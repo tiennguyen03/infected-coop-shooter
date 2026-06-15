@@ -188,3 +188,13 @@ Print statements from Main confirm both bootstraps ran.
       death/XP, item grant+clear+stat restore, damage routing with Hunter's Mark +60% at
       x3, full restart cleanup). Found+fixed a projectile-reset race — object-pool resets
       now also `folder:ClearAllChildren()` to sweep strays. Sprint 11 complete.
+- [~] Sprint 12 — Operation Completion V1 (doc:
+      [docs/SPRINT_12_OPERATION_COMPLETION_V1.md](docs/SPRINT_12_OPERATION_COMPLETION_V1.md)):
+      objective completion fires `ObjectiveService.onComplete` → `ExtractionService` spawns a
+      hold zone far from the objective, 30s hold (pauses outside), then mission success
+      (freeze via PauseService + clear enemies + `MissionSuccess` remote → `MissionSuccessUI`);
+      `ExtractionUI` top-center prompt. Run state = workspace attrs ObjectiveCompleted/
+      ExtractionActive/Extracted (cleared on restart). RunManager honors restart when dead OR
+      Extracted. Dev: ForceObjectiveComplete/ForceMissionSuccess; VerifyCleanup checks
+      extraction leftovers. CODE DONE + checks clean + synced; live verification PENDING
+      (playtest wedged — needs manual Stop→Play then dev fast-path).

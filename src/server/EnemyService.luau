@@ -369,6 +369,10 @@ local function spawnLoop()
 		if workspace:GetAttribute("ObjectiveActive") == true then
 			interval *= Config.Difficulty.ObjectiveSpawnFactor
 		end
+		-- And during extraction.
+		if workspace:GetAttribute("ExtractionActive") == true then
+			interval *= Config.Extraction.SpawnFactor
+		end
 		task.wait(interval)
 		if not PauseService.isPaused() and #zombies < DifficultyService.getMaxAlive() then
 			local position = randomSpawnPosition()

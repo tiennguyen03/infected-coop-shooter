@@ -17,6 +17,8 @@ local XPService = require(script.Parent.XPService)
 local ObjectiveService = {}
 
 local objectiveRemote: RemoteEvent
+-- ExtractionService registers here to start extraction on completion.
+local completionListeners: { () -> () } = {}
 
 local zonePart: BasePart?
 local progress = 0
@@ -80,8 +82,12 @@ local function createZone(): BasePart
 end
 
 local function complete()
+	if completed then
+		return
+	end
 	completed = true
 	workspace:SetAttribute("ObjectiveActive", false)
+	workspace:SetAttribute("ObjectiveCompleted", true)
 	if heartbeatConnection then
 		heartbeatConnection:Disconnect()
 		heartbeatConnection = nil
@@ -96,7 +102,20 @@ local function complete()
 	end
 
 	objectiveRemote:FireAllClients("completed", Config.Objective.RequiredSeconds)
-	print("[ObjectiveService] Objective complete, awarded", Config.Objective.XPReward, "XP")
+	print("[ObjectiveService] Objective complete -> extraction")
+	for _, listener in completionListeners do
+		listener()
+	end
+end
+
+-- ExtractionService subscribes to start extraction when the objective is done.
+function ObjectiveService.onComplete(listener: () -> ())
+	table.insert(completionListeners, listener)
+end
+
+-- Dev shortcut: complete the objective immediately (works even before it spawns).
+function ObjectiveService.forceComplete()
+	complete()
 end
 
 local function onHeartbeat(deltaTime: number)
@@ -156,6 +175,7 @@ function ObjectiveService.reset()
 	progress = 0
 	timeSinceSync = 0
 	workspace:SetAttribute("ObjectiveActive", false)
+	workspace:SetAttribute("ObjectiveCompleted", false)
 	if heartbeatConnection then
 		heartbeatConnection:Disconnect()
 		heartbeatConnection = nil

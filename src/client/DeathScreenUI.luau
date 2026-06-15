@@ -72,14 +72,19 @@ local function show()
 	title.Parent = dim
 
 	local items = (player:GetAttribute("ItemsCollected") :: number?) or 0
+	local objectiveDone = if workspace:GetAttribute("ObjectiveCompleted") == true
+		then "Yes"
+		else "No"
 	statLine(dim, 0, `Time survived: {formatTime(survived)}`)
 	statLine(dim, 1, `Infected killed: {kills}`)
 	statLine(dim, 2, `Level reached: {level}`)
 	statLine(dim, 3, `Items collected: {items}`)
+	statLine(dim, 4, `Objective completed: {objectiveDone}`)
+	statLine(dim, 5, "Extracted: No")
 
 	local button = Instance.new("TextButton")
 	button.AnchorPoint = Vector2.new(0.5, 0)
-	button.Position = UDim2.new(0.5, 0, 0, 320)
+	button.Position = UDim2.new(0.5, 0, 0, 340)
 	button.Size = UDim2.fromOffset(240, 52)
 	button.BackgroundColor3 = Color3.fromRGB(214, 69, 51)
 	button.Text = "RESTART"

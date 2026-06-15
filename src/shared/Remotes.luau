@@ -14,6 +14,8 @@ local REMOTE_NAMES = {
 	"BuffNotice", -- server -> client: (text: string) short on-screen buff announcement
 	"RestartRun", -- client -> server: request a fresh run after dying
 	"DevCommand", -- client -> server: (command: string, ...) Studio/creator-only dev tools
+	"ExtractionUpdate", -- server -> client: (kind: "available"|"progress"|"returning"|"complete"|"hide", progress)
+	"MissionSuccess", -- server -> client: () show the operation-complete results screen
 }
 
 if RunService:IsServer() and not ReplicatedStorage:FindFirstChild("Remotes") then

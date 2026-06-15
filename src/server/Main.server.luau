@@ -24,6 +24,7 @@ require(script.Parent.MineService).init()
 require(script.Parent.ShockCoilService).init()
 require(script.Parent.EnemyService).init()
 require(script.Parent.ObjectiveService).init()
+require(script.Parent.ExtractionService).init()
 require(script.Parent.RunManager).init()
 require(script.Parent.DevTestService).init()
 

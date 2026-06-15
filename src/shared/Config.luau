@@ -159,6 +159,17 @@ local Config = {
 		SyncInterval = 0.1, -- seconds between progress updates to the UI
 	},
 
+	-- Extraction phase (Sprint 12): starts when the objective completes. Fixed
+	-- test location far from the objective at (60,_,60); ~212 studs away.
+	Extraction = {
+		HoldDuration = 30, -- accumulated seconds inside the zone to win
+		ZoneSize = Vector3.new(28, 1, 28),
+		ZonePosition = Vector3.new(-90, 0.6, -90),
+		SyncInterval = 0.1,
+		PressureWave = { Walker = 12, Runner = 4, Brute = 1 },
+		SpawnFactor = 0.8, -- spawn interval multiplier while extracting (+20%)
+	},
+
 	-- Difficulty scaling (Sprint 8 tuning): continuous per-minute scaling
 	-- with caps, per docs/PLAN.md Sprint 8 targets. No enemy speed scaling.
 	Difficulty = {

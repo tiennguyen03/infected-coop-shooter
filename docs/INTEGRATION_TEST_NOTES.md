@@ -90,6 +90,14 @@ PENDING — run Test F (messy state → KillPlayer → RestartRun → VerifyClea
 None new this sprint (no content changes). Sprint 8/9/10 balance still needs the real
 playtest pass.
 
+## Sprint 12 (Operation Completion V1) — added 2026-06-12
+Objective completion now starts an extraction phase (ExtractionService): glowing zone,
+hold 30s, OPERATION COMPLETE screen, clean restart. Full detail + live test fast-path in
+[SPRINT_12_OPERATION_COMPLETION_V1.md](SPRINT_12_OPERATION_COMPLETION_V1.md). Static
+checks PASS. **Live verification PASS 2026-06-12** (after manual Stop → Play): extraction
+starts on objective completion, zone appears, mission success fires, restart cleans up
+(0 enemies/zone/run-flags immediately after restart), no errors. Reported bug root cause
+was a stale playtest running pre-Sprint-12 code; source wiring was already correct.
+
 ## Recommended Next Sprint
-Sprint 12: Operation Completion V1 (objective success → extraction zone → hold timer →
-mission-success screen → next-run flow). Only after Sprint 11's cleanup tests pass.
+Run the outstanding human balance/fun playtest for Sprints 8-12, then post-MVP milestones.

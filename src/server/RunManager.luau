@@ -11,6 +11,7 @@ local AmmoCacheService = require(script.Parent.AmmoCacheService)
 local DifficultyService = require(script.Parent.DifficultyService)
 local DroneService = require(script.Parent.DroneService)
 local EnemyService = require(script.Parent.EnemyService)
+local ExtractionService = require(script.Parent.ExtractionService)
 local IncendiaryService = require(script.Parent.IncendiaryService)
 local ItemEffectService = require(script.Parent.ItemEffectService)
 local ItemService = require(script.Parent.ItemService)
@@ -42,15 +43,18 @@ function RunManager.resetRun(player: Player)
 	PlayerStatsService.resetPlayer(player)
 	DifficultyService.restart()
 	ObjectiveService.reset()
+	ExtractionService.reset()
 	player:LoadCharacterAsync()
 	print("[RunManager] Run restarted for", player.Name)
 end
 
 local function onRestartRequest(player: Player)
-	-- Only honor restarts when the player is actually dead.
+	-- Honor restarts when the player is dead OR the run ended in success.
 	local character = player.Character
 	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-	if not character or not humanoid or humanoid.Health <= 0 then
+	local dead = not character or not humanoid or humanoid.Health <= 0
+	local extracted = workspace:GetAttribute("Extracted") == true
+	if dead or extracted then
 		RunManager.resetRun(player)
 	end
 end

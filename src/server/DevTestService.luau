@@ -121,6 +121,16 @@ function DevTestService.clearItemObjects()
 	require(script.Parent.ShockCoilService).reset()
 end
 
+function DevTestService.forceObjectiveComplete()
+	require(script.Parent.ObjectiveService).forceComplete()
+	print("[DevTest] ForceObjectiveComplete (extraction should start)")
+end
+
+function DevTestService.forceMissionSuccess()
+	require(script.Parent.ExtractionService).forceComplete()
+	print("[DevTest] ForceMissionSuccess")
+end
+
 function DevTestService.spawnEnemy(enemyType: string, count: number)
 	if not EnemyService.spawnWave then
 		return
@@ -213,6 +223,21 @@ function DevTestService.verifyCleanup(): { pass: boolean, leftovers: { string } 
 	check("fire pools", folderCount("FirePools"))
 	check("mines", folderCount("Mines"))
 	check("marked targets", ItemEffectService.getActiveMarkCount())
+	if workspace:FindFirstChild("ExtractionZone") then
+		table.insert(leftovers, "extraction zone still exists")
+	end
+	if workspace:FindFirstChild("ObjectiveZone") then
+		table.insert(leftovers, "objective zone still exists")
+	end
+	if workspace:GetAttribute("ExtractionActive") == true then
+		table.insert(leftovers, "ExtractionActive still true")
+	end
+	if workspace:GetAttribute("Extracted") == true then
+		table.insert(leftovers, "Extracted still true")
+	end
+	if workspace:GetAttribute("ObjectiveCompleted") == true then
+		table.insert(leftovers, "ObjectiveCompleted still true")
+	end
 
 	local player = firstPlayer()
 	if player then
@@ -277,6 +302,12 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 	end,
 	VerifyCleanup = function()
 		DevTestService.verifyCleanup()
+	end,
+	ForceObjectiveComplete = function()
+		DevTestService.forceObjectiveComplete()
+	end,
+	ForceMissionSuccess = function()
+		DevTestService.forceMissionSuccess()
 	end,
 }
 
