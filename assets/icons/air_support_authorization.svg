@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#262a2e"/>
+      <stop offset="1" stop-color="#17191c"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="28" fill="url(#bg)" stroke="#d64533" stroke-width="6"/>
+
+  <!-- reticle -->
+  <g fill="none" stroke="#d64533" stroke-width="8">
+    <circle cx="128" cy="140" r="62"/>
+    <circle cx="128" cy="140" r="30" opacity="0.55"/>
+  </g>
+  <g stroke="#d64533" stroke-width="8" stroke-linecap="round">
+    <line x1="128" y1="62" x2="128" y2="92"/>
+    <line x1="128" y1="188" x2="128" y2="218"/>
+    <line x1="50" y1="140" x2="80" y2="140"/>
+    <line x1="176" y1="140" x2="206" y2="140"/>
+  </g>
+  <circle cx="128" cy="140" r="7" fill="#f0b429"/>
+
+  <!-- incoming ordnance -->
+  <g transform="rotate(38 178 64)">
+    <rect x="170" y="34" width="16" height="44" rx="7" fill="#cfd6dd"/>
+    <path d="M178 22 L170 38 L186 38 Z" fill="#d64533"/>
+    <path d="M170 78 L164 92 L174 84 Z" fill="#9aa4ad"/>
+    <path d="M186 78 L192 92 L182 84 Z" fill="#9aa4ad"/>
+  </g>
+  <!-- motion lines -->
+  <g stroke="#f0b429" stroke-width="6" stroke-linecap="round" opacity="0.8">
+    <line x1="58" y1="46" x2="84" y2="72"/>
+    <line x1="46" y1="76" x2="64" y2="94"/>
+  </g>
+</svg>

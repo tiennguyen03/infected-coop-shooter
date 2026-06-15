@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#262a2e"/>
+      <stop offset="1" stop-color="#17191c"/>
+    </linearGradient>
+    <linearGradient id="brass" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#e0b85c"/>
+      <stop offset="0.5" stop-color="#c49a3f"/>
+      <stop offset="1" stop-color="#8f6e2a"/>
+    </linearGradient>
+    <linearGradient id="tip" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#e05545"/>
+      <stop offset="1" stop-color="#9c2e22"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="28" fill="url(#bg)" stroke="#c43a2c" stroke-width="6"/>
+
+  <!-- three rounds, middle one forward -->
+  <g transform="translate(70,38)">
+    <!-- left round -->
+    <g transform="translate(-38,14) rotate(-6 28 90)">
+      <path d="M14 52 Q14 18 28 6 Q42 18 42 52 Z" fill="url(#tip)"/>
+      <path d="M14 52 L14 56 L42 56 L42 52 Z" fill="#5c4a1e"/>
+      <rect x="14" y="56" width="28" height="94" fill="url(#brass)"/>
+      <rect x="10" y="150" width="36" height="16" rx="3" fill="#8f6e2a"/>
+      <rect x="19" y="62" width="6" height="82" fill="#f0d490" opacity="0.45"/>
+    </g>
+    <!-- right round -->
+    <g transform="translate(74,14) rotate(6 28 90)">
+      <path d="M14 52 Q14 18 28 6 Q42 18 42 52 Z" fill="url(#tip)"/>
+      <path d="M14 52 L14 56 L42 56 L42 52 Z" fill="#5c4a1e"/>
+      <rect x="14" y="56" width="28" height="94" fill="url(#brass)"/>
+      <rect x="10" y="150" width="36" height="16" rx="3" fill="#8f6e2a"/>
+      <rect x="19" y="62" width="6" height="82" fill="#f0d490" opacity="0.45"/>
+    </g>
+    <!-- center round (bigger, hollow tip) -->
+    <g transform="translate(12,0)">
+      <path d="M12 60 Q12 18 32 2 Q52 18 52 60 Z" fill="url(#tip)"/>
+      <circle cx="32" cy="34" r="11" fill="#3a1410"/>
+      <circle cx="32" cy="34" r="6" fill="#1c0a08"/>
+      <path d="M12 60 L12 65 L52 65 L52 60 Z" fill="#5c4a1e"/>
+      <rect x="12" y="65" width="40" height="106" fill="url(#brass)"/>
+      <rect x="7" y="171" width="50" height="18" rx="3" fill="#8f6e2a"/>
+      <rect x="19" y="72" width="8" height="92" fill="#f0d490" opacity="0.45"/>
+    </g>
+  </g>
+</svg>

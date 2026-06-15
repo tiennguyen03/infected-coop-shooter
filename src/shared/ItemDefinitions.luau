@@ -1,0 +1,123 @@
+--!strict
+-- Item metadata only — no gameplay logic here. Effects live in
+-- ItemEffectService (server); numbers live in Config.Items. Abbrev/Color
+-- drive the placeholder icon style until real icons are uploaded (IconId).
+
+export type ItemDefinition = {
+	Id: string,
+	Name: string,
+	Description: string,
+	Abbrev: string,
+	Color: Color3,
+	IconId: string?,
+}
+
+local ItemDefinitions: { [string]: ItemDefinition } = {
+	hollow_point_rounds = {
+		Id = "hollow_point_rounds",
+		Name = "Hollow Point Rounds",
+		Description = "Shots have a 15% chance per stack to inflict Bleed: 4 damage per second for 3 seconds.",
+		Abbrev = "HP",
+		Color = Color3.fromRGB(196, 58, 44),
+		-- Image ids for all five items: assets/icons/ASSET_IDS.md
+		IconId = "rbxassetid://138354803501340",
+	},
+	adrenaline_injector = {
+		Id = "adrenaline_injector",
+		Name = "Adrenaline Injector",
+		Description = "Below 30% health: +20% move speed and +20% fire rate per stack.",
+		Abbrev = "AD",
+		Color = Color3.fromRGB(70, 214, 140),
+		IconId = "rbxassetid://73534221660878",
+	},
+	tactical_drone_beacon = {
+		Id = "tactical_drone_beacon",
+		Name = "Tactical Drone Beacon",
+		Description = "Kills have a 10% chance per stack to deploy a combat drone for 20 seconds.",
+		Abbrev = "DR",
+		Color = Color3.fromRGB(63, 167, 214),
+		IconId = "rbxassetid://73375484822115",
+	},
+	emergency_ammo_cache = {
+		Id = "emergency_ammo_cache",
+		Name = "Emergency Ammo Cache",
+		Description = "A supply crate drops nearby every 25s (faster per stack). Grab it for a random 8s combat buff.",
+		Abbrev = "AC",
+		Color = Color3.fromRGB(125, 140, 88),
+		IconId = "rbxassetid://116972182907671",
+	},
+	air_support_authorization = {
+		Id = "air_support_authorization",
+		Name = "Air Support Authorization",
+		Description = "Every 30 kills (fewer per stack), call an airstrike on the largest nearby Infected cluster.",
+		Abbrev = "AS",
+		Color = Color3.fromRGB(214, 69, 51),
+		IconId = "rbxassetid://136560283241343",
+	},
+	kevlar_plate_carrier = {
+		Id = "kevlar_plate_carrier",
+		Name = "Kevlar Plate Carrier",
+		Description = "Gain 20 shield per stack whenever you level up (max 80 from this item).",
+		Abbrev = "KV",
+		Color = Color3.fromRGB(78, 132, 196),
+		IconId = nil,
+	},
+	vampire_serum = {
+		Id = "vampire_serum",
+		Name = "Vampire Serum",
+		Description = "Heal 10 HP per stack every 12 credited kills.",
+		Abbrev = "VS",
+		Color = Color3.fromRGB(176, 38, 52),
+		IconId = nil,
+	},
+	ricochet_rounds = {
+		Id = "ricochet_rounds",
+		Name = "Ricochet Rounds",
+		Description = "Shots have a 12% chance per stack to bounce to a nearby Infected for 50% damage.",
+		Abbrev = "RC",
+		Color = Color3.fromRGB(120, 200, 210),
+		IconId = nil,
+	},
+	shrapnel_magazine = {
+		Id = "shrapnel_magazine",
+		Name = "Shrapnel Magazine",
+		Description = "Every 6th shot fires extra side projectiles for 60% damage.",
+		Abbrev = "SH",
+		Color = Color3.fromRGB(190, 150, 70),
+		IconId = nil,
+	},
+	incendiary_gel = {
+		Id = "incendiary_gel",
+		Name = "Incendiary Gel",
+		Description = "Kills have a 15% chance per stack to leave burning ground.",
+		Abbrev = "IN",
+		Color = Color3.fromRGB(232, 120, 40),
+		IconId = nil,
+	},
+	repulsor_mine_kit = {
+		Id = "repulsor_mine_kit",
+		Name = "Repulsor Mine Kit",
+		Description = "Periodically drop a blast mine that detonates on nearby Infected.",
+		Abbrev = "MN",
+		Color = Color3.fromRGB(96, 150, 220),
+		IconId = nil,
+	},
+	shock_coil = {
+		Id = "shock_coil",
+		Name = "Shock Coil",
+		Description = "Periodically shock and slow nearby Infected.",
+		Abbrev = "SC",
+		Color = Color3.fromRGB(120, 180, 255),
+		IconId = nil,
+	},
+	hunters_mark_optics = {
+		Id = "hunters_mark_optics",
+		Name = "Hunter's Mark Optics",
+		Description = "Periodically mark a high-health Infected to take +20% damage per stack.",
+		Abbrev = "HM",
+		Color = Color3.fromRGB(220, 60, 60),
+		IconId = nil,
+	},
+}
+
+return ItemDefinitions

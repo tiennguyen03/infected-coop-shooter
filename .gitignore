@@ -1,0 +1,10 @@
+# Roblox place builds
+*.rbxl
+*.rbxlx
+*.rbxl.lock
+*.rbxlx.lock
+
+# Generated tooling files
+sourcemap.json
+globalTypes.d.luau
+roblox.yml

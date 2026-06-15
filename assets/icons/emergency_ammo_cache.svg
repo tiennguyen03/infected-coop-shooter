@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#262a2e"/>
+      <stop offset="1" stop-color="#17191c"/>
+    </linearGradient>
+    <linearGradient id="crate" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7d8c58"/>
+      <stop offset="1" stop-color="#57633c"/>
+    </linearGradient>
+    <linearGradient id="lid" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8d9c66"/>
+      <stop offset="1" stop-color="#6b7a4a"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="28" fill="url(#bg)" stroke="#6b7a4a" stroke-width="6"/>
+
+  <!-- crate body -->
+  <rect x="44" y="100" width="168" height="100" rx="8" fill="url(#crate)" stroke="#3d452a" stroke-width="4"/>
+  <!-- lid -->
+  <rect x="36" y="72" width="184" height="36" rx="8" fill="url(#lid)" stroke="#3d452a" stroke-width="4"/>
+  <!-- straps -->
+  <rect x="74" y="72" width="18" height="128" fill="#3d452a" opacity="0.85"/>
+  <rect x="164" y="72" width="18" height="128" fill="#3d452a" opacity="0.85"/>
+  <!-- latch -->
+  <rect x="118" y="98" width="20" height="18" rx="4" fill="#c9a24b" stroke="#3d452a" stroke-width="3"/>
+
+  <!-- stencil: bullets -->
+  <g transform="translate(106,128)">
+    <g fill="#e8e4d4">
+      <path d="M6 44 L6 16 Q6 6 12 2 Q18 6 18 16 L18 44 Z" opacity="0.9"/>
+      <path d="M26 44 L26 16 Q26 6 32 2 Q38 6 38 16 L38 44 Z" opacity="0.9"/>
+    </g>
+  </g>
+  <!-- stencil hazard ticks on lid -->
+  <g fill="#e8e4d4" opacity="0.85">
+    <rect x="52" y="82" width="14" height="16" transform="skewX(-18)"/>
+    <rect x="196" y="82" width="14" height="16" transform="skewX(-18)"/>
+  </g>
+
+  <!-- supply-drop arrow -->
+  <g fill="#e8b54b">
+    <rect x="120" y="28" width="16" height="22" rx="3"/>
+    <path d="M104 48 L128 70 L152 48 Z"/>
+  </g>
+</svg>

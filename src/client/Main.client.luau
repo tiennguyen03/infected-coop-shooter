@@ -1,0 +1,19 @@
+--!strict
+-- Client bootstrap. Requires each controller module and starts it.
+
+require(script.Parent.SoundFX).init()
+require(script.Parent.CameraController).init()
+require(script.Parent.SprintController).init()
+require(script.Parent.WeaponController).init()
+require(script.Parent.ObjectiveUI).init()
+require(script.Parent.DamageNumberUI).init()
+require(script.Parent.RunTimerUI).init()
+require(script.Parent.XPBarUI).init()
+require(script.Parent.ItemSelectionUI).init()
+require(script.Parent.ItemBarUI).init()
+require(script.Parent.BuffNoticeUI).init()
+require(script.Parent.DeathScreenUI).init()
+require(script.Parent.HealthBarUI).init()
+require(script.Parent.DevTestPanel).init()
+
+print("[Client] All controllers initialized")
