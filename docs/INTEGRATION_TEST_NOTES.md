@@ -99,5 +99,16 @@ starts on objective completion, zone appears, mission success fires, restart cle
 (0 enemies/zone/run-flags immediately after restart), no errors. Reported bug root cause
 was a stale playtest running pre-Sprint-12 code; source wiring was already correct.
 
+## Sprint 14 (Item Rarity Framework) — added 2026-06-12
+Rarities (Common/Uncommon/Legendary) on all 13 items, weighted-rarity offer rolls (70/25/5)
+with distinct cards + fallback, every-4th-level-up Uncommon+ guarantee, rarity colors/labels
+on level-up cards. Plan: [ITEM_RARITY_PLAN.md](ITEM_RARITY_PLAN.md). Static checks PASS.
+Rarity card UI confirmed in-engine (grey COMMON / green UNCOMMON labels + borders render).
+**Bug found + fixed:** dying while a level-up item offer was open left the equipment screen
+up and the game paused, blocking restart ("infinite deploying"). Fix: server cancels
+pending offers + unpauses on death (`ItemService.cancelOffers`); client closes the offer
+card on death. PENDING (quick): SimulateItemOffers distribution check + VerifyCleanup after
+a rarity-era restart.
+
 ## Recommended Next Sprint
-Run the outstanding human balance/fun playtest for Sprints 8-12, then post-MVP milestones.
+Run the outstanding human balance/fun playtest for Sprints 8-13, then post-MVP milestones.

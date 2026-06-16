@@ -121,6 +121,21 @@ function DevTestService.clearItemObjects()
 	require(script.Parent.ShockCoilService).reset()
 end
 
+function DevTestService.simulateItemOffers(count: number)
+	local tally = require(script.Parent.ItemService).simulateOffers(count)
+	local total = tally.Common + tally.Uncommon + tally.Legendary
+	print(
+		string.format(
+			"[DevTest] SimulateItemOffers %d: Common %.1f%% / Uncommon %.1f%% / Legendary %.1f%%",
+			count,
+			tally.Common / total * 100,
+			tally.Uncommon / total * 100,
+			tally.Legendary / total * 100
+		)
+	)
+	return tally
+end
+
 function DevTestService.forceObjectiveComplete()
 	require(script.Parent.ObjectiveService).forceComplete()
 	print("[DevTest] ForceObjectiveComplete (extraction should start)")
@@ -308,6 +323,9 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 	end,
 	ForceMissionSuccess = function()
 		DevTestService.forceMissionSuccess()
+	end,
+	SimulateItemOffers = function(_player, count)
+		DevTestService.simulateItemOffers(tonumber(count) or 1000)
 	end,
 }
 

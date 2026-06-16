@@ -53,6 +53,17 @@ missing, `~/.rokit/bin` may not be on PATH — run `rokit install` from the proj
   `luau-lsp analyze --sourcemap=sourcemap.json --definitions=globalTypes.d.luau src` —
   type checking (requires `globalTypes.d.luau` from the luau-lsp repo; skip if absent).
 
+## Status
+- Sprint 14 (Item Rarity Framework) code-complete + static-clean: rarities on all 13 items
+  (6 Common / 6 Uncommon / 1 Legendary), weighted offers (70/25/5) + every-4th Uncommon+
+  guarantee, rarity card UI. Plan: [docs/ITEM_RARITY_PLAN.md](docs/ITEM_RARITY_PLAN.md).
+  Fixed "infinite deploying" bug (death while a level-up offer was open kept the game paused
+  / equipment screen up, blocking restart) — `ItemService.cancelOffers` on death + client
+  closes the card on death. Pending: quick SimulateItemOffers distribution + VerifyCleanup.
+- Sprint 13 Full MVP Balance + Fun Test still OPEN (plan:
+  [docs/SPRINT_13_FULL_MVP_BALANCE_TEST.md](docs/SPRINT_13_FULL_MVP_BALANCE_TEST.md)) —
+  needs 3 natural human playtests; tune config only.
+
 ## AI workflow rules (hard-won + community practice)
 
 - Build ONE feature per prompt/turn, then verify, then move on. Don't one-shot multiple

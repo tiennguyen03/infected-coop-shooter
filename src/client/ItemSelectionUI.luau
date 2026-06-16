@@ -7,6 +7,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local ItemDefinitions =
 	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("ItemDefinitions"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
@@ -33,11 +34,16 @@ local function createCard(parent: Frame, itemId: string, ownedStacks: number, po
 		return
 	end
 
+	local rarityName = definition.Rarity or "Common"
+	local rarity = Config.ItemRarities[rarityName] or Config.ItemRarities.Common
+	local rarityColor = rarity.Color
+
 	local card = Instance.new("TextButton")
 	card.Name = itemId
 	card.Position = position
 	card.Size = UDim2.fromOffset(CARD_WIDTH, CARD_HEIGHT)
-	card.BackgroundColor3 = Color3.fromRGB(32, 34, 38)
+	-- Subtle rarity-tinted background accent.
+	card.BackgroundColor3 = rarityColor:Lerp(Color3.fromRGB(28, 30, 34), 0.82)
 	card.BorderSizePixel = 0
 	card.Text = ""
 	card.AutoButtonColor = true
@@ -47,9 +53,22 @@ local function createCard(parent: Frame, itemId: string, ownedStacks: number, po
 	corner.Parent = card
 
 	local stroke = Instance.new("UIStroke")
-	stroke.Color = definition.Color
-	stroke.Thickness = 2
+	stroke.Color = rarityColor
+	stroke.Thickness = if rarityName == "Legendary"
+		then 4
+		elseif rarityName == "Uncommon" then 3
+		else 2
 	stroke.Parent = card
+
+	local rarityLabel = Instance.new("TextLabel")
+	rarityLabel.Position = UDim2.fromOffset(0, 0)
+	rarityLabel.Size = UDim2.new(1, 0, 0, 14)
+	rarityLabel.BackgroundTransparency = 1
+	rarityLabel.Text = string.upper(rarity.DisplayName)
+	rarityLabel.TextColor3 = rarityColor
+	rarityLabel.TextSize = 12
+	rarityLabel.Font = Enum.Font.GothamBold
+	rarityLabel.Parent = card
 
 	-- Placeholder icon: colored plate with the abbreviation. Swapped for an
 	-- ImageLabel when definition.IconId is set.
@@ -163,14 +182,28 @@ local function showOffer(choices: { string }, inventory: { [string]: number })
 	overlay = gui
 end
 
+local function watchCharacter(character: Model)
+	-- Death must close the equipment screen so the death/restart UI is usable.
+	local humanoid = character:WaitForChild("Humanoid") :: Humanoid
+	humanoid.Died:Connect(closeOverlay)
+end
+
 function ItemSelectionUI.init()
 	-- A run restart respawns the character; never leave a stale offer open.
-	Players.LocalPlayer.CharacterAdded:Connect(closeOverlay)
+	Players.LocalPlayer.CharacterAdded:Connect(function(character)
+		closeOverlay()
+		watchCharacter(character)
+	end)
+	if Players.LocalPlayer.Character then
+		watchCharacter(Players.LocalPlayer.Character)
+	end
 	selectionRemote = Remotes.get("ItemSelection")
 	selectionRemote.OnClientEvent:Connect(
 		function(kind: string, choices: { string }, inventory: { [string]: number })
 			if kind == "offer" then
 				showOffer(choices, inventory)
+			elseif kind == "cancel" then
+				closeOverlay()
 			end
 		end
 	)

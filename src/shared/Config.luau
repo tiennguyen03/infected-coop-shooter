@@ -40,6 +40,15 @@ local Config = {
 		ThresholdGrowth = 1.25,
 	},
 
+	-- Item rarities (Sprint 14). Weights drive per-card rarity rolls.
+	ItemRarities = {
+		Common = { DisplayName = "Common", Color = Color3.fromRGB(170, 170, 170), Weight = 70 },
+		Uncommon = { DisplayName = "Uncommon", Color = Color3.fromRGB(80, 220, 120), Weight = 25 },
+		Legendary = { DisplayName = "Legendary", Color = Color3.fromRGB(255, 75, 75), Weight = 5 },
+	},
+	-- Every Nth level-up guarantees at least one Uncommon-or-better card.
+	RarityGuaranteeEvery = 4,
+
 	-- Items (Sprint 5). Definitions in shared/ItemDefinitions.luau; full spec
 	-- in docs/ITEMS_MVP.md. Level-up offers ChoicesPerLevel distinct items.
 	Items = {
