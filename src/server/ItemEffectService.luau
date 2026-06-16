@@ -32,6 +32,7 @@ local damageRemote: RemoteEvent
 local droneDeployer: ((player: Player) -> ())? = nil
 local airStriker: ((player: Player) -> ())? = nil
 local firePoolSpawner: ((player: Player, position: Vector3) -> ())? = nil
+local ratSpawner: ((player: Player, position: Vector3, stacks: number) -> ())? = nil
 
 -- Credits a kill to the last player who damaged the humanoid; the kind of
 -- that last hit lets on-kill effects avoid recursive spawns (e.g. a fire
@@ -64,6 +65,21 @@ end
 
 function ItemEffectService.setFirePoolSpawner(spawner: (player: Player, position: Vector3) -> ())
 	firePoolSpawner = spawner
+end
+
+function ItemEffectService.setRatSpawner(spawner: (
+	player: Player,
+	position: Vector3,
+	stacks: number
+) -> ())
+	ratSpawner = spawner
+end
+
+-- Generic credited-kill listeners (AssaultClassService uses this for Combat
+-- Momentum). Fired once per credited kill with the killing player.
+local killListeners: { (player: Player) -> () } = {}
+function ItemEffectService.addKillListener(listener: (player: Player) -> ())
+	table.insert(killListeners, listener)
 end
 
 -- THE damage entry point. Every player-owned damage source calls this so
@@ -215,6 +231,10 @@ function ItemEffectService.onEnemyKilled(humanoid: Humanoid)
 
 	killer:SetAttribute("Kills", ((killer:GetAttribute("Kills") :: number?) or 0) + 1)
 
+	for _, listener in killListeners do
+		listener(killer)
+	end
+
 	-- Vampire Serum: heal every N credited kills.
 	local vampStacks = ItemService.getStacks(killer, "vampire_serum")
 	if vampStacks > 0 then
@@ -251,6 +271,15 @@ function ItemEffectService.onEnemyKilled(humanoid: Humanoid)
 		)
 		if math.random() < chance then
 			firePoolSpawner(killer, deathPosition)
+		end
+	end
+
+	-- Plague Rat Charm: never chains from a rat kill (recursion guard).
+	local ratStacks = ItemService.getStacks(killer, "plague_rat_charm")
+	if ratStacks > 0 and ratSpawner and killKind ~= "rat" and deathPosition then
+		local cfg = Config.Items.PlagueRat
+		if math.random() < math.min(cfg.ProcChancePerStack * ratStacks, cfg.ChanceCap) then
+			ratSpawner(killer, deathPosition, ratStacks)
 		end
 	end
 
@@ -357,7 +386,10 @@ local function stepHunterMark(now: number)
 			local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
 			if root then
 				local cfg = Config.Items.HunterMark
-				local target = highestHealthEnemy(root.Position, cfg.Range)
+				-- Signal Antenna: extend mark range.
+				local range = cfg.Range
+					* (1 + ((player:GetAttribute("HunterMarkRangeMult") :: number?) or 0))
+				local target = highestHealthEnemy(root.Position, range)
 				nextMarkAt[player] = now + cfg.Interval
 				if target then
 					local highlight = Instance.new("Highlight")

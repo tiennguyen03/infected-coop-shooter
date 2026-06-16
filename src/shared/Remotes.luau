@@ -16,6 +16,8 @@ local REMOTE_NAMES = {
 	"DevCommand", -- client -> server: (command: string, ...) Studio/creator-only dev tools
 	"ExtractionUpdate", -- server -> client: (kind: "available"|"progress"|"returning"|"complete"|"hide", progress)
 	"MissionSuccess", -- server -> client: () show the operation-complete results screen
+	"UseAbility", -- client -> server: (abilityName: "dash"|"breach")
+	"AbilityUsed", -- server -> client: (abilityName: string, cooldown: number) for UI countdown
 }
 
 if RunService:IsServer() and not ReplicatedStorage:FindFirstChild("Remotes") then

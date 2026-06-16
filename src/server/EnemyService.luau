@@ -220,7 +220,13 @@ local function attackIfTouching(zombie: Zombie, now: number)
 		local character = targetRoot.Parent :: Model
 		local targetHumanoid = character:FindFirstChildOfClass("Humanoid")
 		if targetHumanoid and targetHumanoid.Health > 0 then
-			targetHumanoid:TakeDamage(zombie.damage * DifficultyService.getDamageMultiplier())
+			-- Ballistic Weave: reduce incoming damage (player attribute, default 1).
+			local victim = Players:GetPlayerFromCharacter(character)
+			local incomingMult = (victim and victim:GetAttribute("IncomingDamageMult") :: number?)
+				or 1
+			targetHumanoid:TakeDamage(
+				zombie.damage * DifficultyService.getDamageMultiplier() * incomingMult
+			)
 			zombie.lastAttackTime = now
 		end
 	end

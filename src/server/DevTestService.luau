@@ -237,6 +237,7 @@ function DevTestService.verifyCleanup(): { pass: boolean, leftovers: { string } 
 	check("ammo caches", folderCount("AmmoCaches"))
 	check("fire pools", folderCount("FirePools"))
 	check("mines", folderCount("Mines"))
+	check("plague rats", folderCount("PlagueRats"))
 	check("marked targets", ItemEffectService.getActiveMarkCount())
 	if workspace:FindFirstChild("ExtractionZone") then
 		table.insert(leftovers, "extraction zone still exists")

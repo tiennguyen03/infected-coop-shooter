@@ -10,6 +10,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local GroundUtil = require(ReplicatedStorage.Shared.GroundUtil)
 local ItemEffectService = require(script.Parent.ItemEffectService)
 
 local ENEMY_TAG = "Enemy"
@@ -55,14 +56,6 @@ local function findClusterCenter(playerPosition: Vector3): Vector3?
 		end
 	end
 	return bestRoot.Position
-end
-
-local function groundBelow(position: Vector3): number
-	local result = workspace:Raycast(
-		Vector3.new(position.X, position.Y + 50, position.Z),
-		Vector3.new(0, -200, 0)
-	)
-	return if result then result.Position.Y else 0
 end
 
 local function detonate(player: Player, center: Vector3)
@@ -119,14 +112,15 @@ function AirStrikeService.strike(player: Player)
 		return
 	end
 	local cfg = Config.Items.AirSupport
-	local groundY = groundBelow(center)
-	local impact = Vector3.new(center.X, groundY, center.Z)
+	-- Drop the marker to the floor below the cluster (cluster center is at the
+	-- enemies' torso height); the filtered cast ignores characters/enemies.
+	local impact = GroundUtil.GetGroundPosition(center, 0.05)
 
 	-- Red warning disc on the ground.
 	local marker = Instance.new("Part")
 	marker.Shape = Enum.PartType.Cylinder
 	marker.Size = Vector3.new(0.4, cfg.BlastRadius * 2, cfg.BlastRadius * 2)
-	marker.CFrame = CFrame.new(impact + Vector3.new(0, 0.3, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	marker.CFrame = CFrame.new(impact) * CFrame.Angles(0, 0, math.rad(90))
 	marker.Anchored = true
 	marker.CanCollide = false
 	marker.CanQuery = false

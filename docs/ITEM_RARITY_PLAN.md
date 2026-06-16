@@ -15,12 +15,17 @@ like a lucky moment, not an expectation.
 
 Defined in `Config.ItemRarities`. Per-item rarity lives on each `ItemDefinitions` entry.
 
-## Current 13-item assignment
-**Common (6):** hollow_point_rounds, adrenaline_injector, emergency_ammo_cache,
-kevlar_plate_carrier, vampire_serum, shrapnel_magazine
-**Uncommon (6):** tactical_drone_beacon, ricochet_rounds, incendiary_gel,
-repulsor_mine_kit, shock_coil, hunters_mark_optics
+## Current 23-item assignment (Sprint 15)
+**Common (16):** hollow_point_rounds, adrenaline_injector, emergency_ammo_cache,
+kevlar_plate_carrier, vampire_serum, shrapnel_magazine, high_grain_powder,
+combat_stimulants, lightweight_boots, military_rations, field_manual, scavenger_pouch,
+ballistic_weave, field_dressing, signal_antenna, cheap_drone_parts
+**Uncommon (7):** tactical_drone_beacon, ricochet_rounds, incendiary_gel,
+repulsor_mine_kit, shock_coil, hunters_mark_optics, plague_rat_charm
 **Legendary (1):** air_support_authorization
+
+Pool after Sprint 16: 16 Common / 7 Uncommon / 1 Legendary = 24 total. Odds (70/25/5) and
+the every-4th guarantee unchanged.
 
 ## Offer logic
 Level-up still offers 3 **distinct** cards. Per card: roll a rarity by weight → pick a

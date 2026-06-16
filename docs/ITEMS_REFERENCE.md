@@ -20,8 +20,27 @@ level-up offers 3 distinct choices. Last updated 2026-06-12.
 | 12 | Shock Coil | `shock_coil` | Uncommon | Periodic pulse | unlimited |
 | 13 | Hunter's Mark Optics | `hunters_mark_optics` | Uncommon | Priority debuff | unlimited |
 
-Rarities (Sprint 14): 6 Common · 6 Uncommon · 1 Legendary. Offer weights 70/25/5; see
+Rarities: 16 Common · 7 Uncommon · 1 Legendary (24 total). Offer weights 70/25/5; see
 [ITEM_RARITY_PLAN.md](ITEM_RARITY_PLAN.md).
+
+### Sprint 16
+| # | Name | Id | Rarity | Effect |
+|---|------|----|--------|--------|
+| 24 | Plague Rat Charm | `plague_rat_charm` | Uncommon | Kills have a 12%/stack chance to unleash plague rats (2–5 by stacks) that crawl to nearby Infected, latch, and deal 3 DPS for 4s. Cap 15/player, 8s lifetime, rat kills credit you. |
+
+### Common Item Pack 1 (Sprint 15) — passive items
+| # | Name | Id | Effect per stack |
+|---|------|----|------------------|
+| 14 | High-Grain Powder | `high_grain_powder` | +8% bullet damage |
+| 15 | Combat Stimulants | `combat_stimulants` | +7% fire rate |
+| 16 | Lightweight Boots | `lightweight_boots` | +7% move speed |
+| 17 | Military Rations | `military_rations` | +12 max HP |
+| 18 | Field Manual | `field_manual` | +8% XP gained |
+| 19 | Scavenger Pouch | `scavenger_pouch` | +15% XP orb magnet range |
+| 20 | Ballistic Weave | `ballistic_weave` | -6% incoming damage (cap -50%) |
+| 21 | Field Dressing | `field_dressing` | heal 8 HP on level-up |
+| 22 | Signal Antenna | `signal_antenna` | +10% drone & Hunter's Mark range |
+| 23 | Cheap Drone Parts | `cheap_drone_parts` | +10% drone duration |
 
 ---
 

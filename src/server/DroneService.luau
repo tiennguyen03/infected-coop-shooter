@@ -22,6 +22,7 @@ type Drone = {
 	part: BasePart,
 	owner: Player,
 	angle: number, -- fixed offset angle so multiple drones spread out
+	targetRange: number,
 	expiresAt: number,
 	nextFireAt: number,
 	nextRetargetAt: number,
@@ -43,10 +44,10 @@ local function countFor(player: Player): number
 	return count
 end
 
-local function nearestEnemy(position: Vector3): (Humanoid?, BasePart?)
+local function nearestEnemy(position: Vector3, range: number): (Humanoid?, BasePart?)
 	local bestHumanoid: Humanoid? = nil
 	local bestRoot: BasePart? = nil
-	local bestDistance = Config.Items.Drone.TargetRange
+	local bestDistance = range
 	for _, model in CollectionService:GetTagged(ENEMY_TAG) do
 		if model:IsA("Model") then
 			local humanoid = model:FindFirstChildOfClass("Humanoid")
@@ -86,11 +87,16 @@ function DroneService.deploy(owner: Player): boolean
 	part.Color = Color3.fromRGB(63, 167, 214)
 	part.Parent = droneFolder
 
+	-- Signal Antenna / Cheap Drone Parts: per-owner range + duration boosts.
+	local rangeMult = 1 + ((owner:GetAttribute("DroneRangeMult") :: number?) or 0)
+	local durationMult = 1 + ((owner:GetAttribute("DroneDurationMult") :: number?) or 0)
+
 	table.insert(drones, {
 		part = part :: BasePart,
 		owner = owner,
 		angle = math.random() * math.pi * 2,
-		expiresAt = os.clock() + Config.Items.Drone.Duration,
+		targetRange = Config.Items.Drone.TargetRange * rangeMult,
+		expiresAt = os.clock() + Config.Items.Drone.Duration * durationMult,
 		nextFireAt = 0,
 		nextRetargetAt = 0,
 		target = nil,
@@ -141,7 +147,7 @@ local function stepDrones(deltaTime: number)
 
 		if now >= drone.nextRetargetAt then
 			drone.nextRetargetAt = now + RETARGET_INTERVAL
-			local humanoid = nearestEnemy(position)
+			local humanoid = nearestEnemy(position, drone.targetRange)
 			drone.target = humanoid
 		end
 

@@ -53,6 +53,12 @@ missing, `~/.rokit/bin` may not be on PATH — run `rokit install` from the proj
   `luau-lsp analyze --sourcemap=sourcemap.json --definitions=globalTypes.d.luau src` —
   type checking (requires `globalTypes.d.luau` from the luau-lsp repo; skip if absent).
 
+## Current next task
+Live verify Sprint 15 Assault Class V1 + Proper Held Gun. See docs/PROJECT_HANDOFF_CONTEXT.md.
+Do not add features until gun visual, Q dash, E breach, Combat Momentum, cooldown UI, and
+VerifyCleanup are verified. Manual Stop → Play may be required because Studio MCP can run
+stale playtests.
+
 ## Status
 - Sprint 14 (Item Rarity Framework) code-complete + static-clean: rarities on all 13 items
   (6 Common / 6 Uncommon / 1 Legendary), weighted offers (70/25/5) + every-4th Uncommon+

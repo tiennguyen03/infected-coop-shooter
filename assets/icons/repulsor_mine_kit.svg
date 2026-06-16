@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#262a2e"/>
+      <stop offset="1" stop-color="#17191c"/>
+    </linearGradient>
+    <radialGradient id="dome" cx="0.4" cy="0.35" r="0.75">
+      <stop offset="0" stop-color="#7aa9e0"/>
+      <stop offset="1" stop-color="#3c5d8c"/>
+    </radialGradient>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="28" fill="url(#bg)" stroke="#6096dc" stroke-width="6"/>
+
+  <!-- blast rings -->
+  <g fill="none" stroke="#6096dc" stroke-linecap="round" opacity="0.6">
+    <path d="M70 96 A60 60 0 0 1 186 96" stroke-width="6"/>
+    <path d="M54 84 A80 80 0 0 1 202 84" stroke-width="5" opacity="0.6"/>
+  </g>
+
+  <!-- mine base -->
+  <ellipse cx="128" cy="186" rx="74" ry="20" fill="#2c3036" stroke="#14161a" stroke-width="5"/>
+  <!-- dome body -->
+  <path d="M68 178 Q68 128 128 128 Q188 128 188 178 Z" fill="url(#dome)" stroke="#27406a" stroke-width="5"/>
+  <!-- prongs -->
+  <g stroke="#9aa4ad" stroke-width="7" stroke-linecap="round">
+    <line x1="92" y1="138" x2="84" y2="112"/>
+    <line x1="128" y1="128" x2="128" y2="100"/>
+    <line x1="164" y1="138" x2="172" y2="112"/>
+  </g>
+  <g fill="#d64533"><circle cx="84" cy="110" r="6"/><circle cx="128" cy="98" r="6"/><circle cx="172" cy="110" r="6"/></g>
+  <!-- sensor light -->
+  <circle cx="128" cy="162" r="9" fill="#cfe2ff"/>
+  <circle cx="128" cy="162" r="4" fill="#6096dc"/>
+</svg>

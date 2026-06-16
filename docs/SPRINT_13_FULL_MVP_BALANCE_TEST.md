@@ -107,9 +107,33 @@ or stage/biome variety, or operator selection) — chosen based on what the bala
 showed was missing. Do not start it until Sprint 13's runs pass.
 
 ## Run results (fill during testing)
-### Run 1 — Baseline
-### Run 2 — Tuning
-### Run 3 — Verification
+### Run 1 — Baseline (pre-tune, Sprint 14 rarity build)
+- Result: SUCCESS (extracted)
+- Total time: 7:13
+- Kills: 413
+- Level reached: 12
+- Items collected: 11 (10 unique) — rarity: 1 Legendary, 7 Uncommon, 3 Common
+  (Air Support + drones x2, ricochet, incendiary, mine, shock, hunter's mark, hollow point, vampire, shrapnel)
+- Objective: completed · Extracted: yes · Errors: none
+- (Player feel notes / milestone times / fun rating: pending from player)
+- Objective read from data: first-try win at 7:13 with 413 kills → leaned EASY; player
+  reported: shots too fast / too weak late, zombie count overwhelming, objective zone too
+  tight to kite.
+
+### Run 2 — after tune (TODO: play on fresh Play)
+### Run 3 — Verification (TODO)
+
 ### Config changes (old → new → reason)
+- Weapon.Damage 6 → 12; Weapon.FireCooldown 0.1 → 0.15 (slower, punchier; DPS 60 → 80) —
+  player: "shoots too fast, does too little damage near the end."
+- Difficulty.MaxAliveSchedule 14/22/32/45 → 11/16/24/34; MaxAliveLate 60 → 45 (~0.75x) —
+  player: horde "a little too overwhelming."
+- Objective.ZoneSize 30 → 46 — player: objective too tight, "little room to kite."
+- Added TestArena (ArenaService): 300x300 soft slate floor + containing walls, eye-easy
+  blue-grey, for testing (player request).
+
 ### Bugs found / fixed
+- (Sprint 14) Death while a level-up offer was open blocked restart ("infinite deploying")
+  — fixed: server cancels offers + unpauses on death; client closes the card on death.
+
 ### Deferred (do not fix this sprint)

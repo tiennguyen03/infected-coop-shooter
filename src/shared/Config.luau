@@ -20,12 +20,28 @@ local Config = {
 	},
 
 	Weapon = {
-		Damage = 6, -- DPS stays 60 with the faster fire rate (same time-to-kill)
-		FireCooldown = 0.1, -- seconds between shots (10/sec)
+		Damage = 12, -- Sprint 13 tune: punchier shots that matter vs late scaled HP
+		FireCooldown = 0.15, -- slower fire (6.7/sec); DPS 80, up from 60
 		ProjectileSpeed = 180, -- studs per second
 		ProjectileLifetime = 3, -- seconds before despawn
 		ProjectileSize = Vector3.new(0.4, 0.4, 1.4),
 		MaxAimDistance = 1000, -- how far the aim raycast reaches
+	},
+
+	-- Assault class (Sprint 15 / class V1). Default and only class for now.
+	Assault = {
+		MomentumDuration = 4, -- seconds; refreshed by kills
+		MaxMomentumStacks = 5,
+		DamagePerStack = 0.04, -- +4% damage per stack
+		MoveSpeedPerStack = 0.04, -- +4% move speed per stack
+		DashCooldown = 5,
+		DashDistance = 18, -- studs
+		DashDuration = 0.18, -- seconds
+		BreachCooldown = 12,
+		BreachThrowDistance = 35, -- studs
+		BreachFuseTime = 0.8, -- seconds
+		BreachRadius = 14, -- studs
+		BreachDamage = 45,
 	},
 
 	-- XP and leveling (Sprint 4). Orb value comes from the enemy type
@@ -53,6 +69,20 @@ local Config = {
 	-- in docs/ITEMS_MVP.md. Level-up offers ChoicesPerLevel distinct items.
 	Items = {
 		ChoicesPerLevel = 3,
+		-- Common Item Pack 1 (Sprint 15) passive per-stack values.
+		Passives = {
+			HighGrainPowder = 0.08, -- + bullet damage
+			CombatStimulants = 0.07, -- + fire rate
+			LightweightBoots = 0.07, -- + move speed
+			MilitaryRations = 12, -- + max HP
+			FieldManual = 0.08, -- + XP gained
+			ScavengerPouch = 0.15, -- + orb magnet range
+			BallisticWeave = 0.06, -- - incoming damage
+			BallisticWeaveCap = 0.5, -- max damage reduction
+			FieldDressing = 8, -- HP healed on level-up
+			SignalAntenna = 0.1, -- + drone & Hunter's Mark range
+			CheapDroneParts = 0.1, -- + drone duration
+		},
 		HollowPoint = {
 			BleedChancePerStack = 0.15,
 			BleedDuration = 3, -- seconds; reapplying refreshes, never stacks
@@ -138,6 +168,19 @@ local Config = {
 			SlowFactor = 0.7, -- enemy WalkSpeed multiplier while slowed
 			SlowDuration = 2,
 		},
+		PlagueRat = {
+			ProcChancePerStack = 0.12,
+			ChanceCap = 0.6,
+			RatsPerStack = { 2, 3, 4, 5 }, -- index = min(stacks, 4)
+			MaxActivePerPlayer = 15,
+			Lifetime = 8, -- seconds
+			TargetRange = 45, -- studs to acquire a target
+			DamagePerSecond = 3,
+			LatchDuration = 4, -- seconds latched per target
+			MaxRetargets = 1,
+			CrawlSpeed = 22, -- studs/sec toward target
+			ContactRange = 2.2, -- studs to latch
+		},
 		HunterMark = {
 			Interval = 10, -- seconds between marks
 			Duration = 6,
@@ -163,7 +206,7 @@ local Config = {
 		PressureWave = { Walker = 8, Runner = 2 }, -- spawned around the zone on appear
 		PressureBruteAfter = 210, -- also +1 Brute if the run is older than this (seconds)
 		XPReward = 500,
-		ZoneSize = Vector3.new(30, 1, 30),
+		ZoneSize = Vector3.new(46, 1, 46), -- Sprint 13 tune: bigger, room to kite while holding
 		ZonePosition = Vector3.new(60, 0.5, 60), -- sits on the baseplate surface
 		SyncInterval = 0.1, -- seconds between progress updates to the UI
 	},
@@ -189,8 +232,9 @@ local Config = {
 		SpawnIntervalDecayPerMinute = 0.85, -- spawn interval multiplier per minute
 		MinSpawnInterval = 0.6, -- seconds
 		-- Population cap ramps with run time: { upToSeconds, maxAlive }.
-		MaxAliveSchedule = { { 75, 14 }, { 180, 22 }, { 300, 32 }, { 480, 45 } },
-		MaxAliveLate = 60, -- after the schedule (lower this first if perf drops)
+		-- Sprint 13 tune: ~0.75x counts (was 14/22/32/45/60) — less overwhelming.
+		MaxAliveSchedule = { { 75, 11 }, { 180, 16 }, { 300, 24 }, { 480, 34 } },
+		MaxAliveLate = 45, -- after the schedule (lower this first if perf drops)
 		ObjectiveSpawnFactor = 0.8, -- spawn interval multiplier while objective active
 	},
 

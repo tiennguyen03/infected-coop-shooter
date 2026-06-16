@@ -16,6 +16,8 @@ require(script.Parent.DeathScreenUI).init()
 require(script.Parent.HealthBarUI).init()
 require(script.Parent.ExtractionUI).init()
 require(script.Parent.MissionSuccessUI).init()
+require(script.Parent.AbilityController).init()
+require(script.Parent.AbilityUI).init()
 require(script.Parent.DevTestPanel).init()
 
 print("[Client] All controllers initialized")

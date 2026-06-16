@@ -105,6 +105,12 @@ local function tryFire()
 end
 
 function WeaponController.init()
+	-- The rifle is a Tool, but it's always equipped — hide the backpack hotbar.
+	local StarterGui = game:GetService("StarterGui")
+	pcall(function()
+		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false)
+	end)
+
 	UserInputService.InputBegan:Connect(function(input, gameProcessed)
 		if not gameProcessed and input.UserInputType == Enum.UserInputType.MouseButton1 then
 			isFiring = true

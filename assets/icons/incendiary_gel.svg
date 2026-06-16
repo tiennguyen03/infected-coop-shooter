@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#262a2e"/>
+      <stop offset="1" stop-color="#17191c"/>
+    </linearGradient>
+    <linearGradient id="flame" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#e8552a"/>
+      <stop offset="0.55" stop-color="#f08a28"/>
+      <stop offset="1" stop-color="#ffd24a"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="28" fill="url(#bg)" stroke="#e87828" stroke-width="6"/>
+
+  <!-- burning ground pool -->
+  <ellipse cx="128" cy="208" rx="78" ry="16" fill="#e8552a" opacity="0.35"/>
+  <ellipse cx="128" cy="206" rx="52" ry="10" fill="#f08a28" opacity="0.45"/>
+
+  <!-- main flame -->
+  <path d="M128 40
+           C168 86 158 110 150 128
+           C176 120 176 150 168 168
+           C160 196 142 206 128 206
+           C112 206 96 196 90 168
+           C84 146 96 132 110 138
+           C100 110 110 80 128 40 Z"
+        fill="url(#flame)" stroke="#c4431f" stroke-width="4" stroke-linejoin="round"/>
+  <!-- inner flame -->
+  <path d="M128 96 C146 122 140 150 128 178 C116 158 110 140 116 126 C120 114 128 108 128 96 Z"
+        fill="#ffd24a" opacity="0.85"/>
+
+  <!-- gel droplets -->
+  <g fill="#f08a28">
+    <path d="M70 150 q-7-10 0-18 q7 8 0 18 Z"/>
+    <path d="M188 138 q-7-10 0-18 q7 8 0 18 Z"/>
+  </g>
+</svg>

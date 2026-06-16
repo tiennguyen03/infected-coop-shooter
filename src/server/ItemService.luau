@@ -17,6 +17,12 @@ local ItemService = {}
 
 local selectionRemote: RemoteEvent
 local itemsUpdateRemote: RemoteEvent
+local inventoryChangedHandler: ((player: Player) -> ())? = nil
+
+-- PassiveItemService registers here to recompute passives when items change.
+function ItemService.setInventoryChangedHandler(handler: (player: Player) -> ())
+	inventoryChangedHandler = handler
+end
 
 local inventories: { [Player]: { [string]: number } } = {}
 local pendingOffers: { [Player]: number } = {}
@@ -172,6 +178,10 @@ function ItemService.addItem(player: Player, itemId: string)
 		total += stacks
 	end
 	player:SetAttribute("ItemsCollected", total)
+
+	if inventoryChangedHandler then
+		inventoryChangedHandler(player)
+	end
 end
 
 function ItemService.getStacks(player: Player, itemId: string): number

@@ -110,5 +110,24 @@ pending offers + unpauses on death (`ItemService.cancelOffers`); client closes t
 card on death. PENDING (quick): SimulateItemOffers distribution check + VerifyCleanup after
 a rarity-era restart.
 
+## Sprint 15 (Common Item Pack 1 + icons) — added 2026-06-12
+10 new Common passive items (pool 16/6/1 = 23) via `PassiveItemService` (recompute on
+inventory change; stat items via PlayerStatsService, rest via player attributes read by
+XP/orb/enemy/drone/mark systems). 10 flat SVG icons in assets/icons/ (not uploaded;
+IconId nil). Rarity odds + guarantee unchanged. Static checks PASS; code synced. Live
+verification PENDING (playtest wedged on old code — needs manual Stop → Play, then check
+pool counts 16/6/1, per-item attributes, VerifyCleanup). Detail:
+[SPRINT_15_COMMON_ITEM_PACK_1.md](SPRINT_15_COMMON_ITEM_PACK_1.md).
+
+## Sprint 16 (Plague Rat Charm) — added 2026-06-12
+New Uncommon `plague_rat_charm` (pool 16/7/1 = 24). `PlagueRatService`: on-kill proc (12%/
+stack, cap 60%) spawns part-built rats that crawl → latch → deal 3 DPS via central
+`dealDamage` (kind "rat", guarded so rat kills don't chain). Cap 15/player, 8s lifetime,
+1 retarget. Icon `assets/icons/plague_rat_charm.svg` (not uploaded; IconId nil).
+VerifyCleanup now also checks the PlagueRats folder. **Live VERIFIED:** rarity Uncommon,
+pool 24, kills summon rats, cap held at exactly 15, controlled DoT = 3 DPS/rat (2 rats →
+12 dmg/2s), restart cleared all rats (0), no Output errors. Detail:
+[SPRINT_16_PLAGUE_RAT_CHARM.md](SPRINT_16_PLAGUE_RAT_CHARM.md).
+
 ## Recommended Next Sprint
 Run the outstanding human balance/fun playtest for Sprints 8-13, then post-MVP milestones.

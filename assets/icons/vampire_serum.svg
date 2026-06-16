@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#262a2e"/>
+      <stop offset="1" stop-color="#17191c"/>
+    </linearGradient>
+    <linearGradient id="fluid" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e23b50"/>
+      <stop offset="1" stop-color="#9c1c2c"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="28" fill="url(#bg)" stroke="#b02634" stroke-width="6"/>
+
+  <!-- vial -->
+  <g transform="translate(128,28)">
+    <rect x="-24" y="0" width="48" height="20" rx="6" fill="#9aa4ad"/>
+    <path d="M-20 20 L-20 150 Q-20 190 0 190 Q20 190 20 150 L20 20 Z"
+          fill="#2b3036" stroke="#566069" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M-13 92 L-13 150 Q-13 182 0 182 Q13 182 13 150 L13 92 Z" fill="url(#fluid)"/>
+    <ellipse cx="-13" cy="120" rx="4" ry="22" fill="#ffffff" opacity="0.18"/>
+    <!-- measure ticks -->
+    <g stroke="#8a949d" stroke-width="3" stroke-linecap="round">
+      <line x1="6" y1="56" x2="16" y2="56"/>
+      <line x1="6" y1="78" x2="16" y2="78"/>
+      <line x1="6" y1="100" x2="16" y2="100"/>
+    </g>
+  </g>
+
+  <!-- blood drop -->
+  <path d="M128 214 q-13-16 0-32 q13 16 0 32 Z" fill="#e23b50"/>
+</svg>

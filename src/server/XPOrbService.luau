@@ -88,10 +88,13 @@ local function stepOrbs(deltaTime: number)
 			continue
 		end
 
+		-- Scavenger Pouch: +% magnet range.
+		local magnetRadius = Config.XP.MagnetRadius
+			* (1 + ((player:GetAttribute("OrbMagnetMult") :: number?) or 0))
 		if distance <= Config.XP.CollectRadius then
 			XPService.addXP(player, orb.xp)
 			removeOrb(index)
-		elseif distance <= Config.XP.MagnetRadius then
+		elseif distance <= magnetRadius then
 			local direction = (root.Position - orb.part.Position).Unit
 			orb.part.Position += direction * Config.XP.OrbFlySpeed * deltaTime
 		end

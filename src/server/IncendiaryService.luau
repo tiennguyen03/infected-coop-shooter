@@ -10,6 +10,7 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local GroundUtil = require(ReplicatedStorage.Shared.GroundUtil)
 local ItemEffectService = require(script.Parent.ItemEffectService)
 local PauseService = require(script.Parent.PauseService)
 
@@ -52,11 +53,14 @@ function IncendiaryService.spawnPool(owner: Player, position: Vector3)
 		end
 	end
 
+	-- Drop the pool to the floor (kill position is at the enemy's torso height).
+	local ground = GroundUtil.GetGroundPosition(position, 0.05)
+
 	local part = Instance.new("Part")
 	part.Name = "FirePool"
 	part.Shape = Enum.PartType.Cylinder
 	part.Size = Vector3.new(0.5, cfg.Radius * 2, cfg.Radius * 2)
-	part.CFrame = CFrame.new(position) * CFrame.Angles(0, 0, math.rad(90))
+	part.CFrame = CFrame.new(ground) * CFrame.Angles(0, 0, math.rad(90))
 	part.Anchored = true
 	part.CanCollide = false
 	part.CanQuery = false

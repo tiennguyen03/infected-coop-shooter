@@ -30,6 +30,9 @@ local function setupPlayer(player: Player)
 end
 
 function XPService.addXP(player: Player, amount: number)
+	-- Field Manual: +% XP gained.
+	amount *= 1 + ((player:GetAttribute("XPGainMult") :: number?) or 0)
+
 	local xp = (player:GetAttribute("XP") :: number?) or 0
 	local level = (player:GetAttribute("Level") :: number?) or 1
 
