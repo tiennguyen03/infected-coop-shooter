@@ -8,3 +8,6 @@
 sourcemap.json
 globalTypes.d.luau
 roblox.yml
+
+# Rendered icon PNGs (regenerate from SVG; uploaded asset IDs in ASSET_IDS.md)
+assets/icons/*.png

@@ -67,7 +67,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Common",
 		Abbrev = "KV",
 		Color = Color3.fromRGB(78, 132, 196),
-		IconId = nil,
+		IconId = "rbxassetid://92667019174781",
 	},
 	vampire_serum = {
 		Id = "vampire_serum",
@@ -76,7 +76,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Common",
 		Abbrev = "VS",
 		Color = Color3.fromRGB(176, 38, 52),
-		IconId = nil,
+		IconId = "rbxassetid://86620200858094",
 	},
 	ricochet_rounds = {
 		Id = "ricochet_rounds",
@@ -85,7 +85,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Uncommon",
 		Abbrev = "RC",
 		Color = Color3.fromRGB(120, 200, 210),
-		IconId = nil,
+		IconId = "rbxassetid://113545243088765",
 	},
 	shrapnel_magazine = {
 		Id = "shrapnel_magazine",
@@ -94,7 +94,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Common",
 		Abbrev = "SH",
 		Color = Color3.fromRGB(190, 150, 70),
-		IconId = nil,
+		IconId = "rbxassetid://110602856790424",
 	},
 	incendiary_gel = {
 		Id = "incendiary_gel",
@@ -103,7 +103,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Uncommon",
 		Abbrev = "IN",
 		Color = Color3.fromRGB(232, 120, 40),
-		IconId = nil,
+		IconId = "rbxassetid://102114406866803",
 	},
 	repulsor_mine_kit = {
 		Id = "repulsor_mine_kit",
@@ -112,7 +112,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Uncommon",
 		Abbrev = "MN",
 		Color = Color3.fromRGB(96, 150, 220),
-		IconId = nil,
+		IconId = "rbxassetid://106486103737408",
 	},
 	shock_coil = {
 		Id = "shock_coil",
@@ -121,7 +121,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Uncommon",
 		Abbrev = "SC",
 		Color = Color3.fromRGB(120, 180, 255),
-		IconId = nil,
+		IconId = "rbxassetid://80678860630204",
 	},
 	hunters_mark_optics = {
 		Id = "hunters_mark_optics",
@@ -130,7 +130,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Uncommon",
 		Abbrev = "HM",
 		Color = Color3.fromRGB(220, 60, 60),
-		IconId = nil,
+		IconId = "rbxassetid://108037917401035",
 	},
 
 	-- Plague Rat Charm (Sprint 16) — Uncommon on-kill swarm DoT.
@@ -141,7 +141,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Uncommon",
 		Abbrev = "RT",
 		Color = Color3.fromRGB(120, 170, 70),
-		IconId = nil,
+		IconId = "rbxassetid://80711295113057",
 	},
 
 	-- Common Item Pack 1 (Sprint 15). Passive stat/utility items.
@@ -152,7 +152,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Common",
 		Abbrev = "PW",
 		Color = Color3.fromRGB(200, 120, 60),
-		IconId = nil,
+		IconId = "rbxassetid://136501293446413",
 	},
 	combat_stimulants = {
 		Id = "combat_stimulants",
@@ -161,7 +161,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Common",
 		Abbrev = "ST",
 		Color = Color3.fromRGB(120, 200, 180),
-		IconId = nil,
+		IconId = "rbxassetid://73547908765824",
 	},
 	lightweight_boots = {
 		Id = "lightweight_boots",
@@ -170,7 +170,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Common",
 		Abbrev = "BT",
 		Color = Color3.fromRGB(150, 170, 110),
-		IconId = nil,
+		IconId = "rbxassetid://73600198968253",
 	},
 	military_rations = {
 		Id = "military_rations",
@@ -179,7 +179,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Common",
 		Abbrev = "RA",
 		Color = Color3.fromRGB(180, 150, 90),
-		IconId = nil,
+		IconId = "rbxassetid://122915559361636",
 	},
 	field_manual = {
 		Id = "field_manual",
@@ -188,7 +188,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Common",
 		Abbrev = "FM",
 		Color = Color3.fromRGB(110, 160, 210),
-		IconId = nil,
+		IconId = "rbxassetid://97589883842710",
 	},
 	scavenger_pouch = {
 		Id = "scavenger_pouch",
@@ -197,7 +197,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Common",
 		Abbrev = "SP",
 		Color = Color3.fromRGB(150, 200, 120),
-		IconId = nil,
+		IconId = "rbxassetid://126849901954306",
 	},
 	ballistic_weave = {
 		Id = "ballistic_weave",
@@ -206,7 +206,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Common",
 		Abbrev = "BW",
 		Color = Color3.fromRGB(120, 130, 150),
-		IconId = nil,
+		IconId = "rbxassetid://114390734879069",
 	},
 	field_dressing = {
 		Id = "field_dressing",
@@ -215,7 +215,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Common",
 		Abbrev = "FD",
 		Color = Color3.fromRGB(210, 130, 130),
-		IconId = nil,
+		IconId = "rbxassetid://117660636699908",
 	},
 	signal_antenna = {
 		Id = "signal_antenna",
@@ -224,7 +224,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Common",
 		Abbrev = "AN",
 		Color = Color3.fromRGB(130, 180, 220),
-		IconId = nil,
+		IconId = "rbxassetid://73449240860432",
 	},
 	cheap_drone_parts = {
 		Id = "cheap_drone_parts",
@@ -233,7 +233,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Common",
 		Abbrev = "DP",
 		Color = Color3.fromRGB(90, 160, 200),
-		IconId = nil,
+		IconId = "rbxassetid://113191750726666",
 	},
 }
 
