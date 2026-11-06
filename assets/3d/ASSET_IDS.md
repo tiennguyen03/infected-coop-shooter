@@ -2,7 +2,8 @@
 
 Uploaded 2026-11-06 via Open Cloud (`upload_asset`, assetType Model for FBX, Decal for the
 palette). Mesh ids were read in Studio with `InsertService:LoadAsset(<modelAssetId>)` and are
-wired into `src/shared/Assets/<name>.model.json` (Rojo-managed MeshPart templates).
+wired into `src/shared/MeshAssets.luau` (server-built MeshPart templates). Old env v1 model
+uploads (126781711029053, 110183901153071, 111918726514098) are superseded.
 
 Palette texture: decal `77421611874143` → image **`87519201884536`** (the `TextureID`).
 
@@ -16,9 +17,19 @@ Palette texture: decal `77421611874143` → image **`87519201884536`** (the `Tex
 | wpn_rifle | 86613539481097 | 77112302177721 | 0.195 x 0.84 x 2.9 | 0.65x of the Blender size; grip offset handled in PlayerSetup |
 | prop_plague_rat | 102065990394982 | 135041557109073 | 0.47 x 0.52 x 1.88 | 0.7x of Blender; PlagueRatService PrimaryPart, faces -Z |
 | env_barrier_jersey | 83842095201437 | 120043526542183 | 6 x 2.75 x 2 | solid; ArenaService dressing |
-| env_sandbag_bunker | 109949409344551 | 126781711029053 | 10.6 x 3.25 x 8.85 | solid (Box, no interior); ArenaService dressing |
-| env_guard_tower | 114795601863176 | 110183901153071 | 9.8 x 21.65 x 9.8 | solid; ArenaService dressing |
-| env_ruin_building | 73293862191628 | 111918726514098 | 25.9 x 15.1 x 20.24 | solid (Box, sealed); ArenaService dressing |
+| env_sandbag_bunker (v2) | 72798329648015 | 104090605242659 | 12.8 x 6.3 x 10.8 | solid; rebuilt 2026-11-06 to character scale |
+| env_guard_tower (v2) | 140295675948906 | 86672166489335 | 11 x 27.25 x 11 | solid; rebuilt 2026-11-06 |
+| env_ruin_building (v2) | 112569589520919 | 75991267203586 | 32.73 x 24.6 x 25.35 | solid; rebuilt 2026-11-06 (10.5-stud storeys) |
+| env_container_olive | 90739805417437 | 132200158345619 | 22.1 x 9.55 x 9.2 | solid |
+| env_container_rust | 108583453603951 | 134169217220802 | 22.1 x 9.55 x 9.2 | solid |
+| env_wreck_humvee | 101500567016827 | 78504635684807 | 17 x 7.11 x 8.1 | solid; nose toward -X |
+| env_twall | 123453107626792 | 95876600065674 | 8 x 12.5 x 2.6 | solid |
+| env_hesco | 76249676881241 | 85372982024960 | 6.22 x 4.58 x 4.72 | solid |
+| env_comm_tower | 121850127656343 | 136043833521905 | 8.04 x 44.7 x 8 | solid; landmark |
+| env_tent | 81822440803835 | 138062558436837 | 19.2 x 8.6 x 12 | solid; door on -X |
+| env_checkpoint | 71573561117915 | 129215637928455 | 22.05 x 9.5 x 7.4 | PreciseConvexDecomposition; booth at -X, boom along +X |
+| env_dead_tree | 103119294791056 | 130464254006022 | 4.97 x 13.98 x 7.09 | Hull |
+| env_lamp_post | 132474171948585 | 84369687950095 | 4.9 x 13 x 1.2 | Hull; arm along +X |
 | inf_walker_head | 125036021688938 | 109685456333011 | 1.300, 1.220, 1.510 | R15 limb, offset 0.000, 0.020, -0.115 |
 | inf_walker_upper_torso | 73526825074456 | 78180467775035 | 2.000, 1.700, 1.190 | R15 limb, offset 0.030, 0.000, -0.095 |
 | inf_walker_lower_torso | 90864407049648 | 113855995604506 | 1.990, 0.400, 1.080 | R15 limb, offset 0.000, 0.000, -0.040 |

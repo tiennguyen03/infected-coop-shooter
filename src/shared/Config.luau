@@ -207,12 +207,12 @@ local Config = {
 		PressureBruteAfter = 210, -- also +1 Brute if the run is older than this (seconds)
 		XPReward = 500,
 		ZoneSize = Vector3.new(46, 1, 46), -- Sprint 13 tune: bigger, room to kite while holding
-		ZonePosition = Vector3.new(60, 0.5, 60), -- sits on the baseplate surface
+		ZonePosition = Vector3.new(70, 8.5, 70), -- on top of the Compound hill (ArenaService HILLS)
 		SyncInterval = 0.1, -- seconds between progress updates to the UI
 	},
 
-	-- Extraction phase (Sprint 12): starts when the objective completes. Fixed
-	-- test location far from the objective at (60,_,60); ~212 studs away.
+	-- Extraction phase (Sprint 12): starts when the objective completes. The helipad in the
+	-- south-west corner, ~226 studs from the objective hill.
 	Extraction = {
 		HoldDuration = 30, -- accumulated seconds inside the zone to win
 		ZoneSize = Vector3.new(28, 1, 28),

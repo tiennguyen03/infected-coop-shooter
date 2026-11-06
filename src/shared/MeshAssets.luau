@@ -19,7 +19,13 @@ local PALETTE_TEXTURE = "rbxassetid://87519201884536"
 -- `solid` = a static obstacle: CanCollide + CastShadow on (buildings, barriers).
 -- `offset` = the mesh's bounds centre relative to its design origin (Infected limbs are
 -- designed around the R15 limb centre; a MeshPart is centred on its bounds).
-type MeshDef = { meshId: string, size: Vector3, solid: boolean?, offset: Vector3? }
+type MeshDef = {
+	meshId: string,
+	size: Vector3,
+	solid: boolean?,
+	offset: Vector3?,
+	fidelity: Enum.CollisionFidelity?, -- default Box; thin/open pieces use a tighter hull
+}
 
 -- `size` is the in-game size in studs (the mesh is scaled to it). Blender sizes are in
 -- assets/3d/README.md; rifle is 0.65x and drone 0.8x of the Blender size.
@@ -44,25 +50,80 @@ local MESHES: { [string]: MeshDef } = {
 		meshId = "rbxassetid://102065990394982",
 		size = Vector3.new(0.47, 0.52, 1.88),
 	},
+	-- Environment (assets/3d Environment collection, built to the 5-stud character; sizes are
+	-- the Blender dims in Roblox axis order). `solid` = Box obstacle; see ArenaService.
 	env_barrier_jersey = {
 		meshId = "rbxassetid://83842095201437",
 		size = Vector3.new(6, 2.75, 2),
 		solid = true,
 	},
 	env_sandbag_bunker = {
-		meshId = "rbxassetid://109949409344551",
-		size = Vector3.new(10.6, 3.25, 8.85),
+		meshId = "rbxassetid://72798329648015",
+		size = Vector3.new(12.8, 6.3, 10.8),
 		solid = true,
 	},
 	env_guard_tower = {
-		meshId = "rbxassetid://114795601863176",
-		size = Vector3.new(9.8, 21.65, 9.8),
+		meshId = "rbxassetid://140295675948906",
+		size = Vector3.new(11, 27.25, 11),
 		solid = true,
 	},
 	env_ruin_building = {
-		meshId = "rbxassetid://73293862191628",
-		size = Vector3.new(25.9, 15.1, 20.24),
+		meshId = "rbxassetid://112569589520919",
+		size = Vector3.new(32.73, 24.6, 25.35),
 		solid = true,
+	},
+	env_container_olive = {
+		meshId = "rbxassetid://90739805417437",
+		size = Vector3.new(22.1, 9.55, 9.2),
+		solid = true,
+	},
+	env_container_rust = {
+		meshId = "rbxassetid://108583453603951",
+		size = Vector3.new(22.1, 9.55, 9.2),
+		solid = true,
+	},
+	env_wreck_humvee = {
+		meshId = "rbxassetid://101500567016827",
+		size = Vector3.new(17, 7.11, 8.1),
+		solid = true,
+	},
+	env_twall = {
+		meshId = "rbxassetid://123453107626792",
+		size = Vector3.new(8, 12.5, 2.6),
+		solid = true,
+	},
+	env_hesco = {
+		meshId = "rbxassetid://76249676881241",
+		size = Vector3.new(6.22, 4.58, 4.72),
+		solid = true,
+	},
+	env_comm_tower = {
+		meshId = "rbxassetid://121850127656343",
+		size = Vector3.new(8.04, 44.7, 8),
+		solid = true,
+	},
+	env_tent = {
+		meshId = "rbxassetid://81822440803835",
+		size = Vector3.new(19.2, 8.6, 12),
+		solid = true,
+	},
+	env_checkpoint = {
+		meshId = "rbxassetid://71573561117915",
+		size = Vector3.new(22.05, 9.5, 7.4),
+		solid = true,
+		fidelity = Enum.CollisionFidelity.PreciseConvexDecomposition, -- the boom arm, not a block
+	},
+	env_dead_tree = {
+		meshId = "rbxassetid://103119294791056",
+		size = Vector3.new(4.97, 13.98, 7.09),
+		solid = true,
+		fidelity = Enum.CollisionFidelity.Hull,
+	},
+	env_lamp_post = {
+		meshId = "rbxassetid://132474171948585",
+		size = Vector3.new(4.9, 13, 1.2),
+		solid = true,
+		fidelity = Enum.CollisionFidelity.Hull,
 	},
 	-- Infected limb sets (assets/3d inf_<type>_<limb>): swapped onto the R15 rig by dressInfected.
 	inf_walker_head = {
@@ -211,7 +272,7 @@ local function buildTemplate(folder: Folder, name: string, def: MeshDef)
 		-- form documented elsewhere fails here with "Argument 3 missing or nil".
 		return InsertService:CreateMeshPartAsync(
 			def.meshId,
-			Enum.CollisionFidelity.Box,
+			def.fidelity or Enum.CollisionFidelity.Box,
 			Enum.RenderFidelity.Automatic
 		)
 	end)

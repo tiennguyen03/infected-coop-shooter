@@ -1,7 +1,7 @@
 # Handoff — Roguelike Arena Survivor (VS Code + Claude Code terminal)
 
 Start here when picking the project up in a fresh Claude Code session.
-Last updated: 2026-11-05 (co-op decision + Blender MCP). Last verified commit on `main`: `ca95c58`.
+Last updated: 2026-11-06 (Stage 1 map + generated SFX). Last verified commit on `main`: `ca95c58`.
 
 ## What this is
 
@@ -42,19 +42,23 @@ Read in this order:
 2. **Sprint 13 Full MVP Balance + Fun Test** — still OPEN. Needs 3 natural human playtests;
    tune `src/shared/Config.luau` only. Plan: `docs/SPRINT_13_FULL_MVP_BALANCE_TEST.md`.
    This is the gate for calling the MVP done (criteria in `docs/PLAN.md`).
-3. **3D meshes in game (2026-11-06):** ammo crate, repulsor mine, drone, rifle, XP orb and
-   plague rat are MeshParts cloned from `src/shared/MeshAssets.luau` templates, and the arena
-   has 13 pieces of set dressing (2 ruined buildings, 2 guard towers, 2 sandbag bunkers,
-   7 jersey barriers; `ArenaService.DRESSING`). Verified in a playtest. Beacon mesh uploaded,
-   unused. **Infected bodies shipped**: Walker/Runner/Brute limb meshes swapped onto the
-   stock R15 rig at boot (`MeshAssets.dressInfected`), walk animation intact. Pipeline:
-   `assets/3d/README.md`. Next: floor/ground treatment, more dressing variety, The Chosen
-   player bodies.
-4. **Live Blender control (blender-mcp) — set up and socket-verified 2026-11-05**
+3. **Stage 1 "Checkpoint Delta" shipped 2026-11-06** (`ArenaService`: two hills with
+   walkable embankments, roads, helipad, checkpoint, 52 dressing pieces from 14 character-
+   scale Blender meshes; objective zone moved onto the Compound hill). Verified in a playtest
+   (Infected climb the slopes). Props/rifle/XP orb/rat/Infected bodies are meshes too
+   (`src/shared/MeshAssets.luau`, pipeline `assets/3d/README.md`). Next: react to the
+   owner's playtest of the stage, more terrain variety (rock outcrops, a sunken road),
+   The Chosen player bodies. Beacon mesh uploaded, unused.
+4. **Generated SFX pipeline (2026-11-06):** `assets/audio/build/generate.py` makes sounds
+   from text prompts with Stable Audio Open Small, run in Docker (`generate.sh`; Windows
+   Smart App Control blocks PyTorch on the host; ~3 min per sound on CPU). The rifle shot is
+   generated, uploaded and wired (`SoundFX` `shoot`, with a built-in fallback). Next: run the
+   other 31 prompts, upload, wire the new events (`assets/audio/README.md`).
+5. **Live Blender control (blender-mcp) — set up and socket-verified 2026-11-05**
    (`.mcp.json` + add-on; `assets/3d/README.md` > Live Blender). Not yet used from a Claude
    Code session (needs a restart to load the tools). Shipped meshes still go through the
    headless build script.
-5. **Post-MVP roadmap** (`docs/PLAN.md` order): Co-op Sprints A/B, second playable
+6. **Post-MVP roadmap** (`docs/PLAN.md` order): Co-op Sprints A/B, second playable
    character from LORE.md ("The Chosen"), elite enemies, bosses, stage progression. All new
    visual work (Blender low-poly assets, VFX, UI) follows `docs/STYLES.md`.
 

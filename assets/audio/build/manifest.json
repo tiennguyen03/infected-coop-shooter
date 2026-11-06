@@ -1,0 +1,162 @@
+{
+  "rifle_shot": {
+    "prompt": "single assault rifle gunshot, close mic, sharp crack with short tail, outdoor, dry",
+    "seconds": 1.5,
+    "seed": 11
+  },
+  "rifle_shot_alt": {
+    "prompt": "single assault rifle gunshot, close mic, punchy crack, slightly different take, outdoor",
+    "seconds": 1.5,
+    "seed": 12
+  },
+  "bullet_hit_flesh": {
+    "prompt": "bullet impact on a body, wet thud with a slap, close, short",
+    "seconds": 0.8,
+    "seed": 21
+  },
+  "bullet_hit_concrete": {
+    "prompt": "bullet ricochet off concrete, sharp crack and debris, short",
+    "seconds": 0.9,
+    "seed": 22
+  },
+  "infected_groan": {
+    "prompt": "zombie groan, low guttural rasping voice, menacing, close",
+    "seconds": 2.0,
+    "seed": 31
+  },
+  "infected_groan_alt": {
+    "prompt": "zombie moan, hoarse wet growl, mid distance",
+    "seconds": 2.0,
+    "seed": 32
+  },
+  "infected_death": {
+    "prompt": "zombie death cry, choked gurgling scream cut short, close",
+    "seconds": 1.6,
+    "seed": 33
+  },
+  "runner_shriek": {
+    "prompt": "fast zombie shriek, high raspy screech, aggressive, close",
+    "seconds": 1.4,
+    "seed": 34
+  },
+  "brute_roar": {
+    "prompt": "huge monster roar, deep chest rumble, long, close, heavy",
+    "seconds": 2.5,
+    "seed": 35
+  },
+  "brute_death": {
+    "prompt": "huge monster dying groan collapsing to the ground, deep, heavy thud at the end",
+    "seconds": 2.5,
+    "seed": 36
+  },
+  "rat_squeak": {
+    "prompt": "rat squeak, small animal, quick, close",
+    "seconds": 0.6,
+    "seed": 41
+  },
+  "rat_bite": {
+    "prompt": "small animal bite and scratch, quick scrabble on skin, close",
+    "seconds": 0.7,
+    "seed": 42
+  },
+  "xp_pickup": {
+    "prompt": "soft digital pickup blip, short rising tone, clean, game ui",
+    "seconds": 0.5,
+    "seed": 51
+  },
+  "level_up": {
+    "prompt": "triumphant short military radio sting, two-note brass hit with a crisp snare, clean",
+    "seconds": 1.5,
+    "seed": 52
+  },
+  "item_pick": {
+    "prompt": "solid metallic click confirm, tactical equipment latch, short, clean",
+    "seconds": 0.6,
+    "seed": 53
+  },
+  "crate_land": {
+    "prompt": "wooden ammo crate dropped on concrete, heavy wood thud with rattle of metal inside",
+    "seconds": 1.2,
+    "seed": 61
+  },
+  "crate_open": {
+    "prompt": "wooden crate lid opening with metal latch and ammunition clinking",
+    "seconds": 1.2,
+    "seed": 62
+  },
+  "mine_arm": {
+    "prompt": "electronic device arming beep, two quick high beeps, small speaker",
+    "seconds": 0.8,
+    "seed": 63
+  },
+  "mine_blast": {
+    "prompt": "landmine explosion, sharp blast with dirt debris, outdoor, close",
+    "seconds": 2.0,
+    "seed": 64
+  },
+  "drone_hover": {
+    "prompt": "small quadcopter drone hovering, steady motor hum, seamless loop, mid distance",
+    "seconds": 4.0,
+    "seed": 65
+  },
+  "drone_shot": {
+    "prompt": "small energy pistol shot, quick electric zap, clean",
+    "seconds": 0.7,
+    "seed": 66
+  },
+  "airstrike_whistle": {
+    "prompt": "falling bomb whistle descending in pitch, outdoor, ominous",
+    "seconds": 2.2,
+    "seed": 67
+  },
+  "airstrike_blast": {
+    "prompt": "large aerial bomb explosion with long rumbling tail, outdoor, distant and heavy",
+    "seconds": 3.5,
+    "seed": 68
+  },
+  "fire_loop": {
+    "prompt": "ground fire burning, crackling flames, seamless loop, close",
+    "seconds": 4.0,
+    "seed": 69
+  },
+  "shock_zap": {
+    "prompt": "electric arc discharge, crackling zap, short, close",
+    "seconds": 0.8,
+    "seed": 70
+  },
+  "dash": {
+    "prompt": "quick whoosh of a person sprinting past, cloth and air rush, short",
+    "seconds": 0.8,
+    "seed": 81
+  },
+  "breach": {
+    "prompt": "heavy concussive shockwave thump with a bass drop, short, close",
+    "seconds": 1.2,
+    "seed": 82
+  },
+  "player_hurt": {
+    "prompt": "man grunting in pain from a hit, short, close",
+    "seconds": 0.8,
+    "seed": 91
+  },
+  "player_down": {
+    "prompt": "man collapsing to the ground with a pained groan, gear clatter",
+    "seconds": 1.6,
+    "seed": 92
+  },
+  "objective_tick": {
+    "prompt": "short radio beep confirm, military comms, clean",
+    "seconds": 0.5,
+    "seed": 93
+  },
+  "objective_complete": {
+    "prompt": "military radio confirmation sting, static burst then a clean two-tone chime",
+    "seconds": 1.5,
+    "seed": 94
+  },
+  "extraction_horn": {
+    "prompt": "distant helicopter approaching with rotor wash, outdoor, long",
+    "seconds": 5.0,
+    "seed": 95
+  }
+}

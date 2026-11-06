@@ -1,16 +1,24 @@
 --!strict
--- Tiny client sound player using Roblox built-in (rbxasset) sounds, which
--- always load — no uploads or moderation involved. Each play clones the
+-- Tiny client sound player. Generated SFX (assets/audio, ids in assets/audio/ASSET_IDS.md)
+-- are uploaded audio assets; each has a Roblox built-in (rbxasset) `fallback` that always
+-- loads, used while the upload is still in moderation or if it fails. Each play clones the
 -- template so rapid sounds overlap instead of restarting.
 
+local ContentProvider = game:GetService("ContentProvider")
 local SoundService = game:GetService("SoundService")
 
 export type SoundName = "shoot" | "hit" | "death" | "levelup"
 
-local DEFINITIONS: { [string]: { id: string, volume: number, speed: number?, vary: number? } } = {
-	-- High-pitched snap = a light rifle crack instead of a boom; `vary`
-	-- randomizes pitch a little so rapid fire doesn't sound robotic.
-	shoot = { id = "rbxasset://sounds/snap.mp3", volume = 0.2, speed = 2.1, vary = 0.15 },
+type Definition = { id: string, fallback: string?, volume: number, speed: number?, vary: number? }
+
+local DEFINITIONS: { [string]: Definition } = {
+	-- `vary` randomizes pitch a little so rapid fire doesn't sound robotic.
+	shoot = {
+		id = "rbxassetid://134062568029221",
+		fallback = "rbxasset://sounds/snap.mp3",
+		volume = 0.5,
+		vary = 0.08,
+	},
 	hit = { id = "rbxasset://sounds/snap.mp3", volume = 0.3, speed = 0.85 },
 	death = { id = "rbxasset://sounds/uuhhh.mp3", volume = 0.5 },
 	levelup = { id = "rbxasset://sounds/electronicpingshort.wav", volume = 0.6 },
@@ -48,6 +56,18 @@ function SoundFX.init()
 		templates[name] = sound
 		if definition.vary then
 			variances[name] = definition.vary
+		end
+		local fallback = definition.fallback
+		if fallback then
+			task.spawn(function()
+				ContentProvider:PreloadAsync({ sound }, function(_, status)
+					if status == Enum.AssetFetchStatus.Failure then
+						warn(`SoundFX: {name} ({definition.id}) failed to load, using fallback`)
+						sound.SoundId = fallback
+						sound.PlaybackSpeed = 2.1
+					end
+				end)
+			end)
 		end
 	end
 end

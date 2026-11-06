@@ -304,115 +304,327 @@ def barrier_jersey(b):
     b.box((0.3, 0.3, 0.5), (0, 0, 2.5), swatch="rust")  # lifting eye / rebar
 
 
+# ------------------------------------------------------------------ scale reference
+# 1 BU = 1 stud = 0.28 m. Every Environment asset is built against the 5-stud R15 character
+# (docs/STYLES.md §6): doors you walk through, cover you shoot over, storeys you look up at.
+# Use these constants, never eyeballed numbers.
+CHAR_H = 5.0
+DOOR_H, DOOR_W = 7.2, 3.6
+STOREY = 10.5  # floor-to-floor
+SILL, HEAD = 3.2, 7.6  # window band: chest height to just above head room
+COVER_H = 4.0  # chest-high cover: sandbags, hesco, vehicle hoods
+CORNERS = ((1, 1), (-1, 1), (1, -1), (-1, -1))
+
+
 @asset("env_sandbag_bunker", "Environment")
 def sandbag_bunker(b):
-    # U-shaped sandbag emplacement, 10 x 8, 1.8 tall, open toward +Y. Solid obstacle in game.
-    bag = (1.25, 0.6, 0.45)
-    def run(x0, y0, x1, y1, rows=4):
+    # U-shaped sandbag emplacement open toward +Y: 12 x 10 footprint, walls COVER_H tall so a
+    # character shoots over them. Lower courses are one block, the top two are loose bags.
+    bag = (1.6, 0.8, 0.7)
+    base_h = COVER_H - 2 * bag[2]
+
+    def wall(x0, y0, x1, y1):
         dx, dy = x1 - x0, y1 - y0
         length = math.hypot(dx, dy)
         ang = math.degrees(math.atan2(dy, dx))
-        n = max(1, int(length / 1.3))
-        for r in range(rows):
-            off = 0.65 if r % 2 else 0.0
-            sw = "tan_d" if r == 0 else ("tan" if r % 2 else "tan_l")
-            for i in range(n):
-                t = (i * 1.3 + off + 0.65) / length
-                if t > 1.0:
+        b.box((length, bag[1], base_h), ((x0 + x1) / 2, (y0 + y1) / 2, base_h / 2), rot=(0, 0, ang), swatch="tan_d")
+        for r in range(2):
+            off = bag[0] / 2 if r else 0.0
+            sw = "tan" if r == 0 else "tan_l"
+            for i in range(int(length / bag[0]) + 1):
+                t = (i * bag[0] + off + bag[0] / 2) / length
+                if t > 0.97:
                     continue
-                x, y = x0 + dx * t, y0 + dy * t
-                b.box(bag, (x, y, 0.225 + r * 0.44), rot=(0, 0, ang), swatch=sw)
-    run(-5.0, 4.0, -5.0, -4.0)  # left wall
-    run(-5.0, -4.0, 5.0, -4.0)  # back wall
-    run(5.0, -4.0, 5.0, 4.0)  # right wall
-    b.box((2.4, 0.9, 1.4), (0, -3.2, 0.7), swatch="olive_d")  # ammo stack inside
-    b.box((0.2, 0.2, 3.0), (-4.6, 3.6, 1.5), swatch="tan_d")  # post
-    b.box((0.2, 0.2, 3.0), (4.6, 3.6, 1.5), swatch="tan_d")
-    b.box((9.4, 0.08, 0.5), (0, 3.6, 3.0), swatch="olive")  # camo-net rail
+                b.box(bag, (x0 + dx * t, y0 + dy * t, base_h + bag[2] * (r + 0.5)), rot=(0, 0, ang), swatch=sw)
+
+    wall(-6.0, 5.0, -6.0, -5.0)
+    wall(-6.0, -5.0, 6.0, -5.0)
+    wall(6.0, -5.0, 6.0, 5.0)
+    b.box((2.8, 1.0, 1.6), (0, -4.0, 0.8), swatch="olive_d")  # ammo stack
+    b.box((1.2, 0.8, 0.5), (2.6, -3.8, 0.25), swatch="olive")  # crate
+    for sx in (-1, 1):
+        b.box((0.25, 0.25, 6.0), (sx * 5.6, 4.6, 3.0), swatch="tan_d")  # camo-net posts
+    b.box((11.5, 0.1, 0.6), (0, 4.6, 6.0), swatch="olive")  # net rail
 
 
 @asset("env_guard_tower", "Environment")
 def guard_tower(b):
-    # Timber watchtower: 9 x 9 footprint, 17.5 tall, open platform at 12.5 with a roof.
-    for sx, sy in ((1, 1), (-1, 1), (1, -1), (-1, -1)):
-        b.box((0.5, 0.5, 12.5), (sx * 3.2, sy * 3.2, 6.25), swatch="tan_d")  # leg
-    for z in (3.0, 7.0):  # cross braces on all four sides
+    # Timber watchtower: 10 x 10 footprint, deck at 14 (almost three characters up), chest-high
+    # plank rail, roof slab at 22, ~27 overall with the antenna. Ladder on the +Y side.
+    L = 3.6  # leg half-spacing
+    DECK = 14.0
+    for sx, sy in CORNERS:
+        b.box((0.7, 0.7, DECK), (sx * L, sy * L, DECK / 2), swatch="tan_d")
+    span = 2 * L
+    for z0, z1 in ((0.8, 6.6), (7.2, 13.0)):  # one X brace per side per bay
+        length = math.hypot(span, z1 - z0)
+        tilt = math.degrees(math.atan2(z1 - z0, span))
         for side in range(4):
-            rot = (0, 0, side * 90)
             a = math.radians(side * 90)
-            cx, cy = math.cos(a) * 3.2, math.sin(a) * 3.2
-            b.box((0.2, 6.2, 0.2), (cx, cy, z), rot=(50, 0, side * 90), swatch="tan_d")
-            b.box((0.2, 6.2, 0.2), (cx, cy, z), rot=(-50, 0, side * 90), swatch="tan_d")
-    b.box((8.6, 8.6, 0.5), (0, 0, 12.5), swatch="tan")  # platform
-    for sx, sy in ((1, 1), (-1, 1), (1, -1), (-1, -1)):
-        b.box((0.3, 0.3, 4.6), (sx * 4.0, sy * 4.0, 15.0), swatch="tan_d")  # roof posts
-    for side in range(4):  # waist-high plank walls
+            lx, ly = -math.sin(a) * L, math.cos(a) * L
+            for sgn in (1, -1):
+                b.box((length, 0.22, 0.22), (lx, ly, (z0 + z1) / 2), rot=(0, sgn * tilt, side * 90), swatch="tan_d")
+    b.box((9.0, 9.0, 0.5), (0, 0, DECK + 0.25), swatch="tan")  # deck
+    for side in range(4):  # chest-high plank rail
         a = math.radians(side * 90)
-        cx, cy = math.cos(a) * 4.1, math.sin(a) * 4.1
-        b.box((0.2, 8.4, 1.3), (cx, cy, 13.4), rot=(0, 0, side * 90), swatch="olive_d")
-    b.box((9.8, 9.8, 0.35), (0, 0, 17.3), swatch="asphalt")  # roof slab
-    b.box((9.2, 9.2, 0.2), (0, 0, 17.55), swatch="dark")  # roof top
-    b.box((0.5, 0.5, 1.2), (0, 0, 18.2), swatch="gun_d")  # antenna base
-    b.cyl(0.05, 3.0, (0, 0, 19.9), segs=5, swatch="gun_l")  # antenna
-    b.cyl(0.3, 0.3, (0, 0, 21.5), segs=6, swatch="red_l")  # beacon light
-    for i in range(9):  # ladder on +Y side
-        b.box((1.2, 0.12, 0.12), (0, 3.55, 1.0 + i * 1.3), swatch="tan_l")
-    b.box((0.14, 0.14, 12.0), (-0.6, 3.55, 6.0), swatch="tan_d")
-    b.box((0.14, 0.14, 12.0), (0.6, 3.55, 6.0), swatch="tan_d")
+        cx, cy = -math.sin(a) * 4.4, math.cos(a) * 4.4
+        b.box((9.0, 0.25, COVER_H), (cx, cy, DECK + 0.5 + COVER_H / 2), rot=(0, 0, side * 90), swatch="olive_d")
+    post_h = 7.7
+    for sx, sy in CORNERS:
+        b.box((0.4, 0.4, post_h), (sx * 4.3, sy * 4.3, DECK + 0.5 + post_h / 2), swatch="tan_d")
+    b.box((11.0, 11.0, 0.4), (0, 0, DECK + 8.4), swatch="asphalt")  # roof slab
+    b.box((10.4, 10.4, 0.25), (0, 0, DECK + 8.7), swatch="dark")
+    b.box((0.6, 0.6, 1.2), (0, 0, DECK + 9.4), swatch="gun_d")  # antenna base
+    b.cyl(0.06, 3.0, (0, 0, DECK + 11.5), segs=5, swatch="gun_l")
+    b.cyl(0.3, 0.3, (0, 0, DECK + 13.1), segs=6, swatch="red_l")  # beacon
+    for i in range(int(DECK / 1.3)):  # ladder
+        b.box((1.4, 0.14, 0.14), (0, L + 0.45, 0.9 + i * 1.3), swatch="tan_l")
+    for sx in (-1, 1):
+        b.box((0.16, 0.16, DECK + 0.5), (sx * 0.7, L + 0.45, (DECK + 0.5) / 2), swatch="tan_d")
 
 
 @asset("env_ruin_building", "Environment")
 def ruin_building(b):
-    # Bombed-out two-storey concrete block, 24 x 16 footprint, ~13 tall, roof gone, back wall
-    # reduced to one storey. Door/window openings are visual only (Box collision in game).
-    T = 0.8  # wall thickness
-    W, D = 24.0, 16.0
+    # Bombed-out two-storey concrete block at character scale: 30 x 20 footprint, two
+    # STOREY floors (~22 tall with the parapet), a real DOOR_W x DOOR_H doorway in the front
+    # (-Y) wall, window sills at chest height. Roof gone, back wall down to one storey.
+    # Box collision in game, so the openings are visual only.
+    T = 1.0
+    W, D = 30.0, 20.0
     hx, hy = W / 2, D / 2
-    F1, F2 = 6.0, 6.5  # storey heights
 
-    def wall_x(y, storeys, door=False):
-        # wall running along X at depth y
+    def wall(axis, pos, storeys, door=False):
+        length = W if axis == "x" else D
+        bays = 4 if axis == "x" else 3
+        pitch = length / bays
+
+        def box(l, h, zc, c=0.0, swatch="concrete"):
+            if axis == "x":
+                b.box((l, T, h), (c, pos, zc), swatch=swatch)
+            else:
+                b.box((T, l, h), (pos, c, zc), swatch=swatch)
+
         for s in range(storeys):
-            z0 = s * F1 + (0 if s == 0 else 0.5)
+            z0 = s * STOREY
             sw = "concrete" if s == 0 else "white_d"
-            # window band: sill 2.3, head 4.6, pillars between 3 windows
-            b.box((W, T, 2.3), (0, y, z0 + 1.15), swatch=sw)  # sill band
-            b.box((W, T, 1.4), (0, y, z0 + 5.3), swatch=sw)  # head band
-            for x in (-hx + 1.5, -4.5, 4.5, hx - 1.5):
-                pw = 3.0 if abs(x) > 8 else 2.4
-                b.box((pw, T, 2.3), (x, y, z0 + 3.45), swatch=sw)  # pillars
-            if door and s == 0:
-                # replace the centre sill with a doorway lintel
-                b.box((3.0, T + 0.1, 0.3), (0, y, 4.5), swatch="asphalt")
+            has_door = door and s == 0
+            if has_door:
+                side = (length - DOOR_W) / 2
+                box(side, SILL, z0 + SILL / 2, -(DOOR_W + side) / 2, sw)
+                box(side, SILL, z0 + SILL / 2, (DOOR_W + side) / 2, sw)
+                box(DOOR_W + 2.4, HEAD - DOOR_H, z0 + (DOOR_H + HEAD) / 2, 0.0, "asphalt")  # lintel
+            else:
+                box(length, SILL, z0 + SILL / 2, 0.0, sw)
+            box(length, STOREY - HEAD, z0 + (HEAD + STOREY) / 2, 0.0, sw)  # head band
+            for i in range(bays + 1):  # pillars between windows
+                c = -length / 2 + i * pitch
+                pw = 2.2 if 0 < i < bays else 2.8
+                c = max(-length / 2 + pw / 2, min(length / 2 - pw / 2, c))
+                if has_door and abs(c) < 0.1:
+                    for sgn in (-1, 1):  # door jambs instead of the centre pillar
+                        box(1.2, DOOR_H, z0 + DOOR_H / 2, sgn * (DOOR_W / 2 + 0.6), sw)
+                    continue
+                box(pw, HEAD - SILL, z0 + (SILL + HEAD) / 2, c, sw)
 
-    def wall_y(x, storeys):
-        for s in range(storeys):
-            z0 = s * F1 + (0 if s == 0 else 0.5)
-            sw = "concrete" if s == 0 else "white_d"
-            b.box((T, D, 2.3), (x, 0, z0 + 1.15), swatch=sw)
-            b.box((T, D, 1.4), (x, 0, z0 + 5.3), swatch=sw)
-            for y in (-hy + 1.5, 0, hy - 1.5):
-                b.box((T, 3.0 if abs(y) > 5 else 2.6, 2.3), (x, y, z0 + 3.45), swatch=sw)
+    wall("x", -hy + T / 2, 2, door=True)  # front (faces -Y)
+    wall("x", hy - T / 2, 1)  # back, one storey (collapsed)
+    wall("y", -hx + T / 2, 2)
+    wall("y", hx - T / 2, 2)
+    b.box((W, D, 0.3), (0, 0, 0.15), swatch="asphalt")  # ground slab
+    b.box((W, D, 0.6), (0, 0, STOREY + 0.3), swatch="asphalt")  # first-floor slab
+    b.box((W + 0.4, 1.4, 0.4), (0, -hy + 0.5, 2 * STOREY + 0.2), swatch="asphalt")  # front parapet
+    for x, h in ((-11, 3.6), (-4, 1.8), (5, 4.8), (11, 2.6)):  # broken stubs on the back wall
+        b.box((3.0, T, h), (x, hy - T / 2, STOREY + h / 2), swatch="white_d")
+    for y, h in ((-6, 2.8), (2, 1.4), (7, 3.6)):  # and on the right wall top
+        b.box((T, 3.0, h), (hx - T / 2, y, 2 * STOREY + h / 2), swatch="white_d")
+    for x, y in ((-7, hy + 0.7), (3, hy + 1.1), (10, hy + 0.5)):  # rebar
+        b.cyl(0.07, 3.6, (x, y, STOREY + 1.2), segs=4, rot=(30, 0, 0), swatch="rust")
+    for x, y, s in ((-13, -hy - 1.8, 2.0), (-10, -hy - 1.0, 1.2), (12, -hy - 2.0, 2.4), (hx + 1.6, 4, 1.6), (hx + 1.2, -5, 1.0)):
+        b.box((s, s * 0.8, s * 0.6), (x, y, s * 0.3), rot=(0, 0, x * 7), swatch="concrete")  # rubble
+    b.box((2.6, 0.12, 0.8), (-9, -hy - 0.5, 4.6), swatch="warning_orange")  # hazard sign at eye height
+    b.box((2.2, 0.1, 0.6), (-9, -hy - 0.56, 4.6), swatch="dark_d")
 
-    wall_x(-hy + T / 2, 2, door=True)  # front (faces -Y)
-    wall_x(hy - T / 2, 1)  # back, one storey (collapsed)
-    wall_y(-hx + T / 2, 2)
-    wall_y(hx - T / 2, 2)
-    b.box((W, D, 0.5), (0, 0, F1 + 0.25), swatch="asphalt")  # first-floor slab
-    b.box((W + 0.4, 1.2, 0.3), (0, -hy + 0.4, F1 + F2 + 0.6), swatch="asphalt")  # front parapet
-    # jagged top on the back/right: broken stubs
-    for x, h in ((-9, 2.2), (-3, 1.1), (4, 3.0), (9, 1.6)):
-        b.box((2.4, T, h), (x, hy - T / 2, F1 + h / 2), swatch="white_d")
-    for y, h in ((-5, 1.8), (2, 0.9), (6, 2.6)):
-        b.box((T, 2.4, h), (hx - T / 2, y, F1 + F2 + h / 2), swatch="white_d")
-    # rebar and rubble
-    for x, y in ((-6, hy + 0.6), (2, hy + 0.9), (8, hy + 0.4)):
-        b.cyl(0.06, 2.4, (x, y, F1 + 0.8), segs=4, rot=(30, 0, 0), swatch="rust")
-    for x, y, s in ((-11, -hy - 1.4, 1.4), (-8.5, -hy - 0.8, 0.9), (10, -hy - 1.6, 1.8), (hx + 1.2, 3, 1.2), (hx + 0.9, -4, 0.8)):
-        b.box((s, s * 0.8, s * 0.6), (x, y, s * 0.3), rot=(0, 0, x * 7), swatch="concrete")
-    # door opening dark backing + sign
-    b.box((2.2, 0.1, 0.6), (-8, -hy - 0.46, 4.0), swatch="warning_orange")  # hazard sign
-    b.box((2.0, 0.08, 0.5), (-8, -hy - 0.5, 4.0), swatch="dark_d")
+
+def _container(b, body, rib, door):
+    # ISO shipping container, real proportions at stud scale: 21.5 long (X), 8.7 wide, 9.3
+    # tall (almost two characters). Doors on the +X end.
+    L, Wd, H = 21.5, 8.7, 9.3
+    b.box((L, Wd, H), (0, 0, H / 2), swatch=body)
+    for sy in (-1, 1):  # corrugation ribs on the long sides
+        for i in range(11):
+            b.box((0.9, 0.3, H - 1.0), (-L / 2 + 1.9 + i * 1.77, sy * (Wd / 2 + 0.1), H / 2), swatch=rib)
+    for sx, sy in CORNERS:
+        b.box((0.5, 0.5, H + 0.2), (sx * (L / 2 - 0.2), sy * (Wd / 2 - 0.2), H / 2 + 0.1), swatch=rib)
+    for sy in (-1, 1):  # door leaves + lock bars
+        b.box((0.3, Wd / 2 - 0.5, H - 0.6), (L / 2 + 0.1, sy * (Wd / 4), H / 2), swatch=door)
+        for k in (-1, 1):
+            b.box((0.4, 0.3, H - 1.4), (L / 2 + 0.35, sy * (Wd / 4) + k * 1.1, H / 2), swatch="gun_d")
+    b.box((L - 0.4, Wd - 0.4, 0.3), (0, 0, H + 0.1), swatch=rib)  # roof lip
+
+
+@asset("env_container_olive", "Environment")
+def container_olive(b):
+    _container(b, "olive", "olive_d", "olive_l")
+
+
+@asset("env_container_rust", "Environment")
+def container_rust(b):
+    _container(b, "rust", "tan_d", "red_d")
+
+
+@asset("env_wreck_humvee", "Environment")
+def wreck_humvee(b):
+    # Burnt-out armoured truck: 16.5 long (X, nose toward -X), 7.8 wide, 6.5 tall; the hood is
+    # chest-high cover. Blackened body, rust patches, turret ring on the cab roof.
+    L, Wd = 16.5, 7.8
+    b.box((L, Wd - 0.6, 2.4), (0, 0, 2.2), swatch="dark")  # hull
+    b.box((5.6, Wd, 0.7), (-L / 2 + 2.8, 0, COVER_H - 0.35), swatch="dark_l")  # hood (top = COVER_H)
+    b.box((7.0, Wd - 1.0, 3.1), (1.0, 0, 3.4 + 1.55), swatch="dark")  # cab
+    b.box((0.2, Wd - 2.0, 1.8), (-2.55, 0, 5.3), swatch="dark_d")  # windscreen
+    for sy in (-1, 1):
+        b.box((2.4, 0.2, 1.6), (0.0, sy * (Wd / 2 - 0.45), 5.3), swatch="dark_d")  # side windows
+        b.box((2.0, 0.2, 1.6), (3.0, sy * (Wd / 2 - 0.45), 5.3), swatch="dark_d")
+    b.box((3.6, Wd - 0.8, 1.4), (L / 2 - 2.2, 0, 3.4 + 0.7), swatch="dark_l")  # rear bed
+    b.cyl(1.7, 0.4, (1.0, 0, 6.7), segs=8, swatch="gun_d")  # turret ring
+    b.cyl(0.12, 2.6, (2.2, 0, 7.0), segs=5, rot=(0, 90, 0), swatch="gun")  # gun barrel (along +X)
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            b.cyl(1.5, 1.2, (sx * 5.2, sy * (Wd / 2 - 0.5), 1.5), segs=8, rot=(90, 0, 0), swatch="dark_d")
+            b.cyl(0.6, 1.3, (sx * 5.2, sy * (Wd / 2 - 0.5), 1.5), segs=6, rot=(90, 0, 0), swatch="gun")
+    b.box((0.6, Wd, 1.0), (-L / 2 - 0.2, 0, 2.0), swatch="gun_d")  # bumper
+    b.box((2.4, 0.15, 1.2), (-3.0, -(Wd / 2 - 0.2), 2.4), swatch="rust")  # rust / scorch patches
+    b.box((3.0, 0.15, 0.9), (4.0, (Wd / 2 - 0.2), 2.0), swatch="rust")
+    b.box((1.4, 2.0, 0.15), (-5.0, 1.5, COVER_H + 0.02), swatch="rust")
+
+
+@asset("env_twall", "Environment")
+def twall(b):
+    # Concrete blast wall (T-wall): 8 long, 12 tall (well over two characters, blocks sight),
+    # 1 thick on a 2.6-wide foot. Chain them along a plateau edge or a road.
+    b.box((8.0, 2.6, 1.0), (0, 0, 0.5), swatch="concrete")
+    b.box((8.0, 1.0, 11.0), (0, 0, 1.0 + 5.5), swatch="concrete")
+    b.box((8.0, 1.1, 0.4), (0, 0, 12.0 - 0.2), swatch="white_d")  # cap
+    for x in (-2.4, 2.4):
+        b.cyl(0.08, 0.6, (x, 0, 12.2), segs=4, swatch="rust")  # lifting loops
+    b.box((3.0, 0.08, 0.9), (-1.5, -0.55, 3.2), swatch="warning_orange")  # stencil band
+    b.box((2.4, 0.06, 0.5), (-1.5, -0.6, 3.2), swatch="dark_d")
+
+
+@asset("env_hesco", "Environment")
+def hesco(b):
+    # Hesco gabion: 6 x 4.5 x 4.4 (a real 1.4 m unit), wire-mesh lines over the sand fill.
+    H = 4.4
+    b.box((6.0, 4.5, H), (0, 0, H / 2), swatch="tan")
+    b.box((5.6, 4.1, 0.2), (0, 0, H + 0.08), swatch="tan_l")  # fill showing on top
+    for x in (-2.0, 0.0, 2.0):
+        for sy in (-1, 1):
+            b.box((0.12, 0.12, H), (x, sy * 2.3, H / 2), swatch="dark_l")
+    for sx in (-1, 1):
+        for y in (-1.5, 1.5):
+            b.box((0.12, 0.12, H), (sx * 3.05, y, H / 2), swatch="dark_l")
+    for z in (1.5, 3.0):
+        for sy in (-1, 1):
+            b.box((6.1, 0.12, 0.12), (0, sy * 2.3, z), swatch="dark_l")
+        for sx in (-1, 1):
+            b.box((0.12, 4.6, 0.12), (sx * 3.05, 0, z), swatch="dark_l")
+
+
+@asset("env_comm_tower", "Environment")
+def comm_tower(b):
+    # Lattice radio mast: 8 x 8 concrete base, 40 tall (eight characters), dish at 28, red
+    # beacon on top. The Stage 1 landmark, visible from anywhere in the arena.
+    H = 40.0
+    Z0 = 1.5
+    b.box((8.0, 8.0, Z0), (0, 0, Z0 / 2), swatch="concrete")
+    bh, th = 2.6, 1.0  # leg half-spacing at base / top
+
+    def half(z):
+        return bh + (th - bh) * (z - Z0) / (H - Z0)
+
+    leg_len = math.hypot(H - Z0, (bh - th) * math.sqrt(2))
+    for sx, sy in CORNERS:
+        tilt = math.degrees(math.atan2(bh - th, H - Z0))
+        rx = sy * tilt  # rotation about X tips +Z toward -Y, so +Y legs lean toward -Y
+        ry = -sx * tilt  # rotation about Y tips +Z toward +X
+        b.box((0.4, 0.4, leg_len), (sx * (bh + th) / 2, sy * (bh + th) / 2, (H + Z0) / 2), rot=(rx, ry, 0), swatch="gun_d")
+    for z in (6.0, 11.0, 16.0, 21.0, 26.0, 31.0, 36.0):
+        h = half(z)
+        b.box((2 * h + 0.4, 0.2, 0.2), (0, h, z), swatch="gun")
+        b.box((2 * h + 0.4, 0.2, 0.2), (0, -h, z), swatch="gun")
+        b.box((0.2, 2 * h + 0.4, 0.2), (h, 0, z), swatch="gun")
+        b.box((0.2, 2 * h + 0.4, 0.2), (-h, 0, z), swatch="gun")
+    b.box((4.4, 4.4, 0.3), (0, 0, 30.0), swatch="gun_d")  # service platform
+    b.cyl(2.4, 0.35, (half(28.0) + 1.6, 0, 28.0), segs=10, rot=(0, 70, 0), swatch="white")  # dish, facing +X
+    b.box((0.3, 0.3, 2.2), (half(28.0) + 0.6, 0, 28.0), rot=(0, 70, 0), swatch="gun_d")  # dish arm
+    b.box((2.2, 2.2, 0.4), (0, 0, H + 0.2), swatch="gun_d")  # cap
+    b.cyl(0.08, 4.0, (0, 0, H + 2.4), segs=5, swatch="gun_l")  # whip antenna
+    b.cyl(0.35, 0.4, (0, 0, H + 4.5), segs=6, swatch="red_l")  # beacon
+    b.box((1.6, 1.0, 1.2), (3.2, -3.0, Z0 + 0.6), swatch="olive_d")  # generator box
+    b.box((1.2, 0.6, 1.0), (-3.0, 3.0, Z0 + 0.5), swatch="gun")  # junction box
+
+
+@asset("env_tent", "Environment")
+def tent(b):
+    # GP-medium style olive tent: 16 long (X) x 12 wide, 4.5-stud walls, ridge at 8. Door flap
+    # on the -X end at DOOR_H. Solid in game.
+    L, Wd, WALL, RIDGE = 16.0, 12.0, 4.5, 8.0
+    b.box((L, Wd, WALL), (0, 0, WALL / 2), swatch="olive")
+    rise = RIDGE - WALL
+    # Builder.wedge collapses its +X top edge, so after a +90 yaw the collapsed edge is at +Y
+    # and the roof rises toward the ridge at y = 0.
+    b.wedge((Wd / 2, L, rise), (0, Wd / 4, WALL + rise / 2), rot=(0, 0, 90), swatch="olive_d")
+    b.wedge((Wd / 2, L, rise), (0, -Wd / 4, WALL + rise / 2), rot=(0, 0, -90), swatch="olive_d")
+    b.box((L + 0.6, 0.3, 0.3), (0, 0, RIDGE), swatch="tan_d")  # ridge pole
+    for sx in (-1, 1):
+        b.box((0.3, 0.3, RIDGE + 0.6), (sx * (L / 2 + 0.1), 0, (RIDGE + 0.6) / 2), swatch="tan_d")  # end poles
+    b.box((0.2, DOOR_W, DOOR_H - 0.8), (-L / 2 - 0.05, 0, (DOOR_H - 0.8) / 2), swatch="dark_d")  # door flap
+    for y in (-4.5, 4.5):  # guy-rope stakes
+        for sx in (-1, 1):
+            b.box((0.2, 0.2, 0.6), (sx * (L / 2 + 1.5), y, 0.3), swatch="tan_d")
+
+
+@asset("env_checkpoint", "Environment")
+def checkpoint(b):
+    # Guard booth (6 x 6, 9.5 tall, counter window at SILL..HEAD) with a 14-stud striped boom
+    # arm reaching along +X across a road. Booth faces -Y; solid in game.
+    S = 6.0
+    b.box((S, S, SILL), (0, 0, SILL / 2), swatch="concrete")
+    for sx, sy in CORNERS:
+        b.box((0.6, 0.6, HEAD - SILL), (sx * (S / 2 - 0.3), sy * (S / 2 - 0.3), (SILL + HEAD) / 2), swatch="white_d")
+    b.box((S, 0.3, HEAD - SILL), (0, S / 2 - 0.15, (SILL + HEAD) / 2), swatch="white_d")  # solid back wall
+    b.box((S, S, 9.0 - HEAD), (0, 0, (HEAD + 9.0) / 2), swatch="white_d")  # head band
+    b.box((S + 1.4, S + 1.4, 0.5), (0, 0, 9.25), swatch="asphalt")  # roof
+    b.box((1.8, 0.1, 0.9), (0, -S / 2 - 0.06, 8.3), swatch="red")  # STOP sign strip
+    b.box((0.8, 0.8, COVER_H), (S / 2 + 1.2, -2.0, COVER_H / 2), swatch="gun_d")  # boom post
+    b.box((0.9, 0.9, 0.9), (S / 2 + 1.2, -2.0, COVER_H + 0.2), swatch="gun")  # hinge box
+    for i in range(4):  # striped arm, 14 long
+        b.box((3.5, 0.45, 0.45), (S / 2 + 1.2 + 1.75 + i * 3.5, -2.0, COVER_H + 0.2), swatch="red" if i % 2 else "white")
+    b.box((0.3, 0.3, COVER_H - 0.6), (S / 2 + 1.2 + 14.0, -2.0, (COVER_H - 0.6) / 2), swatch="gun_d")  # rest post
+
+
+@asset("env_dead_tree", "Environment")
+def dead_tree(b):
+    # Dead leafless tree, 14 tall (about three characters): tapering trunk, four bare limbs.
+    b.cyl(0.75, 10.0, (0, 0, 5.0), segs=6, r2=0.4, swatch="dark_l")
+    b.box((2.4, 2.4, 0.5), (0, 0, 0.25), rot=(0, 0, 20), swatch="dark")  # root mound
+    for z, phi, psi, ln in ((6.5, 55, 20, 5.5), (8.0, 45, 140, 5.0), (9.3, 35, 260, 4.5), (9.9, 15, 60, 4.2)):
+        # branch direction after rot (phi about X, then psi about Z): (sinφ sinψ, -sinφ cosψ, cosφ)
+        p, s = math.radians(phi), math.radians(psi)
+        d = (math.sin(p) * math.sin(s), -math.sin(p) * math.cos(s), math.cos(p))
+        c = (d[0] * ln / 2, d[1] * ln / 2, z + d[2] * ln / 2)
+        b.cyl(0.32, ln, c, segs=5, r2=0.1, rot=(phi, 0, psi), swatch="dark_l")
+
+
+@asset("env_lamp_post", "Environment")
+def lamp_post(b):
+    # Street light: 13 tall pole on a concrete footing, arm reaching 3 studs over the road,
+    # dead lamp head. Lines the main road.
+    b.box((1.2, 1.2, 0.5), (0, 0, 0.25), swatch="concrete")
+    b.cyl(0.25, 12.5, (0, 0, 0.5 + 6.25), segs=6, swatch="gun_d")
+    b.cyl(0.18, 3.4, (1.6, 0, 12.6), segs=6, rot=(0, 90, 0), swatch="gun_d")  # arm along +X
+    b.box((2.2, 0.9, 0.5), (3.2, 0, 12.5), swatch="gun")
+    b.box((1.8, 0.6, 0.1), (3.2, 0, 12.2), swatch="white_d")  # dead lens
+
 
 # ------------------------------------------------------------------ Infected limb sets
 # One mesh per R15 limb (left/right share a mesh), per Infected type. EnemyService swaps the
@@ -631,10 +843,20 @@ def main():
         print(f"built {name}: {obj['tri_count']} tris")
 
     # lay out for the lineup render (x spacing), export + preview each asset at the origin first
+    ref = built.get("ref_human_5st")
     for name, obj in built.items():
         if not name.startswith("ref_"):
             export_fbx(obj, os.path.join(EXPORT, name + ".fbx"))
-        frame_and_render(scene, cam, [obj], os.path.join(PREVIEWS, name + ".png"))
+        d = obj.dimensions
+        print(f"dims {name}: roblox Size = Vector3.new({d.x:.2f}, {d.z:.2f}, {d.y:.2f})")
+        objs = [obj]
+        if ref is not None and ref is not obj and name.startswith("env_"):
+            # environment pieces are judged against the character: stand the reference beside them
+            ref.location = (max(c[0] for c in obj.bound_box) + 1.5, min(c[1] for c in obj.bound_box), 0)
+            objs.append(ref)
+        frame_and_render(scene, cam, objs, os.path.join(PREVIEWS, name + ".png"))
+        if ref is not None:
+            ref.location = (0, 0, 0)
 
     x = 0.0
     lineup = []

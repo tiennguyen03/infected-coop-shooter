@@ -191,7 +191,10 @@ Lower is always acceptable. Add triangles only where the silhouette needs them.
 - **Flat shading everywhere** (Blender: Shade Flat, no Auto Smooth, no subdivision). Low
   facet counts on cylinders (8–12 sides). Hard edges are the look.
 - Model in **studs**: Blender scene unit scale `0.28` so 1 Blender unit = 1 stud
-  (Roblox 1 stud ≈ 0.28 m). A standard R15 character is ~5 studs tall; doors ~7; a crate
+  (Roblox 1 stud ≈ 0.28 m). **Scale table** (constants in the build script, 2026-11-06):
+  character 5, door 7.2 x 3.6, storey 10.5, window sill 3.2 / head 7.6, chest-high cover
+  4.0, ISO container 21.5 x 8.7 x 9.3, truck ~16 x 8 x 6.5. Every environment preview
+  renders with the 5-stud reference beside it. A standard R15 character is ~5 studs tall; doors ~7; a crate
   ~3. Apply all transforms before export.
 - Pivot: props at the bottom center; weapons at the grip point (where the hand holds it);
   characters at the floor between the feet. Forward = -Y in Blender → export with
@@ -255,6 +258,16 @@ Lower is always acceptable. Add triangles only where the silhouette needs them.
   Engineer = olive), gear in the palette, face left simple.
 - Weapons: `gun` and `dark` materials, one accent facet (sight, mag tape) in the owning
   item's or character's accent color.
+
+### Stage 1 "Checkpoint Delta" (shipped 2026-11-06)
+
+Risk of Rain 2 layout rules, zombie-checkpoint dressing: open ground, two raised hills with
+39-degree embankments on every side (parts, not meshes: exact collision, the Infected climb
+them), the objective on the high ground, one landmark (the 40-stud comm tower) visible from
+anywhere, roads for orientation, extraction on a painted helipad. Ground palette: dust
+`rgb(94,88,76)`, hills `rgb(104,96,80)`, slopes `rgb(88,80,66)`, asphalt `rgb(58,60,64)`,
+concrete `rgb(122,120,114)`, road paint `rgb(214,214,208)`. Layout in
+`src/server/ArenaService.luau` (`HILLS`, `DRESSING`).
 
 ---
 

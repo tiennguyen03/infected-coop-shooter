@@ -8,7 +8,7 @@ at or hand-tweak anything. Collections inside it:
 | `Props` | world objects dropped by services: ammo crate, repulsor mine, drone, drone beacon, plague rat |
 | `Weapons` | held tools (rifle) |
 | `Pickups` | XP orb |
-| `Environment` | arena set dressing: jersey barrier, sandbag bunker, guard tower, ruined building |
+| `Environment` | Stage 1 set dressing, all built to the 5-stud character (`CHAR_H`, `DOOR_H`, `STOREY`, `COVER_H` constants in the script): barrier, sandbags, tower, ruin, containers, humvee wreck, T-wall, hesco, comm tower, tent, checkpoint, dead tree, lamp post |
 | `Infected` | enemy limb sets: `inf_<walker|runner|brute>_<limb>`, 9 limbs per type (left/right share) |
 | `_Reference` | a 5-stud human block for scale; never exported |
 
@@ -44,17 +44,28 @@ Add `-- --only wpn_rifle prop_drone` to build a subset.
 | wpn_rifle | 188 | grip | PlayerSetup `attachRifle` part rifle |
 | pick_xp_orb | 80 | center | XPOrbService sphere part |
 | prop_plague_rat | 204 | bottom | PlagueRatService body+head+tail parts |
-| env_barrier_jersey | 72 | bottom | (new) arena dressing, 7 placed |
-| env_sandbag_bunker | 960 | bottom | (new) arena dressing, 2 placed |
-| env_guard_tower | 552 | bottom | (new) arena dressing, 2 placed |
-| env_ruin_building | 696 | bottom | (new) arena dressing, 2 placed |
+| env_barrier_jersey | 72 | bottom | 6 x 2.75 x 2 concrete traffic barrier |
+| env_sandbag_bunker | 552 | bottom | 12 x 10 U-emplacement, COVER_H (4) walls |
+| env_guard_tower | 564 | bottom | 10 x 10 timber tower, deck at 14, 27 overall |
+| env_ruin_building | 816 | bottom | 30 x 20 two-storey block (10.5-stud storeys, real doorway), sealed |
+| env_container_olive / _rust | 408 | bottom | ISO container 21.5 x 8.7 x 9.3 |
+| env_wreck_humvee | 392 | bottom | burnt truck 16.5 x 7.8 x 6.5, hood = COVER_H |
+| env_twall | 84 | bottom | concrete blast wall 8 x 12 |
+| env_hesco | 240 | bottom | gabion 6 x 4.5 x 4.4 |
+| env_comm_tower | 528 | bottom | 40-stud lattice mast, the Stage 1 landmark |
+| env_tent | 124 | bottom | 16 x 12 olive tent, ridge at 8 |
+| env_checkpoint | 192 | bottom | guard booth + 14-stud boom (PreciseConvexDecomposition collision) |
+| env_dead_tree | 96 | bottom | 14-stud bare tree (Hull collision) |
+| env_lamp_post | 76 | bottom | 13-stud street light (Hull collision) |
 | inf_walker_* / inf_runner_* / inf_brute_* | ~500 per body | center | the 15 R15 limb MeshParts of each Infected (`MeshAssets.dressInfected`) |
 | ref_inf_* | — | bottom | assembled preview figures, never exported |
 
 All far under the budgets in `docs/STYLES.md` section 6. Dressing positions live in
-`ArenaService.DRESSING` (clear of spawn pad, objective and extraction zones). Buildings are
-solid Box-collision blocks for now: the Infected have no pathfinding, so enterable interiors
-would be safe spots. Mesh pivots do not survive import (a MeshPart is centred on its bounds).
+`ArenaService.DRESSING` (x/z of the bounds centre + yaw; ground height is found by raycast so
+pieces sit on the hills). Buildings are solid blocks: the Infected have no pathfinding, so
+enterable interiors would be safe spots. Mesh pivots do not survive import (a MeshPart is
+centred on its bounds). Every `env_*` preview renders with the 5-stud reference figure beside
+it: check scale there before uploading.
 
 ### Infected bodies (limb swap, not a custom rig)
 
