@@ -1,31 +1,25 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#262a2e"/>
-      <stop offset="1" stop-color="#17191c"/>
-    </linearGradient>
-    <linearGradient id="fluid" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#e23b50"/>
-      <stop offset="1" stop-color="#9c1c2c"/>
-    </linearGradient>
-  </defs>
-  <rect x="8" y="8" width="240" height="240" rx="28" fill="url(#bg)" stroke="#b02634" stroke-width="6"/>
-
-  <!-- vial -->
-  <g transform="translate(128,28)">
-    <rect x="-24" y="0" width="48" height="20" rx="6" fill="#9aa4ad"/>
-    <path d="M-20 20 L-20 150 Q-20 190 0 190 Q20 190 20 150 L20 20 Z"
-          fill="#2b3036" stroke="#566069" stroke-width="6" stroke-linejoin="round"/>
-    <path d="M-13 92 L-13 150 Q-13 182 0 182 Q13 182 13 150 L13 92 Z" fill="url(#fluid)"/>
-    <ellipse cx="-13" cy="120" rx="4" ry="22" fill="#ffffff" opacity="0.18"/>
-    <!-- measure ticks -->
-    <g stroke="#8a949d" stroke-width="3" stroke-linecap="round">
-      <line x1="6" y1="56" x2="16" y2="56"/>
-      <line x1="6" y1="78" x2="16" y2="78"/>
-      <line x1="6" y1="100" x2="16" y2="100"/>
-    </g>
-  </g>
-
-  <!-- blood drop -->
-  <path d="M128 214 q-13-16 0-32 q13 16 0 32 Z" fill="#e23b50"/>
+<clipPath id="plateClip"><rect x="0" y="0" width="256" height="256" rx="24"/></clipPath>
+<g clip-path="url(#plateClip)">
+<rect x="0" y="0" width="256" height="256" fill="#171a1e" />
+<polygon points="0,0 256,0 0,256" fill="#1e2227" />
+</g>
+<rect x="3" y="3" width="250" height="250" rx="21" fill="none" stroke="#2a3038" stroke-width="3"/>
+<ellipse cx="128" cy="206" rx="64" ry="10" fill="#07090b" opacity="0.55"/>
+<polygon points="100,70 100,170 112,192 128,196 128,70" fill="#3a4049" />
+<polygon points="128,70 128,196 144,192 156,170 156,70" fill="#2b3037" />
+<polygon points="100,118 100,170 112,192 128,196 128,118" fill="#b93434" />
+<polygon points="128,118 128,196 144,192 156,170 156,118" fill="#7e2020" />
+<rect x="100" y="118" width="12" height="56" fill="#e85a5a" />
+<polygon points="100,118 156,118 156,124 100,124" fill="#c86771" opacity="0.6"/>
+<rect x="140" y="86" width="10" height="4" fill="#9aa4ae" />
+<rect x="140" y="100" width="10" height="4" fill="#9aa4ae" />
+<rect x="140" y="132" width="10" height="4" fill="#f2f4f6" opacity="0.5"/>
+<rect x="96" y="48" width="64" height="24" fill="#636d77" />
+<rect x="96" y="48" width="14" height="24" fill="#9aa4ae" />
+<rect x="146" y="48" width="14" height="24" fill="#3d454d" />
+<rect x="96" y="48" width="64" height="6" fill="#9aa4ae" />
+<rect x="94" y="70" width="68" height="6" fill="#3d454d" />
+<polygon points="184,150 196,168 192,180 176,180 172,168" fill="#b02634" />
+<polygon points="184,150 172,168 176,180 182,180" fill="#c86771" />
 </svg>

@@ -1,1 +1,35 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g stroke="#0a2a26" stroke-width="2.5" stroke-linejoin="round"><rect x="26" y="8" width="12" height="40" rx="3" fill="#7be0c8"/><rect x="22" y="44" width="20" height="8" rx="2" fill="#9aa6a6"/><line x1="32" y1="52" x2="32" y2="60" stroke-width="3"/></g><path d="M32 18 l-6 10 h5 l-4 9 11-13 h-5 z" fill="#0a2a26"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+<clipPath id="plateClip"><rect x="0" y="0" width="256" height="256" rx="24"/></clipPath>
+<g clip-path="url(#plateClip)">
+<rect x="0" y="0" width="256" height="256" fill="#171a1e" />
+<polygon points="0,0 256,0 0,256" fill="#1e2227" />
+</g>
+<rect x="3" y="3" width="250" height="250" rx="21" fill="none" stroke="#2a3038" stroke-width="3"/>
+<ellipse cx="128" cy="208" rx="80" ry="10" fill="#07090b" opacity="0.55"/>
+<polygon points="158,196 153.4,203.5 141,209 124,211 107,209 94.6,203.5 90,196 94.6,188.5 107,183 124,181 141,183 153.4,188.5" fill="#99a1a9" />
+<rect x="90" y="92" width="12" height="104" fill="#f2f4f6" />
+<rect x="102" y="92" width="29" height="104" fill="#c9ced4" />
+<rect x="131" y="92" width="27" height="104" fill="#99a1a9" />
+<polygon points="158,92 153.4,99.5 141,105 124,107 107,105 94.6,99.5 90,92 94.6,84.5 107,79 124,77 141,79 153.4,84.5" fill="#f2f4f6" />
+<rect x="96" y="118" width="56" height="44" fill="#30353b" />
+<rect x="96" y="118" width="10" height="44" fill="#4b5159" />
+<polygon points="124,128 132,128 132,136 140,136 140,144 132,144 132,152 124,152 124,144 116,144 116,136 124,136" fill="#a1d9cb" />
+<rect x="86" y="70" width="76" height="24" fill="#78c8b4" />
+<rect x="86" y="70" width="14" height="24" fill="#a1d9cb" />
+<rect x="148" y="70" width="14" height="24" fill="#4a7c70" />
+<polygon points="162,70 156.9,75 143,78.7 124,80 105,78.7 91.1,75 86,70 91.1,65 105,61.3 124,60 143,61.3 156.9,65" fill="#a1d9cb" />
+<g transform="translate(188 184) rotate(-30)"><rect x="-26" y="-10" width="26" height="20" fill="#c9ced4" />
+<rect x="0" y="-10" width="26" height="20" fill="#78c8b4" />
+<rect x="-26" y="-10" width="52" height="5" fill="#f2f4f6" />
+<rect x="-26" y="5" width="26" height="5" fill="#99a1a9" />
+<rect x="0" y="5" width="26" height="5" fill="#4a7c70" />
+<polygon points="-16,0 -18.9,7.1 -26,10 -33.1,7.1 -36,0 -33.1,-7.1 -26,-10 -18.9,-7.1" fill="#c9ced4" />
+<polygon points="36,0 33.1,7.1 26,10 18.9,7.1 16,0 18.9,-7.1 26,-10 33.1,-7.1" fill="#78c8b4" /></g>
+<g transform="translate(66 196) rotate(15)"><rect x="-26" y="-10" width="26" height="20" fill="#c9ced4" />
+<rect x="0" y="-10" width="26" height="20" fill="#78c8b4" />
+<rect x="-26" y="-10" width="52" height="5" fill="#f2f4f6" />
+<rect x="-26" y="5" width="26" height="5" fill="#99a1a9" />
+<rect x="0" y="5" width="26" height="5" fill="#4a7c70" />
+<polygon points="-16,0 -18.9,7.1 -26,10 -33.1,7.1 -36,0 -33.1,-7.1 -26,-10 -18.9,-7.1" fill="#c9ced4" />
+<polygon points="36,0 33.1,7.1 26,10 18.9,7.1 16,0 18.9,-7.1 26,-10 33.1,-7.1" fill="#78c8b4" /></g>
+</svg>

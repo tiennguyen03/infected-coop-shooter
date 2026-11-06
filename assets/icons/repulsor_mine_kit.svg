@@ -1,34 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#262a2e"/>
-      <stop offset="1" stop-color="#17191c"/>
-    </linearGradient>
-    <radialGradient id="dome" cx="0.4" cy="0.35" r="0.75">
-      <stop offset="0" stop-color="#7aa9e0"/>
-      <stop offset="1" stop-color="#3c5d8c"/>
-    </radialGradient>
-  </defs>
-  <rect x="8" y="8" width="240" height="240" rx="28" fill="url(#bg)" stroke="#6096dc" stroke-width="6"/>
-
-  <!-- blast rings -->
-  <g fill="none" stroke="#6096dc" stroke-linecap="round" opacity="0.6">
-    <path d="M70 96 A60 60 0 0 1 186 96" stroke-width="6"/>
-    <path d="M54 84 A80 80 0 0 1 202 84" stroke-width="5" opacity="0.6"/>
-  </g>
-
-  <!-- mine base -->
-  <ellipse cx="128" cy="186" rx="74" ry="20" fill="#2c3036" stroke="#14161a" stroke-width="5"/>
-  <!-- dome body -->
-  <path d="M68 178 Q68 128 128 128 Q188 128 188 178 Z" fill="url(#dome)" stroke="#27406a" stroke-width="5"/>
-  <!-- prongs -->
-  <g stroke="#9aa4ad" stroke-width="7" stroke-linecap="round">
-    <line x1="92" y1="138" x2="84" y2="112"/>
-    <line x1="128" y1="128" x2="128" y2="100"/>
-    <line x1="164" y1="138" x2="172" y2="112"/>
-  </g>
-  <g fill="#d64533"><circle cx="84" cy="110" r="6"/><circle cx="128" cy="98" r="6"/><circle cx="172" cy="110" r="6"/></g>
-  <!-- sensor light -->
-  <circle cx="128" cy="162" r="9" fill="#cfe2ff"/>
-  <circle cx="128" cy="162" r="4" fill="#6096dc"/>
+<clipPath id="plateClip"><rect x="0" y="0" width="256" height="256" rx="24"/></clipPath>
+<g clip-path="url(#plateClip)">
+<rect x="0" y="0" width="256" height="256" fill="#171a1e" />
+<polygon points="0,0 256,0 0,256" fill="#1e2227" />
+</g>
+<rect x="3" y="3" width="250" height="250" rx="21" fill="none" stroke="#2a3038" stroke-width="3"/>
+<ellipse cx="128" cy="206" rx="92" ry="10" fill="#07090b" opacity="0.55"/>
+<ellipse cx="128" cy="158" rx="104" ry="36" fill="none" stroke="#6096dc" stroke-width="4" opacity="0.35"/>
+<ellipse cx="128" cy="158" rx="90" ry="30" fill="none" stroke="#6096dc" stroke-width="5" opacity="0.7"/>
+<polygon points="200,176 192.9,186.4 172.9,194.8 144,199.4 112,199.4 83.1,194.8 63.1,186.4 56,176 63.1,165.6 83.1,157.2 112,152.6 144,152.6 172.9,157.2 192.9,165.6" fill="#3d454d" />
+<rect x="56" y="158" width="144" height="18" fill="#3d454d" />
+<polygon points="56,158 56,176 128,200 128,182" fill="#636d77" />
+<polygon points="200,158 192.9,168.4 172.9,176.8 144,181.4 112,181.4 83.1,176.8 63.1,168.4 56,158 63.1,147.6 83.1,139.2 112,134.6 144,134.6 172.9,139.2 192.9,147.6" fill="#9aa4ae" />
+<polygon points="182,158 176.7,165.8 161.7,172.1 140,175.5 116,175.5 94.3,172.1 79.3,165.8 74,158 79.3,150.2 94.3,143.9 116,140.5 140,140.5 161.7,143.9 176.7,150.2" fill="#636d77" />
+<polygon points="154,152 149,157.9 136,161.5 120,161.5 107,157.9 102,152 107,146.1 120,142.5 136,142.5 149,146.1" fill="#3c5d88" />
+<rect x="102" y="142" width="52" height="10" fill="#3c5d88" />
+<polygon points="154,142 149,147.9 136,151.5 120,151.5 107,147.9 102,142 107,136.1 120,132.5 136,132.5 149,136.1" fill="#6096dc" />
+<polygon points="140,142 136.5,145.5 128,147 119.5,145.5 116,142 119.5,138.5 128,137 136.5,138.5" fill="#90b6e7" />
+<polyline points="108,142 92,110" fill="none" stroke="#4b5159" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+<polyline points="148,142 164,110" fill="none" stroke="#4b5159" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+<polyline points="128,138 128,100" fill="none" stroke="#4b5159" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
 </svg>

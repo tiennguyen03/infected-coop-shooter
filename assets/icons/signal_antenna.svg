@@ -1,1 +1,26 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><line x1="32" y1="50" x2="32" y2="20" stroke="#10202c" stroke-width="3" stroke-linecap="round"/><circle cx="32" cy="18" r="4" fill="#82c0e0" stroke="#10202c" stroke-width="2.5"/><path d="M40 26 a12 12 0 0 1 0 16 M46 20 a20 20 0 0 1 0 28" fill="none" stroke="#82c0e0" stroke-width="2.5" stroke-linecap="round"/><path d="M24 50 h16 l-3-8 h-10 z" fill="#3a5060" stroke="#10202c" stroke-width="2.5" stroke-linejoin="round"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+<clipPath id="plateClip"><rect x="0" y="0" width="256" height="256" rx="24"/></clipPath>
+<g clip-path="url(#plateClip)">
+<rect x="0" y="0" width="256" height="256" fill="#171a1e" />
+<polygon points="0,0 256,0 0,256" fill="#1e2227" />
+</g>
+<rect x="3" y="3" width="250" height="250" rx="21" fill="none" stroke="#2a3038" stroke-width="3"/>
+<ellipse cx="128" cy="212" rx="72" ry="10" fill="#07090b" opacity="0.55"/>
+<polygon points="120,208 83.6,187 83.6,157 120,178" fill="#30353b" />
+<polygon points="120,208 172,178 172,148 120,178" fill="#1f2327" />
+<polygon points="120,178 172,148 135.6,127 83.6,157" fill="#4b5159" />
+<rect x="122" y="60" width="6" height="120" fill="#9aa4ae" />
+<rect x="128" y="60" width="6" height="120" fill="#3d454d" />
+<rect x="116" y="150" width="24" height="20" fill="#636d77" />
+<rect x="116" y="150" width="24" height="5" fill="#9aa4ae" />
+<polygon points="125,60 131,60 128,40" fill="#82b4dc" />
+<polygon points="136,60 133.7,65.7 128,68 122.3,65.7 120,60 122.3,54.3 128,52 133.7,54.3" fill="#82b4dc" />
+<polygon points="129,58 127.5,60.6 124.5,60.6 123,58 124.5,55.4 127.5,55.4" fill="#a8cbe7" />
+<polyline points="96,72 100,52 112,40" fill="none" stroke="#82b4dc" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+<polyline points="160,72 156,52 144,40" fill="none" stroke="#82b4dc" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+<polyline points="72,84 78,50 100,26" fill="none" stroke="#82b4dc" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
+<polyline points="184,84 178,50 156,26" fill="none" stroke="#82b4dc" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
+<polyline points="48,96 58,46 88,14" fill="none" stroke="#82b4dc" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.3"/>
+<polyline points="208,96 198,46 168,14" fill="none" stroke="#82b4dc" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.3"/>
+<polygon points="111.3,195 102.7,190 102.7,176 111.3,181" fill="#a8cbe7" />
+</svg>

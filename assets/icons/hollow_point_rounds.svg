@@ -1,48 +1,39 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#262a2e"/>
-      <stop offset="1" stop-color="#17191c"/>
-    </linearGradient>
-    <linearGradient id="brass" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#e0b85c"/>
-      <stop offset="0.5" stop-color="#c49a3f"/>
-      <stop offset="1" stop-color="#8f6e2a"/>
-    </linearGradient>
-    <linearGradient id="tip" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#e05545"/>
-      <stop offset="1" stop-color="#9c2e22"/>
-    </linearGradient>
-  </defs>
-  <rect x="8" y="8" width="240" height="240" rx="28" fill="url(#bg)" stroke="#c43a2c" stroke-width="6"/>
-
-  <!-- three rounds, middle one forward -->
-  <g transform="translate(70,38)">
-    <!-- left round -->
-    <g transform="translate(-38,14) rotate(-6 28 90)">
-      <path d="M14 52 Q14 18 28 6 Q42 18 42 52 Z" fill="url(#tip)"/>
-      <path d="M14 52 L14 56 L42 56 L42 52 Z" fill="#5c4a1e"/>
-      <rect x="14" y="56" width="28" height="94" fill="url(#brass)"/>
-      <rect x="10" y="150" width="36" height="16" rx="3" fill="#8f6e2a"/>
-      <rect x="19" y="62" width="6" height="82" fill="#f0d490" opacity="0.45"/>
-    </g>
-    <!-- right round -->
-    <g transform="translate(74,14) rotate(6 28 90)">
-      <path d="M14 52 Q14 18 28 6 Q42 18 42 52 Z" fill="url(#tip)"/>
-      <path d="M14 52 L14 56 L42 56 L42 52 Z" fill="#5c4a1e"/>
-      <rect x="14" y="56" width="28" height="94" fill="url(#brass)"/>
-      <rect x="10" y="150" width="36" height="16" rx="3" fill="#8f6e2a"/>
-      <rect x="19" y="62" width="6" height="82" fill="#f0d490" opacity="0.45"/>
-    </g>
-    <!-- center round (bigger, hollow tip) -->
-    <g transform="translate(12,0)">
-      <path d="M12 60 Q12 18 32 2 Q52 18 52 60 Z" fill="url(#tip)"/>
-      <circle cx="32" cy="34" r="11" fill="#3a1410"/>
-      <circle cx="32" cy="34" r="6" fill="#1c0a08"/>
-      <path d="M12 60 L12 65 L52 65 L52 60 Z" fill="#5c4a1e"/>
-      <rect x="12" y="65" width="40" height="106" fill="url(#brass)"/>
-      <rect x="7" y="171" width="50" height="18" rx="3" fill="#8f6e2a"/>
-      <rect x="19" y="72" width="8" height="92" fill="#f0d490" opacity="0.45"/>
-    </g>
-  </g>
+<clipPath id="plateClip"><rect x="0" y="0" width="256" height="256" rx="24"/></clipPath>
+<g clip-path="url(#plateClip)">
+<rect x="0" y="0" width="256" height="256" fill="#171a1e" />
+<polygon points="0,0 256,0 0,256" fill="#1e2227" />
+</g>
+<rect x="3" y="3" width="250" height="250" rx="21" fill="none" stroke="#2a3038" stroke-width="3"/>
+<ellipse cx="128" cy="206" rx="78" ry="11" fill="#07090b" opacity="0.55"/>
+<rect x="70" y="108" width="10" height="86" fill="#e6bd60" />
+<rect x="80" y="108" width="10" height="86" fill="#bf9136" />
+<rect x="90" y="108" width="10" height="86" fill="#845f20" />
+<rect x="68" y="186" width="34" height="8" fill="#845f20" />
+<rect x="70" y="178" width="30" height="4" fill="#845f20" />
+<polygon points="70,108 72,86 85,64 85,108" fill="#636d77" />
+<polygon points="85,64 98,86 100,108 85,108" fill="#3d454d" />
+<polygon points="72,86 85,64 79,88" fill="#9aa4ae" />
+<polygon points="79,80 85,68 91,80" fill="#7a241b" />
+<rect x="70" y="104" width="30" height="5" fill="#c43a2c" />
+<rect x="156" y="108" width="10" height="86" fill="#e6bd60" />
+<rect x="166" y="108" width="10" height="86" fill="#bf9136" />
+<rect x="176" y="108" width="10" height="86" fill="#845f20" />
+<rect x="154" y="186" width="34" height="8" fill="#845f20" />
+<rect x="156" y="178" width="30" height="4" fill="#845f20" />
+<polygon points="156,108 158,86 171,64 171,108" fill="#636d77" />
+<polygon points="171,64 184,86 186,108 171,108" fill="#3d454d" />
+<polygon points="158,86 171,64 165,88" fill="#9aa4ae" />
+<polygon points="165,80 171,68 177,80" fill="#7a241b" />
+<rect x="156" y="104" width="30" height="5" fill="#c43a2c" />
+<rect x="113" y="114" width="10" height="92" fill="#e6bd60" />
+<rect x="123" y="114" width="10" height="92" fill="#bf9136" />
+<rect x="133" y="114" width="10" height="92" fill="#845f20" />
+<rect x="111" y="198" width="34" height="8" fill="#845f20" />
+<rect x="113" y="190" width="30" height="4" fill="#845f20" />
+<polygon points="113,114 115,92 128,70 128,114" fill="#636d77" />
+<polygon points="128,70 141,92 143,114 128,114" fill="#3d454d" />
+<polygon points="115,92 128,70 122,94" fill="#9aa4ae" />
+<polygon points="122,86 128,74 134,86" fill="#7a241b" />
+<rect x="113" y="110" width="30" height="5" fill="#c43a2c" />
 </svg>

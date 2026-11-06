@@ -1,51 +1,26 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#262a2e"/>
-      <stop offset="1" stop-color="#17191c"/>
-    </linearGradient>
-    <linearGradient id="metal" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#55606a"/>
-      <stop offset="1" stop-color="#333b42"/>
-    </linearGradient>
-  </defs>
-  <rect x="8" y="8" width="240" height="240" rx="28" fill="url(#bg)" stroke="#3fa7d6" stroke-width="6"/>
-
-  <!-- radio waves -->
-  <g fill="none" stroke="#3fa7d6" stroke-width="7" stroke-linecap="round">
-    <path d="M84 96 A62 62 0 0 1 172 96" opacity="0.35"/>
-    <path d="M96 110 A44 44 0 0 1 160 110" opacity="0.6"/>
-    <path d="M109 124 A26 26 0 0 1 147 124"/>
-  </g>
-
-  <!-- drone silhouette -->
-  <g fill="#9fd8f0">
-    <rect x="116" y="52" width="24" height="12" rx="5"/>
-    <rect x="92" y="55" width="22" height="5" rx="2.5"/>
-    <rect x="142" y="55" width="22" height="5" rx="2.5"/>
-    <circle cx="96" cy="50" r="4"/>
-    <circle cx="160" cy="50" r="4"/>
-    <rect x="78" y="48" width="36" height="4" rx="2"/>
-    <rect x="142" y="48" width="36" height="4" rx="2"/>
-  </g>
-
-  <!-- beacon body -->
-  <g>
-    <rect x="86" y="140" width="84" height="64" rx="10" fill="url(#metal)" stroke="#6b7680" stroke-width="3"/>
-    <!-- antenna -->
-    <rect x="124" y="104" width="8" height="40" rx="4" fill="#6b7680"/>
-    <circle cx="128" cy="100" r="9" fill="#3fa7d6"/>
-    <!-- status lights -->
-    <circle cx="104" cy="160" r="7" fill="#46d68c"/>
-    <circle cx="128" cy="160" r="7" fill="#3fa7d6"/>
-    <circle cx="152" cy="160" r="7" fill="#2a3138"/>
-    <!-- speaker grille -->
-    <g stroke="#262a2e" stroke-width="4" stroke-linecap="round">
-      <line x1="100" y1="180" x2="156" y2="180"/>
-      <line x1="100" y1="190" x2="156" y2="190"/>
-    </g>
-  </g>
-
-  <!-- base feet -->
-  <rect x="78" y="204" width="100" height="12" rx="6" fill="#2a3138"/>
+<clipPath id="plateClip"><rect x="0" y="0" width="256" height="256" rx="24"/></clipPath>
+<g clip-path="url(#plateClip)">
+<rect x="0" y="0" width="256" height="256" fill="#171a1e" />
+<polygon points="0,0 256,0 0,256" fill="#1e2227" />
+</g>
+<rect x="3" y="3" width="250" height="250" rx="21" fill="none" stroke="#2a3038" stroke-width="3"/>
+<ellipse cx="128" cy="210" rx="80" ry="10" fill="#07090b" opacity="0.55"/>
+<polygon points="114,176 122,176 72,210 62,210" fill="#30353b" />
+<polygon points="134,176 142,176 194,210 184,210" fill="#1f2327" />
+<polygon points="124,180 132,180 134,212 122,212" fill="#30353b" />
+<polygon points="154,180 150.5,185.7 141,189.9 128,191.4 115,189.9 105.5,185.7 102,180 105.5,174.3 115,170.1 128,168.6 141,170.1 150.5,174.3" fill="#3d454d" />
+<rect x="102" y="118" width="9" height="62" fill="#9aa4ae" />
+<rect x="111" y="118" width="22" height="62" fill="#636d77" />
+<rect x="133" y="118" width="21" height="62" fill="#3d454d" />
+<polygon points="154,118 150.5,123.7 141,127.9 128,129.4 115,127.9 105.5,123.7 102,118 105.5,112.3 115,108.1 128,106.6 141,108.1 150.5,112.3" fill="#9aa4ae" />
+<rect x="102" y="150" width="52" height="6" fill="#1f2327" />
+<rect x="110" y="104" width="36" height="14" fill="#30353b" />
+<rect x="110" y="104" width="36" height="4" fill="#4b5159" />
+<polygon points="112,104 128,78 144,104" fill="#3fa7d6" />
+<polygon points="112,104 128,78 124,104" fill="#79c1e2" />
+<polyline points="88,86 96,72 110,64" fill="none" stroke="#3fa7d6" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+<polyline points="168,86 160,72 146,64" fill="none" stroke="#3fa7d6" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+<polyline points="72,74 84,52 106,40" fill="none" stroke="#3fa7d6" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.55"/>
+<polyline points="184,74 172,52 150,40" fill="none" stroke="#3fa7d6" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.55"/>
 </svg>

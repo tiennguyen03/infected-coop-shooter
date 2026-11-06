@@ -1,33 +1,30 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#262a2e"/>
-      <stop offset="1" stop-color="#17191c"/>
-    </linearGradient>
-    <linearGradient id="metal" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#9aa4ad"/>
-      <stop offset="1" stop-color="#5b636b"/>
-    </linearGradient>
-  </defs>
-  <rect x="8" y="8" width="240" height="240" rx="28" fill="url(#bg)" stroke="#78b4ff" stroke-width="6"/>
-
-  <!-- coil base -->
-  <rect x="92" y="186" width="72" height="20" rx="6" fill="#3a3e44" stroke="#15171a" stroke-width="4"/>
-  <!-- coil windings -->
-  <g fill="none" stroke="url(#metal)" stroke-width="12" stroke-linecap="round">
-    <path d="M104 186 q24 -16 48 0"/>
-    <path d="M104 168 q24 -16 48 0"/>
-    <path d="M104 150 q24 -16 48 0"/>
-    <path d="M104 132 q24 -16 48 0"/>
-  </g>
-  <!-- emitter sphere -->
-  <circle cx="128" cy="100" r="22" fill="#cfe2ff"/>
-  <circle cx="128" cy="100" r="22" fill="none" stroke="#78b4ff" stroke-width="4"/>
-
-  <!-- lightning arcs -->
-  <g fill="#bfe0ff" stroke="#78b4ff" stroke-width="2">
-    <path d="M128 78 L150 44 L138 46 L160 16 L120 50 L132 48 Z"/>
-    <path d="M110 92 L78 78 L88 90 L60 88 L96 110 L88 98 Z"/>
-    <path d="M148 100 L186 96 L174 106 L200 116 L160 120 L170 110 Z"/>
-  </g>
+<clipPath id="plateClip"><rect x="0" y="0" width="256" height="256" rx="24"/></clipPath>
+<g clip-path="url(#plateClip)">
+<rect x="0" y="0" width="256" height="256" fill="#171a1e" />
+<polygon points="0,0 256,0 0,256" fill="#1e2227" />
+</g>
+<rect x="3" y="3" width="250" height="250" rx="21" fill="none" stroke="#2a3038" stroke-width="3"/>
+<ellipse cx="128" cy="212" rx="84" ry="10" fill="#07090b" opacity="0.55"/>
+<polygon points="114,208 69,182 69,160 114,186" fill="#30353b" />
+<polygon points="114,208 186.7,166 186.7,144 114,186" fill="#1f2327" />
+<polygon points="114,186 186.7,144 141.7,118 69,160" fill="#4b5159" />
+<polygon points="148,188 145.3,192.4 138,195.6 128,196.8 118,195.6 110.7,192.4 108,188 110.7,183.6 118,180.4 128,179.2 138,180.4 145.3,183.6" fill="#3d454d" />
+<rect x="108" y="96" width="7" height="92" fill="#9aa4ae" />
+<rect x="115" y="96" width="17" height="92" fill="#636d77" />
+<rect x="132" y="96" width="16" height="92" fill="#3d454d" />
+<polygon points="148,96 145.3,100.4 138,103.6 128,104.8 118,103.6 110.7,100.4 108,96 110.7,91.6 118,88.4 128,87.2 138,88.4 145.3,91.6" fill="#9aa4ae" />
+<rect x="108" y="112" width="40" height="6" fill="#1f2327" />
+<rect x="108" y="132" width="40" height="6" fill="#1f2327" />
+<rect x="108" y="152" width="40" height="6" fill="#1f2327" />
+<rect x="108" y="172" width="40" height="6" fill="#1f2327" />
+<polygon points="172,92 166.1,100 150,105.9 128,108 106,105.9 89.9,100 84,92 89.9,84 106,78.1 128,76 150,78.1 166.1,84" fill="#3d454d" />
+<polygon points="172,86 166.1,94 150,99.9 128,102 106,99.9 89.9,94 84,86 89.9,78 106,72.1 128,70 150,72.1 166.1,78" fill="#636d77" />
+<polygon points="158,84 154,89 143,92.7 128,94 113,92.7 102,89 98,84 102,79 113,75.3 128,74 143,75.3 154,79" fill="#9aa4ae" />
+<polygon points="140.9,71.4 133.4,78.9 122.6,78.9 115.1,71.4 115.1,60.6 122.6,53.1 133.4,53.1 140.9,60.6" fill="#78b4ff" />
+<polygon points="130,62 127,67.2 121,67.2 118,62 121,56.8 127,56.8" fill="#a1cbff" />
+<polyline points="116,60 92,54 80,36 56,30" fill="none" stroke="#a1cbff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+<polyline points="140,60 166,50 172,32 200,26" fill="none" stroke="#a1cbff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+<polyline points="142,70 176,78 190,66 214,72" fill="none" stroke="#78b4ff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>
+<polyline points="114,72 84,84 66,76" fill="none" stroke="#78b4ff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>
 </svg>

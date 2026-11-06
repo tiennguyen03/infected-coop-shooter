@@ -1,3 +1,6 @@
+> SUPERSEDED 2026-11-05: icons are now generated from `assets/icons/build/icons.js` in the
+> style defined by [STYLES.md](STYLES.md). Kept only for the per-item subject descriptions.
+
 # FABLE5_ITEM_ICON_PROMPTS.md
 
 Create 2D vector-style game UI icons for a military zombie apocalypse roguelike.

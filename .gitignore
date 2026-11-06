@@ -11,3 +11,4 @@ roblox.yml
 
 # Rendered icon PNGs (regenerate from SVG; uploaded asset IDs in ASSET_IDS.md)
 assets/icons/*.png
+assets/icons/build/contact_sheet.png

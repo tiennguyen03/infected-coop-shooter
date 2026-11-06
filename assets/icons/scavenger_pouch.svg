@@ -1,1 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path d="M20 24 q12-10 24 0 l4 18 a6 6 0 0 1-6 7 H22 a6 6 0 0 1-6-7 z" fill="#94c878" stroke="#1c3010" stroke-width="2.5" stroke-linejoin="round"/><path d="M24 24 q8-8 16 0" fill="none" stroke="#1c3010" stroke-width="2.5"/><circle cx="32" cy="38" r="5" fill="#cfe8b8" stroke="#1c3010" stroke-width="2"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+<clipPath id="plateClip"><rect x="0" y="0" width="256" height="256" rx="24"/></clipPath>
+<g clip-path="url(#plateClip)">
+<rect x="0" y="0" width="256" height="256" fill="#171a1e" />
+<polygon points="0,0 256,0 0,256" fill="#1e2227" />
+</g>
+<rect x="3" y="3" width="250" height="250" rx="21" fill="none" stroke="#2a3038" stroke-width="3"/>
+<ellipse cx="128" cy="210" rx="80" ry="10" fill="#07090b" opacity="0.55"/>
+<polygon points="92,96 128,100 128,204 72,196 66,130" fill="#636e42" />
+<polygon points="128,100 166,96 190,130 184,196 128,204" fill="#41492b" />
+<polygon points="92,96 128,100 128,130 90,128 66,130" fill="#8e9862" />
+<polygon points="88,74 168,74 172,100 84,100" fill="#30353b" />
+<polygon points="88,74 168,74 168,82 88,82" fill="#4b5159" />
+<polyline points="100,86 100,120 80,150" fill="none" stroke="#96c878" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+<polygon points="72,148 88,148 84,166 76,166" fill="#96c878" />
+<rect x="74" y="164" width="110" height="5" fill="#41492b" />
+<rect x="118" y="60" width="10" height="20" fill="#bf9136" />
+<rect x="134" y="56" width="10" height="24" fill="#e6bd60" />
+<polygon points="150,60 164,56 166,76 152,78" fill="#c9ced4" />
+<polygon points="160,100 176,100 188,128 172,128" fill="#5d7c4a" />
+</svg>

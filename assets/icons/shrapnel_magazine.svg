@@ -1,35 +1,25 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#262a2e"/>
-      <stop offset="1" stop-color="#17191c"/>
-    </linearGradient>
-    <linearGradient id="mag" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#3a3e44"/>
-      <stop offset="1" stop-color="#24272c"/>
-    </linearGradient>
-  </defs>
-  <rect x="8" y="8" width="240" height="240" rx="28" fill="url(#bg)" stroke="#be9646" stroke-width="6"/>
-
-  <!-- magazine, slightly tilted -->
-  <g transform="rotate(-12 110 140)">
-    <path d="M86 64 L142 64 L150 196 Q150 210 136 210 L100 210 Q86 210 84 196 Z"
-          fill="url(#mag)" stroke="#15171a" stroke-width="5" stroke-linejoin="round"/>
-    <!-- feed lip + top round -->
-    <rect x="84" y="56" width="60" height="14" rx="4" fill="#4a4f56"/>
-    <path d="M96 56 Q96 40 114 36 Q132 40 132 56 Z" fill="#be9646"/>
-    <!-- witness holes -->
-    <g fill="#15171a"><circle cx="138" cy="100" r="4"/><circle cx="140" cy="130" r="4"/><circle cx="142" cy="160" r="4"/></g>
-  </g>
-
-  <!-- flying shrapnel fragments -->
-  <g fill="#d9b35e" stroke="#8f6e2a" stroke-width="2">
-    <path d="M178 70 l16 6 l-6 14 l-14 -8 Z"/>
-    <path d="M196 110 l14 10 l-10 12 l-12 -10 Z"/>
-    <path d="M176 132 l12 4 l-4 12 l-12 -6 Z"/>
-  </g>
-  <g stroke="#be9646" stroke-width="4" stroke-linecap="round" opacity="0.7">
-    <line x1="160" y1="74" x2="176" y2="70"/>
-    <line x1="170" y1="118" x2="188" y2="116"/>
-  </g>
+<clipPath id="plateClip"><rect x="0" y="0" width="256" height="256" rx="24"/></clipPath>
+<g clip-path="url(#plateClip)">
+<rect x="0" y="0" width="256" height="256" fill="#171a1e" />
+<polygon points="0,0 256,0 0,256" fill="#1e2227" />
+</g>
+<rect x="3" y="3" width="250" height="250" rx="21" fill="none" stroke="#2a3038" stroke-width="3"/>
+<ellipse cx="128" cy="210" rx="70" ry="10" fill="#07090b" opacity="0.55"/>
+<polygon points="100,96 128,96 136,200 116,208 96,160" fill="#4b5159" />
+<polygon points="128,96 160,96 176,150 172,200 136,200" fill="#30353b" />
+<rect x="100" y="122" width="60" height="5" fill="#1f2327" />
+<rect x="102" y="146" width="64" height="5" fill="#1f2327" />
+<rect x="106" y="170" width="64" height="5" fill="#1f2327" />
+<rect x="100" y="86" width="60" height="10" fill="#636d77" />
+<rect x="100" y="86" width="60" height="4" fill="#9aa4ae" />
+<polygon points="108,86 152,86 146,66 114,66" fill="#bf9136" />
+<polygon points="108,86 114,66 122,66 122,86" fill="#e6bd60" />
+<polygon points="114,66 146,66 136,52 124,52" fill="#636d77" />
+<polygon points="0,-14 9.8,0 0,16.8 -9.8,0" fill="#be9646" transform="translate(70 70) rotate(25)"/>
+<polygon points="0,-12 8.4,0 0,14.4 -8.4,0" fill="#be9646" transform="translate(190 60) rotate(-20)"/>
+<polygon points="0,-10 7,0 0,12 -7,0" fill="#d2b67e" transform="translate(60 120) rotate(-40)"/>
+<polygon points="0,-10 7,0 0,12 -7,0" fill="#d2b67e" transform="translate(200 108) rotate(35)"/>
+<polygon points="0,-8 5.6,0 0,9.6 -5.6,0" fill="#765d2b" transform="translate(176 36) rotate(10)"/>
+<polygon points="0,-8 5.6,0 0,9.6 -5.6,0" fill="#765d2b" transform="translate(92 44) rotate(-15)"/>
 </svg>

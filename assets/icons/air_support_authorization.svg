@@ -1,35 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#262a2e"/>
-      <stop offset="1" stop-color="#17191c"/>
-    </linearGradient>
-  </defs>
-  <rect x="8" y="8" width="240" height="240" rx="28" fill="url(#bg)" stroke="#d64533" stroke-width="6"/>
-
-  <!-- reticle -->
-  <g fill="none" stroke="#d64533" stroke-width="8">
-    <circle cx="128" cy="140" r="62"/>
-    <circle cx="128" cy="140" r="30" opacity="0.55"/>
-  </g>
-  <g stroke="#d64533" stroke-width="8" stroke-linecap="round">
-    <line x1="128" y1="62" x2="128" y2="92"/>
-    <line x1="128" y1="188" x2="128" y2="218"/>
-    <line x1="50" y1="140" x2="80" y2="140"/>
-    <line x1="176" y1="140" x2="206" y2="140"/>
-  </g>
-  <circle cx="128" cy="140" r="7" fill="#f0b429"/>
-
-  <!-- incoming ordnance -->
-  <g transform="rotate(38 178 64)">
-    <rect x="170" y="34" width="16" height="44" rx="7" fill="#cfd6dd"/>
-    <path d="M178 22 L170 38 L186 38 Z" fill="#d64533"/>
-    <path d="M170 78 L164 92 L174 84 Z" fill="#9aa4ad"/>
-    <path d="M186 78 L192 92 L182 84 Z" fill="#9aa4ad"/>
-  </g>
-  <!-- motion lines -->
-  <g stroke="#f0b429" stroke-width="6" stroke-linecap="round" opacity="0.8">
-    <line x1="58" y1="46" x2="84" y2="72"/>
-    <line x1="46" y1="76" x2="64" y2="94"/>
-  </g>
+<clipPath id="plateClip"><rect x="0" y="0" width="256" height="256" rx="24"/></clipPath>
+<g clip-path="url(#plateClip)">
+<rect x="0" y="0" width="256" height="256" fill="#171a1e" />
+<polygon points="0,0 256,0 0,256" fill="#1e2227" />
+</g>
+<rect x="3" y="3" width="250" height="250" rx="21" fill="none" stroke="#2a3038" stroke-width="3"/>
+<polygon points="128,48 128,196 118,190 116,108" fill="#9aa4ae" />
+<polygon points="118,118 118,150 54,162 54,152" fill="#636d77" />
+<polygon points="118,168 118,190 92,202 92,194" fill="#636d77" />
+<polygon points="128,48 128,196 138,190 140,108" fill="#636d77" />
+<polygon points="138,118 138,150 202,162 202,152" fill="#3d454d" />
+<polygon points="138,168 138,190 164,202 164,194" fill="#3d454d" />
+<circle cx="128" cy="128" r="92" fill="none" stroke="#852b20" stroke-width="3"/>
+<circle cx="128" cy="128" r="80" fill="none" stroke="#d64533" stroke-width="7"/>
+<polyline points="128,30 128,56" fill="none" stroke="#d64533" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+<polyline points="128,200 128,226" fill="none" stroke="#d64533" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+<polyline points="30,128 56,128" fill="none" stroke="#d64533" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+<polyline points="200,128 226,128" fill="none" stroke="#d64533" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+<polygon points="128,118 136,128 128,138 120,128" fill="#e27d70" />
 </svg>

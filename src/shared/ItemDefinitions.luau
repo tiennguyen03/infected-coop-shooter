@@ -22,7 +22,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Common",
 		Abbrev = "HP",
 		Color = Color3.fromRGB(196, 58, 44),
-		IconId = "rbxassetid://138354803501340",
+		IconId = "rbxassetid://106052794609307",
 	},
 	adrenaline_injector = {
 		Id = "adrenaline_injector",
@@ -31,7 +31,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Common",
 		Abbrev = "AD",
 		Color = Color3.fromRGB(70, 214, 140),
-		IconId = "rbxassetid://73534221660878",
+		IconId = "rbxassetid://75905528365649",
 	},
 	tactical_drone_beacon = {
 		Id = "tactical_drone_beacon",
@@ -40,7 +40,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Uncommon",
 		Abbrev = "DR",
 		Color = Color3.fromRGB(63, 167, 214),
-		IconId = "rbxassetid://73375484822115",
+		IconId = "rbxassetid://93910900196884",
 	},
 	emergency_ammo_cache = {
 		Id = "emergency_ammo_cache",
@@ -49,7 +49,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Common",
 		Abbrev = "AC",
 		Color = Color3.fromRGB(125, 140, 88),
-		IconId = "rbxassetid://116972182907671",
+		IconId = "rbxassetid://127917945022019",
 	},
 	air_support_authorization = {
 		Id = "air_support_authorization",
@@ -58,7 +58,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Legendary",
 		Abbrev = "AS",
 		Color = Color3.fromRGB(214, 69, 51),
-		IconId = "rbxassetid://136560283241343",
+		IconId = "rbxassetid://112349300482610",
 	},
 	kevlar_plate_carrier = {
 		Id = "kevlar_plate_carrier",
@@ -67,7 +67,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Common",
 		Abbrev = "KV",
 		Color = Color3.fromRGB(78, 132, 196),
-		IconId = "rbxassetid://92667019174781",
+		IconId = "rbxassetid://112286218001477",
 	},
 	vampire_serum = {
 		Id = "vampire_serum",
@@ -76,7 +76,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Common",
 		Abbrev = "VS",
 		Color = Color3.fromRGB(176, 38, 52),
-		IconId = "rbxassetid://86620200858094",
+		IconId = "rbxassetid://124871799608336",
 	},
 	ricochet_rounds = {
 		Id = "ricochet_rounds",
@@ -85,7 +85,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Uncommon",
 		Abbrev = "RC",
 		Color = Color3.fromRGB(120, 200, 210),
-		IconId = "rbxassetid://113545243088765",
+		IconId = "rbxassetid://114114705411597",
 	},
 	shrapnel_magazine = {
 		Id = "shrapnel_magazine",
@@ -94,7 +94,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Common",
 		Abbrev = "SH",
 		Color = Color3.fromRGB(190, 150, 70),
-		IconId = "rbxassetid://110602856790424",
+		IconId = "rbxassetid://124493023372188",
 	},
 	incendiary_gel = {
 		Id = "incendiary_gel",
@@ -103,7 +103,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Uncommon",
 		Abbrev = "IN",
 		Color = Color3.fromRGB(232, 120, 40),
-		IconId = "rbxassetid://102114406866803",
+		IconId = "rbxassetid://120185044572558",
 	},
 	repulsor_mine_kit = {
 		Id = "repulsor_mine_kit",
@@ -112,7 +112,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Uncommon",
 		Abbrev = "MN",
 		Color = Color3.fromRGB(96, 150, 220),
-		IconId = "rbxassetid://106486103737408",
+		IconId = "rbxassetid://92670564918027",
 	},
 	shock_coil = {
 		Id = "shock_coil",
@@ -121,7 +121,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Uncommon",
 		Abbrev = "SC",
 		Color = Color3.fromRGB(120, 180, 255),
-		IconId = "rbxassetid://80678860630204",
+		IconId = "rbxassetid://83350462961014",
 	},
 	hunters_mark_optics = {
 		Id = "hunters_mark_optics",
@@ -130,7 +130,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Uncommon",
 		Abbrev = "HM",
 		Color = Color3.fromRGB(220, 60, 60),
-		IconId = "rbxassetid://108037917401035",
+		IconId = "rbxassetid://136190678726539",
 	},
 
 	-- Plague Rat Charm (Sprint 16) — Uncommon on-kill swarm DoT.
@@ -141,7 +141,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Uncommon",
 		Abbrev = "RT",
 		Color = Color3.fromRGB(120, 170, 70),
-		IconId = "rbxassetid://80711295113057",
+		IconId = "rbxassetid://119524213982906",
 	},
 
 	-- Common Item Pack 1 (Sprint 15). Passive stat/utility items.
@@ -152,7 +152,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Common",
 		Abbrev = "PW",
 		Color = Color3.fromRGB(200, 120, 60),
-		IconId = "rbxassetid://136501293446413",
+		IconId = "rbxassetid://86057108539929",
 	},
 	combat_stimulants = {
 		Id = "combat_stimulants",
@@ -161,7 +161,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Common",
 		Abbrev = "ST",
 		Color = Color3.fromRGB(120, 200, 180),
-		IconId = "rbxassetid://73547908765824",
+		IconId = "rbxassetid://99544827573369",
 	},
 	lightweight_boots = {
 		Id = "lightweight_boots",
@@ -170,7 +170,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Common",
 		Abbrev = "BT",
 		Color = Color3.fromRGB(150, 170, 110),
-		IconId = "rbxassetid://73600198968253",
+		IconId = "rbxassetid://87239041890547",
 	},
 	military_rations = {
 		Id = "military_rations",
@@ -179,7 +179,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Common",
 		Abbrev = "RA",
 		Color = Color3.fromRGB(180, 150, 90),
-		IconId = "rbxassetid://122915559361636",
+		IconId = "rbxassetid://122473239416011",
 	},
 	field_manual = {
 		Id = "field_manual",
@@ -188,7 +188,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Common",
 		Abbrev = "FM",
 		Color = Color3.fromRGB(110, 160, 210),
-		IconId = "rbxassetid://97589883842710",
+		IconId = "rbxassetid://70742354998371",
 	},
 	scavenger_pouch = {
 		Id = "scavenger_pouch",
@@ -197,7 +197,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Common",
 		Abbrev = "SP",
 		Color = Color3.fromRGB(150, 200, 120),
-		IconId = "rbxassetid://126849901954306",
+		IconId = "rbxassetid://82173783293142",
 	},
 	ballistic_weave = {
 		Id = "ballistic_weave",
@@ -206,7 +206,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Common",
 		Abbrev = "BW",
 		Color = Color3.fromRGB(120, 130, 150),
-		IconId = "rbxassetid://114390734879069",
+		IconId = "rbxassetid://124919143174637",
 	},
 	field_dressing = {
 		Id = "field_dressing",
@@ -215,7 +215,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Common",
 		Abbrev = "FD",
 		Color = Color3.fromRGB(210, 130, 130),
-		IconId = "rbxassetid://117660636699908",
+		IconId = "rbxassetid://137643580128142",
 	},
 	signal_antenna = {
 		Id = "signal_antenna",
@@ -224,7 +224,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Common",
 		Abbrev = "AN",
 		Color = Color3.fromRGB(130, 180, 220),
-		IconId = "rbxassetid://73449240860432",
+		IconId = "rbxassetid://98301242278764",
 	},
 	cheap_drone_parts = {
 		Id = "cheap_drone_parts",
@@ -233,7 +233,7 @@ local ItemDefinitions: { [string]: ItemDefinition } = {
 		Rarity = "Common",
 		Abbrev = "DP",
 		Color = Color3.fromRGB(90, 160, 200),
-		IconId = "rbxassetid://113191750726666",
+		IconId = "rbxassetid://117089147085343",
 	},
 }
 

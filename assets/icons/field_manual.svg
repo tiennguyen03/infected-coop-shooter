@@ -1,1 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path d="M14 14 h16 a4 4 0 0 1 2 1 a4 4 0 0 1 2-1 h16 v34 h-16 a4 4 0 0 0-2 1 a4 4 0 0 0-2-1 h-16 z" fill="#6ea0d2" stroke="#0e2238" stroke-width="2.5" stroke-linejoin="round"/><line x1="32" y1="16" x2="32" y2="49" stroke="#0e2238" stroke-width="2"/><g stroke="#dcecfb" stroke-width="2" stroke-linecap="round"><line x1="18" y1="22" x2="28" y2="22"/><line x1="18" y1="28" x2="28" y2="28"/><line x1="36" y1="22" x2="46" y2="22"/><line x1="36" y1="28" x2="46" y2="28"/></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+<clipPath id="plateClip"><rect x="0" y="0" width="256" height="256" rx="24"/></clipPath>
+<g clip-path="url(#plateClip)">
+<rect x="0" y="0" width="256" height="256" fill="#171a1e" />
+<polygon points="0,0 256,0 0,256" fill="#1e2227" />
+</g>
+<rect x="3" y="3" width="250" height="250" rx="21" fill="none" stroke="#2a3038" stroke-width="3"/>
+<ellipse cx="128" cy="206" rx="96" ry="12" fill="#07090b" opacity="0.55"/>
+<polygon points="96,196 9.4,146 9.4,122 96,172" fill="#c9ced4" />
+<polygon points="96,196 168.7,154 168.7,130 96,172" fill="#99a1a9" />
+<polygon points="96,186 168.7,144 168.7,142.5 96,184.5" fill="#f2f4f6" />
+<polygon points="96,181 168.7,139 168.7,137.5 96,179.5" fill="#f2f4f6" />
+<polygon points="96,176 168.7,134 168.7,132.5 96,174.5" fill="#f2f4f6" />
+<polygon points="92,172 168.2,128 168.2,122 92,166" fill="#41492b" />
+<polygon points="92,172 1.9,120 1.9,114 92,166" fill="#636e42" />
+<polygon points="92,166 168.2,122 78.1,70 1.9,114" fill="#8e9862" />
+<polygon points="88.5,148 140.5,118 128.4,111 76.4,141" fill="#6ea0d2" />
+<polygon points="67.8,136 98.9,118 92,114 60.8,132" fill="#f2f4f6" />
+<polygon points="53.9,128 97.2,103 90.3,99 47,124" fill="#f2f4f6" opacity="0.7"/>
+<polygon points="142.2,107 133.6,102 133.6,136 137.9,132.5 142.2,141" fill="#9abde0" />
+</svg>
