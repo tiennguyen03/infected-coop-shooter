@@ -60,30 +60,20 @@ All far under the budgets in `docs/STYLES.md` section 6.
    the owning service clone it instead of building a Part. Keep the old Part as the fallback
    until the clone is verified in a playtest.
 
-## Live Blender (blender-mcp) — setup status
+## Live Blender (blender-mcp) — set up 2026-11-05
 
-Claude can drive the open Blender window through the open-source **blender-mcp** bridge
-(add-on "MCP for Blender" inside Blender + the `blender-mcp` MCP server run by `uvx`). As of
-2026-11-05 the pieces are downloaded but **two steps need the user**, because Claude Code's
-permission classifier refuses to install third-party code or register MCP servers on its own:
+Claude drives the open Blender window through the open-source **blender-mcp** bridge: the
+"MCP for Blender" add-on (installed in Blender 5.2, auto-starts a socket server on
+`localhost:9876`) plus the `blender-mcp` MCP server, registered for this repo in `.mcp.json`
+(`uvx blender-mcp`). Blender must be open for the tools to work; the MCP tools appear in a
+Claude Code session started after `.mcp.json` existed.
 
-1. **Install the add-on in Blender 5.2:** Edit → Preferences → Add-ons → ▾ (top right) →
-   *Install from Disk…* → pick the downloaded `addon.py`
-   (`C:\Users\Bread\AppData\Local\Temp\claude\C--Users-Bread-roguelike-arena-survivor\54211fff-e643-4f72-94fc-631d4f4b96b6\scratchpad\blender-mcp-dl\addon.py`,
-   or re-download from https://github.com/ahujasid/blender-mcp/blob/main/addon.py). Tick it
-   on. In the 3D view sidebar (N) → *BlenderMCP* tab, keep **Auto-Start Server** on (default)
-   so it listens on `localhost:9876` whenever Blender runs.
-2. **Register the MCP server for this project:** create `.mcp.json` at the repo root with
-   ```json
-   {"mcpServers":{"blender":{"command":"C:\\Users\\Bread\\AppData\\Local\\hermes\\bin\\uvx.exe","args":["blender-mcp"]}}}
-   ```
-   then restart Claude Code. (The claude.ai "Blender connector" added earlier also only shows
-   up after a restart.)
+Verified: a raw `get_scene_info` over the socket returned the `arena_survivor.blend` objects.
 
-Verify: with Blender open, `mcp__blender__get_scene_info` lists the `arena_survivor.blend`
-collections. Rules once live: Claude may inspect and prototype in the open scene, but every
-asset that ships is still written into `build/build_assets.py` and rebuilt, so the `.blend`
-stays reproducible (no hand-edited geometry as the only source).
+Rules once live: Claude may inspect and prototype in the open scene, but every asset that
+ships is still written into `build/build_assets.py` and rebuilt, so the `.blend` stays
+reproducible (no hand-edited geometry as the only source). Re-install the add-on from
+https://github.com/ahujasid/blender-mcp/blob/main/addon.py if Blender is reinstalled.
 
 ## Style rules
 

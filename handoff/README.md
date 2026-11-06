@@ -47,9 +47,10 @@ Read in this order:
    palette.png). Not yet imported into Studio or wired into services. Next: upload
    palette.png, import FBX with Scale Unit = Studs, replace placeholder Parts one service at a
    time (see `assets/3d/README.md`).
-4. **Live Blender control (blender-mcp) — needs two user steps**, see
-   `assets/3d/README.md` > Live Blender. Until then the headless build script is the way
-   Claude edits meshes.
+4. **Live Blender control (blender-mcp) — set up and socket-verified 2026-11-05**
+   (`.mcp.json` + add-on; `assets/3d/README.md` > Live Blender). Not yet used from a Claude
+   Code session (needs a restart to load the tools). Shipped meshes still go through the
+   headless build script.
 5. **Post-MVP roadmap** (`docs/PLAN.md` order): Co-op Sprints A/B, second playable
    character from LORE.md ("The Chosen"), elite enemies, bosses, stage progression. All new
    visual work (Blender low-poly assets, VFX, UI) follows `docs/STYLES.md`.
