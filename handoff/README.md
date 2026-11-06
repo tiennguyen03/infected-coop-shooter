@@ -31,14 +31,14 @@ Read in this order:
   (`assets/icons/ASSET_IDS.md`).
 - Static checks clean (stylua / selene / luau-lsp / rojo build) at `ca95c58`.
 - 2026-11-05: decided the final product is **4-player co-op**. `src/` audited; 13 single-
-  player shortcuts logged in `docs/MULTIPLAYER_READINESS.md` with a planned fix each. No code
-  changed yet; 6 design decisions there need the owner's answer before Co-op Sprint A.
+  player shortcuts logged in `docs/MULTIPLAYER_READINESS.md` with a planned fix each, and
+  all 6 co-op design decisions are answered there. No code changed yet.
 
 ## Open work, in priority order
 
-1. **Answer the 6 co-op design decisions** in `docs/MULTIPLAYER_READINESS.md` (level-up
-   pause, XP sharing, death/revive, run ownership, shared pickups, difficulty per player).
-   Recommendations are written next to each. Then Co-op Sprint A can be planned.
+1. **Plan Co-op Sprint A** from the decided design in `docs/MULTIPLAYER_READINESS.md`
+   (run state machine, no-pause level-up, downed/revive, spawn pads, reset split, client
+   screens). Verify with the Studio MCP `multiplayer_playtest` tool.
 2. **Sprint 13 Full MVP Balance + Fun Test** — still OPEN. Needs 3 natural human playtests;
    tune `src/shared/Config.luau` only. Plan: `docs/SPRINT_13_FULL_MVP_BALANCE_TEST.md`.
    This is the gate for calling the MVP done (criteria in `docs/PLAN.md`).

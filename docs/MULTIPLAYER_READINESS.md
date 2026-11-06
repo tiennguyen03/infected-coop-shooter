@@ -39,42 +39,52 @@ may add to this list.
 
 | # | Sev | Where | Problem today | Planned shape | Fix when |
 |---|---|---|---|---|---|
-| 1 | B | `RunManager` | Death ends the run; `RestartRun` from any dead/extracted player resets global services but only the requester's per-player state, and respawns only the requester. No "all dead" handling. | Run state machine owned by the server: `Lobby → Running → Ended`. Per-player `Alive / Downed / Dead` state. Run ends when every player is dead or extraction completes. Restart = vote or host, resets every player. | Co-op Sprint A |
-| 2 | B | `PauseService`, `ItemService`, `AssaultClassService`, client `CameraController`/`WeaponController`/`AbilityController`/`AbilityUI` | One player's level-up pauses the whole world via a single global boolean; another player's pick unpauses it. | Decision pending (see Open design decisions #1). Either per-player "choosing" state with no world pause, or a ref-counted pause. Either way the flag becomes per-player data, not one bool. | Co-op Sprint A |
+| 1 | B | `RunManager` | Death ends the run; `RestartRun` from any dead/extracted player resets global services but only the requester's per-player state, and respawns only the requester. No "all dead" handling. | Run state machine owned by the server: `Lobby → Running → Ended`. Per-player `Alive / Downed / Dead` (#3). Run ends when every player is dead or extraction completes. Start/restart = request + ready-up timer (#4), resets every player. | Co-op Sprint A |
+| 2 | B | `PauseService`, `ItemService`, `AssaultClassService`, client `CameraController`/`WeaponController`/`AbilityController`/`AbilityUI` | One player's level-up pauses the whole world via a single global boolean; another player's pick unpauses it. | Decided (#1): no world pause. Per-player `Choosing` state, offer UI is non-blocking, `GamePaused` leaves gameplay. | Co-op Sprint A |
 | 3 | B | `ObjectiveService`, `ExtractionService` | One zone, any single player inside counts, completion/pause broadcast to all. | Keep shared objective (co-op goal) but define the rule: N-of-players in zone, or any one. Extraction needs a "waiting for squad" state. | Co-op Sprint B |
-| 4 | M | `XPOrbService`, `ObjectiveService` | Orb XP goes to the nearest player only; objective XP goes in full to everyone. Inconsistent. | Decision pending (#2). Likely shared XP: every orb pickup grants every living player. | Co-op Sprint A |
-| 5 | M | `DifficultyService`, `EnemyService`, `Config` MaxAlive schedule | Nothing scales with player count; run clock ignores pause. | Add `PlayerCountScaling` to Config (HP, spawn rate, max-alive per extra player). Clock = accumulated unpaused time. | Co-op Sprint B |
+| 4 | M | `XPOrbService`, `ObjectiveService` | Orb XP goes to the nearest player only; objective XP goes in full to everyone. Inconsistent. | Decided (#2): shared XP, every orb pickup grants every living player. | Co-op Sprint A |
+| 5 | M | `DifficultyService`, `EnemyService`, `Config` MaxAlive schedule | Nothing scales with player count; run clock ignores pause. | Decided (#6): `Config.PlayerCountScaling` scales spawn rate and max-alive per living player, not HP/damage. Clock = accumulated unpaused time. | Co-op Sprint B |
 | 6 | M | `EnemyService` spawn placement | Spawns around a random player without checking they are alive. | Pick from living players only. | Any sprint (small) |
-| 7 | M | `AmmoCacheService` | Any player can take another player's crate. | Decide: owner-only or shared pickups (lean shared, co-op friendly). | Co-op Sprint B |
+| 7 | M | `AmmoCacheService` | Any player can take another player's crate. | Decided (#5): owner-only, the crate collides only with its owner. | Co-op Sprint B |
 | 8 | M | `ItemEffectService.resetPlayer`, `AssaultClassService.resetPlayer`, `ProjectileServer.reset` | Per-player reset wipes humanoid-keyed/global tables; run reset clears per-player `shotCount` but not `lastFireTime`. | Split strictly per the rule above. | Co-op Sprint A |
 | 9 | M | `ItemEffectService` damage/death events | Every hit and kill is `FireAllClients`; each client plays every player's hit sounds. | Hit numbers to the damager only; death VFX to all but sound distance-attenuated or owner-only. | Co-op Sprint B |
-| 10 | M | `ArenaService` | One `SpawnLocation` at the origin. | 4 spawn pads in a cluster; respawn/revive at a teammate. | Co-op Sprint A |
+| 10 | M | `ArenaService` | One `SpawnLocation` at the origin. | 4 spawn pads in a cluster; revive happens in place, stage-start respawn at the pads. | Co-op Sprint A |
 | 11 | M | `DevTestService` | Falls back to `GetPlayers()[1]`; run-state printouts inspect one player. | Dev commands target the invoking player; printouts loop players. | Any sprint (small) |
-| 12 | C | `DeathScreenUI` | Hardcodes "Extracted: No"; Restart button resets the server's run for everyone. | Death screen becomes a spectate/downed screen; final screen only on run end. | Co-op Sprint A |
+| 12 | C | `DeathScreenUI` | Hardcodes "Extracted: No"; Restart button resets the server's run for everyone. | Downed overlay (timer, "teammate reviving"), spectate on Dead, final screen only on run end. | Co-op Sprint A |
 | 13 | C | `MissionSuccessUI` | Shown to all, hidden only on the local `CharacterAdded`, so non-requesters keep it up after restart. | Hide on the run-state change event, not on respawn. | Co-op Sprint A |
 
-## Open design decisions (need the owner's call before Co-op Sprint A)
+## Design decisions (decided by the owner 2026-11-05)
 
-1. **Level-up in co-op.** Options: (a) no world pause, the chooser keeps moving and picks from
-   a non-blocking card row; (b) brief slow-mo for everyone; (c) choices bank up and are taken
-   at a safe moment (end of wave / in the objective zone). Recommendation: (a), it is what
-   co-op roguelikes converge on and it removes `PauseService` from gameplay entirely.
-2. **XP sharing.** Options: shared (every orb gives all living players full XP) vs. individual
-   (nearest player). Recommendation: shared. Keeps the squad level-aligned and removes
-   orb-stealing.
-3. **Death.** Options: (a) downed + revive by a teammate within a window, dead until next
-   objective completes otherwise; (b) permanent death, spectate until run ends; (c) respawn
-   at the objective. Recommendation: (a) with respawn-on-objective as the safety valve.
-4. **Run ownership.** Who starts/restarts: host (first joiner), majority vote, or anyone.
-   Recommendation: anyone can *request*, run starts after a short ready-up timer.
-5. **Items.** Per-player inventories stay (already true). Decide whether world pickups
-   (crates) are per-owner or shared. Recommendation: shared.
-6. **Difficulty.** Per extra player: more enemies (spawn rate + cap), not more HP per enemy,
-   so the game stays snappy. Numbers in `Config.PlayerCountScaling`.
+1. **Level-up in co-op: no world pause.** The chooser keeps moving and picks from a
+   non-blocking card row; the other three players never notice. `PauseService` leaves
+   gameplay entirely (extraction/success can keep a run-end freeze).
+2. **XP is shared.** Every orb pickup grants its full XP to every living player. Objective XP
+   already does this. Levels stay per player (same XP in, same level out, unless someone
+   joined late).
+3. **Death: downed, revivable, respawn at the start of the next stage.** A player at 0 HP
+   drops to a *Downed* state with a bleed-out timer; a teammate standing next to them for a
+   short hold revives them. Owner's concern: late game, a downed player just gets eaten.
+   Claude's call to cover it: **the Infected ignore downed players and downed players take no
+   damage** (they are a rescue target, not a snack), the pressure is the timer and the
+   teammate having to stop shooting. If the timer runs out the player is *Dead* and spectates;
+   dead players **respawn when the next stage starts**, not when an objective completes.
+   Until stage progression exists (post-MVP), a run is one stage, so dead = spectate to run
+   end and revive is the only recovery. Numbers (bleed-out seconds, revive hold, max revives)
+   in `Config.Downed`.
+4. **Run ownership: anyone can request, short ready-up timer.** The first request opens a
+   countdown; the run starts when it expires or everyone readies. Restart after a run ends
+   works the same way.
+5. **Items are per owner.** Inventories stay per player (already true). World pickups
+   (ammo crates, future class drops) are **owner-only**: only the player whose item spawned it
+   can collect it. Reason: future classes should have distinct, self-built kits.
+6. **Difficulty per extra player: more Infected, not tougher Infected.** Spawn rate and
+   max-alive scale with living player count; HP/damage per Infected do not. Numbers in
+   `Config.PlayerCountScaling`, with 1 player = today's values.
 
 ## Sequencing
 
-Single-player MVP balance (Sprint 13) stays first. Then **Co-op Sprint A** (run state machine,
+All six decisions are made, so Co-op Sprint A can be planned at any time. Single-player MVP
+balance (Sprint 13) is still the recommended first step. **Co-op Sprint A** (run state machine,
 per-player pause/choosing, death/downed, spawn pads, reset split, client screens) and
 **Co-op Sprint B** (objective/extraction rules, difficulty scaling, shared pickups, event
 routing). Both are designed with the `multiplayer_playtest` Studio MCP tool (2+ clients)
