@@ -414,6 +414,115 @@ def ruin_building(b):
     b.box((2.2, 0.1, 0.6), (-8, -hy - 0.46, 4.0), swatch="warning_orange")  # hazard sign
     b.box((2.0, 0.08, 0.5), (-8, -hy - 0.5, 4.0), swatch="dark_d")
 
+# ------------------------------------------------------------------ Infected limb sets
+# One mesh per R15 limb (left/right share a mesh), per Infected type. EnemyService swaps the
+# default R15 limb MeshParts for these at template build (same Name/Size/CFrame, attachments
+# moved over, so the default walk animation keeps working). Each limb's bounds equal the R15
+# limb size (Blender X width, Y depth, Z height; centred at the origin) so the MeshPart Size
+# fit is distortion-free; small front/top details may protrude ~0.1.
+R15_LIMB = {
+    "head": (1.16, 1.16, 1.18),
+    "upper_torso": (1.94, 1.0, 1.70),
+    "lower_torso": (1.99, 1.0, 0.40),
+    "upper_arm": (1.0, 1.0, 1.24),
+    "lower_arm": (1.0, 1.0, 1.12),
+    "hand": (0.98, 1.03, 0.32),
+    "upper_leg": (0.99, 0.97, 1.36),
+    "lower_leg": (0.99, 0.97, 1.30),
+    "foot": (1.01, 1.0, 0.31),
+}
+
+INFECTED_TYPES = {
+    # skin, cloth, cloth_d, boot, head gear kind, accent
+    "walker": dict(skin="inf_skin", cloth="olive", cloth_d="olive_d", boot="dark", head="helmet", accent="olive_d", blood="red"),
+    "runner": dict(skin="inf_runner", cloth="tan", cloth_d="tan_d", boot="dark", head="hair", accent="white_d", blood="red_d"),
+    "brute": dict(skin="inf_brute", cloth="dark", cloth_d="dark_d", boot="dark_d", head="plate", accent="gun_d", blood="red"),
+}
+
+
+def _limb(b, limb, sw, o=(0, 0, 0), side=1):
+    """Add one limb's geometry at offset o. side = +1 right / -1 left (only used for previews)."""
+    ox, oy, oz = o
+
+    def B(size, loc=(0, 0, 0), swatch="gun", rot=None):
+        b.box(size, (ox + loc[0], oy + loc[1], oz + loc[2]), rot=rot, swatch=swatch)
+
+    W, D, H = R15_LIMB[limb]
+    if limb == "head":
+        B((W, D, H), swatch=sw["skin"])
+        B((1.0, 0.16, 0.16), (0, -0.58, 0.18), swatch="dark")  # brow
+        for x in (-0.25, 0.25):
+            B((0.2, 0.1, 0.14), (x, -0.61, 0.04), swatch="infected_green")  # eyes
+        B((0.5, 0.1, 0.12), (0, -0.61, -0.3), swatch="dark_d")  # mouth
+        B((0.34, 0.1, 0.08), (0.12, -0.6, -0.14), swatch=sw["blood"])  # blood smear
+        if sw["head"] == "helmet":
+            B((1.28, 1.28, 0.42), (0, 0, 0.42), swatch=sw["accent"])
+            B((1.3, 0.3, 0.08), (0, -0.72, 0.24), swatch=sw["accent"])  # brim
+        elif sw["head"] == "hair":
+            B((1.2, 1.12, 0.26), (0, 0.04, 0.5), swatch="dark")
+        else:  # plate helmet
+            B((1.3, 1.3, 0.5), (0, 0, 0.4), swatch=sw["accent"])
+            B((1.0, 0.1, 0.1), (0, -0.66, 0.22), swatch="dark_d")  # visor slit
+    elif limb == "upper_torso":
+        B((W, D, H), swatch=sw["cloth"])
+        B((1.3, 0.18, 1.1), (0, -0.55, 0.1), swatch=sw["accent"])  # vest / plate
+        for x in (-0.55, 0.55):
+            B((0.2, 0.12, 1.5), (x, -0.53, 0), swatch="dark")  # straps
+        B((0.1, 0.5, 0.6), (0.98, 0.05, -0.3), swatch=sw["skin"])  # torn sleeve/side skin
+        B((0.4, 0.06, 0.3), (-0.3, -0.66, -0.2), swatch=sw["blood"])  # blood on plate
+        if sw["head"] == "plate":  # brute backpack / armour
+            B((1.3, 0.3, 1.1), (0, 0.6, 0.1), swatch="gun_d")
+    elif limb == "lower_torso":
+        B((W, D, H), swatch=sw["cloth_d"])
+        B((0.3, 0.12, 0.26), (0, -0.52, 0), swatch="brass")  # buckle
+    elif limb == "upper_arm":
+        B((1.0, 1.0, 0.7), (0, 0, 0.27), swatch=sw["cloth"])  # sleeve
+        B((0.9, 0.9, 0.54), (0, 0, -0.35), swatch=sw["skin"])  # bare arm
+        if sw["head"] == "plate":
+            B((1.16, 1.16, 0.3), (0, 0, 0.45), swatch=sw["accent"])  # pauldron
+    elif limb == "lower_arm":
+        B((0.9, 0.9, 1.12), swatch=sw["skin"])
+        B((1.0, 1.0, 0.24), (0, 0, 0.12), swatch="white_d")  # bandage
+    elif limb == "hand":
+        B((W, D, H), swatch=sw["skin"])
+        for x in (-0.2, 0.2):
+            B((0.06, 0.5, 0.33), (x, -0.27, 0), swatch="dark_d")  # finger gaps
+    elif limb == "upper_leg":
+        B((W, D, H), swatch=sw["cloth"])
+        B((0.7, 0.2, 0.42), (0, -0.5, -0.42), swatch="dark")  # knee pad
+    elif limb == "lower_leg":
+        B((0.9, 0.9, 0.8), (0, 0, 0.25), swatch=sw["cloth"])
+        B((W, D, 0.5), (0, 0, -0.4), swatch=sw["boot"])  # boot shaft
+    elif limb == "foot":
+        B((W, D, 0.23), (0, 0, 0.04), swatch=sw["boot"])
+        B((W, D, 0.08), (0, 0, -0.115), swatch="dark_d")  # sole
+
+
+def _register_infected():
+    for tname, sw in INFECTED_TYPES.items():
+        for limb in R15_LIMB:
+            def fn(b, limb_name=limb, sw_=sw):
+                _limb(b, limb_name, sw_)
+            ASSETS[f"inf_{tname}_{limb}"] = (fn, "Infected", "center")
+
+        def preview(b, _sw=sw):
+            # Assembled figure at R15 offsets (hip at z=0), for the lineup/preview only.
+            _limb(b, "head", _sw, (0, 0, 1.59))
+            _limb(b, "upper_torso", _sw, (0, 0, 0.20))
+            _limb(b, "lower_torso", _sw, (0, 0, -0.80))
+            for s in (-1, 1):
+                _limb(b, "upper_arm", _sw, (s * 1.47, 0, 0.37))
+                _limb(b, "lower_arm", _sw, (s * 1.47, 0, -0.22))
+                _limb(b, "hand", _sw, (s * 1.47, 0, -0.85))
+                _limb(b, "upper_leg", _sw, (s * 0.5, 0, -1.42))
+                _limb(b, "lower_leg", _sw, (s * 0.5, 0, -2.20))
+                _limb(b, "foot", _sw, (s * 0.5, 0, -2.85))
+        ASSETS[f"ref_inf_{tname}"] = (preview, "_Reference", "bottom")
+
+
+_register_infected()
+
+
 # ------------------------------------------------------------------ scene plumbing
 def reset_scene():
     bpy.ops.wm.read_factory_settings(use_empty=True)

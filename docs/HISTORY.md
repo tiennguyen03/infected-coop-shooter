@@ -29,5 +29,6 @@ git history; this file is the index. Current state and open work: `handoff/READM
 
 | 2026-11-06 | First Blender meshes live: `MeshAssets` server-built MeshPart templates (CreateMeshPartAsync + palette texture); crate, mine, drone, XP orb, rifle services clone them with Part fallbacks. Verified in a playtest | assets/3d/README.md, assets/3d/ASSET_IDS.md |
 | 2026-11-06 | Plague rat mesh + arena set dressing: jersey barrier, sandbag bunker, guard tower, ruined building (13 placed via `ArenaService.DRESSING`, solid Box collision). Verified in a playtest | assets/3d/README.md |
+| 2026-11-06 | Infected bodies: 27 limb meshes (Walker/Runner/Brute x 9 limbs) swapped onto the stock R15 rig per type at boot (`MeshAssets.dressInfected`, joints rebuilt from attachments). Verified in a playtest | assets/3d/README.md > Infected bodies, docs/STYLES.md §7 |
 
 Still open: Sprint 13 Full MVP Balance + Fun Test (docs/SPRINT_13_FULL_MVP_BALANCE_TEST.md).

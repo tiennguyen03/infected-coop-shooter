@@ -246,6 +246,10 @@ Lower is always acceptable. Add triangles only where the silhouette needs them.
   yellowed and 0.9× scale, Brute dark and 2× scale). Blood as flat `red.m` facets, never
   gore detail.
 - Eyes: two small `infected green` facets so they read at distance in the dark.
+- Build: one mesh per R15 limb inside the stock limb box, swapped onto the stock rig at boot
+  (`assets/3d/README.md` > Infected bodies). Walker = olive fatigues + helmet + vest,
+  Runner = tan civilian + hair + white shirt plate, Brute = dark armour + plate helmet +
+  pauldrons + pack. Shipped 2026-11-06.
 - The Chosen (player characters, see LORE.md): realistic silhouettes, one signature color
   patch per character (e.g. K-9 handler = tan, Epidemiologist = white, Recon = dark,
   Engineer = olive), gear in the palette, face left simple.

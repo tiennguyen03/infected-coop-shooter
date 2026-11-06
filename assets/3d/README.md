@@ -9,7 +9,7 @@ at or hand-tweak anything. Collections inside it:
 | `Weapons` | held tools (rifle) |
 | `Pickups` | XP orb |
 | `Environment` | arena set dressing: jersey barrier, sandbag bunker, guard tower, ruined building |
-| `Infected` | (empty for now) enemy bodies |
+| `Infected` | enemy limb sets: `inf_<walker|runner|brute>_<limb>`, 9 limbs per type (left/right share) |
 | `_Reference` | a 5-stud human block for scale; never exported |
 
 The `.blend` is **generated** by `build/build_assets.py`. Every asset is described in code
@@ -48,11 +48,25 @@ Add `-- --only wpn_rifle prop_drone` to build a subset.
 | env_sandbag_bunker | 960 | bottom | (new) arena dressing, 2 placed |
 | env_guard_tower | 552 | bottom | (new) arena dressing, 2 placed |
 | env_ruin_building | 696 | bottom | (new) arena dressing, 2 placed |
+| inf_walker_* / inf_runner_* / inf_brute_* | ~500 per body | center | the 15 R15 limb MeshParts of each Infected (`MeshAssets.dressInfected`) |
+| ref_inf_* | — | bottom | assembled preview figures, never exported |
 
 All far under the budgets in `docs/STYLES.md` section 6. Dressing positions live in
 `ArenaService.DRESSING` (clear of spawn pad, objective and extraction zones). Buildings are
 solid Box-collision blocks for now: the Infected have no pathfinding, so enterable interiors
 would be safe spots. Mesh pivots do not survive import (a MeshPart is centred on its bounds).
+
+### Infected bodies (limb swap, not a custom rig)
+
+The enemies stay stock R15 rigs from `CreateHumanoidModelFromDescription` (free walk
+animation, Humanoid physics). Each limb is modelled in Blender inside the R15 limb's box
+(`R15_LIMB` in the build script, centred on the limb's origin; front/top details may protrude
+~0.1). At boot `EnemyService` clones the bare rig once per type and `MeshAssets.dressInfected`
+swaps every limb MeshPart for the type's mesh: same name, same centre (`offset` corrects the
+bounds-centre shift), rig attachments moved over, then `Humanoid:BuildRigFromAttachments()`
+rebuilds the joints (modern rigs get `AnimationConstraint`s, not Motor6Ds). Spawns clone the
+dressed template, so per-spawn cost is a plain Clone. To restyle a type, change its swatch
+dict in `INFECTED_TYPES`, rebuild, re-upload the 9 limbs, update the ids in `MeshAssets`.
 
 ## Getting a mesh into Roblox (the pipeline that shipped 2026-11-06)
 

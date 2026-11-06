@@ -17,7 +17,9 @@ local MeshAssets = {}
 local PALETTE_TEXTURE = "rbxassetid://87519201884536"
 
 -- `solid` = a static obstacle: CanCollide + CastShadow on (buildings, barriers).
-type MeshDef = { meshId: string, size: Vector3, solid: boolean? }
+-- `offset` = the mesh's bounds centre relative to its design origin (Infected limbs are
+-- designed around the R15 limb centre; a MeshPart is centred on its bounds).
+type MeshDef = { meshId: string, size: Vector3, solid: boolean?, offset: Vector3? }
 
 -- `size` is the in-game size in studs (the mesh is scaled to it). Blender sizes are in
 -- assets/3d/README.md; rifle is 0.65x and drone 0.8x of the Blender size.
@@ -61,6 +63,142 @@ local MESHES: { [string]: MeshDef } = {
 		meshId = "rbxassetid://73293862191628",
 		size = Vector3.new(25.9, 15.1, 20.24),
 		solid = true,
+	},
+	-- Infected limb sets (assets/3d inf_<type>_<limb>): swapped onto the R15 rig by dressInfected.
+	inf_walker_head = {
+		meshId = "rbxassetid://125036021688938",
+		size = Vector3.new(1.300, 1.220, 1.510),
+		offset = Vector3.new(0.000, 0.020, -0.115),
+	},
+	inf_walker_upper_torso = {
+		meshId = "rbxassetid://73526825074456",
+		size = Vector3.new(2.000, 1.700, 1.190),
+		offset = Vector3.new(0.030, 0.000, -0.095),
+	},
+	inf_walker_lower_torso = {
+		meshId = "rbxassetid://90864407049648",
+		size = Vector3.new(1.990, 0.400, 1.080),
+		offset = Vector3.new(0.000, 0.000, -0.040),
+	},
+	inf_walker_upper_arm = {
+		meshId = "rbxassetid://130641385322566",
+		size = Vector3.new(1.000, 1.240, 1.000),
+		offset = Vector3.new(0.000, 0.000, 0.000),
+	},
+	inf_walker_lower_arm = {
+		meshId = "rbxassetid://106641376979082",
+		size = Vector3.new(1.000, 1.120, 1.000),
+		offset = Vector3.new(0.000, 0.000, 0.000),
+	},
+	inf_walker_hand = {
+		meshId = "rbxassetid://101524032490960",
+		size = Vector3.new(0.980, 0.330, 1.035),
+		offset = Vector3.new(0.000, 0.000, -0.002),
+	},
+	inf_walker_upper_leg = {
+		meshId = "rbxassetid://97365267283514",
+		size = Vector3.new(0.990, 1.360, 1.085),
+		offset = Vector3.new(0.000, 0.000, -0.058),
+	},
+	inf_walker_lower_leg = {
+		meshId = "rbxassetid://97366869131440",
+		size = Vector3.new(0.990, 1.300, 0.970),
+		offset = Vector3.new(0.000, 0.000, 0.000),
+	},
+	inf_walker_foot = {
+		meshId = "rbxassetid://79144855233866",
+		size = Vector3.new(1.010, 0.310, 1.000),
+		offset = Vector3.new(0.000, 0.000, 0.000),
+	},
+	inf_runner_head = {
+		meshId = "rbxassetid://85607611852070",
+		size = Vector3.new(1.200, 1.220, 1.260),
+		offset = Vector3.new(0.000, 0.020, -0.030),
+	},
+	inf_runner_upper_torso = {
+		meshId = "rbxassetid://116304103046435",
+		size = Vector3.new(2.000, 1.700, 1.190),
+		offset = Vector3.new(0.030, 0.000, -0.095),
+	},
+	inf_runner_lower_torso = {
+		meshId = "rbxassetid://94511863005066",
+		size = Vector3.new(1.990, 0.400, 1.080),
+		offset = Vector3.new(0.000, 0.000, -0.040),
+	},
+	inf_runner_upper_arm = {
+		meshId = "rbxassetid://119560986493213",
+		size = Vector3.new(1.000, 1.240, 1.000),
+		offset = Vector3.new(0.000, 0.000, 0.000),
+	},
+	inf_runner_lower_arm = {
+		meshId = "rbxassetid://109736917953704",
+		size = Vector3.new(1.000, 1.120, 1.000),
+		offset = Vector3.new(0.000, 0.000, 0.000),
+	},
+	inf_runner_hand = {
+		meshId = "rbxassetid://84025375138002",
+		size = Vector3.new(0.980, 0.330, 1.035),
+		offset = Vector3.new(0.000, 0.000, -0.002),
+	},
+	inf_runner_upper_leg = {
+		meshId = "rbxassetid://93056587028938",
+		size = Vector3.new(0.990, 1.360, 1.085),
+		offset = Vector3.new(0.000, 0.000, -0.058),
+	},
+	inf_runner_lower_leg = {
+		meshId = "rbxassetid://132251690624078",
+		size = Vector3.new(0.990, 1.300, 0.970),
+		offset = Vector3.new(0.000, 0.000, 0.000),
+	},
+	inf_runner_foot = {
+		meshId = "rbxassetid://79144855233866",
+		size = Vector3.new(1.010, 0.310, 1.000),
+		offset = Vector3.new(0.000, 0.000, 0.000),
+	},
+	inf_brute_head = {
+		meshId = "rbxassetid://140393473012009",
+		size = Vector3.new(1.300, 1.240, 1.360),
+		offset = Vector3.new(0.000, 0.030, -0.030),
+	},
+	inf_brute_upper_torso = {
+		meshId = "rbxassetid://105779397180273",
+		size = Vector3.new(2.000, 1.700, 1.440),
+		offset = Vector3.new(0.030, 0.000, 0.030),
+	},
+	inf_brute_lower_torso = {
+		meshId = "rbxassetid://88192737666842",
+		size = Vector3.new(1.990, 0.400, 1.080),
+		offset = Vector3.new(0.000, 0.000, -0.040),
+	},
+	inf_brute_upper_arm = {
+		meshId = "rbxassetid://73003273286253",
+		size = Vector3.new(1.160, 1.240, 1.160),
+		offset = Vector3.new(0.000, 0.000, 0.000),
+	},
+	inf_brute_lower_arm = {
+		meshId = "rbxassetid://121529679833263",
+		size = Vector3.new(1.000, 1.120, 1.000),
+		offset = Vector3.new(0.000, 0.000, 0.000),
+	},
+	inf_brute_hand = {
+		meshId = "rbxassetid://80232071254581",
+		size = Vector3.new(0.980, 0.330, 1.035),
+		offset = Vector3.new(0.000, 0.000, -0.002),
+	},
+	inf_brute_upper_leg = {
+		meshId = "rbxassetid://140452804420046",
+		size = Vector3.new(0.990, 1.360, 1.085),
+		offset = Vector3.new(0.000, 0.000, -0.058),
+	},
+	inf_brute_lower_leg = {
+		meshId = "rbxassetid://101498519950030",
+		size = Vector3.new(0.990, 1.300, 0.970),
+		offset = Vector3.new(0.000, 0.000, 0.000),
+	},
+	inf_brute_foot = {
+		meshId = "rbxassetid://110603242759494",
+		size = Vector3.new(1.010, 0.310, 1.000),
+		offset = Vector3.new(0.000, 0.000, 0.000),
 	},
 }
 
@@ -115,6 +253,85 @@ function MeshAssets.init()
 	for name, def in MESHES do
 		task.spawn(buildTemplate, folder, name, def)
 	end
+end
+
+-- R15 limb part name -> limb mesh suffix (left/right share one mesh).
+local LIMB_OF_PART: { [string]: string } = {
+	Head = "head",
+	UpperTorso = "upper_torso",
+	LowerTorso = "lower_torso",
+	LeftUpperArm = "upper_arm",
+	RightUpperArm = "upper_arm",
+	LeftLowerArm = "lower_arm",
+	RightLowerArm = "lower_arm",
+	LeftHand = "hand",
+	RightHand = "hand",
+	LeftUpperLeg = "upper_leg",
+	RightUpperLeg = "upper_leg",
+	LeftLowerLeg = "lower_leg",
+	RightLowerLeg = "lower_leg",
+	LeftFoot = "foot",
+	RightFoot = "foot",
+}
+
+function MeshAssets.hasInfectedSet(typeName: string): boolean
+	for _, limb in LIMB_OF_PART do
+		if templates[`inf_{string.lower(typeName)}_{limb}`] == nil then
+			return false
+		end
+	end
+	return true
+end
+
+-- Replaces every R15 limb of an unscaled rig with the type's limb meshes, keeping part
+-- names, centres and rig attachments, then rebuilds the Motor6Ds from the attachments so the
+-- stock walk animation still drives it. Returns false (rig untouched) if any limb is missing.
+function MeshAssets.dressInfected(model: Model, typeName: string): boolean
+	if not MeshAssets.hasInfectedSet(typeName) then
+		return false
+	end
+	local humanoid = model:FindFirstChildOfClass("Humanoid")
+	if not humanoid then
+		return false
+	end
+	local prefix = `inf_{string.lower(typeName)}_`
+	for _, part in model:GetChildren() do
+		local limb = part:IsA("BasePart") and LIMB_OF_PART[part.Name]
+		if not limb then
+			continue
+		end
+		local name = prefix .. limb
+		local def = MESHES[name]
+		local replacement = (templates[name] :: MeshPart):Clone()
+		local offset = def.offset or Vector3.zero
+		replacement.Name = part.Name
+		replacement.CFrame = part.CFrame * CFrame.new(offset)
+		replacement.Anchored = false
+		replacement.CanCollide = part.CanCollide
+		replacement.CanQuery = part.CanQuery
+		replacement.CanTouch = part.CanTouch
+		replacement.CastShadow = true
+		for _, child in part:GetChildren() do
+			if child:IsA("Attachment") then
+				-- Keep the attachment at the same place in the limb: the new part centre moved.
+				child.CFrame = child.CFrame - offset
+				child.Parent = replacement
+			elseif child:IsA("Motor6D") then
+				child:Destroy()
+			elseif not child:IsA("Decal") and not child:IsA("SpecialMesh") then
+				child.Parent = replacement
+			end
+		end
+		replacement.Parent = model
+		part:Destroy()
+	end
+	for _, descendant in model:GetDescendants() do
+		if descendant:IsA("Motor6D") then
+			descendant:Destroy()
+		end
+	end
+	humanoid:BuildRigFromAttachments()
+	return true
 end
 
 function MeshAssets.clone(name: string): MeshPart?

@@ -13,6 +13,7 @@ local RunService = game:GetService("RunService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local EnemyDefinitions = require(ReplicatedStorage.Shared.EnemyDefinitions)
+local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
 local DifficultyService = require(script.Parent.DifficultyService)
 local ItemEffectService = require(script.Parent.ItemEffectService)
 local PauseService = require(script.Parent.PauseService)
@@ -41,6 +42,9 @@ type Zombie = {
 local EnemyService = {}
 
 local zombieTemplate: Model?
+-- Per-type rigs with the Blender limb meshes (MeshAssets.dressInfected); falls back to the
+-- bare R15 template until a type's limb set has loaded.
+local dressedTemplates: { [string]: Model } = {}
 local zombies: { Zombie } = {}
 local wasPaused = false
 
@@ -134,7 +138,7 @@ end
 
 -- `groundPosition` is at ground level; the rig is pivoted up by hip height.
 local function spawnZombie(groundPosition: Vector3, typeName: string)
-	local template = zombieTemplate
+	local template = dressedTemplates[typeName] or zombieTemplate
 	local definition = EnemyDefinitions[typeName]
 	if not template or not definition then
 		return
@@ -429,6 +433,26 @@ function EnemyService.init()
 	if not zombieTemplate then
 		warn("[EnemyService] Enemy spawning disabled - no rig template")
 		return
+	end
+	-- Dress one template per type once its limb meshes exist (they build asynchronously).
+	for typeName in EnemyDefinitions do
+		task.spawn(function()
+			local deadline = os.clock() + 30
+			while not MeshAssets.hasInfectedSet(typeName) and os.clock() < deadline do
+				task.wait(0.5)
+			end
+			local base = zombieTemplate
+			if not base or not MeshAssets.hasInfectedSet(typeName) then
+				warn(`[EnemyService] {typeName} keeps the bare rig: limb meshes not loaded`)
+				return
+			end
+			local dressed = base:Clone()
+			if MeshAssets.dressInfected(dressed, typeName) then
+				dressedTemplates[typeName] = dressed
+			else
+				dressed:Destroy()
+			end
+		end)
 	end
 	RunService.Heartbeat:Connect(stepZombies)
 	task.spawn(spawnLoop)

@@ -46,8 +46,10 @@ Read in this order:
    plague rat are MeshParts cloned from `src/shared/MeshAssets.luau` templates, and the arena
    has 13 pieces of set dressing (2 ruined buildings, 2 guard towers, 2 sandbag bunkers,
    7 jersey barriers; `ArenaService.DRESSING`). Verified in a playtest. Beacon mesh uploaded,
-   unused. Pipeline: `assets/3d/README.md`. Next: Infected bodies (enemies are still bare
-   R15 rigs), floor/ground treatment, then more dressing variety.
+   unused. **Infected bodies shipped**: Walker/Runner/Brute limb meshes swapped onto the
+   stock R15 rig at boot (`MeshAssets.dressInfected`), walk animation intact. Pipeline:
+   `assets/3d/README.md`. Next: floor/ground treatment, more dressing variety, The Chosen
+   player bodies.
 4. **Live Blender control (blender-mcp) — set up and socket-verified 2026-11-05**
    (`.mcp.json` + add-on; `assets/3d/README.md` > Live Blender). Not yet used from a Claude
    Code session (needs a restart to load the tools). Shipped meshes still go through the
