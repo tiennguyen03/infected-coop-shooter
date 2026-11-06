@@ -1,7 +1,7 @@
 # Handoff — Roguelike Arena Survivor (VS Code + Claude Code terminal)
 
 Start here when picking the project up in a fresh Claude Code session.
-Last updated: 2026-11-06 (Stage 1 map + generated SFX). Last verified commit on `main`: `ca95c58`.
+Last updated: 2026-11-06 (Stage 1 sky + 600-stud map). Last verified commit on `main`: `6bc164e`.
 
 ## What this is
 
@@ -42,11 +42,16 @@ Read in this order:
 2. **Sprint 13 Full MVP Balance + Fun Test** — still OPEN. Needs 3 natural human playtests;
    tune `src/shared/Config.luau` only. Plan: `docs/SPRINT_13_FULL_MVP_BALANCE_TEST.md`.
    This is the gate for calling the MVP done (criteria in `docs/PLAN.md`).
-3. **Stage 1 "Checkpoint Delta" shipped 2026-11-06** (`ArenaService`: five height levels,
-   Compound with an upper tier, Ridge, Overlook knoll, a highway embankment with a bridge
-   over the main road, roads, helipad, checkpoint, 55 dressing pieces from 14 character-
-   scale Blender meshes; objective zone on the Compound's lower tier). Verified in a
-   playtest (Infected climb every slope). **Player body shipped**: the Assault class wears
+3. **Stage 1 "Checkpoint Delta" shipped 2026-11-06** (`ArenaService`: 600 x 600 studs,
+   the central checkpoint plus four outer districts (Suburb north, Depot east, Scrapyard
+   south, Barracks west), ten hills on five height levels, a highway embankment the full
+   width with a bridge over the main road, roads, helipad, 138 dressing pieces from 14
+   character-scale Blender meshes, three burning ruins; objective zone on the Compound's
+   lower tier). **Sky shipped** (`SkyService`: burnt-orange outbreak sky, smoke-stained
+   clouds, a ring of burning city silhouettes outside the walls; values in
+   `docs/STYLES.md > Stage 1 sky`). Verified in a playtest (Infected climb every slope,
+   the tent roof slope is walkable: tent / guard tower / comm tower use
+   PreciseConvexDecomposition collision, the rest Box or Hull). **Player body shipped**: the Assault class wears
    the `pc_assault_*` limb set (`PlayerSetup` -> `MeshAssets.dressModel`; avatar appearance
    off). K-9 / Epidemiologist / Recon / Engineer bodies are built and previewed in Blender,
    not uploaded (no class system yet). Pipeline `assets/3d/README.md`. Next: react to the

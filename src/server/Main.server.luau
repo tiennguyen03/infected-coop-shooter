@@ -8,6 +8,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 require(ReplicatedStorage.Shared.Remotes)
 require(ReplicatedStorage.Shared.MeshAssets).init()
 
+require(script.Parent.SkyService).init()
 require(script.Parent.ArenaService).init()
 require(script.Parent.PauseService).init()
 require(script.Parent.DifficultyService).init()

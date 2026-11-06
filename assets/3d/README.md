@@ -47,14 +47,14 @@ Add `-- --only wpn_rifle prop_drone` to build a subset.
 | prop_plague_rat | 204 | bottom | PlagueRatService body+head+tail parts |
 | env_barrier_jersey | 72 | bottom | 6 x 2.75 x 2 concrete traffic barrier |
 | env_sandbag_bunker | 552 | bottom | 12 x 10 U-emplacement, COVER_H (4) walls |
-| env_guard_tower | 564 | bottom | 10 x 10 timber tower, deck at 14, 27 overall |
+| env_guard_tower | 564 | bottom | 10 x 10 timber tower, deck at 14, 27 overall (PreciseConvexDecomposition collision) |
 | env_ruin_building | 816 | bottom | 30 x 20 two-storey block (10.5-stud storeys, real doorway), sealed |
 | env_container_olive / _rust | 408 | bottom | ISO container 21.5 x 8.7 x 9.3 |
 | env_wreck_humvee | 392 | bottom | burnt truck 16.5 x 7.8 x 6.5, hood = COVER_H |
 | env_twall | 84 | bottom | concrete blast wall 8 x 12 |
 | env_hesco | 240 | bottom | gabion 6 x 4.5 x 4.4 |
-| env_comm_tower | 528 | bottom | 40-stud lattice mast, the Stage 1 landmark |
-| env_tent | 124 | bottom | 16 x 12 olive tent, ridge at 8 |
+| env_comm_tower | 528 | bottom | 40-stud lattice mast, the Stage 1 landmark (PreciseConvexDecomposition collision) |
+| env_tent | 124 | bottom | 16 x 12 olive tent, ridge at 8, walkable roof slope (PreciseConvexDecomposition collision) |
 | env_checkpoint | 192 | bottom | guard booth + 14-stud boom (PreciseConvexDecomposition collision) |
 | env_dead_tree | 96 | bottom | 14-stud bare tree (Hull collision) |
 | env_lamp_post | 76 | bottom | 13-stud street light (Hull collision) |

@@ -271,10 +271,39 @@ height (ground 0, Ridge/Compound 8, highway embankment 12 with a bridge over the
 road, Overlook knoll 14, Compound upper tier 16), every rise a ~40-degree embankment
 (parts, not meshes: exact collision, the Infected climb them; the only overhang is the
 bridge), the objective on the high ground, one landmark (the 40-stud comm tower on the
-top tier) visible from anywhere, roads for orientation, extraction on a painted helipad. Ground palette: dust
+top tier) visible from anywhere, roads for orientation, extraction on a painted helipad.
+The arena is 600 x 600 studs: the checkpoint in the middle (Compound, Ridge, Overlook,
+highway) and four outer districts, each with its own hill and silhouette: the Suburb
+(north, ruined houses on the North Bluff, a burning ruin), the Depot (east, container yard
+on a concrete pad, the Depot Mound), the Scrapyard (south, wrecks and barriers, the South
+Rise), the Barracks (west, parade terrace, tents, a burning ruin). The Infected spawn
+around the players, so the outer districts are optional ground, not dead space.
+
+Collision: environment meshes default to Box (cheapest, fine for crates, walls, containers,
+sealed buildings). A mesh the player can stand on or walk through at an angle (the tent's
+roof slope, the lattice towers) uses PreciseConvexDecomposition; thin poles (dead tree,
+lamp post) use Hull. Set per mesh in `MeshAssets.MESHES.fidelity`.
+
+Ground palette: dust
 `rgb(94,88,76)`, hills `rgb(104,96,80)`, slopes `rgb(88,80,66)`, asphalt `rgb(58,60,64)`,
 concrete `rgb(122,120,114)`, road paint `rgb(214,214,208)`. Layout in
 `src/server/ArenaService.luau` (`HILLS`, `DRESSING`).
+
+#### Stage 1 sky (`src/server/SkyService.luau`)
+
+The first evening of the outbreak: a low sun through a smoke-stained sky, the city beyond
+the perimeter burning. Everything is engine settings plus ~30 static parts, no skybox
+textures. Lighting: ClockTime 17.6, latitude 30, Brightness 1.8, ColorShift top
+`rgb(230,140,70)` / bottom `rgb(110,60,40)`, fog `rgb(176,104,66)` 260-1500. Atmosphere:
+Density 0.36, Offset 0.2, Color `rgb(214,112,58)`, Decay `rgb(92,38,28)`, Glare 0.7,
+Haze 6 (the haze is what turns the stock blue skybox orange; drop it and the sky goes
+green-grey). Terrain Clouds: Cover 0.72, Density 0.6, Color `rgb(104,66,48)`. Outside the
+walls a ring of 23 flat `DistantCity` silhouettes (`rgb(44,40,42)`, 470-560 studs out,
+60-220 tall, clustered north-east) with slow smoke columns and fire glow on six of them;
+`SkyService.burn(part)` puts the same fire + smoke on a dressing piece (`burning = true`
+in `ArenaService.DRESSING`). Smoke is the stock `smoke_main` particle at rate 5,
+14-22 s life, a light westerly drift; fire is `fire_main` with one PointLight. Budget: nine
+emitters in the whole scene.
 
 ---
 

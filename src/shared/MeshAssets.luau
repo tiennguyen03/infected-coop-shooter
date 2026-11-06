@@ -66,6 +66,7 @@ local MESHES: { [string]: MeshDef } = {
 		meshId = "rbxassetid://140295675948906",
 		size = Vector3.new(11, 27.25, 11),
 		solid = true,
+		fidelity = Enum.CollisionFidelity.PreciseConvexDecomposition, -- walk between the legs
 	},
 	env_ruin_building = {
 		meshId = "rbxassetid://112569589520919",
@@ -101,11 +102,13 @@ local MESHES: { [string]: MeshDef } = {
 		meshId = "rbxassetid://121850127656343",
 		size = Vector3.new(8.04, 44.7, 8),
 		solid = true,
+		fidelity = Enum.CollisionFidelity.PreciseConvexDecomposition,
 	},
 	env_tent = {
 		meshId = "rbxassetid://81822440803835",
 		size = Vector3.new(19.2, 8.6, 12),
 		solid = true,
+		fidelity = Enum.CollisionFidelity.PreciseConvexDecomposition, -- the gable roof is walkable
 	},
 	env_checkpoint = {
 		meshId = "rbxassetid://71573561117915",
