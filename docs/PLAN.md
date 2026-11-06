@@ -7,7 +7,10 @@ Risk of Rain 2, but with original mechanics, characters, items, and progression 
 
 The first version should focus on discovering the core fun loop as quickly as possible.
 
-Do NOT build multiplayer yet.
+Do NOT build multiplayer *features* yet (lobby, voting, revive). But the final product is
+**4-player co-op**, so every system is designed for up to 4 players from day one: state is per
+player or explicitly per run, never "the player". Rules, debt register and open decisions:
+[MULTIPLAYER_READINESS.md](MULTIPLAYER_READINESS.md).
 
 Do NOT build multiple characters yet.
 
@@ -204,7 +207,9 @@ Do NOT begin these until MVP is complete.
 - **Elite Enemies:** stronger enemy variants
 - **Boss System:** timed boss encounters
 - **Stage Progression:** multiple maps, teleporters, biome progression
-- **Multiplayer:** networking, replication, co-op runs
+- **Co-op (the final product):** Co-op Sprint A (run state machine, per-player level-up,
+  downed/revive, spawn pads) then Sprint B (squad objective rules, player-count difficulty,
+  shared pickups). Plan: [MULTIPLAYER_READINESS.md](MULTIPLAYER_READINESS.md)
 
 ---
 

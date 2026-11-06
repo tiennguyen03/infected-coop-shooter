@@ -1,12 +1,12 @@
 # Handoff — Roguelike Arena Survivor (VS Code + Claude Code terminal)
 
 Start here when picking the project up in a fresh Claude Code session.
-Last updated: 2026-11-05 (icon v2 redesign). Last verified commit on `main`: `3d709f2`.
+Last updated: 2026-11-05 (co-op decision + Blender MCP). Last verified commit on `main`: `ca95c58`.
 
 ## What this is
 
-Single-player Roblox roguelike (Risk of Rain 2-style loop, grounded military zombie
-setting). Full loop works: spawn → fight → level up → pick 1 of 3 items → Hold Position
+Roblox roguelike (Risk of Rain 2-style loop, grounded military zombie setting). **Final
+product is 4-player co-op**; the current build is single-player. Full loop works: spawn → fight → level up → pick 1 of 3 items → Hold Position
 objective → extraction → OPERATION COMPLETE → restart. 24 items, 3 enemy types, Assault
 class with Q dash / E breach / Combat Momentum, server-authoritative everything.
 
@@ -18,6 +18,7 @@ Read in this order:
 3. `docs/HISTORY.md` — what shipped so far, with links to each sprint doc.
 4. `docs/STYLES.md` — visual style guide (icons, UI, low-poly 3D, VFX, perf budgets).
 5. `docs/PLAN.md` — scope rules + roadmap. `docs/LORE.md` — setting/naming.
+6. `docs/MULTIPLAYER_READINESS.md` — co-op rules + debt register, before touching run flow.
 
 ## Current state (verified 2026-11-05 in a live playtest)
 
@@ -28,16 +29,16 @@ Read in this order:
 - Sprint 16 (Plague Rat Charm) verified earlier.
 - All 24 item icons (v2 uniform style) uploaded to Roblox and wired
   (`assets/icons/ASSET_IDS.md`).
-- Static checks clean (stylua / selene / luau-lsp / rojo build) at `3d709f2`.
+- Static checks clean (stylua / selene / luau-lsp / rojo build) at `ca95c58`.
+- 2026-11-05: decided the final product is **4-player co-op**. `src/` audited; 13 single-
+  player shortcuts logged in `docs/MULTIPLAYER_READINESS.md` with a planned fix each. No code
+  changed yet; 6 design decisions there need the owner's answer before Co-op Sprint A.
 
 ## Open work, in priority order
 
-1. **Icon set v2 — DONE + live-verified 2026-11-05.** All 24 icons redrawn in one generated
-   faceted low-poly style (`assets/icons/build/icons.js`, spec `docs/STYLES.md`), uploaded via
-   Open Cloud (`upload.js`), image ids resolved in Studio, wired (`wire.js`), level-up cards
-   and item bar checked in a playtest. Uncommitted at the time of writing — commit SVGs +
-   `build/` + `ItemDefinitions.luau` + `ASSET_IDS.md` + docs, and untrack the 5 PNGs git still
-   tracks (`git rm --cached assets/icons/*.png`).
+1. **Answer the 6 co-op design decisions** in `docs/MULTIPLAYER_READINESS.md` (level-up
+   pause, XP sharing, death/revive, run ownership, shared pickups, difficulty per player).
+   Recommendations are written next to each. Then Co-op Sprint A can be planned.
 2. **Sprint 13 Full MVP Balance + Fun Test** — still OPEN. Needs 3 natural human playtests;
    tune `src/shared/Config.luau` only. Plan: `docs/SPRINT_13_FULL_MVP_BALANCE_TEST.md`.
    This is the gate for calling the MVP done (criteria in `docs/PLAN.md`).
@@ -46,8 +47,11 @@ Read in this order:
    palette.png). Not yet imported into Studio or wired into services. Next: upload
    palette.png, import FBX with Scale Unit = Studs, replace placeholder Parts one service at a
    time (see `assets/3d/README.md`).
-4. **Post-MVP roadmap** (`docs/PLAN.md` order): second playable character from LORE.md
-   ("The Chosen"), elite enemies, bosses, stage progression, multiplayer last. All new
+4. **Live Blender control (blender-mcp) — needs two user steps**, see
+   `assets/3d/README.md` > Live Blender. Until then the headless build script is the way
+   Claude edits meshes.
+5. **Post-MVP roadmap** (`docs/PLAN.md` order): Co-op Sprints A/B, second playable
+   character from LORE.md ("The Chosen"), elite enemies, bosses, stage progression. All new
    visual work (Blender low-poly assets, VFX, UI) follows `docs/STYLES.md`.
 
 Minor loose ends: get an explicit `VerifyCleanup` PASS printout in a fresh playtest;

@@ -1,7 +1,7 @@
 # Roguelike Arena Survivor
 
-Single-player Roblox roguelike (Risk of Rain 2-inspired loop, original mechanics), grounded
-military zombie setting. Enemies are "the Infected" (model name `Infected`).
+Roblox roguelike (Risk of Rain 2-inspired loop, original mechanics), grounded military zombie
+setting. **Final product is 4-player co-op**; single-player is the current build target. Enemies are "the Infected" (model name `Infected`).
 
 Read on demand, not up front:
 - `handoff/README.md` — **current state, open work, dev-env startup, Studio MCP gotchas.**
@@ -11,6 +11,8 @@ Read on demand, not up front:
 - `docs/LORE.md` — setting, tone, naming. Lore never overrides gameplay.
 - `docs/STYLES.md` — every visual decision: palette, icons, UI, low-poly 3D/Blender, VFX,
   performance budgets. Read before any visual work.
+- `docs/MULTIPLAYER_READINESS.md` — co-op rules, single-player debt register, open design
+  decisions. Read before touching run flow, pause, XP, death, spawning, or objectives.
 
 ## Guiding rule
 
@@ -40,6 +42,10 @@ concern, not polish.
 - Enemies: Models tagged `"Enemy"` with a Humanoid. Damage goes through
   `ItemEffectService.dealDamage` (the one damage entry point).
 - UI is code-generated; disk is the single source of truth. No hand edits in Studio.
+- Design for up to 4 players: state keyed by `Player` (cleaned on `PlayerRemoving`) or
+  explicitly per run; never `GetPlayers()[1]`; `resetPlayer` touches only that player,
+  `reset` only run state. New single-player shortcuts are not allowed; existing ones are
+  listed in `docs/MULTIPLAYER_READINESS.md`.
 
 ## Commands (Rokit toolchain; `export PATH="$HOME/.rokit/bin:$PATH"` if a tool is missing)
 
