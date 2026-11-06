@@ -125,6 +125,54 @@ local MESHES: { [string]: MeshDef } = {
 		solid = true,
 		fidelity = Enum.CollisionFidelity.Hull,
 	},
+	-- The Chosen (assets/3d pc_<class>_<limb>): player bodies, swapped onto the player's R15
+	-- rig by PlayerSetup via dressModel. Only Assault is uploaded; the other four classes are
+	-- built in Blender (previews) and wait for a class system.
+	pc_assault_head = {
+		meshId = "rbxassetid://95005339350582",
+		size = Vector3.new(1.34, 1.25, 1.48),
+		offset = Vector3.new(0.000, 0.035, -0.090),
+	},
+	pc_assault_upper_torso = {
+		meshId = "rbxassetid://86706465408743",
+		size = Vector3.new(1.94, 1.7, 1.44),
+		offset = Vector3.new(0.000, 0.000, -0.060),
+	},
+	pc_assault_lower_torso = {
+		meshId = "rbxassetid://138634306069937",
+		size = Vector3.new(2.01, 0.4, 1.12),
+		offset = Vector3.new(0.000, 0.000, -0.050),
+	},
+	pc_assault_upper_arm = {
+		meshId = "rbxassetid://76463628405742",
+		size = Vector3.new(1.04, 1.24, 1.09),
+		offset = Vector3.new(0.000, 0.000, -0.025),
+	},
+	pc_assault_lower_arm = {
+		meshId = "rbxassetid://111242427197801",
+		size = Vector3.new(1.04, 1.12, 1.04),
+		offset = Vector3.new(0.000, 0.000, 0.000),
+	},
+	pc_assault_hand = {
+		meshId = "rbxassetid://133846130665573",
+		size = Vector3.new(0.98, 0.33, 1.03),
+		offset = Vector3.new(0.000, 0.000, -0.002),
+	},
+	pc_assault_upper_leg = {
+		meshId = "rbxassetid://99577988454218",
+		size = Vector3.new(1.08, 1.36, 1.09),
+		offset = Vector3.new(0.043, 0.000, -0.058),
+	},
+	pc_assault_lower_leg = {
+		meshId = "rbxassetid://87884254546571",
+		size = Vector3.new(1.01, 1.3, 0.99),
+		offset = Vector3.new(0.000, 0.000, 0.000),
+	},
+	pc_assault_foot = {
+		meshId = "rbxassetid://79144855233866",
+		size = Vector3.new(1.01, 0.31, 1.0),
+		offset = Vector3.new(0.000, 0.000, 0.000),
+	},
 	-- Infected limb sets (assets/3d inf_<type>_<limb>): swapped onto the R15 rig by dressInfected.
 	inf_walker_head = {
 		meshId = "rbxassetid://125036021688938",
@@ -335,27 +383,37 @@ local LIMB_OF_PART: { [string]: string } = {
 	RightFoot = "foot",
 }
 
-function MeshAssets.hasInfectedSet(typeName: string): boolean
+-- True once every limb template of a set (`inf_walker_`, `pc_assault_`...) is built.
+function MeshAssets.hasSet(prefix: string): boolean
 	for _, limb in LIMB_OF_PART do
-		if templates[`inf_{string.lower(typeName)}_{limb}`] == nil then
+		if not templates[prefix .. limb] then
 			return false
 		end
 	end
 	return true
 end
 
--- Replaces every R15 limb of an unscaled rig with the type's limb meshes, keeping part
--- names, centres and rig attachments, then rebuilds the Motor6Ds from the attachments so the
--- stock walk animation still drives it. Returns false (rig untouched) if any limb is missing.
-function MeshAssets.dressInfected(model: Model, typeName: string): boolean
-	if not MeshAssets.hasInfectedSet(typeName) then
+function MeshAssets.hasInfectedSet(typeName: string): boolean
+	return MeshAssets.hasSet(`inf_{string.lower(typeName)}_`)
+end
+
+-- Swaps every R15 limb of `model` for the `prefix` limb set (same part names, same centres,
+-- attachments carried over), then rebuilds the joints from the attachments. Works on the
+-- Infected templates and on live player characters (which must have no appearance loaded:
+-- accessories and clothing are stripped here, body scales are left at 1).
+function MeshAssets.dressModel(model: Model, prefix: string): boolean
+	if not MeshAssets.hasSet(prefix) then
 		return false
 	end
 	local humanoid = model:FindFirstChildOfClass("Humanoid")
 	if not humanoid then
 		return false
 	end
-	local prefix = `inf_{string.lower(typeName)}_`
+	for _, child in model:GetChildren() do
+		if child:IsA("Accoutrement") or child:IsA("Clothing") or child:IsA("ShirtGraphic") then
+			child:Destroy()
+		end
+	end
 	for _, part in model:GetChildren() do
 		local limb = part:IsA("BasePart") and LIMB_OF_PART[part.Name]
 		if not limb then
@@ -393,6 +451,10 @@ function MeshAssets.dressInfected(model: Model, typeName: string): boolean
 	end
 	humanoid:BuildRigFromAttachments()
 	return true
+end
+
+function MeshAssets.dressInfected(model: Model, typeName: string): boolean
+	return MeshAssets.dressModel(model, `inf_{string.lower(typeName)}_`)
 end
 
 function MeshAssets.clone(name: string): MeshPart?

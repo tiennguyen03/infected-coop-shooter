@@ -30,6 +30,15 @@ Palette texture: decal `77421611874143` → image **`87519201884536`** (the `Tex
 | env_checkpoint | 71573561117915 | 129215637928455 | 22.05 x 9.5 x 7.4 | PreciseConvexDecomposition; booth at -X, boom along +X |
 | env_dead_tree | 103119294791056 | 130464254006022 | 4.97 x 13.98 x 7.09 | Hull |
 | env_lamp_post | 132474171948585 | 84369687950095 | 4.9 x 13 x 1.2 | Hull; arm along +X |
+| pc_assault_head | 95005339350582 | 109799809484018 | 1.34, 1.25, 1.48 | R15 limb, offset 0.000, 0.035, -0.090 |
+| pc_assault_upper_torso | 86706465408743 | 117944474269990 | 1.94, 1.70, 1.44 | R15 limb, offset 0.000, 0.000, -0.060 |
+| pc_assault_lower_torso | 138634306069937 | 78418535413019 | 2.01, 0.40, 1.12 | R15 limb, offset 0.000, 0.000, -0.050 |
+| pc_assault_upper_arm | 76463628405742 | 129827125546347 | 1.04, 1.24, 1.09 | R15 limb, offset 0.000, 0.000, -0.025 |
+| pc_assault_lower_arm | 111242427197801 | 94086121640082 | 1.04, 1.12, 1.04 | R15 limb |
+| pc_assault_hand | 133846130665573 | 100198436557637 | 0.98, 0.33, 1.03 | R15 limb, offset 0.000, 0.000, -0.002 |
+| pc_assault_upper_leg | 99577988454218 | 83831662733103 | 1.08, 1.36, 1.09 | R15 limb, offset 0.043, 0.000, -0.058 |
+| pc_assault_lower_leg | 87884254546571 | 140543316185534 | 1.01, 1.30, 0.99 | R15 limb |
+| pc_assault_foot | 79144855233866 | 126410611292083 | 1.01, 0.31, 1.00 | R15 limb (same mesh as inf_walker_foot) |
 | inf_walker_head | 125036021688938 | 109685456333011 | 1.300, 1.220, 1.510 | R15 limb, offset 0.000, 0.020, -0.115 |
 | inf_walker_upper_torso | 73526825074456 | 78180467775035 | 2.000, 1.700, 1.190 | R15 limb, offset 0.030, 0.000, -0.095 |
 | inf_walker_lower_torso | 90864407049648 | 113855995604506 | 1.990, 0.400, 1.080 | R15 limb, offset 0.000, 0.000, -0.040 |

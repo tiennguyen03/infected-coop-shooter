@@ -32,5 +32,7 @@ git history; this file is the index. Current state and open work: `handoff/READM
 | 2026-11-06 | Infected bodies: 27 limb meshes (Walker/Runner/Brute x 9 limbs) swapped onto the stock R15 rig per type at boot (`MeshAssets.dressInfected`, joints rebuilt from attachments). Verified in a playtest | assets/3d/README.md > Infected bodies, docs/STYLES.md §7 |
 | 2026-11-06 | Generated SFX pipeline: Stable Audio Open Small in Docker (`assets/audio/build`), 32 prompts; rifle shot generated, uploaded (134062568029221) and wired into `SoundFX.shoot` with a built-in fallback. Verified in a playtest | assets/audio/README.md |
 | 2026-11-06 | Stage 1 "Checkpoint Delta": arena rebuilt RoR2-style (two hills with walkable embankments, roads, helipad, checkpoint), 14 environment meshes rebuilt/added at character scale (scale constants in the build script), 52 dressing pieces, objective on the hill. Verified in a playtest | docs/STYLES.md > Stage 1, assets/3d/README.md |
+| 2026-11-06 | Stage 1 verticality: Compound upper tier (16), Overlook knoll (14), highway embankment (12) with a bridge over the main road, Ridge raised to 8; stacked/open-sided hills in `ArenaService.HILLS`. Verified in a playtest | docs/STYLES.md > Stage 1 |
+| 2026-11-06 | Player bodies: five Chosen limb sets built in Blender (`PC_CLASSES`); Assault uploaded and worn in game via `MeshAssets.dressModel` with avatar appearance off. Verified in a playtest | assets/3d/README.md, docs/STYLES.md §7 |
 
 Still open: Sprint 13 Full MVP Balance + Fun Test (docs/SPRINT_13_FULL_MVP_BALANCE_TEST.md).

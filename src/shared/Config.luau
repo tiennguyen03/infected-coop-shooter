@@ -207,7 +207,7 @@ local Config = {
 		PressureBruteAfter = 210, -- also +1 Brute if the run is older than this (seconds)
 		XPReward = 500,
 		ZoneSize = Vector3.new(46, 1, 46), -- Sprint 13 tune: bigger, room to kite while holding
-		ZonePosition = Vector3.new(70, 8.5, 70), -- on top of the Compound hill (ArenaService HILLS)
+		ZonePosition = Vector3.new(50, 8.5, 50), -- on the Compound's lower tier (ArenaService HILLS)
 		SyncInterval = 0.1, -- seconds between progress updates to the UI
 	},
 

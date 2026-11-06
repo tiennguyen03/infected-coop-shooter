@@ -22,20 +22,52 @@ local WALL_THICKNESS = 3
 local GROUND_COLOR = Color3.fromRGB(94, 88, 76)
 local ROAD_COLOR = Color3.fromRGB(58, 60, 64)
 local CONCRETE_COLOR = Color3.fromRGB(122, 120, 114)
-local HILL_COLOR = Color3.fromRGB(104, 96, 80)
-local SLOPE_COLOR = Color3.fromRGB(88, 80, 66)
+local HILL_COLOR = Color3.fromRGB(102, 96, 78)
+local SLOPE_COLOR = Color3.fromRGB(82, 74, 60)
 local WALL_COLOR = Color3.fromRGB(104, 100, 92)
 local PAINT_COLOR = Color3.fromRGB(214, 214, 208)
 
--- Raised plateaus. `top` is the flat size (X, Z), `height` the top surface above y=0.
--- Each side gets a wedge embankment `slope` studs deep (height * 1.25 ~ 39 degrees, easy
--- for Humanoids), corners get solid blocks.
-type Hill = { name: string, x: number, z: number, top: Vector2, height: number }
+-- Raised plateaus. `top` is the flat size (X, Z), `height` the rise above `base` (default
+-- y=0, so tiers stack). Each side gets a wedge embankment `height * 1.2` studs deep (~40
+-- degrees, easy for Humanoids) unless listed in `open` (a vertical face: an arena wall or a
+-- bridge abutment); corners next to a closed side get solid blocks.
+-- Levels in play: ground 0, Ridge/Compound 8, highway 12, Overlook 14, Compound upper 16.
+type Hill = {
+	name: string,
+	x: number,
+	z: number,
+	top: Vector2,
+	height: number,
+	base: number?,
+	open: { [string]: boolean }?,
+}
 local HILLS: { Hill } = {
-	-- The Compound: the objective zone (Config.Objective.ZonePosition) sits on top.
-	{ name = "Compound", x = 70, z = 70, top = Vector2.new(80, 80), height = 8 },
+	-- The Compound: the objective zone (Config.Objective.ZonePosition) sits on the lower
+	-- tier; the comm tower on the upper tier in its north-east corner.
+	{ name = "Compound", x = 70, z = 70, top = Vector2.new(90, 90), height = 8 },
+	{ name = "CompoundUpper", x = 94, z = 94, top = Vector2.new(24, 24), height = 8, base = 8 },
 	-- The Ridge: the ruined barracks and a watchtower overlook the main road.
-	{ name = "Ridge", x = -100, z = 45, top = Vector2.new(60, 44), height = 5 },
+	{ name = "Ridge", x = -100, z = 45, top = Vector2.new(60, 44), height = 8 },
+	-- The Overlook: a tall knoll in the south-east with a watchtower on top.
+	{ name = "Overlook", x = 105, z = -105, top = Vector2.new(40, 40), height = 14 },
+	-- The highway: a raised east-west embankment across the map at z = -45, broken by a
+	-- bridge over the main road (x -46..-14). Vertical ends at the walls and the bridge.
+	{
+		name = "HighwayWest",
+		x = -98,
+		z = -45,
+		top = Vector2.new(104, 18),
+		height = 12,
+		open = { east = true, west = true },
+	},
+	{
+		name = "HighwayEast",
+		x = 68,
+		z = -45,
+		top = Vector2.new(164, 18),
+		height = 12,
+		open = { east = true, west = true },
+	},
 }
 
 -- Set dressing: `name` is a MeshAssets template; x/z are the piece's bounds centre; `yaw` in
@@ -44,21 +76,23 @@ local HILLS: { Hill } = {
 -- and off the embankments (a piece straddling a slope floats on one side).
 type Dressing = { name: string, x: number, z: number, yaw: number }
 local DRESSING: { Dressing } = {
-	-- Landmark + the Compound (hill top x 30..110, z 30..110; zone 47..93)
-	{ name = "env_comm_tower", x = 100, z = 100, yaw = 0 },
-	{ name = "env_tent", x = 42, z = 98, yaw = 0 },
-	{ name = "env_tent", x = 42, z = 82, yaw = 0 },
+	-- The Compound lower tier (top x 25..115, z 25..115; zone 27..73; the upper tier's
+	-- slopes cover x,z >= 72) and upper tier (top 82..106)
+	{ name = "env_comm_tower", x = 94, z = 94, yaw = 0 },
+	{ name = "env_twall", x = 84, z = 100, yaw = 90 },
+	{ name = "env_twall", x = 84, z = 92, yaw = 90 },
+	{ name = "env_hesco", x = 100, z = 84, yaw = 0 },
+	{ name = "env_tent", x = 42, z = 104, yaw = 0 },
+	{ name = "env_tent", x = 42, z = 88, yaw = 0 },
 	{ name = "env_container_olive", x = 100, z = 44, yaw = 0 },
 	{ name = "env_container_rust", x = 100, z = 55, yaw = 8 },
-	{ name = "env_wreck_humvee", x = 60, z = 102, yaw = -30 },
-	{ name = "env_sandbag_bunker", x = 86, z = 36, yaw = 180 },
-	{ name = "env_hesco", x = 36, z = 40, yaw = 0 },
-	{ name = "env_hesco", x = 36, z = 47, yaw = 0 },
-	{ name = "env_hesco", x = 36, z = 54, yaw = 0 },
-	{ name = "env_twall", x = 55, z = 36, yaw = 0 },
-	{ name = "env_twall", x = 63, z = 36, yaw = 0 },
-	{ name = "env_twall", x = 104, z = 75, yaw = 90 },
-	{ name = "env_twall", x = 104, z = 83, yaw = 90 },
+	{ name = "env_wreck_humvee", x = 62, z = 104, yaw = -30 },
+	{ name = "env_sandbag_bunker", x = 86, z = 34, yaw = 180 },
+	{ name = "env_hesco", x = 34, z = 40, yaw = 0 },
+	{ name = "env_hesco", x = 34, z = 47, yaw = 0 },
+	{ name = "env_hesco", x = 34, z = 54, yaw = 0 },
+	{ name = "env_twall", x = 55, z = 34, yaw = 0 },
+	{ name = "env_twall", x = 63, z = 34, yaw = 0 },
 	-- The Ridge (hill top x -130..-70, z 23..67)
 	{ name = "env_ruin_building", x = -104, z = 48, yaw = 0 },
 	{ name = "env_guard_tower", x = -78, z = 30, yaw = 0 },
@@ -71,17 +105,19 @@ local DRESSING: { Dressing } = {
 	{ name = "env_twall", x = -6, z = -112, yaw = 0 },
 	{ name = "env_sandbag_bunker", x = -52, z = -98, yaw = 0 },
 	{ name = "env_wreck_humvee", x = -27, z = 28, yaw = 15 },
-	{ name = "env_wreck_humvee", x = 86, z = -47, yaw = -80 },
-	{ name = "env_container_rust", x = -8, z = -60, yaw = 70 },
-	{ name = "env_container_olive", x = 30, z = -22, yaw = -15 },
+	{ name = "env_container_rust", x = -8, z = -84, yaw = 70 },
+	{ name = "env_container_olive", x = 30, z = -10, yaw = -15 },
+	-- On the highway (ground height is found by raycast, so these sit on the deck)
+	{ name = "env_wreck_humvee", x = 100, z = -45, yaw = -80 },
+	{ name = "env_barrier_jersey", x = 20, z = -44, yaw = 5 },
+	{ name = "env_barrier_jersey", x = -120, z = -46, yaw = -8 },
 	{ name = "env_lamp_post", x = -42, z = -80, yaw = 0 },
 	{ name = "env_lamp_post", x = -42, z = -20, yaw = 0 },
 	{ name = "env_lamp_post", x = -42, z = 60, yaw = 0 },
 	{ name = "env_lamp_post", x = -42, z = 120, yaw = 0 },
 	{ name = "env_barrier_jersey", x = -24, z = 70, yaw = 10 },
 	{ name = "env_barrier_jersey", x = -36, z = 100, yaw = -25 },
-	{ name = "env_barrier_jersey", x = 10, z = -50, yaw = 80 },
-	{ name = "env_barrier_jersey", x = 120, z = -40, yaw = 95 },
+	{ name = "env_barrier_jersey", x = 10, z = -78, yaw = 80 },
 	-- Helipad (extraction, -90,-90) and the south-west
 	{ name = "env_lamp_post", x = -114, z = -114, yaw = 45 },
 	{ name = "env_lamp_post", x = -66, z = -114, yaw = 135 },
@@ -90,8 +126,10 @@ local DRESSING: { Dressing } = {
 	{ name = "env_hesco", x = -120, z = -40, yaw = 20 },
 	{ name = "env_hesco", x = -113, z = -40, yaw = 20 },
 	-- South-east corner and the eastern edge
-	{ name = "env_guard_tower", x = 118, z = -118, yaw = 45 },
-	{ name = "env_sandbag_bunker", x = 118, z = -80, yaw = 90 },
+	-- The Overlook (top x 85..125, z -125..-85)
+	{ name = "env_guard_tower", x = 116, z = -116, yaw = 45 },
+	{ name = "env_sandbag_bunker", x = 96, z = -96, yaw = 90 },
+	{ name = "env_barrier_jersey", x = 60, z = -80, yaw = 30 },
 	{ name = "env_container_olive", x = 128, z = 10, yaw = 90 },
 	{ name = "env_barrier_jersey", x = 60, z = -110, yaw = 30 },
 	-- Dead trees around the edges
@@ -128,28 +166,34 @@ local function buildHill(parent: Instance, hill: Hill)
 	local model = Instance.new("Model")
 	model.Name = hill.name
 	local h = hill.height
-	local slope = h * 1.25
+	local base = hill.base or 0
+	local cy = base + h / 2
+	local slope = h * 1.2
+	local open = hill.open or {}
 	local hx, hz = hill.top.X / 2, hill.top.Y / 2
 	makePart(
 		"Top",
 		Vector3.new(hill.top.X, h, hill.top.Y),
-		CFrame.new(hill.x, h / 2, hill.z),
+		CFrame.new(hill.x, cy, hill.z),
 		HILL_COLOR
 	).Parent =
 		model
 	-- A WedgePart rises from its -Z edge to its +Z face, so each embankment is yawed to put
 	-- the tall face against the plateau.
 	local sides = {
-		{ x = 0, z = -(hz + slope / 2), yaw = 0, w = hill.top.X }, -- south
-		{ x = 0, z = hz + slope / 2, yaw = 180, w = hill.top.X }, -- north
-		{ x = hx + slope / 2, z = 0, yaw = -90, w = hill.top.Y }, -- east
-		{ x = -(hx + slope / 2), z = 0, yaw = 90, w = hill.top.Y }, -- west
+		south = { x = 0, z = -(hz + slope / 2), yaw = 0, w = hill.top.X },
+		north = { x = 0, z = hz + slope / 2, yaw = 180, w = hill.top.X },
+		east = { x = hx + slope / 2, z = 0, yaw = -90, w = hill.top.Y },
+		west = { x = -(hx + slope / 2), z = 0, yaw = 90, w = hill.top.Y },
 	}
-	for _, side in sides do
+	for name, side in sides do
+		if open[name] then
+			continue
+		end
 		makePart(
 			"Slope",
 			Vector3.new(side.w, h, slope),
-			CFrame.new(hill.x + side.x, h / 2, hill.z + side.z)
+			CFrame.new(hill.x + side.x, cy, hill.z + side.z)
 				* CFrame.Angles(0, math.rad(side.yaw), 0),
 			SLOPE_COLOR,
 			"WedgePart"
@@ -158,10 +202,15 @@ local function buildHill(parent: Instance, hill: Hill)
 	end
 	for _, sx in { -1, 1 } do
 		for _, sz in { -1, 1 } do
+			local xSide = if sx > 0 then "east" else "west"
+			local zSide = if sz > 0 then "north" else "south"
+			if open[xSide] or open[zSide] then
+				continue
+			end
 			makePart(
 				"Corner",
 				Vector3.new(slope, h, slope),
-				CFrame.new(hill.x + sx * (hx + slope / 2), h / 2, hill.z + sz * (hz + slope / 2)),
+				CFrame.new(hill.x + sx * (hx + slope / 2), cy, hill.z + sz * (hz + slope / 2)),
 				SLOPE_COLOR
 			).Parent =
 				model
@@ -170,6 +219,52 @@ local function buildHill(parent: Instance, hill: Hill)
 	model.Parent = parent
 end
 
+local HIGHWAY_Y = 12 -- top of the highway embankment (HILLS HighwayWest/East height)
+
+local function buildHighway(parent: Instance)
+	local model = Instance.new("Model")
+	model.Name = "Highway"
+	-- Asphalt along the whole embankment, bridge included.
+	makePart("Road", Vector3.new(300, 0.2, 14), CFrame.new(0, HIGHWAY_Y + 0.1, -45), ROAD_COLOR).Parent =
+		model
+	for x = -140, 140, 20 do
+		makePart(
+			"Dash",
+			Vector3.new(8, 0.1, 0.6),
+			CFrame.new(x, HIGHWAY_Y + 0.25, -45),
+			PAINT_COLOR
+		).Parent =
+			model
+	end
+	-- Bridge deck over the main road (x -46..-14): 32 long, underside at 10.5 so a 2x Brute
+	-- fits under it. Concrete parapets on both edges, piers either side of the road below.
+	makePart(
+		"Deck",
+		Vector3.new(32, 1.5, 18),
+		CFrame.new(-30, HIGHWAY_Y - 0.75, -45),
+		CONCRETE_COLOR
+	).Parent =
+		model
+	for _, sz in { -1, 1 } do
+		makePart(
+			"Parapet",
+			Vector3.new(32, 2.5, 0.6),
+			CFrame.new(-30, HIGHWAY_Y + 1.25, -45 + sz * 8.7),
+			CONCRETE_COLOR
+		).Parent =
+			model
+	end
+	for _, sx in { -1, 1 } do
+		makePart(
+			"Pier",
+			Vector3.new(2, HIGHWAY_Y - 1.5, 14),
+			CFrame.new(-30 + sx * 11, (HIGHWAY_Y - 1.5) / 2, -45),
+			CONCRETE_COLOR
+		).Parent =
+			model
+	end
+	model.Parent = parent
+end
 local function buildHelipad(parent: Instance)
 	local zone = Config.Extraction.ZonePosition
 	local model = Instance.new("Model")
@@ -259,6 +354,7 @@ function ArenaService.init()
 	for _, hill in HILLS do
 		buildHill(arena, hill)
 	end
+	buildHighway(arena)
 	buildHelipad(arena)
 
 	-- Raised spawn pad at the origin.

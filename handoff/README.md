@@ -42,13 +42,15 @@ Read in this order:
 2. **Sprint 13 Full MVP Balance + Fun Test** — still OPEN. Needs 3 natural human playtests;
    tune `src/shared/Config.luau` only. Plan: `docs/SPRINT_13_FULL_MVP_BALANCE_TEST.md`.
    This is the gate for calling the MVP done (criteria in `docs/PLAN.md`).
-3. **Stage 1 "Checkpoint Delta" shipped 2026-11-06** (`ArenaService`: two hills with
-   walkable embankments, roads, helipad, checkpoint, 52 dressing pieces from 14 character-
-   scale Blender meshes; objective zone moved onto the Compound hill). Verified in a playtest
-   (Infected climb the slopes). Props/rifle/XP orb/rat/Infected bodies are meshes too
-   (`src/shared/MeshAssets.luau`, pipeline `assets/3d/README.md`). Next: react to the
-   owner's playtest of the stage, more terrain variety (rock outcrops, a sunken road),
-   The Chosen player bodies. Beacon mesh uploaded, unused.
+3. **Stage 1 "Checkpoint Delta" shipped 2026-11-06** (`ArenaService`: five height levels,
+   Compound with an upper tier, Ridge, Overlook knoll, a highway embankment with a bridge
+   over the main road, roads, helipad, checkpoint, 55 dressing pieces from 14 character-
+   scale Blender meshes; objective zone on the Compound's lower tier). Verified in a
+   playtest (Infected climb every slope). **Player body shipped**: the Assault class wears
+   the `pc_assault_*` limb set (`PlayerSetup` -> `MeshAssets.dressModel`; avatar appearance
+   off). K-9 / Epidemiologist / Recon / Engineer bodies are built and previewed in Blender,
+   not uploaded (no class system yet). Pipeline `assets/3d/README.md`. Next: react to the
+   owner's playtest, rock outcrops / a sunken road for more cover, class selection.
 4. **Generated SFX pipeline (2026-11-06):** `assets/audio/build/generate.py` makes sounds
    from text prompts with Stable Audio Open Small, run in Docker (`generate.sh`; Windows
    Smart App Control blocks PyTorch on the host; ~3 min per sound on CPU). The rifle shot is

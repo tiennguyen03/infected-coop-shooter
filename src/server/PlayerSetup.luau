@@ -4,6 +4,7 @@
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local StarterPlayer = game:GetService("StarterPlayer")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
@@ -162,6 +163,9 @@ local function attachRifle(character: Model, humanoid: Humanoid)
 	end)
 end
 
+-- The playable class body (assets/3d pc_<class>_*). One class for now.
+local PLAYER_BODY = "pc_assault_"
+
 local function onCharacterAdded(character: Model)
 	local humanoid = character:WaitForChild("Humanoid") :: Humanoid
 	humanoid.MaxHealth = Config.Player.MaxHealth
@@ -170,6 +174,11 @@ local function onCharacterAdded(character: Model)
 
 	character:WaitForChild("HumanoidRootPart")
 	character:WaitForChild("RightHand")
+	-- Swap the stock R15 limbs for the class body before the rifle welds to the hand.
+	-- Templates build asynchronously at boot; a character that beats them keeps the stock body.
+	if MeshAssets.waitFor(PLAYER_BODY .. "head", 10) then
+		MeshAssets.dressModel(character, PLAYER_BODY)
+	end
 	attachRifle(character, humanoid)
 end
 
@@ -181,6 +190,9 @@ local function onPlayerAdded(player: Player)
 end
 
 function PlayerSetup.init()
+	-- Characters spawn as bare R15 rigs (no avatar clothing/accessories) so the class body
+	-- is the whole look and every player is the same silhouette.
+	StarterPlayer.LoadCharacterAppearance = false
 	Players.PlayerAdded:Connect(onPlayerAdded)
 	for _, player in Players:GetPlayers() do
 		onPlayerAdded(player)

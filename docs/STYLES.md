@@ -255,16 +255,23 @@ Lower is always acceptable. Add triangles only where the silhouette needs them.
   pauldrons + pack. Shipped 2026-11-06.
 - The Chosen (player characters, see LORE.md): realistic silhouettes, one signature color
   patch per character (e.g. K-9 handler = tan, Epidemiologist = white, Recon = dark,
-  Engineer = olive), gear in the palette, face left simple.
+  Engineer = olive), gear in the palette, face left simple. Built 2026-11-06 as limb sets
+  (`PC_CLASSES` in the build script): Assault = grey fatigues, olive plate carrier, helmet
+  with NVG mount, friendly-blue patch (worn in game); K-9 = olive + tan carrier + patrol
+  cap; Epidemiologist = white jacket + respirator + goggles; Recon = all dark + hood +
+  boonie brim; Engineer = light-olive coveralls + orange hard hat. Previews in
+  `assets/3d/build/previews/ref_pc_*.png`.
 - Weapons: `gun` and `dark` materials, one accent facet (sight, mag tape) in the owning
   item's or character's accent color.
 
 ### Stage 1 "Checkpoint Delta" (shipped 2026-11-06)
 
-Risk of Rain 2 layout rules, zombie-checkpoint dressing: open ground, two raised hills with
-39-degree embankments on every side (parts, not meshes: exact collision, the Infected climb
-them), the objective on the high ground, one landmark (the 40-stud comm tower) visible from
-anywhere, roads for orientation, extraction on a painted helipad. Ground palette: dust
+Risk of Rain 2 layout rules, zombie-checkpoint dressing: open ground and five levels of
+height (ground 0, Ridge/Compound 8, highway embankment 12 with a bridge over the main
+road, Overlook knoll 14, Compound upper tier 16), every rise a ~40-degree embankment
+(parts, not meshes: exact collision, the Infected climb them; the only overhang is the
+bridge), the objective on the high ground, one landmark (the 40-stud comm tower on the
+top tier) visible from anywhere, roads for orientation, extraction on a painted helipad. Ground palette: dust
 `rgb(94,88,76)`, hills `rgb(104,96,80)`, slopes `rgb(88,80,66)`, asphalt `rgb(58,60,64)`,
 concrete `rgb(122,120,114)`, road paint `rgb(214,214,208)`. Layout in
 `src/server/ArenaService.luau` (`HILLS`, `DRESSING`).

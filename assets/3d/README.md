@@ -9,6 +9,7 @@ at or hand-tweak anything. Collections inside it:
 | `Weapons` | held tools (rifle) |
 | `Pickups` | XP orb |
 | `Environment` | Stage 1 set dressing, all built to the 5-stud character (`CHAR_H`, `DOOR_H`, `STOREY`, `COVER_H` constants in the script): barrier, sandbags, tower, ruin, containers, humvee wreck, T-wall, hesco, comm tower, tent, checkpoint, dead tree, lamp post |
+| `Chosen` | player limb sets `pc_<class>_<limb>` for assault, k9, epi, recon, engineer (`PC_CLASSES`); only assault is uploaded and worn in game |
 | `Infected` | enemy limb sets: `inf_<walker|runner|brute>_<limb>`, 9 limbs per type (left/right share) |
 | `_Reference` | a 5-stud human block for scale; never exported |
 
@@ -58,7 +59,9 @@ Add `-- --only wpn_rifle prop_drone` to build a subset.
 | env_dead_tree | 96 | bottom | 14-stud bare tree (Hull collision) |
 | env_lamp_post | 76 | bottom | 13-stud street light (Hull collision) |
 | inf_walker_* / inf_runner_* / inf_brute_* | ~500 per body | center | the 15 R15 limb MeshParts of each Infected (`MeshAssets.dressInfected`) |
-| ref_inf_* | — | bottom | assembled preview figures, never exported |
+| pc_assault_* | ~470 per body | center | the player's 15 R15 limb MeshParts (`PlayerSetup` -> `MeshAssets.dressModel`) |
+| pc_k9_* / pc_epi_* / pc_recon_* / pc_engineer_* | ~470 per body | center | built + previewed, not uploaded (no class system yet) |
+| ref_inf_* / ref_pc_* | — | bottom | assembled preview figures, never exported |
 
 All far under the budgets in `docs/STYLES.md` section 6. Dressing positions live in
 `ArenaService.DRESSING` (x/z of the bounds centre + yaw; ground height is found by raycast so
@@ -67,7 +70,7 @@ enterable interiors would be safe spots. Mesh pivots do not survive import (a Me
 centred on its bounds). Every `env_*` preview renders with the 5-stud reference figure beside
 it: check scale there before uploading.
 
-### Infected bodies (limb swap, not a custom rig)
+### Infected and player bodies (limb swap, not a custom rig)
 
 The enemies stay stock R15 rigs from `CreateHumanoidModelFromDescription` (free walk
 animation, Humanoid physics). Each limb is modelled in Blender inside the R15 limb's box
@@ -78,6 +81,12 @@ bounds-centre shift), rig attachments moved over, then `Humanoid:BuildRigFromAtt
 rebuilds the joints (modern rigs get `AnimationConstraint`s, not Motor6Ds). Spawns clone the
 dressed template, so per-spawn cost is a plain Clone. To restyle a type, change its swatch
 dict in `INFECTED_TYPES`, rebuild, re-upload the 9 limbs, update the ids in `MeshAssets`.
+
+Player bodies use the same mechanism (`_pc_limb`, `PC_CLASSES`): `PlayerSetup` turns off
+`StarterPlayer.LoadCharacterAppearance` so characters spawn as bare R15 rigs, then
+`MeshAssets.dressModel(character, "pc_assault_")` swaps the limbs before the rifle welds to
+the hand. The build prints `offset <name>` (bounds centre, Roblox axis order) for every
+centre-pivot limb; copy it into the `MeshAssets` entry.
 
 ## Getting a mesh into Roblox (the pipeline that shipped 2026-11-06)
 
