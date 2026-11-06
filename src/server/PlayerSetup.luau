@@ -80,7 +80,8 @@ local function attachRifle(character: Model, humanoid: Humanoid)
 	end
 
 	-- Handle-local layout: grip at the origin (the palm), barrel along -Z.
-	local body = MeshAssets.clone("wpn_rifle")
+	-- waitFor: the first character spawns before the boot-time template build finishes.
+	local body = MeshAssets.waitFor("wpn_rifle", 5)
 	if body then
 		-- Low-poly rifle mesh (assets/3d wpn_rifle, 0.65x). The mesh pivot is the grip; the
 		-- MeshPart is centred on its bounding box, so offset by the mesh's centre-from-grip.

@@ -3,7 +3,47 @@
 -- the objective (+60,+60) and extraction (-90,-90) zones with room to kite.
 -- Easy-on-the-eyes muted blue-grey for long testing sessions.
 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
+
 local ArenaService = {}
+
+-- Set dressing: low-poly buildings/barriers from assets/3d, placed clear of the spawn pad
+-- (origin), the objective zone (+60,+60) and the extraction zone (-90,-90). All are solid
+-- Box-collision obstacles (the Infected have no pathfinding, so no enterable interiors yet).
+type Dressing = { name: string, x: number, z: number, yaw: number }
+local DRESSING: { Dressing } = {
+	{ name = "env_ruin_building", x = -70, z = 50, yaw = 20 },
+	{ name = "env_ruin_building", x = 100, z = -45, yaw = -100 },
+	{ name = "env_guard_tower", x = -35, z = -115, yaw = 0 },
+	{ name = "env_guard_tower", x = 115, z = 100, yaw = 45 },
+	{ name = "env_sandbag_bunker", x = 30, z = -60, yaw = 180 },
+	{ name = "env_sandbag_bunker", x = -115, z = 15, yaw = 90 },
+	{ name = "env_barrier_jersey", x = -40, z = -22, yaw = 30 },
+	{ name = "env_barrier_jersey", x = 45, z = 12, yaw = -60 },
+	{ name = "env_barrier_jersey", x = -95, z = -40, yaw = 10 },
+	{ name = "env_barrier_jersey", x = 20, z = 105, yaw = 80 },
+	{ name = "env_barrier_jersey", x = 95, z = 30, yaw = 45 },
+	{ name = "env_barrier_jersey", x = -130, z = 115, yaw = 0 },
+	{ name = "env_barrier_jersey", x = 60, z = -120, yaw = 120 },
+}
+
+local function placeDressing(arena: Model)
+	local folder = Instance.new("Folder")
+	folder.Name = "Dressing"
+	folder.Parent = arena
+	for _, entry in DRESSING do
+		local name, x, z, yaw = entry.name, entry.x, entry.z, entry.yaw
+		-- Templates build asynchronously at boot; wait for each (nil = skip, floor stays bare).
+		local part = MeshAssets.waitFor(name, 20)
+		if part then
+			part.Name = name
+			part.CFrame = CFrame.new(x, part.Size.Y / 2, z) * CFrame.Angles(0, math.rad(yaw), 0)
+			part.Parent = folder
+		end
+	end
+end
 
 local HALF = 150 -- half-extent: arena spans -150..+150 on X/Z (300 studs)
 local WALL_HEIGHT = 24
@@ -99,6 +139,7 @@ function ArenaService.init()
 		arena
 
 	arena.Parent = workspace
+	task.spawn(placeDressing, arena)
 end
 
 return ArenaService

@@ -12,6 +12,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
 local GroundUtil = require(ReplicatedStorage.Shared.GroundUtil)
 local ItemEffectService = require(script.Parent.ItemEffectService)
 local PauseService = require(script.Parent.PauseService)
@@ -41,6 +42,18 @@ local function buildRat(position: Vector3): (Model, BasePart)
 	local model = Instance.new("Model")
 	model.Name = "PlagueRat"
 
+	local mesh = MeshAssets.clone("prop_plague_rat")
+	if mesh then
+		-- Low-poly rat mesh (assets/3d prop_plague_rat). One part: body, head, tail, eyes.
+		mesh.Name = "Body"
+		mesh.Position = position
+		mesh.Parent = model
+		model.PrimaryPart = mesh
+		model.Parent = ratFolder
+		return model, mesh
+	end
+
+	-- Placeholder rat from Parts when the mesh template is missing.
 	local body = Instance.new("Part")
 	body.Name = "Body"
 	body.Size = Vector3.new(0.6, 0.5, 1.2)

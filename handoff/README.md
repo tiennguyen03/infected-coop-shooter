@@ -42,10 +42,12 @@ Read in this order:
 2. **Sprint 13 Full MVP Balance + Fun Test** — still OPEN. Needs 3 natural human playtests;
    tune `src/shared/Config.luau` only. Plan: `docs/SPRINT_13_FULL_MVP_BALANCE_TEST.md`.
    This is the gate for calling the MVP done (criteria in `docs/PLAN.md`).
-3. **3D meshes in game (2026-11-06):** ammo crate, repulsor mine, drone, rifle and XP orb are
-   MeshParts cloned from `src/shared/MeshAssets.luau` templates (crate + mine + rifle seen in
-   a playtest; drone/orb spawn as MeshParts per the server). Beacon mesh uploaded, unused.
-   Pipeline: `assets/3d/README.md`. Next: Infected bodies, rat mesh, arena buildings.
+3. **3D meshes in game (2026-11-06):** ammo crate, repulsor mine, drone, rifle, XP orb and
+   plague rat are MeshParts cloned from `src/shared/MeshAssets.luau` templates, and the arena
+   has 13 pieces of set dressing (2 ruined buildings, 2 guard towers, 2 sandbag bunkers,
+   7 jersey barriers; `ArenaService.DRESSING`). Verified in a playtest. Beacon mesh uploaded,
+   unused. Pipeline: `assets/3d/README.md`. Next: Infected bodies (enemies are still bare
+   R15 rigs), floor/ground treatment, then more dressing variety.
 4. **Live Blender control (blender-mcp) — set up and socket-verified 2026-11-05**
    (`.mcp.json` + add-on; `assets/3d/README.md` > Live Blender). Not yet used from a Claude
    Code session (needs a restart to load the tools). Shipped meshes still go through the

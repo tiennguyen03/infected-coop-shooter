@@ -5,10 +5,10 @@ at or hand-tweak anything. Collections inside it:
 
 | Collection | Contents |
 |---|---|
-| `Props` | world objects dropped by services: ammo crate, repulsor mine, drone, drone beacon |
+| `Props` | world objects dropped by services: ammo crate, repulsor mine, drone, drone beacon, plague rat |
 | `Weapons` | held tools (rifle) |
 | `Pickups` | XP orb |
-| `Environment` | (empty for now) arena set dressing |
+| `Environment` | arena set dressing: jersey barrier, sandbag bunker, guard tower, ruined building |
 | `Infected` | (empty for now) enemy bodies |
 | `_Reference` | a 5-stud human block for scale; never exported |
 
@@ -43,8 +43,16 @@ Add `-- --only wpn_rifle prop_drone` to build a subset.
 | prop_drone_beacon | 172 | bottom center | (new) beacon pickup / objective dressing |
 | wpn_rifle | 188 | grip | PlayerSetup `attachRifle` part rifle |
 | pick_xp_orb | 80 | center | XPOrbService sphere part |
+| prop_plague_rat | 204 | bottom | PlagueRatService body+head+tail parts |
+| env_barrier_jersey | 72 | bottom | (new) arena dressing, 7 placed |
+| env_sandbag_bunker | 960 | bottom | (new) arena dressing, 2 placed |
+| env_guard_tower | 552 | bottom | (new) arena dressing, 2 placed |
+| env_ruin_building | 696 | bottom | (new) arena dressing, 2 placed |
 
-All far under the budgets in `docs/STYLES.md` section 6.
+All far under the budgets in `docs/STYLES.md` section 6. Dressing positions live in
+`ArenaService.DRESSING` (clear of spawn pad, objective and extraction zones). Buildings are
+solid Box-collision blocks for now: the Infected have no pathfinding, so enterable interiors
+would be safe spots. Mesh pivots do not survive import (a MeshPart is centred on its bounds).
 
 ## Getting a mesh into Roblox (the pipeline that shipped 2026-11-06)
 

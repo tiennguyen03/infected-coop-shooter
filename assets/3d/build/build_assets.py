@@ -275,6 +275,145 @@ def ref_human(b):
     b.box((1, 1, 1), (0, 0, 5.5), swatch="white")
 
 
+
+@asset("prop_plague_rat", "Props")
+def plague_rat(b):
+    # PlagueRatService rat (old Parts: body 0.6 x 0.5 x 1.2 + head + tail). Faces -Y.
+    b.box((0.6, 0.85, 0.44), (0, 0.05, 0.36), swatch="dark_l")  # body
+    b.box((0.66, 0.5, 0.5), (0, 0.42, 0.37), swatch="dark")  # rump
+    b.box((0.44, 0.42, 0.36), (0, -0.52, 0.4), swatch="dark")  # head
+    b.box((0.24, 0.32, 0.2), (0, -0.84, 0.36), swatch="dark_l")  # snout
+    b.box((0.1, 0.08, 0.1), (0, -1.0, 0.38), swatch="heal_pink")  # nose
+    for sx in (-1, 1):
+        b.cyl(0.11, 0.05, (sx * 0.17, -0.42, 0.63), segs=6, rot=(90, 0, 0), swatch="heal_pink")  # ear
+        b.box((0.09, 0.06, 0.09), (sx * 0.15, -0.74, 0.47), swatch="red_l")  # eye
+        b.box((0.13, 0.16, 0.24), (sx * 0.23, -0.32, 0.12), swatch="dark_d")  # front leg
+        b.box((0.15, 0.2, 0.26), (sx * 0.26, 0.38, 0.13), swatch="dark_d")  # hind leg
+    b.cyl(0.055, 0.55, (0, 0.92, 0.3), segs=5, rot=(90, 0, 0), swatch="rust")  # tail base
+    b.cyl(0.04, 0.5, (0, 1.4, 0.2), segs=5, rot=(78, 0, 0), swatch="rust")  # tail tip
+
+
+@asset("env_barrier_jersey", "Environment")
+def barrier_jersey(b):
+    # Concrete traffic barrier, 6 studs long, 2.4 tall. Stepped jersey profile.
+    b.box((6.0, 2.0, 0.5), (0, 0, 0.25), swatch="concrete")
+    b.box((6.0, 1.3, 0.7), (0, 0, 0.85), swatch="concrete")
+    b.box((6.0, 0.7, 1.2), (0, 0, 1.8), swatch="concrete")
+    b.box((1.2, 0.72, 0.5), (-1.8, 0, 1.9), swatch="warning_orange")  # hazard stripes
+    b.box((1.2, 0.72, 0.5), (1.8, 0, 1.9), swatch="warning_orange")
+    b.box((0.3, 0.3, 0.5), (0, 0, 2.5), swatch="rust")  # lifting eye / rebar
+
+
+@asset("env_sandbag_bunker", "Environment")
+def sandbag_bunker(b):
+    # U-shaped sandbag emplacement, 10 x 8, 1.8 tall, open toward +Y. Solid obstacle in game.
+    bag = (1.25, 0.6, 0.45)
+    def run(x0, y0, x1, y1, rows=4):
+        dx, dy = x1 - x0, y1 - y0
+        length = math.hypot(dx, dy)
+        ang = math.degrees(math.atan2(dy, dx))
+        n = max(1, int(length / 1.3))
+        for r in range(rows):
+            off = 0.65 if r % 2 else 0.0
+            sw = "tan_d" if r == 0 else ("tan" if r % 2 else "tan_l")
+            for i in range(n):
+                t = (i * 1.3 + off + 0.65) / length
+                if t > 1.0:
+                    continue
+                x, y = x0 + dx * t, y0 + dy * t
+                b.box(bag, (x, y, 0.225 + r * 0.44), rot=(0, 0, ang), swatch=sw)
+    run(-5.0, 4.0, -5.0, -4.0)  # left wall
+    run(-5.0, -4.0, 5.0, -4.0)  # back wall
+    run(5.0, -4.0, 5.0, 4.0)  # right wall
+    b.box((2.4, 0.9, 1.4), (0, -3.2, 0.7), swatch="olive_d")  # ammo stack inside
+    b.box((0.2, 0.2, 3.0), (-4.6, 3.6, 1.5), swatch="tan_d")  # post
+    b.box((0.2, 0.2, 3.0), (4.6, 3.6, 1.5), swatch="tan_d")
+    b.box((9.4, 0.08, 0.5), (0, 3.6, 3.0), swatch="olive")  # camo-net rail
+
+
+@asset("env_guard_tower", "Environment")
+def guard_tower(b):
+    # Timber watchtower: 9 x 9 footprint, 17.5 tall, open platform at 12.5 with a roof.
+    for sx, sy in ((1, 1), (-1, 1), (1, -1), (-1, -1)):
+        b.box((0.5, 0.5, 12.5), (sx * 3.2, sy * 3.2, 6.25), swatch="tan_d")  # leg
+    for z in (3.0, 7.0):  # cross braces on all four sides
+        for side in range(4):
+            rot = (0, 0, side * 90)
+            a = math.radians(side * 90)
+            cx, cy = math.cos(a) * 3.2, math.sin(a) * 3.2
+            b.box((0.2, 6.2, 0.2), (cx, cy, z), rot=(50, 0, side * 90), swatch="tan_d")
+            b.box((0.2, 6.2, 0.2), (cx, cy, z), rot=(-50, 0, side * 90), swatch="tan_d")
+    b.box((8.6, 8.6, 0.5), (0, 0, 12.5), swatch="tan")  # platform
+    for sx, sy in ((1, 1), (-1, 1), (1, -1), (-1, -1)):
+        b.box((0.3, 0.3, 4.6), (sx * 4.0, sy * 4.0, 15.0), swatch="tan_d")  # roof posts
+    for side in range(4):  # waist-high plank walls
+        a = math.radians(side * 90)
+        cx, cy = math.cos(a) * 4.1, math.sin(a) * 4.1
+        b.box((0.2, 8.4, 1.3), (cx, cy, 13.4), rot=(0, 0, side * 90), swatch="olive_d")
+    b.box((9.8, 9.8, 0.35), (0, 0, 17.3), swatch="asphalt")  # roof slab
+    b.box((9.2, 9.2, 0.2), (0, 0, 17.55), swatch="dark")  # roof top
+    b.box((0.5, 0.5, 1.2), (0, 0, 18.2), swatch="gun_d")  # antenna base
+    b.cyl(0.05, 3.0, (0, 0, 19.9), segs=5, swatch="gun_l")  # antenna
+    b.cyl(0.3, 0.3, (0, 0, 21.5), segs=6, swatch="red_l")  # beacon light
+    for i in range(9):  # ladder on +Y side
+        b.box((1.2, 0.12, 0.12), (0, 3.55, 1.0 + i * 1.3), swatch="tan_l")
+    b.box((0.14, 0.14, 12.0), (-0.6, 3.55, 6.0), swatch="tan_d")
+    b.box((0.14, 0.14, 12.0), (0.6, 3.55, 6.0), swatch="tan_d")
+
+
+@asset("env_ruin_building", "Environment")
+def ruin_building(b):
+    # Bombed-out two-storey concrete block, 24 x 16 footprint, ~13 tall, roof gone, back wall
+    # reduced to one storey. Door/window openings are visual only (Box collision in game).
+    T = 0.8  # wall thickness
+    W, D = 24.0, 16.0
+    hx, hy = W / 2, D / 2
+    F1, F2 = 6.0, 6.5  # storey heights
+
+    def wall_x(y, storeys, door=False):
+        # wall running along X at depth y
+        for s in range(storeys):
+            z0 = s * F1 + (0 if s == 0 else 0.5)
+            sw = "concrete" if s == 0 else "white_d"
+            # window band: sill 2.3, head 4.6, pillars between 3 windows
+            b.box((W, T, 2.3), (0, y, z0 + 1.15), swatch=sw)  # sill band
+            b.box((W, T, 1.4), (0, y, z0 + 5.3), swatch=sw)  # head band
+            for x in (-hx + 1.5, -4.5, 4.5, hx - 1.5):
+                pw = 3.0 if abs(x) > 8 else 2.4
+                b.box((pw, T, 2.3), (x, y, z0 + 3.45), swatch=sw)  # pillars
+            if door and s == 0:
+                # replace the centre sill with a doorway lintel
+                b.box((3.0, T + 0.1, 0.3), (0, y, 4.5), swatch="asphalt")
+
+    def wall_y(x, storeys):
+        for s in range(storeys):
+            z0 = s * F1 + (0 if s == 0 else 0.5)
+            sw = "concrete" if s == 0 else "white_d"
+            b.box((T, D, 2.3), (x, 0, z0 + 1.15), swatch=sw)
+            b.box((T, D, 1.4), (x, 0, z0 + 5.3), swatch=sw)
+            for y in (-hy + 1.5, 0, hy - 1.5):
+                b.box((T, 3.0 if abs(y) > 5 else 2.6, 2.3), (x, y, z0 + 3.45), swatch=sw)
+
+    wall_x(-hy + T / 2, 2, door=True)  # front (faces -Y)
+    wall_x(hy - T / 2, 1)  # back, one storey (collapsed)
+    wall_y(-hx + T / 2, 2)
+    wall_y(hx - T / 2, 2)
+    b.box((W, D, 0.5), (0, 0, F1 + 0.25), swatch="asphalt")  # first-floor slab
+    b.box((W + 0.4, 1.2, 0.3), (0, -hy + 0.4, F1 + F2 + 0.6), swatch="asphalt")  # front parapet
+    # jagged top on the back/right: broken stubs
+    for x, h in ((-9, 2.2), (-3, 1.1), (4, 3.0), (9, 1.6)):
+        b.box((2.4, T, h), (x, hy - T / 2, F1 + h / 2), swatch="white_d")
+    for y, h in ((-5, 1.8), (2, 0.9), (6, 2.6)):
+        b.box((T, 2.4, h), (hx - T / 2, y, F1 + F2 + h / 2), swatch="white_d")
+    # rebar and rubble
+    for x, y in ((-6, hy + 0.6), (2, hy + 0.9), (8, hy + 0.4)):
+        b.cyl(0.06, 2.4, (x, y, F1 + 0.8), segs=4, rot=(30, 0, 0), swatch="rust")
+    for x, y, s in ((-11, -hy - 1.4, 1.4), (-8.5, -hy - 0.8, 0.9), (10, -hy - 1.6, 1.8), (hx + 1.2, 3, 1.2), (hx + 0.9, -4, 0.8)):
+        b.box((s, s * 0.8, s * 0.6), (x, y, s * 0.3), rot=(0, 0, x * 7), swatch="concrete")
+    # door opening dark backing + sign
+    b.box((2.2, 0.1, 0.6), (-8, -hy - 0.46, 4.0), swatch="warning_orange")  # hazard sign
+    b.box((2.0, 0.08, 0.5), (-8, -hy - 0.5, 4.0), swatch="dark_d")
+
 # ------------------------------------------------------------------ scene plumbing
 def reset_scene():
     bpy.ops.wm.read_factory_settings(use_empty=True)

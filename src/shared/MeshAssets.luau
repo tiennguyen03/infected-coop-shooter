@@ -16,7 +16,8 @@ local MeshAssets = {}
 -- Shared palette texture (assets/3d/palette.png as an Image asset).
 local PALETTE_TEXTURE = "rbxassetid://87519201884536"
 
-type MeshDef = { meshId: string, size: Vector3 }
+-- `solid` = a static obstacle: CanCollide + CastShadow on (buildings, barriers).
+type MeshDef = { meshId: string, size: Vector3, solid: boolean? }
 
 -- `size` is the in-game size in studs (the mesh is scaled to it). Blender sizes are in
 -- assets/3d/README.md; rifle is 0.65x and drone 0.8x of the Blender size.
@@ -36,6 +37,31 @@ local MESHES: { [string]: MeshDef } = {
 		size = Vector3.new(1.56, 3.21, 1.36),
 	},
 	wpn_rifle = { meshId = "rbxassetid://86613539481097", size = Vector3.new(0.195, 0.84, 2.9) },
+	-- 0.7x of the Blender size (tail included in the length).
+	prop_plague_rat = {
+		meshId = "rbxassetid://102065990394982",
+		size = Vector3.new(0.47, 0.52, 1.88),
+	},
+	env_barrier_jersey = {
+		meshId = "rbxassetid://83842095201437",
+		size = Vector3.new(6, 2.75, 2),
+		solid = true,
+	},
+	env_sandbag_bunker = {
+		meshId = "rbxassetid://109949409344551",
+		size = Vector3.new(10.6, 3.25, 8.85),
+		solid = true,
+	},
+	env_guard_tower = {
+		meshId = "rbxassetid://114795601863176",
+		size = Vector3.new(9.8, 21.65, 9.8),
+		solid = true,
+	},
+	env_ruin_building = {
+		meshId = "rbxassetid://73293862191628",
+		size = Vector3.new(25.9, 15.1, 20.24),
+		solid = true,
+	},
 }
 
 local templates: { [string]: MeshPart } = {}
@@ -61,12 +87,21 @@ local function buildTemplate(folder: Folder, name: string, def: MeshDef)
 	part.Size = def.size
 	part.Material = Enum.Material.SmoothPlastic
 	part.Anchored = true
-	part.CanCollide = false
-	part.CanQuery = false
+	part.CanCollide = def.solid == true
+	part.CanQuery = def.solid == true
 	part.CanTouch = false
-	part.CastShadow = false
+	part.CastShadow = def.solid == true
 	part.Parent = folder
 	templates[name] = part
+end
+
+-- Yields until the template exists (or the timeout passes). For boot-time placement.
+function MeshAssets.waitFor(name: string, timeoutSeconds: number): MeshPart?
+	local deadline = os.clock() + timeoutSeconds
+	while templates[name] == nil and os.clock() < deadline do
+		task.wait(0.25)
+	end
+	return MeshAssets.clone(name)
 end
 
 -- Server only. Templates fill in asynchronously; clone() returns nil until a template is ready.
