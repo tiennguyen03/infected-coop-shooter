@@ -1,0 +1,122 @@
+# Handoff — Roguelike Arena Survivor (VS Code + Claude Code terminal)
+
+Start here when picking the project up in a fresh Claude Code session.
+Last updated: 2026-11-05. Last commit on `main`: `3d709f2` (origin/main in sync).
+
+## What this is
+
+Single-player Roblox roguelike (Risk of Rain 2-style loop, grounded military zombie
+setting). Full loop works: spawn → fight → level up → pick 1 of 3 items → Hold Position
+objective → extraction → OPERATION COMPLETE → restart. 24 items, 3 enemy types, Assault
+class with Q dash / E breach / Combat Momentum, server-authoritative everything.
+
+Repo: https://github.com/tiennguyen03/risk-of-blox — folder `~/roguelike-arena-survivor`.
+
+Read in this order:
+1. `CLAUDE.md` — conventions, commands, sprint-by-sprint status (long but authoritative).
+2. This file — current state + what to do next.
+3. `handoff/ICON_STYLE_GUIDE.md` — only if working on the open icon task.
+4. `docs/PLAN.md` — scope rules + roadmap. `docs/LORE.md` — setting/naming.
+
+## Current state (verified 2026-11-05 in a live playtest)
+
+- Sprint 15 (Assault Class V1 + held gun + Common Item Pack 1) **live-verified**: rifle is a
+  real equipped `Tool`, cooldowns freeze during item-selection pause, fire pools/rats/
+  airstrikes sit on the floor (`shared/GroundUtil`), rats move as one model (no after-
+  images), full run to OPERATION COMPLETE.
+- Sprint 16 (Plague Rat Charm) verified earlier.
+- All 24 item icons uploaded to Roblox and wired (`assets/icons/ASSET_IDS.md`).
+- Static checks clean (stylua / selene / luau-lsp / rojo build) at `3d709f2`.
+
+## Open work, in priority order
+
+1. **Make the 24 item icons stylistically uniform** (user request, not started).
+   13 icons use the 256×256 "dark plate + accent border" house style; 11 are flat 64×64
+   glyphs with no plate. Decision still needed from the user — the last question asked was:
+   *"Which icons jump out as not belonging, and what about them looks off (drawing style,
+   colors, detail, background)?"* If the user says "just do it", redraw the 11 outliers in
+   the house style. Full spec + pipeline in `handoff/ICON_STYLE_GUIDE.md`.
+2. **Sprint 13 Full MVP Balance + Fun Test** — still OPEN. Needs 3 natural human playtests;
+   tune `src/shared/Config.luau` only. Plan: `docs/SPRINT_13_FULL_MVP_BALANCE_TEST.md`.
+   This is the gate for calling the MVP done (criteria in `docs/PLAN.md`).
+3. **Post-MVP roadmap** (`docs/PLAN.md` order): second playable character from LORE.md
+   ("The Chosen"), elite enemies, bosses, stage progression, multiplayer last.
+
+Minor loose ends: get an explicit `VerifyCleanup` PASS printout in a fresh playtest;
+track down the harmless `rbxassetid://203785492 … Asset type does not match` warning
+(a wrong-typed sound/texture reference, not an item icon); rifle `tool.Grip` tilt may want
+a nudge.
+
+## Dev environment
+
+Toolchain is Rokit-managed (`rokit.toml`): rojo 7.6.1, StyLua 2.5.2, selene 0.31.0,
+luau-lsp 1.68.0. Binaries in `~/.rokit/bin` — add to PATH if a tool is "missing":
+
+```bash
+export PATH="$HOME/.rokit/bin:$PATH"
+```
+
+Sync to Studio (keep this running in a terminal tab):
+
+```bash
+rojo serve default.project.json
+```
+
+Then in Roblox Studio open the test place ("Chance of Drops Testing", place id
+15581035561), Rojo plugin → Connect (localhost:34872). After any `default.project.json`
+change, restart `rojo serve` and reconnect.
+
+Static checks after every change:
+
+```bash
+stylua src
+```
+
+```bash
+selene src
+```
+
+```bash
+rojo build -o build.rbxlx
+```
+
+VS Code: `.vscode/extensions.json` recommends Luau LSP, StyLua, selene and Rojo
+extensions; `.vscode/settings.json` points them at the Rokit binaries.
+
+## Roblox Studio MCP (live verification)
+
+Server `robloxstudio` (`@chrrxs/robloxstudio-mcp@latest --auto-install-plugin`) is
+configured at user scope in `~/.claude.json`, so it is available in any Claude Code session.
+Studio must be open with the MCP plugin connected. Tools: `solo_playtest`, `execute_luau`
+(targets `server` / `client-1`), `grep_scripts`, `get_script_source`, `get_runtime_logs`,
+`capture_screenshot`, `upload_asset`, `manage_instance`.
+
+Hard-won gotchas:
+- **`execute_luau` runs in an isolated VM.** `require()` returns a fresh, un-`init()`ed
+  module copy — calling service functions from eval hits nil remotes. Drive the real game by
+  firing the `DevCommand` RemoteEvent from `client-1`; use eval only to read Instance/
+  attribute state. Stateless modules (GroundUtil) are fine in eval.
+- DevCommand commands: GiveXP, ForceLevelUp, GrantItem(itemId, stacks), ClearItems,
+  SpawnEnemy(type, count), ClearEnemies, KillPlayer, RestartRun, PrintRunState,
+  VerifyCleanup, ForceObjectiveComplete, ForceMissionSuccess. Pick an item via the
+  `ItemSelection` remote (client fires chosen item id).
+- A running playtest never picks up synced code — always Stop → Play after a sync. Studio
+  MCP sometimes can't tear down a wedged playtest; manual Stop → Play fixes it.
+- `grep_scripts` / `get_script_source` return "Unknown error" when Rojo isn't connected or
+  when the playtest has ended (peers gone). Check `solo_playtest` status first.
+- NEVER create script instances in Studio for files Rojo manages (duplicates break boot).
+
+## Security / housekeeping (do not relax)
+
+- Never print or commit API keys. The Open Cloud key lives outside the repo in
+  `~/.claude.json` (robloxstudio MCP env). `upload_asset` uses it from its own env — never
+  read or echo it.
+- `assets/icons/*.png` is gitignored; only SVG sources are committed.
+- Commit attribution: end commit messages with
+  `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>` (or whatever model is running).
+- `gh` CLI is not installed; push with plain `git push` (credentials are cached).
+- If Claude Code's auto permission mode starts refusing Bash/MCP with "claude-opus-4-8 is
+  temporarily unavailable, so auto mode cannot determine the safety of…", that is an
+  Anthropic-side classifier outage — switch to **bypass permissions** (Shift+Tab) to unblock.
+- Rules of the project: one feature per turn, verify, then move on. Balance numbers live in
+  `Config.luau`. UI is code-generated (disk is the source of truth).

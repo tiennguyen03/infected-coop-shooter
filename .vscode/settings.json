@@ -1,0 +1,20 @@
+{
+  "files.associations": {
+    "*.luau": "luau",
+    "*.project.json": "jsonc"
+  },
+  "editor.formatOnSave": true,
+  "[luau]": {
+    "editor.defaultFormatter": "JohnnyMorganz.stylua"
+  },
+  "stylua.searchBinaryInPATH": true,
+  "luau-lsp.sourcemap.enabled": true,
+  "luau-lsp.sourcemap.rojoProjectFile": "default.project.json",
+  "luau-lsp.sourcemap.autogenerate": true,
+  "luau-lsp.require.mode": "relativeToFile",
+  "files.exclude": {
+    "build.rbxlx": true,
+    "sourcemap.json": true,
+    "assets/icons/*.png": true
+  }
+}

@@ -54,10 +54,11 @@ missing, `~/.rokit/bin` may not be on PATH — run `rokit install` from the proj
   type checking (requires `globalTypes.d.luau` from the luau-lsp repo; skip if absent).
 
 ## Current next task
-Live verify Sprint 15 Assault Class V1 + Proper Held Gun. See docs/PROJECT_HANDOFF_CONTEXT.md.
-Do not add features until gun visual, Q dash, E breach, Combat Momentum, cooldown UI, and
-VerifyCleanup are verified. Manual Stop → Play may be required because Studio MCP can run
-stale playtests.
+Fresh session? Read [handoff/README.md](handoff/README.md) first — current state, open work,
+dev-env startup, Studio MCP gotchas. Sprint 15 was live-verified 2026-11-05 (commit `3d709f2`).
+Open work: (1) make the 24 item icons stylistically uniform — 11 are off-style; spec and
+pipeline in [handoff/ICON_STYLE_GUIDE.md](handoff/ICON_STYLE_GUIDE.md), user decision still
+pending; (2) Sprint 13 balance playtests; (3) post-MVP roadmap per docs/PLAN.md.
 
 ## Status
 - Sprint 14 (Item Rarity Framework) code-complete + static-clean: rarities on all 13 items
