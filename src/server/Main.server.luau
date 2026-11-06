@@ -6,6 +6,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 -- Creating remotes first guarantees clients never wait on a system that
 -- hasn't initialized yet.
 require(ReplicatedStorage.Shared.Remotes)
+require(ReplicatedStorage.Shared.MeshAssets).init()
 
 require(script.Parent.ArenaService).init()
 require(script.Parent.PauseService).init()

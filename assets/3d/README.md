@@ -46,19 +46,24 @@ Add `-- --only wpn_rifle prop_drone` to build a subset.
 
 All far under the budgets in `docs/STYLES.md` section 6.
 
-## Getting a mesh into Roblox
+## Getting a mesh into Roblox (the pipeline that shipped 2026-11-06)
 
-1. Studio → Avatar/3D Importer (Home tab → Import 3D) → pick `export/<asset>.fbx`.
-2. In the import dialog set **Scale Unit = Studs**, uncheck anything about rigs/animations,
-   keep "Merge meshes" off (each FBX is already one mesh). Import.
-3. Upload `palette.png` once as a Decal (`assets/icons/build/upload.js` style, or Studio Bulk
-   Import) and set every MeshPart's `TextureID` to its image id. Record the ids in
-   `assets/3d/ASSET_IDS.md`.
-4. On the MeshPart: `Anchored` as needed, `CollisionFidelity = Box`,
-   `RenderFidelity = Automatic`, `CastShadow = false` for small clutter.
-5. Put the MeshPart in `ReplicatedStorage.Assets.<name>` (Rojo-managed folder TBD) and have
-   the owning service clone it instead of building a Part. Keep the old Part as the fallback
-   until the clone is verified in a playtest.
+1. **Upload** the FBX with the Studio MCP `upload_asset` tool (`assetType: "Model"`), and
+   `palette.png` once as a `Decal`. Open Cloud imports FBX at 100x (1 Blender unit = 100
+   studs); that is fine, the MeshPart is scaled by `Size`.
+2. **Read the MeshId** in Studio edit mode:
+   `InsertService:LoadAsset(<modelAssetId>)` → the MeshPart inside → `.MeshId`. Record
+   mesh id, model id, in-game Size and placement note in `ASSET_IDS.md`.
+3. **Register** it in `src/shared/MeshAssets.luau` (`MESHES[name] = { meshId, size }`). At
+   server boot `MeshAssets.init()` builds one template per entry with
+   `InsertService:CreateMeshPartAsync(meshId, CollisionFidelity.Box, RenderFidelity.Automatic)`
+   (positional arguments; the options-table form errors) and sets the palette `TextureID`.
+   Do **not** create MeshParts through Rojo `model.json`: the live sync sets `MeshId`
+   without the mesh bounds (`MeshSize` stays 0) and the mesh renders at the wrong scale.
+4. **Use** it: the owning service calls `MeshAssets.clone(name)` and keeps its old Part as
+   the fallback when that returns nil. Mesh pivots are at the bottom in Blender but a
+   MeshPart is centred on its bounds, so place at `ground + Size.Y / 2`.
+5. Verify in a playtest (`solo_playtest`, grant the item, screenshot).
 
 ## Live Blender (blender-mcp) — set up 2026-11-05
 

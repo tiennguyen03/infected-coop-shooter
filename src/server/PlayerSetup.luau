@@ -6,6 +6,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
 
 local PlayerSetup = {}
 
@@ -79,43 +80,67 @@ local function attachRifle(character: Model, humanoid: Humanoid)
 	end
 
 	-- Handle-local layout: grip at the origin (the palm), barrel along -Z.
-	riflePart(
-		"Body",
-		Vector3.new(0.34, 0.46, 1.5),
-		CFrame.new(0, 0.2, -0.1),
-		Color3.fromRGB(62, 66, 70)
-	)
-	riflePart(
-		"Barrel",
-		Vector3.new(0.16, 0.16, 1),
-		CFrame.new(0, 0.28, -1.05),
-		Color3.fromRGB(40, 42, 45)
-	)
-	riflePart(
-		"Muzzle",
-		Vector3.new(0.2, 0.2, 0.14),
-		CFrame.new(0, 0.28, -1.6),
-		Color3.fromRGB(28, 28, 28)
-	)
-	riflePart(
-		"Stock",
-		Vector3.new(0.28, 0.4, 0.7),
-		CFrame.new(0, 0.06, 0.78),
-		Color3.fromRGB(82, 64, 42),
-		Enum.Material.Wood
-	)
-	riflePart(
-		"TriggerGrip",
-		Vector3.new(0.2, 0.42, 0.24),
-		CFrame.new(0, -0.18, 0.1),
-		Color3.fromRGB(40, 42, 45)
-	)
-	riflePart(
-		"Foregrip",
-		Vector3.new(0.16, 0.34, 0.2),
-		CFrame.new(0, -0.06, -0.6),
-		Color3.fromRGB(40, 42, 45)
-	)
+	local body = MeshAssets.clone("wpn_rifle")
+	if body then
+		-- Low-poly rifle mesh (assets/3d wpn_rifle, 0.65x). The mesh pivot is the grip; the
+		-- MeshPart is centred on its bounding box, so offset by the mesh's centre-from-grip.
+		body.Name = "Body"
+		body.Anchored = false
+		body.Massless = true
+		body.CFrame = handle.CFrame * CFrame.new(0, 0.185, -0.54)
+		local weld = Instance.new("WeldConstraint")
+		weld.Part0 = handle
+		weld.Part1 = body
+		weld.Parent = body
+		body.Parent = tool
+		-- Invisible muzzle marker at the barrel tip (WeaponController fires from it).
+		local muzzle = riflePart(
+			"Muzzle",
+			Vector3.new(0.2, 0.2, 0.14),
+			CFrame.new(0, 0.42, -1.95),
+			Color3.new()
+		)
+		muzzle.Transparency = 1
+	else
+		-- Placeholder rifle from Parts when the mesh template is missing.
+		riflePart(
+			"Body",
+			Vector3.new(0.34, 0.46, 1.5),
+			CFrame.new(0, 0.2, -0.1),
+			Color3.fromRGB(62, 66, 70)
+		)
+		riflePart(
+			"Barrel",
+			Vector3.new(0.16, 0.16, 1),
+			CFrame.new(0, 0.28, -1.05),
+			Color3.fromRGB(40, 42, 45)
+		)
+		riflePart(
+			"Muzzle",
+			Vector3.new(0.2, 0.2, 0.14),
+			CFrame.new(0, 0.28, -1.6),
+			Color3.fromRGB(28, 28, 28)
+		)
+		riflePart(
+			"Stock",
+			Vector3.new(0.28, 0.4, 0.7),
+			CFrame.new(0, 0.06, 0.78),
+			Color3.fromRGB(82, 64, 42),
+			Enum.Material.Wood
+		)
+		riflePart(
+			"TriggerGrip",
+			Vector3.new(0.2, 0.42, 0.24),
+			CFrame.new(0, -0.18, 0.1),
+			Color3.fromRGB(40, 42, 45)
+		)
+		riflePart(
+			"Foregrip",
+			Vector3.new(0.16, 0.34, 0.2),
+			CFrame.new(0, -0.06, -0.6),
+			Color3.fromRGB(40, 42, 45)
+		)
+	end
 
 	-- Seat the rifle in the hand. Tilt the grip so the barrel rides level/up
 	-- against the default hold pose. (First-pass — tune in Studio if needed.)

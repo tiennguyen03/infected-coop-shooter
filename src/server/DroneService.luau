@@ -10,6 +10,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
 local ItemEffectService = require(script.Parent.ItemEffectService)
 local PauseService = require(script.Parent.PauseService)
 local ProjectileServer = require(script.Parent.ProjectileServer)
@@ -75,16 +76,19 @@ function DroneService.deploy(owner: Player): boolean
 		return false
 	end
 
-	local part = Instance.new("Part")
+	local part: BasePart = MeshAssets.clone("prop_drone") or Instance.new("Part")
 	part.Name = "CombatDrone"
-	part.Size = Vector3.new(1.1, 0.35, 1.1)
+	if part:IsA("Part") then
+		-- Placeholder when the mesh template is missing.
+		part.Size = Vector3.new(1.1, 0.35, 1.1)
+		part.Material = Enum.Material.Neon
+		part.Color = Color3.fromRGB(63, 167, 214)
+	end
 	part.CFrame = CFrame.new(root.Position + Vector3.new(0, Config.Items.Drone.FollowHeight, 0))
 	part.Anchored = true
 	part.CanCollide = false
 	part.CanQuery = false
 	part.CanTouch = false
-	part.Material = Enum.Material.Neon
-	part.Color = Color3.fromRGB(63, 167, 214)
 	part.Parent = droneFolder
 
 	-- Signal Antenna / Cheap Drone Parts: per-owner range + duration boosts.

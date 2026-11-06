@@ -10,6 +10,7 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
 local ItemEffectService = require(script.Parent.ItemEffectService)
 local ItemService = require(script.Parent.ItemService)
 local PauseService = require(script.Parent.PauseService)
@@ -110,18 +111,23 @@ local function dropMine(owner: Player, root: BasePart)
 	local result = workspace:Raycast(behind + Vector3.new(0, 50, 0), Vector3.new(0, -200, 0))
 	local groundY = if result then result.Position.Y else root.Position.Y - 2.5
 
-	local part = Instance.new("Part")
+	local part: BasePart = MeshAssets.clone("prop_repulsor_mine") or Instance.new("Part")
 	part.Name = "RepulsorMine"
-	part.Shape = Enum.PartType.Cylinder
-	part.Size = Vector3.new(0.4, 2, 2)
-	part.CFrame = CFrame.new(Vector3.new(behind.X, groundY + 0.2, behind.Z))
-		* CFrame.Angles(0, 0, math.rad(90))
+	if part:IsA("Part") then
+		-- Placeholder when the mesh template is missing: a flat cylinder lying on the ground.
+		part.Shape = Enum.PartType.Cylinder
+		part.Size = Vector3.new(0.4, 2, 2)
+		part.Material = Enum.Material.Metal
+		part.Color = Color3.fromRGB(96, 150, 220)
+		part.CFrame = CFrame.new(Vector3.new(behind.X, groundY + 0.2, behind.Z))
+			* CFrame.Angles(0, 0, math.rad(90))
+	else
+		part.CFrame = CFrame.new(Vector3.new(behind.X, groundY + part.Size.Y / 2, behind.Z))
+	end
 	part.Anchored = true
 	part.CanCollide = false
 	part.CanQuery = false
 	part.CanTouch = false
-	part.Material = Enum.Material.Metal
-	part.Color = Color3.fromRGB(96, 150, 220)
 	part.Parent = mineFolder
 
 	table.insert(mines, {

@@ -27,4 +27,6 @@ git history; this file is the index. Current state and open work: `handoff/READM
 | 2026-11-05 | Doc-sync workflow: slim CLAUDE.md, this file, commit hook `.claude/hooks/doc-sync-check.js` | CLAUDE.md > Doc-sync |
 | 2026-11-05 | Co-op decision: final product is 4-player co-op. Full single-player audit of `src/`, debt register (13 items), 6 co-op design decisions made (no-pause level-up, shared XP, downed/revive + stage respawn, ready-up start, owner-only pickups, more-not-tougher scaling), 4-player design rule in CLAUDE.md, PLAN.md scope updated. Blender MCP bridge set up (`.mcp.json` + add-on) and socket-verified | docs/MULTIPLAYER_READINESS.md, assets/3d/README.md > Live Blender |
 
+| 2026-11-06 | First Blender meshes live: `MeshAssets` server-built MeshPart templates (CreateMeshPartAsync + palette texture); crate, mine, drone, XP orb, rifle services clone them with Part fallbacks. Verified in a playtest | assets/3d/README.md, assets/3d/ASSET_IDS.md |
+
 Still open: Sprint 13 Full MVP Balance + Fun Test (docs/SPRINT_13_FULL_MVP_BALANCE_TEST.md).

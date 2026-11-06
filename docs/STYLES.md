@@ -215,7 +215,9 @@ Lower is always acceptable. Add triangles only where the silhouette needs them.
 
 - Export FBX per asset: selected objects only, mesh only, apply scale, no animation unless
   rigging, no embedded textures (palette is uploaded once and referenced by `TextureID`).
-- Import with Studio's 3D Importer (or MCP `import_rbxm`), then set on each MeshPart:
+- Import via Open Cloud `upload_asset` (Model) + `src/shared/MeshAssets.luau` templates built
+  with `CreateMeshPartAsync` at server boot (steps in `assets/3d/README.md`); never through
+  Rojo `model.json` (wrong scale). Each template has:
   `Anchored = true` (static), `CastShadow = false` for clutter under ~2 studs,
   `CollisionFidelity = Box` (or `Hull` for walkable geometry; never `PreciseConvex`
   for clutter), `RenderFidelity = Automatic`, `CanQuery = false` and `CanTouch = false`

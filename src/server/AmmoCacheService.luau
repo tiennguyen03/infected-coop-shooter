@@ -9,6 +9,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local ItemService = require(script.Parent.ItemService)
 local PauseService = require(script.Parent.PauseService)
@@ -88,17 +89,21 @@ local function spawnCache(nearRoot: BasePart)
 	)
 	local groundY = if rayResult then rayResult.Position.Y else 0
 
-	local part = Instance.new("Part")
+	local part: BasePart = MeshAssets.clone("prop_ammo_crate") or Instance.new("Part")
 	part.Name = "AmmoCache"
-	part.Size = Vector3.new(2.6, 1.6, 1.8)
-	part.Position = Vector3.new(spawnXZ.X, groundY + 0.8, spawnXZ.Z)
+	if part:IsA("Part") then
+		-- Placeholder when the mesh template is missing.
+		part.Size = Vector3.new(2.6, 1.6, 1.8)
+		part.Material = Enum.Material.Metal
+		part.Color = Color3.fromRGB(107, 122, 74)
+	end
+	-- Mesh pivot is at the bottom; the MeshPart is centred, so lift by half its height.
+	part.Position = Vector3.new(spawnXZ.X, groundY + part.Size.Y / 2, spawnXZ.Z)
 	part.Orientation = Vector3.new(0, math.deg(angle), 0)
 	part.Anchored = true
 	part.CanCollide = false
 	part.CanQuery = false
 	part.CanTouch = false
-	part.Material = Enum.Material.Metal
-	part.Color = Color3.fromRGB(107, 122, 74)
 
 	local marker = Instance.new("BillboardGui")
 	marker.Size = UDim2.fromOffset(90, 26)

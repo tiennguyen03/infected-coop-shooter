@@ -8,6 +8,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
 local PauseService = require(script.Parent.PauseService)
 local XPService = require(script.Parent.XPService)
 
@@ -45,17 +46,20 @@ end
 function XPOrbService.spawnOrb(position: Vector3, xp: number)
 	-- Bigger orb for bigger rewards (Brutes) so value reads at a glance.
 	local diameter = if xp >= 20 then 1.5 else 0.9
-	local part = Instance.new("Part")
+	local part: BasePart = MeshAssets.clone("pick_xp_orb") or Instance.new("Part")
 	part.Name = "XPOrb"
-	part.Shape = Enum.PartType.Ball
+	if part:IsA("Part") then
+		-- Placeholder when the mesh template is missing.
+		part.Shape = Enum.PartType.Ball
+		part.Material = Enum.Material.Neon
+		part.Color = Color3.fromRGB(85, 255, 170)
+	end
 	part.Size = Vector3.new(diameter, diameter, diameter)
 	part.Position = position
 	part.Anchored = true
 	part.CanCollide = false
 	part.CanQuery = false
 	part.CanTouch = false
-	part.Material = Enum.Material.Neon
-	part.Color = Color3.fromRGB(85, 255, 170)
 	part.Parent = orbFolder
 
 	table.insert(orbs, {
