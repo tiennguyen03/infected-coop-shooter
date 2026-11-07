@@ -184,10 +184,13 @@ that was done to help it (a screening band, a bandage over the bite, cut restrai
 
 ## B. The Index hosts (5,000 tris, boss, health bar)
 
-### The Warden (Delta; scale 2.3)
-- **Was:** the Delta MP who ran the Gate. The strain grew his riot kit into him.
+### The Warden (Delta; scale 1.9; built 2026-11-07, 2,588 body + 572 plate tris)
+- **Was:** the Delta MP sergeant who ran the Gate, the Gate NCOIC. Bitten through the
+  shield sleeve on the last day of screening; chained the Gate from outside under the
+  containment order, shutting the garrison and the highway's refugees in with himself.
+  The strain grew his riot kit into him. The only Index that stands upright.
 - **Head:** riot helmet fused to the skull, `dark.m` shell, `gun.l` visor cracked and set
-  into the `rebuilt` brow; green eyes behind it.
+  into the `rebuilt` brow; `strain.l` eyes in `dark.d` rims behind it.
 - **Torso:** the Brute's bone shelf under `dark` riot plates (chest, shoulders, back); a
   `white.m` **MP brassard** with `dark.d` letters on the upper arm; a `dark` radio handset
   on its coiled cord grown into the chest plate.
@@ -195,7 +198,11 @@ that was done to help it (a screening band, a bandage over the bite, cut restrai
   forearm as an attached part (`dark.l`, 2 studs wide, `gun.l` window).
 - **Legs/feet:** `dark.d` shin guards, `olive.m` trousers, `dark.d` boots.
 - **Mechanic:** six plates (helmet shell, chest, back, both shoulders, shield) are attached
-  parts with their own health; each one off reveals `rebuilt` bone and a `strain.d` seam.
+  parts with their own health; each one off reveals `rebuilt` bone and a `strain.l` seam
+  (built as the limb geometry under the plate). Gas canisters on the right hip feed the
+  phase-2 lob. Built as `inf_warden_*` with side-specific arms (`_l` shield grips and
+  seam, `_r` brassard) and `inf_warden_plate_*`; numbers in `docs/PROGRESSION.md`
+  > *Index kit: the Warden*.
 
 ### The Bloat (Mile 14; scale 1.6, depth/width 1.5)
 - **Was:** the driver of the lead bus. Sealed the bitten aboard, then was bitten himself.

@@ -29,15 +29,34 @@ function ItemEffectService.addKillListener(listener: (player: Player) -> ())
 end
 
 -- THE damage entry point. `attacker` is nil for a squad bot (BotService): no kill credit, no
--- hit marker. `kind` names the source ("hit", "headshot", "breach", "fire", ...).
+-- hit marker. `kind` names the source ("hit", "headshot", "breach", "fire", ...). `part` is
+-- the part the round hit when known: an Index plate (PlateHealth attribute, IndexService)
+-- takes the hit instead of the body, at GuardFactor while he guards (the Flank plate never).
 function ItemEffectService.dealDamage(
 	attacker: Player?,
 	humanoid: Humanoid,
 	amount: number,
 	position: Vector3?,
-	kind: string?
+	kind: string?,
+	part: Instance?
 )
 	if humanoid.Health <= 0 then
+		return
+	end
+	local plateHealth = part and part:GetAttribute("PlateHealth")
+	if part and typeof(plateHealth) == "number" then
+		local model = part:FindFirstAncestorOfClass("Model")
+		local guard = model and model:GetAttribute("GuardFactor")
+		if typeof(guard) == "number" and part:GetAttribute("Flank") ~= true then
+			amount *= guard
+		end
+		part:SetAttribute("PlateHealth", math.max(0, plateHealth - amount))
+		if attacker then
+			lastDamager[humanoid] = attacker
+		end
+		if position then
+			damageRemote:FireAllClients(position, amount, kind or "plate", attacker)
+		end
 		return
 	end
 	-- A bot's hit (no attacker) leaves any player's kill credit on the target in place.

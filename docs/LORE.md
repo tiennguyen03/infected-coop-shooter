@@ -99,6 +99,41 @@ turned the place from the inside. Control calls them the Index; the soldiers cal
 they look like (the Warden, the Bloat, the Patient, the Lineman, the Specimen). Putting one
 down is the only kill Control pays for on the spot.
 
+**The Warden** (Delta). The Gate NCOIC, an MP sergeant, ran the screening lane on the last
+day: hands, papers, through. He was bitten through the shield sleeve by a civilian who
+had passed the count. When the containment order came he chained the Gate himself, from
+the outside, with the garrison and the highway's refugees still in the pens, and stayed
+on post. The strain found the kit before it found the man: riot plate grown into bone,
+the handset fused to the chest plate and still keyed open, so every attack starts with
+carrier hiss and a squelch. He still walks the route, Gate to bus line to Inner Gate to
+the Apron, checking buses that have been empty for a week. Shoot the plates off and he
+is just a man again. Optional name for the roster board: SGT HALE (not used in game).
+
+Radio for the Warden sortie (`Config.Index.Warden.Radio`; the insert and wipe lines are
+written but not yet placed):
+
+| Cue | Line |
+|---|---|
+| Insert (not placed) | "Pike, Control. Delta's Index is the Gate NCOIC. He chained it. Expect him to come looking." |
+| Primary complete | "Control copies. That's the Primary. Index is moving at the Gate." |
+| Gate open | "Gate's open. Contact in the lane, big. It's wearing riot plate." |
+| Sighting | "Eyes on. That's the Gate NCOIC. Control, Index confirmed." |
+| Bus line | "Bus line. He's checking buses. Plates first, then the body." |
+| Inner Gate | "Inner Gate. He's working his second checkpoint. Flank when he guards." |
+| First plate | "Plate's off. That's bone under it. Keep working the seams." |
+| Last plate | "Last plate. He's just a man again. Put him down." |
+| Riot Call (the handset) | "...all posts, Gate. Crowd at the wire. Send the reserve..." |
+| Bash (the handset) | "...hands. Show me your hands. Hands..." |
+| Charge (the handset) | "...move back. Move back. Clear the lane..." |
+| Canister (the handset) | "...gas. Gas in the lane..." |
+| Kill | "Index down. Control copies. Gate's yours, Pike. Pallet inbound." |
+| Wipe (not placed) | "Pike, Control. Lost you at the Gate. Marking Delta red." |
+
+Gate dressing written for Open the Route, not placed yet: the chain and padlock on the
+outside of the Gate; spray on the T-wall, "GATE CLOSED BY ORDER. NCOIC"; the Gate log on
+the booth desk, the last line "212 held. Bitten: 1 (self). Chaining the gate." (the
+highway, never a number, when it is spoken on the radio).
+
 ## Resupply
 
 Lantern does not come back for a squad that has not earned it. Kills and objectives build

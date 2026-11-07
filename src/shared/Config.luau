@@ -334,6 +334,7 @@ local Config = {
 			},
 			Brute = { move = "mutant_walking", attack = "mutant_swiping", death = "zombie_death" },
 			Hocker = { move = "zombie_walk", attack = "hocker_spit", death = "zombie_death" },
+			Warden = { move = "mutant_walking", attack = "mutant_swiping", death = "zombie_death" },
 		},
 		-- Ground speed (studs/s) at which each locomotion clip plays at 1x; the track rate
 		-- scales with the actual speed so feet do not slide.
@@ -696,6 +697,148 @@ local Config = {
 		PathWaypointReach = 3, -- studs: the next waypoint counts as reached
 	},
 
+	-- The Index (Sprint 19): the Warden, Delta's boss (IndexService; docs/PROGRESSION.md
+	-- "Index kit: the Warden"). Spawns beyond the Gate when the Primary completes and walks
+	-- the screening lane to the Apron, then hunts. Body and plate health scale per extra
+	-- living player (HealthPerExtraPlayer: the one exception to MULTIPLAYER_READINESS
+	-- decision 6). Distances in studs, times in seconds; damage per hit before
+	-- Difficulty.DamageMultiplier. Numbers: systems designer 2026-11-07, scale 1.9 (art).
+	Index = {
+		Warden = {
+			SpawnPosition = Vector3.new(-30, 0, -290), -- beyond the Gate (LEVELS A6)
+			Waypoints = { -- the lane in: the Gate, the bus line, the Inner Gate, the Apron
+				Vector3.new(-30, 0, -274),
+				Vector3.new(-30, 0, -200),
+				Vector3.new(-30, 0, -112),
+				Vector3.new(-30, 0, -45),
+				Vector3.new(-30, 0, 0),
+			},
+			WaypointRadio = { [2] = "BusLine", [3] = "InnerGate" }, -- Radio key read on reaching a waypoint
+			WaypointReach = 6,
+			WalkTimeout = 75, -- the hunt starts anyway after this long on the lane
+			SightingRange = 90, -- a living member this close during the walk: the sighting line
+			SpawnDelay = 1.5, -- stands still after spawning
+			GateOpenDelay = 3,
+			HideDelay = 2.5, -- boss bar stays this long after the fight
+			TellHold = 1.6, -- seconds a tell line stays on the boss bar
+			RiotCallSpacing = 1, -- frames between the bodies of a Riot Call (one burst would hitch)
+			SyncInterval = 0.2,
+			HealthPerExtraPlayer = 0.33,
+			ScaleReach = 1.9, -- the body's scale: reach distances below are at scale 1
+			ArmouredMultiplier = 0.25, -- a round into a plate (the plate takes it, not the body)
+			ExposedMultiplier = 1.5, -- a round into a limb whose plate is gone
+			-- Plates: { Limb = the R15 part it welds to, Mesh = assets/3d piece, Health }.
+			-- Flank: full damage even while he guards (the back).
+			Plates = {
+				Helmet = { Limb = "Head", Mesh = "inf_warden_plate_helmet", Health = 300 },
+				Chest = { Limb = "UpperTorso", Mesh = "inf_warden_plate_chest", Health = 500 },
+				Back = {
+					Limb = "UpperTorso",
+					Mesh = "inf_warden_plate_back",
+					Health = 400,
+					Flank = true,
+				},
+				ShoulderL = {
+					Limb = "LeftUpperArm",
+					Mesh = "inf_warden_plate_shoulder",
+					Health = 300,
+				},
+				ShoulderR = {
+					Limb = "RightUpperArm",
+					Mesh = "inf_warden_plate_shoulder",
+					Health = 300,
+				},
+				Shield = { Limb = "LeftLowerArm", Mesh = "inf_warden_plate_shield", Health = 600 },
+			},
+			PlateOrder = { "Helmet", "Chest", "Back", "ShoulderL", "ShoulderR", "Shield" }, -- boss bar pips
+			CrackFraction = 0.5, -- a plate below this fraction reads cracked
+			PlateBreakStagger = 1.5,
+			PlateBreakImpulse = 30, -- studs/s the plate flies off at
+			PlateDebris = 5, -- seconds a fallen plate lies there
+			-- Shield Bash: close, frontal arc. Roll out of it.
+			Bash = {
+				Range = 8,
+				Windup = 0.9,
+				ArcDegrees = 90,
+				Damage = 40,
+				Cooldown = 3,
+				Recovery = 0.6,
+			},
+			-- Gate Charge: a straight line at speed; hard cover in the way stuns him (WallStun).
+			Charge = {
+				MinRange = 15,
+				MaxRange = 45,
+				Windup = 1.2,
+				Distance = 45,
+				Speed = 40,
+				Width = 5,
+				Damage = 35,
+				Cooldown = 10,
+				FirstDelay = 6, -- seconds after spawning before the first charge
+				Recovery = 0.8,
+				WallStun = 3,
+				Probe = 3, -- studs ahead of the root (at scale 1) the charge looks for hard cover
+				HitHeight = 8, -- height difference inside which the charge still hits a body
+			},
+			-- Gas Canister (phase 2+): lobbed at the furthest member in range; a puddle.
+			Canister = {
+				MinPhase = 2,
+				MaxRange = 70,
+				Windup = 1,
+				Damage = 10,
+				Cooldown = 8,
+				Recovery = 0.5,
+				Projectile = {
+					Speed = 50,
+					Size = 1.2,
+					Color = Color3.fromRGB(156, 170, 72),
+					SplashRadius = 5,
+					Lead = 0.5,
+					Puddle = { Radius = 9, Duration = 6, DamagePerSecond = 12 },
+				},
+			},
+			-- Guard: shield over the visor. Slow, frontal plates take PlateDamageFactor; flank him.
+			Guard = {
+				MinRange = 8,
+				MaxRange = 16,
+				Duration = 2.5,
+				Cooldown = 9,
+				SpeedFactor = 0.5,
+				PlateDamageFactor = 0.25,
+			},
+			-- Phases, entered at or below a body fraction; each opens with a Riot Call
+			-- (spawnWave round him, 25-35 studs) and may retune him.
+			Phases = {
+				{ Below = 0.6, RiotCall = { Walker = 6, Runner = 2 }, WalkersPerExtraPlayer = 3 },
+				{
+					Below = 0.25,
+					RiotCall = { Walker = 6, Runner = 2 },
+					WalkersPerExtraPlayer = 3,
+					ChargeCooldown = 5,
+					WalkSpeed = 11,
+				},
+			},
+			-- The field while he is up: fewer ambient spawns, a smaller horde, no Brutes.
+			Pressure = { SpawnFactor = 1.5, MaxAliveReduction = 8, Caps = { Brute = 0 } },
+			-- The priority pallet on death: an upgrade crate (Crates.CardsPerPlayer cards each),
+			-- a full heal and a re-arm; his SupplyValue goes to the Resupply pool like any kill.
+			Drop = { Offset = 6 },
+			-- Radio lines (lore developer 2026-11-07), shown as notices. Insert and wipe lines
+			-- belong to RunManager flows later.
+			Radio = {
+				PrimaryComplete = "Control copies. That's the Primary. Index is moving at the Gate.",
+				GateOpen = "Gate's open. Contact in the lane, big. It's wearing riot plate.",
+				Sighting = "Eyes on. That's the Gate NCOIC. Control, Index confirmed.",
+				BusLine = "Bus line. He's checking buses. Plates first, then the body.",
+				InnerGate = "Inner Gate. He's working his second checkpoint. Flank when he guards.",
+				FirstPlate = "Plate's off. That's bone under it. Keep working the seams.",
+				LastPlate = "Last plate. He's just a man again. Put him down.",
+				RiotCall = "...all posts, Gate. Crowd at the wire. Send the reserve...",
+				Kill = "Index down. Control copies. Gate's yours, Pike. Pallet inbound.",
+			},
+		},
+	},
+
 	Zombies = {
 		SpawnInterval = 2, -- base seconds between spawns (decays per minute)
 		InitialCount = 5, -- Walkers spawned right at run start
@@ -706,6 +849,7 @@ local Config = {
 		SpawnAttempts = 6,
 		SpawnBuildingMargin = 2,
 		CorpseLifetime = 1.5, -- seconds before a dead zombie is removed
+		BossCorpseLifetime = 8, -- an Index host's body stays long enough to read
 		MaxPuddles = 8, -- caustic puddles alive at once (perf); the oldest goes first
 		ThroatSacSwell = 1.8, -- Hocker sac size multiplier at the end of the windup
 	},

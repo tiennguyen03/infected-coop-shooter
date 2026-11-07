@@ -22,7 +22,7 @@ export type ProjectileSpec = {
 }
 
 export type Behaviour = {
-	Attack: "melee" | "projectile",
+	Attack: "melee" | "projectile" | "boss", -- boss: steered by IndexService, not the chase loop
 	StandOff: number?, -- projectile: stop approaching inside this distance
 	Windup: number?, -- seconds the attack pose plays before the hit lands
 	Projectile: ProjectileSpec?,
@@ -47,6 +47,7 @@ export type EnemyDefinition = {
 	-- Tallest cover top (studs above the feet) this form climbs when it is pressed against
 	-- it (EnemyService; Config.Movement.Infected). nil = never climbs.
 	ClimbHeight: number?,
+	Boss: boolean?, -- an Index host: spawned by IndexService, never by the director
 }
 
 local MELEE: Behaviour = { Attack = "melee" }
@@ -125,6 +126,24 @@ local EnemyDefinitions: { [string]: EnemyDefinition } = {
 			},
 		},
 		ThroatSac = true,
+	},
+	-- The Index (Delta): the Warden, armoured (Config.Index.Warden: plates, kit, phases).
+	-- IndexService steers him; the director never picks him (FirstSpawnTime huge, Boss).
+	Warden = {
+		DisplayName = "The Warden",
+		Scale = 1.9,
+		MaxHealth = 7000,
+		WalkSpeed = 8,
+		Damage = 40, -- Shield Bash; the other attacks carry their own damage in Config.Index
+		AttackRange = 8,
+		AttackCooldown = 3,
+		SupplyValue = 400,
+		SpawnCost = 0,
+		FirstSpawnTime = math.huge,
+		Color = Color3.fromRGB(58, 60, 56),
+		Behaviour = { Attack = "boss" },
+		HeadshotMultiplier = 2, -- once the helmet is off (the shell takes the hits until then)
+		Boss = true,
 	},
 }
 

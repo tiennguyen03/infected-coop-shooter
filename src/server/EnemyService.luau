@@ -105,6 +105,14 @@ type Climb = {
 
 local EnemyService = {}
 
+-- A boss body for IndexService (spawnBoss): the rig, the body clips; the service steers it.
+export type BossHandle = {
+	model: Model,
+	humanoid: Humanoid,
+	root: BasePart,
+	attackTrack: AnimationTrack?,
+}
+
 local zombieTemplate: Model?
 -- Per-type rigs with the Blender limb meshes (MeshAssets.dressInfected); falls back to the
 -- bare R15 template until a type's limb set has loaded.
@@ -219,26 +227,38 @@ local function onZombieDied(zombie: Zombie)
 		listener(zombie.supplyValue, zombie.root.Position)
 	end
 	ItemEffectService.onEnemyKilled(zombie.humanoid)
-	task.delay(Config.Zombies.CorpseLifetime, function()
+	local definition = EnemyDefinitions[zombie.typeName]
+	local lifetime = if definition and definition.Boss
+		then Config.Zombies.BossCorpseLifetime
+		else Config.Zombies.CorpseLifetime
+	task.delay(lifetime, function()
 		zombie.model:Destroy()
 	end)
 end
 
--- `groundPosition` is at ground level; the rig is pivoted up by hip height.
-local function spawnZombie(groundPosition: Vector3, typeName: string)
+-- `groundPosition` is at ground level; the rig is pivoted up by hip height. `prepare` runs
+-- on the clone before it is scaled (a boss's plates go on at scale 1 and scale with it).
+local function spawnZombie(
+	groundPosition: Vector3,
+	typeName: string,
+	prepare: ((Model) -> ())?
+): Zombie?
 	local definition = EnemyDefinitions[typeName]
 	if not definition then
-		return
+		return nil
 	end
 	local template = dressedTemplates[definition.BodySet or typeName] or zombieTemplate
 	if not template then
-		return
+		return nil
 	end
 
 	local model = template:Clone()
 	model.Name = definition.DisplayName
 	model.ModelStreamingMode = Enum.ModelStreamingMode.Atomic -- a rig never half-streams
 	model:SetAttribute("EnemyType", typeName)
+	if prepare then
+		prepare(model)
+	end
 	if definition.Scale ~= 1 then
 		model:ScaleTo(definition.Scale)
 	end
@@ -252,7 +272,9 @@ local function spawnZombie(groundPosition: Vector3, typeName: string)
 	-- EnemyService.slow restores this after a slow without corrupting it.
 	humanoid:SetAttribute("BaseWalkSpeed", definition.WalkSpeed)
 	humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
-	attachHealthBar(humanoid, root, definition.Scale)
+	if not definition.Boss then
+		attachHealthBar(humanoid, root, definition.Scale) -- a boss has the boss bar (BossBarUI)
+	end
 
 	for _, part in model:GetDescendants() do
 		if part:IsA("BasePart") then
@@ -384,6 +406,7 @@ local function spawnZombie(groundPosition: Vector3, typeName: string)
 	humanoid.Died:Connect(function()
 		onZombieDied(zombie)
 	end)
+	return zombie
 end
 
 -- Ambient lines: one body at a time, spaced out, only near someone who can hear them.
@@ -683,6 +706,9 @@ local function stepZombies()
 			stepProjectileZombie(zombie, now)
 			continue
 		end
+		if zombie.behaviour.Attack == "boss" then
+			continue -- IndexService steers the Index hosts
+		end
 
 		if now >= zombie.nextRepathTime then
 			zombie.nextRepathTime = now + REPATH_INTERVAL
@@ -871,6 +897,13 @@ local function pickSpawnType(): string
 				continue
 			end
 		end
+		-- While the Index is up: his pressure caps (no Brutes).
+		local indexCap = if workspace:GetAttribute("IndexActive") == true
+			then Config.Index.Warden.Pressure.Caps[typeName]
+			else nil
+		if indexCap and countOfType(typeName) >= indexCap then
+			continue
+		end
 		local maxShare = Config.Spawning.MaxShare[typeName]
 		if maxShare then
 			local share = (countOfType(typeName) + 1) / (aliveTotal + 1)
@@ -893,6 +926,25 @@ local function pickSpawnType(): string
 		end
 	end
 	return candidates[#candidates].name
+end
+
+-- IndexService: spawns a boss form at `groundPosition` and hands its body back. The chase
+-- loop leaves it alone (Behaviour.Attack "boss"); death still credits SupplyValue.
+function EnemyService.spawnBoss(
+	typeName: string,
+	groundPosition: Vector3,
+	prepare: ((Model) -> ())?
+): BossHandle?
+	local zombie = spawnZombie(groundPosition, typeName, prepare)
+	if not zombie then
+		return nil
+	end
+	return {
+		model = zombie.model,
+		humanoid = zombie.humanoid,
+		root = zombie.root,
+		attackTrack = zombie.attackTrack,
+	}
 end
 
 -- Spawns `count` of a type in a ring: around `center` if given (objective
@@ -977,12 +1029,19 @@ local function spawnLoop()
 		if workspace:GetAttribute("ResupplyActive") == true then
 			interval *= Config.Requisition.Lure.SpawnFactor
 		end
+		-- Less while the Index is up: the fight is the pressure (Config.Index.Warden.Pressure).
+		local maxAlive = DifficultyService.getMaxAlive()
+		if workspace:GetAttribute("IndexActive") == true then
+			local pressure = Config.Index.Warden.Pressure
+			interval *= pressure.SpawnFactor
+			maxAlive = math.max(4, maxAlive - pressure.MaxAliveReduction)
+		end
 		task.wait(interval)
 		if
 			RunStates.isLive()
 			and workspace:GetAttribute("DevSpawnsOff") ~= true
 			and not PauseService.isPaused()
-			and #zombies < DifficultyService.getMaxAlive()
+			and #zombies < maxAlive
 		then
 			local position = randomSpawnPosition()
 			if position then

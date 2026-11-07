@@ -23,6 +23,7 @@ local EnemyProjectileService = require(script.Parent.EnemyProjectileService)
 local EnemyService = require(script.Parent.EnemyService)
 local ExtractionService = require(script.Parent.ExtractionService)
 local IncendiaryService = require(script.Parent.IncendiaryService)
+local IndexService = require(script.Parent.IndexService)
 local ItemEffectService = require(script.Parent.ItemEffectService)
 local LoadoutService = require(script.Parent.LoadoutService)
 local MineService = require(script.Parent.MineService)
@@ -140,6 +141,7 @@ function RunManager.startRun()
 	AssaultClassService.reset()
 	DifficultyService.restart()
 	ObjectiveService.reset()
+	IndexService.reset()
 	ExtractionService.reset()
 	Squad.resetRun()
 	local players = Players:GetPlayers()
@@ -221,8 +223,9 @@ function RunManager.init()
 	Players.CharacterAutoLoads = false
 	setState("Lobby", "")
 
-	-- Explore -> Primary when the hold zone appears; Primary -> Index -> Extract when the hold
-	-- is done (Index is a passthrough until the Warden); Extract -> Ended on extraction.
+	-- Explore -> Primary when the hold zone appears; Primary -> Index when the hold is done
+	-- (the Warden comes through the Gate; IndexService); Index -> Extract when he dies (or at
+	-- once if no boss could spawn); Extract -> Ended on extraction.
 	ObjectiveService.onActivated(function()
 		if RunStates.current() == "Explore" then
 			setState("Primary")
@@ -233,6 +236,15 @@ function RunManager.init()
 			return
 		end
 		setState("Index")
+		if not IndexService.start() then
+			setState("Extract")
+			ExtractionService.start()
+		end
+	end)
+	IndexService.onDefeated(function()
+		if RunStates.current() ~= "Index" then
+			return
+		end
 		setState("Extract")
 		ExtractionService.start()
 	end)

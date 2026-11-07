@@ -380,6 +380,88 @@ local MESHES: { [string]: MeshDef } = {
 	-- The Chosen (assets/3d pc_<class>_<limb>): player bodies, swapped onto the player's R15
 	-- rig by PlayerSetup via dressModel. Only Assault is uploaded; the other four classes are
 	-- built in Blender (previews) and wait for a class system.
+	-- The Warden (Sprint 19): side-specific arms (`_l` / `_r`; dressModel looks the side up
+	-- first) and six plates welded on by IndexService (uploaded 2026-11-07).
+	inf_warden_head = {
+		meshId = "rbxassetid://91451946704174",
+		size = Vector3.new(1.260, 1.220, 1.260),
+		offset = Vector3.new(0.020, 0.020, -0.050),
+	},
+	inf_warden_upper_torso = {
+		meshId = "rbxassetid://127929460133902",
+		size = Vector3.new(2.100, 1.930, 1.230),
+		offset = Vector3.new(0.000, 0.115, -0.044),
+	},
+	inf_warden_lower_torso = {
+		meshId = "rbxassetid://135925546743840",
+		size = Vector3.new(2.360, 0.500, 1.130),
+		offset = Vector3.new(0.040, -0.040, -0.055),
+	},
+	inf_warden_upper_arm_l = {
+		meshId = "rbxassetid://128429828626584",
+		size = Vector3.new(0.900, 1.240, 0.870),
+		offset = Vector3.new(-0.018, 0.000, 0.000),
+	},
+	inf_warden_upper_arm_r = {
+		meshId = "rbxassetid://92719408011297",
+		size = Vector3.new(0.880, 1.240, 0.870),
+		offset = Vector3.new(0.008, 0.000, 0.000),
+	},
+	inf_warden_lower_arm_l = {
+		meshId = "rbxassetid://119556389365321",
+		size = Vector3.new(1.280, 1.100, 0.990),
+		offset = Vector3.new(-0.160, -0.010, -0.015),
+	},
+	inf_warden_lower_arm_r = {
+		meshId = "rbxassetid://103182885123605",
+		size = Vector3.new(1.160, 1.100, 1.000),
+		offset = Vector3.new(0.099, -0.010, -0.020),
+	},
+	inf_warden_hand = {
+		meshId = "rbxassetid://90513292529609",
+		size = Vector3.new(0.980, 0.410, 1.050),
+		offset = Vector3.new(0.000, -0.005, -0.035),
+	},
+	inf_warden_upper_leg = {
+		meshId = "rbxassetid://135036799820300",
+		size = Vector3.new(0.960, 1.380, 1.080),
+		offset = Vector3.new(0.000, -0.010, -0.060),
+	},
+	inf_warden_lower_leg = {
+		meshId = "rbxassetid://110791812728893",
+		size = Vector3.new(0.990, 1.300, 1.090),
+		offset = Vector3.new(0.000, 0.000, -0.058),
+	},
+	inf_warden_foot = {
+		meshId = "rbxassetid://88019661795689",
+		size = Vector3.new(1.010, 0.340, 1.050),
+		offset = Vector3.new(0.000, 0.017, -0.025),
+	},
+	inf_warden_plate_helmet = {
+		meshId = "rbxassetid://93019556832338",
+		size = Vector3.new(1.510, 1.120, 1.650),
+		offset = Vector3.new(0.025, 0.160, -0.065),
+	},
+	inf_warden_plate_chest = {
+		meshId = "rbxassetid://119813747852082",
+		size = Vector3.new(1.900, 1.420, 0.600),
+		offset = Vector3.new(0.000, -0.010, -0.770),
+	},
+	inf_warden_plate_back = {
+		meshId = "rbxassetid://117946002815095",
+		size = Vector3.new(1.900, 1.400, 0.530),
+		offset = Vector3.new(0.000, 0.000, 0.735),
+	},
+	inf_warden_plate_shoulder = {
+		meshId = "rbxassetid://138769670496956",
+		size = Vector3.new(1.330, 0.510, 1.330),
+		offset = Vector3.new(0.000, 0.515, 0.000),
+	},
+	inf_warden_plate_shield = {
+		meshId = "rbxassetid://81264490942347",
+		size = Vector3.new(2.080, 4.000, 0.680),
+		offset = Vector3.new(-0.600, -0.300, -0.510),
+	},
 	pc_assault_head = {
 		meshId = "rbxassetid://113120416771558",
 		size = Vector3.new(1.340, 1.240, 1.540),
@@ -780,9 +862,27 @@ local LIMB_OF_PART: { [string]: string } = {
 }
 
 -- True once every limb template of a set (`inf_walker_`, `pc_assault_`...) is built.
+-- The mesh a limb part wears from `prefix`: a side-specific `_l` / `_r` entry when the set
+-- defines one for that part's side (the Warden's arms), else the shared limb mesh.
+local function limbMeshName(prefix: string, partName: string): string?
+	local limb = LIMB_OF_PART[partName]
+	if not limb then
+		return nil
+	end
+	local side = if string.sub(partName, 1, 4) == "Left"
+		then "_l"
+		elseif string.sub(partName, 1, 5) == "Right" then "_r"
+		else ""
+	if side ~= "" and MESHES[prefix .. limb .. side] then
+		return prefix .. limb .. side
+	end
+	return prefix .. limb
+end
+
 function MeshAssets.hasSet(prefix: string): boolean
-	for _, limb in LIMB_OF_PART do
-		if not templates[prefix .. limb] then
+	for partName in LIMB_OF_PART do
+		local name = limbMeshName(prefix, partName)
+		if not name or not templates[name] then
 			return false
 		end
 	end
@@ -811,11 +911,10 @@ function MeshAssets.dressModel(model: Model, prefix: string): boolean
 		end
 	end
 	for _, part in model:GetChildren() do
-		local limb = part:IsA("BasePart") and LIMB_OF_PART[part.Name]
-		if not limb then
+		local name = if part:IsA("BasePart") then limbMeshName(prefix, part.Name) else nil
+		if not name or not part:IsA("BasePart") then
 			continue
 		end
-		local name = prefix .. limb
 		local def = MESHES[name]
 		local replacement = (templates[name] :: MeshPart):Clone()
 		local offset = def.offset or Vector3.zero

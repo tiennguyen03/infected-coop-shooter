@@ -9,8 +9,8 @@ Status (2026-11-07, Delta rework): **section A and the building kit (B1-B2) are 
 `ArenaService` (composite colliders, seven enterable kit buildings, perches with ramps, the
 Scrapes, the deck gantry, ground patches, tall Pens ring, prop placements) with the systems
 they need (`EnemyService` spawn filter + vertical chase, `BotService` unstick,
-`StanceService` crawl, StreamingEnabled). Still not built: A5 Primary props and points, A6
-the Warden, A7 stores crates and Secondaries, per-site spawn points, A10 Containment band
+`StanceService` crawl, StreamingEnabled). A6 the Warden built 2026-11-07. Still not built:
+A5 Primary props and points, A7 stores crates and Secondaries, per-site spawn points, A10 Containment band
 dressing (now in `docs/PROGRESSION.md`'s plan), and Mile 14 / Kestrel (section C). The
 `prop_*` and new `env_*` meshes are uploaded and wired (`assets/3d/ASSET_IDS.md`).
 
@@ -147,12 +147,13 @@ the checks still owed. Section B is the building kit.
 | Open the Route | the Gate | 4 jersey barriers across the lane at z-274, x-39,-33,-27,-21; 3 lock blocks at (-36,2.9,-274),(-30,2.9,-274),(-24,2.9,-274); point beyond (-30,0,-288) |
 | Evacuate | never at Delta | |
 
-## A6. Index entry: the Warden
+## A6. Index entry: the Warden (built 2026-11-07; `Config.Index.Warden`, `IndexService`)
 
 - Spawn (-30,-290). Waypoints: (-30,-274) Gate lane, (-30,-200), (-30,-112) Inner Gate lane,
   (-30,-45) under the bridge, (-30,0) Apron, then free chase.
 - Lane: 24 wide at both gates (x-42..-18), 16-wide road elsewhere: lamps at x=-42, buses at
-  x >= -9.5, nothing else within 10 studs. Bridge underside 10.5 vs a 2x R15 at ~10.4.
+  x >= -9.5, nothing else within 10 studs. Bridge underside 10.5; he is scale 1.9 (~9.9
+  tall) and walked under it in the playtest.
 - Boss ground: the Apron plus open ground x-20..25, z-36..25. Two perches 40 apart
   ((30,-10) and (-10,-10), ramped: A9) are the line-breakers; the Screening Block's west
   windows (storey 2, y 9..17.6) overlook the whole walk from the Inner Gate; the Compound W
@@ -428,7 +429,7 @@ doors to 6; Contained a 7th medical tent at (-150,-100) with a stores crate.
    Route's barrier line must be gone before it spawns. Force the Index with the squad on the
    Apron; screenshot from (0,6,-20) looking SSW as it comes under the bridge. Fix: thin the
    deck to 1.0 (underside 11), or Scale 1.9 for the Warden; keep x-42..-18 free at z -274 and
-   -112.
+   -112. **Resolved 2026-11-07: scale 1.9; the walk verified in a playtest.**
 
 Bonus: flare under the bridge at (-30,-45); if the pallet lands on the deck above, land it by
 a raycast from the flare's resting point + 2, not from the sky.

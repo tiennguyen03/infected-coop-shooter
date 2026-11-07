@@ -346,7 +346,15 @@ this section; the bullets below describe the 2026-11-06 build still worn by the 
   garrison soldier (swapped from the bullets above); the Assault is Isaac Weller, a fifth
   Chosen; all five wear the same `dark` Pike carrier with a coloured square on the left
   shoulder and back (Weller blue, Cole tan, Reyes white, Cross black/grey border, Kane
-  orange). Rebuilt to the sheets so far: **Walker, Runner, Brute, Hocker** (`inf_<type>_*`,
+  orange). Index hosts: **the Warden** built 2026-11-07 (`inf_warden_*` 2,588 tris + six
+  `inf_warden_plate_*` 572 tris, cap 5,000): `bruise` skin on the Brute bone shelf, olive
+  MP uniform, `white` brassard with `dark.d` bars on the right arm, `dark` riot plates
+  with `dark.l` edges, `gun.l` visor and shield window, `strain.l` seams and eyes, one
+  red handset lamp. Plates are separate welded MeshParts so a break is geometry leaving
+  the body; the crack state is a HUD pip (objective yellow), not an overlay mesh. The
+  boss bar (`BossBarUI`) uses the §5 panel grey, `wound` for the body, `gun.l` for a
+  plate, objective yellow for a crack and a tell, friendly blue for the stun.
+  Rebuilt to the sheets so far: **Walker, Runner, Brute, Hocker** (`inf_<type>_*`,
   36 limbs; the first rebuild was uploaded and verified in a playtest 2026-11-07; skin v2 +
   limb geometry v2 uploaded and verified the same day (palette v4 texture, 23 changed limbs;
   ids in `assets/3d/ASSET_IDS.md`); 1.4-2.1k tris per body against caps of 1.6k / 2.0k /

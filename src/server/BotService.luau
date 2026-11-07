@@ -325,7 +325,8 @@ local function shoot(bot: Bot, origin: Vector3, aim: Vector3, params: RaycastPar
 				humanoid,
 				Config.Bots.Damage * multiplier,
 				hit.Position,
-				kind
+				kind,
+				hit.Instance
 			)
 		end
 	end

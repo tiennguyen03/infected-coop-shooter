@@ -1037,7 +1037,7 @@ R15_POSE = {
 }
 
 # Whole-body triangle caps (15 limbs, both sides), art director v2. The build prints each body.
-BODY_TRI_CAP = {"walker": 1600, "runner": 2000, "brute": 2400, "hocker": 2200}
+BODY_TRI_CAP = {"walker": 1600, "runner": 2000, "brute": 2400, "hocker": 2200, "warden": 5000}
 
 OCT = (0, 0, 22.5)  # octagon flats face the limb box sides
 FACE_NORMAL = {
@@ -1450,32 +1450,211 @@ def hocker_limb(L, limb):
         walker_limb(L, limb)
 
 
+# --- The Warden (Delta's Index host; docs/CHARACTERS.md B): the MP sergeant who ran the Gate,
+# bitten through the shield sleeve, his riot kit grown into him. Built on the Brute's bone shelf
+# in MP olive with a dark duty belt and gas canisters on the right hip; the arms are side
+# specific (the brassard on the right upper arm, the shield's bone grips on the left forearm).
+# Everything the plates hide is already here: rebuilt bone with `strain_l` seams, so a plate
+# coming off reveals the strain working (CHARACTERS: the seams are the one green on him).
+# The six plates are separate meshes (`_warden_plate`) welded on by IndexService with their own
+# health; scale 1.9 in game (10.1 studs, under the 10.5 bridge deck).
+def warden_limb(L, limb, side=None):
+    W, D, H = R15_LIMB[limb]
+    skin = "bruise"
+    sx = 1 if side == "r" else -1  # the arm's outer face
+    if limb == "head":
+        L.box((W, D, 0.5), (0, 0, -0.34), swatch=skin)  # jaw
+        L.box((W - 0.1, D - 0.1, 0.72), (0, 0, 0.23), swatch="rebuilt")  # plated skull under the shell
+        L.box((0.08, 1.0, 0.06), (0.2, 0, 0.6), swatch="strain_l")  # the seam the helmet hides
+        L.box((1.16, 0.24, 0.18), (0, -0.56, 0.1), swatch="rebuilt_d")  # brow
+        for x in (-0.26, 0.26):  # eyes lit strain behind the visor (art director: strain_l, not green)
+            L.box((0.3, 0.08, 0.2), (x, -0.57, -0.06), swatch="dark_d")
+            L.box((0.2, 0.1, 0.1), (x, -0.58, -0.06), swatch="strain_l")
+        L.box((0.7, 0.1, 0.08), (0, -0.6, -0.26), swatch="dark_d")  # mouth
+        L.box((W, 0.06, 0.1), (0, -0.56, -0.5), swatch="dark")  # chin strap
+        L.lesion(0.3, 0.3, (0.58, 0.02, -0.34), face="right")
+        L.blotch(0.4, 0.3, (-0.58, -0.06, -0.34), face="left", swatch="bruise_d")
+    elif limb == "upper_torso":
+        L.box((W, D, H), swatch="olive")  # MP shirt
+        L.box((W, D, 0.5), (0, 0, 0.6), swatch=skin)  # bare shoulders over the collar
+        for y in (-0.42, 0.42):
+            L.box((2.1, 0.3, 0.44), (0, y, 0.72), swatch="rebuilt")  # the Brute's bone shelf
+            for x in (-0.7, 0.0, 0.7):
+                L.ico(0.16, (x, y, 0.92), swatch="rebuilt_l")
+        L.box((W + 0.06, 0.5, 0.2), (0, 0, 0.84), swatch="rebuilt")
+        for z in (0.3, -0.1, -0.5):  # ribs through the shirt, a seam under each (chest plate hides them)
+            L.box((1.3, 0.06, 0.08), (0, -0.52, z), swatch="rebuilt")
+            L.box((1.2, 0.05, 0.04), (0, -0.53, z - 0.1), swatch="strain_l")
+        L.box((0.5, 0.06, 1.3), (0, 0.52, -0.1), swatch="rebuilt")  # spine ridge (back plate hides it)
+        L.box((0.08, 0.05, 1.3), (-0.3, 0.53, -0.1), swatch="strain_l")
+        L.blotch(0.4, 0.4, (0.55, -0.52, 0.2), swatch="bruise_d")
+        L.cluster(3, 0.09, (-0.6, -0.56, -0.3), spread=0.15)
+    elif limb == "lower_torso":
+        L.box((W, D, H), swatch="olive")
+        L.box((W + 0.02, D + 0.02, 0.16), (0, 0, 0.1), swatch="dark")  # duty belt
+        L.box((0.3, 0.2, 0.1), (0, -0.52, 0.1), swatch="brass")  # buckle
+        for y in (-0.25, 0.1):  # gas canisters on the right hip
+            L.cyl(0.14, 0.42, (1.08, y, -0.08), swatch="gun_d")
+            L.cyl(0.06, 0.08, (1.08, y, 0.17), swatch="gun_l")
+        L.box((0.2, 0.16, 0.3), (-1.04, 0, 0.0), swatch="dark")  # cuff pouch on the left
+        L.box((0.6, 0.12, 0.2), (0.4, -0.52, -0.1), swatch="rebuilt")  # hip bone through
+    elif limb == "upper_arm":
+        L.cap(0.46, (0, 0, 0.16), swatch=skin)  # bare shoulder (the shoulder plate sits over it)
+        L.oct(0.47, 0.05, (0, 0, 0.3), swatch="strain_l")  # seam ring under the plate edge
+        L.oct(0.44, 0.1, (0, 0, -0.02), swatch="olive_d")  # rolled sleeve edge
+        L.oct(0.36, 0.6, (0, 0, -0.32), swatch=skin, r_top=0.44)
+        if side == "r":  # the white MP brassard, two abstract bars (no text)
+            L.oct(0.41, 0.3, (0, 0, -0.3), swatch="white")
+            for y in (-0.12, 0.12):
+                L.box((0.06, 0.12, 0.2), (0.42, y, -0.3), swatch="dark_d")
+        else:
+            L.lesion(0.26, 0.3, (-0.4, 0, -0.3), face="left")
+    elif limb == "lower_arm":
+        L.cap(0.52, (0, 0, 0.02), swatch=skin)
+        L.oct(0.48, 0.6, (0, 0, -0.26), swatch=skin, r_top=0.52)  # swollen striking forearm
+        for z in (0.3, 0.0, -0.3):
+            L.box((0.24, 0.2, 0.3), (sx * 0.5, 0.1, z), rot=(0, sx * 30, 0), swatch="rebuilt")  # ulna spurs
+        L.blotch(0.4, 0.5, (0, -0.48, -0.16), swatch="bruise_d")
+        if side == "l":  # bone grown out to the shield's grips (the shield plate welds over these)
+            for z in (0.25, -0.35):
+                L.box((0.5, 0.3, 0.22), (-0.55, -0.3, z), swatch="rebuilt")
+            L.box((0.06, 0.4, 0.7), (-0.5, -0.2, -0.05), swatch="strain_l")  # seam where the shield meets the arm
+        else:
+            L.boil(0.1, (0.3, -0.42, -0.1), n=(0.4, -0.9, 0))
+    elif limb == "hand":
+        L.box((W, 0.74, 0.4), (0, 0.12, 0.0), swatch="dark")  # gloved fist
+        L.box((0.9, 0.32, 0.22), (0, -0.4, 0.08), swatch="rebuilt_l")  # knuckles through the glove
+        for x in (-0.22, 0.0, 0.22):
+            L.box((0.05, 0.4, 0.3), (x, -0.36, -0.06), swatch="dark_d")
+    elif limb == "upper_leg":
+        L.hip_inset(0.5, "olive", h=0.36)
+        L.oct(0.5, 0.9, (0, 0, 0.05), swatch="olive")
+        L.oct(0.52, 0.08, (0, 0, 0.2), swatch="olive_d")  # cargo seam
+        L.oct(0.46, 0.4, (0, 0, -0.5), swatch="olive", r_top=0.5)
+        L.box((0.8, 0.36, 0.36), (0, -0.42, -0.5), swatch="dark_d")  # knee cup
+        L.box((0.5, 0.06, 0.34), (-0.15, -0.5, 0.35), swatch=skin)  # torn trouser
+        L.lesion(0.22, 0.2, (-0.15, -0.52, 0.35))
+    elif limb == "lower_leg":
+        L.cap(0.42, (0, 0, 0.23), swatch="olive")
+        L.oct(0.42, 0.78, (0, 0, -0.16), swatch="olive", r_top=0.46)
+        L.box((0.8, 0.28, 0.95), (0, -0.44, 0.1), swatch="dark_d")  # shin guard
+        for z in (0.4, 0.1, -0.2):
+            L.box((0.84, 0.08, 0.1), (0, -0.56, z), swatch="dark_l")  # guard ribs
+        L.box((W, D, 0.5), (0, 0, -0.4), swatch="dark_d")  # boot shaft
+    elif limb == "foot":
+        L.shoe("dark_d")
+        L.box((0.9, 0.3, 0.26), (0, -0.4, 0.06), swatch="dark")  # toe cap
+
+
+# The Warden's six plates, each built in the frame of the limb it welds to (same offset rule as
+# the Chosen's gear): helmet on Head, chest and back on UpperTorso, shoulder on either UpperArm
+# (symmetric in x, one mesh for both), shield on LeftLowerArm (faces front when the arm hangs).
+# IndexService gives each its own health; the shield blocks frontal chest shots by being in front.
+WARDEN_PLATES = {"helmet": "head", "chest": "upper_torso", "back": "upper_torso", "shoulder": "upper_arm", "shield": "lower_arm"}
+
+
+def _warden_plate(L, which):
+    if which == "helmet":
+        L.oct(0.74, 0.56, (0, 0, 0.44), swatch="dark", r_top=0.5)  # riot shell: a tapered crown (art director: not the Brute's box)
+        for x in (-0.68, 0.68):
+            L.box((0.1, 1.0, 0.5), (x, 0.05, -0.12), swatch="dark")  # ear guards wrap the shell to the jaw
+        L.box((1.4, 0.3, 0.1), (0, -0.74, 0.22), swatch="dark")  # peak
+        L.box((1.24, 0.08, 0.56), (0, -0.68, -0.12), swatch="gun_l")  # visor
+        L.box((0.05, 0.1, 0.5), (0.22, -0.7, -0.12), rot=(0, 18, 0), swatch="dark_d")  # the crack across it
+        L.box((1.24, 0.2, 0.46), (0, 0.66, -0.1), swatch="dark")  # neck guard
+        L.box((0.16, 0.2, 0.2), (0.7, -0.3, 0.3), swatch="dark_d")  # helmet strobe mount
+    elif which == "chest":
+        L.box((1.86, 0.3, 1.4), (0, -0.62, 0.0), swatch="dark")  # chest plate
+        L.box((1.9, 0.08, 0.2), (0, -0.78, 0.56), swatch="dark_l")  # top edge
+        L.box((1.9, 0.08, 0.16), (0, -0.78, -0.64), swatch="dark_l")  # bottom edge
+        for x in (-0.5, 0.5):
+            L.box((0.1, 0.1, 1.2), (x, -0.79, 0.0), swatch="dark_l")  # ribs
+        L.box((0.36, 0.26, 0.56), (0.6, -0.9, 0.42), swatch="gun_d")  # the radio handset, grown in (gun_d so it reads on the dark plate)
+        L.box((0.26, 0.04, 0.3), (0.6, -1.04, 0.5), swatch="dark_d")  # speaker grille
+        L.box((0.08, 0.06, 0.08), (0.72, -1.04, 0.2), swatch="red")  # TX lamp
+        for x, z in ((0.36, 0.1), (0.22, -0.08), (0.1, -0.26)):  # the coiled cord, three turns
+            L.cyl(0.06, 0.12, (x, -0.84, z), rot=(90, 0, 0), segs=6, swatch="gun_d")
+    elif which == "back":
+        L.box((1.86, 0.3, 1.4), (0, 0.62, 0.0), swatch="dark")
+        L.box((1.9, 0.08, 0.2), (0, 0.78, 0.56), swatch="dark_l")
+        L.box((1.3, 0.06, 0.32), (0, 0.8, 0.05), swatch="white")  # the MP band, abstract
+        L.box((1.0, 0.06, 0.06), (0, 0.84, 0.05), swatch="dark_d")
+        L.box((0.4, 0.3, 0.6), (-0.6, 0.85, -0.3), swatch="olive_d")  # radio pack
+    elif which == "shoulder":
+        L.oct(0.7, 0.34, (0, 0, 0.5), swatch="dark", r_top=0.62)
+        L.oct(0.72, 0.08, (0, 0, 0.3), swatch="dark_l")  # rim
+        L.box((0.3, 1.2, 0.1), (0, 0, 0.72), swatch="dark_d")  # top ridge
+    elif which == "shield":
+        cx, cy = -0.6, -0.72  # outboard of the left forearm, ahead of it
+        L.box((2.0, 0.16, 3.8), (cx, cy, -0.3), swatch="dark_l")  # the shield, door-sized at scale 1.9
+        L.box((2.08, 0.1, 0.16), (cx, cy - 0.02, 1.62), swatch="dark")  # top edge
+        L.box((2.08, 0.1, 0.16), (cx, cy - 0.02, -2.22), swatch="dark")  # bottom edge
+        for x in (cx - 0.96, cx + 0.96):
+            L.box((0.16, 0.1, 3.8), (x, cy - 0.02, -0.3), swatch="dark")  # side rails
+        L.box((1.2, 0.06, 0.9), (cx, cy - 0.1, 0.7), swatch="gun_l")  # window
+        L.box((1.4, 0.06, 0.3), (cx, cy - 0.1, -0.4), swatch="white_d")  # the band where the lettering was (white_d: the brassard stays his one true white)
+        for z in (0.25, -0.35):  # grips: bone grown from the forearm to the shield's back
+            L.box((0.5, 0.5, 0.26), (cx + 0.5, cy + 0.3, z), swatch="rebuilt")
+
+
 INFECTED_TYPES = {
     "walker": walker_limb,
     "runner": runner_limb,
     "brute": brute_limb,
     "hocker": hocker_limb,
+    "warden": warden_limb,
 }
+# Forms whose arms differ by side: these limbs export as `_l` / `_r` meshes (MeshAssets.dressModel
+# looks the side up before the shared name).
+INFECTED_SIDED = {"warden": ("upper_arm", "lower_arm")}
+# Plates on the assembled Warden preview: (plate, limb, side sign).
+WARDEN_PREVIEW_PLATES = (
+    ("helmet", "head", 0), ("chest", "upper_torso", 0), ("back", "upper_torso", 0),
+    ("shoulder", "upper_arm", -1), ("shoulder", "upper_arm", 1), ("shield", "lower_arm", -1),
+)
 
 
 def _register_infected():
     for tname, build in INFECTED_TYPES.items():
+        sided = INFECTED_SIDED.get(tname, ())
         for limb in R15_LIMB:
-            def fn(b, limb_name=limb, build_=build):
-                build_(Limb(b), limb_name)
-            ASSETS[f"inf_{tname}_{limb}"] = (fn, "Infected", "center")
+            if limb in sided:
+                for side in ("l", "r"):
+                    def fn(b, limb_name=limb, build_=build, side_=side):
+                        build_(Limb(b), limb_name, side_)
+                    ASSETS[f"inf_{tname}_{limb}_{side}"] = (fn, "Infected", "center")
+            else:
+                def fn(b, limb_name=limb, build_=build):
+                    build_(Limb(b), limb_name)
+                ASSETS[f"inf_{tname}_{limb}"] = (fn, "Infected", "center")
 
-        def preview(b, build_=build):
+        def preview(b, build_=build, sided_=sided, tname_=tname):
             # Assembled figure at R15 offsets (hip at z=0), for the lineup/preview only.
+            def place(sub, x, y, z):
+                verts = list(sub.bm.verts)
+                bmesh.ops.translate(sub.bm, vec=Vector((x, y, z)), verts=verts)
+                b.merge(sub)
             for limb, (x, y, z) in R15_POSE.items():
                 sides = (1,) if x == 0 else (-1, 1)
                 for s in sides:
                     sub = Builder()
-                    build_(Limb(sub), limb)
-                    verts = list(sub.bm.verts)
-                    bmesh.ops.translate(sub.bm, vec=Vector((s * x, y, z)), verts=verts)
-                    b.merge(sub)
+                    if limb in sided_:
+                        build_(Limb(sub), limb, "r" if s > 0 else "l")
+                    else:
+                        build_(Limb(sub), limb)
+                    place(sub, s * x, y, z)
+            if tname_ == "warden":
+                for which, limb, s in WARDEN_PREVIEW_PLATES:
+                    x, y, z = R15_POSE[limb]
+                    sub = Builder()
+                    _warden_plate(Limb(sub), which)
+                    place(sub, s * x, y, z)
         ASSETS[f"ref_inf_{tname}"] = (preview, "_Reference", "bottom")
+
+    for which in WARDEN_PLATES:
+        def plate(b, w=which):
+            _warden_plate(Limb(b), w)
+        ASSETS[f"inf_warden_plate_{which}"] = (plate, "Infected", "center")
 
 
 _register_infected()

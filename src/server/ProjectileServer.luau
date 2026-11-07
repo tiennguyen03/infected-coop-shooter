@@ -183,7 +183,15 @@ function ProjectileServer.hitMultiplier(
 	humanoid: Humanoid,
 	headshotMultiplier: number?
 ): (number, string)
+	-- The Index's armour (IndexService): a plated part takes the round at the armoured rate
+	-- (ItemEffectService routes it to the plate); a limb whose plate is gone is exposed.
+	if typeof(part:GetAttribute("PlateHealth")) == "number" then
+		return Config.Index.Warden.ArmouredMultiplier, "plate"
+	end
 	if part.Name ~= "Head" then
+		if part:GetAttribute("Exposed") == true then
+			return Config.Index.Warden.ExposedMultiplier, "exposed"
+		end
 		return 1, "hit"
 	end
 	local model = humanoid.Parent
@@ -241,7 +249,14 @@ local function fireHitscan(
 		end
 		local multiplier, kind =
 			ProjectileServer.hitMultiplier(result.Instance, humanoid, weapon.HeadshotMultiplier)
-		ItemEffectService.dealDamage(player, humanoid, damage * multiplier, result.Position, kind)
+		ItemEffectService.dealDamage(
+			player,
+			humanoid,
+			damage * multiplier,
+			result.Position,
+			kind,
+			result.Instance
+		)
 		if stagger and humanoid.Health > 0 then
 			EnemyService.stagger(humanoid, Config.Upgrades.HollowPoint.StaggerSeconds)
 		end

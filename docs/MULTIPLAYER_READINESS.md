@@ -83,7 +83,10 @@ may add to this list.
    pallets and stores are the exception by design: a shared trigger, personal cards.
 6. **Difficulty per extra player: more Infected, not tougher Infected.** Spawn rate and
    max-alive scale with living player count; HP/damage per Infected do not. Numbers in
-   `Config.PlayerCountScaling`, with 1 player = today's values.
+   `Config.PlayerCountScaling`, with 1 player = today's values. **Exception (2026-11-07):**
+   an Index host is one body, so its body and plate health scale
+   (`Config.Index.Warden.HealthPerExtraPlayer`, 0.33 per extra living player at spawn) and
+   its Riot Call adds Walkers per extra player.
 7. **A lobby place with a main menu; the party teleports into a private match (owner,
    2026-11-07).** Players land in a separate lobby place: main menu, party up (invite or
    matchmade squad of up to 4), pick class and loadout, ready. The party is teleported

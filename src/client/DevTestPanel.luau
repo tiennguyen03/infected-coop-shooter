@@ -134,6 +134,8 @@ local function sections(): { Section }
 				{ label = "5 Runners", send = cmd("SpawnEnemy", "Runner", 5) },
 				{ label = "1 Brute", send = cmd("SpawnEnemy", "Brute", 1) },
 				{ label = "3 Hockers", send = cmd("SpawnEnemy", "Hocker", 3) },
+				{ label = "Warden (Gate)", send = cmd("SpawnWarden") },
+				{ label = "Warden here", send = cmd("WardenHere"), hotkey = Enum.KeyCode.F9 },
 			},
 		},
 		{

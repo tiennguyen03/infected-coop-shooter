@@ -32,7 +32,7 @@ One stage is a **sortie** (Control's word; decided 2026-11-06).
 | Insert | Lantern lands at the stage pad; squad spawns; Control reads the Primary, the Secondaries and the Burn timer (`Operation.MissionTimer`, 14:00) | spawn at a fixed point |
 | Explore | Loot stores, earn Resupply, find field upgrades; clock runs (`Config.Difficulty`) | Resupply and the loadout shipped 2026-11-07 (no stores yet) |
 | Primary | One of the stage's pool, placed at one of its three sites or a named landmark; the squad starts it when ready | hold zone appears at one spot after 180 s |
-| Index | Completing the Primary calls the boss from its canon entry | pressure wave, no boss |
+| Index | Completing the Primary calls the boss from its canon entry | the Warden on Delta (shipped 2026-11-07, `IndexService`) |
 | Call the bird | Green smoke at a pad; Lantern inbound 90 s; squad holds the LZ; everyone inside boards, anyone outside is left (Dead for the sortie) | 30 s hold, run ends |
 | Next sortie | Dead players respawn at the next pad; clock, Resupply pool and drop counter carry over | n/a |
 | Stand Down | After Kestrel: board = run ends, scored; or ask for a **Second Pass** (same corridor, higher clock floor, later forms from drop, containment gains doubled) | n/a |
@@ -103,7 +103,7 @@ gone (`docs/sprints/SPRINT_18_LOADOUT.md`). Lore names on the HUD ([LORE.md](LOR
   armoury; convoy trucks, Rest Stop back room; pharmacy, triage stores). Hold E 3 s to open,
   which is loud. Not built.
 - **Priority pallet.** An Index kill drops a pallet at the corpse: re-arm, full heal, three
-  upgrade cards each. Not built.
+  upgrade cards each. Shipped with the Warden (`IndexService.endFight`).
 
 ## Operation: the Burn, extraction, scoring
 
@@ -274,11 +274,42 @@ form on Kestrel (the player learns it twice). An Index kill drops a priority pal
 
 | Index | Stage | Body | Mechanic (one rule) |
 |---|---|---|---|
-| the Warden | Delta | MP Brute, riot plate grown into the bone | armoured: shoot the plates off, then the body |
+| the Warden | Delta | MP Brute, riot plate grown into the bone | armoured: shoot the plates off, then the body (**built**, below) |
 | the Bloat | Mile 14 | gas-swollen, pale belly, veins showing | area denial: bursts into a lingering cloud on death; kill it where you can afford the cloud |
 | the Patient | Kestrel | the host that got the antiviral | regenerates in waves: damage windows between surges |
 | the Lineman | Harlan Yard | a Runner the strain finished | drags a player; its call pulls the map |
 | the Specimen | Reservoir | the station's live host | every mechanic above, in phases |
+
+### Index kit: the Warden (shipped 2026-11-07, `docs/sprints/SPRINT_19_WARDEN.md`)
+
+Numbers in `Config.Index.Warden`; the service is `src/server/IndexService.luau`.
+
+- **Entry.** Primary complete → `Index`. Control: "Index is moving at the Gate." He spawns
+  at (-30,-290), the Gate opens (radio), and he walks the screening route: Gate lane, bus
+  line ("He's checking buses. Plates first, then the body."), Inner Gate ("Flank when he
+  guards."), under the bridge, the Apron, then the hunt. A member within 90 studs during
+  the walk gets the sighting line. The walk times out after 75 s.
+- **Body.** 7,000 hp at scale 1.9, +33% per extra living player (the one exception to
+  "more Infected, not tougher Infected": one body cannot be more bodies). Headshot ×2.
+- **Plates** (one rule): helmet 300, chest 500, back 400 (the flank), shoulders 300 each,
+  shield 600. A round into a plate does 25% to the plate and nothing to the body; a
+  round into a limb whose plate is gone does 150%. At half a plate cracks (yellow pip);
+  at zero it flies off, he staggers 1.5 s, the limb is bare. Order on the HUD: HELM,
+  CHEST, BACK, L SHLD, R SHLD, SHIELD. Radio on the first and the last plate.
+- **Attacks**, each with the handset's words on the boss bar first: **Bash** (8 studs,
+  90° arc, 40 damage, 0.9 s windup); **Charge** (15-45 studs, 1.2 s windup, 45 studs at
+  40/s, 35 damage, hard cover stuns him 3 s; first one 6 s after spawning, every 10 s
+  after); **Gas Canister** (phase 2+, lobbed at the furthest member within 70 studs, 10 +
+  a 9-stud puddle for 6 s); **Guard** (8-16 studs: shield up 2.5 s, half speed, plates
+  take 25% except the back; "flank him").
+- **Phases** by body health: below 60% the **Riot Call** (6 Walkers + 2 Runners round
+  him, +3 Walkers per extra player, one body per frame); below 25% a second call, charges
+  every 5 s, walk 11. While he is up the wave loop spawns at ×1.5 interval, 8 fewer
+  alive, no Brutes (`Pressure`).
+- **Kill.** "Gate's yours, Pike. Pallet inbound." Priority pallet (upgrade cards) at the
+  corpse, everyone alive healed and re-armed, `Extract` and the pad lights. His corpse
+  stays 8 s.
+- **Target fight** 100-120 s for a squad that works the plates; retune plate health first.
 
 ## The Infected roster
 
@@ -346,8 +377,9 @@ infinite reserve, and use `ProjectileServer.hitMultiplier` so the Brute's plate 
    stage's pool, places them at sites/landmarks, shows markers; the 180 s delay goes. First
    four Primaries: Secure, Sanitize, Confirm Casualties, Open the Route. First three
    Secondaries: Silence the Alarm, Light the Pad, Misdrop.
-6. **Index kit.** A boss is an Infected definition with `boss = true`, a health bar, an
-   entry path and one mechanic hook. The Warden first.
+6. **Index kit.** A boss is an Infected definition with `Boss = true`, a health bar, an
+   entry path and one mechanic hook. **The Warden shipped 2026-11-07** (`IndexService`,
+   `EnemyService.spawnBoss`, `BossBarUI`); the Bloat and the Patient reuse the frame.
 7. **Containment Board.** `WarMapService` (one shared DataStore board), band overrides at
    stage load, the board screen between runs.
 8. **Stage definitions.** `src/shared/StageDefinitions.luau`: landmark/hill/dressing tables,

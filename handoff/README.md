@@ -1,7 +1,7 @@
 # Handoff — Infected Co-op Shooter (VS Code + Claude Code terminal)
 
 Start here when picking the project up in a fresh Claude Code session.
-Last updated: 2026-11-07 (skinned Weller). Last verified commit on `main`: the skinned Weller commit (playtested as the player).
+Last updated: 2026-11-07 (the Warden, Sprint 19). Last verified commit on `main`: the Warden commit (solo + 2-client playtests).
 
 ## What this is
 
@@ -56,6 +56,14 @@ Read in this order:
   longer count as a ceiling). Perf: 60 fps with 40 Walkers, server script lane 1.6 ms/frame.
   Not yet walked: the A13 route list (R1-R7), the staircase and vertical-chase tests, the
   low-end device pass; do them in the first play session on this build.
+- 2026-11-07: **The Warden, Delta's Index host, shipped and playtested** (Sprint 19,
+  `docs/sprints/SPRINT_19_WARDEN.md`). Primary complete → `RunState Index` →
+  `IndexService.start()`: he spawns at the Gate (scale 1.9, 7,000 hp, +33% per extra
+  living player), walks the main road with radio lines, then hunts. Six welded plate
+  meshes with their own health (rounds into a plate do 25%, into a bared limb 150%);
+  Bash / Charge / Gas Canister / Guard with handset tells on the new `BossBarUI`;
+  Riot Call at 60% and 25%. Kill → priority pallet, heal, re-arm, `Extract`. Dev: F1
+  `Warden (Gate)` / `Warden here`. 16 meshes uploaded (`assets/3d/ASSET_IDS.md`).
 - 2026-11-07: **Weller is a skinned mesh** (`Config.Player.SkinnedBody = true`;
   `docs/CHARACTERS.md` C, `assets/3d/README.md` "Skinned Weller"). One 944-tri body with
   the R15 bone tree over a hidden 15-part rig: `MeshAssets.buildSkinnedBody` loads the two
@@ -118,6 +126,12 @@ Read in this order:
 
 ## Open work, in priority order
 
+- **The Warden shipped 2026-11-07** (`docs/sprints/SPRINT_19_WARDEN.md` > Open work):
+  handset hiss + squelch tell clip and his own vocals (audio pipeline), an upright
+  walk / shield-square charge clip instead of the mutant set, Gate dressing (chain,
+  spray, MP roster) and the insert / wipe radio lines, a 4-player phone pass on phase
+  2. First real fight on this build: 100-120 s is the target; retune
+  `Config.Index.Warden` plate health if it drags.
 - **Skinned Weller shipped 2026-11-07.** Watch a full life on it (sprint, roll, vault,
   downed crawl, a Hocker hit on the hidden limbs). If anything breaks:
   `Config.Player.SkinnedBody = false` ships the tapered rigid Weller.
@@ -183,7 +197,7 @@ Read in this order:
    `AnimationController`, per-type Infected clips, hold-E breach ghost). All 15 clips are
    published through Open Cloud (ids in `Config.Animations.Ids`, `assets/animations/
    ASSET_IDS.md`), so they play outside Studio too. Polish later: a hollow breach ring.
-1. **Co-op Sprint A shipped 2026-11-07** (`docs/sprints/SPRINT_17_COOP_A.md`): `Squad` roster, run state machine, reset split, spawn pads, run-end screens + ready-up, downed/revive (F), bot squadmates. **Loadout rework shipped 2026-11-07 (Sprint 18).** **Next per the spine:** the Warden; Co-op Sprint B (register rows 3/5/7/9, extraction rule) and the lobby place (decision 7) after.
+1. **Co-op Sprint A shipped 2026-11-07** (`docs/sprints/SPRINT_17_COOP_A.md`): `Squad` roster, run state machine, reset split, spawn pads, run-end screens + ready-up, downed/revive (F), bot squadmates. **Loadout rework shipped 2026-11-07 (Sprint 18).** **The Warden shipped 2026-11-07 (Sprint 19).** **Next per the spine:** objective pools on Delta; Co-op Sprint B (register rows 3/5/7/9, extraction rule) and the lobby place (decision 7) after.
    Planned after it (owner, 2026-11-07): a **lobby place** with a main menu where parties
    queue and teleport together into the match (`docs/MULTIPLAYER_READINESS.md` decision 7);
    number keys 1-4 take call-ins and the flare (decision 8).

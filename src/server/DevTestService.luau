@@ -21,6 +21,7 @@ local UpgradeDefinitions = require(ReplicatedStorage.Shared.UpgradeDefinitions)
 local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
 local CallInService = require(script.Parent.CallInService)
 local EnemyService = require(script.Parent.EnemyService)
+local IndexService = require(script.Parent.IndexService)
 local LoadoutService = require(script.Parent.LoadoutService)
 local PlayerStatsService = require(script.Parent.PlayerStatsService)
 local RequisitionService = require(script.Parent.RequisitionService)
@@ -336,6 +337,19 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 	end,
 	ClearEnemies = function()
 		DevTestService.clearEnemies()
+	end,
+	-- The Index: the full entrance from the Gate, or the Warden in front of you (no walk).
+	SpawnWarden = function()
+		print("[DevTest] SpawnWarden (the Gate) ->", IndexService.start())
+	end,
+	WardenHere = function(player)
+		local character = player.Character
+		local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		if root then
+			local flat = Vector3.new(root.CFrame.LookVector.X, 0, root.CFrame.LookVector.Z)
+			local forward = if flat.Magnitude > 0.01 then flat.Unit else Vector3.zAxis
+			print("[DevTest] WardenHere ->", IndexService.spawnAt(root.Position + forward * 24))
+		end
 	end,
 	KillPlayer = function(player)
 		DevTestService.killPlayer(player)
