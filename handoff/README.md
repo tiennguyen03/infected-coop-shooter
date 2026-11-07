@@ -1,7 +1,7 @@
 # Handoff — Infected Co-op Shooter (VS Code + Claude Code terminal)
 
 Start here when picking the project up in a fresh Claude Code session.
-Last updated: 2026-11-07 (dev tools v2). Last verified commit on `main`: the dev-tools commit (playtested).
+Last updated: 2026-11-07 (downed crawl). Last verified commit on `main`: the downed-crawl commit (playtested).
 
 ## What this is
 

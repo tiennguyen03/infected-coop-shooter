@@ -55,6 +55,7 @@ animations, played by `src/client/AnimationController.luau` (players) and
 | zombie_crawl (Zombie Crawl) | spare: the Crawler's move | in place |
 | sprint_roll (Sprinting Forward Roll) | Assault roll (sprint + LeftControl) | `in_place` (hip drop kept); 1.17 s, played at `Config.Movement.Roll.Duration`; published 2026-11-07 |
 | running_slide (Running Slide) | Assault slide (sprint + C) | `in_place` (hips drop 2.2 studs to the ground); 1.53 s, played at `Config.Movement.Slide.Duration`; published 2026-11-07 |
+| downed_crawl (Crawling, hands and knees) | Downed crawl (client DownedController, bots hold it still) | `in_place`; 1.8 s loop, rate follows crawl speed, frozen when still; published 2026-11-07 |
 | zombie_stumble (Zombie Stumble) | spare: Infected flinch | |
 | zombie_scream (Zombie Scream) | spare: Hocker windup | |
 

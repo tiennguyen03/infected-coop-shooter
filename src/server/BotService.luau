@@ -122,7 +122,7 @@ local function loadTracks(bot: Bot, humanoid: Humanoid)
 		walk = Animations.load(found, clips.walk.forward, Enum.AnimationPriority.Movement),
 		run = Animations.load(found, clips.run.forward, Enum.AnimationPriority.Movement),
 		fire = Animations.load(found, clips.fire, Enum.AnimationPriority.Action2),
-		downed = Animations.load(found, clips.prone.idle, Enum.AnimationPriority.Action3),
+		downed = Animations.load(found, clips.downed, Enum.AnimationPriority.Action3),
 	}
 	for _, track in { bot.tracks.idle, bot.tracks.walk, bot.tracks.run, bot.tracks.downed } do
 		if track then
@@ -379,6 +379,7 @@ local function holdDowned(bot: Bot, humanoid: Humanoid, root: BasePart)
 	end
 	if tracks.downed and not tracks.downed.IsPlaying then
 		tracks.downed:Play(0.3)
+		tracks.downed:AdjustSpeed(0) -- held on all fours: a downed bot waits for help
 	end
 end
 

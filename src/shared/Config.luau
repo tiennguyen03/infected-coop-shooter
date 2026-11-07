@@ -118,6 +118,7 @@ local Config = {
 		ReviveHealthFraction = 0.5,
 		DownedHealth = 1,
 		MaxRevives = 2, -- per run; the next lethal hit after that kills outright
+		CrawlSpeed = 3, -- studs/s: a downed body crawls on hands and knees toward cover or help
 	},
 
 	-- Run flow (RunManager, Shared.RunStates). Co-op Sprint A.
@@ -212,6 +213,7 @@ local Config = {
 			vault_low = "rbxassetid://122259453837052",
 			sprint_roll = "rbxassetid://80433355485535",
 			running_slide = "rbxassetid://138341516012248",
+			downed_crawl = "rbxassetid://131142341976869",
 			climb_ledge = "rbxassetid://87799425638897",
 			climb_low = "rbxassetid://111567195502844",
 			climb_high = "rbxassetid://97579324656436",
@@ -280,6 +282,7 @@ local Config = {
 			roll = "sprint_roll", -- sprint + LeftControl
 			slide = "running_slide", -- sprint + C
 			climb = "climb_ledge", -- onto bunker / humvee / container
+			downed = "downed_crawl", -- downed (Squad): on all fours, crawling
 		},
 		-- The Infected, per type (EnemyDefinitions).
 		Infected = {
@@ -302,6 +305,7 @@ local Config = {
 		-- Ground speed (studs/s) at which each locomotion clip plays at 1x; the track rate
 		-- scales with the actual speed so feet do not slide.
 		MoveClipSpeed = {
+			downed_crawl = 4, -- estimate: the Mixamo clip was exported in place
 			rifle_walk = 12,
 			rifle_run = 22,
 			-- Measured by retarget.py from the pack's baked root motion.

@@ -105,6 +105,8 @@ CLIPS = {
     # horizontal travel is stripped; the game carries the body (client MovementController).
     "sprint_roll": {"loop": False, "step": 1, "in_place": True},
     "running_slide": {"loop": False, "step": 1, "in_place": True},
+    # Downed (Squad): crawl on hands and knees while waiting for a revive (2026-11-07).
+    "downed_crawl": {"loop": True, "step": 1, "in_place": True},
     # Crouch: hip drop stays (vertical), horizontal travel stripped.
     "crouch_idle": {"loop": True, "step": 2, "in_place": True},
     "crouch_enter": {"loop": False, "step": 1, "in_place": True},

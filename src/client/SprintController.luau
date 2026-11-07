@@ -27,7 +27,7 @@ local function applySpeed()
 	local humanoid = getHumanoid()
 	local character = Players.LocalPlayer.Character
 	if humanoid and character and character:GetAttribute("SquadState") == "Downed" then
-		humanoid.WalkSpeed = 0 -- downed (Squad): wait for a revive
+		humanoid.WalkSpeed = Config.Downed.CrawlSpeed -- downed (Squad): crawl toward help
 	elseif humanoid and overrideSpeed then
 		humanoid.WalkSpeed = overrideSpeed
 	elseif humanoid then

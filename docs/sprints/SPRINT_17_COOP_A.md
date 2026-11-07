@@ -90,7 +90,7 @@ requiring RunManager (RunManager requires services, never the reverse). Workspac
 ## 3. Downed / revive (decision #3)
 
 `Config.Downed = { BleedOutSeconds 30, ReviveHold 3, ReviveRadius 8, ReviveHealthFraction
-0.5, DownedHealth 1, MaxRevives 2 }`, `Config.Run = { ReadyUpSeconds, InsertSeconds,
+0.5, DownedHealth 1, MaxRevives 2, CrawlSpeed 3 (added 2026-11-07: downed bodies crawl on hands and knees) }`, `Config.Run = { ReadyUpSeconds, InsertSeconds,
 SpawnPads }`.
 
 - `EnemyProjectileService.damagePlayer`: `member = Squad.fromHumanoid(humanoid)`; return
