@@ -5,8 +5,9 @@ palette). Mesh ids were read in Studio with `InsertService:LoadAsset(<modelAsset
 wired into `src/shared/MeshAssets.luau` (server-built MeshPart templates). Old env v1 model
 uploads (126781711029053, 110183901153071, 111918726514098) are superseded.
 
-Palette texture (v2, 2026-11-07, adds the `rebuilt`/`strain`/`foliage_d` swatches): decal
-`113842156774300` → image **`88256641133314`** (the `TextureID`). v1 was `87519201884536`.
+Palette texture (v3, 2026-11-07, adds the `rebuilt`/`strain`/`foliage_d`/`rust_l`/`rust_d`
+swatches): decal `120331040807954` → image **`110782102234723`** (the `TextureID`). v2 was
+`88256641133314`, v1 `87519201884536`.
 
 | Mesh | MeshId | Model asset (upload) | In-game Size (studs) | Placement note |
 |---|---|---|---|---|
@@ -31,15 +32,6 @@ Palette texture (v2, 2026-11-07, adds the `rebuilt`/`strain`/`foliage_d` swatche
 | env_checkpoint | 71573561117915 | 129215637928455 | 22.05 x 9.5 x 7.4 | PreciseConvexDecomposition; booth at -X, boom along +X |
 | env_dead_tree | 103119294791056 | 130464254006022 | 4.97 x 13.98 x 7.09 | Hull |
 | env_lamp_post | 132474171948585 | 84369687950095 | 4.9 x 13 x 1.2 | Hull; arm along +X |
-| pc_assault_head | 95005339350582 | 109799809484018 | 1.34, 1.25, 1.48 | R15 limb, offset 0.000, 0.035, -0.090 |
-| pc_assault_upper_torso | 86706465408743 | 117944474269990 | 1.94, 1.70, 1.44 | R15 limb, offset 0.000, 0.000, -0.060 |
-| pc_assault_lower_torso | 138634306069937 | 78418535413019 | 2.01, 0.40, 1.12 | R15 limb, offset 0.000, 0.000, -0.050 |
-| pc_assault_upper_arm | 76463628405742 | 129827125546347 | 1.04, 1.24, 1.09 | R15 limb, offset 0.000, 0.000, -0.025 |
-| pc_assault_lower_arm | 111242427197801 | 94086121640082 | 1.04, 1.12, 1.04 | R15 limb |
-| pc_assault_hand | 133846130665573 | 100198436557637 | 0.98, 0.33, 1.03 | R15 limb, offset 0.000, 0.000, -0.002 |
-| pc_assault_upper_leg | 99577988454218 | 83831662733103 | 1.08, 1.36, 1.09 | R15 limb, offset 0.043, 0.000, -0.058 |
-| pc_assault_lower_leg | 87884254546571 | 140543316185534 | 1.01, 1.30, 0.99 | R15 limb |
-| pc_assault_foot | 79144855233866 | 126410611292083 | 1.01, 0.31, 1.00 | R15 limb (same mesh as inf_walker_foot) |
 | inf_walker_head | 89158175147461 | 130652970591168 | 1.21, 1.22, 1.31 | R15 limb (v2 2026-11-07), offset -0.005, 0.020, -0.035 |
 | inf_walker_upper_torso | 128339684458111 | 96331127663285 | 2.00, 1.75, 1.20 | R15 limb (v2 2026-11-07), offset 0.000, 0.025, 0.000 |
 | inf_walker_lower_torso | 115889571442634 | 122831631690254 | 2.05, 0.43, 1.37 | R15 limb (v2 2026-11-07), offset 0.000, 0.005, -0.045 |
@@ -76,6 +68,15 @@ Palette texture (v2, 2026-11-07, adds the `rebuilt`/`strain`/`foliage_d` swatche
 | inf_hocker_upper_leg | 119669238480601 | 88472952067354 | 1.00, 1.48, 1.26 | R15 limb (v2 2026-11-07), offset 0.000, -0.060, -0.048 |
 | inf_hocker_lower_leg | 102042184592850 | 129028388580658 | 0.99, 1.30, 0.97 | R15 limb (v2 2026-11-07), offset 0.000, 0.000, 0.000 |
 | inf_hocker_foot | 79144855233866 | 139880549411227 | 1.01, 0.31, 1.00 | R15 limb (v2 2026-11-07), offset 0.000, 0.000, 0.000 |
+| pc_assault_head | 113120416771558 | 108816968954550 | 1.34, 1.24, 1.54 | R15 limb (Weller v2 2026-11-07), offset 0.000, 0.030, -0.060 |
+| pc_assault_upper_torso | 109606627346841 | 101027325915224 | 1.94, 1.70, 1.51 | R15 limb (Weller v2 2026-11-07), offset 0.000, 0.000, -0.025 |
+| pc_assault_lower_torso | 130324769107274 | 103310952242998 | 2.01, 0.40, 1.12 | R15 limb (Weller v2 2026-11-07), offset 0.000, 0.000, -0.050 |
+| pc_assault_upper_arm | 70752581527557 | 130102142650442 | 1.04, 1.24, 1.10 | R15 limb (Weller v2 2026-11-07), offset 0.000, 0.000, -0.030 |
+| pc_assault_lower_arm | 111242427197801 | 89733526738016 | 1.04, 1.12, 1.04 | R15 limb (Weller v2 2026-11-07), offset 0.000, 0.000, 0.000 |
+| pc_assault_hand | 133846130665573 | 93761417336976 | 0.98, 0.33, 1.03 | R15 limb (Weller v2 2026-11-07), offset 0.000, 0.000, -0.002 |
+| pc_assault_upper_leg | 123449912579061 | 103599487897185 | 1.08, 1.36, 1.09 | R15 limb (Weller v2 2026-11-07), offset 0.043, 0.000, -0.058 |
+| pc_assault_lower_leg | 87884254546571 | 116185213877232 | 1.01, 1.30, 0.99 | R15 limb (Weller v2 2026-11-07), offset 0.000, 0.000, 0.000 |
+| pc_assault_foot | 79144855233866 | 112575972731289 | 1.01, 0.31, 1.00 | R15 limb (Weller v2 2026-11-07), offset 0.000, 0.000, 0.000 |
 
 Open Cloud imports the FBX at 100x (1 Blender unit → 100 studs) and clamps any axis to 2048,
 so the imported size is meaningless; `MeshAssets.luau` sets the intended stud size (Blender

@@ -14,7 +14,7 @@ local ServerStorage = game:GetService("ServerStorage")
 local MeshAssets = {}
 
 -- Shared palette texture (assets/3d/palette.png as an Image asset).
-local PALETTE_TEXTURE = "rbxassetid://88256641133314"
+local PALETTE_TEXTURE = "rbxassetid://110782102234723"
 
 -- `solid` = a static obstacle: CanCollide + CastShadow on (buildings, barriers).
 -- `offset` = the mesh's bounds centre relative to its design origin (Infected limbs are
@@ -132,48 +132,48 @@ local MESHES: { [string]: MeshDef } = {
 	-- rig by PlayerSetup via dressModel. Only Assault is uploaded; the other four classes are
 	-- built in Blender (previews) and wait for a class system.
 	pc_assault_head = {
-		meshId = "rbxassetid://95005339350582",
-		size = Vector3.new(1.34, 1.25, 1.48),
-		offset = Vector3.new(0.000, 0.035, -0.090),
+		meshId = "rbxassetid://113120416771558",
+		size = Vector3.new(1.340, 1.240, 1.540),
+		offset = Vector3.new(0.000, 0.030, -0.060),
 	},
 	pc_assault_upper_torso = {
-		meshId = "rbxassetid://86706465408743",
-		size = Vector3.new(1.94, 1.7, 1.44),
-		offset = Vector3.new(0.000, 0.000, -0.060),
+		meshId = "rbxassetid://109606627346841",
+		size = Vector3.new(1.940, 1.700, 1.510),
+		offset = Vector3.new(0.000, 0.000, -0.025),
 	},
 	pc_assault_lower_torso = {
-		meshId = "rbxassetid://138634306069937",
-		size = Vector3.new(2.01, 0.4, 1.12),
+		meshId = "rbxassetid://130324769107274",
+		size = Vector3.new(2.010, 0.400, 1.120),
 		offset = Vector3.new(0.000, 0.000, -0.050),
 	},
 	pc_assault_upper_arm = {
-		meshId = "rbxassetid://76463628405742",
-		size = Vector3.new(1.04, 1.24, 1.09),
-		offset = Vector3.new(0.000, 0.000, -0.025),
+		meshId = "rbxassetid://70752581527557",
+		size = Vector3.new(1.040, 1.240, 1.100),
+		offset = Vector3.new(0.000, 0.000, -0.030),
 	},
 	pc_assault_lower_arm = {
 		meshId = "rbxassetid://111242427197801",
-		size = Vector3.new(1.04, 1.12, 1.04),
+		size = Vector3.new(1.040, 1.120, 1.040),
 		offset = Vector3.new(0.000, 0.000, 0.000),
 	},
 	pc_assault_hand = {
 		meshId = "rbxassetid://133846130665573",
-		size = Vector3.new(0.98, 0.33, 1.03),
+		size = Vector3.new(0.980, 0.330, 1.030),
 		offset = Vector3.new(0.000, 0.000, -0.002),
 	},
 	pc_assault_upper_leg = {
-		meshId = "rbxassetid://99577988454218",
-		size = Vector3.new(1.08, 1.36, 1.09),
+		meshId = "rbxassetid://123449912579061",
+		size = Vector3.new(1.080, 1.360, 1.090),
 		offset = Vector3.new(0.043, 0.000, -0.058),
 	},
 	pc_assault_lower_leg = {
 		meshId = "rbxassetid://87884254546571",
-		size = Vector3.new(1.01, 1.3, 0.99),
+		size = Vector3.new(1.010, 1.300, 0.990),
 		offset = Vector3.new(0.000, 0.000, 0.000),
 	},
 	pc_assault_foot = {
 		meshId = "rbxassetid://79144855233866",
-		size = Vector3.new(1.01, 0.31, 1.0),
+		size = Vector3.new(1.010, 0.310, 1.000),
 		offset = Vector3.new(0.000, 0.000, 0.000),
 	},
 	-- Infected limb sets (assets/3d inf_<type>_<limb>): swapped onto the R15 rig by dressInfected.

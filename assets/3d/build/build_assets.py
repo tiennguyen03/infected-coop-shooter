@@ -42,6 +42,7 @@ PALETTE = [
     ("concrete", "#7c7a74"), ("asphalt", "#3e4044"), ("rust", "#7a4328"),
     ("foliage", "#596232"), ("inf_skin", "#62745a"), ("inf_runner", "#7f7e44"), ("inf_brute", "#3b473b"),
     ("foliage_d", "#3a4120"),
+    ("rust_l", "#a8603c"), ("rust_d", "#4d2a18"),
     ("rebuilt", "#b09686"), ("rebuilt_l", "#dccbbb"), ("rebuilt_d", "#73584e"),
     ("strain", "#bed73c"), ("strain_l", "#d2e276"), ("strain_d", "#768525"),
     ("friendly_blue", "#3fa7d6"), ("warning_orange", "#e87828"), ("objective_yellow", "#e6bd60"),
@@ -973,123 +974,205 @@ _register_infected()
 
 # ------------------------------------------------------------------ The Chosen (player bodies)
 # Same limb-swap build as the Infected: one mesh per R15 limb inside the stock limb box.
-# docs/STYLES.md §7: realistic silhouettes, gear in the palette, one signature colour patch
-# per character (the `accent`), faces kept simple. `head` picks the headgear.
+# docs/CHARACTERS.md §C: every Chosen wears the same `dark` Pike carrier with a white PIKE tab
+# on the left shoulder strap and one square patch on the left shoulder and the top of the back
+# panel in their own colour; grey `gun` trousers (no Infected wears grey); faces kept simple.
 PC_CLASSES = {
-    # Assault: the current playable class. Grey fatigues, olive plate carrier, ballistic
-    # helmet with an NVG mount. Signature: friendly blue.
-    "assault": dict(skin="tan_l", cloth="gun", cloth_d="gun_d", boot="dark", gear="olive_d", accent="friendly_blue", head="helmet"),
-    # Mason Cole, K-9 handler: olive fatigues, tan carrier, patrol cap. Signature: tan.
-    "k9": dict(skin="tan", cloth="olive", cloth_d="olive_d", boot="dark", gear="tan_d", accent="tan_l", head="cap"),
-    # Dr. Elena Reyes, epidemiologist: white field jacket, respirator + goggles. Signature: white.
-    "epi": dict(skin="tan_l", cloth="white", cloth_d="gun", boot="dark", gear="white_d", accent="white_l", head="mask"),
-    # Ava Cross, recon: dark everything, hood, boonie brim. Signature: dark (light-grey trim).
-    "recon": dict(skin="tan", cloth="dark_l", cloth_d="dark", boot="dark_d", gear="dark", accent="gun_l", head="hood"),
-    # Victor Kane, field engineer: light-olive coveralls, tool belt, hard hat. Signature: olive.
-    "engineer": dict(skin="tan_l", cloth="olive_l", cloth_d="olive", boot="rust", gear="olive_d", accent="warning_orange", head="hardhat"),
+    # SSgt Isaac Weller, Assault (the body worn in game): grey fatigues, dark ballistic helmet
+    # with an NVG mount, two tourniquets staged on the straps. Friendly blue.
+    "assault": dict(skin="tan", top="gun", top_d="gun_d", trousers="gun", boot="dark", glove="dark",
+                    head="helmet", accent="friendly_blue", border=None, knee="dark", rolled=False),
+    # Mason Cole, K-9 handler: olive blouse (the one olive top), patrol cap, leash on the hip. Tan.
+    "k9": dict(skin="tan", top="olive", top_d="olive_d", trousers="gun", boot="dark", glove="dark",
+               head="cap", accent="tan_l", border=None, knee="dark", rolled=True),
+    # Dr. Elena Reyes, epidemiologist: white field jacket, hood up, respirator, goggles,
+    # nitrile gloves. White.
+    "epi": dict(skin="tan_l", top="white", top_d="white_d", trousers="gun", boot="dark", glove="white_d",
+                head="mask", accent="white_l", border=None, knee="white_d", rolled=False),
+    # Ava Cross, recon: dark smock, hood under a boonie brim, face wrap, whip antenna, no knee
+    # pads, name tape blacked out. Black square with a grey border.
+    "recon": dict(skin="tan", top="dark_l", top_d="dark", trousers="gun", boot="dark_d", glove="dark",
+                  head="hood", accent="dark_d", border="gun_l", knee=None, rolled=False),
+    # Victor Kane, field engineer: light-olive coveralls, orange hard hat, tool pack with a pry
+    # bar, work gloves and boots. Orange.
+    "engineer": dict(skin="tan_l", top="olive_l", top_d="olive", trousers="olive_l", boot="rust_d", glove="tan_d",
+                     head="hardhat", accent="warning_orange", border=None, knee="olive_d", rolled=True),
 }
 
+LEFT = -0.62  # the carrier's left shoulder strap (x); the patch side
 
-def _pc_limb(b, limb, sw, o=(0, 0, 0)):
-    ox, oy, oz = o
 
-    def B(size, loc=(0, 0, 0), swatch="gun", rot=None):
-        b.box(size, (ox + loc[0], oy + loc[1], oz + loc[2]), rot=rot, swatch=swatch)
+def _pc_face(L, sw, brow="tan_d"):
+    W, D, H = R15_LIMB["head"]
+    L.box((W, D, H), swatch=sw["skin"])
+    for x in (-0.24, 0.24):
+        L.box((0.18, 0.08, 0.1), (x, -0.6, 0.08), swatch="dark_d")  # eyes
+    L.box((0.9, 0.1, 0.08), (0, -0.59, 0.24), swatch=brow)  # brow line
+    L.box((0.16, 0.12, 0.22), (0, -0.62, -0.06), swatch=sw["skin"])  # nose
+    L.box((0.4, 0.08, 0.05), (0, -0.6, -0.28), swatch="dark_d")  # mouth
 
+
+def _pc_carrier(L, sw, cname):
+    """The Pike carrier on the upper torso, identical on all five."""
+    L.box((1.4, 0.2, 1.3), (0, -0.56, 0.05), swatch="dark")  # front panel
+    L.box((1.4, 0.2, 1.3), (0, 0.56, 0.05), swatch="dark")  # back panel
+    for x in (-0.62, 0.62):
+        L.box((0.24, 1.1, 0.24), (x, 0, 0.72), swatch="dark")  # shoulder straps
+    L.box((0.22, 0.08, 0.12), (LEFT, -0.6, 0.48), swatch="white")  # PIKE tab
+    # the identifying square: left shoulder strap top and the top of the back panel
+    for loc in ((LEFT, -0.58, 0.66), (LEFT, 0.68, 0.6)):
+        if sw["border"]:
+            L.box((0.4, 0.07, 0.26), loc, swatch=sw["border"])
+        L.box((0.34, 0.1, 0.2), loc, swatch=sw["accent"])
+    L.box((0.5, 0.06, 0.1), (0.45, -0.68, 0.52), swatch="dark_d" if cname == "recon" else "white")  # name tape
+
+
+def _pc_limb(b, limb, sw, cname, o=(0, 0, 0)):
+    L = Limb(b, o)
     W, D, H = R15_LIMB[limb]
     head = sw["head"]
     if limb == "head":
-        B((W, D, H), swatch=sw["skin"])
-        for x in (-0.24, 0.24):
-            B((0.18, 0.08, 0.1), (x, -0.6, 0.08), swatch="dark_d")  # eyes
-        B((0.9, 0.12, 0.1), (0, -0.59, 0.24), swatch=sw["cloth_d"] if head == "hood" else "tan_d")  # brow
         if head == "helmet":
-            B((1.3, 1.3, 0.46), (0, 0, 0.4), swatch=sw["gear"])
-            B((1.34, 0.26, 0.1), (0, -0.7, 0.2), swatch=sw["gear"])  # brim
-            B((0.36, 0.3, 0.26), (0, -0.62, 0.52), swatch="dark")  # NVG mount
-            B((0.2, 0.7, 0.2), (0, -0.4, 0.56), swatch="dark_d")  # strap rail
+            _pc_face(L, sw)
+            L.box((1.3, 1.3, 0.46), (0, 0, 0.4), swatch="dark")  # ballistic helmet
+            L.box((1.34, 0.26, 0.1), (0, -0.7, 0.2), swatch="dark")  # brim
+            L.box((0.36, 0.3, 0.26), (0, -0.62, 0.52), swatch="dark_d")  # NVG mount
+            L.box((0.3, 0.1, 0.14), (0, 0.66, 0.5), swatch="gun_l")  # IR strobe
+            L.box((1.2, 0.06, 0.08), (0, -0.5, -0.42), swatch="dark")  # chin strap
+            for x in (-0.58, 0.58):
+                L.box((0.08, 1.0, 0.3), (x, 0, 0.1), swatch="dark_d")  # short hair at the sides
+            L.box((0.7, 0.08, 0.1), (0, -0.6, -0.44), swatch="dark_d")  # beard line
         elif head == "cap":
-            B((1.24, 1.2, 0.3), (0, 0.02, 0.46), swatch=sw["gear"])
-            B((1.0, 0.42, 0.06), (0, -0.78, 0.33), swatch=sw["gear"])  # brim
+            _pc_face(L, sw)
+            L.box((1.24, 1.2, 0.3), (0, 0.02, 0.46), swatch="tan")  # patrol cap
+            L.box((1.0, 0.42, 0.06), (0, -0.78, 0.33), swatch="tan")  # flat brim
+            for x in (-0.59, 0.59):
+                L.box((0.08, 0.6, 0.3), (x, 0, 0.14), swatch="gun_l")  # grey at the temples
         elif head == "mask":
-            B((1.0, 0.22, 0.42), (0, -0.62, -0.22), swatch=sw["gear"])  # respirator
-            for x in (-0.36, 0.36):
-                B((0.26, 0.2, 0.26), (x, -0.64, -0.3), swatch="gun_d")  # filters
-            B((1.1, 0.14, 0.26), (0, -0.62, 0.1), swatch="dark")  # goggle strap/lens
-            B((1.2, 1.2, 0.26), (0, 0, 0.5), swatch=sw["cloth"])  # hood top
-        elif head == "hood":
-            B((1.28, 1.28, 0.5), (0, 0.04, 0.4), swatch=sw["cloth_d"])  # hood top
-            B((1.28, 0.3, 0.9), (0, 0.5, -0.1), swatch=sw["cloth_d"])  # hood back
+            L.box((W, D, H), swatch=sw["skin"])
+            L.box((1.28, 1.28, 0.5), (0, 0.04, 0.4), swatch="white")  # hood up
+            L.box((1.28, 0.3, 0.9), (0, 0.5, -0.1), swatch="white")
             for x in (-0.6, 0.6):
-                B((0.16, 1.1, 0.9), (x, 0.08, -0.1), swatch=sw["cloth_d"])  # hood sides
-            B((1.5, 1.5, 0.06), (0, 0, 0.4), swatch=sw["cloth_d"])  # boonie brim
-            B((0.5, 0.1, 0.1), (0, -0.62, -0.25), swatch=sw["cloth_d"])  # face wrap
+                L.box((0.16, 1.1, 0.9), (x, 0.08, -0.1), swatch="white")
+            L.box((0.9, 0.12, 0.12), (0, -0.56, 0.3), swatch="dark_d")  # hair under the hood
+            L.box((1.0, 0.22, 0.42), (0, -0.62, -0.24), swatch="gun_d")  # half-face respirator
+            for x in (-0.36, 0.36):
+                L.box((0.26, 0.2, 0.26), (x, -0.64, -0.32), swatch="gun")  # filters
+            L.box((1.2, 0.12, 0.16), (0, 0, 0.1), swatch="dark")  # goggle strap
+            for x in (-0.24, 0.24):
+                L.box((0.3, 0.1, 0.22), (x, -0.63, 0.1), swatch="gun_l")  # goggle lenses
+        elif head == "hood":
+            _pc_face(L, sw, brow="dark")
+            L.box((1.28, 1.28, 0.5), (0, 0.04, 0.4), swatch="dark")  # hood
+            L.box((1.28, 0.3, 0.9), (0, 0.5, -0.1), swatch="dark")
+            for x in (-0.6, 0.6):
+                L.box((0.16, 1.1, 0.9), (x, 0.08, -0.1), swatch="dark")
+            L.box((1.5, 1.5, 0.06), (0, 0, 0.4), swatch="dark")  # boonie brim
+            L.box((1.0, 0.12, 0.38), (0, -0.6, -0.32), swatch="dark_d")  # face wrap to the nose
+            L.box((0.08, 0.5, 0.08), (0.62, -0.1, 0.2), swatch="tan_d")  # pencil behind the ear
         else:  # hardhat
-            B((1.26, 1.26, 0.4), (0, 0, 0.44), swatch=sw["accent"])
-            B((1.5, 1.5, 0.08), (0, 0, 0.26), swatch=sw["accent"])  # brim
-            B((0.5, 0.3, 0.12), (0, -0.56, 0.42), swatch="dark")  # headlamp
+            _pc_face(L, sw)
+            L.box((1.26, 1.26, 0.4), (0, 0, 0.44), swatch="warning_orange")
+            L.box((1.5, 1.5, 0.08), (0, 0, 0.26), swatch="warning_orange")  # brim
+            L.box((0.5, 0.3, 0.12), (0, -0.56, 0.44), swatch="dark")  # headlamp
+            L.box((0.5, 0.06, 0.1), (0, -0.66, 0.56), swatch="dark_d")  # KANE in marker
+            L.box((0.44, 0.08, 0.08), (0, -0.62, -0.18), swatch="tan_d")  # moustache
     elif limb == "upper_torso":
-        B((W, D, H), swatch=sw["cloth"])
-        B((1.4, 0.2, 1.3), (0, -0.56, 0.05), swatch=sw["gear"])  # plate carrier front
-        B((1.4, 0.2, 1.3), (0, 0.56, 0.05), swatch=sw["gear"])  # back panel
-        for x in (-0.62, 0.62):
-            B((0.24, 1.1, 0.24), (x, 0, 0.72), swatch=sw["gear"])  # shoulder straps
-        for x in (-0.4, 0.0, 0.4):
-            B((0.3, 0.16, 0.42), (x, -0.7, -0.3), swatch=sw["cloth_d"])  # mag pouches
-        B((0.34, 0.06, 0.2), (0.45, -0.69, 0.42), swatch=sw["accent"])  # signature patch
-        B((0.6, 0.16, 0.16), (-0.45, -0.68, 0.44), swatch="dark")  # radio
-        B((1.0, 0.86, 0.14), (0, 0.04, 0.78), swatch=sw["cloth_d"])  # collar
-        if head == "hardhat":
-            B((0.5, 0.2, 0.5), (0.0, 0.7, -0.2), swatch="gun")  # tool pack
-        if head == "mask":
-            B((0.9, 0.2, 0.3), (0, -0.7, 0.1), swatch=sw["accent"])  # chest cross strip
+        L.box((W, D, H), swatch=sw["top"])
+        L.box((1.0, 0.86, 0.14), (0, 0.04, 0.78), swatch=sw["top_d"])  # collar
+        _pc_carrier(L, sw, cname)
+        if cname == "assault":
+            for x in (-0.4, 0.0, 0.4):
+                L.box((0.3, 0.16, 0.42), (x, -0.7, -0.35), swatch="gun_d")  # mag pouches
+            L.box((0.6, 0.16, 0.16), (-0.1, -0.68, 0.2), swatch="dark")  # radio
+            for x in (-0.62, 0.62):
+                L.box((0.12, 0.2, 0.5), (x, -0.6, 0.02), swatch="red_d")  # two tourniquets
+        elif cname == "k9":
+            for x in (-0.3, 0.3):
+                L.box((0.3, 0.16, 0.42), (x, -0.7, -0.35), swatch="gun_d")
+            L.box((0.4, 0.3, 0.5), (0.78, -0.3, -0.45), swatch="tan_d")  # tug pouch, right side
+            L.box((0.1, 0.14, 0.3), (0.78, -0.42, -0.75), swatch="tan_l")  # chewed tug toy hanging
+            L.box((0.14, 0.04, 0.2), (0.08, -0.6, 0.2), swatch="gun_l")  # Kilo's spare tag
+        elif cname == "epi":
+            L.box((0.6, 0.2, 0.5), (0.4, -0.7, -0.25), swatch="white_d")  # sample pouch
+            for x in (0.24, 0.4, 0.56):
+                L.box((0.08, 0.1, 0.3), (x, -0.78, -0.2), swatch="white_l")  # vials
+                L.box((0.08, 0.1, 0.06), (x, -0.78, -0.02), swatch="red_d")  # caps
+            L.box((0.06, 0.1, 0.3), (-0.4, -0.68, 0.1), swatch="white")  # sharpie
+            L.box((0.2, 0.06, 0.26), (-0.1, -0.7, -0.55), swatch="white")  # hospital ID badge
+            L.box((0.04, 0.1, 0.5), (-0.1, -0.68, -0.2), swatch="gun_l")  # on its lanyard
+        elif cname == "recon":
+            L.box((0.5, 0.2, 0.4), (0.5, 0.68, 0.3), swatch="dark")  # radio on the back panel
+            L.box((0.06, 0.06, 1.2), (0.5, 0.72, 0.5), swatch="gun_d")  # whip antenna
+            L.box((0.36, 0.1, 0.3), (-0.4, -0.68, -0.1), swatch="dark_d")  # notebook
+            L.box((0.1, 0.14, 0.6), (LEFT, -0.6, -0.1), swatch="dark")  # sheathed knife
+        else:  # engineer
+            L.box((1.0, 0.3, 0.9), (0, 0.66, -0.1), swatch="gun")  # tool pack
+            L.box((0.12, 0.1, 1.9), (0, 0.72, 0.05), rot=(0, 35, 0), swatch="rust_l")  # pry bar across it
+            L.box((0.3, 0.16, 0.42), (-0.4, -0.7, -0.35), swatch=sw["top_d"])  # one pouch
     elif limb == "lower_torso":
-        B((W, D, H), swatch=sw["cloth_d"])
-        B((W + 0.02, D + 0.02, 0.16), (0, 0, 0.06), swatch="dark")  # belt
-        B((0.3, 0.12, 0.18), (0, -0.53, 0.06), swatch="brass")  # buckle
-        for x in (-0.6, 0.6):
-            B((0.3, 0.22, 0.3), (x, -0.5, -0.04), swatch=sw["gear"])  # belt pouches
+        L.box((W, D, H), swatch=sw["trousers"])
+        L.box((W + 0.02, D + 0.02, 0.16), (0, 0, 0.06), swatch="dark")  # belt
+        L.box((0.3, 0.12, 0.18), (0, -0.53, 0.06), swatch="brass")  # buckle
+        if cname == "k9":
+            L.cyl(0.22, 0.2, (-0.72, -0.4, 0), rot=(90, 0, 0), swatch="tan")  # the leash, coiled
+            L.box((0.1, 0.1, 0.16), (-0.72, -0.5, -0.1), swatch="gun")  # its clip
+            L.box((0.4, 0.3, 0.4), (0.76, -0.3, 0), swatch="tan_d")  # dump pouch
+        elif cname == "engineer":
+            L.box((0.08, 0.1, 0.5), (0.6, -0.54, -0.04), swatch="gun_l")  # wrench
+            L.cyl(0.16, 0.14, (-0.5, -0.56, 0), rot=(90, 0, 0), swatch="tan")  # tape roll
+            L.box((0.1, 0.08, 0.2), (0.2, -0.55, -0.02), swatch="brass")  # carabiner
+        else:
+            for x in (-0.6, 0.6):
+                L.box((0.3, 0.22, 0.3), (x, -0.5, -0.04), swatch="dark")  # belt pouches
     elif limb == "upper_arm":
-        B((W, D, H), swatch=sw["cloth"])
-        B((1.04, 1.04, 0.3), (0, 0, 0.42), swatch=sw["cloth_d"])  # shoulder seam
-        B((0.5, 0.08, 0.3), (0, -0.53, 0.05), swatch=sw["accent"])  # signature arm patch
+        if sw["rolled"]:
+            L.box((W, D, 0.7), (0, 0, 0.27), swatch=sw["top"])  # sleeve rolled to the elbow
+            L.box((1.04, 1.04, 0.14), (0, 0, -0.06), swatch=sw["top_d"])  # the roll
+            L.box((0.9, 0.9, 0.54), (0, 0, -0.35), swatch=sw["skin"])
+        else:
+            L.box((W, D, H), swatch=sw["top"])
+        L.box((1.04, 1.04, 0.24), (0, 0, 0.48), swatch=sw["top_d"])  # shoulder seam
+        if sw["border"]:
+            L.box((0.4, 0.07, 0.26), (0, -0.53, 0.2), swatch=sw["border"])
+        L.box((0.34, 0.1, 0.2), (0, -0.53, 0.2), swatch=sw["accent"])  # sleeve square
     elif limb == "lower_arm":
-        B((W, D, H), swatch=sw["cloth"])
-        B((1.04, 1.04, 0.24), (0, 0, -0.44), swatch="dark")  # glove cuff
+        L.box((W, D, H), swatch=sw["skin"] if sw["rolled"] else sw["top"])
+        L.box((1.04, 1.04, 0.24), (0, 0, -0.44), swatch=sw["glove"])  # glove cuff
+        if cname == "engineer":
+            L.box((1.06, 1.06, 0.1), (0, 0, -0.26), swatch="warning_orange")  # marking tape on the wrist
     elif limb == "hand":
-        B((W, D, H), swatch="dark")  # gloves
+        L.box((W, D, H), swatch=sw["glove"])
         for x in (-0.2, 0.2):
-            B((0.06, 0.5, 0.33), (x, -0.27, 0), swatch="dark_d")  # finger gaps
+            L.box((0.06, 0.5, 0.33), (x, -0.27, 0), swatch="dark_d")  # finger gaps
     elif limb == "upper_leg":
-        B((W, D, H), swatch=sw["cloth"])
-        B((0.8, 0.2, 0.46), (0, -0.5, -0.4), swatch=sw["gear"])  # knee pad
-        B((0.36, 0.22, 0.4), (0.4, -0.45, 0.2), swatch=sw["cloth_d"])  # thigh pouch
+        L.box((W, D, H), swatch=sw["trousers"])
+        if sw["knee"]:
+            L.box((0.8, 0.2, 0.46), (0, -0.5, -0.4), swatch=sw["knee"])  # knee pad
+        if cname == "k9":
+            L.box((0.5, 0.26, 0.5), (0.4, -0.42, 0.1), swatch="tan_d")  # stuffed cargo pocket
+        elif cname != "engineer":
+            L.box((0.36, 0.22, 0.4), (0.4, -0.45, 0.2), swatch=sw["top_d"])  # thigh pouch
     elif limb == "lower_leg":
-        B((W, D, 0.8), (0, 0, 0.25), swatch=sw["cloth"])
-        B((W + 0.02, D + 0.02, 0.5), (0, 0, -0.4), swatch=sw["boot"])  # boot shaft
+        L.box((W, D, 0.8), (0, 0, 0.25), swatch=sw["trousers"])
+        L.box((W + 0.02, D + 0.02, 0.5), (0, 0, -0.4), swatch=sw["boot"])  # boot shaft
     elif limb == "foot":
-        B((W, D, 0.23), (0, 0, 0.04), swatch=sw["boot"])
-        B((W, D, 0.08), (0, 0, -0.115), swatch="dark_d")  # sole
+        L.shoe(sw["boot"])
+        if cname == "engineer":
+            L.box((0.6, 0.3, 0.26), (0, -0.4, 0.04), swatch="gun_l")  # steel toe cap
 
 
 def _register_chosen():
     for cname, sw in PC_CLASSES.items():
         for limb in R15_LIMB:
-            def fn(b, limb_name=limb, sw_=sw):
-                _pc_limb(b, limb_name, sw_)
+            def fn(b, limb_name=limb, sw_=sw, c=cname):
+                _pc_limb(b, limb_name, sw_, c)
             ASSETS[f"pc_{cname}_{limb}"] = (fn, "Chosen", "center")
 
-        def preview(b, _sw=sw):
-            _pc_limb(b, "head", _sw, (0, 0, 1.59))
-            _pc_limb(b, "upper_torso", _sw, (0, 0, 0.20))
-            _pc_limb(b, "lower_torso", _sw, (0, 0, -0.80))
-            for s in (-1, 1):
-                _pc_limb(b, "upper_arm", _sw, (s * 1.47, 0, 0.37))
-                _pc_limb(b, "lower_arm", _sw, (s * 1.47, 0, -0.22))
-                _pc_limb(b, "hand", _sw, (s * 1.47, 0, -0.85))
-                _pc_limb(b, "upper_leg", _sw, (s * 0.5, 0, -1.42))
-                _pc_limb(b, "lower_leg", _sw, (s * 0.5, 0, -2.20))
-                _pc_limb(b, "foot", _sw, (s * 0.5, 0, -2.85))
+        def preview(b, _sw=sw, c=cname):
+            for limb, (x, y, z) in R15_POSE.items():
+                for s in ((1,) if x == 0 else (-1, 1)):
+                    _pc_limb(b, limb, _sw, c, (s * x, y, z))
         ASSETS[f"ref_pc_{cname}"] = (preview, "_Reference", "bottom")
 
 

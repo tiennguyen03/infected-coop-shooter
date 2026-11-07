@@ -280,8 +280,9 @@ this section; the bullets below describe the 2026-11-06 build still worn by the 
   shoulder and back (Weller blue, Cole tan, Reyes white, Cross black/grey border, Kane
   orange). Rebuilt to the sheets so far (2026-11-07, verified in a playtest): **Walker, Runner,
   Brute, Hocker** (`inf_<type>_*` v2, 36 limbs, 0.8-1.1k tris per body; the Hocker has its own
-  set now). Still on the old build: the five Chosen. Not built: Bloat, Shedder, Crawler, Kite,
-  Growth, the Index hosts, Kilo.
+  set now), and **the five Chosen** (`PC_CLASSES` rebuilt with the shared Pike carrier; Weller's
+  set uploaded and worn in game, the other four built and previewed). Not built: Bloat,
+  Shedder, Crawler, Kite, Growth, the Index hosts, Kilo.
 
 ### Stage 1 "Checkpoint Delta" (shipped 2026-11-06)
 

@@ -9,7 +9,7 @@ at or hand-tweak anything. Collections inside it:
 | `Weapons` | held tools (rifle) |
 | `Pickups` | XP orb |
 | `Environment` | Stage 1 set dressing, all built to the 5-stud character (`CHAR_H`, `DOOR_H`, `STOREY`, `COVER_H` constants in the script): barrier, sandbags, tower, ruin, containers, humvee wreck, T-wall, hesco, comm tower, tent, checkpoint, dead tree, lamp post |
-| `Chosen` | player limb sets `pc_<class>_<limb>` for assault, k9, epi, recon, engineer (`PC_CLASSES`); only assault is uploaded and worn in game |
+| `Chosen` | player limb sets `pc_<class>_<limb>` for assault (Weller), k9 (Cole), epi (Reyes), recon (Cross), engineer (Kane) (`PC_CLASSES`, `_pc_limb`, the shared `_pc_carrier`); only assault is uploaded and worn in game |
 | `Infected` | enemy limb sets: `inf_<walker|runner|brute|hocker>_<limb>`, 9 limbs per type (left/right share), one builder function per type (`walker_limb`...) from the sheets in `docs/CHARACTERS.md` |
 | `_Reference` | a 5-stud human block for scale; never exported |
 
@@ -59,8 +59,8 @@ Add `-- --only wpn_rifle prop_drone` to build a subset.
 | env_dead_tree | 96 | bottom | 14-stud bare tree (Hull collision) |
 | env_lamp_post | 76 | bottom | 13-stud street light (Hull collision) |
 | inf_walker_* / inf_runner_* / inf_brute_* / inf_hocker_* | 0.8-1.1k per body | center | the 15 R15 limb MeshParts of each Infected (`MeshAssets.dressInfected`); v2 2026-11-07 |
-| pc_assault_* | ~470 per body | center | the player's 15 R15 limb MeshParts (`PlayerSetup` -> `MeshAssets.dressModel`) |
-| pc_k9_* / pc_epi_* / pc_recon_* / pc_engineer_* | ~470 per body | center | built + previewed, not uploaded (no class system yet) |
+| pc_assault_* | ~600 per body | center | Weller, the player's 15 R15 limb MeshParts (`PlayerSetup` -> `MeshAssets.dressModel`); v2 2026-11-07 |
+| pc_k9_* / pc_epi_* / pc_recon_* / pc_engineer_* | ~600 per body | center | Cole, Reyes, Cross, Kane: built + previewed, not uploaded (no class system yet) |
 | ref_inf_* / ref_pc_* | — | bottom | assembled preview figures, never exported |
 
 All far under the budgets in `docs/STYLES.md` section 6. Dressing positions live in

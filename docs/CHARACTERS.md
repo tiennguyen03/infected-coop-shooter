@@ -7,8 +7,8 @@ shared), flat facets from the palette (`docs/STYLES.md` §2), budgets from §6 (
 per Infected, 5,000 for Brute/Index). Asymmetry lives on the head and torso only, or on
 attached parts (the Hocker sac proves attached parts work).
 
-Status: Walker, Runner, Brute and Hocker rebuilt to these sheets 2026-11-07 (list kept in
-`docs/STYLES.md` §7); everything else is sheet only.
+Status: Walker, Runner, Brute, Hocker and the five Chosen rebuilt to these sheets 2026-11-07
+(list kept in `docs/STYLES.md` §7); everything else is sheet only.
 
 ## The two rules that make the roster read
 
