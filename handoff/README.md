@@ -1,7 +1,7 @@
 # Handoff — Infected Co-op Shooter (VS Code + Claude Code terminal)
 
 Start here when picking the project up in a fresh Claude Code session.
-Last updated: 2026-11-07 (feel pass: hit marker, faster vault/climb, climb immunity, quieter steps). Last verified commit on `main`: the feel-pass commit (playtested before committing).
+Last updated: 2026-11-07 (movement weight, sprint-roll, slide). Last verified commit on `main`: the movement-weight commit (weight and roll playtested; slide not yet seen running).
 
 ## What this is
 
@@ -48,6 +48,10 @@ Read in this order:
   hit point, the player's pain grunt, and per-form Infected vocals with no-repeat random
   variants (`EnemyService` → `WorldSounds`, 3D on the head, replicated). Pipeline and
   the bank table: `assets/audio/README.md > Banks`.
+- 2026-11-07: **movement weight, roll, slide.** `client/MomentumController` eases the
+  body's velocity toward the input (`Config.Movement.Momentum`), so starts, stops and
+  reversals take time. Sprint + LeftControl rolls (melee immunity via `CoverMoveService`),
+  sprint + C slides (`Config.Movement.Roll` / `Slide`, `MovementController.tryDash`).
 - 2026-11-07: **feel pass.** Crosshair hit marker replaces damage numbers (`HitMarkerUI`,
   `Config.HitMarker`; only the attacker sees it: `DamageDealt` now carries the attacker).
   Vault 0.55 s / climb 1.1 s. Infected melee skips a body mid-vault/climb
@@ -86,9 +90,12 @@ Read in this order:
      the roster `MaxHealth` together (systems-designer call; flat curve per the spine).
   2. **More Infected vocal variety.** Three idle / two attack lines per form is thin; add
      variants to each bank (`generate.py` `SOUNDS` + `BANKS`, re-upload the bank).
-  3. **Roll.** Holding Shift (sprint) and pressing LeftControl rolls (a dodge roll clip from
-     Mixamo, short i-frames, `MovementController`); crouch stays on LeftControl when not
-     sprinting. Reuse `CoverMoveService`'s window for the i-frames.
+  3. **Publish the roll and slide clips.** `sprint_roll` is retargeted and plays as a Studio
+     preview only (`Config.Animations.Ids.sprint_roll = ""`). `running_slide` (Mixamo
+     "Running Slide", FBX without skin, 30 fps) still has to be downloaded into
+     `assets/animations/source/mixamo/running_slide.fbx`: Chrome blocked the second
+     automatic download from mixamo.com. Then retarget both and publish them in one pass
+     (`assets/animations/README.md` steps 2-4). Until then the slide runs in the run pose.
   4. **Rework the map for the movement set.** Delta was laid out for a body that walks
      around cover; now it vaults, climbs and is climbed over. Redo `docs/LEVELS.md` with
      more climbable cover (containers, humvees, bunkers, stacked hesco), routes that use

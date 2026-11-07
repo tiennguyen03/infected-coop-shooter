@@ -19,7 +19,7 @@ local REMOTE_NAMES = {
 	"MissionSuccess", -- server -> client: () show the operation-complete results screen
 	"UseAbility", -- client -> server: (abilityName: "dash"|"breach")
 	"AbilityUsed", -- server -> client: (abilityName: string, cooldown: number) for UI countdown
-	"CoverMove", -- client -> server: (kind: "vault"|"climb") the body started going over cover
+	"CoverMove", -- client -> server: (kind: "vault"|"climb"|"roll") the body started going over cover or rolling
 }
 
 if RunService:IsServer() and not ReplicatedStorage:FindFirstChild("Remotes") then

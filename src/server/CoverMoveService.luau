@@ -1,5 +1,5 @@
 --!strict
--- CoverMoveService: the client runs the vault/climb (MovementController) and reports it
+-- CoverMoveService: the client runs the vault/climb/roll (MovementController) and reports it
 -- with the CoverMove remote. The server opens a short window, stored on the character as
 -- the "CoverMoveUntil" attribute (server os.clock), in which Infected melee skips that body
 -- (EnemyService.attackIfTouching). Ranged attacks still land. Windows are capped at the
@@ -17,7 +17,7 @@ local CoverMoveService = {}
 local windowEnds: { [Player]: number } = {}
 
 local function onCoverMove(player: Player, kind: unknown)
-	if kind ~= "vault" and kind ~= "climb" then
+	if kind ~= "vault" and kind ~= "climb" and kind ~= "roll" then
 		return
 	end
 	local character = player.Character
@@ -31,7 +31,10 @@ local function onCoverMove(player: Player, kind: unknown)
 	if lastEnd and now < lastEnd + settings.CoverImmunity.Cooldown then
 		return
 	end
-	local duration = if kind == "vault" then settings.VaultDuration else settings.ClimbDuration
+	local duration = if kind == "vault"
+		then settings.VaultDuration
+		elseif kind == "roll" then settings.Roll.Duration
+		else settings.ClimbDuration
 	local ends = now + duration + settings.CoverImmunity.Grace
 	windowEnds[player] = ends
 	character:SetAttribute("CoverMoveUntil", ends)

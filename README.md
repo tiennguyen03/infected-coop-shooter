@@ -24,9 +24,10 @@ single-player; every system is written for four.
 2. In Studio: Plugins tab → Rojo → **Connect**
 3. Press **Play** (F5).
 
-Controls: WASD move, **Shift** sprint, **LeftControl** crouch, **C** prone, **Space** vault
-or climb cover, **hold left-click** to shoot (over-the-shoulder aim, mouse wheel zooms),
-**Q** dash, **E** breach.
+Controls: WASD move (the body has weight: it speeds up and slows down), **Shift** sprint,
+**LeftControl** crouch, **C** prone, **Space** vault or climb cover, **Shift + LeftControl**
+roll, **Shift + C** slide, **hold left-click** to shoot (over-the-shoulder aim, mouse wheel
+zooms), **Q** dash, **E** breach.
 
 The loop: the Infected hunt you and the pressure climbs on a clock you can read. Kills earn
 Resupply; a flare brings a pallet and you walk into 1 of 3 cards. Hold Position when you

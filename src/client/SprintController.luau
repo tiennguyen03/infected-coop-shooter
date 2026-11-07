@@ -16,6 +16,7 @@ local isSprinting = false
 local isAiming = false
 local stanceFactor = 1
 local sprintAllowed = true
+local overrideSpeed: number? = nil -- a roll or slide (MovementController) owns the speed
 
 local function getHumanoid(): Humanoid?
 	local character = Players.LocalPlayer.Character
@@ -24,7 +25,9 @@ end
 
 local function applySpeed()
 	local humanoid = getHumanoid()
-	if humanoid then
+	if humanoid and overrideSpeed then
+		humanoid.WalkSpeed = overrideSpeed
+	elseif humanoid then
 		local base = if isSprinting
 				and sprintAllowed
 				and not isAiming
@@ -56,6 +59,17 @@ function SprintController.setStanceFactor(factor: number, canSprint: boolean)
 	applySpeed()
 end
 
+-- A roll or slide sets the body's speed outright; nil hands it back to sprint/stance/ADS.
+function SprintController.setOverrideSpeed(speed: number?)
+	overrideSpeed = speed
+	applySpeed()
+end
+
+-- Shift is down (whether or not sprint is currently allowed).
+function SprintController.isSprintHeld(): boolean
+	return isSprinting
+end
+
 function SprintController.isSprinting(): boolean
 	return isSprinting and sprintAllowed and not isAiming
 end
@@ -76,6 +90,7 @@ function SprintController.init()
 	-- A respawned character starts at base speed even if Shift is held.
 	Players.LocalPlayer.CharacterAdded:Connect(function()
 		isAiming = false
+		overrideSpeed = nil
 		stanceFactor = 1
 		sprintAllowed = true
 		setSprinting(false)

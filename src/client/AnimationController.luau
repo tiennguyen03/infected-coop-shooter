@@ -50,6 +50,8 @@ type Tracks = {
 	breach: AnimationTrack?,
 	vault: AnimationTrack?,
 	climb: AnimationTrack?,
+	roll: AnimationTrack?,
+	slide: AnimationTrack?,
 }
 
 local tracks: Tracks = {}
@@ -275,6 +277,8 @@ local function setup(character: Model)
 		breach = Animations.load(animator, clips.breach, Enum.AnimationPriority.Action3),
 		vault = Animations.load(animator, clips.vault, Enum.AnimationPriority.Action3),
 		climb = Animations.load(animator, clips.climb, Enum.AnimationPriority.Action3),
+		roll = Animations.load(animator, clips.roll, Enum.AnimationPriority.Action3),
+		slide = Animations.load(animator, clips.slide, Enum.AnimationPriority.Action3),
 	}
 	stances = {
 		stand = loadStance(animator, {
@@ -385,7 +389,10 @@ end
 
 -- Plays the vault or climb clip at the rate that fits `duration` and holds the locomotion
 -- off for that long. Returns false when the clip is not available.
-function AnimationController.playMove(kind: "vault" | "climb", duration: number): boolean
+function AnimationController.playMove(
+	kind: "vault" | "climb" | "roll" | "slide",
+	duration: number
+): boolean
 	local track = (tracks :: { [string]: AnimationTrack? })[kind]
 	if dead then
 		return false

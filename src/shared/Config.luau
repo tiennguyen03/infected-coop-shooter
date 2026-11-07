@@ -35,6 +35,19 @@ local Config = {
 		-- move's duration plus Grace; a new window opens no sooner than Cooldown after the
 		-- last one closed, so spamming the remote never gives standing immunity.
 		CoverImmunity = { Grace = 0.15, Cooldown = 0.4 },
+		-- Weight (client MomentumController, 2026-11-07): the body's velocity eases toward
+		-- the input instead of snapping, so turning and stopping cost time and kiting
+		-- takes footwork. Studs/s per second; Deceleration also applies when reversing.
+		Momentum = {
+			Acceleration = 60, -- 0 -> walk (16) in ~0.27 s, 0 -> sprint (24) in 0.4 s
+			Deceleration = 75, -- walk -> stop in ~0.2 s; a full reversal ~0.45 s
+		},
+		-- Sprint + LeftControl: a short roll along the move direction. Infected melee skips
+		-- the body for the roll (CoverMoveService, same window as a vault).
+		Roll = { Duration = 0.8, Speed = 25, Cooldown = 1 },
+		-- Sprint + C: a longer slide that bleeds speed from StartSpeed to EndSpeed. No
+		-- immunity; it covers ground, the roll dodges.
+		Slide = { Duration = 0.95, StartSpeed = 30, EndSpeed = 14, Cooldown = 1.2 },
 		AutoVaultSprinting = true, -- sprinting into cover vaults without pressing Space
 		Infected = {
 			LowHeight = 5, -- a top above this uses the form's climbHigh clip (Runners)
@@ -135,6 +148,7 @@ local Config = {
 			-- Movement set (2026-11-07): vault/climb, crouch, prone; Infected climbs and
 			-- extras (Crawler move, flinch, Hocker scream) for later.
 			vault_low = "rbxassetid://122259453837052",
+			sprint_roll = "", -- Studio preview until published
 			climb_ledge = "rbxassetid://87799425638897",
 			climb_low = "rbxassetid://111567195502844",
 			climb_high = "rbxassetid://97579324656436",
@@ -200,6 +214,8 @@ local Config = {
 				exit = "prone_exit",
 			},
 			vault = "vault_low", -- over jersey / hesco
+			roll = "sprint_roll", -- sprint + LeftControl
+			slide = "running_slide", -- sprint + C (no id until the clip is downloaded)
 			climb = "climb_ledge", -- onto bunker / humvee / container
 		},
 		-- The Infected, per type (EnemyDefinitions).

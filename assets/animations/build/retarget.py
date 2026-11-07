@@ -101,6 +101,10 @@ CLIPS = {
     "climb_ledge": {"loop": False, "step": 1, "root_lock": True},  # players onto bunker / container
     "climb_low": {"loop": False, "step": 1, "root_lock": True},  # Walkers / Runners over hesco
     "climb_high": {"loop": False, "step": 1, "root_lock": True},  # Runners onto containers
+    # Sprint-roll and slide (2026-11-07): the hip drop to the ground stays (vertical), the
+    # horizontal travel is stripped; the game carries the body (client MovementController).
+    "sprint_roll": {"loop": False, "step": 1, "in_place": True},
+    "running_slide": {"loop": False, "step": 1, "in_place": True},
     # Crouch: hip drop stays (vertical), horizontal travel stripped.
     "crouch_idle": {"loop": True, "step": 2, "in_place": True},
     "crouch_enter": {"loop": False, "step": 1, "in_place": True},

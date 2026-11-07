@@ -53,6 +53,8 @@ animations, played by `src/client/AnimationController.luau` (players) and
 | prone_fire | Assault prone aim, upper body | |
 | prone_walk_f/b | Assault prone crawl, two-way blend (sideways folds into forward) | in place |
 | zombie_crawl (Zombie Crawl) | spare: the Crawler's move | in place |
+| sprint_roll (Sprinting Forward Roll) | Assault roll (sprint + LeftControl) | `in_place` (hip drop kept); 1.17 s, played at `Config.Movement.Roll.Duration`; Studio preview, not yet published |
+| running_slide (Running Slide) | Assault slide (sprint + C) | `in_place`; **not downloaded yet** (see handoff) |
 | zombie_stumble (Zombie Stumble) | spare: Infected flinch | |
 | zombie_scream (Zombie Scream) | spare: Hocker windup | |
 

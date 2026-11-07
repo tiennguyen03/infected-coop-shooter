@@ -79,6 +79,11 @@ function StanceController.init()
 		if gameProcessed or workspace:GetAttribute("GamePaused") == true then
 			return
 		end
+		-- While sprinting these keys roll and slide instead (MovementController).
+		local lowKey = input.KeyCode == Enum.KeyCode.LeftControl or input.KeyCode == Enum.KeyCode.C
+		if lowKey and SprintController.isSprinting() then
+			return
+		end
 		if input.KeyCode == Enum.KeyCode.LeftControl then
 			toggle("crouch")
 		elseif input.KeyCode == Enum.KeyCode.C then
