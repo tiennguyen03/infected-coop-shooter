@@ -313,7 +313,8 @@ emitters in the whole scene.
 
 Mixamo motion capture retargeted onto the stock R15 rig (pipeline and clip table:
 `assets/animations/README.md`). The Assault reads as a soldier: hunched low-ready idle that
-scans, rifle walk, leaning sprint, shouldered aim while the trigger is held, a short recoil
+scans, rifle jog and sprint that blend four directions so strafing and backpedalling look
+right (2026-11-06), shouldered aim while the trigger is held, a short recoil
 per shot, a flinch on damage, a fall on death (the rig stays jointed). Upper-body clips
 (aim, fire, hit, breach throw) leave the legs to the locomotion clip. Each Infected type
 has its own gait (Walker shuffle, Runner sprint, Brute lumber), an attack swing and a death

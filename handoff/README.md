@@ -1,7 +1,7 @@
 # Handoff — Roguelike Arena Survivor (VS Code + Claude Code terminal)
 
 Start here when picking the project up in a fresh Claude Code session.
-Last updated: 2026-11-06 (Hocker + behaviour hooks). Last verified commit on `main`: `bd6c008`.
+Last updated: 2026-11-06 (directional locomotion). Last verified commit on `main`: `0ece557`.
 
 ## What this is
 
@@ -45,6 +45,15 @@ Read in this order:
    Delta as the only stage, then Mile 14 + Bloat. Design subagents in `.claude/agents/`
    (lore-developer, systems-designer, level-designer, playtest-critic) argue the design
    before code; the lore developer owns canon.
+   **Direction change under discussion (2026-11-06, not yet in PROGRESSION.md):** the owner
+   wants Helldivers 2-style co-op structure on top of the roguelike run: a stage as an
+   operation (main + side objectives from a pool, mission timer, called extraction), the
+   Corridor as a war map with per-district liberation %, supply drops (thrown beacon, helo
+   crate, walk-in pick of three) replacing the pause-based level-up, boss kills as
+   guaranteed high-rarity drops, strafing done, ADS + headshots + hit/headshot sounds,
+   an Infected visual redesign, loadouts with alternate abilities (backlog), a sound day
+   (backlog). Agreed next: revise PROGRESSION.md to this hybrid with the lore developer and
+   systems designer, then Co-op Sprint A.
    **Roblox's own Studio MCP** (`Roblox_Studio`, added 2026-11-06, local scope) is a second
    server: use it only for `generate_animation` (returns a published id; its clips play on
    our R15 rigs, extra bones ignored), `open_cloud_invoke` and camera-positioned

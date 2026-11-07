@@ -83,6 +83,17 @@ CLIPS = {
     "zombie_death": {"loop": False, "step": 2},
     "mutant_walking": {"loop": True, "step": 1},
     "mutant_swiping": {"loop": False, "step": 1},
+    # Rifle 8-Way Locomotion Pack (walk / sprint, four directions): root motion is baked
+    # in, so `in_place` strips the horizontal hip travel and reports the ground speed the
+    # clip was authored at (-> Config.Animations.MoveClipSpeed).
+    "loco_walk_f": {"loop": True, "step": 1, "in_place": True},
+    "loco_walk_b": {"loop": True, "step": 1, "in_place": True},
+    "loco_walk_l": {"loop": True, "step": 1, "in_place": True},
+    "loco_walk_r": {"loop": True, "step": 1, "in_place": True},
+    "loco_run_f": {"loop": True, "step": 1, "in_place": True},
+    "loco_run_b": {"loop": True, "step": 1, "in_place": True},
+    "loco_run_l": {"loop": True, "step": 1, "in_place": True},
+    "loco_run_r": {"loop": True, "step": 1, "in_place": True},
 }
 
 
@@ -121,6 +132,14 @@ def retarget(name: str, cfg: dict):
     frames = list(range(f0, f1 + 1, cfg["step"]))
     if frames[-1] != f1:
         frames.append(f1)
+    in_place = bool(cfg.get("in_place", False))
+    hips_bone = arm.pose.bones[bones["Hips"]]
+    scene.frame_set(f0)
+    hips_start = (arm.matrix_world @ hips_bone.head).copy()
+    scene.frame_set(f1)
+    hips_end = (arm.matrix_world @ hips_bone.head).copy()
+    travel = M @ (hips_end - hips_start)
+    ground_speed = Vector((travel.x, 0, travel.z)).length * STUDS_PER_METRE * fps / max(1, f1 - f0)
     for f in frames:
         scene.frame_set(f)
         world = {"HumanoidRootPart": Matrix.Identity(3)}
@@ -136,6 +155,8 @@ def retarget(name: str, cfg: dict):
             if part == "LowerTorso":
                 hips = arm.matrix_world @ pb.head
                 pos = (M @ (hips - hips_rest)) * STUDS_PER_METRE
+                if in_place:
+                    pos = Vector((0, pos.y, 0))
             poses[part] = to_cframe_values(transform, pos)
         keyframes.append({"t": round((f - f0) / fps, 4), "poses": poses})
 
@@ -145,12 +166,14 @@ def retarget(name: str, cfg: dict):
         "loop": cfg["loop"],
         "upperBody": bool(cfg.get("upper", False)),
         "duration": round((f1 - f0) / fps, 4),
+        "groundSpeed": round(ground_speed, 2),
         "keyframes": keyframes,
     }
     os.makedirs(OUT, exist_ok=True)
     with open(os.path.join(OUT, name + ".json"), "w", encoding="utf-8", newline="\n") as fh:
         json.dump(clip, fh, separators=(",", ":"))
-    print(f"{name}: {len(keyframes)} keyframes, {clip['duration']} s, loop={cfg['loop']}")
+    print(f"{name}: {len(keyframes)} keyframes, {clip['duration']} s, loop={cfg['loop']}, "
+          f"ground speed {ground_speed:.1f} studs/s{' (stripped)' if in_place else ''}")
 
 
 def main():
