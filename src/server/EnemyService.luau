@@ -28,6 +28,11 @@ local WALK_ANIMATION_ID = "rbxassetid://507777826" -- default R15 walk
 local REPATH_INTERVAL = 0.25
 local SPAWN_HIP_HEIGHT = 3.5 -- root height above ground at scale 1
 local BACK_OFF_DISTANCE = 8 -- studs a projectile form retreats when a player gets inside half its stand-off
+-- Nudge rule (docs/LEVELS.md): no pathfinding, so a melee form that moved less than
+-- NUDGE_STUCK_DISTANCE since its last repath while still out of reach is pressed against
+-- cover; it sidesteps NUDGE_DISTANCE perpendicular to its target, alternating sides.
+local NUDGE_STUCK_DISTANCE = 1
+local NUDGE_DISTANCE = 8
 local SAC_OFFSET = CFrame.new(0, 0.95, -0.5) -- throat sac relative to UpperTorso (the rig faces -Z)
 local SAC_SIZE = 0.9
 
@@ -45,6 +50,8 @@ type Zombie = {
 	attackTrack: AnimationTrack?,
 	deathTrack: AnimationTrack?,
 	nextRepathTime: number,
+	lastRepathPosition: Vector3,
+	nudgeSign: number,
 	behaviour: EnemyDefinitions.Behaviour,
 	-- Projectile forms: the windup in progress and whether the last check had a clear throw.
 	windupUntil: number?,
@@ -275,6 +282,8 @@ local function spawnZombie(groundPosition: Vector3, typeName: string)
 		attackTrack = attackTrack,
 		deathTrack = deathTrack,
 		nextRepathTime = 0,
+		lastRepathPosition = Vector3.new(1e9, 0, 0),
+		nudgeSign = 1,
 		behaviour = definition.Behaviour,
 		windupUntil = nil,
 		throwClear = false,
@@ -441,7 +450,21 @@ local function stepZombies()
 			else
 				local targetRoot = nearestPlayerRoot(zombie.root.Position)
 				if targetRoot then
-					zombie.humanoid:MoveTo(targetRoot.Position)
+					local here = zombie.root.Position
+					local goal = targetRoot.Position
+					local stuck = (here - zombie.lastRepathPosition).Magnitude
+						< NUDGE_STUCK_DISTANCE
+					if stuck and (goal - here).Magnitude > zombie.attackRange then
+						local toTarget = Vector3.new(goal.X - here.X, 0, goal.Z - here.Z)
+						if toTarget.Magnitude > 0.1 then
+							local side = Vector3.new(-toTarget.Z, 0, toTarget.X).Unit
+								* zombie.nudgeSign
+							zombie.nudgeSign = -zombie.nudgeSign
+							goal = here + side * NUDGE_DISTANCE
+						end
+					end
+					zombie.lastRepathPosition = here
+					zombie.humanoid:MoveTo(goal)
 				end
 			end
 		end

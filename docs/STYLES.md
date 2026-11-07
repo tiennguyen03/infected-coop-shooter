@@ -284,7 +284,12 @@ this section; the bullets below describe the 2026-11-06 build still worn by the 
   set uploaded and worn in game, the other four built and previewed). Not built: Bloat,
   Shedder, Crawler, Kite, Growth, the Index hosts, Kilo.
 
-### Stage 1 "Checkpoint Delta" (shipped 2026-11-06)
+### Stage 1 "Checkpoint Delta" (shipped 2026-11-06, relaid 2026-11-07)
+
+Layout as of 2026-11-07 follows [LEVELS.md](LEVELS.md) section A (insert and extract on the
+LZ, the Gate T-wall line and bus line to the south, the Pens hesco ring to the west); the
+notes below describe the pieces and the dressing rules, which did not change. New piece:
+`env_bus` (42 x 12.5 x 10, white with a steel stripe, one window blown out).
 
 Risk of Rain 2 layout rules, zombie-checkpoint dressing: open ground and five levels of
 height (ground 0, Ridge/Compound 8, highway embankment 12 with a bridge over the main

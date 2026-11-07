@@ -1,8 +1,11 @@
 --!strict
 -- Stage 1: "Checkpoint Delta". An overrun quarantine checkpoint laid out like a Risk of
--- Rain 2 stage: open ground with two raised hills (walkable embankments on every side, so
--- the Infected, who have no pathfinding, can always climb to the player), a landmark comm
--- tower on the high ground, roads for orientation, and the objective on the hill.
+-- Rain 2 stage: open ground with raised hills (walkable embankments on every side, so the
+-- Infected, who have no pathfinding, can always climb to the player), a landmark comm
+-- tower on the high ground, roads for orientation, and the objective on the hill. Layout
+-- per docs/LEVELS.md section A (2026-11-07): insert and extract at the LZ helipad, the
+-- main road south to the Gate (a T-wall line across the map with one lane, buses queued
+-- inside it), the Pens as a hesco-ringed funnel site, the Overlook summit kept open.
 -- Terrain is plain Parts (exact collision, no mesh cost); dressing is MeshAssets templates
 -- placed by raycast onto whatever ground is under them. Every piece is built against the
 -- 5-stud character (assets/3d/build/build_assets.py scale constants).
@@ -73,13 +76,14 @@ local HILLS: { Hill } = {
 	{ name = "NorthBluff", x = -230, z = 235, top = Vector2.new(56, 56), height = 10 }, -- Suburb
 	{ name = "DepotMound", x = 235, z = -205, top = Vector2.new(50, 50), height = 12 }, -- Depot
 	{ name = "SouthRise", x = -190, z = -235, top = Vector2.new(70, 44), height = 8 }, -- Scrapyard
-	{ name = "ParadeTerrace", x = -235, z = 120, top = Vector2.new(70, 60), height = 6 }, -- Barracks row
+	{ name = "ParadeTerrace", x = -250, z = 120, top = Vector2.new(70, 60), height = 6 }, -- the Pens
 }
 
 -- Set dressing: `name` is a MeshAssets template; x/z are the piece's bounds centre; `yaw` in
 -- degrees. Ground height is found by raycast, so pieces can sit on hills. Keep everything
--- clear of the spawn pad (origin), the objective hill top centre and the helipad (-90,-90),
--- and off the embankments (a piece straddling a slope floats on one side).
+-- clear of the LZ helipad (-90,-90: insert and extract), the objective hill top centre, the
+-- Apron (origin: boss ground) and the main road lane (x -42..-18: the Warden walks it), and
+-- off the embankments (a piece straddling a slope floats on one side).
 type Dressing = { name: string, x: number, z: number, yaw: number, burning: boolean? }
 local DRESSING: { Dressing } = {
 	-- The Compound lower tier (top x 25..115, z 25..115; zone 27..73; the upper tier's
@@ -103,8 +107,8 @@ local DRESSING: { Dressing } = {
 	{ name = "env_ruin_building", x = -104, z = 48, yaw = 0, burning = true },
 	{ name = "env_guard_tower", x = -78, z = 30, yaw = 0 },
 	{ name = "env_barrier_jersey", x = -82, z = 60, yaw = 20 },
-	-- Main road (x = -30, north-south) and the checkpoint at its south end
-	{ name = "env_checkpoint", x = -30, z = -112, yaw = 0 },
+	-- Main road (x = -30, north-south) and the Inner Gate across it at z = -112 (lane x -42..-18)
+	{ name = "env_checkpoint", x = -58, z = -120, yaw = 0 },
 	{ name = "env_twall", x = -46, z = -112, yaw = 0 },
 	{ name = "env_twall", x = -54, z = -112, yaw = 0 },
 	{ name = "env_twall", x = -14, z = -112, yaw = 0 },
@@ -129,12 +133,14 @@ local DRESSING: { Dressing } = {
 	{ name = "env_lamp_post", x = -66, z = -114, yaw = 135 },
 	{ name = "env_lamp_post", x = -114, z = -66, yaw = -45 },
 	{ name = "env_barrier_jersey", x = -60, z = -70, yaw = 45 },
+	{ name = "env_barrier_jersey", x = -100, z = -116, yaw = 0 },
+	{ name = "env_barrier_jersey", x = -80, z = -116, yaw = 0 },
 	{ name = "env_hesco", x = -120, z = -40, yaw = 20 },
 	{ name = "env_hesco", x = -113, z = -40, yaw = 20 },
 	-- South-east corner and the eastern edge
 	-- The Overlook (top x 85..125, z -125..-85)
-	{ name = "env_guard_tower", x = 116, z = -116, yaw = 45 },
-	{ name = "env_sandbag_bunker", x = 96, z = -96, yaw = 90 },
+	{ name = "env_guard_tower", x = 142, z = -100, yaw = 45 },
+	{ name = "env_sandbag_bunker", x = 104, z = -108, yaw = 180 },
 	{ name = "env_barrier_jersey", x = 60, z = -80, yaw = 30 },
 	{ name = "env_container_olive", x = 128, z = 10, yaw = 90 },
 	{ name = "env_barrier_jersey", x = 60, z = -110, yaw = 30 },
@@ -168,14 +174,16 @@ local DRESSING: { Dressing } = {
 	{ name = "env_dead_tree", x = 270, z = 190, yaw = 250 },
 	{ name = "env_dead_tree", x = 120, z = 160, yaw = 330 },
 	-- East: the Depot (x 150..300). Container yard on a concrete pad, hesco walls, a mound.
-	{ name = "env_container_olive", x = 200, z = 20, yaw = 0 },
-	{ name = "env_container_rust", x = 200, z = 32, yaw = 0 },
-	{ name = "env_container_olive", x = 200, z = 44, yaw = 0 },
-	{ name = "env_container_rust", x = 240, z = 20, yaw = 0 },
-	{ name = "env_container_olive", x = 240, z = 32, yaw = 0 },
-	{ name = "env_container_rust", x = 240, z = 56, yaw = 0 },
-	{ name = "env_container_olive", x = 270, z = 100, yaw = 90 },
-	{ name = "env_container_rust", x = 214, z = 96, yaw = -20 },
+	-- columns A-D (x 172/198/224/250, two containers each along z); aisles 16 wide between
+	{ name = "env_container_olive", x = 172, z = 20, yaw = 90 },
+	{ name = "env_container_rust", x = 172, z = 44, yaw = 90 },
+	{ name = "env_container_olive", x = 198, z = 20, yaw = 90 },
+	{ name = "env_container_rust", x = 198, z = 44, yaw = 90 },
+	{ name = "env_container_olive", x = 224, z = 20, yaw = 90 },
+	{ name = "env_container_rust", x = 224, z = 44, yaw = 90 },
+	{ name = "env_container_rust", x = 250, z = 20, yaw = 90 },
+	{ name = "env_container_olive", x = 250, z = 44, yaw = 90 },
+	{ name = "env_container_rust", x = 214, z = 100, yaw = 0 },
 	{ name = "env_hesco", x = 170, z = 70, yaw = 0 },
 	{ name = "env_hesco", x = 177, z = 70, yaw = 0 },
 	{ name = "env_hesco", x = 184, z = 70, yaw = 0 },
@@ -193,20 +201,20 @@ local DRESSING: { Dressing } = {
 	{ name = "env_lamp_post", x = 260, z = -120, yaw = 0 },
 	{ name = "env_dead_tree", x = 285, z = -70, yaw = 20 },
 	{ name = "env_dead_tree", x = 170, z = -260, yaw = 120 },
-	-- South: the Scrapyard (z -150..-300). Wrecks, barriers, a second checkpoint at the
-	-- main road's south end, a low rise with a tower.
-	{ name = "env_checkpoint", x = -30, z = -262, yaw = 180 },
-	{ name = "env_twall", x = -46, z = -262, yaw = 0 },
-	{ name = "env_twall", x = -54, z = -262, yaw = 0 },
-	{ name = "env_twall", x = -14, z = -262, yaw = 0 },
-	{ name = "env_twall", x = -6, z = -262, yaw = 0 },
-	{ name = "env_wreck_humvee", x = 20, z = -200, yaw = 70 },
+	-- South: the Scrapyard (z -150..-300) and the Gate: a T-wall line across z = -274 (added
+	-- in code below) with one lane at x -42..-18, the booth beside it, a siren on a lamp post,
+	-- and the bus line queued inside the wire (Hocker-proof cover on the Gate approach).
+	{ name = "env_checkpoint", x = -54, z = -262, yaw = 0 },
+	{ name = "env_lamp_post", x = -10, z = -264, yaw = 0 },
+	{ name = "env_bus", x = -4, z = -150, yaw = 90 },
+	{ name = "env_bus", x = -4, z = -196, yaw = 90 },
+	{ name = "env_bus", x = -4, z = -242, yaw = 90 },
+	{ name = "env_bus", x = 40, z = -205, yaw = 60 },
 	{ name = "env_wreck_humvee", x = 60, z = -230, yaw = -120 },
 	{ name = "env_wreck_humvee", x = -100, z = -180, yaw = 160 },
 	{ name = "env_container_rust", x = 100, z = -190, yaw = 30 },
-	{ name = "env_container_olive", x = 40, z = -270, yaw = -50 },
+	{ name = "env_container_olive", x = 44, z = -250, yaw = -50 },
 	{ name = "env_barrier_jersey", x = -70, z = -210, yaw = 40 },
-	{ name = "env_barrier_jersey", x = 0, z = -240, yaw = -30 },
 	{ name = "env_barrier_jersey", x = 110, z = -250, yaw = 80 },
 	{ name = "env_barrier_jersey", x = -140, z = -160, yaw = 10 },
 	{ name = "env_guard_tower", x = -190, z = -235, yaw = 0 },
@@ -217,15 +225,15 @@ local DRESSING: { Dressing } = {
 	{ name = "env_dead_tree", x = -270, z = -280, yaw = 40 },
 	{ name = "env_dead_tree", x = 140, z = -285, yaw = 200 },
 	{ name = "env_dead_tree", x = -200, z = -290, yaw = 300 },
-	-- West: the Barracks row (x -300..-150). Two more blocks, tents on a parade terrace.
+	-- West: the Barracks row (x -300..-150). Two more blocks, and the Pens: the holding
+	-- tents on the terrace, ringed in hesco with three mouths (ring added in code below).
 	{ name = "env_ruin_building", x = -250, z = 30, yaw = 90 },
 	{ name = "env_ruin_building", x = -250, z = -60, yaw = 90, burning = true },
-	{ name = "env_tent", x = -250, z = 110, yaw = 0 },
-	{ name = "env_tent", x = -250, z = 130, yaw = 0 },
-	{ name = "env_tent", x = -222, z = 110, yaw = 0 },
-	{ name = "env_hesco", x = -180, z = 100, yaw = 90 },
-	{ name = "env_hesco", x = -180, z = 107, yaw = 90 },
-	{ name = "env_hesco", x = -180, z = 114, yaw = 90 },
+	{ name = "env_tent", x = -266, z = 102, yaw = 0 },
+	{ name = "env_tent", x = -266, z = 120, yaw = 0 },
+	{ name = "env_tent", x = -266, z = 138, yaw = 0 },
+	{ name = "env_lamp_post", x = -218, z = 160, yaw = 0 },
+	{ name = "env_lamp_post", x = -200, z = 120, yaw = 0 },
 	{ name = "env_sandbag_bunker", x = -200, z = -120, yaw = 0 },
 	{ name = "env_wreck_humvee", x = -180, z = 20, yaw = 80 },
 	{ name = "env_lamp_post", x = -170, z = 60, yaw = 0 },
@@ -235,6 +243,24 @@ local DRESSING: { Dressing } = {
 	{ name = "env_dead_tree", x = -170, z = 150, yaw = 220 },
 	{ name = "env_dead_tree", x = -290, z = -120, yaw = 70 },
 }
+
+-- The Gate: T-walls every 8 studs across the whole map at z = -274, skipping the lane
+-- (x -42..-18) the main road runs through. "Walls face out": the Index walks in through here.
+for k = 0, 74 do
+	if k < 32 or k > 34 then
+		table.insert(DRESSING, { name = "env_twall", x = -294 + 8 * k, z = -274, yaw = 0 })
+	end
+end
+-- The Pens' hesco ring (docs/LEVELS.md A3): north and south rows with a 20-wide mouth, an
+-- east column with a mouth, the arena wall closing the west. Infected climb the slope,
+-- meet hesco and nudge sideways into a mouth.
+for _, x in { -283, -276.4, -269.8, -263.2, -236.8, -230.2, -223.6, -217 } do
+	table.insert(DRESSING, { name = "env_hesco", x = x, z = 147, yaw = 0 })
+	table.insert(DRESSING, { name = "env_hesco", x = x, z = 93, yaw = 0 })
+end
+for _, z in { 100, 106.5, 133.5, 140 } do
+	table.insert(DRESSING, { name = "env_hesco", x = -218, z = z, yaw = 90 })
+end
 
 local function makePart(
 	name: string,
@@ -359,11 +385,10 @@ local function buildHighway(parent: Instance)
 	end
 	model.Parent = parent
 end
-local function buildHelipad(parent: Instance)
-	local zone = Config.Extraction.ZonePosition
+local function buildHelipad(parent: Instance, name: string, x: number, z: number, baseY: number)
 	local model = Instance.new("Model")
-	model.Name = "Helipad"
-	local base = CFrame.new(zone.X, 0, zone.Z)
+	model.Name = name
+	local base = CFrame.new(x, baseY, z)
 	makePart("Pad", Vector3.new(40, 0.4, 40), base * CFrame.new(0, 0.2, 0), CONCRETE_COLOR).Parent =
 		model
 	-- Painted H: two uprights and a crossbar, a hair above the pad so they never z-fight.
@@ -408,8 +433,52 @@ local function buildRoads(parent: Instance)
 		model
 	makePart("DepotPad", Vector3.new(130, 0.3, 110), CFrame.new(220, 0.15, 50), CONCRETE_COLOR).Parent =
 		model
-	makePart("ParadePad", Vector3.new(56, 0.3, 46), CFrame.new(-235, 6.15, 120), CONCRETE_COLOR).Parent =
+	makePart("ParadePad", Vector3.new(56, 0.3, 46), CFrame.new(-250, 6.15, 120), CONCRETE_COLOR).Parent =
 		model
+	model.Parent = parent
+end
+
+-- Plain-Part landmarks that need no mesh (docs/LEVELS.md): the Ridge whiteboard (story spot
+-- 1), the Depot generator (Lights On prop) and the siren head on the Gate's lamp post.
+local function buildLandmarks(parent: Instance)
+	local model = Instance.new("Model")
+	model.Name = "Landmarks"
+	makePart("Whiteboard", Vector3.new(0.3, 4, 6), CFrame.new(-87, 10, 48), PAINT_COLOR).Parent =
+		model
+	makePart(
+		"WhiteboardLegs",
+		Vector3.new(0.3, 2, 5),
+		CFrame.new(-87, 9, 48),
+		Color3.fromRGB(48, 50, 54)
+	).Parent =
+		model
+	makePart(
+		"Generator",
+		Vector3.new(8, 5, 4.5),
+		CFrame.new(178, 2.8, -2),
+		Color3.fromRGB(52, 56, 60)
+	).Parent =
+		model
+	makePart(
+		"GeneratorStack",
+		Vector3.new(0.8, 3, 0.8),
+		CFrame.new(175.5, 6.8, -2),
+		Color3.fromRGB(40, 42, 46)
+	).Parent =
+		model
+	local siren = makePart(
+		"Siren",
+		Vector3.new(1.5, 1.5, 1),
+		CFrame.new(-10, 11, -264),
+		Color3.fromRGB(185, 52, 52)
+	)
+	siren.Material = Enum.Material.Neon
+	local light = Instance.new("PointLight")
+	light.Color = siren.Color
+	light.Range = 40
+	light.Brightness = 2
+	light.Parent = siren
+	siren.Parent = model
 	model.Parent = parent
 end
 
@@ -461,18 +530,15 @@ function ArenaService.init()
 		buildHill(arena, hill)
 	end
 	buildHighway(arena)
-	buildHelipad(arena)
+	-- The LZ: insert and extract (Config.Extraction.ZonePosition). The Depot's alternate pad
+	-- sits on the DepotPad concrete (top 0.3).
+	local lz = Config.Extraction.ZonePosition
+	buildHelipad(arena, "Helipad", lz.X, lz.Z, 0)
+	buildHelipad(arena, "AltHelipad", 255, 85, 0.3)
+	buildLandmarks(arena)
 
-	-- Raised spawn pad at the origin.
-	makePart(
-		"SpawnPad",
-		Vector3.new(20, 1, 20),
-		CFrame.new(0, 1.5, 0),
-		Color3.fromRGB(132, 128, 120)
-	).Parent =
-		arena
-
-	-- Put the player spawn on top of the pad (move existing SpawnLocation or create one).
+	-- Players insert on the LZ pad (move existing SpawnLocation or create one). The pad
+	-- itself is the visual; the SpawnLocation is invisible.
 	local spawn = workspace:FindFirstChildWhichIsA("SpawnLocation", true)
 	if not spawn then
 		spawn = Instance.new("SpawnLocation")
@@ -480,10 +546,10 @@ function ArenaService.init()
 		spawn.Neutral = true
 	end
 	spawn.Anchored = true
-	spawn.CanCollide = true
-	spawn.Transparency = 0.4
-	spawn.Color = Color3.fromRGB(150, 200, 160)
-	spawn.Position = Vector3.new(0, 2.5, 0)
+	spawn.CanCollide = false
+	spawn.Transparency = 1
+	spawn.Size = Vector3.new(6, 0.2, 6)
+	spawn.Position = Vector3.new(lz.X, 0.6, lz.Z)
 	spawn.Parent = arena
 
 	local wy = WALL_HEIGHT / 2

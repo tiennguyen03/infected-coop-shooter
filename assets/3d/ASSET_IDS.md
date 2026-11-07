@@ -77,6 +77,7 @@ swatches): decal `120331040807954` → image **`110782102234723`** (the `Texture
 | pc_assault_upper_leg | 123449912579061 | 103599487897185 | 1.08, 1.36, 1.09 | R15 limb (Weller v2 2026-11-07), offset 0.043, 0.000, -0.058 |
 | pc_assault_lower_leg | 87884254546571 | 116185213877232 | 1.01, 1.30, 0.99 | R15 limb (Weller v2 2026-11-07), offset 0.000, 0.000, 0.000 |
 | pc_assault_foot | 79144855233866 | 112575972731289 | 1.01, 0.31, 1.00 | R15 limb (Weller v2 2026-11-07), offset 0.000, 0.000, 0.000 |
+| env_bus | 115848012015557 | 84471628520896 | 42.9 x 12.75 x 10.9 | solid; the Gate bus line (ArenaService), Mile 14 later; 2026-11-07 |
 
 Open Cloud imports the FBX at 100x (1 Blender unit → 100 studs) and clamps any axis to 2048,
 so the imported size is meaningless; `MeshAssets.luau` sets the intended stud size (Blender

@@ -642,6 +642,40 @@ def lamp_post(b):
     b.box((1.8, 0.6, 0.1), (3.2, 0, 12.2), swatch="white_d")  # dead lens
 
 
+@asset("env_bus", "Environment")
+def bus(b):
+    # Transit bus (docs/LEVELS.md B): 42 long (X, nose toward -X), 10 wide, 12.5 tall. Tall
+    # enough to stop a Hocker's lob and a lane wide when parked across a road: the Delta bus
+    # line and the Mile 14 jam. Box collision in game.
+    L, Wd, H = 42.0, 10.0, 12.5
+    FLOOR = 2.6
+    b.box((L, Wd, H - FLOOR - 0.4), (0, 0, FLOOR + (H - FLOOR - 0.4) / 2), swatch="white_d")  # body
+    b.box((L - 0.6, Wd - 0.6, 0.4), (0, 0, H - 0.2), swatch="white")  # roof
+    b.box((3.0, 3.0, 0.3), (5.0, 0, H + 0.1), swatch="white_d")  # roof hatch
+    for sy in (-1, 1):
+        b.box((L - 6.0, 0.2, 3.2), (1.0, sy * (Wd / 2 + 0.08), 9.2), swatch="dark_d")  # window band
+        for i in range(8):  # window pillars
+            b.box((0.3, 0.26, 3.2), (-L / 2 + 5.0 + i * 4.5, sy * (Wd / 2 + 0.1), 9.2), swatch="white_d")
+        b.box((L - 2.0, 0.2, 0.9), (0.5, sy * (Wd / 2 + 0.06), 5.6), swatch="gun")  # livery stripe
+        b.box((L - 2.0, 0.2, 1.4), (0.5, sy * (Wd / 2 + 0.06), FLOOR + 0.7), swatch="gun_d")  # skirt
+    b.box((3.0, 0.24, 7.0), (-L / 2 + 6.0, Wd / 2 + 0.1, FLOOR + 3.5), swatch="dark_d")  # door (right side)
+    b.box((0.12, 0.3, 7.0), (-L / 2 + 6.0, Wd / 2 + 0.12, FLOOR + 3.5), swatch="gun_l")  # door split
+    b.box((0.2, Wd - 1.2, 4.6), (-L / 2 - 0.08, 0, 8.4), swatch="dark_d")  # windscreen
+    b.box((0.14, 6.0, 1.2), (-L / 2 - 0.14, 0, 11.4), swatch="dark")  # destination sign
+    b.box((0.06, 3.2, 0.5), (-L / 2 - 0.24, 0, 11.4), swatch="brass")  # its lit text
+    b.box((0.2, Wd - 2.0, 2.8), (L / 2 + 0.08, 0, 9.4), swatch="dark_d")  # rear window
+    for sx in (-1, 1):
+        b.box((0.5, Wd, 1.2), (sx * (L / 2 + 0.2), 0, 3.0), swatch="gun_d")  # bumpers
+        for sy in (-1, 1):
+            b.cyl(2.0, 1.4, (sx * 14.0, sy * (Wd / 2 - 0.7), 2.0), segs=10, rot=(90, 0, 0), swatch="dark_d")  # tyres
+            b.cyl(0.9, 1.5, (sx * 14.0, sy * (Wd / 2 - 0.7), 2.0), segs=8, rot=(90, 0, 0), swatch="gun")  # hubs
+    for sy in (-1, 1):
+        b.box((0.4, 0.5, 1.6), (-L / 2 + 1.0, sy * (Wd / 2 + 0.2), 9.0), swatch="dark")  # mirrors
+    b.box((6.0, 0.16, 2.0), (10.0, -(Wd / 2 + 0.1), 4.6), swatch="rust")  # scorch and rust
+    b.box((4.0, 0.16, 1.4), (-8.0, (Wd / 2 + 0.1), 7.2), swatch="rust")
+    b.box((2.4, 0.12, 0.9), (-L / 2 + 12.0, -(Wd / 2 + 0.14), 9.0), swatch="dark_d")  # one window blown out
+
+
 # ------------------------------------------------------------------ Infected limb sets
 # One mesh per R15 limb (left/right share a mesh), per Infected type. EnemyService swaps the
 # default R15 limb MeshParts for these at template build (same Name/Size/CFrame, attachments

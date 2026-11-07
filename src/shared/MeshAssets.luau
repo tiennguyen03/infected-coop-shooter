@@ -104,6 +104,12 @@ local MESHES: { [string]: MeshDef } = {
 		solid = true,
 		fidelity = Enum.CollisionFidelity.PreciseConvexDecomposition,
 	},
+	-- Transit bus (docs/LEVELS.md B): Hocker-proof cover, a lane wide across a road.
+	env_bus = {
+		meshId = "rbxassetid://115848012015557",
+		size = Vector3.new(42.9, 12.75, 10.9),
+		solid = true,
+	},
 	env_tent = {
 		meshId = "rbxassetid://81822440803835",
 		size = Vector3.new(19.2, 8.6, 12),

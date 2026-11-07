@@ -1,7 +1,7 @@
 # Handoff — Roguelike Arena Survivor (VS Code + Claude Code terminal)
 
 Start here when picking the project up in a fresh Claude Code session.
-Last updated: 2026-11-07 (body redesign part 2: the Chosen v2). Last verified commit on `main`: `6ff7357`.
+Last updated: 2026-11-07 (Delta relaid to docs/LEVELS.md). Last verified commit on `main`: `f0d7759`.
 
 ## What this is
 
@@ -36,9 +36,11 @@ Read in this order:
 - 2026-11-07: **body + map redesign started.** Build sheets for every body in
   `docs/CHARACTERS.md`, the Delta/Mile 14/Kestrel layout spec in `docs/LEVELS.md`. Walker,
   Runner, Brute and Hocker wear the v2 limb sets and the player wears Weller (palette v3
-  texture in `MeshAssets`; the other four Chosen are built, not uploaded). Still to build,
-  in order: the Delta map redesign (`docs/LEVELS.md` A1-A10, env_bus first), then the
-  rest of the roster (Bloat, Shedder, Crawler), the Index hosts, Kilo.
+  texture in `MeshAssets`; the other four Chosen are built, not uploaded). Delta is relaid
+  to `docs/LEVELS.md` A1-A2 (LZ insert, the Gate, bus line, the Pens ring, Depot columns,
+  alternate pad) with the Infected nudge rule. Still to build, in order: the rest of the
+  roster (Bloat, Shedder, Crawler), the Index hosts (the Warden first, A6), Kilo; the
+  LEVELS.md items that need systems (A5/A7/A9/A10) land with those systems.
 
 ## Open work, in priority order
 

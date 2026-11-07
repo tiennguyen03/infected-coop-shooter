@@ -3,7 +3,15 @@
 Layout spec from the level designer, 2026-11-07, for the operations structure in
 `docs/PROGRESSION.md`. Frame: 600 x 600, origin centre, +X east, +Z north (ArenaService
 convention). Positions are (x, z) of a piece's bounds centre; y only where it matters. Ground
-is raycast. Status: **spec only**; nothing below is built yet.
+is raycast.
+
+Status (2026-11-07): **Delta A1/A2 built** in `ArenaService` (spawn on the LZ, the Gate line +
+booth + siren light, the bus line with the new `env_bus`, the Pens terrace + hesco ring +
+tents, the Overlook summit cleared, the Depot columns + generator + alternate pad, the Ridge
+whiteboard) and the **nudge rule** in `EnemyService`. Not built: everything that needs a
+system that does not exist yet (A5 Primary props and points, A6 the Warden, A7 stores crates
+and Secondaries, A9 per-site spawn points, A10 Containment band dressing, the siren sound),
+and Mile 14 / Kestrel (section C).
 
 Two engine facts that drive every site:
 
