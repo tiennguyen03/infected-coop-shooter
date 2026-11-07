@@ -63,9 +63,10 @@ generator, in UI code, and should be the swatches of the shared 3D palette textu
 | shield blue | `#4e84c4` | shields |
 | heal pink | `#d28282` | healing |
 
-Rarity colors live in `Config.ItemRarities` (Common `170,170,170`, Uncommon `80,220,120`,
-Legendary `255,75,75`). Item accents live in `ItemDefinitions.Color`; that single value is
-the item's identity across icon, card, bar slot, and any 3D pickup.
+Rarity is gone (loadout rework 2026-11-07): a card is a **supply** card (olive
+`107,122,74`) or a **field upgrade** (`63,167,214`). Accents live in `CallInDefinitions.Color`
+and `UpgradeDefinitions.Color`; that single value is the tool's identity across icon, card,
+HUD strip, and any 3D prop.
 
 ### Accent derivation
 
@@ -106,9 +107,9 @@ SVG primitives; the script writes `assets/icons/<id>.svg` + `.png` (PNGs are git
 - One object, centered, occupying roughly 60–75% of the canvas width and height.
 - Keep at least ~24 px clear from the plate edge (nothing crosses `x<24`, `x>232`,
   `y<24`, `y>232`).
-- Material tones from the palette above; exactly one accent material (the item's
-  `ItemDefinitions.Color`) used on the part that explains the item (fluid, lamp, stripe,
-  flame, tag). Secondary saturated colors only when the subject demands it (brass, blood).
+- Material tones from the palette above; exactly one accent material (the tool's
+  `CallInDefinitions.Color` / `UpgradeDefinitions.Color`) used on the part that explains the
+  item (fluid, lamp, stripe, flame, tag). Secondary saturated colors only when the subject demands it (brass, blood).
 - Boxes use the shared isometric helper (`isoBox`), cylinders use `cylinder`, round things
   use `facetEllipse` (visible facets, 8–14 sides). Right axis `(0.866,-0.5)`, left axis
   `(-0.866,-0.5)`.
@@ -127,7 +128,7 @@ SVG primitives; the script writes `assets/icons/<id>.svg` + `.png` (PNGs are git
 node assets/icons/build/icons.js sheet          # render all + build/contact_sheet.png
 node assets/icons/build/icons.js <id> [<id>...] # render a subset
 node assets/icons/build/upload.js <id> [...]    # Open Cloud upload -> prints decal/image ids
-node assets/icons/build/wire.js                 # writes IconId into ItemDefinitions + ASSET_IDS.md
+node assets/icons/build/wire.js                 # writes IconId into ItemDefinitions + ASSET_IDS.md (stale: ItemDefinitions is gone, retarget to CallInDefinitions / UpgradeDefinitions before the next icon batch)
 ```
 
 `upload.js` reads `ROBLOX_OPEN_CLOUD_API_KEY` from the environment or from the robloxstudio
@@ -155,20 +156,31 @@ ASSET_IDS.md. The old AI image-prompt doc was deleted 2026-11-06; subjects live 
 
 ## 5. UI
 
-- Backgrounds: `rgb(28,30,34)` panels; cards tint toward the rarity color
-  (`rarity:Lerp(rgb(28,30,34), 0.82)`). Icon slots `rgb(32,34,38)`.
+- Backgrounds: `rgb(28,30,34)` panels; cards tint toward the kind color
+  (`kind:Lerp(rgb(28,30,34), 0.82)`, supply olive or upgrade blue). Icon slots `rgb(32,34,38)`.
 - Text: `rgb(240,240,240)` primary, Gotham family (`GothamBold` for names, `GothamBlack`
-  for big numbers, `Gotham` for body). Rarity label in the rarity color, 12 px uppercase.
-- Corners: 10 px cards/panels, 8 px icons on cards, 6 px bar slots. Strokes: rarity color,
-  2 px Common / 3 px Uncommon / 4 px Legendary.
-- Bars: health green→red, XP in friendly blue, shield in shield blue.
+  for big numbers, `Gotham` for body). Kind label ("SUPPLY", "<SLOT> UPGRADE") in the kind
+  color, 12 px uppercase.
+- Corners: 10 px cards/panels, 8 px icons on cards, 6 px bar slots. Strokes: kind color, 2 px.
+- Bars: health green→red at the bottom centre (`-24`), the Armour Plate shield as a shield
+  blue overlay from the left with a "+N" tag, Resupply amber above it (`-50`, pulses on a
+  kill, "[3] FLARE" when it covers the cost). No XP bar.
+- Ammo counter (loadout rework 2026-11-07): `MAG / RESERVE` in `GothamBlack` just right of
+  and below the crosshair (`+70, +34` from centre), white; amber under a quarter magazine;
+  "RELOADING" with a draining amber bar during a reload; red "DRY [R]" on empty.
+- Call-in tiles: bottom right next to Q / E, `[1] Magpie` / `[2] Tripline` (lore names),
+  amber charge pips under the name (one per charge, dim when spent), "READY" or the
+  seconds to the next charge; a tile with no charge goes the cooling grey.
+- Loadout strip: top left under the run timer, two call-in names in their accent colour then
+  the six upgrade slots (Dash, Breach, Rifle, Kit, the two call-ins) showing the upgrade's
+  lore name or a dim "<slot>: -".
 - Hit marker (2026-11-07, replaced damage numbers): four diagonal ticks round the
   crosshair, white on a hit, gold and larger on a headshot, red, larger and thicker on a
   kill; only the attacker sees it, damage over time never marks. Sizes and timings in
   `Config.HitMarker`. Sparks and 3D hit sounds stay at the hit point for everyone.
 - UI stays **code-generated** (disk is the single source of truth). No hand edits in Studio.
-- Never block the center of the screen except for the level-up card row and death /
-  success screens, which pause the game.
+- Never block the center of the screen except for the run-end screens, which freeze the
+  field. Cards live in the world (billboards at the pallet), never as a pop-up.
 
 ---
 

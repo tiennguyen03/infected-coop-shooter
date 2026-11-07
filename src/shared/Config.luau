@@ -94,12 +94,12 @@ local Config = {
 		FollowSlack = 4, -- closer than this to the slot: stand
 		RunBeyond = 16, -- further than this: run
 		TeleportBeyond = 80, -- further than this (stuck, fell behind): reappear in the slot
-		-- Tuned 2026-11-07: bots support, the player carries. The player's rifle is ~80 DPS;
-		-- a bot is ~27 (8 / 0.3 s, a few headshots), so three bots together roughly equal
-		-- one player. Untuned v1 (9 / 0.22 s, 20% heads, no reaction) cleared waves alone.
+		-- Loadout rework 2026-11-07: a bot fires the service rifle (same Damage, magazine and
+		-- reload as the player: WeaponDefinitions) at a third of the player's rate, so three
+		-- bots roughly equal one player; its reserve is infinite. Fallback if they carry: 0.55.
 		Range = 90, -- studs; the Infected beyond this are ignored
-		FireCooldown = 0.3, -- seconds between shots (the player: 0.15)
-		Damage = 8, -- per round (the player: 12)
+		FireCooldown = 0.45, -- seconds between shots (the player: 0.15)
+		Damage = 20, -- per round (the player: 20)
 		Spread = 3, -- degrees, half-angle
 		HeadshotChance = 0.1, -- share of shots aimed at the head
 		ReactionTime = 0.35, -- seconds between spotting a new target and the first shot
@@ -150,14 +150,23 @@ local Config = {
 		PivotEaseTime = 0.25,
 	},
 
+	-- The service rifle (WeaponDefinitions.service_rifle reads these). Realistic time-to-kill
+	-- (loadout rework 2026-11-07): Walker 3 body / 1 head, Runner 2 / 1, Hocker 4 / 2,
+	-- Brute 13 / 11 at the flat curve.
 	Weapon = {
-		Damage = 12, -- Sprint 13 tune: punchier shots that matter vs late scaled HP
-		FireCooldown = 0.15, -- slower fire (6.7/sec); DPS 80, up from 60
+		Damage = 20,
+		FireCooldown = 0.15, -- 6.7 rounds/s; DPS 133
+		-- Magazine (loadout rework): the server owns Mag / Reserve per player, refuses a shot on
+		-- empty, R reloads (cancelled by a roll, a slide or going down). Pallets re-arm.
+		MagazineSize = 30,
+		ReloadTime = 2.2, -- seconds
+		ReserveStart = 120, -- rounds in reserve at insert
+		ReserveMax = 120,
 		-- The rifle is hitscan (2026-11-07): one raycast per shot, damage lands the same
 		-- frame. Range caps the ray; the tracer is client-drawn feedback only.
 		Range = 400,
 		TracerDuration = 0.06,
-		HeadshotMultiplier = 2.0, -- on a Head hit (EnemyDefinitions may override per form)
+		HeadshotMultiplier = 3.0, -- on a Head hit (EnemyDefinitions may override per form)
 		-- Drones still fly projectiles (ProjectileServer.fire): their speed and lifetime.
 		ProjectileSpeed = 180, -- studs per second
 		ProjectileLifetime = 3, -- seconds before despawn
@@ -345,33 +354,16 @@ local Config = {
 		BreachThrowDistance = 35, -- studs
 		BreachFuseTime = 0.8, -- seconds
 		BreachRadius = 14, -- studs
-		BreachDamage = 45,
+		BreachDamage = 80, -- 45 before the loadout rework (realistic TTK)
 	},
 
-	-- XP and leveling (Sprint 4). Orb value comes from the enemy type
-	-- (EnemyDefinitions.XPReward). Reaching the next level requires
-	-- BaseThreshold * ThresholdGrowth^(level-1).
-	XP = {
-		MagnetRadius = 12, -- studs: orb starts flying toward the player
-		CollectRadius = 3, -- studs: orb is absorbed and grants XP
-		OrbFlySpeed = 40, -- studs per second while magnetized
-		OrbLifetime = 60, -- seconds before an uncollected orb despawns
-		BaseThreshold = 100,
-		ThresholdGrowth = 1.25,
-	},
-
-	-- Automatic level growth (Resupply, 2026-11-06): a level no longer opens a draft; it
-	-- grows the body. Growth stops at MaxLevel so items carry the late game.
-	Progression = {
-		HealthPerLevel = 3,
-		DamagePerLevel = 0.03, -- +3% bullet damage per level
-		MaxLevel = 40,
-	},
-
-	-- Resupply (docs/PROGRESSION.md > Resupply): kills fill one run-wide pool; a player throws
-	-- the red flare when the pool covers the cost and a pallet lands DropDelay seconds later.
+	-- Resupply (docs/PROGRESSION.md > Loadout, pallets and field upgrades): every kill credits
+	-- its form's SupplyValue to one run-wide pool, any distance (no orbs since the loadout
+	-- rework); a player throws the red flare when the pool covers the cost and a pallet lands
+	-- DropDelay seconds later. The pallet is the ammo box: anyone who walks up to it is re-armed
+	-- once (full magazine + reserve), and its three cards are the supply cards in Crates.
 	Requisition = {
-		BaseCost = 450,
+		BaseCost = 500,
 		CostGrowth = 1.35, -- per drop, run-wide
 		CostCap = 3000,
 		CostPerExtraPlayer = 0.8, -- 4 players: cost x3.4
@@ -381,6 +373,7 @@ local Config = {
 		CardLifetime = 60, -- unpicked cards vanish
 		CardSpacing = 4.5, -- studs between the three cards
 		PickRadius = 2.5, -- walk this close to a card to take it
+		RearmRadius = 6, -- studs from the pallet: full magazine + reserve, once per player per pallet
 		MaxCrates = 4, -- oldest pallet closes when a fifth lands (perf)
 		Lure = {
 			Radius = 120, -- Infected inside walk to the flare, not the player, until it lands
@@ -391,165 +384,105 @@ local Config = {
 		},
 	},
 
-	-- Item rarities (Sprint 14): display only; roll weights per crate source are in Crates.
-	ItemRarities = {
-		Common = { DisplayName = "Common", Color = Color3.fromRGB(170, 170, 170) },
-		Uncommon = { DisplayName = "Uncommon", Color = Color3.fromRGB(80, 220, 120) },
-		Legendary = { DisplayName = "Legendary", Color = Color3.fromRGB(255, 75, 75) },
-	},
-	-- Crates: every pallet shows each player CardsPerPlayer cards rolled with its source's
-	-- weights. Every GuaranteeEvery-th Resupply drop carries at least one Uncommon.
+	-- Pallet cards (loadout rework 2026-11-07): every pallet shows each player the same three
+	-- supply cards (UpgradeDefinitions, Kind "supply"); walk into one to take it. Upgrade
+	-- crates (the Primary's site crate today; Stores and Secondary crates later) show
+	-- CardsPerPlayer field upgrades instead. No rarity.
 	Crates = {
 		CardsPerPlayer = 3,
-		GuaranteeEvery = 4,
-		Weights = {
-			Requisition = { Common = 70, Uncommon = 25, Legendary = 5 },
-			Stores = { Common = 55, Uncommon = 38, Legendary = 7 },
-			Secondary = { Common = 40, Uncommon = 50, Legendary = 10 },
-			Boss = { Common = 0, Uncommon = 90, Legendary = 10 },
-		},
+		SupplyCards = { "medkit", "restock", "armour_plate" }, -- card order, left to right
+		ArmourPlate = 50, -- hit points of Shield soaked before health (EnemyProjectileService)
+		ShieldCap = 100, -- two plates at most
 	},
 
-	-- Items (Sprint 5). Definitions in shared/ItemDefinitions.luau; full spec
-	-- in docs/sprints/SPRINT_05_ITEMS_MVP.md.
-	Items = {
-		-- Common Item Pack 1 (Sprint 15) passive per-stack values.
-		Passives = {
-			HighGrainPowder = 0.08, -- + bullet damage
-			CombatStimulants = 0.07, -- + fire rate
-			LightweightBoots = 0.07, -- + move speed
-			MilitaryRations = 12, -- + max HP
-			FieldManual = 0.08, -- + XP gained
-			ScavengerPouch = 0.15, -- + orb magnet range
-			BallisticWeave = 0.06, -- - incoming damage
-			BallisticWeaveCap = 0.5, -- max damage reduction
-			FieldDressing = 8, -- HP healed on level-up
-			SignalAntenna = 0.1, -- + drone & Hunter's Mark range
-			CheapDroneParts = 0.1, -- + drone duration
-		},
-		HollowPoint = {
-			BleedChancePerStack = 0.15,
-			BleedDuration = 3, -- seconds; reapplying refreshes, never stacks
-			BleedTickDamage = 4, -- damage per second
-		},
-		Adrenaline = {
-			HealthFraction = 0.3, -- active while health is below this fraction
-			MoveSpeedPerStack = 0.2,
-			FireRatePerStack = 0.2,
-		},
-		Drone = {
-			ProcChancePerStack = 0.1, -- per enemy kill
-			Duration = 20, -- seconds
-			Damage = 6, -- per drone shot
-			FireInterval = 0.6, -- seconds between shots
-			MaxActivePerPlayer = 3,
-			TargetRange = 60, -- studs
-			FollowHeight = 5, -- studs above the player
-			FollowRadius = 4, -- studs beside the player
+	-- Call-ins (CallInDefinitions; keys 1 and 2). Charges refill one at a time every Cooldown
+	-- seconds; a Restock card fills them. No friendly fire: only the Infected are hurt.
+	CallIns = {
+		-- Magpie (Drone Beacon): thrown; Drones follow the thrower for Duration seconds and shoot
+		-- the nearest Infected in TargetRange.
+		Magpie = {
+			Charges = 1,
+			Cooldown = 90,
+			ThrowDistance = 35,
+			Drones = 2,
+			Duration = 30,
+			Damage = 6,
+			FireInterval = 0.6,
+			TargetRange = 60,
+			FollowHeight = 5,
+			FollowRadius = 4,
 			ProjectileSpeed = 120,
+			MaxDronesPerPlayer = 4,
 		},
-		AmmoCache = {
-			BaseInterval = 25, -- seconds between cache spawns at 1 stack
-			IntervalReductionPerStack = 3, -- seconds faster per extra stack
-			MinInterval = 10,
-			CacheLifetime = 20, -- seconds before an untouched cache despawns
-			CollectRadius = 4, -- studs
-			SpawnDistanceMin = 12, -- studs from the player
-			SpawnDistanceMax = 20,
-			BuffDuration = 8, -- seconds
-			BuffBonus = 0.25, -- +25% for Damage/FireRate/MoveSpeed buffs
-			ShieldHP = 25, -- temporary max-health boost for the Shield buff
-		},
-		Kevlar = {
-			ShieldPerStack = 20, -- temp max health per stack on each level-up
-			ShieldCap = 80, -- max concurrent shield from this item
-			Duration = 15, -- seconds each grant lasts
-		},
-		Vampire = {
-			KillsPerHeal = 12, -- credited kills per heal
-			HealPerStack = 10,
-		},
-		Ricochet = {
-			ChancePerStack = 0.12,
-			ChanceCap = 0.6,
-			DamageFactor = 0.5, -- of the triggering hit
-			Range = 20, -- studs from the hit
-			MaxTargets = 3, -- hard cap (1 + stacks/3 up to this)
-		},
-		Shrapnel = {
-			ShotsPerBurst = 6, -- every Nth player-fired shot
-			DamageFactor = 0.6,
-			MaxExtra = 5, -- extra projectiles cap (1 stack = 2)
-		},
-		Incendiary = {
-			ChancePerStack = 0.15,
-			ChanceCap = 0.6,
-			Radius = 8,
-			Duration = 5,
-			DamagePerSecond = 5,
-			MaxPools = 6, -- per player; oldest removed
-		},
-		Mine = {
-			BaseInterval = 18, -- seconds; -3 per extra stack
-			IntervalPerStack = 3,
-			MinInterval = 9,
-			BaseDamage = 30, -- +5 per extra stack
-			DamagePerStack = 5,
-			MaxDamage = 45,
+		-- Tripline (Mines): thrown; Mines land on an arc bulging away from the thrower and blow
+		-- when an Infected steps within TriggerRadius.
+		Tripline = {
+			Charges = 2,
+			Cooldown = 60,
+			ThrowDistance = 35,
+			Mines = 6,
+			ArcRadius = 8, -- studs from the landing point to each mine
+			ArcDegrees = 160, -- the arc's span
 			TriggerRadius = 5,
 			BlastRadius = 10,
-			Lifetime = 25,
-			MaxMines = 5, -- per player; oldest removed
+			Damage = 80,
+			Lifetime = 90,
+			MaxMines = 12, -- per player; the oldest goes first
 		},
-		ShockCoil = {
-			BaseCooldown = 12, -- seconds; -2 per extra stack
-			CooldownPerStack = 2,
-			MinCooldown = 6,
-			BaseDamage = 18, -- +4 per extra stack
-			DamagePerStack = 4,
-			MaxDamage = 30,
+		-- Anvil (Fire Mission): marks a point; after WarningDelay, Shells land ShellInterval apart.
+		Anvil = {
+			Charges = 1,
+			Cooldown = 150,
+			ThrowDistance = 35,
+			WarningDelay = 3,
+			Shells = 3,
+			ShellInterval = 1,
+			BlastRadius = 12,
+			BlastDamage = 80,
+			Scatter = 3, -- studs each shell lands off the mark
+		},
+		-- Pen Coil (Shock Coil): a pulse around the user that damages and slows.
+		PenCoil = {
+			Charges = 2,
+			Cooldown = 25,
 			Radius = 14,
-			SlowFactor = 0.7, -- enemy WalkSpeed multiplier while slowed
-			SlowDuration = 2,
-		},
-		PlagueRat = {
-			ProcChancePerStack = 0.12,
-			ChanceCap = 0.6,
-			RatsPerStack = { 2, 3, 4, 5 }, -- index = min(stacks, 4)
-			MaxActivePerPlayer = 15,
-			Lifetime = 8, -- seconds
-			TargetRange = 45, -- studs to acquire a target
-			DamagePerSecond = 3,
-			LatchDuration = 4, -- seconds latched per target
-			MaxRetargets = 1,
-			CrawlSpeed = 22, -- studs/sec toward target
-			ContactRange = 2.2, -- studs to latch
-		},
-		HunterMark = {
-			Interval = 10, -- seconds between marks
-			Duration = 6,
-			Range = 70, -- studs; marks the highest-health enemy
-			BonusPerStack = 0.2, -- extra damage taken by the marked target
-			BonusCap = 1,
-		},
-		AirSupport = {
-			BaseKillRequirement = 30, -- kills per strike at 1 stack
-			ReductionPerStack = 5, -- fewer kills per extra stack
-			MinKillRequirement = 10,
-			WarningDelay = 1.5, -- seconds the red marker shows before impact
-			BlastRadius = 16, -- studs
-			BlastDamage = 60,
-			SearchRange = 100, -- studs around the player to find a cluster
+			Damage = 25,
+			SlowFactor = 0.4, -- Infected WalkSpeed multiplier while slowed
+			SlowDuration = 3,
 		},
 	},
 
-	-- Hold Position objective V1. Pays out through XPService on completion.
+	-- Field upgrades (UpgradeDefinitions): one per slot, a new pick replaces. Each is a flag
+	-- read by the service that owns the tool; the numbers it needs are here.
+	Upgrades = {
+		FireTrail = {
+			PoolsPerDash = 3,
+			Radius = 6,
+			Duration = 5,
+			DamagePerSecond = 8,
+			MaxPools = 9,
+		},
+		SmokeDash = { ImmunitySeconds = 1.5 }, -- Infected melee cannot find the body after the dash
+		LureCharge = { Radius = 18, FuseTime = 3 }, -- the charge baits the Infected until it blows
+		ThroughAndThrough = { Pierce = 1 }, -- Infected a round passes through after the first
+		HollowPoint = { StaggerSeconds = 0.6 }, -- the hit Infected stops for this long
+		CombatReload = { MomentumStacks = 5 }, -- reload is instant at this many Momentum stacks
+		LastStand = { SpreadMultiplier = 2 }, -- fire from the ground while downed, hip only
+		Tourniquet = { Seconds = 4 }, -- self-revive once per sortie, this long after going down
+		WalkingBarrage = { Shells = 5, Step = 8 }, -- Anvil shells walk Step studs along the throw
+		Escort = {}, -- Magpie drones stay with a downed owner and their clock pauses
+		CommandDetonation = {}, -- press the Tripline key again to blow every armed mine
+		Defibrillator = {}, -- a Pen Coil pulse revives downed squadmates in its radius
+	},
+
+	-- Hold Position objective V1. Pays SupplyReward into the Resupply pool on completion and
+	-- drops an upgrade crate at the site when it activates (field upgrade source).
 	Objective = {
 		AppearDelay = 180, -- seconds after server start before the zone appears
 		RequiredSeconds = 45, -- total accumulated seconds inside the zone
-		PressureWave = { Walker = 8, Runner = 2 }, -- spawned around the zone on appear
-		PressureBruteAfter = 210, -- also +1 Brute if the run is older than this (seconds)
-		XPReward = 500,
+		PressureWave = { Walker = 8, Runner = 4 }, -- spawned around the zone on appear
+		PressureBruteAfter = 0, -- also +1 Brute if the run is older than this (seconds)
+		SupplyReward = 500,
 		ZoneSize = Vector3.new(46, 1, 46), -- Sprint 13 tune: bigger, room to kite while holding
 		ZonePosition = Vector3.new(50, 8.5, 50), -- on the Compound's lower tier (ArenaService HILLS)
 		SyncInterval = 0.1, -- seconds between progress updates to the UI
@@ -566,20 +499,37 @@ local Config = {
 		SpawnFactor = 0.8, -- spawn interval multiplier while extracting (+20%)
 	},
 
-	-- Difficulty scaling (Sprint 8 tuning): continuous per-minute scaling
-	-- with caps, per docs/PLAN.md Sprint 8 targets. No enemy speed scaling.
+	-- Flat threat curve (the spine, 2026-11-07): no per-minute health or damage growth. The
+	-- Infected get scarier by composition (Spawning phases) and count, not by numbers.
 	Difficulty = {
-		HealthPerMinute = 0.08, -- +8% enemy max health per elapsed minute
-		HealthCap = 2.25,
-		DamagePerMinute = 0.04, -- +4% enemy contact damage per minute
-		DamageCap = 1.75,
-		SpawnIntervalDecayPerMinute = 0.85, -- spawn interval multiplier per minute
-		MinSpawnInterval = 0.6, -- seconds
+		HealthPerMinute = 0,
+		HealthCap = 1,
+		DamagePerMinute = 0,
+		DamageCap = 1,
+		SpawnIntervalDecayPerMinute = 0.93, -- spawn interval multiplier per minute
+		MinSpawnInterval = 1.0, -- seconds
 		-- Population cap ramps with run time: { upToSeconds, maxAlive }.
-		-- Sprint 13 tune: ~0.75x counts (was 14/22/32/45/60) — less overwhelming.
-		MaxAliveSchedule = { { 75, 11 }, { 180, 16 }, { 300, 24 }, { 480, 34 } },
-		MaxAliveLate = 45, -- after the schedule (lower this first if perf drops)
-		ObjectiveSpawnFactor = 0.8, -- spawn interval multiplier while objective active
+		MaxAliveSchedule = { { 75, 10 }, { 180, 14 }, { 300, 20 }, { 480, 26 } },
+		MaxAliveLate = 30, -- after the schedule (lower this first if perf drops)
+		ObjectiveSpawnFactor = 0.7, -- spawn interval multiplier while objective active
+	},
+
+	-- More players, more Infected, not tougher Infected (MULTIPLAYER_READINESS decision 6).
+	-- Per living player beyond the first (DifficultyService, EnemyService).
+	PlayerCountScaling = {
+		SpawnIntervalPerExtraPlayer = 0.8, -- spawn interval multiplier per extra player
+		MaxAlivePerExtraPlayer = 3,
+		HeavyCapPerExtraPlayer = 1, -- Brute / Hocker caps
+		MaxAliveHardCap = 44,
+	},
+
+	-- The Burn (PROGRESSION.md > Operation): when the mission timer runs out. Reserved for
+	-- OperationService; nothing reads it yet.
+	Overrun = {
+		Weights = { Walker = 30, Runner = 34, Brute = 18, Hocker = 18 },
+		SpawnFactor = 0.5,
+		MaxAliveBonus = 6,
+		HeavyCapBonus = 2,
 	},
 
 	-- Spawn director phases (Sprint 9): type weights per run-time window,
@@ -587,10 +537,10 @@ local Config = {
 	Spawning = {
 		Phases = {
 			{ Until = 75, Weights = { Walker = 100 } },
-			{ Until = 180, Weights = { Walker = 80, Runner = 20 } },
-			{ Until = 300, Weights = { Walker = 65, Runner = 25, Brute = 10 } },
-			{ Until = 480, Weights = { Walker = 55, Runner = 30, Brute = 15 } },
-			{ Until = math.huge, Weights = { Walker = 40, Runner = 30, Brute = 18, Hocker = 12 } },
+			{ Until = 180, Weights = { Walker = 75, Runner = 25 } },
+			{ Until = 300, Weights = { Walker = 60, Runner = 28, Brute = 12 } },
+			{ Until = 480, Weights = { Walker = 50, Runner = 30, Brute = 12, Hocker = 8 } },
+			{ Until = math.huge, Weights = { Walker = 38, Runner = 30, Brute = 16, Hocker = 16 } },
 		},
 		-- Fairness caps by type. MaxShare: at most this share of alive enemies.
 		-- CapSchedule: { upToSeconds, max alive of the type }, CapLate after the schedule.

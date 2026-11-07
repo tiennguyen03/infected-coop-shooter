@@ -8,7 +8,8 @@
 -- marker), and rejoins at its slot RespawnSeconds after dying. Numbers in Config.Bots.
 -- Downed (Squad): a downed bot lies prone and waits; a standing bot breaks formation to
 -- revive the nearest downed squadmate when no Infected is close (Config.Bots.Revive*).
--- Not yet: call-ins (loadout rework), vaulting.
+-- It carries the service rifle's magazine (reloads from an infinite reserve). Not yet:
+-- call-ins, vaulting.
 
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
@@ -20,8 +21,10 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local RunStates = require(ReplicatedStorage.Shared.RunStates)
+local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
 local ItemEffectService = require(script.Parent.ItemEffectService)
 local PlayerSetup = require(script.Parent.PlayerSetup)
+local ProjectileServer = require(script.Parent.ProjectileServer)
 local Squad = require(script.Parent.Squad)
 
 local ENEMY_TAG = "Enemy"
@@ -50,6 +53,8 @@ type Bot = {
 	nextShot: number,
 	respawnAt: number?,
 	spawning: boolean,
+	rounds: number, -- left in the magazine (WeaponDefinitions; the reserve is infinite)
+	reloadUntil: number?, -- os.clock while reloading
 	target: Humanoid?, -- the Infected it is shooting (a new one costs ReactionTime)
 	reviving: Squad.Member?, -- the downed member this bot is reviving
 	reviveProgress: number, -- seconds held next to them
@@ -186,6 +191,8 @@ local function spawnBot(bot: Bot, position: Vector3)
 	bot.model, bot.humanoid, bot.root = rig, humanoid, root
 	bot.respawnAt = nil
 	bot.nextShot = os.clock() + 0.5
+	bot.rounds = WeaponDefinitions.get(WeaponDefinitions.DEFAULT).MagazineSize
+	bot.reloadUntil = nil
 	Squad.bindCharacter(bot.member, rig)
 	loadTracks(bot, humanoid)
 
@@ -268,7 +275,19 @@ local function rayParams(): RaycastParams
 		end
 	end
 	for _, name in
-		{ "Projectiles", "Tracers", "InfectedProjectiles", "XPOrbs", "Resupply", "ResupplyCards" }
+		{
+			"Projectiles",
+			"Tracers",
+			"InfectedProjectiles",
+			"Resupply",
+			"ResupplyCards",
+			"Drones",
+			"Mines",
+			"FirePools",
+			"AssaultEffects",
+			"CallInEffects",
+			"StrikeEffects",
+		}
 	do
 		local found = workspace:FindFirstChild(name)
 		if found then
@@ -295,14 +314,15 @@ local function shoot(bot: Bot, origin: Vector3, aim: Vector3, params: RaycastPar
 	if hit then
 		local humanoid = enemyFromPart(hit.Instance)
 		if humanoid and humanoid.Health > 0 then
-			local headshot = hit.Instance.Name == "Head"
-			local multiplier = if headshot then Config.Weapon.HeadshotMultiplier else 1
+			local weapon = WeaponDefinitions.get(WeaponDefinitions.DEFAULT)
+			local multiplier, kind =
+				ProjectileServer.hitMultiplier(hit.Instance, humanoid, weapon.HeadshotMultiplier)
 			ItemEffectService.dealDamage(
 				nil,
 				humanoid,
 				Config.Bots.Damage * multiplier,
 				hit.Position,
-				if headshot then "headshot" else "hit"
+				kind
 			)
 		end
 	end
@@ -475,11 +495,21 @@ local function think(bot: Bot, now: number, params: RaycastParams)
 		bot.target = enemy
 		bot.nextShot = math.max(bot.nextShot, now + Config.Bots.ReactionTime)
 	end
+	-- The magazine: a bot reloads like the player (WeaponDefinitions), from an infinite reserve.
+	local weapon = WeaponDefinitions.get(WeaponDefinitions.DEFAULT)
+	local reloadUntil = bot.reloadUntil
+	if reloadUntil and now >= reloadUntil then
+		bot.reloadUntil = nil
+		bot.rounds = weapon.MagazineSize
+	elseif not reloadUntil and bot.rounds <= 0 then
+		bot.reloadUntil = now + weapon.ReloadTime
+	end
 	if enemy and aim then
 		humanoid.AutoRotate = false
 		root.CFrame = CFrame.lookAt(root.Position, Vector3.new(aim.X, root.Position.Y, aim.Z))
-		if now >= bot.nextShot then
+		if now >= bot.nextShot and not bot.reloadUntil and bot.rounds > 0 then
 			bot.nextShot = now + Config.Bots.FireCooldown * (0.85 + math.random() * 0.3)
+			bot.rounds -= 1
 			local origin = if bot.muzzle
 				then bot.muzzle.Position
 				else root.Position + Vector3.new(0, 1.5, 0)
@@ -546,6 +576,8 @@ function BotService.startRun()
 			nextShot = 0,
 			respawnAt = nil,
 			spawning = false,
+			rounds = WeaponDefinitions.get(WeaponDefinitions.DEFAULT).MagazineSize,
+			reloadUntil = nil,
 			target = nil,
 			reviving = nil,
 			reviveProgress = 0,

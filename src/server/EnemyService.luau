@@ -28,7 +28,6 @@ local ItemEffectService = require(script.Parent.ItemEffectService)
 local PauseService = require(script.Parent.PauseService)
 local WorldSounds = require(script.Parent.WorldSounds)
 local Squad = require(script.Parent.Squad)
-local XPOrbService = require(script.Parent.XPOrbService)
 
 local ENEMY_TAG = "Enemy"
 local ENEMY_COLLISION_GROUP = "Enemy"
@@ -58,7 +57,7 @@ type Zombie = {
 	damage: number,
 	attackRange: number,
 	attackCooldown: number,
-	xpReward: number,
+	supplyValue: number,
 	lastAttackTime: number,
 	attackTrack: AnimationTrack?,
 	deathTrack: AnimationTrack?,
@@ -95,8 +94,15 @@ local zombieTemplate: Model?
 local dressedTemplates: { [string]: Model } = {}
 local zombies: { Zombie } = {}
 local wasPaused = false
--- Resupply lure: melee forms inside the radius walk to this point instead of a player.
-local lure: { position: Vector3, radius: number, expiresAt: number }? = nil
+-- Lures (the Resupply flare, a Bait Charge): melee forms inside a lure's radius walk to it
+-- instead of a player. The newest lure that reaches a body wins.
+type Lure = { position: Vector3, radius: number, expiresAt: number }
+local lures: { Lure } = {}
+-- Slows (Pen Coil, Hollow Point stagger): per-humanoid generation so overlapping slows never
+-- strand a body at reduced speed.
+local slowGeneration: { [Humanoid]: number } = {}
+-- Kill listeners (RequisitionService): every death credits its SupplyValue to the squad.
+local killListeners: { (supplyValue: number, position: Vector3) -> () } = {}
 
 local function buildTemplate(): Model?
 	local description = Instance.new("HumanoidDescription")
@@ -192,7 +198,9 @@ local function onZombieDied(zombie: Zombie)
 	if zombie.deathTrack then
 		zombie.deathTrack:Play(0.1)
 	end
-	XPOrbService.spawnOrb(zombie.root.Position, zombie.xpReward)
+	for _, listener in killListeners do
+		listener(zombie.supplyValue, zombie.root.Position)
+	end
 	ItemEffectService.onEnemyKilled(zombie.humanoid)
 	task.delay(Config.Zombies.CorpseLifetime, function()
 		zombie.model:Destroy()
@@ -223,7 +231,7 @@ local function spawnZombie(groundPosition: Vector3, typeName: string)
 	humanoid.MaxHealth = health
 	humanoid.Health = health
 	humanoid.WalkSpeed = definition.WalkSpeed
-	-- Shock Coil reads this to restore speed after a slow without corrupting it.
+	-- EnemyService.slow restores this after a slow without corrupting it.
 	humanoid:SetAttribute("BaseWalkSpeed", definition.WalkSpeed)
 	humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
 	attachHealthBar(humanoid, root, definition.Scale)
@@ -309,7 +317,7 @@ local function spawnZombie(groundPosition: Vector3, typeName: string)
 		damage = definition.Damage,
 		attackRange = definition.AttackRange,
 		attackCooldown = definition.AttackCooldown,
-		xpReward = definition.XPReward,
+		supplyValue = definition.SupplyValue,
 		lastAttackTime = 0,
 		attackTrack = attackTrack,
 		deathTrack = deathTrack,
@@ -591,15 +599,20 @@ local function stepZombies()
 
 		if now >= zombie.nextRepathTime then
 			zombie.nextRepathTime = now + REPATH_INTERVAL
-			local activeLure = lure
-			if activeLure and now >= activeLure.expiresAt then
-				lure = nil
-				activeLure = nil
+			local activeLure: Lure? = nil
+			for lureIndex = #lures, 1, -1 do
+				local candidate = lures[lureIndex]
+				if now >= candidate.expiresAt then
+					table.remove(lures, lureIndex)
+				elseif
+					not activeLure
+					and (zombie.root.Position - candidate.position).Magnitude
+						<= candidate.radius
+				then
+					activeLure = candidate
+				end
 			end
-			if
-				activeLure
-				and (zombie.root.Position - activeLure.position).Magnitude <= activeLure.radius
-			then
+			if activeLure then
 				zombie.humanoid:MoveTo(activeLure.position)
 			else
 				local targetRoot = nearestPlayerRoot(zombie.root.Position)
@@ -670,6 +683,11 @@ local function phaseWeights(elapsed: number): { [string]: number }
 	return Config.Spawning.Phases[#Config.Spawning.Phases].Weights
 end
 
+-- Living players beyond the first: heavy caps grow with people (Config.PlayerCountScaling).
+local function extraPlayers(): number
+	return math.max(#Squad.livingOwners() - 1, 0)
+end
+
 -- Weighted pick honoring first-spawn times and the per-type caps in Config.Spawning
 -- (count schedules, share of the horde). Falls back to Walker.
 local function pickSpawnType(): string
@@ -687,7 +705,9 @@ local function pickSpawnType(): string
 		local capSchedule = Config.Spawning.CapSchedule[typeName]
 		if capSchedule then
 			local late = Config.Spawning.CapLate[typeName] or math.huge
-			if countOfType(typeName) >= scheduleLookup(capSchedule, late, elapsed) then
+			local cap = scheduleLookup(capSchedule, late, elapsed)
+				+ Config.PlayerCountScaling.HeavyCapPerExtraPlayer * extraPlayers()
+			if countOfType(typeName) >= cap then
 				continue
 			end
 		end
@@ -739,17 +759,47 @@ function EnemyService.spawnMixedWave(count: number, center: Vector3)
 end
 
 -- Melee forms within `radius` of `position` walk to it for `duration` seconds (the
--- Resupply flare). nil clears the lure.
+-- Resupply flare, a Bait Charge). Lures stack; nil clears them all.
 function EnemyService.setLure(position: Vector3?, radius: number?, duration: number?)
 	if position then
-		lure = {
+		table.insert(lures, {
 			position = position,
 			radius = radius or 0,
 			expiresAt = os.clock() + (duration or 0),
-		}
+		})
 	else
-		lure = nil
+		table.clear(lures)
 	end
+end
+
+-- Multiplies an Infected's speed by `factor` for `duration` seconds, then restores its
+-- BaseWalkSpeed. A newer slow replaces an older one (generation guard).
+function EnemyService.slow(humanoid: Humanoid, factor: number, duration: number)
+	if humanoid.Health <= 0 then
+		return
+	end
+	local base = (humanoid:GetAttribute("BaseWalkSpeed") :: number?) or humanoid.WalkSpeed
+	local generation = (slowGeneration[humanoid] or 0) + 1
+	slowGeneration[humanoid] = generation
+	humanoid.WalkSpeed = base * factor
+	task.delay(duration, function()
+		if humanoid.Parent and slowGeneration[humanoid] == generation then
+			if not PauseService.isPaused() then
+				humanoid.WalkSpeed = base
+			end
+			slowGeneration[humanoid] = nil
+		end
+	end)
+end
+
+-- Hollow Point: the body stops for `seconds`.
+function EnemyService.stagger(humanoid: Humanoid, seconds: number)
+	EnemyService.slow(humanoid, 0, seconds)
+end
+
+-- RequisitionService: fired on every death with the form's SupplyValue and where it fell.
+function EnemyService.addKillListener(listener: (supplyValue: number, position: Vector3) -> ())
+	table.insert(killListeners, listener)
 end
 
 local function spawnLoop()
@@ -814,7 +864,8 @@ end
 
 -- Clears all enemies for a fresh run.
 function EnemyService.reset()
-	lure = nil
+	table.clear(lures)
+	table.clear(slowGeneration)
 	sortieGeneration += 1
 	EnemyService.clearAll()
 end

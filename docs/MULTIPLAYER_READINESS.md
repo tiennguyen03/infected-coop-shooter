@@ -25,11 +25,12 @@ drift; the file and symbol names are the stable pointers).
 
 ## Already fine (keep it this way)
 
-Per-player attributes (XP/Level/XPRequired, stat Mults, Kills, ItemsCollected,
-MomentumStacks), per-player inventories and offers (`ItemService`), per-player fire-rate and
-ability validation, per-player drone/rat caps, every `PlayerRemoving` handler, kill credit via
+Per-player attributes (stat Mults, Kills, MomentumStacks, Mag/Reserve/ReloadUntil,
+CallIn1/2 + charges, Upgrade<Slot>, Shield), per-player loadouts and card offers
+(`LoadoutService`, `CallInService`, `RequisitionService`), per-player fire-rate and ability
+validation, per-player drone/mine/pool caps, every `PlayerRemoving` handler, kill credit via
 the one damage entry point `ItemEffectService.dealDamage`, enemy targeting = nearest living
-player, HUDs reading `LocalPlayer` only.
+member, HUDs reading `LocalPlayer` only.
 
 ## Debt register
 
@@ -42,10 +43,10 @@ may add to this list.
 | 1 | B | `RunManager` | Death ends the run; `RestartRun` from any dead/extracted player resets global services but only the requester's per-player state, and respawns only the requester. No "all dead" handling. | Run state machine owned by the server: `Lobby → Running → Ended`. Per-player `Alive / Downed / Dead` (#3). Run ends when every player is dead or extraction completes. Start/restart = request + ready-up timer (#4), resets every player. | Done 2026-11-07 (Sprint A step 5) |
 | 2 | B | `PauseService`, `ItemService`, `AssaultClassService`, client `CameraController`/`WeaponController`/`AbilityController`/`AbilityUI` | ~~One player's level-up pauses the whole world.~~ Done 2026-11-07: level-up no longer pauses; the draft is a world pallet (Resupply). `GamePaused` remains only for the run-end freeze. | Decided (#1), shipped as Resupply. | Done |
 | 3 | B | `ObjectiveService`, `ExtractionService` | One zone, any single player inside counts, completion/pause broadcast to all. | Keep shared objective (co-op goal) but define the rule: N-of-players in zone, or any one. Extraction needs a "waiting for squad" state. | Co-op Sprint B |
-| 4 | M | `XPOrbService`, `ObjectiveService` | Orb XP goes to the nearest player only; objective XP goes in full to everyone. Inconsistent. | Decided (#2): shared XP, every orb pickup grants every living player. | Done 2026-11-07 (Sprint A step 3) |
-| 5 | M | `DifficultyService`, `EnemyService`, `Config` MaxAlive schedule | Nothing scales with player count; run clock ignores pause. | Decided (#6): `Config.PlayerCountScaling` scales spawn rate and max-alive per living player, not HP/damage. Clock = accumulated unpaused time. | Co-op Sprint B |
+| 4 | M | ~~`XPOrbService`, `ObjectiveService`~~ | ~~Orb XP goes to the nearest player only; objective XP goes in full to everyone.~~ Superseded 2026-11-07 by the loadout rework: no orbs, no levels; every kill credits its `SupplyValue` to the shared Resupply pool at any distance. | n/a | Superseded (Sprint 18) |
+| 5 | M | `DifficultyService`, `EnemyService`, `Config` MaxAlive schedule | ~~Nothing scales with player count;~~ run clock ignores pause. | Decided (#6): `Config.PlayerCountScaling` scales spawn rate, max-alive and heavy caps per living player, not HP/damage (done 2026-11-07, Sprint 18). Clock = accumulated unpaused time (open). | Co-op Sprint B (clock only) |
 | 6 | M | `EnemyService` spawn placement | Spawns around a random player without checking they are alive. | Pick from living players only. | Done 2026-11-07 (Sprint A step 3) |
-| 7 | M | `AmmoCacheService` | Any player can take another player's crate. | Decided (#5): owner-only, the crate collides only with its owner. | Co-op Sprint B |
+| 7 | M | ~~`AmmoCacheService`~~ | ~~Any player can take another player's crate.~~ Superseded 2026-11-07: `AmmoCacheService` deleted; the pallet re-arms every living player within `Requisition.RearmRadius` once each (loadout rework). | n/a | Superseded (Sprint 18) |
 | 8 | M | `ItemEffectService.resetPlayer`, `AssaultClassService.resetPlayer`, `ProjectileServer.reset` | Per-player reset wipes humanoid-keyed/global tables; run reset clears per-player `shotCount` but not `lastFireTime`. | Split strictly per the rule above. | Done 2026-11-07 (Sprint A step 2) |
 | 9 | M | `ItemEffectService` damage/death events | Every hit and kill is `FireAllClients`; each client plays every player's hit sounds. | Hit numbers to the damager only; death VFX to all but sound distance-attenuated or owner-only. | Co-op Sprint B |
 | 10 | M | `ArenaService` | One `SpawnLocation` at the origin. | 4 spawn pads in a cluster; revive happens in place, stage-start respawn at the pads. | Done 2026-11-07 (Sprint A step 4) |
@@ -59,9 +60,10 @@ may add to this list.
    ([PROGRESSION.md](PROGRESSION.md)): the draft moves into the world (pallet with personal
    cards, one pick per player), levels become automatic growth. `PauseService` leaves
    gameplay entirely (extraction/success can keep a run-end freeze).
-2. **XP is shared.** Every orb pickup grants its full XP to every living player. Objective XP
-   already does this. Levels stay per player (same XP in, same level out, unless someone
-   joined late). Base orb XP also feeds the squad's shared Resupply pool, once per orb.
+2. **XP is shared.** Superseded 2026-11-07 by the loadout rework
+   ([PROGRESSION.md](PROGRESSION.md) > Loadout, pallets and field upgrades): there is no XP
+   and no level. Every kill credits its `SupplyValue` to the squad's one Resupply pool at
+   any distance; the pool is the only in-run resource and it is shared.
 3. **Death: downed, revivable, respawn at the start of the next stage.** A player at 0 HP
    drops to a *Downed* state with a bleed-out timer; a teammate standing next to them for a
    short hold revives them. Owner's concern: late game, a downed player just gets eaten.

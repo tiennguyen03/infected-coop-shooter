@@ -1,8 +1,10 @@
 --!strict
 -- Server-authoritative shooting. The player's rifle is hitscan (2026-11-07): the client
--- sends a fire request, the server validates it, applies the spread cone, raycasts once
--- and lands the damage the same frame (a Head hit is a headshot). Drones and other
--- item sources still fly simulated projectiles through ProjectileServer.fire.
+-- sends a fire request, the server validates it (alive or Last Stand, rate, a round in the
+-- magazine: LoadoutService), applies the weapon's spread cone, raycasts once and lands the
+-- damage the same frame (a Head hit is a headshot). Through-and-Through carries the round
+-- into the next Infected; Hollow Point staggers the one it hit. Drones still fly simulated
+-- projectiles through ProjectileServer.fire.
 
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
@@ -12,8 +14,10 @@ local RunService = game:GetService("RunService")
 local Config = require(ReplicatedStorage.Shared.Config)
 local EnemyDefinitions = require(ReplicatedStorage.Shared.EnemyDefinitions)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
+local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
+local EnemyService = require(script.Parent.EnemyService)
 local ItemEffectService = require(script.Parent.ItemEffectService)
-local ItemService = require(script.Parent.ItemService)
+local LoadoutService = require(script.Parent.LoadoutService)
 local PauseService = require(script.Parent.PauseService)
 local PlayerStatsService = require(script.Parent.PlayerStatsService)
 local Squad = require(script.Parent.Squad)
@@ -22,6 +26,19 @@ local ENEMY_TAG = "Enemy"
 -- How far a reported fire origin may be from the character before the
 -- request is rejected as suspicious.
 local MAX_ORIGIN_OFFSET = 10
+-- Folders a player's round never hits (effects, pickups, the squad's bots).
+local PASS_THROUGH_FOLDERS = {
+	"Resupply",
+	"ResupplyCards",
+	"InfectedProjectiles",
+	"SquadBots",
+	"Drones",
+	"Mines",
+	"FirePools",
+	"AssaultEffects",
+	"CallInEffects",
+	"StrikeEffects",
+}
 
 type Projectile = {
 	part: BasePart,
@@ -29,20 +46,18 @@ type Projectile = {
 	owner: Player,
 	damage: number,
 	speed: number,
-	canProc: boolean, -- whether a hit rolls on-hit items (bleed/ricochet)
 	expiresAt: number,
 	raycastParams: RaycastParams,
 }
 
 export type FireOptions = {
-	owner: Player, -- gets damage credit and item procs
+	owner: Player, -- gets damage credit
 	origin: Vector3,
 	direction: Vector3, -- unit vector
 	damage: number,
 	speed: number?, -- defaults to the weapon projectile speed
 	size: Vector3?,
 	color: Color3?,
-	canProc: boolean?, -- default true; false for chained/secondary hits
 	exclude: { Instance }?, -- extra raycast exclusions beyond projectiles
 }
 
@@ -52,7 +67,6 @@ local projectileFolder: Folder
 local tracerRemote: RemoteEvent
 local activeProjectiles: { Projectile } = {}
 local lastFireTime: { [Player]: number } = {}
-local shotCount: { [Player]: number } = {} -- for Shrapnel Magazine
 
 local function findEnemyHumanoid(hit: Instance): Humanoid?
 	local model = hit:FindFirstAncestorOfClass("Model")
@@ -80,7 +94,7 @@ local function createProjectilePart(options: FireOptions): BasePart
 	return part
 end
 
--- Generic projectile spawner used by the player weapon and by drones.
+-- Generic projectile spawner (drones).
 function ProjectileServer.fire(options: FireOptions)
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Exclude
@@ -98,7 +112,6 @@ function ProjectileServer.fire(options: FireOptions)
 		owner = options.owner,
 		damage = options.damage,
 		speed = options.speed or Config.Weapon.ProjectileSpeed,
-		canProc = if options.canProc == nil then true else options.canProc,
 		expiresAt = os.clock() + Config.Weapon.ProjectileLifetime,
 		raycastParams = params,
 	})
@@ -135,14 +148,6 @@ local function stepProjectiles(deltaTime: number)
 					result.Position,
 					"hit"
 				)
-				if projectile.canProc then
-					ItemEffectService.onProjectileHit(
-						projectile.owner,
-						humanoid,
-						result.Position,
-						projectile.damage
-					)
-				end
 			end
 			removeProjectile(index)
 		else
@@ -171,8 +176,13 @@ local function applySpread(direction: Vector3, halfAngleDegrees: number): Vector
 end
 
 -- The damage multiplier for a hit on `part` of an Infected: a Head hit is a headshot,
--- scaled by the form's own HeadshotMultiplier when it has one.
-local function hitMultiplier(part: Instance, humanoid: Humanoid): (number, string)
+-- scaled by the form's own HeadshotMultiplier when it has one, else the weapon's
+-- (`headshotMultiplier`; the service rifle's when nil). BotService uses this too.
+function ProjectileServer.hitMultiplier(
+	part: Instance,
+	humanoid: Humanoid,
+	headshotMultiplier: number?
+): (number, string)
 	if part.Name ~= "Head" then
 		return 1, "hit"
 	end
@@ -180,31 +190,73 @@ local function hitMultiplier(part: Instance, humanoid: Humanoid): (number, strin
 	local typeName = model and model:GetAttribute("EnemyType")
 	local definition = if typeof(typeName) == "string" then EnemyDefinitions[typeName] else nil
 	local multiplier = (definition and definition.HeadshotMultiplier)
+		or headshotMultiplier
 		or Config.Weapon.HeadshotMultiplier
 	return multiplier, "headshot"
 end
 
--- One hitscan round: raycast, damage on an Infected hit, tracer to everyone else.
+local function excludeList(character: Model?): { Instance }
+	local exclude: { Instance } = { projectileFolder }
+	if character then
+		table.insert(exclude, character)
+	end
+	for _, name in PASS_THROUGH_FOLDERS do
+		local folder = workspace:FindFirstChild(name)
+		if folder then
+			table.insert(exclude, folder)
+		end
+	end
+	return exclude
+end
+
+-- One hitscan round: raycast, damage on an Infected hit (carrying on through `pierce` more
+-- bodies), tracer to everyone else.
 local function fireHitscan(
 	player: Player,
 	origin: Vector3,
 	direction: Vector3,
 	damage: number,
-	canProc: boolean,
-	params: RaycastParams
+	weapon: WeaponDefinitions.WeaponDefinition,
+	pierce: number,
+	stagger: boolean,
+	exclude: { Instance }
 )
-	local result = workspace:Raycast(origin, direction * Config.Weapon.Range, params)
-	local endPoint = if result then result.Position else origin + direction * Config.Weapon.Range
-	if result then
-		local humanoid = findEnemyHumanoid(result.Instance)
-		if humanoid and humanoid.Health > 0 then
-			local multiplier, kind = hitMultiplier(result.Instance, humanoid)
-			local dealt = damage * multiplier
-			ItemEffectService.dealDamage(player, humanoid, dealt, result.Position, kind)
-			if canProc then
-				ItemEffectService.onProjectileHit(player, humanoid, result.Position, dealt)
-			end
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	local filter = table.clone(exclude)
+	params.FilterDescendantsInstances = filter
+	local from = origin
+	local remaining = weapon.Range
+	local endPoint = origin + direction * weapon.Range
+	local bodiesLeft = pierce
+	while remaining > 0 do
+		local result = workspace:Raycast(from, direction * remaining, params)
+		if not result then
+			break
 		end
+		endPoint = result.Position
+		local humanoid = findEnemyHumanoid(result.Instance)
+		if not humanoid or humanoid.Health <= 0 then
+			break
+		end
+		local multiplier, kind =
+			ProjectileServer.hitMultiplier(result.Instance, humanoid, weapon.HeadshotMultiplier)
+		ItemEffectService.dealDamage(player, humanoid, damage * multiplier, result.Position, kind)
+		if stagger and humanoid.Health > 0 then
+			EnemyService.stagger(humanoid, Config.Upgrades.HollowPoint.StaggerSeconds)
+		end
+		if bodiesLeft <= 0 then
+			break
+		end
+		-- Through-and-Through: the round carries on past this body.
+		bodiesLeft -= 1
+		local model = humanoid.Parent
+		if model then
+			table.insert(filter, model)
+			params.FilterDescendantsInstances = filter
+		end
+		remaining -= (result.Position - from).Magnitude
+		from = result.Position
 	end
 	for _, other in Players:GetPlayers() do
 		if other ~= player then
@@ -217,22 +269,29 @@ local function onFireRequest(player: Player, origin: unknown, direction: unknown
 	if typeof(origin) ~= "Vector3" or typeof(direction) ~= "Vector3" then
 		return
 	end
-
 	if PauseService.isPaused() then
 		return
 	end
-	-- Downed members cannot fire.
+	-- Downed members cannot fire, unless Last Stand lets them shoot from the ground.
 	local member = Squad.fromPlayer(player)
-	if member and not Squad.canAct(member) then
+	if not member then
 		return
+	end
+	local lastStand = false
+	if not Squad.canAct(member) then
+		if member.state == "Downed" and LoadoutService.hasUpgrade(player, "last_stand") then
+			lastStand = true
+		else
+			return
+		end
 	end
 
 	-- Server-side cooldown scaled by the player's fire rate multiplier;
 	-- slight tolerance so honest clients at the rate limit aren't rejected
 	-- by network jitter.
+	local weapon = LoadoutService.getWeapon(player)
 	local now = os.clock()
-	local cooldown = Config.Weapon.FireCooldown
-		/ PlayerStatsService.getMultiplier(player, "FireRate")
+	local cooldown = weapon.FireCooldown / PlayerStatsService.getMultiplier(player, "FireRate")
 	if now - (lastFireTime[player] or 0) < cooldown * 0.9 then
 		return
 	end
@@ -248,49 +307,28 @@ local function onFireRequest(player: Player, origin: unknown, direction: unknown
 	if direction.Magnitude < 0.001 then
 		return
 	end
+	-- The magazine: an empty one refuses the shot (the client asks for a reload).
+	if not LoadoutService.consumeRound(player) then
+		return
+	end
 
 	lastFireTime[player] = now
-	local params = RaycastParams.new()
-	params.FilterType = Enum.RaycastFilterType.Exclude
-	local exclude: { Instance } = { projectileFolder }
-	if character then
-		table.insert(exclude, character)
-	end
-	for _, name in { "Resupply", "ResupplyCards", "InfectedProjectiles", "XPOrbs", "SquadBots" } do
-		local folder = workspace:FindFirstChild(name)
-		if folder then
-			table.insert(exclude, folder)
-		end
-	end
-	params.FilterDescendantsInstances = exclude
+	local exclude = excludeList(character)
 	-- The client says whether it is aiming down sights; that only tightens the cone (the
 	-- speed penalty is client-owned movement either way), so trusting it costs nothing.
-	local spread = if aiming == true then Config.Weapon.ADS.Spread else Config.Weapon.HipSpread
-	local aim = applySpread(direction.Unit, spread)
-	local baseDamage = Config.Weapon.Damage * PlayerStatsService.getMultiplier(player, "Damage")
-	fireHitscan(player, origin, aim, baseDamage, true, params)
-
-	-- Shrapnel Magazine: every Nth player shot fires extra angled rounds.
-	-- Only player gun shots count (drones call fire() directly).
-	local count = (shotCount[player] or 0) + 1
-	shotCount[player] = count
-	local shrapStacks = ItemService.getStacks(player, "shrapnel_magazine")
-	if shrapStacks > 0 and count % Config.Items.Shrapnel.ShotsPerBurst == 0 then
-		local extra = math.min(1 + shrapStacks, Config.Items.Shrapnel.MaxExtra)
-		local maxAngle = math.rad(math.min(8 + (extra - 2) * 2, 16))
-		for i = 1, extra do
-			-- Spread evenly across [-maxAngle, +maxAngle].
-			local t = if extra == 1 then 0 else (i - 1) / (extra - 1) * 2 - 1
-			local spreadDir = (CFrame.Angles(0, t * maxAngle, 0) * CFrame.new(aim)).Position
-			fireHitscan(
-				player,
-				origin,
-				spreadDir.Unit,
-				baseDamage * Config.Items.Shrapnel.DamageFactor,
-				true,
-				params
-			)
-		end
+	local spread = if aiming == true and not lastStand then weapon.AdsSpread else weapon.HipSpread
+	if lastStand then
+		spread *= Config.Upgrades.LastStand.SpreadMultiplier
+	end
+	local baseDamage = weapon.Damage * PlayerStatsService.getMultiplier(player, "Damage")
+	local pierce = weapon.Pierce or 0
+	if LoadoutService.hasUpgrade(player, "through_and_through") then
+		pierce += Config.Upgrades.ThroughAndThrough.Pierce
+	end
+	local stagger = LoadoutService.hasUpgrade(player, "hollow_point")
+	for _ = 1, weapon.Pellets or 1 do
+		local aim = applySpread(direction.Unit, spread)
+		fireHitscan(player, origin, aim, baseDamage, weapon, pierce, stagger, exclude)
 	end
 end
 
@@ -305,10 +343,9 @@ function ProjectileServer.reset()
 	end
 end
 
--- One player's fire timing and Shrapnel Magazine shot counter.
+-- One player's fire timing.
 function ProjectileServer.resetPlayer(player: Player)
 	lastFireTime[player] = nil
-	shotCount[player] = nil
 end
 
 function ProjectileServer.init()
@@ -322,7 +359,6 @@ function ProjectileServer.init()
 
 	Players.PlayerRemoving:Connect(function(player)
 		lastFireTime[player] = nil
-		shotCount[player] = nil
 	end)
 end
 

@@ -1,7 +1,9 @@
 --!strict
--- Repulsor Mine Kit item: while owned, periodically drops a mine behind the
--- player that detonates when an Infected wanders close, dealing area damage.
--- Mines never hurt the player (only tagged enemies are damaged).
+-- Tripline (Mines call-in, CallInService): the thrown line lands and Config.CallIns.Tripline
+-- .Mines charges settle on an arc bulging away from the thrower. A mine blows when an
+-- Infected steps within TriggerRadius (area damage through ItemEffectService.dealDamage;
+-- never the squad). Daisy Chain (command_detonation upgrade): CallInService asks
+-- detonateAll when the owner presses the Tripline key with mines still armed.
 
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
@@ -10,16 +12,12 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local GroundUtil = require(ReplicatedStorage.Shared.GroundUtil)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
 local ItemEffectService = require(script.Parent.ItemEffectService)
-local ItemService = require(script.Parent.ItemService)
 local PauseService = require(script.Parent.PauseService)
 
 local ENEMY_TAG = "Enemy"
-
-local function mineStacks(player: Player): number
-	return ItemService.getStacks(player, "repulsor_mine_kit")
-end
 
 type Mine = {
 	part: BasePart,
@@ -31,17 +29,7 @@ local MineService = {}
 
 local mineFolder: Folder
 local mines: { Mine } = {}
-local nextDropAt: { [Player]: number } = {}
-
-local function mineInterval(stacks: number): number
-	local cfg = Config.Items.Mine
-	return math.max(cfg.BaseInterval - (stacks - 1) * cfg.IntervalPerStack, cfg.MinInterval)
-end
-
-local function mineDamage(stacks: number): number
-	local cfg = Config.Items.Mine
-	return math.min(cfg.BaseDamage + (stacks - 1) * cfg.DamagePerStack, cfg.MaxDamage)
-end
+local lastStep = 0
 
 local function removeMine(index: number)
 	mines[index].part:Destroy()
@@ -50,9 +38,8 @@ local function removeMine(index: number)
 end
 
 local function detonate(mine: Mine)
-	local cfg = Config.Items.Mine
+	local cfg = Config.CallIns.Tripline
 	local center = mine.part.Position
-	local damage = mineDamage(mineStacks(mine.owner))
 
 	local flash = Instance.new("Part")
 	flash.Shape = Enum.PartType.Ball
@@ -81,16 +68,21 @@ local function detonate(mine: Mine)
 			local root = model:FindFirstChild("HumanoidRootPart") :: BasePart?
 			if humanoid and humanoid.Health > 0 and root then
 				if (root.Position - center).Magnitude <= cfg.BlastRadius then
-					ItemEffectService.dealDamage(mine.owner, humanoid, damage, root.Position, "hit")
+					ItemEffectService.dealDamage(
+						mine.owner,
+						humanoid,
+						cfg.Damage,
+						root.Position,
+						"hit"
+					)
 				end
 			end
 		end
 	end
 end
 
-local function dropMine(owner: Player, root: BasePart)
-	local cfg = Config.Items.Mine
-
+local function placeMine(owner: Player, at: Vector3)
+	local cfg = Config.CallIns.Tripline
 	local ownedCount = 0
 	for _, mine in mines do
 		if mine.owner == owner then
@@ -106,23 +98,19 @@ local function dropMine(owner: Player, root: BasePart)
 		end
 	end
 
-	-- Behind the player relative to facing.
-	local behind = root.Position - root.CFrame.LookVector * 6
-	local result = workspace:Raycast(behind + Vector3.new(0, 50, 0), Vector3.new(0, -200, 0))
-	local groundY = if result then result.Position.Y else root.Position.Y - 2.5
-
+	local ground = GroundUtil.GetGroundPosition(at, 0)
 	local part: BasePart = MeshAssets.clone("prop_repulsor_mine") or Instance.new("Part")
-	part.Name = "RepulsorMine"
+	part.Name = "Mine"
 	if part:IsA("Part") then
 		-- Placeholder when the mesh template is missing: a flat cylinder lying on the ground.
 		part.Shape = Enum.PartType.Cylinder
 		part.Size = Vector3.new(0.4, 2, 2)
 		part.Material = Enum.Material.Metal
 		part.Color = Color3.fromRGB(96, 150, 220)
-		part.CFrame = CFrame.new(Vector3.new(behind.X, groundY + 0.2, behind.Z))
+		part.CFrame = CFrame.new(ground + Vector3.new(0, 0.2, 0))
 			* CFrame.Angles(0, 0, math.rad(90))
 	else
-		part.CFrame = CFrame.new(Vector3.new(behind.X, groundY + part.Size.Y / 2, behind.Z))
+		part.CFrame = CFrame.new(ground + Vector3.new(0, part.Size.Y / 2, 0))
 	end
 	part.Anchored = true
 	part.CanCollide = false
@@ -137,35 +125,60 @@ local function dropMine(owner: Player, root: BasePart)
 	})
 end
 
+-- CallInService: the line lands at `point`; the mines settle on an arc of ArcRadius around
+-- it spanning ArcDegrees, centred on `facing` (flat, away from the thrower).
+function MineService.layArc(owner: Player, point: Vector3, facing: Vector3): boolean
+	local cfg = Config.CallIns.Tripline
+	local forward = Vector3.new(facing.X, 0, facing.Z)
+	forward = if forward.Magnitude > 0.01 then forward.Unit else Vector3.zAxis
+	local count = cfg.Mines
+	local span = math.rad(cfg.ArcDegrees)
+	for index = 1, count do
+		local t = if count > 1 then (index - 1) / (count - 1) - 0.5 else 0
+		local angle = t * span
+		local direction = CFrame.fromAxisAngle(Vector3.yAxis, angle):VectorToWorldSpace(forward)
+		placeMine(owner, point + direction * cfg.ArcRadius)
+	end
+	return true
+end
+
+-- Mines still armed for `owner`.
+function MineService.armedCount(owner: Player): number
+	local count = 0
+	for _, mine in mines do
+		if mine.owner == owner then
+			count += 1
+		end
+	end
+	return count
+end
+
+-- Daisy Chain: every armed mine of `owner` blows now.
+function MineService.detonateAll(owner: Player): number
+	local blown = 0
+	for index = #mines, 1, -1 do
+		local mine = mines[index]
+		if mine.owner == owner then
+			detonate(mine)
+			removeMine(index)
+			blown += 1
+		end
+	end
+	return blown
+end
+
 local function onHeartbeat()
+	local now = os.clock()
 	if PauseService.isPaused() then
+		local shift = now - lastStep
+		for _, mine in mines do
+			mine.expiresAt += shift
+		end
+		lastStep = now
 		return
 	end
-	local cfg = Config.Items.Mine
-	local now = os.clock()
-
-	-- Drop timers per owning player.
-	for _, player in Players:GetPlayers() do
-		local stacks = mineStacks(player)
-		if stacks == 0 then
-			nextDropAt[player] = nil
-			continue
-		end
-		local character = player.Character
-		local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
-		if not root then
-			continue
-		end
-		local at = nextDropAt[player]
-		if not at then
-			nextDropAt[player] = now + mineInterval(stacks)
-		elseif now >= at then
-			nextDropAt[player] = now + mineInterval(stacks)
-			dropMine(player, root)
-		end
-	end
-
-	-- Trigger / expiry.
+	lastStep = now
+	local cfg = Config.CallIns.Tripline
 	for index = #mines, 1, -1 do
 		local mine = mines[index]
 		if now >= mine.expiresAt or not mine.part.Parent then
@@ -198,7 +211,6 @@ function MineService.reset()
 		mine.part:Destroy()
 	end
 	table.clear(mines)
-	table.clear(nextDropAt)
 	if mineFolder then
 		mineFolder:ClearAllChildren()
 	end
@@ -208,10 +220,15 @@ function MineService.init()
 	mineFolder = Instance.new("Folder")
 	mineFolder.Name = "Mines"
 	mineFolder.Parent = workspace
+	lastStep = os.clock()
 	RunService.Heartbeat:Connect(onHeartbeat)
 
 	Players.PlayerRemoving:Connect(function(player: Player)
-		nextDropAt[player] = nil
+		for index = #mines, 1, -1 do
+			if mines[index].owner == player then
+				removeMine(index)
+			end
+		end
 	end)
 end
 

@@ -1,8 +1,10 @@
 --!strict
 -- Enemy archetype stats and behaviour (Sprint 9, extended 2026-11-06 for the Infected
 -- roster in docs/PROGRESSION.md). All enemy tuning lives here; EnemyService reads the
--- Behaviour table and has no per-type branches. Time-based health/damage scaling comes from
--- Config.Difficulty on top of these; spawn weights and caps from Config.Spawning.
+-- Behaviour table and has no per-type branches. The curve is flat (Config.Difficulty is
+-- 1x since the loadout rework 2026-11-07); spawn weights and caps from Config.Spawning.
+-- Health and damage sit on the realistic time-to-kill in Config.Weapon (rifle 20, head x3):
+-- Walker 3 body / 1 head, Runner 2 / 1, Hocker 4 / 2, Brute 13 / 11.
 
 export type PuddleSpec = {
 	Radius: number,
@@ -34,7 +36,7 @@ export type EnemyDefinition = {
 	Damage: number, -- per melee hit or per projectile impact
 	AttackRange: number, -- studs between root parts (projectile: max throw)
 	AttackCooldown: number, -- seconds between hits
-	XPReward: number,
+	SupplyValue: number, -- credited to the squad's Resupply pool on death (any distance)
 	SpawnCost: number, -- reserved for a budget director later
 	FirstSpawnTime: number, -- seconds of run time before it may spawn
 	Color: Color3,
@@ -53,12 +55,12 @@ local EnemyDefinitions: { [string]: EnemyDefinition } = {
 	Walker = {
 		DisplayName = "Walker",
 		Scale = 1,
-		MaxHealth = 35,
+		MaxHealth = 55,
 		WalkSpeed = 9.5,
-		Damage = 8,
+		Damage = 10,
 		AttackRange = 4,
 		AttackCooldown = 1.1,
-		XPReward = 10,
+		SupplyValue = 10,
 		SpawnCost = 1,
 		FirstSpawnTime = 0,
 		Color = Color3.fromRGB(88, 154, 84),
@@ -68,12 +70,12 @@ local EnemyDefinitions: { [string]: EnemyDefinition } = {
 	Runner = {
 		DisplayName = "Runner",
 		Scale = 0.9,
-		MaxHealth = 22,
+		MaxHealth = 35,
 		WalkSpeed = 17,
-		Damage = 6,
+		Damage = 8,
 		AttackRange = 3.5,
 		AttackCooldown = 0.85,
-		XPReward = 12,
+		SupplyValue = 12,
 		SpawnCost = 1.5,
 		FirstSpawnTime = 75,
 		Color = Color3.fromRGB(168, 146, 66),
@@ -83,12 +85,12 @@ local EnemyDefinitions: { [string]: EnemyDefinition } = {
 	Brute = {
 		DisplayName = "Brute",
 		Scale = 2,
-		MaxHealth = 160,
+		MaxHealth = 260,
 		WalkSpeed = 6.5,
-		Damage = 22,
+		Damage = 30,
 		AttackRange = 5.5,
 		AttackCooldown = 1.6,
-		XPReward = 35,
+		SupplyValue = 35,
 		SpawnCost = 5,
 		FirstSpawnTime = 180,
 		Color = Color3.fromRGB(52, 88, 50),
@@ -100,12 +102,12 @@ local EnemyDefinitions: { [string]: EnemyDefinition } = {
 	Hocker = {
 		DisplayName = "Hocker",
 		Scale = 1,
-		MaxHealth = 45,
+		MaxHealth = 75,
 		WalkSpeed = 8,
-		Damage = 12,
+		Damage = 15,
 		AttackRange = 55,
 		AttackCooldown = 3.0,
-		XPReward = 18,
+		SupplyValue = 18,
 		SpawnCost = 2.5,
 		FirstSpawnTime = 480,
 		Color = Color3.fromRGB(176, 170, 84),
@@ -119,7 +121,7 @@ local EnemyDefinitions: { [string]: EnemyDefinition } = {
 				Color = Color3.fromRGB(190, 215, 60),
 				SplashRadius = 4,
 				Lead = 0.5,
-				Puddle = { Radius = 6, Duration = 4, DamagePerSecond = 6 },
+				Puddle = { Radius = 6, Duration = 4, DamagePerSecond = 8 },
 			},
 		},
 		ThroatSac = true,

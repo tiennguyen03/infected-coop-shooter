@@ -1,9 +1,12 @@
 --!strict
 -- Hold left mouse button to fire. Aims from the character toward whatever
--- the cursor is pointing at, then asks the server to spawn the projectile.
+-- the cursor is pointing at, then asks the server to fire the round.
 -- Hold right mouse button to aim down sights (ADS): tighter spread (server), slower
 -- walk and no sprint (SprintController), closer camera and narrower FOV
 -- (CameraController), rifle shouldered (AnimationController), crosshair closes.
+-- The magazine (loadout rework 2026-11-07) is the server's (LoadoutService: Mag, Reserve,
+-- ReloadUntil attributes): R asks for a reload, an empty magazine asks for one on the next
+-- trigger pull, and no shot is sent while reloading. Last Stand lets a downed body fire.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -12,6 +15,8 @@ local UserInputService = game:GetService("UserInputService")
 
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
+local WeaponDefinitions =
+	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("WeaponDefinitions"))
 local SoundFX = require(script.Parent.SoundFX)
 local AnimationController = require(script.Parent.AnimationController)
 local CameraController = require(script.Parent.CameraController)
@@ -22,7 +27,9 @@ local WeaponController = {}
 local isFiring = false
 local isAiming = false
 local lastFireTime = 0
+local lastReloadRequest = 0
 local tracerFolder: Folder? = nil
+local RELOAD_REQUEST_GAP = 0.5 -- seconds between automatic reload requests on an empty mag
 
 -- A thin bright line from the muzzle to where the round went, gone in a few frames. Drawn
 -- locally for our own shots (instant) and for other players' shots via ShotTracer.
@@ -83,7 +90,7 @@ local function getAimPoint(): Vector3?
 	if character then
 		table.insert(exclude, character)
 	end
-	for _, name in { "Projectiles", "Tracers", "Resupply", "ResupplyCards", "XPOrbs" } do
+	for _, name in { "Projectiles", "Tracers", "Resupply", "ResupplyCards", "Drones", "Mines" } do
 		local folder = workspace:FindFirstChild(name)
 		if folder then
 			table.insert(exclude, folder)
@@ -99,24 +106,61 @@ local function getAimPoint(): Vector3?
 	return ray.Origin + ray.Direction * Config.Weapon.MaxAimDistance
 end
 
+-- The magazine as the server published it.
+function WeaponController.isReloading(): boolean
+	local until_ = (Players.LocalPlayer:GetAttribute("ReloadUntil") :: number?) or 0
+	return until_ > workspace:GetServerTimeNow()
+end
+
+function WeaponController.requestReload()
+	local player = Players.LocalPlayer
+	local weapon = WeaponDefinitions.get(player:GetAttribute("Weapon") :: string?)
+	local mag = (player:GetAttribute("Mag") :: number?) or 0
+	local reserve = (player:GetAttribute("Reserve") :: number?) or 0
+	if WeaponController.isReloading() or mag >= weapon.MagazineSize or reserve <= 0 then
+		return
+	end
+	if workspace:GetAttribute("GamePaused") == true then
+		return
+	end
+	lastReloadRequest = os.clock()
+	Remotes.get("Reload"):FireServer()
+end
+
 local function tryFire()
 	if workspace:GetAttribute("GamePaused") == true then
 		return
 	end
 
+	local player = Players.LocalPlayer
 	local now = os.clock()
-	local fireRateMult = (Players.LocalPlayer:GetAttribute("FireRateMult") :: number?) or 1
-	if now - lastFireTime < Config.Weapon.FireCooldown / fireRateMult then
+	local weapon = WeaponDefinitions.get(player:GetAttribute("Weapon") :: string?)
+	local fireRateMult = (player:GetAttribute("FireRateMult") :: number?) or 1
+	if now - lastFireTime < weapon.FireCooldown / fireRateMult then
+		return
+	end
+	if WeaponController.isReloading() then
+		return
+	end
+	if ((player:GetAttribute("Mag") :: number?) or 0) <= 0 then
+		-- Dry: ask for a reload (once per half second while the trigger is held).
+		if now - lastReloadRequest >= RELOAD_REQUEST_GAP then
+			WeaponController.requestReload()
+		end
 		return
 	end
 
-	local character = Players.LocalPlayer.Character
+	local character = player.Character
 	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
 	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
 	if not root or not humanoid or humanoid.Health <= 0 then
 		return
 	end
-	if character and character:GetAttribute("SquadState") == "Downed" then
+	if
+		character
+		and character:GetAttribute("SquadState") == "Downed"
+		and player:GetAttribute("UpgradeKit") ~= "last_stand"
+	then
 		return
 	end
 
@@ -188,6 +232,8 @@ function WeaponController.init()
 			AnimationController.setAiming(true)
 		elseif input.UserInputType == Enum.UserInputType.MouseButton2 then
 			setAiming(true)
+		elseif input.KeyCode == Enum.KeyCode.R then
+			WeaponController.requestReload()
 		end
 	end)
 

@@ -4,7 +4,8 @@
 -- clears low cover and lands where the target stood (plus a half lead on their velocity, so
 -- a moving player can step out of it). Impact splashes every player in range and, when the
 -- definition asks for one, leaves a puddle that ticks damage on anyone standing in it.
--- Player damage from any Infected goes through `damagePlayer` (difficulty + armour).
+-- Player damage from any Infected goes through `damagePlayer` (difficulty, then the
+-- Armour Plate shield soaks what it can: LoadoutService.absorb).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -13,6 +14,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local EnemyDefinitions = require(ReplicatedStorage.Shared.EnemyDefinitions)
 local GroundUtil = require(ReplicatedStorage.Shared.GroundUtil)
 local DifficultyService = require(script.Parent.DifficultyService)
+local LoadoutService = require(script.Parent.LoadoutService)
 local PauseService = require(script.Parent.PauseService)
 local Squad = require(script.Parent.Squad)
 local WorldSounds = require(script.Parent.WorldSounds)
@@ -51,8 +53,8 @@ local folder: Folder
 local spits: { Spit } = {}
 local puddles: { Puddle } = {}
 
--- The one entry point for Infected damage to a player: difficulty scaling + the player's
--- incoming-damage multiplier (Ballistic Weave).
+-- The one entry point for Infected damage to a player: difficulty scaling, then the
+-- player's Armour Plate shield takes the hit before health.
 function EnemyProjectileService.damagePlayer(humanoid: Humanoid, amount: number)
 	if humanoid.Health <= 0 then
 		return
@@ -67,10 +69,13 @@ function EnemyProjectileService.damagePlayer(humanoid: Humanoid, amount: number)
 	if member and member.owner and member.owner:GetAttribute("DevGod") == true then
 		return
 	end
-	local incomingMult: number = if member
-		then Squad.ownerAttribute(member, "IncomingDamageMult", 1)
-		else 1
-	local dealt = amount * DifficultyService.getDamageMultiplier() * incomingMult
+	local dealt = amount * DifficultyService.getDamageMultiplier()
+	if member and member.owner then
+		dealt = LoadoutService.absorb(member.owner, dealt)
+		if dealt <= 0 then
+			return
+		end
+	end
 	if member and humanoid.Health - dealt <= 0 then
 		Squad.down(member)
 		return

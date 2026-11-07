@@ -1,12 +1,15 @@
 --!strict
--- Resupply (docs/PROGRESSION.md > Resupply): the draft that replaced the level-up pop-up.
--- Kills fill one run-wide pool (base orb XP, once per orb). When the pool covers the
--- current cost any living player throws the red flare; for DropDelay seconds the Infected
--- nearby walk to the flare instead of the squad, then a pallet drops out of the sky, lands
--- loud (a wave spawns around it) and shows each player their own three cards in a row in
--- front of it. Walk into a card to take it: one pick per player per pallet, cards vanish
--- after CardLifetime. Pool and drop count carry across stages. Server-authoritative: the
--- client only asks to throw and asks to pick; both are validated here.
+-- Resupply (docs/PROGRESSION.md > Loadout, pallets and field upgrades). Every kill credits
+-- its form's SupplyValue to one run-wide pool (EnemyService kill listener; no orbs since
+-- the loadout rework 2026-11-07), the hold objective adds its reward. When the pool covers
+-- the current cost any living player throws the red flare (key 3); for DropDelay seconds
+-- the Infected nearby walk to the flare instead of the squad, then a pallet drops out of
+-- the sky and lands loud (a wave spawns around it). The pallet is the ammo box: every
+-- living player who walks within RearmRadius is re-armed once (full magazine + reserve).
+-- Its three cards are the supply cards (Medkit / Restock / Armour Plate; one pick per
+-- player per pallet). An upgrade crate (`dropCrate(..., "upgrade")`, the Primary's site
+-- crate) shows each player field upgrades instead. Server-authoritative: the client only
+-- asks to throw and asks to pick; both are validated here.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -14,14 +17,15 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
-local ItemDefinitions = require(ReplicatedStorage.Shared.ItemDefinitions)
+local GroundUtil = require(ReplicatedStorage.Shared.GroundUtil)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local ThrowUtil = require(ReplicatedStorage.Shared.ThrowUtil)
+local UpgradeDefinitions = require(ReplicatedStorage.Shared.UpgradeDefinitions)
+local CallInService = require(script.Parent.CallInService)
 local EnemyService = require(script.Parent.EnemyService)
-local ItemService = require(script.Parent.ItemService)
+local LoadoutService = require(script.Parent.LoadoutService)
 local PauseService = require(script.Parent.PauseService)
-local XPOrbService = require(script.Parent.XPOrbService)
 local Squad = require(script.Parent.Squad)
 
 local FLARE_COLOR = Color3.fromRGB(255, 60, 40)
@@ -30,6 +34,8 @@ local CRATE_DROP_TIME = 1.1
 local CARD_HEIGHT = 2 -- card anchor above the ground
 local CARD_FORWARD = 3.5 -- cards stand this far in front of the pallet, toward the thrower
 local PICK_SLACK = 3 -- server tolerance on top of PickRadius (latency, card width)
+
+export type CrateKind = "supply" | "upgrade"
 
 type Pending = {
 	position: Vector3,
@@ -40,11 +46,13 @@ type Pending = {
 
 type Crate = {
 	id: number,
+	kind: CrateKind,
 	part: BasePart,
 	position: Vector3,
 	cardPositions: { Vector3 },
 	offers: { [Player]: { string } },
 	picked: { [Player]: boolean },
+	rearmed: { [Player]: boolean },
 	expiresAt: number,
 }
 
@@ -55,7 +63,7 @@ local resupplyRemote: RemoteEvent
 local noticeRemote: RemoteEvent
 
 local pool = 0
-local drops = 0 -- pallets called this run (drives the cost curve and the guarantee)
+local drops = 0 -- pallets called this run (drives the cost curve)
 local flareReadyAt = 0
 local pending: Pending? = nil
 local crates: { Crate } = {}
@@ -83,7 +91,7 @@ local function publish()
 	)
 end
 
--- The one way in: base XP of a collected orb, once (not once per player), plus objective XP.
+-- The one way in: a kill's SupplyValue (once, not once per player) and the objective reward.
 function RequisitionService.addRequisition(amount: number)
 	pool += amount
 	publish()
@@ -153,19 +161,37 @@ local function cardPositions(center: Vector3, facing: Vector3): { Vector3 }
 	return positions
 end
 
-local function land(drop: Pending)
-	drop.flare:Destroy()
+-- What `player` sees on a crate of `kind`: the supply cards, or a roll of field upgrades
+-- they can still take (possibly none).
+local function offerFor(player: Player, kind: CrateKind): { string }
+	if kind == "supply" then
+		return table.clone(Config.Crates.SupplyCards)
+	end
+	return LoadoutService.rollUpgradeOffer(player, Config.Crates.CardsPerPlayer)
+end
+
+-- Drops a crate of `kind` on `position` (ground-snapped), cards facing `facing`. `loud`
+-- lands it like a pallet: a ring wave and extra pressure for a while. The part falls in
+-- from the sky; the cards show once it lands.
+function RequisitionService.dropCrate(
+	position: Vector3,
+	facing: Vector3,
+	kind: CrateKind,
+	loud: boolean
+)
 	local cfg = Config.Requisition
+	local ground = GroundUtil.GetGroundPosition(position, 0)
+	local flat = Vector3.new(facing.X, 0, facing.Z)
+	local forward = if flat.Magnitude > 0.01 then flat.Unit else Vector3.zAxis
 
 	local part: BasePart = MeshAssets.clone("prop_ammo_crate") or Instance.new("Part")
-	part.Name = "Pallet"
+	part.Name = if kind == "supply" then "Pallet" else "UpgradeCrate"
 	if part:IsA("Part") then
 		part.Size = Vector3.new(3.2, 2, 2.4)
 		part.Material = Enum.Material.Metal
 		part.Color = Color3.fromRGB(107, 122, 74)
 	end
-	local rest = CFrame.lookAt(drop.position, drop.position + drop.facing)
-		* CFrame.new(0, part.Size.Y / 2, 0)
+	local rest = CFrame.lookAt(ground, ground + forward) * CFrame.new(0, part.Size.Y / 2, 0)
 	part.CFrame = rest + Vector3.new(0, CRATE_DROP_HEIGHT, 0)
 	part.Anchored = true
 	part.CanCollide = false
@@ -181,7 +207,7 @@ local function land(drop: Pending)
 	local label = Instance.new("TextLabel")
 	label.Size = UDim2.fromScale(1, 1)
 	label.BackgroundTransparency = 1
-	label.Text = "RESUPPLY"
+	label.Text = if kind == "supply" then "RESUPPLY" else "FIELD KIT"
 	label.TextColor3 = Color3.fromRGB(232, 181, 75)
 	label.TextScaled = true
 	label.Font = Enum.Font.GothamBold
@@ -199,42 +225,45 @@ local function land(drop: Pending)
 		return
 	end
 
-	-- Landed loud: the ring wave, extra pressure for a while.
 	local living = livingPlayers()
-	local wave = cfg.Lure.Wave + cfg.Lure.WavePerExtraPlayer * math.max(#living - 1, 0)
-	EnemyService.spawnMixedWave(wave, drop.position)
-	pressureUntil = os.clock() + cfg.Lure.SpawnFactorDuration
-	workspace:SetAttribute("ResupplyActive", true)
+	if loud then
+		-- Landed loud: the ring wave, extra pressure for a while.
+		local wave = cfg.Lure.Wave + cfg.Lure.WavePerExtraPlayer * math.max(#living - 1, 0)
+		EnemyService.spawnMixedWave(wave, ground)
+		pressureUntil = os.clock() + cfg.Lure.SpawnFactorDuration
+		workspace:SetAttribute("ResupplyActive", true)
+	end
 
-	-- Personal cards: the same three positions for everyone, a different roll per player.
+	-- Personal cards: the same three positions for everyone, each player's own offer.
 	if #crates >= cfg.MaxCrates then
 		closeCrate(1)
 	end
-	local guarantee = drops % Config.Crates.GuaranteeEvery == 0
 	local crate: Crate = {
 		id = nextCrateId,
+		kind = kind,
 		part = part,
-		position = drop.position,
-		cardPositions = cardPositions(drop.position, drop.facing),
+		position = ground,
+		cardPositions = cardPositions(ground, forward),
 		offers = {},
 		picked = {},
+		rearmed = {},
 		expiresAt = os.clock() + cfg.CardLifetime,
 	}
 	nextCrateId += 1
 	table.insert(crates, crate)
 	for _, player in living do
-		local choices = ItemService.rollChoices(Config.Crates.Weights.Requisition, guarantee)
+		local choices = offerFor(player, kind)
 		crate.offers[player] = choices
-		resupplyRemote:FireClient(
-			player,
-			"cards",
-			crate.id,
-			choices,
-			crate.cardPositions,
-			ItemService.getInventory(player)
-		)
+		if #choices > 0 then
+			resupplyRemote:FireClient(player, "cards", crate.id, kind, choices, crate.cardPositions)
+		end
 	end
-	print(`[Requisition] pallet {crate.id} down, {#living} players offered, wave {wave}`)
+	print(`[Requisition] {kind} crate {crate.id} down, {#living} players offered`)
+end
+
+local function land(drop: Pending)
+	drop.flare:Destroy()
+	RequisitionService.dropCrate(drop.position, drop.facing, "supply", true)
 end
 
 local function onFlare(player: Player, target: unknown)
@@ -280,8 +309,34 @@ local function onFlare(player: Player, target: unknown)
 	print(`[Requisition] {player.Name} threw the flare; pallet in {cfg.DropDelay}s (drop {drops})`)
 end
 
-local function onPick(player: Player, crateId: unknown, itemId: unknown)
-	if typeof(crateId) ~= "number" or typeof(itemId) ~= "string" then
+-- Applies a taken card to the player. Returns the notice for the rest of the squad.
+local function applyCard(player: Player, cardId: string): string?
+	local definition = UpgradeDefinitions.get(cardId)
+	if not definition then
+		return nil
+	end
+	if definition.Kind == "upgrade" then
+		if not LoadoutService.giveUpgrade(player, cardId) then
+			return nil
+		end
+	elseif cardId == "medkit" then
+		local character = player.Character
+		local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+		if humanoid and humanoid.Health > 0 then
+			humanoid.Health = humanoid.MaxHealth
+		end
+	elseif cardId == "restock" then
+		CallInService.refill(player)
+	elseif cardId == "armour_plate" then
+		LoadoutService.addShield(player, Config.Crates.ArmourPlate)
+	else
+		return nil
+	end
+	return `{player.Name} took {definition.Name}`
+end
+
+local function onPick(player: Player, crateId: unknown, cardId: unknown)
+	if typeof(crateId) ~= "number" or typeof(cardId) ~= "string" then
 		return
 	end
 	local crate: Crate? = nil
@@ -294,14 +349,13 @@ local function onPick(player: Player, crateId: unknown, itemId: unknown)
 		return
 	end
 	local offer = crate.offers[player]
-	local index = if offer then table.find(offer, itemId) else nil
+	local index = if offer then table.find(offer, cardId) else nil
 	if not index then
 		return
 	end
-	local character = player.Character
-	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
-	if not humanoid or not root or humanoid.Health <= 0 then
+	local member = Squad.fromPlayer(player)
+	local root = member and member.root
+	if not member or not Squad.canAct(member) or not root then
 		return
 	end
 	local cardPosition = crate.cardPositions[index]
@@ -309,13 +363,15 @@ local function onPick(player: Player, crateId: unknown, itemId: unknown)
 	if flat.Magnitude > Config.Requisition.PickRadius + PICK_SLACK then
 		return
 	end
+	local notice = applyCard(player, cardId)
+	if not notice then
+		return
+	end
 	crate.picked[player] = true
-	ItemService.addItem(player, itemId)
 	resupplyRemote:FireClient(player, "picked", crate.id)
-	local definition = ItemDefinitions[itemId]
 	for _, other in Players:GetPlayers() do
 		if other ~= player then
-			noticeRemote:FireClient(other, `{player.Name} took {definition.Name}`)
+			noticeRemote:FireClient(other, notice)
 		end
 	end
 end
@@ -325,6 +381,25 @@ local function onRemote(player: Player, kind: unknown, ...: unknown)
 		onFlare(player, ...)
 	elseif kind == "pick" then
 		onPick(player, ...)
+	end
+end
+
+-- The pallet is the ammo box: a living player within RearmRadius is re-armed once per crate.
+local function rearmNearby()
+	local radius = Config.Requisition.RearmRadius
+	for _, crate in crates do
+		for _, player in livingPlayers() do
+			if crate.rearmed[player] then
+				continue
+			end
+			local member = Squad.fromPlayer(player)
+			local root = member and member.root
+			if root and (root.Position - crate.position).Magnitude <= radius then
+				crate.rearmed[player] = true
+				LoadoutService.refillAmmo(player)
+				noticeRemote:FireClient(player, "RE-ARMED")
+			end
+		end
 	end
 end
 
@@ -356,6 +431,7 @@ local function step()
 			closeCrate(index)
 		end
 	end
+	rearmNearby()
 	if pressureUntil > 0 and now >= pressureUntil then
 		pressureUntil = 0
 		workspace:SetAttribute("ResupplyActive", false)
@@ -388,7 +464,9 @@ function RequisitionService.init()
 	resupplyRemote = Remotes.get("Resupply")
 	noticeRemote = Remotes.get("BuffNotice")
 	resupplyRemote.OnServerEvent:Connect(onRemote)
-	XPOrbService.addCollectListener(RequisitionService.addRequisition)
+	EnemyService.addKillListener(function(supplyValue: number)
+		RequisitionService.addRequisition(supplyValue)
+	end)
 	workspace:SetAttribute("ResupplyActive", false)
 	publish()
 	lastStep = os.clock()
@@ -398,6 +476,7 @@ function RequisitionService.init()
 		for _, crate in crates do
 			crate.offers[player] = nil
 			crate.picked[player] = nil
+			crate.rearmed[player] = nil
 		end
 	end)
 end

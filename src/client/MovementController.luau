@@ -74,7 +74,7 @@ local function rayParams(model: Model): RaycastParams
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Exclude
 	local exclude: { Instance } = { model }
-	for _, name in { "Projectiles", "Tracers", "Resupply", "ResupplyCards", "XPOrbs" } do
+	for _, name in { "Projectiles", "Tracers", "Resupply", "ResupplyCards", "Drones", "Mines" } do
 		local folder = workspace:FindFirstChild(name)
 		if folder then
 			table.insert(exclude, folder)
@@ -218,9 +218,8 @@ function MovementController.tryDash(kind: "roll" | "slide"): boolean
 	root.CFrame = CFrame.lookAlong(root.Position, direction)
 	SprintController.setOverrideSpeed(startSpeed)
 	AnimationController.playMove(kind, duration)
-	if kind == "roll" then
-		Remotes.get("CoverMove"):FireServer("roll")
-	end
+	-- The roll buys its melee window; the slide only drops a reload in progress.
+	Remotes.get("CoverMove"):FireServer(kind)
 	dash = {
 		kind = kind,
 		humanoid = humanoid,

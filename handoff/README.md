@@ -1,15 +1,17 @@
 # Handoff — Infected Co-op Shooter (VS Code + Claude Code terminal)
 
 Start here when picking the project up in a fresh Claude Code session.
-Last updated: 2026-11-07 (downed crawl). Last verified commit on `main`: the downed-crawl commit (playtested).
+Last updated: 2026-11-07 (Sprint 18 loadout rework). Last verified commit on `main`: the Sprint 18 commit (playtested).
 
 ## What this is
 
 Roblox 4-player co-op shooter (Helldivers-style loadout power, grounded military bio-horror
 setting). **Final
-product is 4-player co-op**; the current build is single-player. Full loop works: spawn → fight → earn Resupply → flare → pallet → walk into 1 of 3 cards → Hold Position
-objective → extraction → OPERATION COMPLETE → restart. 24 items, 4 Infected forms (Walker, Runner, Brute, Hocker), Assault
-class with Q dash / E breach / Combat Momentum, server-authoritative everything.
+product is 4-player co-op**; the current build is single-player. Full loop works: spawn → fight → kills fill Resupply → flare (3) → pallet (re-arm + 1 of 3
+supply cards) → Hold Position objective (site crate: 1 of 3 field upgrades) → extraction →
+OPERATION COMPLETE → restart. Service rifle with a magazine, 4 call-ins on keys 1/2, 12 field
+upgrades, 4 Infected forms (Walker, Runner, Brute, Hocker), Weller with Q dash / E breach /
+Combat Momentum, server-authoritative everything.
 
 Repo: https://github.com/tiennguyen03/infected-coop-shooter — folder `~/infected-coop-shooter`.
 
@@ -21,16 +23,21 @@ Read in this order:
 5. `docs/PLAN.md` — scope rules + roadmap. `docs/LORE.md` — setting/naming.
 6. `docs/MULTIPLAYER_READINESS.md` — co-op rules + debt register, before touching run flow.
 
-## Current state (verified 2026-11-05 in a live playtest)
+## Current state (verified 2026-11-07 in a live playtest)
 
-- Sprint 15 (Assault Class V1 + held gun + Common Item Pack 1) **live-verified**: rifle is a
-  real equipped `Tool`, cooldowns freeze during item-selection pause, fire pools/rats/
-  airstrikes sit on the floor (`shared/GroundUtil`), rats move as one model (no after-
-  images), full run to OPERATION COMPLETE.
-- Sprint 16 (Plague Rat Charm) verified earlier.
-- All 24 item icons (v2 uniform style) uploaded to Roblox and wired
-  (`assets/icons/ASSET_IDS.md`).
-- Static checks clean (stylua / selene / luau-lsp / rojo build) at `ca95c58`.
+- 2026-11-07: **Sprint 18, loadout rework shipped and playtested**
+  (`docs/sprints/SPRINT_18_LOADOUT.md`). The item economy, XP orbs and levels are gone;
+  power is the loadout: service rifle with a 30-round magazine (R reloads, pallets re-arm),
+  call-ins on keys 1/2 (Magpie, Tripline by default; Anvil, Pen Coil through the dev panel
+  until the Armory exists), pallet cards Medkit / Restock / Armour Plate, twelve field
+  upgrades in six slots from the Primary's site crate, flat threat curve with
+  `Config.PlayerCountScaling`, realistic time-to-kill (Walker 3 body / 1 head). New:
+  `LoadoutService`, `CallInService`, `LoadoutUI`, `WeaponDefinitions`, `CallInDefinitions`,
+  `UpgradeDefinitions`. Deleted: XPOrbService, XPService, PassiveItemService,
+  AmmoCacheService, PlagueRatService, ItemService, ItemDefinitions, ItemBarUI, XPBarUI,
+  `docs/ITEMS_REFERENCE.md`. The 24 item icons stay uploaded; call-ins reuse them, the
+  cards have none yet.
+- Static checks clean (stylua / selene / luau-lsp / rojo build) at the Sprint 18 commit.
 - 2026-11-05: decided the final product is **4-player co-op**. `src/` audited; 13 single-
   player shortcuts logged in `docs/MULTIPLAYER_READINESS.md` with a planned fix each, and
   all 6 co-op design decisions are answered there. No code changed yet.
@@ -83,9 +90,11 @@ Read in this order:
   doing the work. Means a new skin row set in `docs/STYLES.md` §2 replacing the three
   `infected` tints, and a re-paint pass on the four v2 Infected builders (geometry stays).
   Not scheduled; do it in one pass with the next body sprint.
-- **Backlog (owner, 2026-11-07): rifle reload.** A magazine, R to reload, a reload clip and
-  a reload sound (generate `reload_1..2` into a `player_weapon` bank with the rifle shot).
-  Goes with the ammo economy decision in PROGRESSION; not before Co-op Sprint A.
+- **Backlog (2026-11-07): reload clip and sound.** The magazine shipped in Sprint 18; the
+  reload still has no animation and no sound (generate `reload_1..2` into a `player_weapon`
+  bank with the rifle shot). Also open from Sprint 18: icons for the supply and upgrade cards,
+  `assets/icons/build/wire.js` still writes into the deleted ItemDefinitions, Hollow Point
+  stagger cadence, the Armory (call-in choice before the drop).
 - **Backlog (owner, 2026-11-07, after the movement set playtest).** Hit marker, faster
   vault/climb, climb immunity and quieter footsteps shipped (feel pass, HISTORY). Left, in
   the owner's order:
@@ -132,7 +141,7 @@ Read in this order:
    `AnimationController`, per-type Infected clips, hold-E breach ghost). All 15 clips are
    published through Open Cloud (ids in `Config.Animations.Ids`, `assets/animations/
    ASSET_IDS.md`), so they play outside Studio too. Polish later: a hollow breach ring.
-1. **Co-op Sprint A shipped 2026-11-07** (`docs/sprints/SPRINT_17_COOP_A.md`): `Squad` roster, run state machine, reset split, spawn pads, run-end screens + ready-up, downed/revive (F), bot squadmates. **Next per the spine:** the loadout rework (call-ins on 1-2, tactical pallets, field upgrades, flat curve, realistic time-to-kill), then the Warden; Co-op Sprint B (register rows 3/5/7/9, extraction rule) and the lobby place (decision 7) after.
+1. **Co-op Sprint A shipped 2026-11-07** (`docs/sprints/SPRINT_17_COOP_A.md`): `Squad` roster, run state machine, reset split, spawn pads, run-end screens + ready-up, downed/revive (F), bot squadmates. **Loadout rework shipped 2026-11-07 (Sprint 18).** **Next per the spine:** the Warden; Co-op Sprint B (register rows 3/5/7/9, extraction rule) and the lobby place (decision 7) after.
    Planned after it (owner, 2026-11-07): a **lobby place** with a main menu where parties
    queue and teleport together into the match (`docs/MULTIPLAYER_READINESS.md` decision 7);
    number keys 1-4 take call-ins and the flare (decision 8).
@@ -234,9 +243,13 @@ Hard-won gotchas:
   enemy damage), Heal (also revives), DownPlayer(botName?), RevivePlayer(botName?),
   KillPlayer, DownBot, KillBots, SetBots(n), ToggleSpawns (workspace DevSpawnsOff),
   ActivateObjective (hold zone now), ForceObjectiveComplete, ForceMissionSuccess, ForceWipe,
-  RestartRun, FillResupply, SpawnEnemy(type, count), ClearEnemies, GiveXP, ForceLevelUp,
-  GrantItem(itemId, stacks), ClearItems, PrintRunState, VerifyCleanup. Pick a card via the
-  `Resupply` remote (client fires "pick", crateId, itemId) or walk the character into it.
+  RestartRun, FillResupply, SpawnEnemy(type, count), ClearEnemies, SetCallIn(slot, id),
+  GiveUpgrade(id), ClearUpgrades, RefillAmmo, RestockCallIns, SetWeapon(id),
+  DropUpgradeCrate, DropSupplyCrate, PrintRunState, VerifyCleanup (expects a dead run: in a
+  live run it reports the armed objective zone and natural spawns). Pick a card via the
+  `Resupply` remote (client fires "pick", crateId, cardId within 5.5 studs of the card) or
+  walk the character into it. Call-ins: `CallIn` remote (slot, landingPoint). Teleport the
+  character from `client-1` (`root.CFrame = ...`); `Humanoid:MoveTo` loses to live input.
   For a deterministic test: God + ToggleSpawns + SetBots 0, then spawn exactly what you need.
 - A running playtest never picks up synced code — always Stop → Play after a sync. Studio
   MCP sometimes can't tear down a wedged playtest; manual Stop → Play fixes it.

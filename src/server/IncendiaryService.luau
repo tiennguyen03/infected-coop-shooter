@@ -1,8 +1,7 @@
 --!strict
--- Incendiary Gel item: a kill may leave a burning pool that ticks damage on
--- Infected standing in it. ItemEffectService rolls the spawn chance on kill
--- and calls spawnPool via setFirePoolSpawner. Fire kills never spawn new
--- pools (recursion guard lives in ItemEffectService via lastDamageKind).
+-- Flare Straps (fire_trail upgrade, AssaultClassService): the Combat Dash leaves burning
+-- pools along its path (Config.Upgrades.FireTrail) that tick damage on the Infected standing
+-- in them. Pools never hurt the squad.
 
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -27,6 +26,7 @@ local IncendiaryService = {}
 
 local poolFolder: Folder
 local pools: { Pool } = {}
+local lastStep = 0
 
 local function removePool(index: number)
 	pools[index].part:Destroy()
@@ -35,7 +35,7 @@ local function removePool(index: number)
 end
 
 function IncendiaryService.spawnPool(owner: Player, position: Vector3)
-	local cfg = Config.Items.Incendiary
+	local cfg = Config.Upgrades.FireTrail
 
 	-- Enforce the per-player pool cap by removing this owner's oldest.
 	local ownedCount = 0
@@ -53,7 +53,6 @@ function IncendiaryService.spawnPool(owner: Player, position: Vector3)
 		end
 	end
 
-	-- Drop the pool to the floor (kill position is at the enemy's torso height).
 	local ground = GroundUtil.GetGroundPosition(position, 0.05)
 
 	local part = Instance.new("Part")
@@ -80,12 +79,30 @@ function IncendiaryService.spawnPool(owner: Player, position: Vector3)
 	})
 end
 
-local function onHeartbeat()
-	if PauseService.isPaused() then
+-- `count` pools spaced evenly from `from` to `to` (the dash path).
+function IncendiaryService.spawnTrail(owner: Player, from: Vector3, to: Vector3, count: number)
+	if count <= 0 then
 		return
 	end
-	local cfg = Config.Items.Incendiary
+	for index = 1, count do
+		local alpha = if count > 1 then (index - 1) / (count - 1) else 0.5
+		IncendiaryService.spawnPool(owner, from:Lerp(to, alpha))
+	end
+end
+
+local function onHeartbeat()
 	local now = os.clock()
+	if PauseService.isPaused() then
+		local shift = now - lastStep
+		for _, pool in pools do
+			pool.expiresAt += shift
+			pool.nextTick += shift
+		end
+		lastStep = now
+		return
+	end
+	lastStep = now
+	local cfg = Config.Upgrades.FireTrail
 	for index = #pools, 1, -1 do
 		local pool = pools[index]
 		if now >= pool.expiresAt then
@@ -99,7 +116,6 @@ local function onHeartbeat()
 					local root = model:FindFirstChild("HumanoidRootPart") :: BasePart?
 					if humanoid and humanoid.Health > 0 and root then
 						if (root.Position - center).Magnitude <= cfg.Radius then
-							-- "fire" kind so a fire kill won't spawn another pool.
 							ItemEffectService.dealDamage(
 								pool.owner,
 								humanoid,
@@ -129,10 +145,7 @@ function IncendiaryService.init()
 	poolFolder = Instance.new("Folder")
 	poolFolder.Name = "FirePools"
 	poolFolder.Parent = workspace
-
-	ItemEffectService.setFirePoolSpawner(function(owner: Player, position: Vector3)
-		IncendiaryService.spawnPool(owner, position)
-	end)
+	lastStep = os.clock()
 	RunService.Heartbeat:Connect(onHeartbeat)
 end
 

@@ -1,9 +1,10 @@
 --!strict
 -- Hold Position objective V1: one zone appears mid-run, progress accumulates
--- while any player stands inside (pauses outside, never resets), pays out XP
--- once on completion, and never repeats.
+-- while any player stands inside (pauses outside, never resets), pays
+-- Config.Objective.SupplyReward into the Resupply pool once on completion, and never
+-- repeats. An upgrade crate (field upgrades, RequisitionService.dropCrate) lands at the
+-- site when the zone appears: the Primary is the one guaranteed upgrade source of a run.
 
-local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
@@ -13,7 +14,6 @@ local DifficultyService = require(script.Parent.DifficultyService)
 local EnemyService = require(script.Parent.EnemyService)
 local PauseService = require(script.Parent.PauseService)
 local RequisitionService = require(script.Parent.RequisitionService)
-local XPService = require(script.Parent.XPService)
 local Squad = require(script.Parent.Squad)
 
 local ObjectiveService = {}
@@ -101,10 +101,7 @@ local function complete()
 		zonePart = nil
 	end
 
-	for _, player in Players:GetPlayers() do
-		XPService.addXP(player, Config.Objective.XPReward)
-	end
-	RequisitionService.addRequisition(Config.Objective.XPReward)
+	RequisitionService.addRequisition(Config.Objective.SupplyReward)
 
 	objectiveRemote:FireAllClients("completed", Config.Objective.RequiredSeconds)
 	print("[ObjectiveService] Objective complete -> extraction")
@@ -162,6 +159,17 @@ local function activate()
 	if DifficultyService.getElapsed() >= Config.Objective.PressureBruteAfter then
 		EnemyService.spawnWave("Brute", 1, Config.Objective.ZonePosition)
 	end
+	-- The site crate: field upgrade cards facing the nearest living member (quiet: the
+	-- pressure wave above is the fight).
+	local center = Config.Objective.ZonePosition
+	local nearest = Squad.nearestLiving(center)
+	local nearestRoot = nearest and nearest.root
+	local facing = if nearestRoot
+		then Vector3.new(nearestRoot.Position.X - center.X, 0, nearestRoot.Position.Z - center.Z)
+		else Vector3.zAxis
+	task.spawn(function()
+		RequisitionService.dropCrate(center, facing, "upgrade", false)
+	end)
 	print("[ObjectiveService] Objective active")
 	for _, listener in activationListeners do
 		listener()

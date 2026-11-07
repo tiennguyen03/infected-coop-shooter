@@ -12,7 +12,7 @@ Harlan Control inserts the squad ("Pike") by helo ("Lantern") into a district of
 quarantine corridor ahead of its scheduled fire mission, **the Burn**. Each district is one
 **sortie**: Control gives a **Primary** objective drawn from the stage's pool and two
 optional **Secondaries**. The squad explores, loots the position's abandoned **stores**,
-earns **Resupply** pallets and levels while the difficulty clock runs. Completing the
+earns **Resupply** pallets and **field upgrades** while the difficulty clock runs. Completing the
 Primary calls the district's **Index** host (the boss). When the squad is ready it pops
 green smoke and Lantern takes 90 seconds to arrive; the squad holds the LZ and boards. Three
 sorties (Delta, Mile 14, Kestrel) make an **operation**. Boarding at Kestrel is **Stand
@@ -30,7 +30,7 @@ One stage is a **sortie** (Control's word; decided 2026-11-06).
 | Step | What happens | Today |
 |---|---|---|
 | Insert | Lantern lands at the stage pad; squad spawns; Control reads the Primary, the Secondaries and the Burn timer (`Operation.MissionTimer`, 14:00) | spawn at a fixed point |
-| Explore | Loot stores, earn Resupply, level; clock runs (`Config.Difficulty`) | Resupply shipped 2026-11-07 (no stores yet) |
+| Explore | Loot stores, earn Resupply, find field upgrades; clock runs (`Config.Difficulty`) | Resupply and the loadout shipped 2026-11-07 (no stores yet) |
 | Primary | One of the stage's pool, placed at one of its three sites or a named landmark; the squad starts it when ready | hold zone appears at one spot after 180 s |
 | Index | Completing the Primary calls the boss from its canon entry | pressure wave, no boss |
 | Call the bird | Green smoke at a pad; Lantern inbound 90 s; squad holds the LZ; everyone inside boards, anyone outside is left (Dead for the sortie) | 30 s hold, run ends |
@@ -40,45 +40,70 @@ One stage is a **sortie** (Control's word; decided 2026-11-06).
 Failure: squad all dead = sortie lost, operation over; containment from sorties already
 extracted still counts. The Burn running out does not end the run (see Operation).
 
-## Resupply (replaces the level-up draft)
+## Loadout, pallets and field upgrades (spine v1, shipped 2026-11-07)
 
-The pause-and-pick-three level-up is gone. Kills still level the player, but a level is
-automatic growth; the draft moves into the world.
+Power comes from the loadout, not from in-run growth: the Helldivers 2 model with one
+Hades-style twist (field upgrades). The Risk of Rain item economy, XP orbs and levels are
+gone (`docs/sprints/SPRINT_18_LOADOUT.md`). Lore names on the HUD ([LORE.md](LORE.md)).
 
-- **Pool.** One run-wide Resupply meter on every HUD, fed by base orb XP once per orb
-  (XP itself stays shared per decision #2). Cost rises per drop run-wide and scales with
-  player count. New `Config.Requisition`: `BaseCost 450`, `CostGrowth 1.35`, `CostCap 3000`,
-  `CostPerExtraPlayer 0.8`, `BeaconCooldown 20`, `DropDelay 20`, `CardLifetime 60`,
-  `CarryOver true`. Target cadence: 6–7 drops per 12-minute sortie, 1 or 4 players.
-- **The red flare.** Any player throws it (35 studs, same arc as the breach charge) when the
-  pool covers the cost. HUD: "SUPPLY 0:20" and the thrower's name. Never call it a beacon
-  (item 3 is the Drone Beacon).
-- **The lure.** For the 20 s descent the Infected inside `LureRadius 120` walk to the flare,
-  not the player. The pallet lands loud: `Wave 10` (+3 per extra player) spawns in a 25–35
-  stud ring, phase-weighted, and spawn interval x0.7 for 30 s. The decision is *where and
-  when*: throw early at a defensible spot, or throw mid-fight and loot under fire.
-- **The pallet.** One crate, personal cards: each player sees their own three cards at the
-  crate (server rolls per player), walks into one to take it, the other two fade. One pick
-  per player per pallet; unpicked cards vanish at 60 s. Kill feed announces picks.
-- **Automatic level growth.** New `Config.Progression`: `HealthPerLevel 3`,
-  `DamagePerLevel 0.03`, `MaxLevel 40`. XP curve unchanged (100 x 1.25). Level-up is a sound
-  and a HUD pulse, no freeze. `PauseService` leaves gameplay.
+- **Loadout.** A Chosen is a weapon, Q dash, E breach, the Momentum passive and two
+  **call-in** slots on keys 1 and 2, chosen before the drop (the dev panel today, the Armory
+  later). The rifle (`WeaponDefinitions.service_rifle`, from `Config.Weapon`) has a
+  30-round magazine and a 120-round reserve: R reloads (2.2 s; a roll, a slide or going
+  down cancels it), an empty magazine refuses the shot and asks for a reload. The server
+  owns the magazine (`LoadoutService`).
+- **Call-ins** (`CallInDefinitions`, numbers in `Config.CallIns`; no friendly fire). Each
+  slot holds charges that refill one at a time:
+
+  | Key | Lore name | Tool | Charges / cooldown | What it does |
+  |---|---|---|---|---|
+  | 1 (default) | **Magpie** | Drone Beacon | 1 / 90 s | thrown 35 studs; two of Lantern's quadcopters follow the thrower 30 s, Damage 6 every 0.6 s, range 60 |
+  | 2 (default) | **Tripline** | Mines | 2 / 60 s | thrown; 6 charges on an 8-stud arc bulging away from you; trigger 5, blast 10, Damage 80, 90 s |
+  | swap-in | **Anvil** | Fire Mission | 1 / 150 s | thrown marker; after 3 s the battery lands 3 shells 1 s apart, Damage 80 in 12 studs |
+  | swap-in | **Pen Coil** | Shock Coil | 2 / 25 s | pulse around you: Damage 25 and a 0.4x slow for 3 s inside 14 studs |
+
+- **Pallets are tactical.** The Resupply pool (one meter on every HUD) is fed by every
+  kill's `SupplyValue` at any distance (Walker 10, Runner 12, Hocker 18, Brute 35) and by the
+  Primary (`Objective.SupplyReward 500`); the meter pulses on a kill. When it covers the cost
+  (`Requisition.BaseCost 500`, x1.35 per drop, cap 3000, +80% per extra player) any living
+  player throws the red flare (key 3, 35 studs); for 20 s the Infected inside 120 studs walk
+  to the flare, then the pallet lands loud (`Lure.Wave 10` +3 per extra player, spawn
+  interval x0.7 for 30 s). **The pallet is the ammo box**: every living player who walks
+  within `RearmRadius 6` is re-armed once (full magazine and reserve). Its three cards are
+  the same for everyone (`Crates.SupplyCards`): **Medkit** (full heal), **Restock** (both
+  call-in slots full), **Armour Plate** (+50 shield soaked before health, cap 100). One pick
+  per player per pallet, cards vanish at 60 s. No rarity, no upgrades from pallets.
+- **Field upgrades** (`UpgradeDefinitions`, flags on `LoadoutService`, numbers in
+  `Config.Upgrades`). Six slots, one per tool (Dash, Breach, Rifle, Kit, call-in A, call-in
+  B); a new pick in a filled slot replaces it. Sources: the Primary's site crate (lands when
+  the hold zone appears; shows 3 you can still take), later Stores and Secondary crates and
+  the Index pallet (3-5 per sortie). Each changes how a tool works, never a percentage:
+
+  | Slot | Lore name | Effect |
+  |---|---|---|
+  | Dash | Flare Straps | the dash leaves 3 fire pools (radius 6, 8/s for 5 s) |
+  | Dash | Smoke Dash | Infected melee cannot find you for 1.5 s after the dash |
+  | Breach | Bait Charge | the breach charge lures the Infected inside 18 studs for a 3 s fuse |
+  | Rifle | Through-and-Through | a round carries into the next Infected |
+  | Rifle | Hollow Point | the hit Infected stops for 0.6 s |
+  | Kit | Combat Reload | reload is instant at 5 Momentum |
+  | Kit | Last Stand | fire from the ground while downed (hip, spread x2) |
+  | Kit | Spare Tourniquet | stand up on your own 4 s after going down, once per sortie, no revive spent |
+  | Anvil | Walk It In | 5 shells stepping 8 studs along the throw |
+  | Magpie | Last Flight | the drones stay with a downed owner, their clock paused |
+  | Tripline | Daisy Chain | press 2 again to blow every armed mine (no charge) |
+  | Pen Coil | Ground Strap | the pulse stands up every downed squadmate in reach |
+
+- **Flat threat curve.** `Config.Difficulty` health and damage at 1x; pressure is the spawn
+  interval decay (0.93/min to 1.0 s), the max-alive schedule (10 / 14 / 20 / 26, late 30),
+  the phase mix (Walker-only to W38 R30 B16 H16) and the player count
+  (`Config.PlayerCountScaling`: spawn interval x0.8, +3 alive and +1 heavy per extra
+  living player, hard cap 44). `Config.Overrun` is reserved for the Burn.
 - **Stores.** Free crates at the position's abandoned stock (Depot containers, Ridge
   armoury; convoy trucks, Rest Stop back room; pharmacy, triage stores). Hold E 3 s to open,
-  which is loud.
-- **Priority pallet.** An Index kill drops a pallet at the corpse, never Common.
-
-| Source (`Config.Crates`) | Common | Uncommon | Legendary | Guarantee |
-|---|---|---|---|---|
-| Requisition | 70 | 25 | 5 | every 4th drop has an Uncommon |
-| Stores (POI) | 55 | 38 | 7 | none |
-| Secondary | 40 | 50 | 10 | one Uncommon |
-| Boss | 0 | 90 | 10 | never Common; 80/20 once there are 3+ Legendaries |
-
-Config moves: `Items.ChoicesPerLevel` → `Crates.CardsPerPlayer`; `RarityGuaranteeEvery` →
-`Crates.GuaranteeEvery`; `ItemRarities.*.Weight` → `Crates.Requisition`. Flag: the
-Legendary pool is one item (Air Support); two more Legendaries before any source rolls it
-above 5%.
+  which is loud. Not built.
+- **Priority pallet.** An Index kill drops a pallet at the corpse: re-arm, full heal, three
+  upgrade cards each. Not built.
 
 ## Operation: the Burn, extraction, scoring
 
@@ -146,9 +171,9 @@ survive, reach.
 | Silence the Alarm | "Something's still running the alarm at the Gate. It's drawing them." | hold E on the looping sound source | Delta siren; Mile 14 bus horn; Kestrel PA | spawn rate drops in its radius |
 | Lights On | "Depot generator's intact. Get the lights on." | hold E 8 s at a generator | Delta Depot; Mile 14 Toll Plaza; Kestrel Field | the district's lamps light (preview of Held) |
 | Light the Pad | "There's a second pad on the Depot apron. Mark it." | hold E at a marked pad | Delta Depot; Mile 14 Rest Stop; Kestrel Triage Lot | extraction can be called there |
-| Sample Run | "Control wants tissue from a heavy host. Bag one." | kill the marked Brute/Bloat, hold E on the corpse, carry (no sprint) to the LZ | all | next pallet gets the Boss rarity shift |
+| Sample Run | "Control wants tissue from a heavy host. Bag one." | kill the marked Brute/Bloat, hold E on the corpse, carry (no sprint) to the LZ | all | the next Requisition pallet shows 3 field-upgrade cards |
 | Headcount | "Control has 212 names from the Delta roster. Confirm what's left." | reach and interact at the stage's 3 story spots | all | lore delivery, moves the player (pillar 1) |
-| Clear the Spitters | "Hockers on the Overpass are shelling the toll lane." | kill N of one form before a short timer | Mile 14, Delta late | XP burst |
+| Clear the Spitters | "Hockers on the Overpass are shelling the toll lane." | kill N of one form before a short timer | Mile 14, Delta late | Resupply burst |
 | Misdrop | "Lantern put a pallet in the Suburb. It's yours if you get there first." | reach a crate in an outer district within 4 min | all | the crate is the reward |
 | Sealed Bus | "Bus 7 reads NEG on the manifest. Confirm it." | hold E on a chained bus; Runner burst; kill all | Delta Gate, Mile 14 the Jam | dark beat (it was never NEG) |
 | Recover Logs | "Toll booth recorder is still live. Pull it." | walk-in pickup at one story spot | all | codex entry |
@@ -265,7 +290,7 @@ form gets its own limb set (lore developer + [STYLES.md](STYLES.md) first), Hock
 |---|---|---|---|---|
 | Walker | slow melee | still a person, grey, old wounds closed | S1 | exists |
 | Runner | fast melee | dense rebuilt muscle, tendons like cable | S1 | exists |
-| Brute | melee tank | bone overgrowth, plated shoulders | S1 | exists; headshot x1.25 (plated skull), no weak point |
+| Brute | melee tank | bone overgrowth, plated shoulders | S1 | exists; 260 HP, headshot x1.25 (plated skull), no weak point |
 | Hocker | ranged | lobs caustic fluid; throat a swollen sac | S1 late | shipped 2026-11-06 (Walker body + sac; own mesh first in the redesign) |
 | Bloat | exploder, area denial | gas-swollen, pale belly, veins showing | S2 Index, common S3 | on-death cloud |
 | Shedder | splitter | body seamed into segments, extra limbs | S3 | on-death spawns 2–3 Crawlers |
@@ -284,11 +309,13 @@ flag with each shot and the server picks the cone.
 **Hitscan and headshots shipped 2026-11-07.** The rifle no longer flies a projectile: the
 server raycasts once per shot (`Weapon.Range 400`) and the damage lands the same frame;
 tracers are client-drawn (`Weapon.TracerDuration`, own shots instantly, others' shots via
-the `ShotTracer` remote). A `Head` hit deals `Weapon.HeadshotMultiplier 2.0` (the Brute's
+the `ShotTracer` remote). A `Head` hit deals `Weapon.HeadshotMultiplier 3.0` (the Brute's
 definition overrides to 1.25, bone overgrowth) and arrives as damage kind `"headshot"`:
 white, larger number and a sharper placeholder sound until the sound day. Drones still fly
-projectiles. Shots to kill at clock 0: Walker 3 body / 2 head, Runner 2 / 1, Hocker 4 / 2,
-Brute 14 / 11.
+projectiles. Realistic time-to-kill since the loadout rework (`Weapon.Damage 20`, flat
+curve): Walker 3 body / 1 head, Runner 2 / 1, Hocker 4 / 2, Brute 13 / 11. Bots fire the
+same rifle at a third of the rate (`Bots.FireCooldown 0.45`) with the same magazine and an
+infinite reserve, and use `ProjectileServer.hitMultiplier` so the Brute's plate applies.
 
 ## Technical plan (debt first, then content)
 
@@ -296,14 +323,19 @@ Brute 14 / 11.
    `StandOff`, `Windup`, `Projectile` + `Puddle`), `BodySet`, `ThroatSac`; caps keyed by
    type; `EnemyProjectileService` owns lobs, puddles and `damagePlayer`. Still to add as
    forms need them: `onDeath` (cloud | split), `mover` (none | flyer), `HeadshotMultiplier`.
-2. **Resupply.** Done 2026-11-07: `RequisitionService` (pool fed once per orb and per
-   objective, cost curve, F throws the flare through `ThrowUtil`, lure via
-   `EnemyService.setLure`, pallet tween + `spawnMixedWave`, personal card rolls, pick
-   validation by distance), `Config.Requisition / Crates / Progression`, `ItemService`
-   reduced to inventories + `rollChoices(weights)`, automatic level growth in
-   `PassiveItemService`, client `ResupplyUI` (meter above the HP bar, world cards as
-   billboards on local anchor parts, walk-in pick). The level-up pause is gone; `PauseService`
-   now only freezes the run end. Not yet: stores crates, boss pallet, pallet/rotor sounds.
+2. **Resupply and the loadout.** Done 2026-11-07 (Resupply, then the loadout rework the
+   same day: `docs/sprints/SPRINT_18_LOADOUT.md`). `RequisitionService` (pool fed by every
+   kill's `SupplyValue` through an `EnemyService` kill listener and by the objective, cost
+   curve, key 3 throws the flare through `ThrowUtil`, lure via `EnemyService.setLure`,
+   `dropCrate(position, facing, kind, loud)` for pallets and upgrade crates, re-arm within
+   `RearmRadius`, supply or upgrade card offers, pick validation by distance);
+   `LoadoutService` (weapon + magazine, call-in slots, six upgrade slots, shield);
+   `CallInService` (charges, the `CallIn` remote, dispatch to `DroneService` / `MineService`
+   / `AirStrikeService` / `ShockCoilService`); `WeaponDefinitions`, `CallInDefinitions`,
+   `UpgradeDefinitions`; client `LoadoutUI` (ammo counter, loadout strip), `ResupplyUI`
+   (meter above the HP bar, world cards as billboards on local anchor parts, walk-in pick).
+   `PauseService` only freezes the run end. Not yet: stores crates, boss pallet, the
+   Armory, pallet/rotor sounds.
 3. **ADS and headshots.** Small; slots anywhere after 2.
 4. **Run state machine + Operation.** `RunManager` owns `Insert → Explore → Primary → Index
    → Extract → (next sortie | Stand Down | Second Pass)` per run with stage index and pass
@@ -324,8 +356,8 @@ Brute 14 / 11.
    Shedder/Crawler + Patient, Stand Down and Second Pass, stages 4 and 5.
 
 Build order: 2 → 3 → 4 → 5 (on Delta) → 6 → 7 → 8. Each step is one playtest-verified
-feature. Co-op Sprint B (player-count scaling, shared-pickup rules, event routing) threads
-through 4–7 as each system is touched.
+feature. Co-op Sprint B (shared-pickup rules, event routing) threads through 4–7 as each system is
+touched; player-count scaling shipped with the loadout rework (`Config.PlayerCountScaling`).
 
 First playtest of Resupply logs per drop: clock minute, pool minus cost at throw (always ~0
 means no "when" decision exists), distance from the previous drop, seconds to last pick,
@@ -333,37 +365,29 @@ deaths within 30 s. Targets: 5–7 drops per 12 min solo, picks within 20 s, at 
 per three drops, consecutive drops 60+ studs apart. Fixes if missed: an overflow bonus
 (throw at 1.5x cost for a fourth card); or `Wave 14`, `LureRadius 160` if drops camp a corner.
 
-## The spine (decided by the owner 2026-11-07)
+## The spine (decided by the owner 2026-11-07; v1 shipped the same day)
 
 Power comes from the loadout, not from in-run stat growth: the Helldivers 2 model, with
-one Hades-style twist. Replaces the Risk of Rain item economy above where they conflict;
-the Resupply flare, pallet and lure stay.
+one Hades-style twist. The section *Loadout, pallets and field upgrades* above is the
+shipped shape; this is the order and what is still open.
 
-- **Loadout.** A Chosen is a weapon, two abilities and a passive (docs/CHARACTERS.md), plus
-  two **call-in** slots chosen before the drop. The active items already built (Air Support,
-  Drone Beacon, Mines, Shock Coil, Plague Rat) become call-ins; passive stat items leave the
-  drop pool (delete or fold into field upgrades).
-- **Pallets are tactical.** Ammo, heals, call-in refills; the flare decision is survival.
-- **Field upgrades.** Three or four per sortie from pallets, Stores and Secondaries, each
-  big and legible: it changes how an ability or call-in works (a dash that leaves fire, a
-  breach charge that pulls), never a percentage. Pick one of three.
-- **Flat threat curve.** No per-minute health growth. Difficulty is the stage, the form mix
-  and the hold; the Infected get scarier by composition.
-- **Meta between runs.** Containment Board plus unlocks: call-ins, Chosen, field upgrades.
-- **Bot squadmates.** In single player the other Chosen fill the squad as server-side AI
-  (follow, shoot, use a call-in, revive, die); a real player joining replaces a bot. Built on
-  the same squad-member abstraction as Co-op Sprint A so every system that keys on a player
-  (targets, XP, downed state, spawn pads) sees a bot the same way.
-- **Bots v1 shipped 2026-11-07, ahead of the rest of Sprint A** (owner: solo was boring to
-  test): `server/BotService` on `server/Squad`, `Config.Bots`. Follow in formation, shoot
-  the nearest visible Infected, respawn after 10 s. No downed/revive, call-ins or vaulting yet.
-- **Order.** Co-op Sprint A (run state machine with squad members) → bots → loadout rework
-  (call-ins, pallets, field upgrades, flat curve) → the Warden → objective pools → Mile 14.
+- **Meta between runs.** Containment Board plus unlocks: call-ins, Chosen, field upgrades,
+  the Armory (weapon families with variants: launch 5 primaries + 3 sidearms, 4 throwables,
+  2 heavy call-ins, 2 specials; +3-4 guns per drop). Not built: every call-in is unlocked
+  from run 1 and the dev panel swaps slots.
+- **Bot squadmates.** Shipped 2026-11-07 (`server/BotService` on `server/Squad`,
+  `Config.Bots`): follow in formation, shoot the nearest visible Infected with the service
+  rifle's magazine, revive, respawn after 10 s. Not yet: call-ins, vaulting.
+- **Order.** Co-op Sprint A → bots → loadout rework (done) → the Warden → objective pools →
+  Mile 14.
 
 The 2026-11-07 systems-designer numbers for the old economy (doubled item magnitudes,
-`Requisition.CostCap` 2000, additive-stacking fix in `PlayerStatsService`) are not applied;
-two of its findings carry over: pallets must keep landing through the Index window, and
-chosen upgrades must outscale automatic growth.
+`Requisition.CostCap` 2000, additive-stacking fix in `PlayerStatsService`) were never
+applied; the economy they tuned is gone. Two findings carry over: pallets must keep landing
+through the Index window, and chosen upgrades must stay legible next to the flat curve.
+Cut with the rework: Plague Rat (tone, invisible damage, perf), every stat item, Vampire
+Rounds, Shrapnel, Hunter's Mark, Scavenger Pouch; the Rats call-in from the lore pass is
+open for a later Armory page.
 
 ## Backlog (decided, not scheduled)
 
@@ -372,7 +396,8 @@ chosen upgrades must outscale automatic growth.
   (`assets/audio/README.md > Banks`); still to generate: Control's radio lines, Lantern's
   rotor, the Burn, the pickup and item one-shots.
 - **Infected visual redesign.** Own limb sets per form, Hocker first; hollow breach ring.
-- **Field Manual** only speeds the owner's levels now; weak, rework later.
+- **Hollow Point tuning.** The stagger lands on every hit; watch for chain-stunning a Brute
+  at 6.7 rounds/s (shorten `Upgrades.HollowPoint.StaggerSeconds` or add a per-body gap).
 
 ## Open questions (for the owner)
 

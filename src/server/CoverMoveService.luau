@@ -4,25 +4,31 @@
 -- the "CoverMoveUntil" attribute (server os.clock), in which Infected melee skips that body
 -- (EnemyService.attackIfTouching). Ranged attacks still land. Windows are capped at the
 -- configured move duration and can't be chained without a gap, so the remote can't buy
--- standing immunity. State is per player and dropped on PlayerRemoving.
+-- standing immunity. State is per player and dropped on PlayerRemoving. Every move (and a
+-- slide, which buys no window) drops a reload in progress (LoadoutService.cancelReload).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
+local LoadoutService = require(script.Parent.LoadoutService)
 
 local CoverMoveService = {}
 
 local windowEnds: { [Player]: number } = {}
 
 local function onCoverMove(player: Player, kind: unknown)
-	if kind ~= "vault" and kind ~= "climb" and kind ~= "roll" then
+	if kind ~= "vault" and kind ~= "climb" and kind ~= "roll" and kind ~= "slide" then
 		return
 	end
 	local character = player.Character
 	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
 	if not character or not humanoid or humanoid.Health <= 0 then
+		return
+	end
+	LoadoutService.cancelReload(player)
+	if kind == "slide" then
 		return
 	end
 	local settings = Config.Movement

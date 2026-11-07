@@ -6,21 +6,25 @@
 -- Invoke from the client DevTestPanel (creator), or directly via the Studio
 -- MCP runtime eval, e.g.:
 --   require(game.ServerScriptService.Server.DevTestService).spawnEnemy("Brute", 1)
+-- Loadout rework (2026-11-07): SetCallIn / GiveUpgrade / ClearUpgrades / RefillAmmo /
+-- RestockCallIns / SetWeapon / DropUpgradeCrate / DropSupplyCrate drive LoadoutService,
+-- CallInService and RequisitionService directly.
 
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
-local Config = require(ReplicatedStorage.Shared.Config)
-local ItemDefinitions = require(ReplicatedStorage.Shared.ItemDefinitions)
+local CallInDefinitions = require(ReplicatedStorage.Shared.CallInDefinitions)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
+local UpgradeDefinitions = require(ReplicatedStorage.Shared.UpgradeDefinitions)
+local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
+local CallInService = require(script.Parent.CallInService)
 local EnemyService = require(script.Parent.EnemyService)
-local ItemEffectService = require(script.Parent.ItemEffectService)
-local ItemService = require(script.Parent.ItemService)
+local LoadoutService = require(script.Parent.LoadoutService)
 local PlayerStatsService = require(script.Parent.PlayerStatsService)
+local RequisitionService = require(script.Parent.RequisitionService)
 local RunManager = require(script.Parent.RunManager)
-local XPService = require(script.Parent.XPService)
 
 local CREATOR_USER_ID = 67169996
 local ENEMY_TAG = "Enemy"
@@ -37,14 +41,13 @@ local function folderCount(name: string): number
 	return if folder then #folder:GetChildren() else 0
 end
 
--- Accepts the snake_case id ("ricochet_rounds") or a loose alias
--- ("RicochetRounds", "Ricochet Rounds").
-local function resolveItemId(input: string): string?
-	if ItemDefinitions[input] then
+-- Accepts a snake_case id ("fire_trail") or a loose alias ("FireTrail", "Fire Trail").
+local function resolveId(rows: { [string]: any }, input: string): string?
+	if rows[input] then
 		return input
 	end
 	local normalized = string.lower((input:gsub("[%s_]", "")))
-	for id in ItemDefinitions do
+	for id in rows do
 		if string.lower((id:gsub("_", ""))) == normalized then
 			return id
 		end
@@ -56,81 +59,39 @@ end
 -- Commands
 ----------------------------------------------------------------------
 
-function DevTestService.giveXP(amount: number, player: Player)
-	local target: Player? = player
-	if target then
-		XPService.addXP(target, amount)
-		print(`[DevTest] GiveXP {amount} -> {target.Name}`)
-	end
-end
-
-function DevTestService.forceLevelUp(player: Player)
-	local target: Player? = player
-	if not target then
+function DevTestService.setCallIn(player: Player, slot: number, callInId: string)
+	local resolved = resolveId(CallInDefinitions.Rows, callInId)
+	if not resolved or not LoadoutService.setCallIn(player, slot, resolved) then
+		warn(`[DevTest] SetCallIn: unknown call-in '{callInId}' or slot {slot}`)
 		return
 	end
-	local xp = (target:GetAttribute("XP") :: number?) or 0
-	local required = (target:GetAttribute("XPRequired") :: number?) or 100
-	XPService.addXP(target, math.max(required - xp, 1))
-	print(`[DevTest] ForceLevelUp -> {target.Name}`)
+	print(`[DevTest] SetCallIn {slot} = {resolved} -> {player.Name}`)
 end
 
-function DevTestService.grantItem(itemId: string, stacks: number?, player: Player)
-	local target: Player? = player
-	local resolved = resolveItemId(itemId)
-	if not target or not resolved then
-		warn(`[DevTest] GrantItem: unknown item '{itemId}'`)
+function DevTestService.giveUpgrade(player: Player, upgradeId: string)
+	local resolved = resolveId(UpgradeDefinitions.Rows, upgradeId)
+	if not resolved or not LoadoutService.giveUpgrade(player, resolved) then
+		warn(`[DevTest] GiveUpgrade: '{upgradeId}' unknown or not applicable to this loadout`)
 		return
 	end
-	for _ = 1, stacks or 1 do
-		ItemService.addItem(target, resolved)
-	end
-	print(`[DevTest] GrantItem {resolved} x{stacks or 1} -> {target.Name}`)
+	print(`[DevTest] GiveUpgrade {resolved} -> {player.Name}`)
 end
 
--- Clears inventory and every active item effect for a live player without
--- restarting the run (stats return to normal).
-function DevTestService.clearItems(player: Player)
-	local target: Player? = player
-	if not target then
-		return
-	end
-	ItemService.resetPlayer(target)
-	ItemEffectService.resetPlayer(target)
-	PlayerStatsService.resetPlayer(target)
-	DevTestService.clearItemObjects()
-
-	local humanoid = getHumanoid(target)
-	if humanoid then
-		humanoid.MaxHealth = Config.Player.MaxHealth
-		humanoid.Health = math.min(humanoid.Health, humanoid.MaxHealth)
-	end
-	print(`[DevTest] ClearItems -> {target.Name}`)
+-- Clears every field upgrade and the stat bonuses for a live player without restarting.
+function DevTestService.clearUpgrades(player: Player)
+	LoadoutService.clearUpgrades(player)
+	PlayerStatsService.resetPlayer(player)
+	DevTestService.clearCallInObjects()
+	print(`[DevTest] ClearUpgrades -> {player.Name}`)
 end
 
--- Destroys item-spawned world objects (drones, fire pools, mines). Used by
--- ClearItems; each service owns its own reset.
-function DevTestService.clearItemObjects()
+-- Destroys call-in world objects (drones, fire pools, mines, strike markers).
+function DevTestService.clearCallInObjects()
 	require(script.Parent.DroneService).reset()
 	require(script.Parent.IncendiaryService).reset()
 	require(script.Parent.MineService).reset()
 	require(script.Parent.ShockCoilService).reset()
-end
-
-function DevTestService.simulateItemOffers(count: number)
-	local tally =
-		require(script.Parent.ItemService).simulateOffers(count, Config.Crates.Weights.Requisition)
-	local total = tally.Common + tally.Uncommon + tally.Legendary
-	print(
-		string.format(
-			"[DevTest] SimulateItemOffers %d: Common %.1f%% / Uncommon %.1f%% / Legendary %.1f%%",
-			count,
-			tally.Common / total * 100,
-			tally.Uncommon / total * 100,
-			tally.Legendary / total * 100
-		)
-	)
-	return tally
+	require(script.Parent.AirStrikeService).reset()
 end
 
 function DevTestService.forceObjectiveComplete()
@@ -173,6 +134,21 @@ function DevTestService.restartRun(player: Player)
 	end
 end
 
+-- Drops a crate of `kind` in front of the player (quiet: no wave).
+function DevTestService.dropCrate(player: Player, kind: "supply" | "upgrade")
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if not root then
+		return
+	end
+	local look = root.CFrame.LookVector
+	local flat = Vector3.new(look.X, 0, look.Z)
+	flat = if flat.Magnitude > 0.01 then flat.Unit else Vector3.zAxis
+	local at = root.Position + flat * 12
+	task.spawn(RequisitionService.dropCrate, at, -flat, kind, false)
+	print(`[DevTest] Drop {kind} crate -> {player.Name}`)
+end
+
 function DevTestService.printRunState(): { [string]: any }
 	local zone = workspace:FindFirstChild("ObjectiveZone")
 
@@ -192,13 +168,14 @@ function DevTestService.printRunState(): { [string]: any }
 		walkerCount = EnemyService.count("Walker"),
 		runnerCount = EnemyService.count("Runner"),
 		bruteCount = EnemyService.count("Brute"),
+		hockerCount = EnemyService.count("Hocker"),
 		droneCount = folderCount("Drones"),
 		projectileCount = folderCount("Projectiles"),
-		xpOrbCount = folderCount("XPOrbs"),
-		ammoCacheCount = folderCount("AmmoCaches"),
 		firePoolCount = folderCount("FirePools"),
 		mineCount = folderCount("Mines"),
-		markedTargets = ItemEffectService.getActiveMarkCount(),
+		strikeEffectCount = folderCount("StrikeEffects"),
+		resupplyPool = workspace:GetAttribute("ResupplyPool"),
+		resupplyCost = workspace:GetAttribute("ResupplyCost"),
 		objectiveActive = workspace:GetAttribute("ObjectiveActive") == true,
 		objectiveZoneExists = zone ~= nil,
 	}
@@ -207,7 +184,7 @@ function DevTestService.printRunState(): { [string]: any }
 	for key, value in state do
 		print(string.format("  %s = %s", tostring(key), tostring(value)))
 	end
-	-- Every squad member (players and bots), then each player's own progress.
+	-- Every squad member (players and bots), then each player's own loadout.
 	local Squad = require(script.Parent.Squad)
 	for _, member in Squad.members() do
 		print(
@@ -221,15 +198,27 @@ function DevTestService.printRunState(): { [string]: any }
 		)
 	end
 	for _, player in Players:GetPlayers() do
+		local upgrades = {}
+		for _, slot in UpgradeDefinitions.SLOTS do
+			local id = player:GetAttribute("Upgrade" .. slot)
+			if typeof(id) == "string" and id ~= "" then
+				table.insert(upgrades, `{slot}={id}`)
+			end
+		end
 		print(
 			string.format(
-				"  player %s: level %s, xp %s/%s, kills %s, items %s",
+				"  player %s: %s mag %s/%s, kills %s, shield %s, call-ins %s(%s) %s(%s), upgrades [%s]",
 				player.Name,
-				tostring(player:GetAttribute("Level")),
-				tostring(player:GetAttribute("XP")),
-				tostring(player:GetAttribute("XPRequired")),
+				tostring(player:GetAttribute("Weapon")),
+				tostring(player:GetAttribute("Mag")),
+				tostring(player:GetAttribute("Reserve")),
 				tostring(player:GetAttribute("Kills")),
-				tostring(player:GetAttribute("ItemsCollected"))
+				tostring(player:GetAttribute("Shield")),
+				tostring(player:GetAttribute("CallIn1")),
+				tostring(player:GetAttribute("CallIn1Charges")),
+				tostring(player:GetAttribute("CallIn2")),
+				tostring(player:GetAttribute("CallIn2Charges")),
+				table.concat(upgrades, ", ")
 			)
 		)
 	end
@@ -250,12 +239,11 @@ function DevTestService.verifyCleanup(): { pass: boolean, leftovers: { string } 
 	check("enemies", #CollectionService:GetTagged(ENEMY_TAG))
 	check("drones", folderCount("Drones"))
 	check("projectiles", folderCount("Projectiles"))
-	check("XP orbs", folderCount("XPOrbs"))
-	check("ammo caches", folderCount("AmmoCaches"))
 	check("fire pools", folderCount("FirePools"))
 	check("mines", folderCount("Mines"))
-	check("plague rats", folderCount("PlagueRats"))
-	check("marked targets", ItemEffectService.getActiveMarkCount())
+	check("strike effects", folderCount("StrikeEffects"))
+	check("call-in effects", folderCount("CallInEffects"))
+	check("resupply objects", folderCount("Resupply"))
 	if workspace:FindFirstChild("ExtractionZone") then
 		table.insert(leftovers, "extraction zone still exists")
 	end
@@ -279,15 +267,18 @@ function DevTestService.verifyCleanup(): { pass: boolean, leftovers: { string } 
 				table.insert(leftovers, `{player.Name}: {stat} multiplier still {mult}`)
 			end
 		end
-		local humanoid = getHumanoid(player)
-		if humanoid and humanoid.MaxHealth > Config.Player.MaxHealth then
-			table.insert(
-				leftovers,
-				`{player.Name}: MaxHealth still {humanoid.MaxHealth} (shield leftover)`
-			)
+		local weapon = LoadoutService.getWeapon(player)
+		if (player:GetAttribute("Mag") :: number?) ~= weapon.MagazineSize then
+			table.insert(leftovers, `{player.Name}: magazine not full`)
 		end
-		if (player:GetAttribute("ItemsCollected") :: number?) ~= 0 then
-			table.insert(leftovers, `{player.Name}: item stacks remain`)
+		if ((player:GetAttribute("Shield") :: number?) or 0) ~= 0 then
+			table.insert(leftovers, `{player.Name}: shield remains`)
+		end
+		for _, slot in UpgradeDefinitions.SLOTS do
+			local id = player:GetAttribute("Upgrade" .. slot)
+			if typeof(id) == "string" and id ~= "" then
+				table.insert(leftovers, `{player.Name}: upgrade {id} remains in {slot}`)
+			end
 		end
 	end
 
@@ -308,17 +299,37 @@ end
 ----------------------------------------------------------------------
 
 local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
-	GiveXP = function(player, amount)
-		DevTestService.giveXP(tonumber(amount) or 100, player)
+	-- Loadout rework.
+	SetCallIn = function(player, slot, callInId)
+		DevTestService.setCallIn(player, tonumber(slot) or 1, tostring(callInId))
 	end,
-	ForceLevelUp = function(player)
-		DevTestService.forceLevelUp(player)
+	GiveUpgrade = function(player, upgradeId)
+		DevTestService.giveUpgrade(player, tostring(upgradeId))
 	end,
-	GrantItem = function(player, itemId, stacks)
-		DevTestService.grantItem(tostring(itemId), tonumber(stacks) or 1, player)
+	ClearUpgrades = function(player)
+		DevTestService.clearUpgrades(player)
 	end,
-	ClearItems = function(player)
-		DevTestService.clearItems(player)
+	RefillAmmo = function(player)
+		LoadoutService.refillAmmo(player)
+		print(`[DevTest] RefillAmmo -> {player.Name}`)
+	end,
+	RestockCallIns = function(player)
+		CallInService.refill(player)
+		print(`[DevTest] RestockCallIns -> {player.Name}`)
+	end,
+	SetWeapon = function(player, weaponId)
+		local id = tostring(weaponId)
+		if LoadoutService.setWeapon(player, id) then
+			print(`[DevTest] SetWeapon {id} -> {player.Name}`)
+		else
+			warn(`[DevTest] SetWeapon: unknown weapon '{id}' (have: {WeaponDefinitions.DEFAULT})`)
+		end
+	end,
+	DropUpgradeCrate = function(player)
+		DevTestService.dropCrate(player, "upgrade")
+	end,
+	DropSupplyCrate = function(player)
+		DevTestService.dropCrate(player, "supply")
 	end,
 	SpawnEnemy = function(_player, enemyType, count)
 		DevTestService.spawnEnemy(tostring(enemyType), tonumber(count) or 1)
@@ -363,13 +374,9 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 		DevTestService.forceMissionSuccess()
 	end,
 	FillResupply = function()
-		local service = require(script.Parent.RequisitionService)
 		local cost = (workspace:GetAttribute("ResupplyCost") :: number?) or 0
-		service.addRequisition(math.max(cost - service.getPool(), 0))
+		RequisitionService.addRequisition(math.max(cost - RequisitionService.getPool(), 0))
 		print("[DevTest] FillResupply -> pool covers the next flare")
-	end,
-	SimulateItemOffers = function(_player, count)
-		DevTestService.simulateItemOffers(tonumber(count) or 1000)
 	end,
 	-- Dev tools v2 (2026-11-07). Toggles answer with the new state in the output.
 	God = function(player)

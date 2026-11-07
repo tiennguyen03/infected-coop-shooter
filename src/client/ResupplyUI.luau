@@ -1,10 +1,11 @@
 --!strict
--- Resupply on the client: the HUD meter above the XP bar (pool / cost, "[F] FLARE" when it
--- covers the cost, the drop countdown while a pallet is inbound) and the world cards. When a
--- pallet lands the server sends this player their own three item ids and the three card
--- positions; this module stands a card at each as a billboard anchored to a local part and
--- picks the one the player walks into. Other players see their own cards at the same spots.
--- Nothing here pauses the game.
+-- Resupply on the client: the HUD meter above the HP bar (pool / cost, "[3] FLARE" when it
+-- covers the cost, the drop countdown while a pallet is inbound; a short pulse when a kill
+-- feeds the pool) and the world cards. When a crate lands the server sends this player
+-- their own card ids (supply cards on a pallet, field upgrades on an upgrade crate:
+-- UpgradeDefinitions) and the card positions; this module stands a card at each as a
+-- billboard anchored to a local part and picks the one the player walks into. Other
+-- players see their own cards at the same spots. Nothing here pauses the game.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -12,18 +13,21 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
-local ItemDefinitions =
-	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("ItemDefinitions"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
+local UpgradeDefinitions =
+	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("UpgradeDefinitions"))
 local SoundFX = require(script.Parent.SoundFX)
 
 local CARD_STUDS = Vector2.new(2.6, 3.4) -- billboard size in studs
 local AMBER = Color3.fromRGB(232, 181, 75)
 local READY = Color3.fromRGB(255, 120, 60)
 local DIM = Color3.fromRGB(20, 20, 20)
+local SUPPLY_COLOR = Color3.fromRGB(107, 122, 74)
+local UPGRADE_COLOR = Color3.fromRGB(63, 167, 214)
 local CALL_NOTICE_SECONDS = 3
+local GAIN_PULSE_SECONDS = 0.35
 
-type Card = { itemId: string, anchor: BasePart, position: Vector3 }
+type Card = { cardId: string, anchor: BasePart, position: Vector3 }
 type CrateCards = { id: number, cards: { Card }, pickSent: boolean }
 
 local ResupplyUI = {}
@@ -33,6 +37,8 @@ local fill: Frame
 local label: TextLabel
 local noticeUntil = 0
 local noticeText = ""
+local lastPool = 0
+local gainPulseUntil = 0
 local worldFolder: Folder
 local openCrates: { [number]: CrateCards } = {}
 
@@ -45,6 +51,10 @@ local function updateMeter()
 	local cost = (workspace:GetAttribute("ResupplyCost") :: number?) or 1
 	local dropIn = (workspace:GetAttribute("ResupplyDropIn") :: number?) or -1
 	local now = os.clock()
+	if pool > lastPool then
+		gainPulseUntil = now + GAIN_PULSE_SECONDS
+	end
+	lastPool = pool
 
 	if dropIn >= 0 then
 		fill.Size = UDim2.fromScale(1 - math.clamp(dropIn / Config.Requisition.DropDelay, 0, 1), 1)
@@ -60,9 +70,11 @@ local function updateMeter()
 		-- Ready: a slow pulse so the eye finds it without a pop-up.
 		local pulse = 0.5 + 0.5 * math.sin(now * 4)
 		fill.BackgroundColor3 = AMBER:Lerp(READY, pulse)
-		label.Text = "RESUPPLY READY   [F] FLARE"
+		label.Text = "RESUPPLY READY   [3] FLARE"
 	else
-		fill.BackgroundColor3 = AMBER
+		-- A kill just fed the pool: a brief brighten.
+		local gain = math.clamp((gainPulseUntil - now) / GAIN_PULSE_SECONDS, 0, 1)
+		fill.BackgroundColor3 = AMBER:Lerp(Color3.fromRGB(255, 230, 160), gain)
 		label.Text = `RESUPPLY {math.floor(pool)} / {cost}`
 	end
 end
@@ -74,7 +86,7 @@ local function createMeter()
 
 	local bar = Instance.new("Frame")
 	bar.AnchorPoint = Vector2.new(0.5, 1)
-	bar.Position = UDim2.new(0.5, 0, 1, -76) -- above the HP bar (-50) and the XP bar (-24)
+	bar.Position = UDim2.new(0.5, 0, 1, -50) -- above the HP bar (-24)
 	bar.Size = UDim2.fromOffset(420, 18)
 	bar.BackgroundColor3 = DIM
 	bar.BackgroundTransparency = 0.35
@@ -97,7 +109,7 @@ local function createMeter()
 	label = Instance.new("TextLabel")
 	label.Size = UDim2.fromScale(1, 1)
 	label.BackgroundTransparency = 1
-	label.Text = "RESUPPLY 0 / 450"
+	label.Text = `RESUPPLY 0 / {Config.Requisition.BaseCost}`
 	label.TextColor3 = Color3.fromRGB(235, 235, 235)
 	label.TextScaled = true
 	label.Font = Enum.Font.GothamBold
@@ -110,36 +122,42 @@ end
 -- World cards
 ----------------------------------------------------------------------
 
-local function buildCardFace(parent: BillboardGui, itemId: string, ownedStacks: number)
-	local definition = ItemDefinitions[itemId]
-	local rarityName = definition.Rarity or "Common"
-	local rarity = Config.ItemRarities[rarityName] or Config.ItemRarities.Common
-	local rarityColor = rarity.Color
+-- The kind tag line: "SUPPLY" on a pallet card, the upgrade's slot on a field upgrade.
+local function kindLine(definition: UpgradeDefinitions.CardDefinition): (string, Color3)
+	if definition.Kind == "supply" then
+		return "SUPPLY", SUPPLY_COLOR
+	end
+	local slot = definition.Slot or "UPGRADE"
+	if definition.Slot == "CallIn" then
+		slot = definition.CallIn or "CallIn"
+	end
+	return string.upper(`{slot} UPGRADE`), UPGRADE_COLOR
+end
+
+local function buildCardFace(parent: BillboardGui, definition: UpgradeDefinitions.CardDefinition)
+	local kindText, kindColor = kindLine(definition)
 
 	local card = Instance.new("Frame")
 	card.Size = UDim2.fromScale(1, 1)
-	card.BackgroundColor3 = rarityColor:Lerp(Color3.fromRGB(28, 30, 34), 0.82)
+	card.BackgroundColor3 = kindColor:Lerp(Color3.fromRGB(28, 30, 34), 0.82)
 	card.BorderSizePixel = 0
 	local corner = Instance.new("UICorner")
 	corner.CornerRadius = UDim.new(0.05, 0)
 	corner.Parent = card
 	local stroke = Instance.new("UIStroke")
-	stroke.Color = rarityColor
-	stroke.Thickness = if rarityName == "Legendary"
-		then 4
-		elseif rarityName == "Uncommon" then 3
-		else 2
+	stroke.Color = kindColor
+	stroke.Thickness = 2
 	stroke.Parent = card
 
-	local rarityLabel = Instance.new("TextLabel")
-	rarityLabel.Size = UDim2.fromScale(1, 0.07)
-	rarityLabel.Position = UDim2.fromScale(0, 0.02)
-	rarityLabel.BackgroundTransparency = 1
-	rarityLabel.Text = string.upper(rarity.DisplayName)
-	rarityLabel.TextColor3 = rarityColor
-	rarityLabel.TextScaled = true
-	rarityLabel.Font = Enum.Font.GothamBold
-	rarityLabel.Parent = card
+	local kindLabel = Instance.new("TextLabel")
+	kindLabel.Size = UDim2.fromScale(1, 0.07)
+	kindLabel.Position = UDim2.fromScale(0, 0.02)
+	kindLabel.BackgroundTransparency = 1
+	kindLabel.Text = kindText
+	kindLabel.TextColor3 = kindColor
+	kindLabel.TextScaled = true
+	kindLabel.Font = Enum.Font.GothamBold
+	kindLabel.Parent = card
 
 	local icon: GuiObject
 	if definition.IconId then
@@ -178,7 +196,7 @@ local function buildCardFace(parent: BillboardGui, itemId: string, ownedStacks: 
 
 	local description = Instance.new("TextLabel")
 	description.Position = UDim2.fromScale(0.06, 0.56)
-	description.Size = UDim2.fromScale(0.88, 0.3)
+	description.Size = UDim2.fromScale(0.88, 0.34)
 	description.BackgroundTransparency = 1
 	description.Text = definition.Description
 	description.TextColor3 = Color3.fromRGB(190, 190, 190)
@@ -188,27 +206,15 @@ local function buildCardFace(parent: BillboardGui, itemId: string, ownedStacks: 
 	description.Font = Enum.Font.Gotham
 	description.Parent = card
 
-	local owned = Instance.new("TextLabel")
-	owned.AnchorPoint = Vector2.new(0.5, 1)
-	owned.Position = UDim2.fromScale(0.5, 0.97)
-	owned.Size = UDim2.fromScale(0.9, 0.07)
-	owned.BackgroundTransparency = 1
-	owned.Text = if ownedStacks > 0 then `Owned: x{ownedStacks}` else "New"
-	owned.TextColor3 = definition.Color
-	owned.TextScaled = true
-	owned.Font = Enum.Font.GothamBold
-	owned.Parent = card
-
 	card.Parent = parent
 end
 
-local function buildCard(itemId: string, position: Vector3, ownedStacks: number): Card
-	local definition = ItemDefinitions[itemId]
-	local rarity = Config.ItemRarities[definition.Rarity or "Common"] or Config.ItemRarities.Common
+local function buildCard(definition: UpgradeDefinitions.CardDefinition, position: Vector3): Card
+	local _, kindColor = kindLine(definition)
 
-	-- The anchor: a thin glowing base plate on the ground in the rarity colour.
+	-- The anchor: a thin glowing base plate on the ground in the kind colour.
 	local anchor = Instance.new("Part")
-	anchor.Name = itemId
+	anchor.Name = definition.Id
 	anchor.Shape = Enum.PartType.Cylinder
 	anchor.Size = Vector3.new(0.2, 2.2, 2.2)
 	anchor.CFrame = CFrame.new(position - Vector3.new(0, 2 - 0.1, 0))
@@ -219,7 +225,7 @@ local function buildCard(itemId: string, position: Vector3, ownedStacks: number)
 	anchor.CanTouch = false
 	anchor.CastShadow = false
 	anchor.Material = Enum.Material.Neon
-	anchor.Color = rarity.Color
+	anchor.Color = kindColor
 	anchor.Transparency = 0.35
 	anchor.Parent = worldFolder
 
@@ -229,10 +235,10 @@ local function buildCard(itemId: string, position: Vector3, ownedStacks: number)
 	billboard.LightInfluence = 0
 	billboard.MaxDistance = 120
 	billboard.Adornee = anchor
-	buildCardFace(billboard, itemId, ownedStacks)
+	buildCardFace(billboard, definition)
 	billboard.Parent = anchor
 
-	return { itemId = itemId, anchor = anchor, position = position }
+	return { cardId = definition.Id, anchor = anchor, position = position }
 end
 
 local function closeCards(crateId: number, taken: string?)
@@ -242,7 +248,7 @@ local function closeCards(crateId: number, taken: string?)
 	end
 	openCrates[crateId] = nil
 	for _, card in crate.cards do
-		if taken and card.itemId == taken then
+		if taken and card.cardId == taken then
 			-- The one we took: flash and go.
 			card.anchor.Transparency = 0
 			task.delay(0.25, function()
@@ -260,16 +266,17 @@ end
 
 local function showCards(
 	crateId: number,
+	_kind: string,
 	choices: { string },
-	positions: { Vector3 },
-	inventory: { [string]: number }
+	positions: { Vector3 }
 )
 	closeCards(crateId)
 	local crate: CrateCards = { id = crateId, cards = {}, pickSent = false }
-	for index, itemId in choices do
+	for index, cardId in choices do
 		local position = positions[index]
-		if position and ItemDefinitions[itemId] then
-			table.insert(crate.cards, buildCard(itemId, position, inventory[itemId] or 0))
+		local definition = UpgradeDefinitions.get(cardId)
+		if position and definition then
+			table.insert(crate.cards, buildCard(definition, position))
 		end
 	end
 	openCrates[crateId] = crate
@@ -292,9 +299,9 @@ local function checkPicks()
 				Vector3.new(root.Position.X - card.position.X, 0, root.Position.Z - card.position.Z)
 			if flat.Magnitude <= Config.Requisition.PickRadius then
 				crate.pickSent = true
-				resupplyRemote:FireServer("pick", crate.id, card.itemId)
+				resupplyRemote:FireServer("pick", crate.id, card.cardId)
 				-- Optimistic: fade the others now; the server's "picked" clears the rest.
-				closeCards(crate.id, card.itemId)
+				closeCards(crate.id, card.cardId)
 				SoundFX.play("levelup")
 				break
 			end

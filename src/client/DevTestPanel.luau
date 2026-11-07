@@ -12,7 +12,11 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
+local CallInDefinitions =
+	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("CallInDefinitions"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
+local UpgradeDefinitions =
+	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("UpgradeDefinitions"))
 local CameraController = require(script.Parent.CameraController)
 
 local CREATOR_USER_ID = 67169996
@@ -74,6 +78,28 @@ local function sections(): { Section }
 			end,
 		})
 	end
+	-- Loadout rework: swap either call-in slot, hand out any field upgrade, re-arm, restock.
+	local loadout: { Action } = {
+		{ label = "Refill ammo", send = cmd("RefillAmmo"), hotkey = Enum.KeyCode.F8 },
+		{ label = "Restock call-ins", send = cmd("RestockCallIns") },
+		{ label = "Drop upgrade crate", send = cmd("DropUpgradeCrate") },
+		{ label = "Drop supply crate", send = cmd("DropSupplyCrate") },
+		{ label = "Clear upgrades", send = cmd("ClearUpgrades") },
+	}
+	for _, id in CallInDefinitions.Order do
+		local definition = CallInDefinitions.get(id) :: CallInDefinitions.CallInDefinition
+		table.insert(loadout, { label = `1: {definition.Name}`, send = cmd("SetCallIn", 1, id) })
+		table.insert(loadout, { label = `2: {definition.Name}`, send = cmd("SetCallIn", 2, id) })
+	end
+	local upgrades: { Action } = {}
+	for _, id in UpgradeDefinitions.upgradeIds() do
+		local definition = UpgradeDefinitions.get(id) :: UpgradeDefinitions.CardDefinition
+		local slot = definition.Slot or "?"
+		table.insert(
+			upgrades,
+			{ label = `{slot}: {definition.Name}`, send = cmd("GiveUpgrade", id) }
+		)
+	end
 	return {
 		{
 			title = "PLAYER",
@@ -120,13 +146,14 @@ local function sections(): { Section }
 				{ label = "3 bots", send = cmd("SetBots", 3) },
 			},
 		},
+		{ title = "LOADOUT", actions = loadout },
+		{ title = "FIELD UPGRADES", actions = upgrades },
 		{ title = "TELEPORT", actions = teleports },
 		{
 			title = "CHECKS",
 			actions = {
 				{ label = "Print state", send = cmd("PrintRunState") },
 				{ label = "Verify cleanup", send = cmd("VerifyCleanup") },
-				{ label = "Level up", send = cmd("ForceLevelUp") },
 			},
 		},
 	}

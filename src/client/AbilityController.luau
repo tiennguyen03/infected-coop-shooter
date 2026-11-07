@@ -1,15 +1,18 @@
 --!strict
--- Sends Q (dash) / E (breach) ability requests and the F (Resupply flare) throw to the
--- server. The server validates and performs them; this controller forwards input and draws
--- the breach ghost: hold E and a ring shows where the charge will land (the aim point,
--- clamped to throw range, dropped to the ground), release to throw it there. A tap throws
--- at the crosshair. F throws the flare at the crosshair the same way.
+-- Sends Q (dash) / E (breach) ability requests, the 1 / 2 call-ins (loadout rework
+-- 2026-11-07) and the 3 (Resupply flare) throw to the server. The server validates and
+-- performs them; this controller forwards input and draws the breach ghost: hold E and a
+-- ring shows where the charge will land (the aim point, clamped to throw range, dropped to
+-- the ground), release to throw it there. A tap throws at the crosshair. The call-ins and
+-- the flare throw at the crosshair the same way (ThrowUtil, the server's maths).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
+local CallInDefinitions =
+	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("CallInDefinitions"))
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
 local ThrowUtil = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("ThrowUtil"))
@@ -31,7 +34,17 @@ local function raycastParams(): RaycastParams
 	if character then
 		table.insert(exclude, character)
 	end
-	for _, name in { "Projectiles", "AssaultEffects", "BreachGhost", "Resupply" } do
+	for _, name in
+		{
+			"Projectiles",
+			"AssaultEffects",
+			"BreachGhost",
+			"Resupply",
+			"Drones",
+			"Mines",
+			"SquadBots",
+		}
+	do
 		local folder = workspace:FindFirstChild(name)
 		if folder then
 			table.insert(exclude, folder)
@@ -110,9 +123,10 @@ local function startTargeting()
 		return
 	end
 	targeting = true
-	ghost = buildGhost()
+	local model = buildGhost()
+	ghost = model
 	updateGhost()
-	ghost.Parent = workspace
+	model.Parent = workspace
 end
 
 local function stopTargeting(): Vector3?
@@ -129,6 +143,33 @@ local function stopTargeting(): Vector3?
 	return target
 end
 
+-- Key 1 or 2: the call-in in that slot, thrown at the crosshair when it is a throw kind.
+local function useCallIn(slot: number)
+	local player = Players.LocalPlayer
+	local definition = CallInDefinitions.get(player:GetAttribute(`CallIn{slot}`) :: string?)
+	if not definition then
+		return
+	end
+	local charges = (player:GetAttribute(`CallIn{slot}Charges`) :: number?) or 0
+	-- Daisy Chain: the Tripline key still goes out on an empty slot (the server blows the
+	-- armed mines without a charge).
+	local daisyChain = definition.Id == "tripline"
+		and (
+			player:GetAttribute("UpgradeCallInA") == "command_detonation"
+			or player:GetAttribute("UpgradeCallInB") == "command_detonation"
+		)
+	if charges <= 0 and not daisyChain then
+		return
+	end
+	local point: Vector3? = nil
+	if definition.Kind == "throw" then
+		local cfg = (Config.CallIns :: { [string]: any })[definition.ConfigKey]
+		point = landingPoint(cfg.ThrowDistance)
+		AnimationController.playAbility("breach")
+	end
+	Remotes.get("CallIn"):FireServer(slot, point)
+end
+
 function AbilityController.init()
 	local useAbility = Remotes.get("UseAbility")
 	local resupply = Remotes.get("Resupply")
@@ -137,7 +178,7 @@ function AbilityController.init()
 		if gameProcessed then
 			return
 		end
-		-- Don't fire abilities while the run is soft-paused (item selection).
+		-- Nothing fires while the field is frozen (run end).
 		if workspace:GetAttribute("GamePaused") == true then
 			return
 		end
@@ -145,6 +186,10 @@ function AbilityController.init()
 			useAbility:FireServer("dash")
 		elseif input.KeyCode == Enum.KeyCode.E then
 			startTargeting()
+		elseif input.KeyCode == Enum.KeyCode.One then
+			useCallIn(1)
+		elseif input.KeyCode == Enum.KeyCode.Two then
+			useCallIn(2)
 		elseif input.KeyCode == Enum.KeyCode.Three then
 			resupply:FireServer("flare", landingPoint(Config.Requisition.FlareThrowDistance))
 		end
@@ -166,7 +211,7 @@ function AbilityController.init()
 		end
 	end)
 
-	-- A respawn or a pause cancels any held targeting.
+	-- A respawn or the freeze cancels any held targeting.
 	Players.LocalPlayer.CharacterAdded:Connect(function()
 		stopTargeting()
 	end)

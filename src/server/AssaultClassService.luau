@@ -2,7 +2,11 @@
 -- Assault class V1 (Sprint 15): the default and only class. Provides the
 -- Combat Momentum passive (kill-stacking damage/speed via PlayerStatsService),
 -- a Q Combat Dash, and an E Breach Charge. All abilities are server-validated
--- (alive, run not paused, cooldown) — client cooldowns are display only.
+-- (alive, run not paused, cooldown); client cooldowns are display only.
+-- Field upgrades (loadout rework 2026-11-07, LoadoutService flags): Flare Straps leaves
+-- fire pools along the dash (IncendiaryService), Smoke Dash hides the body from melee for
+-- a moment after it (the CoverMoveUntil window), Bait Charge makes the breach charge a lure
+-- with a longer fuse (EnemyService.setLure).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -12,7 +16,10 @@ local TweenService = game:GetService("TweenService")
 local Config = require(ReplicatedStorage.Shared.Config)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local ThrowUtil = require(ReplicatedStorage.Shared.ThrowUtil)
+local EnemyService = require(script.Parent.EnemyService)
+local IncendiaryService = require(script.Parent.IncendiaryService)
 local ItemEffectService = require(script.Parent.ItemEffectService)
+local LoadoutService = require(script.Parent.LoadoutService)
 local PauseService = require(script.Parent.PauseService)
 local PlayerStatsService = require(script.Parent.PlayerStatsService)
 local Squad = require(script.Parent.Squad)
@@ -98,6 +105,43 @@ local function doDash(player: Player)
 		TweenInfo.new(Config.Assault.DashDuration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
 		{ CFrame = goalCFrame }
 	):Play()
+
+	-- Flare Straps: burning pools along the path.
+	if LoadoutService.hasUpgrade(player, "fire_trail") then
+		IncendiaryService.spawnTrail(
+			player,
+			root.Position,
+			target,
+			Config.Upgrades.FireTrail.PoolsPerDash
+		)
+	end
+	-- Smoke Dash: the Infected melee cannot find the body for a moment after the dash.
+	if LoadoutService.hasUpgrade(player, "smoke_dash") then
+		local smokeUntil = os.clock()
+			+ Config.Assault.DashDuration
+			+ Config.Upgrades.SmokeDash.ImmunitySeconds
+		local current = (character:GetAttribute("CoverMoveUntil") :: number?) or 0
+		character:SetAttribute("CoverMoveUntil", math.max(current, smokeUntil))
+		local smoke = Instance.new("ParticleEmitter")
+		smoke.Color = ColorSequence.new(Color3.fromRGB(150, 150, 150), Color3.fromRGB(70, 70, 70))
+		smoke.Size = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 2),
+			NumberSequenceKeypoint.new(1, 6),
+		})
+		smoke.Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0.4),
+			NumberSequenceKeypoint.new(1, 1),
+		})
+		smoke.Lifetime = NumberRange.new(1, 1.6)
+		smoke.Speed = NumberRange.new(3, 6)
+		smoke.SpreadAngle = Vector2.new(180, 180)
+		smoke.Enabled = false
+		smoke.Parent = root
+		smoke:Emit(40)
+		task.delay(2, function()
+			smoke:Destroy()
+		end)
+	end
 
 	-- Simple dust streak.
 	local streak = Instance.new("Part")
@@ -188,6 +232,13 @@ local function doBreach(player: Player, requested: Vector3?)
 		character,
 		chargeFolder,
 	}) + Vector3.new(0, 1, 0)
+	-- Bait Charge: a longer fuse, and the Infected around walk to it until it blows.
+	local fuse = cfg.BreachFuseTime
+	if LoadoutService.hasUpgrade(player, "lure_charge") then
+		local lure = Config.Upgrades.LureCharge
+		fuse = lure.FuseTime
+		EnemyService.setLure(center, lure.Radius, fuse)
+	end
 
 	-- Blinking charge.
 	local charge = Instance.new("Part")
@@ -219,9 +270,9 @@ local function doBreach(player: Player, requested: Vector3?)
 		local blinks = 4
 		for _ = 1, blinks do
 			charge.Transparency = 0.6
-			task.wait(cfg.BreachFuseTime / (blinks * 2))
+			task.wait(fuse / (blinks * 2))
 			charge.Transparency = 0
-			task.wait(cfg.BreachFuseTime / (blinks * 2))
+			task.wait(fuse / (blinks * 2))
 		end
 		if charge.Parent then
 			charge:Destroy()
@@ -272,9 +323,8 @@ local function onHeartbeat()
 	local dt = now - lastHeartbeatClock
 	lastHeartbeatClock = now
 
-	-- During the soft pause, slide cooldown / momentum end times forward by the
-	-- elapsed real time so no progress is made while the item screen is open.
-	-- (Single-player MVP: pause freezes gameplay timers. Multiplayer may revisit.)
+	-- During the run-end freeze, slide cooldown / momentum end times forward by the
+	-- elapsed real time so no progress is made while the field is frozen.
 	if PauseService.isPaused() then
 		for player, readyAt in dashReadyAt do
 			if readyAt > now then

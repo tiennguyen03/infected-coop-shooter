@@ -107,8 +107,6 @@ local function showResults()
 	local startTime = (workspace:GetAttribute("RunStartTime") :: number?) or 0
 	local survived = math.max(workspace:GetServerTimeNow() - startTime, 0)
 	local kills = (player:GetAttribute("Kills") :: number?) or 0
-	local level = (player:GetAttribute("Level") :: number?) or 1
-	local items = (player:GetAttribute("ItemsCollected") :: number?) or 0
 	local objectiveDone = workspace:GetAttribute("ObjectiveCompleted") == true
 
 	local gui = newGui("RunEndUI", 100)
@@ -132,8 +130,6 @@ local function showResults()
 	local lines = {
 		`Time survived: {formatTime(survived)}`,
 		`Infected killed: {kills}`,
-		`Level reached: {level}`,
-		`Items collected: {items}`,
 		`Objective completed: {if objectiveDone then "Yes" else "No"}`,
 		`Extracted: {if extracted then "Yes" else "No"}`,
 	}

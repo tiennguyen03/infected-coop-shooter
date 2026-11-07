@@ -1,17 +1,19 @@
 --!strict
 -- Squad: the one roster every system asks "who is on our side" (Co-op Sprint A,
 -- docs/sprints/SPRINT_17_COOP_A.md section 1). A member is a player or a server-side bot
--- (BotService); targeting, splash damage, XP, zones and the wipe check read members from
--- here, so a bot is seen the same way as a player. Per-owner state (items, XP, stat mults)
+-- (BotService); targeting, splash damage, zones and the wipe check read members from
+-- here, so a bot is seen the same way as a player. Per-owner state (loadout, stat mults)
 -- stays on the Player; bots have none (`ownerAttribute` default).
 --
 -- State per member: Alive -> Downed (a lethal hit, decision #3) -> Alive (revived) or
 -- Dead (bled out, killed while out of revives). Downed bodies are not targets and take no
 -- damage; a squadmate holds F (ProximityPrompt) for Config.Downed.ReviveHold to stand them
 -- up; bots revive with Squad.revive. Replicated as character attributes SquadState,
--- BleedOutAt (server time) and Reviver, mirrored on the Player for client UI. Also hands
--- out landing pads (step 4). Requires only Players, Config and ArenaService, so any
--- service can require it without a cycle.
+-- BleedOutAt (server time) and Reviver, mirrored on the Player for client UI. Spare
+-- Tourniquet (the UpgradeKit attribute, loadout rework): a downed player stands up on their
+-- own Config.Upgrades.Tourniquet.Seconds after going down, once per run (SelfReviveAt).
+-- Also hands out landing pads (step 4). Requires only Players, Config and ArenaService, so
+-- any service can require it without a cycle.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -35,6 +37,8 @@ export type Member = {
 	bleedOutAt: number?, -- os.clock, Downed only
 	revivesUsed: number, -- this run; at Config.Downed.MaxRevives a lethal hit kills
 	prompt: ProximityPrompt?,
+	tourniquetUsed: boolean, -- the Spare Tourniquet self-revive, once per run
+	selfReviveAt: number?, -- os.clock, Downed with the tourniquet only
 }
 
 local Squad = {}
@@ -58,18 +62,25 @@ local function newMember(id: string, kind: MemberKind, owner: Player?, name: str
 		bleedOutAt = nil,
 		revivesUsed = 0,
 		prompt = nil,
+		tourniquetUsed = false,
+		selfReviveAt = nil,
 	}
 end
 
 local function publish(member: Member)
 	local bleedOutServer = 0
+	local selfReviveServer = 0
 	if member.state == "Downed" and member.bleedOutAt then
 		bleedOutServer = workspace:GetServerTimeNow() + (member.bleedOutAt - os.clock())
+	end
+	if member.state == "Downed" and member.selfReviveAt then
+		selfReviveServer = workspace:GetServerTimeNow() + (member.selfReviveAt - os.clock())
 	end
 	for _, target in { member.character :: Instance?, member.owner :: Instance? } do
 		if target then
 			target:SetAttribute("SquadState", member.state)
 			target:SetAttribute("BleedOutAt", bleedOutServer)
+			target:SetAttribute("SelfReviveAt", selfReviveServer)
 		end
 	end
 end
@@ -98,6 +109,7 @@ local function setState(member: Member, state: MemberState)
 	member.state = state
 	if state ~= "Downed" then
 		member.bleedOutAt = nil
+		member.selfReviveAt = nil
 		clearPrompt(member)
 	end
 	publish(member)
@@ -265,13 +277,16 @@ function Squad.nearestLiving(position: Vector3): (Member?, number)
 	return nearest, nearestDistance
 end
 
--- Stands a downed member up at Config.Downed.ReviveHealthFraction health.
-function Squad.revive(member: Member, by: Member?)
+-- Stands a downed member up at Config.Downed.ReviveHealthFraction health. `free` (the
+-- Spare Tourniquet) does not count against Config.Downed.MaxRevives.
+function Squad.revive(member: Member, by: Member?, free: boolean?)
 	if member.state ~= "Downed" or not hasBody(member) then
 		return
 	end
 	local humanoid = member.humanoid :: Humanoid
-	member.revivesUsed += 1
+	if not free then
+		member.revivesUsed += 1
+	end
 	humanoid.Health = humanoid.MaxHealth * Config.Downed.ReviveHealthFraction
 	local regen = member.character and member.character:FindFirstChild("Health")
 	if regen and regen:IsA("Script") then
@@ -347,6 +362,14 @@ function Squad.down(member: Member)
 		regen.Enabled = false
 	end
 	member.bleedOutAt = os.clock() + Config.Downed.BleedOutSeconds
+	-- Spare Tourniquet: the body gets itself up, once per run.
+	if
+		not member.tourniquetUsed
+		and Squad.ownerAttribute(member, "UpgradeKit", "") == "tourniquet"
+	then
+		member.tourniquetUsed = true
+		member.selfReviveAt = os.clock() + Config.Upgrades.Tourniquet.Seconds
+	end
 	setState(member, "Downed")
 	addPrompt(member)
 	print(`[Squad] {member.name} is down`)
@@ -356,6 +379,7 @@ end
 function Squad.resetRun()
 	for _, member in members do
 		member.revivesUsed = 0
+		member.tourniquetUsed = false
 	end
 end
 
@@ -416,10 +440,17 @@ local function onPlayerAdded(player: Player)
 	end
 end
 
--- Bleed-out: a downed member whose timer runs out dies.
+-- Bleed-out: a downed member whose timer runs out dies. A tourniquet stands them up first.
 local function step()
 	local now = os.clock()
 	for _, member in members do
+		local selfReviveAt = member.selfReviveAt
+		if member.state == "Downed" and selfReviveAt and now >= selfReviveAt then
+			member.selfReviveAt = nil
+			print(`[Squad] {member.name} used the tourniquet`)
+			Squad.revive(member, member, true)
+			continue
+		end
 		local bleedOutAt = member.bleedOutAt
 		if member.state == "Downed" and bleedOutAt and now >= bleedOutAt then
 			member.bleedOutAt = nil
