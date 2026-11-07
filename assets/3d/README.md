@@ -134,6 +134,12 @@ centre-pivot limb; copy it into the `MeshAssets` entry.
 
 ## Skinned Weller (shipped 2026-11-07)
 
+**Scale rule (2026-11-07).** The importer's rig is built in centimetres and scaled with
+`Model:ScaleTo(0.01)`; that leaves the Model's scale factor at 0.01, and a Humanoid
+scales its movement forces by its character's scale, which made the player sluggish
+and slidy. `buildSkinnedBody` moves the scaled parts into a fresh Model so the
+character ships at scale 1. Any future skinned body must end with `GetScale() == 1`.
+
 **How it ships.** No Studio import step: `upload_asset` both FBX files as Models
 (`pc_assault_skinned.fbx` = the skinned MeshPart with its 16 `Bone`s, `_parts.fbx` = the
 15 limb MeshParts with the `Motor6D`s the importer builds from the `_Att` empties plus a

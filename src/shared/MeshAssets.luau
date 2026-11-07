@@ -1013,10 +1013,20 @@ function MeshAssets.buildSkinnedBody(name: string): Model?
 		end
 		return nil
 	end
-	rig.Name = name
 	rig.PrimaryPart = root
 	rig:ScaleTo(IMPORT_SCALE)
 	bodyModel:ScaleTo(IMPORT_SCALE)
+	-- ScaleTo leaves the Model's scale factor at 0.01, and a Humanoid scales its movement
+	-- forces by its character's scale: the body took over a second to reach walking speed
+	-- and slid to a stop. Re-home the scaled parts in a fresh Model (scale 1, same sizes).
+	local scaled = rig
+	rig = Instance.new("Model")
+	rig.Name = name
+	for _, child in scaled:GetChildren() do
+		child.Parent = rig
+	end
+	scaled:Destroy()
+	rig.PrimaryPart = root
 	for _, leftover in { "InitialPoses", "AnimationController" } do
 		local child = rig:FindFirstChild(leftover)
 		if child then

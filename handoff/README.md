@@ -1,7 +1,7 @@
 # Handoff — Infected Co-op Shooter (VS Code + Claude Code terminal)
 
 Start here when picking the project up in a fresh Claude Code session.
-Last updated: 2026-11-07 (the Warden, Sprint 19). Last verified commit on `main`: the Warden commit (solo + 2-client playtests).
+Last updated: 2026-11-07 (the Warden, Sprint 19; skinned-body scale fix). Last verified commit on `main`: the Warden commit (solo + 2-client playtests).
 
 ## What this is
 
@@ -64,6 +64,14 @@ Read in this order:
   Bash / Charge / Gas Canister / Guard with handset tells on the new `BossBarUI`;
   Riot Call at 60% and 25%. Kill → priority pallet, heal, re-arm, `Extract`. Dev: F1
   `Warden (Gate)` / `Warden here`. 16 meshes uploaded (`assets/3d/ASSET_IDS.md`).
+- 2026-11-07: **Skinned-body movement fix.** The owner reported the player "sliding",
+  "barely controllable", "like two players colliding". Root cause: `buildSkinnedBody`
+  scaled the imported rig with `Model:ScaleTo(0.01)`, which leaves the character Model's
+  scale factor at 0.01, and a Humanoid scales its movement forces by its character's
+  scale: the body took ~1.5 s to reach walking speed and slid to a stop. The scaled parts
+  are now re-homed in a fresh Model (scale 1). Measured with every controller off: 0 →
+  16 studs/s within 0.1 s and an instant stop (was 9 studs/s²). Rule: never leave a
+  character Model with a scale factor other than 1 (`Model:GetScale()`).
 - 2026-11-07: **Weller is a skinned mesh** (`Config.Player.SkinnedBody = true`;
   `docs/CHARACTERS.md` C, `assets/3d/README.md` "Skinned Weller"). One 944-tri body with
   the R15 bone tree over a hidden 15-part rig: `MeshAssets.buildSkinnedBody` loads the two
