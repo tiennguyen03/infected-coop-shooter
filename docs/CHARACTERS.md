@@ -8,15 +8,21 @@ per Infected, 5,000 for Brute/Index). Asymmetry lives on the head and torso only
 attached parts (the Hocker sac proves attached parts work).
 
 Status: Walker, Runner, Brute, Hocker and the five Chosen rebuilt to these sheets 2026-11-07
-(list kept in `docs/STYLES.md` §7); everything else is sheet only.
+(list kept in `docs/STYLES.md` §7); everything else is sheet only. Skin v2 (art director,
+2026-11-07) repainted the four built Infected: where a sheet below says `infected skin` read
+`pallor` (the Bloat reads `flesh`), the Runner's muscle is `wound`, the Brute's skin `bruise`;
+each built form carries a **Skin v2** line with what changed. Palette rows in `STYLES.md` §2.
 
 ## The two rules that make the roster read
 
 **1. The strain has two colours, the same on every form.** New tissue is *rebuilt*: pale,
 waxy, bloodless, like scar over bone (`rebuilt` row). Where the agent is actively working it
-is wet and caustic yellow-green (`strain` row). Eyes stay two `infected green` facets. Blood
-stays `red.m`, and only where the strain tore through *fresh*; old damage is `rebuilt`, not
-red. The further down the roster, the more `rebuilt` and the less skin and cloth is left.
+is wet and caustic yellow-green (`strain` row), and only where it is working: open seams, the
+Hocker's throat and sac, Bloat veins, Warden seams; never skin. Eyes are two milky `pus.l`
+facets set in a `wound` rim (skin v2 canon; the green eyes in the sheets below are superseded).
+Blood stays `red.m`, and only where the strain tore through *fresh*; old damage is `rebuilt`,
+not red. Infection on skin is boils (`pus` domes with a `pus.l` head), lesions (a `flesh.d` rim
+round a `wound` core) and bruise blotches, all as geometry. The further down the roster, the more `rebuilt` and the less skin and cloth is left.
 
 **2. The silhouette ladder.** Walker stands like a person. Runner leans forward. Brute is
 wider than tall. Hocker throws its head back. Bloat is a sphere on legs. Shedder is a tall
@@ -35,22 +41,28 @@ that was done to help it (a screening band, a bandage over the bite, cut restrai
 - **Silhouette:** the only Infected that stands upright. One shoulder dropped (old wound,
   on the torso mesh), arms hanging, head down and slightly forward. Flat shuffle.
 - **Head:** bare; hair a flat `dark.m` cap cut short on one side; `infected skin` face;
-  green eyes; mouth a closed `dark.d` line. A `rebuilt.m` seam from the jaw down the neck.
+  milky `pus.l` eyes in a `wound` rim; mouth a closed `dark.d` line. A `rebuilt.m` seam from
+  the jaw down the neck.
 - **Torso:** civilian: `tan.m` jacket over a `white.d` shirt, jacket torn open on the
   dropped-shoulder side showing `infected skin` and a slab of `rebuilt.m` where the ribs
   were re-set. A `foliage` blanket (the pens issued them) tied round the waist like a shawl,
   hanging to the thigh at the back: this is what reads from behind.
 - **Arms/hands:** sleeves to the elbow, `infected skin` forearms, fingers curled. The Delta
   **screening band**: `white.m` paper band with one `red.m` stripe on the wrist.
-- **Legs/feet:** `asphalt` civilian trousers, one knee a `rebuilt` knot, `dark` shoes.
+- **Legs/feet:** `asphalt` civilian trousers, knees knotted `rebuilt` (limbs mirror), `dark` shoes.
 - **Tell:** the `rebuilt` seams at jaw and ribs: wounds that closed too well.
+- **Skin v2 (built):** `pallor` skin; an open lesion on the left cheek and a bruise blotch on
+  the right temple; a four-boil cluster along the jaw next to the seam, which now weeps a
+  thin `strain.d` line; a `flesh` flush round the rib slab; hands swollen `flesh`, filling
+  the box, a bruise and one pustule on the back. Limbs: rounded tan shoulder, octagonal
+  sleeve and forearm tapering to the band, hip inset, knee cap under the trouser. 1,528 tris.
 
 ### Runner (scale 0.9, ~2,200 tris)
 - **Was:** a soldier of the Delta garrison. The agent did what it was built to do.
 - **Silhouette:** forward lean from the hips, shoulders up and no neck, arms long with
   hands at knee height. From behind, a ridge of cable-tendons down the spine.
 - **Head:** helmet gone; `infected (runner)` skin, scalp bare; jaw clenched, teeth a
-  `white.d` strip; green eyes; brow a `rebuilt.d` ridge.
+  `white.d` strip; milky `pus.l` eyes in a `wound.d` rim; brow a narrow `rebuilt` bone ridge.
 - **Torso:** plate carrier torn off (two `dark` strap stubs on the shoulders), a `gun.d`
   T-shirt split up the middle by the chest growth: `infected (runner)` muscle blocks with
   `rebuilt.l` tendon lines across the pecs and down the spine (back ridge: a stepped spine
@@ -61,6 +73,11 @@ that was done to help it (a screening band, a bandage over the bite, cut restrai
 - **Legs/feet:** `olive.m` fatigue trousers blown at the knees, calves banded, `dark`
   combat boots, laces trailing (a `tan.d` strip on the foot).
 - **Tell:** the tendons: pale cable over yellow muscle, every joint knotted.
+- **Skin v2 (built):** flayed: `wound` muscle everywhere skin was (face, chest, arms, blown
+  knees, calves) under `rebuilt.l` tendon cables, with `pus.d` weep strips down the face,
+  sternum, under the pecs and down every limb; eyes in a `wound.d` rim; nose gone to bone;
+  a `wound.d` torn patch on the side of the head. Limbs: the hardest taper on the roster
+  (forearm 0.40 to 0.32), bone knobs (`rebuilt.l` caps) at elbow and knee. 1,880 tris.
 
 ### Brute (scale 2.0, ~3,000 tris)
 - **Was:** a Delta soldier who took massive trauma and was rebuilt around the breaks.
@@ -78,20 +95,33 @@ that was done to help it (a screening band, a bandage over the bite, cut restrai
 - **Legs/feet:** `olive.m` trousers torn to the thigh, shins plated `rebuilt.m`, `dark.d`
   boots split open at the toe by bone.
 - **Tell:** bone where there should be joints. Headshot x1.25 is the plated skull: the crest.
+- **Skin v2 (built):** `bruise` skin; three boil clusters under the shelf on the bare right
+  side of the chest; a `flesh` goitre at the base of the neck with a weeping pustule; a jaw
+  lesion and a `bruise.d` blotch on the head; two lesions on each thigh. Forearms swollen
+  (fill the box, `bruise.d` strike bruise, one pustule) over thinner tapered upper arms;
+  shoulder caps in the olive sleeve stub. 2,080 tris.
 
 ### Hocker (scale 1.0, ~2,200 tris; sac stays an attached part)
 - **Was:** a Walker a day further on. The agent found the throat and lungs.
 - **Silhouette:** head thrown back, chest caved, elbows clamped to the ribs, hands up at the
   collarbones: a heron. The sac under the jaw is the widest thing on it.
 - **Head:** jaw split at the chin into two halves (`infected skin` outside, `strain.d`
-  inside), tilted up 20 degrees; nose and lips gone to `rebuilt.m`; green eyes rolled up.
+  inside), tilted up 20 degrees; nose and lips gone to `rebuilt.m`; milky `pus.l` eyes set
+  high under the hairline (rolled up).
 - **Torso:** the Walker's `tan.m` jacket, soaked: a `strain.d` stain from the collar. Chest
   hollow (front of the upper torso concave). A `white.m` surgical mask pulled down round
   the neck, under where the sac sits.
-- **Arms/hands:** folded against the chest in the mesh (upper arm angled in, lower arm
-  vertical, hands at the collar, fingers hooked). `infected skin`, `rebuilt.m` wrists.
+- **Arms/hands:** the heron pose (elbows clamped, hands at the collar) comes from the Hocker
+  clips; the mesh arms hang straight with the fingers hooked (the pose does not fit the R15
+  limb boxes). `infected skin`, `rebuilt.m` wrists.
 - **Legs/feet:** as the Walker, knees slightly bent.
 - **Tell:** the sac: `strain.m` with a `strain.l` highlight facet, swells 1.8x on windup.
+- **Skin v2 (built):** `pallor` skin; fevered throat: `flesh` under the split jaw with
+  `flesh.d` flushes up both sides of the head and a `flesh` base where the neck meets the
+  collar; the rolled eyes are one `pus.l` band in a `wound` rim; the jacket is soaked `pus.d`
+  down the front (drips and cuffs too); a ring of six pustules round the collar where the sac
+  sits; the open throat keeps `strain.d` (the only green left on the body besides the sac).
+  Arms tapered with caps; legs are the Walker's. 1,424 tris.
 
 ### Bloat (scale 1.1, BodyDepth/WidthScale 1.35, ~2,400 tris)
 - **Was:** a passenger on a sealed Mile 14 bus. Bitten, bandaged, three days in the heat

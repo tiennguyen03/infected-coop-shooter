@@ -28,9 +28,13 @@ or ask to have it ported into the script.
 Outputs:
 
 - `arena_survivor.blend` — the project
-- `palette.png` + `palette.md` — the one shared texture and its swatch map
+- `palette.png` + `palette.md` — the one shared texture and its swatch map (57 of 64 cells;
+  the order is every exported mesh's UV layout, so rows are only ever appended or replaced
+  in place: the three retired infected tints became `pallor`/`flesh`/`bruise` on 2026-11-07)
 - `export/<asset>.fbx` — one FBX per asset (Y-up, 1 unit = 1 stud)
-- `build/previews/<asset>.png` + `lineup.png` — Workbench renders to check the look
+- `build/previews/<asset>.png` + `lineup_chars.png` (every assembled body, props, weapon, at
+  a readable scale) + `lineup_env.png` (the environment next to the 5-stud figure) — Workbench
+  renders to check the look
 
 Add `-- --only wpn_rifle prop_drone` to build a subset.
 
@@ -59,7 +63,7 @@ Add `-- --only wpn_rifle prop_drone` to build a subset.
 | env_dead_tree | 96 | bottom | 14-stud bare tree (Hull collision) |
 | env_lamp_post | 76 | bottom | 13-stud street light (Hull collision) |
 | env_bus | 712 | bottom | 42-stud transit bus, 12.5 tall (Hocker-proof cover); the Gate bus line, Mile 14's jam |
-| inf_walker_* / inf_runner_* / inf_brute_* / inf_hocker_* | 0.8-1.1k per body | center | the 15 R15 limb MeshParts of each Infected (`MeshAssets.dressInfected`); v2 2026-11-07 |
+| inf_walker_* / inf_runner_* / inf_brute_* / inf_hocker_* | 1.5k / 1.9k / 2.1k / 1.4k per body (caps 1.6k / 2.0k / 2.4k / 2.2k, `BODY_TRI_CAP`) | center | the 15 R15 limb MeshParts of each Infected (`MeshAssets.dressInfected`); skin v2 + limb geometry v2 2026-11-07 |
 | pc_assault_* | ~600 per body | center | Weller, the player's 15 R15 limb MeshParts (`PlayerSetup` -> `MeshAssets.dressModel`); v2 2026-11-07 |
 | pc_k9_* / pc_epi_* / pc_recon_* / pc_engineer_* | ~600 per body | center | Cole, Reyes, Cross, Kane: built + previewed, not uploaded (no class system yet) |
 | ref_inf_* / ref_pc_* | — | bottom | assembled preview figures, never exported |
@@ -83,7 +87,20 @@ rebuilds the joints (modern rigs get `AnimationConstraint`s, not Motor6Ds). Spaw
 dressed template, so per-spawn cost is a plain Clone. To restyle a type, change its swatch
 function in `INFECTED_TYPES` (one `<type>_limb(L, limb)` builder per form; `Limb` wraps the
 primitives at the limb origin, `Builder.rotate_all` tilts a whole limb such as the Hocker's
-head), rebuild, re-upload the 9 limbs, update the ids in `MeshAssets`. Roblox deduplicates
+head), rebuild, re-upload the 9 limbs, update the ids in `MeshAssets`. The build prints
+`body inf_<type>` with the whole-body triangle count against `BODY_TRI_CAP`.
+
+`Limb` helpers (limb geometry v2 + skin v2, 2026-11-07): `oct(r, h, loc, swatch, r_top)` an
+octagonal limb segment, tapered when `r_top` differs (flats face the box sides; r 0.54 fills
+a 1.0 box, 0.36-0.42 is a healthy limb); `cap(r, loc, swatch)` a rounded joint cap at the top
+of a lower limb or the shoulder of an upper arm (bone knobs on the Infected); `hip_inset`
+the narrow collar at the top of an upper leg; `boil(r, loc, n)` a pustule with a `pus_l`
+head pushed out along the surface normal `n`; `cluster(count, r, loc, n, spread)` a fixed
+spiral of boils; `lesion(w, h, loc, face)` an inflamed rim round a raw core on one face
+(`front`/`back`/`left`/`right`/`top`/`bottom`); `blotch(w, h, loc, face, swatch)` a flat
+discolouration; `eyes(..., rim)` the milky eyes in a wound rim. Keep every limb inside its
+R15 box (`R15_LIMB`): a boil or cap that pokes out grows the MeshPart `Size` and shifts the
+printed `offset`. Roblox deduplicates
 identical meshes across uploads (the Hocker's legs share the Walker's mesh ids).
 
 Player bodies use the same mechanism (`_pc_limb`, `PC_CLASSES`): `PlayerSetup` turns off

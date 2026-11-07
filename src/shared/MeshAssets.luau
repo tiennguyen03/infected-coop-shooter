@@ -14,7 +14,7 @@ local ServerStorage = game:GetService("ServerStorage")
 local MeshAssets = {}
 
 -- Shared palette texture (assets/3d/palette.png as an Image asset).
-local PALETTE_TEXTURE = "rbxassetid://110782102234723"
+local PALETTE_TEXTURE = "rbxassetid://115366221483568"
 
 -- `solid` = a static obstacle: CanCollide + CastShadow on (buildings, barriers).
 -- `offset` = the mesh's bounds centre relative to its design origin (Infected limbs are
@@ -196,14 +196,15 @@ local MESHES: { [string]: MeshDef } = {
 		offset = Vector3.new(0.000, 0.000, 0.000),
 	},
 	-- Infected limb sets (assets/3d inf_<type>_<limb>): swapped onto the R15 rig by dressInfected.
-	-- Rebuilt 2026-11-07 to docs/CHARACTERS.md (walker, runner, brute, hocker).
+	-- Rebuilt 2026-11-07 to docs/CHARACTERS.md (walker, runner, brute, hocker); skin v2 repaint
+	-- (pallor / flesh / bruise / wound / pus rows, tapered limbs) uploaded the same day.
 	inf_walker_head = {
-		meshId = "rbxassetid://89158175147461",
-		size = Vector3.new(1.210, 1.220, 1.310),
-		offset = Vector3.new(-0.005, 0.020, -0.035),
+		meshId = "rbxassetid://100636262646383",
+		size = Vector3.new(1.220, 1.290, 1.310),
+		offset = Vector3.new(-0.000, -0.016, -0.035),
 	},
 	inf_walker_upper_torso = {
-		meshId = "rbxassetid://128339684458111",
+		meshId = "rbxassetid://119661347321934",
 		size = Vector3.new(2.000, 1.750, 1.200),
 		offset = Vector3.new(0.000, 0.025, 0.000),
 	},
@@ -213,27 +214,27 @@ local MESHES: { [string]: MeshDef } = {
 		offset = Vector3.new(0.000, 0.005, -0.045),
 	},
 	inf_walker_upper_arm = {
-		meshId = "rbxassetid://120794439621284",
-		size = Vector3.new(1.040, 1.240, 1.040),
+		meshId = "rbxassetid://88373539845018",
+		size = Vector3.new(0.920, 1.240, 0.920),
 		offset = Vector3.new(0.000, 0.000, 0.000),
 	},
 	inf_walker_lower_arm = {
-		meshId = "rbxassetid://106412532252762",
-		size = Vector3.new(0.980, 1.120, 0.980),
+		meshId = "rbxassetid://81627412669309",
+		size = Vector3.new(0.780, 1.120, 0.780),
 		offset = Vector3.new(0.000, 0.000, 0.000),
 	},
 	inf_walker_hand = {
-		meshId = "rbxassetid://82054942299820",
-		size = Vector3.new(0.980, 0.400, 1.030),
-		offset = Vector3.new(0.000, -0.040, -0.002),
+		meshId = "rbxassetid://119988488149184",
+		size = Vector3.new(0.980, 0.480, 1.030),
+		offset = Vector3.new(0.000, 0.002, -0.002),
 	},
 	inf_walker_upper_leg = {
-		meshId = "rbxassetid://119669238480601",
-		size = Vector3.new(1.000, 1.480, 1.260),
-		offset = Vector3.new(0.000, -0.060, -0.048),
+		meshId = "rbxassetid://133917422037960",
+		size = Vector3.new(1.000, 1.400, 1.130),
+		offset = Vector3.new(0.000, -0.020, 0.016),
 	},
 	inf_walker_lower_leg = {
-		meshId = "rbxassetid://102042184592850",
+		meshId = "rbxassetid://129665594524599",
 		size = Vector3.new(0.990, 1.300, 0.970),
 		offset = Vector3.new(0.000, 0.000, 0.000),
 	},
@@ -243,14 +244,14 @@ local MESHES: { [string]: MeshDef } = {
 		offset = Vector3.new(0.000, 0.000, 0.000),
 	},
 	inf_runner_head = {
-		meshId = "rbxassetid://117624060503646",
-		size = Vector3.new(1.160, 1.180, 1.260),
+		meshId = "rbxassetid://137864155811153",
+		size = Vector3.new(1.220, 1.180, 1.260),
 		offset = Vector3.new(0.000, 0.000, -0.050),
 	},
 	inf_runner_upper_torso = {
-		meshId = "rbxassetid://107263794622603",
-		size = Vector3.new(1.940, 1.810, 1.230),
-		offset = Vector3.new(0.000, 0.055, -0.005),
+		meshId = "rbxassetid://80475549545734",
+		size = Vector3.new(1.940, 1.810, 1.250),
+		offset = Vector3.new(0.000, 0.055, -0.015),
 	},
 	inf_runner_lower_torso = {
 		meshId = "rbxassetid://88359244284243",
@@ -258,14 +259,14 @@ local MESHES: { [string]: MeshDef } = {
 		offset = Vector3.new(0.000, 0.000, -0.035),
 	},
 	inf_runner_upper_arm = {
-		meshId = "rbxassetid://136771154014251",
-		size = Vector3.new(1.040, 1.250, 1.040),
-		offset = Vector3.new(0.000, -0.025, 0.000),
+		meshId = "rbxassetid://123865928638635",
+		size = Vector3.new(0.890, 1.220, 0.900),
+		offset = Vector3.new(0.000, 0.010, -0.010),
 	},
 	inf_runner_lower_arm = {
-		meshId = "rbxassetid://73890653650999",
-		size = Vector3.new(0.940, 1.420, 0.940),
-		offset = Vector3.new(0.000, 0.110, 0.000),
+		meshId = "rbxassetid://105743362905245",
+		size = Vector3.new(0.740, 1.120, 0.770),
+		offset = Vector3.new(0.000, 0.000, -0.005),
 	},
 	inf_runner_hand = {
 		meshId = "rbxassetid://112441012464559",
@@ -273,14 +274,14 @@ local MESHES: { [string]: MeshDef } = {
 		offset = Vector3.new(0.000, 0.010, -0.080),
 	},
 	inf_runner_upper_leg = {
-		meshId = "rbxassetid://125662424919143",
-		size = Vector3.new(1.010, 1.400, 1.110),
-		offset = Vector3.new(0.000, -0.020, -0.071),
+		meshId = "rbxassetid://77353023411798",
+		size = Vector3.new(0.920, 1.400, 1.050),
+		offset = Vector3.new(0.000, -0.020, -0.063),
 	},
 	inf_runner_lower_leg = {
-		meshId = "rbxassetid://129895373185483",
-		size = Vector3.new(1.010, 1.280, 0.990),
-		offset = Vector3.new(0.000, -0.010, 0.000),
+		meshId = "rbxassetid://77168222660520",
+		size = Vector3.new(0.960, 1.300, 0.960),
+		offset = Vector3.new(0.000, 0.000, 0.000),
 	},
 	inf_runner_foot = {
 		meshId = "rbxassetid://101646860898946",
@@ -288,14 +289,14 @@ local MESHES: { [string]: MeshDef } = {
 		offset = Vector3.new(0.000, 0.008, 0.075),
 	},
 	inf_brute_head = {
-		meshId = "rbxassetid://73597512666594",
-		size = Vector3.new(1.240, 1.240, 1.300),
-		offset = Vector3.new(0.000, 0.030, -0.030),
+		meshId = "rbxassetid://111819664336015",
+		size = Vector3.new(1.270, 1.240, 1.300),
+		offset = Vector3.new(0.015, 0.030, -0.030),
 	},
 	inf_brute_upper_torso = {
-		meshId = "rbxassetid://89721973590609",
-		size = Vector3.new(2.100, 1.950, 1.450),
-		offset = Vector3.new(0.000, 0.125, 0.045),
+		meshId = "rbxassetid://74874414531963",
+		size = Vector3.new(2.100, 1.950, 1.470),
+		offset = Vector3.new(0.000, 0.125, 0.034),
 	},
 	inf_brute_lower_torso = {
 		meshId = "rbxassetid://123309828753718",
@@ -303,14 +304,14 @@ local MESHES: { [string]: MeshDef } = {
 		offset = Vector3.new(0.000, 0.000, -0.035),
 	},
 	inf_brute_upper_arm = {
-		meshId = "rbxassetid://134350483574031",
-		size = Vector3.new(0.980, 1.240, 0.980),
+		meshId = "rbxassetid://133254036749836",
+		size = Vector3.new(0.820, 1.240, 0.780),
 		offset = Vector3.new(0.000, 0.000, 0.000),
 	},
 	inf_brute_lower_arm = {
-		meshId = "rbxassetid://126689486489276",
-		size = Vector3.new(1.190, 1.120, 1.000),
-		offset = Vector3.new(0.094, 0.000, 0.000),
+		meshId = "rbxassetid://131637342574392",
+		size = Vector3.new(1.190, 1.120, 1.010),
+		offset = Vector3.new(0.095, 0.000, -0.006),
 	},
 	inf_brute_hand = {
 		meshId = "rbxassetid://139690589575020",
@@ -318,12 +319,12 @@ local MESHES: { [string]: MeshDef } = {
 		offset = Vector3.new(0.000, -0.005, -0.035),
 	},
 	inf_brute_upper_leg = {
-		meshId = "rbxassetid://136635886287618",
-		size = Vector3.new(1.010, 1.490, 1.140),
-		offset = Vector3.new(0.000, -0.065, -0.073),
+		meshId = "rbxassetid://96003182956310",
+		size = Vector3.new(1.020, 1.490, 1.130),
+		offset = Vector3.new(0.020, -0.065, -0.076),
 	},
 	inf_brute_lower_leg = {
-		meshId = "rbxassetid://103129814688361",
+		meshId = "rbxassetid://104847318095639",
 		size = Vector3.new(0.990, 1.300, 1.030),
 		offset = Vector3.new(0.000, 0.000, -0.028),
 	},
@@ -333,14 +334,14 @@ local MESHES: { [string]: MeshDef } = {
 		offset = Vector3.new(0.000, 0.027, -0.035),
 	},
 	inf_hocker_head = {
-		meshId = "rbxassetid://95865084839192",
+		meshId = "rbxassetid://126429750811463",
 		size = Vector3.new(1.330, 1.580, 1.680),
 		offset = Vector3.new(0.000, 0.002, -0.040),
 	},
 	inf_hocker_upper_torso = {
-		meshId = "rbxassetid://97667163763245",
-		size = Vector3.new(2.000, 1.710, 1.160),
-		offset = Vector3.new(0.000, 0.007, 0.020),
+		meshId = "rbxassetid://136320366451034",
+		size = Vector3.new(2.000, 1.750, 1.190),
+		offset = Vector3.new(0.000, 0.025, 0.003),
 	},
 	inf_hocker_lower_torso = {
 		meshId = "rbxassetid://115889571442634",
@@ -348,13 +349,13 @@ local MESHES: { [string]: MeshDef } = {
 		offset = Vector3.new(0.000, 0.005, -0.045),
 	},
 	inf_hocker_upper_arm = {
-		meshId = "rbxassetid://120857161769092",
-		size = Vector3.new(1.000, 1.240, 1.000),
+		meshId = "rbxassetid://126385736674962",
+		size = Vector3.new(0.870, 1.240, 0.870),
 		offset = Vector3.new(0.000, 0.000, 0.000),
 	},
 	inf_hocker_lower_arm = {
-		meshId = "rbxassetid://136581492405467",
-		size = Vector3.new(0.960, 1.120, 0.960),
+		meshId = "rbxassetid://76090964452945",
+		size = Vector3.new(0.740, 1.120, 0.740),
 		offset = Vector3.new(0.000, 0.000, 0.000),
 	},
 	inf_hocker_hand = {
@@ -363,12 +364,12 @@ local MESHES: { [string]: MeshDef } = {
 		offset = Vector3.new(0.000, -0.090, -0.067),
 	},
 	inf_hocker_upper_leg = {
-		meshId = "rbxassetid://119669238480601",
-		size = Vector3.new(1.000, 1.480, 1.260),
-		offset = Vector3.new(0.000, -0.060, -0.048),
+		meshId = "rbxassetid://133917422037960",
+		size = Vector3.new(1.000, 1.400, 1.130),
+		offset = Vector3.new(0.000, -0.020, 0.016),
 	},
 	inf_hocker_lower_leg = {
-		meshId = "rbxassetid://102042184592850",
+		meshId = "rbxassetid://129665594524599",
 		size = Vector3.new(0.990, 1.300, 0.970),
 		offset = Vector3.new(0.000, 0.000, 0.000),
 	},

@@ -14,7 +14,8 @@ builds what you specify.
 **How art is made here.** Nothing is hand-modelled. Every mesh is code in
 `assets/3d/build/build_assets.py`: boxes, cylinders and wedges painted with swatches of one
 shared palette texture (`assets/3d/palette.md`), exported to Roblox, with Workbench preview
-renders in `assets/3d/build/previews/<asset>.png` and `lineup.png`. Surfaces that are one
+renders in `assets/3d/build/previews/<asset>.png`, `lineup_chars.png` (bodies, props, weapon)
+and `lineup_env.png` (environment beside the 5-stud figure). Surfaces that are one
 material use Roblox built-in materials instead of the palette (`docs/STYLES.md` section 6
 "Color and texture"). Characters are R15 limb sets (one mesh per limb). So your designs are
 build sheets in that vocabulary, not paintings.
@@ -33,7 +34,7 @@ Before your first answer in a session, read:
 2. `docs/LORE.md` and `docs/CHARACTERS.md` — what you are designing for.
 3. `assets/3d/README.md`, `assets/3d/palette.md`, and the parts of
    `assets/3d/build/build_assets.py` for the asset family you are working on.
-4. `assets/3d/build/previews/lineup.png` and the previews you are asked about (read them
+4. `assets/3d/build/previews/lineup_chars.png` / `lineup_env.png` and the previews you are asked about (read them
    as images), plus any screenshots the engineer gives you.
 
 How you work:

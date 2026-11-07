@@ -1,7 +1,7 @@
 # Handoff — Infected Co-op Shooter (VS Code + Claude Code terminal)
 
 Start here when picking the project up in a fresh Claude Code session.
-Last updated: 2026-11-07 (Sprint 18 loadout rework). Last verified commit on `main`: the Sprint 18 commit (playtested).
+Last updated: 2026-11-07 (Infected skin v2). Last verified commit on `main`: the skin v2 commit (playtested).
 
 ## What this is
 
@@ -37,7 +37,15 @@ Read in this order:
   AmmoCacheService, PlagueRatService, ItemService, ItemDefinitions, ItemBarUI, XPBarUI,
   `docs/ITEMS_REFERENCE.md`. The 24 item icons stay uploaded; call-ins reuse them, the
   cards have none yet.
-- Static checks clean (stylua / selene / luau-lsp / rojo build) at the Sprint 18 commit.
+- 2026-11-07: **Infected skin v2 uploaded and verified** (`docs/STYLES.md` §2/§7,
+  `docs/CHARACTERS.md` A). No zombie green: pallor / flesh / bruise / wound / pus palette
+  rows, boils, lesions and blotches as geometry, milky eyes in a wound rim, octagonal tapered
+  limbs with joint caps. Palette v4 texture + 23 new limb meshes wired in `MeshAssets`
+  (`assets/3d/ASSET_IDS.md`); checked in a playtest (all four forms dress, no missing
+  templates) and in an edit-mode lineup. Art-director pass done before upload (four
+  one-line fixes applied). Later pass, not blocking: rotate lesion cores, thinner eye rims,
+  Brute to `pallor_d` + bruise patches if it reads purple under the stage light.
+- Static checks clean (stylua / selene / luau-lsp / rojo build) at the skin v2 commit.
 - 2026-11-05: decided the final product is **4-player co-op**. `src/` audited; 13 single-
   player shortcuts logged in `docs/MULTIPLAYER_READINESS.md` with a planned fix each, and
   all 6 co-op design decisions are answered there. No code changed yet.
@@ -84,12 +92,10 @@ Read in this order:
 
 ## Open work, in priority order
 
-- **Backlog (owner, 2026-11-07): Infected skin direction.** The owner does not want "zombie
-  green" skin. Target is Resident Evil bio-horror: lesions, pustules, exposed flesh, wet
-  reds and pale bruised skin, with the `rebuilt` (scar) and `strain` (caustic fluid) rows
-  doing the work. Means a new skin row set in `docs/STYLES.md` §2 replacing the three
-  `infected` tints, and a re-paint pass on the four v2 Infected builders (geometry stays).
-  Not scheduled; do it in one pass with the next body sprint.
+- **Infected skin v2 shipped 2026-11-07** (owner direction: no "zombie green"). Open from
+  the art-director pass, for the next body sprint: `Limb.lesion` cores rotated ~20°, eye rim
+  `+0.06`, Walker rib slab bars varied, Brute `pallor_d` base if it still reads purple in
+  game, Hocker heron pose as an idle clip (not buildable inside the R15 boxes).
 - **Backlog (2026-11-07): reload clip and sound.** The magazine shipped in Sprint 18; the
   reload still has no animation and no sound (generate `reload_1..2` into a `player_weapon`
   bank with the rifle shot). Also open from Sprint 18: icons for the supply and upgrade cards,

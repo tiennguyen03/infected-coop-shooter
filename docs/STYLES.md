@@ -4,7 +4,7 @@ Read this before any visual work: icons, UI, VFX, Blender assets, enemy models, 
 Gameplay rules in [PLAN.md](PLAN.md) and tone in [LORE.md](LORE.md) win over anything here.
 Performance wins over fidelity: the game must run smooth on low-end devices first.
 
-Last updated: 2026-11-05 (icon set v2, all 24 redrawn in one style).
+Last updated: 2026-11-07 (Infected skin v2: pallor / flesh / bruise / wound / pus rows).
 
 ---
 
@@ -46,11 +46,19 @@ generator, in UI code, and should be the swatches of the shared 3D palette textu
 | asphalt | `#5c5e62` | `#3e4044` | `#26282b` | roads, lots |
 | rust | `#a8603c` | `#7a4328` | `#4d2a18` | wrecks, old steel |
 | foliage (dead) | `#7f8a4a` | `#596232` | `#3a4120` | overgrowth, sandbags |
-| infected skin | `#8ea383` | `#62745a` | `#3f4c3a` | Walker base tint |
-| infected (runner) | `#b1b06a` | `#7f7e44` | `#53522a` | Runner yellow tint |
-| infected (brute) | `#5b6a5a` | `#3b473b` | `#222a22` | Brute dark tint |
+| pallor (infected skin) | `#bdb5b2` | `#8f8786` | `#5e5759` | pale bruised skin: Walker, Hocker, every sheet that says `infected skin` |
+| flesh (exposed / swollen) | `#dba89e` | `#b27b73` | `#7b4f50` | swollen hands, goitres, fevered throats, lesion rims (`flesh.d`), Bloat |
+| bruise | `#8e7a8f` | `#65506b` | `#3f3046` | deep bruise: Brute skin, blotches on every form |
+| wound | `#c4464a` | `#8e2630` | `#561620` | raw flesh: Runner skin, lesion cores, the eye rim |
+| pus | `#efe2a8` | `#d2bd6c` | `#977f3c` | boils and pustules, milky eyes (`pus.l`), weep strips and soaked cloth (`pus.d`) |
 | rebuilt (strain tissue) | `#dccbbb` | `#b09686` | `#73584e` | closed wounds, bone overgrowth, membranes, seams |
-| strain (fluid) | `#d2e276` | `#bed73c` | `#768525` | sacs, bellies, open seams, anything about to burst |
+| strain (fluid) | `#d2e276` | `#bed73c` | `#768525` | sacs, bellies, open seams, anything about to burst; never skin |
+
+Skin v2 (art director, 2026-11-07): the old green-grey / yellow / dark-green infected tints
+are retired (their palette cells now hold `pallor` / `flesh` / `bruise`). Strain green lives
+only where the agent is working: open seams, the Hocker's throat and sac, Bloat veins, Warden
+seams. `assets/3d/palette.md` is the generated cell map (57 of 64 cells; `concrete` now has
+its `l`/`d` swatches for the building kit).
 
 ### Signal / accent colors (saturated, used sparingly)
 
@@ -276,10 +284,18 @@ form was and what it still wears. Bodies rebuilt to those sheets are listed at t
 this section; the bullets below describe the 2026-11-06 build still worn by the rest.
 
 - Infected share one body style: low-poly humanoid, torn uniform/civilian blocks in the
-  dark/olive/tan materials, skin in the infected tint rows above (Walker green-grey, Runner
-  yellowed and 0.9× scale, Brute dark and 2× scale). Blood as flat `red.m` facets, never
-  gore detail.
-- Eyes: two small `infected green` facets so they read at distance in the dark.
+  dark/olive/tan materials, skin in the v2 rows above (Walker and Hocker `pallor`, Runner
+  `wound` flayed under `rebuilt.l` tendons and 0.9× scale, Brute `bruise` and 2× scale).
+  Damage is geometry, not paint: `Limb.boil` / `cluster` (pus domes with a `pus.l` head),
+  `lesion` (a `flesh.d` rim round a `wound` core), `blotch` (a flat `bruise` patch). Blood as
+  flat `red.m` facets only where a tear is fresh; never gore detail.
+- Limb geometry v2 (2026-11-07): healthy limbs are octagonal tapered segments (`Limb.oct`,
+  70-80% of the R15 box) under a rounded joint cap (`Limb.cap`: bone knob on the Infected)
+  so bent joints swing through their neighbour; upper legs take a `hip_inset` collar; swollen
+  limbs (Walker hands, Brute forearms) fill the box. Each limb still stays inside its R15 box
+  (details protrude ~0.1), so the stock rig and clips are untouched.
+- Eyes: two small milky `pus.l` facets set in a `wound` rim (`wound.d` on the Runner's red
+  face). Never green: the `infected green` accent is for UI/icons/VFX, not bodies.
 - Hocker (2026-11-06): wears the Walker set with a caustic yellow-green throat sac
   (`strain.m`, SmoothPlastic, swells 1.8x over the 0.8 s windup); its spit is a Neon
   ball of the same colour and the puddle a flat Neon disc at 0.45 transparency. Own limb set
@@ -302,9 +318,14 @@ this section; the bullets below describe the 2026-11-06 build still worn by the 
   garrison soldier (swapped from the bullets above); the Assault is Isaac Weller, a fifth
   Chosen; all five wear the same `dark` Pike carrier with a coloured square on the left
   shoulder and back (Weller blue, Cole tan, Reyes white, Cross black/grey border, Kane
-  orange). Rebuilt to the sheets so far (2026-11-07, verified in a playtest): **Walker, Runner,
-  Brute, Hocker** (`inf_<type>_*` v2, 36 limbs, 0.8-1.1k tris per body; the Hocker has its own
-  set now), and **the five Chosen** (`PC_CLASSES` rebuilt with the shared Pike carrier; Weller's
+  orange). Rebuilt to the sheets so far: **Walker, Runner, Brute, Hocker** (`inf_<type>_*`,
+  36 limbs; the first rebuild was uploaded and verified in a playtest 2026-11-07; skin v2 +
+  limb geometry v2 uploaded and verified the same day (palette v4 texture, 23 changed limbs;
+  ids in `assets/3d/ASSET_IDS.md`); 1.4-2.1k tris per body against caps of 1.6k / 2.0k /
+  2.4k / 2.2k. Upload order matters when the palette changes: `palette.png` first, then the
+  `inf_*` FBX, then `MeshAssets` size/offset from the `dims`/`offset` lines the build
+  prints; limbs painted with new cells on an old texture render those cells black, while the new
+  texture on the old limbs only recolours cells 25-27), and **the five Chosen** (`PC_CLASSES` rebuilt with the shared Pike carrier; Weller's
   set uploaded and worn in game, the other four built and previewed). Not built: Bloat,
   Shedder, Crawler, Kite, Growth, the Index hosts, Kilo.
 
@@ -407,6 +428,8 @@ when the player stands inside it, so a hollow ring is a later polish item.
 - 2026-11-07: Owner wants texture, not plain colour. Built-in Roblox materials on the arena
   Parts and on one-material meshes (§6 "Color and texture"); measured 60 fps, no frame
   cost. Next: a textured palette for the multi-colour meshes.
-- 2026-11-07: Owner direction for the Infected: no "zombie green". Move the skin rows toward
-  Resident Evil bio-horror (lesions, pustules, exposed flesh, bruised pale skin, wet red) with
-  `rebuilt`/`strain` as the strain's two colours. Backlog; see handoff/README.md.
+- 2026-11-07: Owner direction for the Infected: no "zombie green". Built as skin v2 and
+  uploaded (§2 rows, §7): pallor / flesh / bruise / wound / pus, boils, lesions and blotches
+  as geometry, milky eyes in a wound rim; `rebuilt`/`strain` stay the strain's two colours,
+  strain only on seams and the Hocker's throat. Limbs went octagonal and tapered with joint
+  caps at the same time (§7).
