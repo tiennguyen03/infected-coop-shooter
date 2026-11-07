@@ -1,4 +1,4 @@
-"""Low-poly asset builder for Roguelike Arena Survivor.
+"""Low-poly asset builder for Infected Co-op Shooter.
 
 Builds every game mesh procedurally with bmesh, paints faces with a shared palette texture
 (one material for all assets), saves the Blender project, exports one FBX per asset and

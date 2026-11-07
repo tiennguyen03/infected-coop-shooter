@@ -1,5 +1,5 @@
 {
-  "name": "roguelike-arena-survivor",
+  "name": "infected-coop-shooter",
   "tree": {
     "$className": "DataModel",
     "ReplicatedStorage": {

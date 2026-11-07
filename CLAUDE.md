@@ -1,7 +1,7 @@
-# Roguelike Arena Survivor
+# Infected Co-op Shooter
 
-Roblox roguelike (Risk of Rain 2-inspired loop, original mechanics), grounded military bio-horror
-setting. **Final product is 4-player co-op**; single-player is the current build target. Enemies are "the Infected" (model name `Infected`).
+Roblox 4-player co-op shooter (Helldivers-style loadout power, original mechanics), grounded
+military bio-horror setting. **Final product is 4-player co-op**; single-player is the current build target. Enemies are "the Infected" (model name `Infected`).
 
 Read on demand, not up front:
 - `handoff/README.md` — **current state, open work, dev-env startup, Studio MCP gotchas.**
@@ -83,4 +83,4 @@ one place and link to it. The hook `.claude/hooks/doc-sync-check.js` blocks a co
 stages code without docs; `[no-docs]` in the message bypasses it for pure fixups.
 
 Commit messages end with `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>` (or the
-model running). `gh` is not installed; push with plain `git push`.
+model running). `gh` is installed and logged in (repo scope); push with plain `git push`.

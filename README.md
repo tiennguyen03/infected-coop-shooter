@@ -1,8 +1,16 @@
-# Roguelike Arena Survivor
+# Infected Co-op Shooter
 
-A single-player Roblox roguelike: survive endless waves, level up, pick upgrades.
-See [docs/PLAN.md](docs/PLAN.md) for the full MVP plan and [CLAUDE.md](CLAUDE.md) for
-architecture and conventions.
+Working title. A Roblox 4-player co-op shooter in a grounded military bio-horror setting:
+a squad is dropped into a fallen quarantine corridor, holds a position against the
+Infected, and gets pulled out before Command burns the district. Power comes from your
+loadout and a few big field upgrades, not stat stacking. The current build is
+single-player; every system is written for four.
+
+- Current state, open work and dev-env gotchas: [handoff/README.md](handoff/README.md)
+- Architecture, conventions and commands: [CLAUDE.md](CLAUDE.md)
+- Run structure, stages, bosses, the Infected roster: [docs/PROGRESSION.md](docs/PROGRESSION.md)
+- Setting and naming: [docs/LORE.md](docs/LORE.md)
+- What shipped, sprint by sprint: [docs/HISTORY.md](docs/HISTORY.md)
 
 ## Setup (one time)
 
@@ -12,22 +20,23 @@ architecture and conventions.
 
 ## Run
 
-1. In this folder: `rojo serve`
+1. In this folder: `rojo serve default.project.json`
 2. In Studio: Plugins tab → Rojo → **Connect**
 3. Press **Play** (F5).
 
-Controls: WASD move, Space jump, **Shift** sprint, **hold left-click** to shoot (over-the-
-shoulder aim at the crosshair, mouse wheel zooms).
+Controls: WASD move, **Shift** sprint, **LeftControl** crouch, **C** prone, **Space** vault
+or climb cover, **hold left-click** to shoot (over-the-shoulder aim, mouse wheel zooms),
+**Q** dash, **E** breach.
 
-The loop: the Infected hunt you and get tougher every minute. Kills drop XP orbs; level
-up to pick 1 of 3 items (bleeding rounds, adrenaline, combat drones, supply drops,
-airstrikes — they stack). At 3:00 a Hold Position objective appears for bonus XP. Death
-ends the run with your stats; RESTART for a fresh one.
+The loop: the Infected hunt you and the pressure climbs on a clock you can read. Kills earn
+Resupply; a flare brings a pallet and you walk into 1 of 3 cards. Hold Position when you
+are ready, then extract. OPERATION COMPLETE ends the run with your stats; RESTART for a
+fresh one.
 
 ## Dev checks
 
 ```
-selene src     # lint
-stylua src     # format
+stylua src                  # format
+selene src                  # lint
 rojo build -o build.rbxlx   # validate project
 ```

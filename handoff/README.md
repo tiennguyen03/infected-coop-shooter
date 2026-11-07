@@ -1,16 +1,17 @@
-# Handoff — Roguelike Arena Survivor (VS Code + Claude Code terminal)
+# Handoff — Infected Co-op Shooter (VS Code + Claude Code terminal)
 
 Start here when picking the project up in a fresh Claude Code session.
-Last updated: 2026-11-07 (movement set: stances, vault/climb, Infected climbing). Last verified commit on `main`: `d6dc391` (sound day; the movement commit on top was playtested before committing).
+Last updated: 2026-11-07 (renamed to the working title Infected Co-op Shooter; movement set before that). Last verified commit on `main`: `513a8d8` (movement set, playtested before committing).
 
 ## What this is
 
-Roblox roguelike (Risk of Rain 2-style loop, grounded military bio-horror setting). **Final
+Roblox 4-player co-op shooter (Helldivers-style loadout power, grounded military bio-horror
+setting). **Final
 product is 4-player co-op**; the current build is single-player. Full loop works: spawn → fight → earn Resupply → flare → pallet → walk into 1 of 3 cards → Hold Position
 objective → extraction → OPERATION COMPLETE → restart. 24 items, 4 Infected forms (Walker, Runner, Brute, Hocker), Assault
 class with Q dash / E breach / Combat Momentum, server-authoritative everything.
 
-Repo: https://github.com/tiennguyen03/risk-of-blox — folder `~/roguelike-arena-survivor`.
+Repo: https://github.com/tiennguyen03/infected-coop-shooter — folder `~/infected-coop-shooter`.
 
 Read in this order:
 1. `CLAUDE.md` — conventions, commands, workflow + doc-sync rules (short; always loaded).

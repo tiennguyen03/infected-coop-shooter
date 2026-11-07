@@ -56,7 +56,7 @@ async function upload(auth, id) {
 		JSON.stringify({
 			assetType: "Decal",
 			displayName: "icon_" + id,
-			description: "Roguelike Arena Survivor item icon",
+			description: "Infected Co-op Shooter item icon",
 			creationContext: { creator: { userId: auth.user } },
 		})
 	);

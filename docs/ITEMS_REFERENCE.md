@@ -1,4 +1,4 @@
-# Items Reference — Roguelike Arena Survivor
+# Items Reference — Infected Co-op Shooter
 
 All 13 items currently in the game. Generated from `src/shared/ItemDefinitions.luau`
 (metadata) and `src/shared/Config.luau` → `Items` (tuning values). All items stack;

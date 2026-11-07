@@ -1,4 +1,4 @@
-# Roguelike Arena Survivor - MVP Plan
+# Infected Co-op Shooter - MVP Plan
 
 ## Vision
 
