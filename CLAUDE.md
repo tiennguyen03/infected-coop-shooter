@@ -21,7 +21,8 @@ Read on demand, not up front:
   playtest-critic. Use them for design calls in their area before building. They are
   read-only and hand back paste-ready doc text: apply what the owner approves, in the same
   commit as the work. performance-reviewer checks a feature against the STYLES budgets
-  before it ships.
+  before it ships. art-director owns the look: build sheets from the lore developer's
+  canon, then reviews the Blender preview renders (the engineer routes between them).
 
 ## Guiding rule
 
