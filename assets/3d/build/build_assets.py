@@ -41,6 +41,9 @@ PALETTE = [
     ("red", "#b93434"), ("red_l", "#e85a5a"), ("red_d", "#7e2020"),
     ("concrete", "#7c7a74"), ("asphalt", "#3e4044"), ("rust", "#7a4328"),
     ("foliage", "#596232"), ("inf_skin", "#62745a"), ("inf_runner", "#7f7e44"), ("inf_brute", "#3b473b"),
+    ("foliage_d", "#3a4120"),
+    ("rebuilt", "#b09686"), ("rebuilt_l", "#dccbbb"), ("rebuilt_d", "#73584e"),
+    ("strain", "#bed73c"), ("strain_l", "#d2e276"), ("strain_d", "#768525"),
     ("friendly_blue", "#3fa7d6"), ("warning_orange", "#e87828"), ("objective_yellow", "#e6bd60"),
     ("infected_green", "#78aa46"), ("shield_blue", "#4e84c4"), ("heal_pink", "#d28282"),
 ]
@@ -159,6 +162,18 @@ class Builder:
         verts = [v for v in verts if v.is_valid]
         self._xform(verts, size=size, rot=rot, loc=loc)
         return self._paint(verts, swatch)
+
+    def rotate_all(self, rot):
+        """Rotate everything built so far about the origin (a tilted head, a leaning torso)."""
+        self._xform(list(self.bm.verts), rot=rot)
+
+    def merge(self, other):
+        """Absorb another Builder's geometry (frees it)."""
+        me = bpy.data.meshes.new("_merge_tmp")
+        other.bm.to_mesh(me)
+        other.bm.free()
+        self.bm.from_mesh(me)
+        bpy.data.meshes.remove(me)
 
     def finish(self, name, collection, material, pivot="bottom"):
         bm = self.bm
@@ -631,7 +646,9 @@ def lamp_post(b):
 # default R15 limb MeshParts for these at template build (same Name/Size/CFrame, attachments
 # moved over, so the default walk animation keeps working). Each limb's bounds equal the R15
 # limb size (Blender X width, Y depth, Z height; centred at the origin) so the MeshPart Size
-# fit is distortion-free; small front/top details may protrude ~0.1.
+# fit is distortion-free; small front/top details may protrude ~0.1 (0.2 on the Brute).
+# Sheets: docs/CHARACTERS.md (2026-11-07). The strain's two colours are the `rebuilt` (pale
+# scar tissue, bone) and `strain` (caustic fluid) swatches; eyes are always `infected_green`.
 R15_LIMB = {
     "head": (1.16, 1.16, 1.18),
     "upper_torso": (1.94, 1.0, 1.70),
@@ -644,91 +661,310 @@ R15_LIMB = {
     "foot": (1.01, 1.0, 0.31),
 }
 
-INFECTED_TYPES = {
-    # skin, cloth, cloth_d, boot, head gear kind, accent
-    "walker": dict(skin="inf_skin", cloth="olive", cloth_d="olive_d", boot="dark", head="helmet", accent="olive_d", blood="red"),
-    "runner": dict(skin="inf_runner", cloth="tan", cloth_d="tan_d", boot="dark", head="hair", accent="white_d", blood="red_d"),
-    "brute": dict(skin="inf_brute", cloth="dark", cloth_d="dark_d", boot="dark_d", head="plate", accent="gun_d", blood="red"),
+# R15 limb centres (hip at z=0) for the assembled preview figures.
+R15_POSE = {
+    "head": (0, 0, 1.59), "upper_torso": (0, 0, 0.20), "lower_torso": (0, 0, -0.80),
+    "upper_arm": (1.47, 0, 0.37), "lower_arm": (1.47, 0, -0.22), "hand": (1.47, 0, -0.85),
+    "upper_leg": (0.5, 0, -1.42), "lower_leg": (0.5, 0, -2.20), "foot": (0.5, 0, -2.85),
 }
 
 
-def _limb(b, limb, sw, o=(0, 0, 0), side=1):
-    """Add one limb's geometry at offset o. side = +1 right / -1 left (only used for previews)."""
-    ox, oy, oz = o
+class Limb:
+    """Primitive helpers offset to one limb's origin."""
 
-    def B(size, loc=(0, 0, 0), swatch="gun", rot=None):
-        b.box(size, (ox + loc[0], oy + loc[1], oz + loc[2]), rot=rot, swatch=swatch)
+    def __init__(self, b, o=(0, 0, 0)):
+        self.b, self.o = b, o
 
+    def _at(self, loc):
+        return (self.o[0] + loc[0], self.o[1] + loc[1], self.o[2] + loc[2])
+
+    def box(self, size, loc=(0, 0, 0), swatch="gun", rot=None):
+        self.b.box(size, self._at(loc), rot=rot, swatch=swatch)
+
+    def cyl(self, r, depth, loc=(0, 0, 0), swatch="gun", rot=None, segs=8, r2=None):
+        self.b.cyl(r, depth, self._at(loc), segs=segs, r2=r2, rot=rot, swatch=swatch)
+
+    def ico(self, r, loc=(0, 0, 0), swatch="gun", subdiv=1):
+        self.b.ico(r, self._at(loc), subdiv=subdiv, swatch=swatch)
+
+    def eyes(self, z=0.04, y=-0.61, dx=0.25, size=(0.2, 0.1, 0.14)):
+        for x in (-dx, dx):
+            self.box(size, (x, y, z), swatch="infected_green")
+
+    def shoe(self, swatch="dark"):
+        W, D, H = R15_LIMB["foot"]
+        self.box((W, D, 0.23), (0, 0, 0.04), swatch=swatch)
+        self.box((W, D, 0.08), (0, 0, -0.115), swatch="dark_d")
+
+
+# --- Walker: a civilian from the pens, the strain's first day. Tan jacket over a white shirt,
+# torn open on the dropped (right, +X) shoulder over a rebuilt rib slab; a foliage blanket tied
+# round the waist like a shawl; Delta screening band on the wrist; no blood, only closed seams.
+def walker_limb(L, limb, skin="inf_skin"):
     W, D, H = R15_LIMB[limb]
     if limb == "head":
-        B((W, D, H), swatch=sw["skin"])
-        B((1.0, 0.16, 0.16), (0, -0.58, 0.18), swatch="dark")  # brow
-        for x in (-0.25, 0.25):
-            B((0.2, 0.1, 0.14), (x, -0.61, 0.04), swatch="infected_green")  # eyes
-        B((0.5, 0.1, 0.12), (0, -0.61, -0.3), swatch="dark_d")  # mouth
-        B((0.34, 0.1, 0.08), (0.12, -0.6, -0.14), swatch=sw["blood"])  # blood smear
-        if sw["head"] == "helmet":
-            B((1.28, 1.28, 0.42), (0, 0, 0.42), swatch=sw["accent"])
-            B((1.3, 0.3, 0.08), (0, -0.72, 0.24), swatch=sw["accent"])  # brim
-        elif sw["head"] == "hair":
-            B((1.2, 1.12, 0.26), (0, 0.04, 0.5), swatch="dark")
-        else:  # plate helmet
-            B((1.3, 1.3, 0.5), (0, 0, 0.4), swatch=sw["accent"])
-            B((1.0, 0.1, 0.1), (0, -0.66, 0.22), swatch="dark_d")  # visor slit
+        L.box((W, D, H), swatch=skin)
+        L.box((1.2, 1.2, 0.26), (0, 0.02, 0.5), swatch="dark")  # hair cap
+        L.box((0.3, 1.1, 0.5), (-0.46, 0.06, 0.2), swatch="dark")  # long on one side only
+        L.box((1.0, 0.1, 0.1), (0, -0.6, 0.26), swatch="dark_d")  # brow
+        L.eyes()
+        L.box((0.16, 0.14, 0.26), (0, -0.62, -0.08), swatch=skin)  # nose
+        L.box((0.5, 0.1, 0.06), (0, -0.6, -0.32), swatch="dark_d")  # closed mouth
+        L.box((0.1, 0.1, 0.5), (0.3, -0.58, -0.34), swatch="rebuilt")  # jaw seam
+        L.box((0.14, 0.1, 0.14), (0.3, -0.6, -0.1), swatch="rebuilt_l")  # seam knot
     elif limb == "upper_torso":
-        B((W, D, H), swatch=sw["cloth"])
-        B((1.3, 0.18, 1.1), (0, -0.55, 0.1), swatch=sw["accent"])  # vest / plate
-        for x in (-0.55, 0.55):
-            B((0.2, 0.12, 1.5), (x, -0.53, 0), swatch="dark")  # straps
-        B((0.1, 0.5, 0.6), (0.98, 0.05, -0.3), swatch=sw["skin"])  # torn sleeve/side skin
-        B((0.4, 0.06, 0.3), (-0.3, -0.66, -0.2), swatch=sw["blood"])  # blood on plate
-        if sw["head"] == "plate":  # brute backpack / armour
-            B((1.3, 0.3, 1.1), (0, 0.6, 0.1), swatch="gun_d")
+        L.box((W, D, 1.55), (0, 0, -0.075), swatch="tan")  # jacket, right shoulder dropped
+        L.box((0.8, D, 0.3), (-0.57, 0, 0.75), swatch="tan")  # left shoulder stays up
+        L.box((0.7, 0.12, 1.4), (0, -0.5, -0.1), swatch="white_d")  # shirt in the open front
+        for x in (-0.45, 0.45):
+            L.box((0.26, 0.1, 1.3), (x, -0.53, -0.1), swatch="tan_d")  # lapels
+        L.box((0.12, 0.06, 0.12), (0, -0.57, -0.5), swatch="brass")  # one button left
+        L.box((0.5, D + 0.02, 1.0), (0.72, 0, -0.2), swatch=skin)  # torn side: bare skin
+        L.box((0.36, 0.12, 0.62), (0.72, -0.5, -0.1), swatch="rebuilt")  # re-set rib slab
+        for z in (0.1, -0.1, -0.3):
+            L.box((0.3, 0.06, 0.06), (0.72, -0.56, z), swatch="rebuilt_l")  # ribs
+        L.box((0.1, 0.1, 0.3), (0.3, -0.5, 0.72), swatch="rebuilt")  # neck seam
+        L.box((2.0, 1.08, 0.3), (0, 0, -0.7), swatch="foliage")  # blanket knotted at the waist
+        L.box((1.9, 0.2, 0.5), (0, 0.5, -0.6), swatch="foliage_d")  # blanket back
     elif limb == "lower_torso":
-        B((W, D, H), swatch=sw["cloth_d"])
-        B((0.3, 0.12, 0.26), (0, -0.52, 0), swatch="brass")  # buckle
+        L.box((W, D, H), swatch="asphalt")
+        L.box((W + 0.06, D + 0.06, 0.42), swatch="foliage")  # shawl wrap
+        L.box((1.9, 0.18, 0.42), (0, 0.55, 0), swatch="foliage_d")  # hanging back
+        L.ico(0.2, (0.35, -0.56, 0.02), swatch="foliage")  # knot
     elif limb == "upper_arm":
-        B((1.0, 1.0, 0.7), (0, 0, 0.27), swatch=sw["cloth"])  # sleeve
-        B((0.9, 0.9, 0.54), (0, 0, -0.35), swatch=sw["skin"])  # bare arm
-        if sw["head"] == "plate":
-            B((1.16, 1.16, 0.3), (0, 0, 0.45), swatch=sw["accent"])  # pauldron
+        L.box((W, D, H), swatch="tan")  # sleeve to the elbow
+        L.box((1.04, 1.04, 0.22), (0, 0, 0.5), swatch="tan_d")  # shoulder seam
+        L.box((1.04, 1.04, 0.14), (0, 0, -0.5), swatch="tan_d")  # cuff
     elif limb == "lower_arm":
-        B((0.9, 0.9, 1.12), swatch=sw["skin"])
-        B((1.0, 1.0, 0.24), (0, 0, 0.12), swatch="white_d")  # bandage
+        L.box((0.88, 0.88, H), swatch=skin)
+        L.box((0.96, 0.96, 0.18), (0, 0, -0.4), swatch="white")  # Delta screening band
+        L.box((0.98, 0.98, 0.05), (0, 0, -0.4), swatch="red")  # its one red stripe
     elif limb == "hand":
-        B((W, D, H), swatch=sw["skin"])
-        for x in (-0.2, 0.2):
-            B((0.06, 0.5, 0.33), (x, -0.27, 0), swatch="dark_d")  # finger gaps
+        L.box((W, D, H), swatch=skin)
+        L.box((0.9, 0.42, 0.3), (0, -0.3, -0.08), swatch=skin)  # fingers curled under
+        for x in (-0.22, 0.0, 0.22):
+            L.box((0.05, 0.44, 0.32), (x, -0.3, -0.08), swatch="dark_d")  # finger gaps
     elif limb == "upper_leg":
-        B((W, D, H), swatch=sw["cloth"])
-        B((0.7, 0.2, 0.42), (0, -0.5, -0.42), swatch="dark")  # knee pad
+        L.box((W, D, H), swatch="asphalt")
+        L.box((1.0, 0.16, 0.9), (0, 0.5, 0.2), swatch="foliage_d")  # blanket hangs to the thigh
+        L.ico(0.3, (0.1, -0.42, -0.5), swatch="rebuilt")  # knee knot
     elif limb == "lower_leg":
-        B((0.9, 0.9, 0.8), (0, 0, 0.25), swatch=sw["cloth"])
-        B((W, D, 0.5), (0, 0, -0.4), swatch=sw["boot"])  # boot shaft
+        L.box((0.95, 0.95, H), swatch="asphalt")
+        L.box((W, D, 0.3), (0, 0, -0.5), swatch="dark")  # shoe top
     elif limb == "foot":
-        B((W, D, 0.23), (0, 0, 0.04), swatch=sw["boot"])
-        B((W, D, 0.08), (0, 0, -0.115), swatch="dark_d")  # sole
+        L.shoe("dark")
+
+
+# --- Runner: a Delta garrison soldier the agent did its job on. Plate carrier torn off, T-shirt
+# split by the chest growth, pale tendon cables over yellow muscle, every joint knotted, dog
+# tags, fatigue trousers blown at the knees, boots. The one with fresh red at the tears.
+def runner_limb(L, limb):
+    W, D, H = R15_LIMB[limb]
+    skin = "inf_runner"
+    if limb == "head":
+        L.box((W, D, H), swatch=skin)
+        L.box((1.14, 0.22, 0.2), (0, -0.56, 0.22), swatch="rebuilt_d")  # brow ridge
+        L.eyes(z=0.04, y=-0.6)
+        L.box((0.2, 0.12, 0.2), (0, -0.62, -0.1), swatch=skin)  # nose
+        L.box((0.66, 0.1, 0.2), (0, -0.6, -0.32), swatch="dark_d")  # clenched jaw
+        L.box((0.54, 0.08, 0.1), (0, -0.62, -0.32), swatch="white_d")  # teeth
+        L.box((0.34, 0.12, 0.34), (0, 0.5, -0.3), swatch="rebuilt_l")  # tendon at the nape
+    elif limb == "upper_torso":
+        L.box((W, D, H), swatch=skin)  # muscle
+        for x in (-0.6, 0.6):
+            L.box((0.72, D + 0.02, 1.5), (x, 0, -0.05), swatch="gun_d")  # T-shirt halves
+        L.box((1.94, 0.3, 1.5), (0, 0.36, -0.05), swatch="gun_d")  # shirt back
+        for x in (-0.37, 0.37):
+            L.box((0.06, 0.12, 1.4), (x, -0.52, -0.05), swatch="red")  # fresh tear edges
+        for x in (-0.3, 0.3):
+            L.box((0.46, 0.24, 0.5), (x, -0.5, 0.25), swatch=skin)  # pecs
+            L.box((0.06, 0.12, 0.9), (x * 0.5, -0.56, -0.1), swatch="rebuilt_l")  # tendons
+        L.box((0.5, 0.1, 0.06), (0, -0.56, 0.5), swatch="rebuilt_l")  # collarbone cable
+        for i, z in enumerate((0.72, 0.42, 0.12, -0.18, -0.48)):
+            L.box((0.28, 0.22, 0.22), (0, 0.5, z), swatch="rebuilt_l")  # spine ridge
+        for x in (-0.66, 0.66):
+            L.box((0.56, 0.8, 0.3), (x, 0, 0.8), swatch=skin)  # traps: no neck
+            L.box((0.26, 0.3, 0.12), (x, -0.36, 0.9), swatch="dark")  # carrier strap stubs
+        L.box((0.04, 0.04, 0.5), (0, -0.57, 0.45), swatch="dark")  # tag cord
+        L.box((0.14, 0.04, 0.22), (0.03, -0.59, 0.15), swatch="gun_l")  # dog tags
+        L.box((0.14, 0.04, 0.22), (-0.04, -0.6, 0.11), swatch="gun_l")
+    elif limb == "lower_torso":
+        L.box((W, D, H), swatch="olive")
+        L.box((W + 0.02, D + 0.02, 0.14), (0, 0, 0.1), swatch="dark")  # belt
+        L.box((0.26, 0.1, 0.16), (0, -0.53, 0.1), swatch="gun")  # buckle
+    elif limb == "upper_arm":
+        L.box((1.04, 1.04, 0.2), (0, 0, 0.5), swatch="gun_d")  # sleeve stub
+        L.box((W, D, 0.4), (0, 0, 0.18), swatch=skin)  # banded muscle
+        L.box((1.02, 1.02, 0.06), (0, 0, -0.05), swatch="rebuilt_l")
+        L.box((0.9, 0.9, 0.4), (0, 0, -0.28), swatch=skin)
+        L.box((0.94, 0.94, 0.06), (0, 0, -0.5), swatch="rebuilt_l")
+        L.box((0.84, 0.84, 0.2), (0, 0, -0.55), swatch=skin)
+    elif limb == "lower_arm":
+        L.ico(0.36, (0, 0, 0.46), swatch="rebuilt_l")  # elbow knob
+        L.box((0.9, 0.9, 0.5), (0, 0, 0.05), swatch=skin)
+        L.box((0.94, 0.94, 0.06), (0, 0, -0.2), swatch="rebuilt_l")
+        L.box((0.82, 0.82, 0.6), (0, 0, -0.3), swatch=skin)
+        L.box((0.86, 0.86, 0.1), (0, 0, -0.5), swatch="rebuilt")  # wrist
+    elif limb == "hand":
+        L.box((W, 0.7, H), (0, 0.16, 0), swatch=skin)
+        L.box((0.9, 0.14, 0.16), (0, -0.2, 0.1), swatch="rebuilt_l")  # knuckles
+        for x in (-0.36, -0.12, 0.12, 0.36):
+            L.box((0.16, 0.5, 0.18), (x, -0.42, -0.02), swatch=skin)  # long splayed fingers
+    elif limb == "upper_leg":
+        L.box((W, D, 0.9), (0, 0, 0.23), swatch="olive")
+        L.box((W + 0.02, 0.12, 0.08), (0, -0.46, -0.2), swatch="olive_d")  # torn edge
+        L.box((0.8, 0.86, 0.5), (0, 0, -0.43), swatch=skin)  # blown knee
+        L.ico(0.22, (0, -0.44, -0.5), swatch="rebuilt_l")  # knee knob
+    elif limb == "lower_leg":
+        L.box((0.9, 0.9, 0.36), (0, 0, 0.45), swatch=skin)  # calf bands
+        L.box((0.94, 0.94, 0.06), (0, 0, 0.25), swatch="rebuilt_l")
+        L.box((0.82, 0.82, 0.36), (0, 0, 0.06), swatch=skin)
+        L.box((W, D, 0.62), (0, 0, -0.34), swatch="dark")  # boot shaft
+        L.box((W + 0.02, D + 0.02, 0.08), (0, 0, -0.08), swatch="dark_l")  # boot collar
+    elif limb == "foot":
+        L.shoe("dark")
+        L.box((0.08, 0.5, 0.06), (0.3, 0.4, 0.14), swatch="tan_d")  # lace trailing off the heel
+
+
+# --- Brute: a Delta soldier rebuilt around his breaks with bone. Bone shelf over both shoulders,
+# plated skull under a split helmet, ribs showing, carrier hanging open on one side, a burst
+# assault pack, spurred forearms, knuckle plates, shins plated, boots split at the toe.
+def brute_limb(L, limb):
+    W, D, H = R15_LIMB[limb]
+    skin = "inf_brute"
+    if limb == "head":
+        L.box((W, D, 0.5), (0, 0, -0.34), swatch=skin)  # jaw
+        L.box((W, D, 0.72), (0, 0, 0.23), swatch="rebuilt")  # plated skull
+        for x in (-0.37, 0.37):
+            L.box((0.5, 1.24, 0.44), (x, 0, 0.42), swatch="olive_d")  # helmet halves
+        L.box((0.22, 1.2, 0.5), (0, 0, 0.4), swatch="rebuilt_l")  # bone crest between them
+        L.box((1.16, 0.24, 0.2), (0, -0.56, 0.12), swatch="rebuilt_d")  # brow overhang
+        L.eyes(z=-0.04, y=-0.56, dx=0.26, size=(0.2, 0.1, 0.1))
+        L.box((1.2, 0.06, 0.08), (0, -0.56, -0.4), swatch="dark")  # chin strap
+        L.box((0.7, 0.1, 0.08), (0, -0.6, -0.26), swatch="dark_d")  # mouth
+    elif limb == "upper_torso":
+        L.box((W, D, H), swatch=skin)
+        for y in (-0.42, 0.42):
+            L.box((2.1, 0.3, 0.5), (0, y, 0.7), swatch="rebuilt")  # the bone shelf
+            for x in (-0.7, 0.0, 0.7):
+                L.ico(0.18, (x, y, 0.92), swatch="rebuilt_l")  # knobs along it
+        L.box((W + 0.06, 0.5, 0.2), (0, 0, 0.84), swatch="rebuilt")  # shelf bridges over the neck
+        for z in (0.35, 0.1, -0.15, -0.4):
+            L.box((1.1, 0.08, 0.1), (0, -0.52, z), swatch="rebuilt")  # ribs
+        L.box((0.5, 0.06, 0.12), (0.3, -0.57, 0.5), swatch="red")  # fresh under the shelf
+        L.box((0.8, 0.16, 1.2), (-0.55, -0.56, -0.05), swatch="olive_d")  # carrier hangs open
+        L.box((0.06, 0.04, 0.9), (-0.5, -0.66, 0.0), swatch="dark_d")  # cracked plate
+        L.box((0.16, 0.34, 1.0), (-0.9, -0.36, 0.2), swatch="dark")  # its strap
+        L.box((1.3, 0.3, 1.0), (0.1, 0.56, -0.1), swatch="olive")  # burst assault pack
+        L.box((0.5, 0.34, 0.5), (0.3, 0.6, -0.4), swatch="olive_d")  # pack flap hanging
+        L.box((0.14, 0.4, 1.2), (0.6, 0.4, 0.1), swatch="dark")  # one strap left
+    elif limb == "lower_torso":
+        L.box((W, D, H), swatch="olive")
+        L.box((W + 0.02, D + 0.02, 0.14), (0, 0, 0.08), swatch="dark")  # belt
+        L.box((0.6, 0.12, 0.2), (0.4, -0.52, 0.02), swatch="rebuilt")  # hip bone through
+    elif limb == "upper_arm":
+        L.box((0.86, 0.86, H), swatch=skin)  # thinner than the forearm
+        L.box((0.96, 0.96, 0.22), (0, 0, 0.5), swatch="olive")  # sleeve stub
+        L.box((0.98, 0.98, 0.08), (0, 0, 0.38), swatch="olive_d")
+    elif limb == "lower_arm":
+        L.box((W, D, H), swatch=skin)
+        for z in (0.32, 0.0, -0.32):
+            L.box((0.24, 0.2, 0.34), (0.5, 0.1, z), rot=(0, 30, 0), swatch="rebuilt")  # ulna spurs
+    elif limb == "hand":
+        L.box((W, 0.74, 0.4), (0, 0.12, 0.0), swatch=skin)  # fist
+        L.box((0.9, 0.32, 0.22), (0, -0.4, 0.08), swatch="rebuilt_l")  # knuckle plates
+        for x in (-0.22, 0.0, 0.22):
+            L.box((0.05, 0.4, 0.3), (x, -0.36, -0.06), swatch="dark_d")  # finger gaps
+    elif limb == "upper_leg":
+        L.box((W, D, 0.6), (0, 0, 0.38), swatch="olive")  # trousers torn to the thigh
+        L.box((W + 0.02, D + 0.02, 0.08), (0, 0, 0.06), swatch="olive_d")
+        L.box((0.9, 0.9, 0.78), (0, 0, -0.29), swatch=skin)
+        L.ico(0.26, (0, -0.42, -0.55), swatch="rebuilt")  # knee knob
+    elif limb == "lower_leg":
+        L.box((0.9, 0.9, 0.8), (0, 0, 0.25), swatch=skin)
+        L.box((0.7, 0.2, 0.9), (0, -0.44, 0.15), swatch="rebuilt")  # shin plate
+        L.box((W, D, 0.5), (0, 0, -0.4), swatch="dark_d")  # boot shaft
+    elif limb == "foot":
+        L.shoe("dark_d")
+        L.box((0.4, 0.3, 0.26), (0.1, -0.42, 0.08), swatch="rebuilt")  # bone through the toe
+
+
+# --- Hocker: a Walker a day further on; the throat is a pump. Head thrown back on a split jaw,
+# nose and lips gone to rebuilt tissue, eyes rolled up, the jacket soaked down the front from
+# the collar, chest hollow, a surgical mask round the neck under where the sac sits, hands
+# hooked up at the collar. Legs are the Walker's. The sac itself stays an attached part.
+def hocker_limb(L, limb):
+    W, D, H = R15_LIMB[limb]
+    skin = "inf_skin"
+    if limb == "head":
+        L.box((W, D, 0.8), (0, 0, 0.19), swatch=skin)  # upper face
+        L.box((1.2, 1.2, 0.26), (0, 0.02, 0.5), swatch="dark")  # hair cap
+        L.box((0.3, 1.1, 0.5), (-0.46, 0.06, 0.2), swatch="dark")
+        L.box((0.6, 0.1, 0.26), (0, -0.6, 0.22), swatch="white_d")  # eyes rolled: whites
+        L.eyes(z=0.32, y=-0.61, dx=0.2, size=(0.14, 0.1, 0.08))  # green at the top
+        L.box((0.5, 0.14, 0.36), (0, -0.6, -0.06), swatch="rebuilt")  # nose and lips gone
+        L.box((0.9, 0.56, 0.3), (0, -0.3, -0.42), swatch="strain_d")  # the open throat
+        for s in (-1, 1):
+            L.box((0.44, 0.64, 0.36), (s * 0.34, -0.3, -0.52), rot=(0, 0, s * 22), swatch=skin)  # jaw halves
+        L.box((W, D, 0.3), (0, 0.1, -0.44), swatch=skin)  # back of the jaw
+        L.b.rotate_all((-20, 0, 0))  # head thrown back
+    elif limb == "upper_torso":
+        for x in (-0.67, 0.67):
+            L.box((0.6, D, H), (x, 0, 0), swatch="tan")  # jacket sides
+        L.box((0.74, 0.8, H), (0, 0.1, 0), swatch="white_d")  # chest caved in: recessed shirt
+        for x in (-0.42, 0.42):
+            L.box((0.2, 0.12, 1.4), (x, -0.5, -0.1), swatch="tan_d")  # lapels
+        L.box((0.5, 0.06, 1.2), (0, -0.33, 0.05), swatch="strain_d")  # soaked down the front
+        for x in (-0.18, 0.2):
+            L.box((0.1, 0.06, 0.5), (x, -0.33, -0.5), swatch="strain_d")  # drips
+        for z in (0.3, 0.05, -0.2):
+            L.box((0.6, 0.04, 0.06), (0, -0.34, z), swatch="rebuilt_l")  # ribs under the shirt
+        L.box((1.0, 0.36, 0.3), (0, -0.36, 0.7), swatch="white")  # surgical mask round the neck
+        L.box((1.2, 0.3, 0.05), (0, -0.36, 0.84), swatch="dark_d")  # mask tie
+        L.box((1.9, 0.2, 0.5), (0, 0.5, -0.6), swatch="foliage_d")  # blanket back
+        L.box((2.0, 1.08, 0.3), (0, 0, -0.7), swatch="foliage")  # blanket knot
+    elif limb == "lower_torso":
+        walker_limb(L, limb)
+    elif limb == "upper_arm":
+        L.box((0.94, 0.94, H), swatch="tan")
+        L.box((1.0, 1.0, 0.14), (0, 0, -0.5), swatch="strain_d")  # soaked cuff
+    elif limb == "lower_arm":
+        L.box((0.86, 0.86, H), swatch=skin)
+        L.box((0.96, 0.96, 0.2), (0, 0, -0.4), swatch="rebuilt")  # rebuilt wrist
+    elif limb == "hand":
+        L.box((W, 0.7, H), (0, 0.16, 0), swatch=skin)
+        for x in (-0.33, -0.11, 0.11, 0.33):
+            L.box((0.16, 0.3, 0.4), (x, -0.4, -0.1), rot=(40, 0, 0), swatch=skin)  # hooked fingers
+        L.box((0.9, 0.12, 0.1), (0, -0.2, 0.12), swatch="rebuilt_l")  # knuckles
+    else:
+        walker_limb(L, limb)
+
+
+INFECTED_TYPES = {
+    "walker": walker_limb,
+    "runner": runner_limb,
+    "brute": brute_limb,
+    "hocker": hocker_limb,
+}
 
 
 def _register_infected():
-    for tname, sw in INFECTED_TYPES.items():
+    for tname, build in INFECTED_TYPES.items():
         for limb in R15_LIMB:
-            def fn(b, limb_name=limb, sw_=sw):
-                _limb(b, limb_name, sw_)
+            def fn(b, limb_name=limb, build_=build):
+                build_(Limb(b), limb_name)
             ASSETS[f"inf_{tname}_{limb}"] = (fn, "Infected", "center")
 
-        def preview(b, _sw=sw):
+        def preview(b, build_=build):
             # Assembled figure at R15 offsets (hip at z=0), for the lineup/preview only.
-            _limb(b, "head", _sw, (0, 0, 1.59))
-            _limb(b, "upper_torso", _sw, (0, 0, 0.20))
-            _limb(b, "lower_torso", _sw, (0, 0, -0.80))
-            for s in (-1, 1):
-                _limb(b, "upper_arm", _sw, (s * 1.47, 0, 0.37))
-                _limb(b, "lower_arm", _sw, (s * 1.47, 0, -0.22))
-                _limb(b, "hand", _sw, (s * 1.47, 0, -0.85))
-                _limb(b, "upper_leg", _sw, (s * 0.5, 0, -1.42))
-                _limb(b, "lower_leg", _sw, (s * 0.5, 0, -2.20))
-                _limb(b, "foot", _sw, (s * 0.5, 0, -2.85))
+            for limb, (x, y, z) in R15_POSE.items():
+                sides = (1,) if x == 0 else (-1, 1)
+                for s in sides:
+                    sub = Builder()
+                    build_(Limb(sub), limb)
+                    verts = list(sub.bm.verts)
+                    bmesh.ops.translate(sub.bm, vec=Vector((s * x, y, z)), verts=verts)
+                    b.merge(sub)
         ASSETS[f"ref_inf_{tname}"] = (preview, "_Reference", "bottom")
 
 

@@ -1,7 +1,7 @@
 # Handoff — Roguelike Arena Survivor (VS Code + Claude Code terminal)
 
 Start here when picking the project up in a fresh Claude Code session.
-Last updated: 2026-11-07 (hitscan + headshots). Last verified commit on `main`: `0bb9d87`.
+Last updated: 2026-11-07 (body redesign part 1: Infected v2). Last verified commit on `main`: `5448b8a`.
 
 ## What this is
 
@@ -33,6 +33,11 @@ Read in this order:
 - 2026-11-05: decided the final product is **4-player co-op**. `src/` audited; 13 single-
   player shortcuts logged in `docs/MULTIPLAYER_READINESS.md` with a planned fix each, and
   all 6 co-op design decisions are answered there. No code changed yet.
+- 2026-11-07: **body + map redesign started.** Build sheets for every body in
+  `docs/CHARACTERS.md`, the Delta/Mile 14/Kestrel layout spec in `docs/LEVELS.md`. Walker,
+  Runner, Brute and Hocker wear the v2 limb sets (palette v2 texture in `MeshAssets`); the
+  Chosen, the rest of the roster, the Index hosts, Kilo and the map are still to build, in
+  that order (next: Weller/the five Chosen with the Pike carrier, then env_bus + the Gate).
 
 ## Open work, in priority order
 

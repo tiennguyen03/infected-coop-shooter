@@ -117,7 +117,6 @@ local EnemyDefinitions: { [string]: EnemyDefinition } = {
 				Puddle = { Radius = 6, Duration = 4, DamagePerSecond = 6 },
 			},
 		},
-		BodySet = "Walker", -- own limb set is backlog (assets/3d)
 		ThroatSac = true,
 	},
 }

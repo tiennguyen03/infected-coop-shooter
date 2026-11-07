@@ -250,7 +250,7 @@ form on Kestrel (the player learns it twice). An Index kill drops a priority pal
 | Index | Stage | Body | Mechanic (one rule) |
 |---|---|---|---|
 | the Warden | Delta | MP Brute, riot plate grown into the bone | armoured: shoot the plates off, then the body |
-| the Bloat | Mile 14 | gas-swollen, translucent | area denial: bursts into a lingering cloud on death; kill it where you can afford the cloud |
+| the Bloat | Mile 14 | gas-swollen, pale belly, veins showing | area denial: bursts into a lingering cloud on death; kill it where you can afford the cloud |
 | the Patient | Kestrel | the host that got the antiviral | regenerates in waves: damage windows between surges |
 | the Lineman | Harlan Yard | a Runner the strain finished | drags a player; its call pulls the map |
 | the Specimen | Reservoir | the station's live host | every mechanic above, in phases |
@@ -267,7 +267,7 @@ form gets its own limb set (lore developer + [STYLES.md](STYLES.md) first), Hock
 | Runner | fast melee | dense rebuilt muscle, tendons like cable | S1 | exists |
 | Brute | melee tank | bone overgrowth, plated shoulders | S1 | exists; headshot x1.25 (plated skull), no weak point |
 | Hocker | ranged | lobs caustic fluid; throat a swollen sac | S1 late | shipped 2026-11-06 (Walker body + sac; own mesh first in the redesign) |
-| Bloat | exploder, area denial | gas-swollen, translucent | S2 Index, common S3 | on-death cloud |
+| Bloat | exploder, area denial | gas-swollen, pale belly, veins showing | S2 Index, common S3 | on-death cloud |
 | Shedder | splitter | body seamed into segments, extra limbs | S3 | on-death spawns 2–3 Crawlers |
 | Crawler | swarm | shed segment, fast, fragile | S3 (from Shedders) | small rig, no attack clip needed |
 | Kite | flyer | shed tissue on ribbed membranes, dives | S4 | non-Humanoid mover (new) |

@@ -10,7 +10,7 @@ at or hand-tweak anything. Collections inside it:
 | `Pickups` | XP orb |
 | `Environment` | Stage 1 set dressing, all built to the 5-stud character (`CHAR_H`, `DOOR_H`, `STOREY`, `COVER_H` constants in the script): barrier, sandbags, tower, ruin, containers, humvee wreck, T-wall, hesco, comm tower, tent, checkpoint, dead tree, lamp post |
 | `Chosen` | player limb sets `pc_<class>_<limb>` for assault, k9, epi, recon, engineer (`PC_CLASSES`); only assault is uploaded and worn in game |
-| `Infected` | enemy limb sets: `inf_<walker|runner|brute>_<limb>`, 9 limbs per type (left/right share) |
+| `Infected` | enemy limb sets: `inf_<walker|runner|brute|hocker>_<limb>`, 9 limbs per type (left/right share), one builder function per type (`walker_limb`...) from the sheets in `docs/CHARACTERS.md` |
 | `_Reference` | a 5-stud human block for scale; never exported |
 
 The `.blend` is **generated** by `build/build_assets.py`. Every asset is described in code
@@ -58,7 +58,7 @@ Add `-- --only wpn_rifle prop_drone` to build a subset.
 | env_checkpoint | 192 | bottom | guard booth + 14-stud boom (PreciseConvexDecomposition collision) |
 | env_dead_tree | 96 | bottom | 14-stud bare tree (Hull collision) |
 | env_lamp_post | 76 | bottom | 13-stud street light (Hull collision) |
-| inf_walker_* / inf_runner_* / inf_brute_* | ~500 per body | center | the 15 R15 limb MeshParts of each Infected (`MeshAssets.dressInfected`) |
+| inf_walker_* / inf_runner_* / inf_brute_* / inf_hocker_* | 0.8-1.1k per body | center | the 15 R15 limb MeshParts of each Infected (`MeshAssets.dressInfected`); v2 2026-11-07 |
 | pc_assault_* | ~470 per body | center | the player's 15 R15 limb MeshParts (`PlayerSetup` -> `MeshAssets.dressModel`) |
 | pc_k9_* / pc_epi_* / pc_recon_* / pc_engineer_* | ~470 per body | center | built + previewed, not uploaded (no class system yet) |
 | ref_inf_* / ref_pc_* | — | bottom | assembled preview figures, never exported |
@@ -80,7 +80,10 @@ swaps every limb MeshPart for the type's mesh: same name, same centre (`offset` 
 bounds-centre shift), rig attachments moved over, then `Humanoid:BuildRigFromAttachments()`
 rebuilds the joints (modern rigs get `AnimationConstraint`s, not Motor6Ds). Spawns clone the
 dressed template, so per-spawn cost is a plain Clone. To restyle a type, change its swatch
-dict in `INFECTED_TYPES`, rebuild, re-upload the 9 limbs, update the ids in `MeshAssets`.
+function in `INFECTED_TYPES` (one `<type>_limb(L, limb)` builder per form; `Limb` wraps the
+primitives at the limb origin, `Builder.rotate_all` tilts a whole limb such as the Hocker's
+head), rebuild, re-upload the 9 limbs, update the ids in `MeshAssets`. Roblox deduplicates
+identical meshes across uploads (the Hocker's legs share the Walker's mesh ids).
 
 Player bodies use the same mechanism (`_pc_limb`, `PC_CLASSES`): `PlayerSetup` turns off
 `StarterPlayer.LoadCharacterAppearance` so characters spawn as bare R15 rigs, then

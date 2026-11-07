@@ -35,11 +35,25 @@ next body, and it burns the host to do it. Nothing wants anything; a body is raw
 being re-sorted. It spreads by fluid, so every form is a delivery method. Harlan Reservoir
 research station was the program's home and its cultures are the only clean copies.
 
+The strain has a look. New tissue is rebuilt: pale, waxy and bloodless, closing wounds
+too well, growing bone where a joint should be. Where the agent is working the tissue is
+wet and caustic yellow-green: the Hocker's throat, the Bloat's belly, the seams a Shedder
+will split along. Nothing about an Infected is dead; its eyes are green and its blood is
+red where the strain tore through fresh. The corridor fell by trying to help, so every
+form still wears the thing that was done for it: Delta's screening band on a Walker's
+wrist, the bandage over the bite on the convoy passenger that became a Bloat, the cut
+restraints on a Kestrel patient that became a Shedder. Every district banded its people
+before it lost them.
+
 **The Infected** is Command's name for every form (and the model name). The Infected are not
 hungry and not dead; they are rebuilt. The soldiers' slang for each form, ordered by how far
-the agent has gone in one body: Walker, Runner, Brute, Hocker, Bloat, Shedder, Crawler,
-Kite, Growth. One rule per form; roster and stage of first appearance in
-[PROGRESSION.md](PROGRESSION.md).
+the agent has gone in one body: Walker (a civilian, the first day), Runner (a garrison
+soldier the agent did its job on), Brute (a soldier rebuilt around his breaks with bone),
+Hocker (a Walker a day on, the throat a pump), Bloat (a bitten passenger sealed on a bus
+with nobody to pass to), Shedder (a ward patient the agent had time to partition), Crawler
+(a shed segment), Kite (shed tissue that found the wind), Growth (a host rooted where it
+fell). One rule per form; roster and stage of first appearance in
+[PROGRESSION.md](PROGRESSION.md); what each one looks like in [CHARACTERS.md](CHARACTERS.md).
 
 ---
 
@@ -106,6 +120,14 @@ specialists. The world needs them because ordinary solutions have already failed
 countless soldiers and civilians continue to fight for survival, these individuals are
 uniquely capable of carrying out missions that nobody else can.
 
+Five of them make the squad Control calls Pike; four deploy on any sortie. They came in on
+Lantern and dress like it: grey fatigues (the corridor garrison wore olive, and the olive is
+on the Infected now) under the Pike carrier, one black plate carrier with a PIKE tab on the
+left shoulder and one square patch on the shoulder and back in the wearer's own colour.
+Weller blue, Cole tan, Reyes white, Cross black with a grey border, Kane orange. From
+behind in the dark, the square is how a squad knows who is who. The dog wears one too.
+Build sheets in [CHARACTERS.md](CHARACTERS.md).
+
 ---
 
 # Core Theme
@@ -138,14 +160,22 @@ A player should be able to describe a character without mentioning their gun.
 
 ---
 
-# Example Character Direction
+# The squad
 
-These examples establish design philosophy and may change later.
+Canon as of 2026-11-07 (the Assault became Weller when the roster was redesigned).
+
+## Staff Sergeant Isaac Weller — Assault
+
+Pike's rifleman and the default pick. Infantry, by the book, the one who does it the way
+soldiers are trained to. Carries two tourniquets where everyone else carries one. Believes
+the plan is the thing that gets people home.
 
 ## Mason Cole — K-9 Handler
 
 Veteran military working dog handler. Protective of civilians. Practical. Calm under
 pressure. Believes nobody should be left behind. His dog is his partner, not equipment.
+His dog is Kilo, a Belgian Malinois, male, in a black harness with a grab handle and
+Cole's tan square on the side. Cole carries Kilo's spare tag on his own chain.
 
 ## Dr. Elena Reyes — Epidemiologist
 

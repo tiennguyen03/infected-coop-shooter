@@ -49,6 +49,8 @@ generator, in UI code, and should be the swatches of the shared 3D palette textu
 | infected skin | `#8ea383` | `#62745a` | `#3f4c3a` | Walker base tint |
 | infected (runner) | `#b1b06a` | `#7f7e44` | `#53522a` | Runner yellow tint |
 | infected (brute) | `#5b6a5a` | `#3b473b` | `#222a22` | Brute dark tint |
+| rebuilt (strain tissue) | `#dccbbb` | `#b09686` | `#73584e` | closed wounds, bone overgrowth, membranes, seams |
+| strain (fluid) | `#d2e276` | `#bed73c` | `#768525` | sacs, bellies, open seams, anything about to burst |
 
 ### Signal / accent colors (saturated, used sparingly)
 
@@ -244,15 +246,20 @@ Lower is always acceptable. Add triangles only where the silhouette needs them.
 
 ## 7. Enemies (Infected) and characters
 
+Per-body build sheets live in [CHARACTERS.md](CHARACTERS.md) (lore developer, 2026-11-07):
+the strain's two colours (`rebuilt` and `strain` rows above), the silhouette ladder, who each
+form was and what it still wears. Bodies rebuilt to those sheets are listed at the end of
+this section; the bullets below describe the 2026-11-06 build still worn by the rest.
+
 - Infected share one body style: low-poly humanoid, torn uniform/civilian blocks in the
   dark/olive/tan materials, skin in the infected tint rows above (Walker green-grey, Runner
   yellowed and 0.9× scale, Brute dark and 2× scale). Blood as flat `red.m` facets, never
   gore detail.
 - Eyes: two small `infected green` facets so they read at distance in the dark.
 - Hocker (2026-11-06): wears the Walker set with a caustic yellow-green throat sac
-  (`rgb(190,215,60)`, SmoothPlastic, swells 1.8x over the 0.8 s windup); its spit is a Neon
-  ball of the same colour and the puddle a flat Neon disc at 0.45 transparency. Its own
-  limb set (split jaw, swollen throat) is backlog in `assets/3d`.
+  (`strain.m`, SmoothPlastic, swells 1.8x over the 0.8 s windup); its spit is a Neon
+  ball of the same colour and the puddle a flat Neon disc at 0.45 transparency. Own limb set
+  (head thrown back on a split jaw, soaked shirt, surgical mask) since 2026-11-07.
 - Build: one mesh per R15 limb inside the stock limb box, swapped onto the stock rig at boot
   (`assets/3d/README.md` > Infected bodies). Walker = olive fatigues + helmet + vest,
   Runner = tan civilian + hair + white shirt plate, Brute = dark armour + plate helmet +
@@ -267,6 +274,14 @@ Lower is always acceptable. Add triangles only where the silhouette needs them.
   `assets/3d/build/previews/ref_pc_*.png`.
 - Weapons: `gun` and `dark` materials, one accent facet (sight, mag tape) in the owning
   item's or character's accent color.
+- Redesign (2026-11-07, CHARACTERS.md): the Walker is the civilian and the Runner the
+  garrison soldier (swapped from the bullets above); the Assault is Isaac Weller, a fifth
+  Chosen; all five wear the same `dark` Pike carrier with a coloured square on the left
+  shoulder and back (Weller blue, Cole tan, Reyes white, Cross black/grey border, Kane
+  orange). Rebuilt to the sheets so far (2026-11-07, verified in a playtest): **Walker, Runner,
+  Brute, Hocker** (`inf_<type>_*` v2, 36 limbs, 0.8-1.1k tris per body; the Hocker has its own
+  set now). Still on the old build: the five Chosen. Not built: Bloat, Shedder, Crawler, Kite,
+  Growth, the Index hosts, Kilo.
 
 ### Stage 1 "Checkpoint Delta" (shipped 2026-11-06)
 
