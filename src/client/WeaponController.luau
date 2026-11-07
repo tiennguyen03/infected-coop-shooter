@@ -10,6 +10,7 @@ local UserInputService = game:GetService("UserInputService")
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
 local SoundFX = require(script.Parent.SoundFX)
+local AnimationController = require(script.Parent.AnimationController)
 
 local WeaponController = {}
 
@@ -80,6 +81,7 @@ local function tryFire()
 
 	lastFireTime = now
 	Remotes.get("FireWeapon"):FireServer(origin, direction.Unit)
+	AnimationController.onShot()
 
 	-- Local-only muzzle flash and shot sound for instant feedback.
 	SoundFX.play("shoot")
@@ -114,12 +116,14 @@ function WeaponController.init()
 	UserInputService.InputBegan:Connect(function(input, gameProcessed)
 		if not gameProcessed and input.UserInputType == Enum.UserInputType.MouseButton1 then
 			isFiring = true
+			AnimationController.setAiming(true)
 		end
 	end)
 
 	UserInputService.InputEnded:Connect(function(input, _gameProcessed)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 then
 			isFiring = false
+			AnimationController.setAiming(false)
 		end
 	end)
 

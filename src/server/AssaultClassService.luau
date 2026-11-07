@@ -169,7 +169,7 @@ local function detonate(player: Player, center: Vector3)
 	end
 end
 
-local function doBreach(player: Player)
+local function doBreach(player: Player, requested: Vector3?)
 	local character = player.Character
 	if not character then
 		return
@@ -180,15 +180,22 @@ local function doBreach(player: Player)
 	end
 	local cfg = Config.Assault
 
-	-- Land point: forward from the player, raycast-clamped, dropped to ground.
+	-- Land point: where the client aimed (hold E to see it), clamped to throw range and
+	-- raycast-clamped so it never lands through a wall; facing-forward when no aim came.
 	local dir = Vector3.new(root.CFrame.LookVector.X, 0, root.CFrame.LookVector.Z).Unit
+	local reach = cfg.BreachThrowDistance
+	if typeof(requested) == "Vector3" then
+		local flat = Vector3.new(requested.X - root.Position.X, 0, requested.Z - root.Position.Z)
+		if flat.Magnitude > 0.5 then
+			dir = flat.Unit
+			reach = math.min(flat.Magnitude, cfg.BreachThrowDistance)
+		end
+	end
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Exclude
 	params.FilterDescendantsInstances = { character, chargeFolder }
-	local fwdHit = workspace:Raycast(root.Position, dir * cfg.BreachThrowDistance, params)
-	local landXZ = if fwdHit
-		then fwdHit.Position - dir * 2
-		else root.Position + dir * cfg.BreachThrowDistance
+	local fwdHit = workspace:Raycast(root.Position, dir * reach, params)
+	local landXZ = if fwdHit then fwdHit.Position - dir * 2 else root.Position + dir * reach
 	local groundHit =
 		workspace:Raycast(landXZ + Vector3.new(0, 30, 0), Vector3.new(0, -200, 0), params)
 	local center = if groundHit then groundHit.Position + Vector3.new(0, 1, 0) else landXZ
@@ -250,7 +257,7 @@ local function canAct(player: Player): boolean
 	return humanoid ~= nil and humanoid.Health > 0
 end
 
-local function onUseAbility(player: Player, abilityName: unknown)
+local function onUseAbility(player: Player, abilityName: unknown, target: unknown)
 	if not canAct(player) then
 		return
 	end
@@ -268,7 +275,7 @@ local function onUseAbility(player: Player, abilityName: unknown)
 		end
 		breachReadyAt[player] = now + Config.Assault.BreachCooldown
 		abilityUsedRemote:FireClient(player, "breach", Config.Assault.BreachCooldown)
-		doBreach(player)
+		doBreach(player, if typeof(target) == "Vector3" then target else nil)
 	end
 end
 

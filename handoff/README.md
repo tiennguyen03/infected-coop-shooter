@@ -1,7 +1,7 @@
 # Handoff — Roguelike Arena Survivor (VS Code + Claude Code terminal)
 
 Start here when picking the project up in a fresh Claude Code session.
-Last updated: 2026-11-06 (progression design + design subagents). Last verified commit on `main`: `b5d1203`.
+Last updated: 2026-11-06 (body animations). Last verified commit on `main`: `e05287a`.
 
 ## What this is
 
@@ -42,10 +42,11 @@ Read in this order:
    is in the doc: data-driven enemy hooks first, then Hocker on Delta. Design subagents in
    `.claude/agents/` (lore-developer, systems-designer, level-designer, playtest-critic)
    argue the design before code; the lore developer owns canon.
-   **Animations (in progress, uncommitted):** Mixamo clips retargeted onto R15
-   (`assets/animations/`, `AnimationController`, per-type Infected clips, hold-E breach
-   ghost). Blocked on the owner clicking Connect in Studio's Rojo plugin, then Stop → Play
-   to verify, then the publish round (`assets/animations/README.md` step 4).
+   **Animations shipped 2026-11-06, verified in a playtest** (`assets/animations/`,
+   `AnimationController`, per-type Infected clips, hold-E breach ghost). Still to do: the
+   **publish round** (`assets/animations/README.md` step 4: 14 clips, one Submit click
+   each, then ids into `Config.Animations.Ids` + `ASSET_IDS.md`). Until then the clips
+   play only in Studio (preview ids) and a published place falls back to the stock walk.
 1. **Plan Co-op Sprint A** from the decided design in `docs/MULTIPLAYER_READINESS.md`
    (run state machine, no-pause level-up, downed/revive, spawn pads, reset split, client
    screens). Verify with the Studio MCP `multiplayer_playtest` tool.

@@ -14,6 +14,7 @@ local RunService = game:GetService("RunService")
 local Config = require(ReplicatedStorage.Shared.Config)
 local EnemyDefinitions = require(ReplicatedStorage.Shared.EnemyDefinitions)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
+local Animations = require(ReplicatedStorage.Shared.Animations)
 local DifficultyService = require(script.Parent.DifficultyService)
 local ItemEffectService = require(script.Parent.ItemEffectService)
 local PauseService = require(script.Parent.PauseService)
@@ -36,6 +37,8 @@ type Zombie = {
 	attackCooldown: number,
 	xpReward: number,
 	lastAttackTime: number,
+	attackTrack: AnimationTrack?,
+	deathTrack: AnimationTrack?,
 	nextRepathTime: number,
 }
 
@@ -129,6 +132,15 @@ end
 
 local function onZombieDied(zombie: Zombie)
 	CollectionService:RemoveTag(zombie.model, ENEMY_TAG)
+	local animator = zombie.humanoid:FindFirstChildOfClass("Animator")
+	if animator then
+		for _, track in animator:GetPlayingAnimationTracks() do
+			track:Stop(0.1)
+		end
+	end
+	if zombie.deathTrack then
+		zombie.deathTrack:Play(0.1)
+	end
 	XPOrbService.spawnOrb(zombie.root.Position, zombie.xpReward)
 	ItemEffectService.onEnemyKilled(zombie.humanoid)
 	task.delay(Config.Zombies.CorpseLifetime, function()
@@ -178,13 +190,30 @@ local function spawnZombie(groundPosition: Vector3, typeName: string)
 		root:SetNetworkOwner(nil)
 	end)
 
+	-- Body clips per type (Config.Animations.Infected); the stock R15 walk until a type's
+	-- clips are published. The rig stays jointed on death so the death clip can play.
+	humanoid.BreakJointsOnDeath = false
+	local attackTrack: AnimationTrack? = nil
+	local deathTrack: AnimationTrack? = nil
 	pcall(function()
 		local animator = humanoid:FindFirstChildOfClass("Animator") :: Animator
-		local animation = Instance.new("Animation")
-		animation.AnimationId = WALK_ANIMATION_ID
-		local track = animator:LoadAnimation(animation)
-		track.Looped = true
-		track:Play()
+		local clips = Config.Animations.Infected[typeName]
+		local moveTrack = clips
+			and Animations.load(animator, clips.move, Enum.AnimationPriority.Core)
+		if moveTrack then
+			local reference = Config.Animations.MoveClipSpeed[clips.move] or definition.WalkSpeed
+			moveTrack.Looped = true
+			moveTrack:Play()
+			moveTrack:AdjustSpeed(definition.WalkSpeed / reference)
+			attackTrack = Animations.load(animator, clips.attack, Enum.AnimationPriority.Action)
+			deathTrack = Animations.load(animator, clips.death, Enum.AnimationPriority.Action4)
+		else
+			local animation = Instance.new("Animation")
+			animation.AnimationId = WALK_ANIMATION_ID
+			local track = animator:LoadAnimation(animation)
+			track.Looped = true
+			track:Play()
+		end
 	end)
 
 	local zombie: Zombie = {
@@ -198,6 +227,8 @@ local function spawnZombie(groundPosition: Vector3, typeName: string)
 		attackCooldown = definition.AttackCooldown,
 		xpReward = definition.XPReward,
 		lastAttackTime = 0,
+		attackTrack = attackTrack,
+		deathTrack = deathTrack,
 		nextRepathTime = 0,
 	}
 	table.insert(zombies, zombie)
@@ -232,6 +263,9 @@ local function attackIfTouching(zombie: Zombie, now: number)
 				zombie.damage * DifficultyService.getDamageMultiplier() * incomingMult
 			)
 			zombie.lastAttackTime = now
+			if zombie.attackTrack then
+				zombie.attackTrack:Play(0.1)
+			end
 		end
 	end
 end

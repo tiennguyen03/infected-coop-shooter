@@ -1,0 +1,77 @@
+# assets/animations — body animations for the Chosen and the Infected
+
+Motion-capture clips from [Mixamo](https://www.mixamo.com) (free with an Adobe account,
+licensed for use inside the game, **not for redistribution**: the raw clips and the retargeted
+keyframe tables are git-ignored; only the published Roblox animation ids are committed),
+retargeted onto the stock R15 rig by a headless Blender script, published as Roblox
+animations, played by `src/client/AnimationController.luau` (players) and
+`src/server/EnemyService.luau` (the Infected). Clip -> state mapping and ids live in
+`Config.Animations`.
+
+## Layout
+
+| Path | What |
+|---|---|
+| `source/mixamo/*.fbx` | Mixamo downloads, git-ignored. Download settings: FBX Binary, **Without Skin**, 30 fps, no keyframe reduction, **In Place** for every locomotion clip |
+| `build/retarget.py` | Blender script: FBX -> `src/shared/AnimationClips/<clip>.json` (git-ignored); per-clip settings in `CLIPS` |
+| `src/shared/AnimationClips/*.json` | retargeted keyframe tables; Rojo syncs each as a ModuleScript |
+| `src/shared/AnimationBuilder.luau` | clip table -> `KeyframeSequence` (dev only) |
+| `src/shared/Animations.luau` | clip name -> animation id: `Config.Animations.Ids`, else a Studio preview id |
+| `ASSET_IDS.md` | published animation ids |
+
+## Clips
+
+| Clip (Mixamo name) | Used as | Notes |
+|---|---|---|
+| rifle_idle (Rifle Idle) | Assault idle | hunched low-ready, scanning |
+| rifle_walk (Rifle Walk) | Assault walk | in place |
+| rifle_run (Rifle Run) | Assault run | in place |
+| rifle_aiming_idle (Rifle Aiming Idle) | Assault aim, upper body | held while the trigger is down |
+| firing_rifle (Firing Rifle) | Assault fire, upper body | 0.27 s recoil per shot |
+| hit_reaction (Hit Reaction) | Assault hit, upper body | |
+| death_from_the_front (Death From The Front) | Assault death | rig stays jointed on death |
+| grenade_throw (Grenade Throw) | Assault breach (E), upper body | |
+| zombie_idle (Zombie Idle) | spare | not wired: the Infected never stand still |
+| zombie_walk (Zombie Walk) | Walker move | in place |
+| zombie_running (Zombie Running) | Runner move | in place |
+| zombie_attack (Zombie Attack) | Walker / Runner attack | |
+| zombie_death (Zombie Death) | all Infected death | |
+| mutant_walking (Mutant Walking) | Brute move | in place |
+| mutant_swiping (Mutant Swiping) | Brute attack | |
+
+## Pipeline
+
+1. **Download** from Mixamo on the default X Bot with the settings above into
+   `source/mixamo/`, file names lower_snake_case (`Rifle Idle.fbx` -> `rifle_idle.fbx`).
+2. **Retarget** (about a minute for all clips):
+   ```bash
+   "/c/Program Files/Blender Foundation/Blender 5.2/blender.exe" --background --python assets/animations/build/retarget.py
+   ```
+   Add new clips to `CLIPS` first (`loop`, `step` = keyframe stride, `upper` = upper-body
+   overlay). The method: every Mixamo bone's world rotation delta from its rest pose, a fixed
+   rest correspondence per R15 limb (Mixamo rests in a T-pose, R15 with the arms down), joint
+   transforms = parent^-1 * child, Blender axes -> Roblox axes. Extra Mixamo bones (spine
+   chain, shoulders, neck) fold into their neighbours. Hip translation goes on the Root joint.
+3. **Preview** in Studio: with `Config.Animations.Ids[clip] == ""`, `Animations.init()` on the
+   server registers the retargeted clip through `KeyframeSequenceProvider` and the game plays
+   it in a playtest (temporary id, Studio only). Verify every clip this way before publishing.
+4. **Publish** (the owner clicks): in Studio, build the sequence and open the save dialog, once
+   per clip:
+   ```lua
+   local AnimationBuilder = require(game.ReplicatedStorage.Shared.AnimationBuilder)
+   local seq = AnimationBuilder.build(AnimationBuilder.loadClip("rifle_idle"))
+   seq.Parent = game.ServerStorage
+   game.Selection:Set({ seq })
+   plugin:SaveSelectedToRoblox() -- runs from a plugin context (Studio MCP execute_luau)
+   ```
+   Submit the dialog, copy the animation id into `Config.Animations.Ids` and `ASSET_IDS.md`,
+   delete the sequence from ServerStorage.
+5. **Play**: `AnimationController` (client) and `EnemyService` (server) load clips by name
+   through `Animations.load`. Locomotion tracks scale their rate with ground speed against
+   `Config.Animations.MoveClipSpeed` so feet do not slide.
+
+## Why not the Animation Editor / a Blender rig addon
+
+Everything else in the project is generated from scripts; animations follow suit so a clip
+can be swapped by changing one table entry and re-running the script. The only manual step
+Roblox forces is the publish click.

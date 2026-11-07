@@ -171,6 +171,8 @@ local function onCharacterAdded(character: Model)
 	humanoid.MaxHealth = Config.Player.MaxHealth
 	humanoid.Health = Config.Player.MaxHealth
 	humanoid.WalkSpeed = Config.Player.WalkSpeed
+	-- The rig stays jointed on death so the death clip can play (AnimationController).
+	humanoid.BreakJointsOnDeath = false
 
 	character:WaitForChild("HumanoidRootPart")
 	character:WaitForChild("RightHand")

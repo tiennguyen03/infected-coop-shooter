@@ -28,6 +28,57 @@ local Config = {
 		MaxAimDistance = 1000, -- how far the aim raycast reaches
 	},
 
+	-- Body animations: clip names from assets/animations (Mixamo, retargeted by
+	-- assets/animations/build/retarget.py). Ids are the published Roblox animations
+	-- (assets/animations/ASSET_IDS.md); "" = not published yet, Studio previews the
+	-- retargeted clip instead (Shared.Animations).
+	Animations = {
+		Ids = {
+			rifle_idle = "",
+			rifle_walk = "",
+			rifle_run = "",
+			rifle_aiming_idle = "",
+			firing_rifle = "",
+			hit_reaction = "",
+			death_from_the_front = "",
+			grenade_throw = "",
+			zombie_idle = "",
+			zombie_walk = "",
+			zombie_running = "",
+			zombie_attack = "",
+			zombie_death = "",
+			mutant_walking = "",
+			mutant_swiping = "",
+		},
+		-- The Chosen (one class for now): which clip plays for each state.
+		Assault = {
+			idle = "rifle_idle",
+			walk = "rifle_walk",
+			run = "rifle_run",
+			aim = "rifle_aiming_idle", -- held while the trigger is down (upper body)
+			fire = "firing_rifle", -- recoil per shot (upper body)
+			hit = "hit_reaction", -- flinch on damage (upper body)
+			death = "death_from_the_front",
+			breach = "grenade_throw", -- E: throwing the breach charge (upper body)
+		},
+		-- The Infected, per type (EnemyDefinitions).
+		Infected = {
+			Walker = { move = "zombie_walk", attack = "zombie_attack", death = "zombie_death" },
+			Runner = { move = "zombie_running", attack = "zombie_attack", death = "zombie_death" },
+			Brute = { move = "mutant_walking", attack = "mutant_swiping", death = "zombie_death" },
+		},
+		-- Ground speed (studs/s) at which each locomotion clip plays at 1x; the track rate
+		-- scales with the actual speed so feet do not slide.
+		MoveClipSpeed = {
+			rifle_walk = 12,
+			rifle_run = 22,
+			zombie_walk = 8,
+			zombie_running = 16,
+			mutant_walking = 6,
+		},
+		WalkRunThreshold = 20, -- studs/s: faster than this plays the run clip (walk 16, sprint 24)
+	},
+
 	-- Assault class (Sprint 15 / class V1). Default and only class for now.
 	Assault = {
 		MomentumDuration = 4, -- seconds; refreshed by kills
@@ -66,7 +117,7 @@ local Config = {
 	RarityGuaranteeEvery = 4,
 
 	-- Items (Sprint 5). Definitions in shared/ItemDefinitions.luau; full spec
-	-- in docs/ITEMS_MVP.md. Level-up offers ChoicesPerLevel distinct items.
+	-- in docs/sprints/SPRINT_05_ITEMS_MVP.md. Level-up offers ChoicesPerLevel distinct items.
 	Items = {
 		ChoicesPerLevel = 3,
 		-- Common Item Pack 1 (Sprint 15) passive per-stack values.

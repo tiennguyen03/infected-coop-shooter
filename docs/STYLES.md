@@ -305,6 +305,19 @@ in `ArenaService.DRESSING`). Smoke is the stock `smoke_main` particle at rate 5,
 14-22 s life, a light westerly drift; fire is `fire_main` with one PointLight. Budget: nine
 emitters in the whole scene.
 
+### Body animation (shipped 2026-11-06)
+
+Mixamo motion capture retargeted onto the stock R15 rig (pipeline and clip table:
+`assets/animations/README.md`). The Assault reads as a soldier: hunched low-ready idle that
+scans, rifle walk, leaning sprint, shouldered aim while the trigger is held, a short recoil
+per shot, a flinch on damage, a fall on death (the rig stays jointed). Upper-body clips
+(aim, fire, hit, breach throw) leave the legs to the locomotion clip. Each Infected type
+has its own gait (Walker shuffle, Runner sprint, Brute lumber), an attack swing and a death
+fall; locomotion rate scales with ground speed so feet do not slide
+(`Config.Animations.MoveClipSpeed`). The breach ghost is a Neon disc in the accent orange
+(`rgb(255,150,60)`, transparency 0.75) plus a ball at the landing point; it fills the view
+when the player stands inside it, so a hollow ring is a later polish item.
+
 ---
 
 ## 8. VFX and world feedback
