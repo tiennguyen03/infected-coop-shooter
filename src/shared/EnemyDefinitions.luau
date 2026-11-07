@@ -39,6 +39,7 @@ export type EnemyDefinition = {
 	FirstSpawnTime: number, -- seconds of run time before it may spawn
 	Color: Color3,
 	Behaviour: Behaviour,
+	HeadshotMultiplier: number?, -- overrides Config.Weapon.HeadshotMultiplier (plated skulls)
 	BodySet: string?, -- limb set to wear (assets/3d inf_<set>_*); defaults to the type name
 	ThroatSac: boolean?, -- Hocker: a sac on the neck that swells during the windup
 }
@@ -87,6 +88,7 @@ local EnemyDefinitions: { [string]: EnemyDefinition } = {
 		FirstSpawnTime = 180,
 		Color = Color3.fromRGB(52, 88, 50),
 		Behaviour = MELEE,
+		HeadshotMultiplier = 1.25, -- bone overgrowth: the head is barely a weak point
 	},
 	-- Ranged: plants, rears back, lobs caustic fluid that leaves a puddle. The one rule:
 	-- a Hocker that stops moving is about to spit. Numbers: systems designer 2026-11-06.

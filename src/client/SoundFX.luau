@@ -7,7 +7,7 @@
 local ContentProvider = game:GetService("ContentProvider")
 local SoundService = game:GetService("SoundService")
 
-export type SoundName = "shoot" | "hit" | "death" | "levelup"
+export type SoundName = "shoot" | "hit" | "headshot" | "death" | "levelup"
 
 type Definition = { id: string, fallback: string?, volume: number, speed: number?, vary: number? }
 
@@ -20,6 +20,9 @@ local DEFINITIONS: { [string]: Definition } = {
 		vary = 0.08,
 	},
 	hit = { id = "rbxasset://sounds/snap.mp3", volume = 0.3, speed = 0.85 },
+	-- Placeholder until the sound day: the hit snap, sharper and louder, so a headshot
+	-- is heard before the number is read.
+	headshot = { id = "rbxasset://sounds/snap.mp3", volume = 0.55, speed = 1.35 },
 	death = { id = "rbxasset://sounds/uuhhh.mp3", volume = 0.5 },
 	levelup = { id = "rbxasset://sounds/electronicpingshort.wav", volume = 0.6 },
 }

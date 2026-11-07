@@ -327,6 +327,10 @@ when the player stands inside it, so a hollow ring is a later polish item.
 
 ## 8. VFX and world feedback
 
+- Tracers (2026-11-07): a 0.12-stud Neon line in `rgb(255,214,120)` from muzzle to impact,
+  alive `Config.Weapon.TracerDuration` (0.06 s), client-side only. Headshot numbers are
+  white and a third larger than hit numbers.
+
 - Objective / extraction zones: flat ring + low translucent cylinder in `objective yellow`.
 - Airstrike warning: flat disc in `warning orange`, blast = expanding faceted sphere,
   no stock fire textures.

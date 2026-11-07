@@ -40,6 +40,7 @@ local function burst(position: Vector3, color: Color3, count: number)
 end
 
 local HIT_COLOR = Color3.fromRGB(255, 233, 120)
+local HEADSHOT_COLOR = Color3.fromRGB(255, 255, 255)
 local BLEED_COLOR = Color3.fromRGB(255, 90, 70)
 
 local function showDamageNumber(position: Vector3, amount: number, kind: string?)
@@ -51,6 +52,9 @@ local function showDamageNumber(position: Vector3, amount: number, kind: string?
 	end
 	if kind == "bleed" then
 		burst(position, BLEED_COLOR, 5)
+	elseif kind == "headshot" then
+		burst(position, HEADSHOT_COLOR, 10)
+		SoundFX.play("headshot")
 	else
 		burst(position, HIT_COLOR, 7)
 		SoundFX.play("hit")
@@ -62,7 +66,9 @@ local function showDamageNumber(position: Vector3, amount: number, kind: string?
 
 	local billboard = Instance.new("BillboardGui")
 	billboard.Name = "DamageNumber"
-	billboard.Size = UDim2.fromScale(2.5, 1.2)
+	billboard.Size = if kind == "headshot"
+		then UDim2.fromScale(3.4, 1.6)
+		else UDim2.fromScale(2.5, 1.2)
 	billboard.AlwaysOnTop = true
 	billboard.Adornee = attachment
 	-- Slight horizontal jitter so rapid hits don't stack into one blob.
@@ -72,7 +78,10 @@ local function showDamageNumber(position: Vector3, amount: number, kind: string?
 	label.Size = UDim2.fromScale(1, 1)
 	label.BackgroundTransparency = 1
 	label.Text = tostring(math.floor(amount + 0.5))
-	label.TextColor3 = if kind == "bleed" then BLEED_COLOR else HIT_COLOR
+	label.TextColor3 = if kind == "bleed"
+		then BLEED_COLOR
+		elseif kind == "headshot" then HEADSHOT_COLOR
+		else HIT_COLOR
 	label.TextStrokeTransparency = 0.4
 	label.TextScaled = true
 	label.Font = Enum.Font.GothamBold

@@ -7,8 +7,9 @@ local RunService = game:GetService("RunService")
 
 local REMOTE_NAMES = {
 	"FireWeapon", -- client -> server: (origin: Vector3, direction: Vector3, aiming: boolean)
+	"ShotTracer", -- server -> other clients: (origin: Vector3, endPoint: Vector3) draw a tracer
 	"ObjectiveUpdate", -- server -> client: (kind: "started"|"progress"|"completed", progress: number)
-	"DamageDealt", -- server -> client: (position: Vector3, amount: number, kind: "hit"|"bleed")
+	"DamageDealt", -- server -> client: (position: Vector3, amount: number, kind: "hit"|"headshot"|"bleed"|"death")
 	"Resupply", -- client -> server: ("flare", target) | ("pick", crateId, itemId); server -> client: ("called", thrower) | ("cards", crateId, choices, positions, inventory) | ("picked", crateId) | ("closed", crateId)
 	"ItemsUpdate", -- server -> client: (inventory: { [itemId]: stacks })
 	"BuffNotice", -- server -> client: (text: string) short on-screen buff announcement

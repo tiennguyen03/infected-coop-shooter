@@ -173,6 +173,7 @@ local function spawnZombie(groundPosition: Vector3, typeName: string)
 
 	local model = template:Clone()
 	model.Name = definition.DisplayName
+	model:SetAttribute("EnemyType", typeName)
 	if definition.Scale ~= 1 then
 		model:ScaleTo(definition.Scale)
 	end

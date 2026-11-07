@@ -22,6 +22,12 @@ local Config = {
 	Weapon = {
 		Damage = 12, -- Sprint 13 tune: punchier shots that matter vs late scaled HP
 		FireCooldown = 0.15, -- slower fire (6.7/sec); DPS 80, up from 60
+		-- The rifle is hitscan (2026-11-07): one raycast per shot, damage lands the same
+		-- frame. Range caps the ray; the tracer is client-drawn feedback only.
+		Range = 400,
+		TracerDuration = 0.06,
+		HeadshotMultiplier = 2.0, -- on a Head hit (EnemyDefinitions may override per form)
+		-- Drones still fly projectiles (ProjectileServer.fire): their speed and lifetime.
 		ProjectileSpeed = 180, -- studs per second
 		ProjectileLifetime = 3, -- seconds before despawn
 		ProjectileSize = Vector3.new(0.4, 0.4, 1.4),

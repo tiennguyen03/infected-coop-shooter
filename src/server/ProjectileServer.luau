@@ -1,6 +1,8 @@
 --!strict
--- Server-authoritative projectiles. Clients only send a fire request; the
--- server validates it, simulates the projectile, and applies damage.
+-- Server-authoritative shooting. The player's rifle is hitscan (2026-11-07): the client
+-- sends a fire request, the server validates it, applies the spread cone, raycasts once
+-- and lands the damage the same frame (a Head hit is a headshot). Drones and other
+-- item sources still fly simulated projectiles through ProjectileServer.fire.
 
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
@@ -8,6 +10,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local EnemyDefinitions = require(ReplicatedStorage.Shared.EnemyDefinitions)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local ItemEffectService = require(script.Parent.ItemEffectService)
 local ItemService = require(script.Parent.ItemService)
@@ -45,6 +48,7 @@ export type FireOptions = {
 local ProjectileServer = {}
 
 local projectileFolder: Folder
+local tracerRemote: RemoteEvent
 local activeProjectiles: { Projectile } = {}
 local lastFireTime: { [Player]: number } = {}
 local shotCount: { [Player]: number } = {} -- for Shrapnel Magazine
@@ -165,6 +169,49 @@ local function applySpread(direction: Vector3, halfAngleDegrees: number): Vector
 	return offset.Unit
 end
 
+-- The damage multiplier for a hit on `part` of an Infected: a Head hit is a headshot,
+-- scaled by the form's own HeadshotMultiplier when it has one.
+local function hitMultiplier(part: Instance, humanoid: Humanoid): (number, string)
+	if part.Name ~= "Head" then
+		return 1, "hit"
+	end
+	local model = humanoid.Parent
+	local typeName = model and model:GetAttribute("EnemyType")
+	local definition = if typeof(typeName) == "string" then EnemyDefinitions[typeName] else nil
+	local multiplier = (definition and definition.HeadshotMultiplier)
+		or Config.Weapon.HeadshotMultiplier
+	return multiplier, "headshot"
+end
+
+-- One hitscan round: raycast, damage on an Infected hit, tracer to everyone else.
+local function fireHitscan(
+	player: Player,
+	origin: Vector3,
+	direction: Vector3,
+	damage: number,
+	canProc: boolean,
+	params: RaycastParams
+)
+	local result = workspace:Raycast(origin, direction * Config.Weapon.Range, params)
+	local endPoint = if result then result.Position else origin + direction * Config.Weapon.Range
+	if result then
+		local humanoid = findEnemyHumanoid(result.Instance)
+		if humanoid and humanoid.Health > 0 then
+			local multiplier, kind = hitMultiplier(result.Instance, humanoid)
+			local dealt = damage * multiplier
+			ItemEffectService.dealDamage(player, humanoid, dealt, result.Position, kind)
+			if canProc then
+				ItemEffectService.onProjectileHit(player, humanoid, result.Position, dealt)
+			end
+		end
+	end
+	for _, other in Players:GetPlayers() do
+		if other ~= player then
+			tracerRemote:FireClient(other, origin, endPoint)
+		end
+	end
+end
+
 local function onFireRequest(player: Player, origin: unknown, direction: unknown, aiming: unknown)
 	if typeof(origin) ~= "Vector3" or typeof(direction) ~= "Vector3" then
 		return
@@ -197,22 +244,25 @@ local function onFireRequest(player: Player, origin: unknown, direction: unknown
 	end
 
 	lastFireTime[player] = now
-	local exclude: { Instance } = {}
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	local exclude: { Instance } = { projectileFolder }
 	if character then
 		table.insert(exclude, character)
 	end
+	for _, name in { "Resupply", "ResupplyCards", "InfectedProjectiles", "XPOrbs" } do
+		local folder = workspace:FindFirstChild(name)
+		if folder then
+			table.insert(exclude, folder)
+		end
+	end
+	params.FilterDescendantsInstances = exclude
 	-- The client says whether it is aiming down sights; that only tightens the cone (the
 	-- speed penalty is client-owned movement either way), so trusting it costs nothing.
 	local spread = if aiming == true then Config.Weapon.ADS.Spread else Config.Weapon.HipSpread
 	local aim = applySpread(direction.Unit, spread)
 	local baseDamage = Config.Weapon.Damage * PlayerStatsService.getMultiplier(player, "Damage")
-	ProjectileServer.fire({
-		owner = player,
-		origin = origin,
-		direction = aim,
-		damage = baseDamage,
-		exclude = exclude,
-	})
+	fireHitscan(player, origin, aim, baseDamage, true, params)
 
 	-- Shrapnel Magazine: every Nth player shot fires extra angled rounds.
 	-- Only player gun shots count (drones call fire() directly).
@@ -226,14 +276,14 @@ local function onFireRequest(player: Player, origin: unknown, direction: unknown
 			-- Spread evenly across [-maxAngle, +maxAngle].
 			local t = if extra == 1 then 0 else (i - 1) / (extra - 1) * 2 - 1
 			local spreadDir = (CFrame.Angles(0, t * maxAngle, 0) * CFrame.new(aim)).Position
-			ProjectileServer.fire({
-				owner = player,
-				origin = origin,
-				direction = spreadDir.Unit,
-				damage = baseDamage * Config.Items.Shrapnel.DamageFactor,
-				color = Color3.fromRGB(255, 170, 90),
-				exclude = exclude,
-			})
+			fireHitscan(
+				player,
+				origin,
+				spreadDir.Unit,
+				baseDamage * Config.Items.Shrapnel.DamageFactor,
+				true,
+				params
+			)
 		end
 	end
 end
@@ -255,6 +305,7 @@ function ProjectileServer.init()
 	projectileFolder.Name = "Projectiles"
 	projectileFolder.Parent = workspace
 
+	tracerRemote = Remotes.get("ShotTracer")
 	Remotes.get("FireWeapon").OnServerEvent:Connect(onFireRequest)
 	RunService.Heartbeat:Connect(stepProjectiles)
 

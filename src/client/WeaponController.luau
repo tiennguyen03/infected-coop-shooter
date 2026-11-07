@@ -22,6 +22,36 @@ local WeaponController = {}
 local isFiring = false
 local isAiming = false
 local lastFireTime = 0
+local tracerFolder: Folder? = nil
+
+-- A thin bright line from the muzzle to where the round went, gone in a few frames. Drawn
+-- locally for our own shots (instant) and for other players' shots via ShotTracer.
+local function drawTracer(origin: Vector3, endPoint: Vector3)
+	local folder = tracerFolder
+	if not folder then
+		return
+	end
+	local length = (endPoint - origin).Magnitude
+	if length < 1 then
+		return
+	end
+	local tracer = Instance.new("Part")
+	tracer.Name = "Tracer"
+	tracer.Size = Vector3.new(0.12, 0.12, length)
+	tracer.CFrame = CFrame.lookAt(origin, endPoint) * CFrame.new(0, 0, -length / 2)
+	tracer.Anchored = true
+	tracer.CanCollide = false
+	tracer.CanQuery = false
+	tracer.CanTouch = false
+	tracer.CastShadow = false
+	tracer.Material = Enum.Material.Neon
+	tracer.Color = Color3.fromRGB(255, 214, 120)
+	tracer.Transparency = 0.2
+	tracer.Parent = folder
+	task.delay(Config.Weapon.TracerDuration, function()
+		tracer:Destroy()
+	end)
+end
 
 function WeaponController.isAiming(): boolean
 	return isAiming
@@ -53,9 +83,11 @@ local function getAimPoint(): Vector3?
 	if character then
 		table.insert(exclude, character)
 	end
-	local projectiles = workspace:FindFirstChild("Projectiles")
-	if projectiles then
-		table.insert(exclude, projectiles)
+	for _, name in { "Projectiles", "Tracers", "Resupply", "ResupplyCards", "XPOrbs" } do
+		local folder = workspace:FindFirstChild(name)
+		if folder then
+			table.insert(exclude, folder)
+		end
 	end
 	params.FilterDescendantsInstances = exclude
 
@@ -102,6 +134,7 @@ local function tryFire()
 	lastFireTime = now
 	Remotes.get("FireWeapon"):FireServer(origin, direction.Unit, isAiming)
 	AnimationController.onShot()
+	drawTracer(origin, aimPoint)
 
 	-- Local-only muzzle flash and shot sound for instant feedback.
 	SoundFX.play("shoot")
@@ -132,6 +165,12 @@ function WeaponController.init()
 	pcall(function()
 		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false)
 	end)
+
+	local folder = Instance.new("Folder")
+	folder.Name = "Tracers"
+	folder.Parent = workspace
+	tracerFolder = folder
+	Remotes.get("ShotTracer").OnClientEvent:Connect(drawTracer)
 
 	UserInputService.InputBegan:Connect(function(input, gameProcessed)
 		if gameProcessed then

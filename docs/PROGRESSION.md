@@ -279,11 +279,16 @@ form gets its own limb set (lore developer + [STYLES.md](STYLES.md) first), Hock
 half-angle, about 1 stud off at 40 studs); holding RMB aims down sights: `Weapon.ADS` =
 spread 0.3, walk x0.6 with sprint off, camera eased in to 5 studs over the shoulder, FOV 55,
 mouse sensitivity scaled with the FOV, crosshair ring closes. The client sends an `aiming`
-flag with each shot and the server picks the cone. Still to do: `HeadshotMultiplier 2.0` on `Head` hits (all forms are R15; the Hocker sac is
-`CanQuery false`), per-definition override for the Brute. `FireRequest` gains an `aiming`
-flag; the server picks the spread; `ProjectileServer` passes `"headshot"` as the damage kind
-for a distinct sound and number colour. Shots to kill at clock 0: Walker 3 body / 2 head,
-Runner 2 / 1, Hocker 4 / 2, Brute 14 / 11.
+flag with each shot and the server picks the cone.
+
+**Hitscan and headshots shipped 2026-11-07.** The rifle no longer flies a projectile: the
+server raycasts once per shot (`Weapon.Range 400`) and the damage lands the same frame;
+tracers are client-drawn (`Weapon.TracerDuration`, own shots instantly, others' shots via
+the `ShotTracer` remote). A `Head` hit deals `Weapon.HeadshotMultiplier 2.0` (the Brute's
+definition overrides to 1.25, bone overgrowth) and arrives as damage kind `"headshot"`:
+white, larger number and a sharper placeholder sound until the sound day. Drones still fly
+projectiles. Shots to kill at clock 0: Walker 3 body / 2 head, Runner 2 / 1, Hocker 4 / 2,
+Brute 14 / 11.
 
 ## Technical plan (debt first, then content)
 
