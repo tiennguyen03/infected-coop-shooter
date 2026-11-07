@@ -92,12 +92,16 @@ uploaded 2026-11-07 and wired; rows below.
 | pc_assault_head | 113120416771558 | 108816968954550 | 1.34, 1.24, 1.54 | R15 limb (Weller v2 2026-11-07), offset 0.000, 0.030, -0.060 |
 | pc_assault_upper_torso | 109606627346841 | 101027325915224 | 1.94, 1.70, 1.51 | R15 limb (Weller v2 2026-11-07), offset 0.000, 0.000, -0.025 |
 | pc_assault_lower_torso | 130324769107274 | 103310952242998 | 2.01, 0.40, 1.12 | R15 limb (Weller v2 2026-11-07), offset 0.000, 0.000, -0.050 |
-| pc_assault_upper_arm | 70752581527557 | 130102142650442 | 1.04, 1.24, 1.10 | R15 limb (Weller v2 2026-11-07), offset 0.000, 0.000, -0.030 |
-| pc_assault_lower_arm | 111242427197801 | 89733526738016 | 1.04, 1.12, 1.04 | R15 limb (Weller v2 2026-11-07), offset 0.000, 0.000, 0.000 |
-| pc_assault_hand | 133846130665573 | 93761417336976 | 0.98, 0.33, 1.03 | R15 limb (Weller v2 2026-11-07), offset 0.000, 0.000, -0.002 |
-| pc_assault_upper_leg | 123449912579061 | 103599487897185 | 1.08, 1.36, 1.09 | R15 limb (Weller v2 2026-11-07), offset 0.043, 0.000, -0.058 |
-| pc_assault_lower_leg | 87884254546571 | 116185213877232 | 1.01, 1.30, 0.99 | R15 limb (Weller v2 2026-11-07), offset 0.000, 0.000, 0.000 |
+| pc_assault_upper_arm | 137615567202319 | 129827927152847 | 1.04, 1.44, 1.10 | R15 limb (Weller v3 tapered 2026-11-07), offset 0.000, -0.098, -0.030 |
+| pc_assault_lower_arm | 135982743004456 | 114217511098805 | 1.00, 1.12, 1.00 | R15 limb (Weller v4 tapered, 0.84 cuff 2026-11-07), offset 0.000, 0.000, 0.000 |
+| pc_assault_hand | 78025074389286 | 102964661396130 | 0.82, 0.33, 0.88 | R15 limb (Weller v3 fist 2026-11-07), offset 0.000, 0.000, -0.010 |
+| pc_assault_upper_leg | 96325067678523 | 114031815727891 | 1.08, 1.59, 1.09 | R15 limb (Weller v3 tapered 2026-11-07), offset 0.043, -0.115, -0.058 |
+| pc_assault_lower_leg | 131875477288797 | 108866156558305 | 1.01, 1.30, 0.99 | R15 limb (Weller v3 tapered 2026-11-07), offset 0.000, 0.000, 0.000 |
 | pc_assault_foot | 79144855233866 | 112575972731289 | 1.01, 0.31, 1.00 | R15 limb (Weller v2 2026-11-07), offset 0.000, 0.000, 0.000 |
+| pc_assault_skinned (skin) | 106205735830249 (v1) | 87236345847400 | 3.98, 5.45, 1.26 | Weller skinned body, one MeshPart with 16 Bones (`MeshAssets.SKINNED_BODIES.body`, loaded whole with LoadAsset; v2 fist hands 2026-11-07) |
+| pc_assault_skinned_parts (hidden rig) | 15 meshes | 89768415142935 | R15 boxes | the same geometry split per R15 limb with Motor6Ds (`SKINNED_BODIES.parts`; v2 2026-11-07) |
+| pc_assault_gear_helmet | 106002887456604 | 115206275662165 | 1.34, 1.11, 1.54 | rigid gear on Head, offset 0.000, 0.095, -0.060 |
+| pc_assault_gear_carrier | 136938794151000 | 103203928656779 | 1.53, 1.44, 1.51 | rigid gear on UpperTorso, offset -0.025, 0.120, -0.025 |
 | env_bus | 115848012015557 | 84471628520896 | 42.9 x 12.75 x 10.9 | solid; the Gate bus line (ArenaService), Mile 14 later; 2026-11-07 |
 
 Open Cloud imports the FBX at 100x (1 Blender unit → 100 studs) and clamps any axis to 2048,

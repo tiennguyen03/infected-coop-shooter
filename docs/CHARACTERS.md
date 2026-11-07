@@ -256,6 +256,21 @@ Colours: Weller `friendly blue`, Cole `tan.l`, Reyes `white.l`, Cross `dark.d` w
 `gun.l` border, Kane `warning orange`. Faces: skin `tan.l`/`tan.m`, two `dark.d` eye
 facets, a brow line, a mouth line. ~2,500 tris each, rifle unchanged.
 
+**Body build (art v2 decision B, 2026-11-07).** The Chosen are the bodies the camera sits
+behind all run, so they get the hybrid treatment: **Weller is built as one skinned mesh**
+on an R15 armature (`pc_assault_skinned`, 944 tris; every joint is a vertex loop skinned
+50/50 to the two bones it joins, forearms and shins taper to 75%, elbow and knee pads
+straddle the joints), with the helmet and the Pike carrier as separate rigid accessories
+so they, and the rifle, weld on as before. The Infected stay rigid per-limb. **Shipped
+2026-11-07** (`Config.Player.SkinnedBody = true`): the skin rides a hidden 15-part R15
+rig assembled at boot (`assets/3d/README.md` "Skinned Weller"), so joints, headshots and
+the rifle weld work as on any R15 body. Hands are fists (0.82 x 0.33 x 0.88), not gloves
+that out-size the helmet (art-director pass). The five rigid limb sets carry the
+**fallback** and the bots: tapered octagonal forearms/shins and round joint caps at every
+elbow and knee (`PC_TAPER` in the build script), inside the same R15 boxes. On the skinned
+body the colour square sits on the left sleeve only; the rigid sets show it on both arms
+because left and right share one mesh.
+
 ### Isaac Weller, Assault (`pc_assault`)
 - **Silhouette:** helmet, squared shoulders, the straightest back in the squad.
 - **Head:** `dark.m` ballistic helmet with NVG mount, chin strap; face `tan.m`, short

@@ -1,7 +1,7 @@
 # Handoff — Infected Co-op Shooter (VS Code + Claude Code terminal)
 
 Start here when picking the project up in a fresh Claude Code session.
-Last updated: 2026-11-07 (Delta rework). Last verified commit on `main`: the Delta rework commit (playtested).
+Last updated: 2026-11-07 (skinned Weller). Last verified commit on `main`: the skinned Weller commit (verified in a playtest as an NPC; first player spawn on it still to be watched after a Rojo reconnect).
 
 ## What this is
 
@@ -56,7 +56,20 @@ Read in this order:
   longer count as a ceiling). Perf: 60 fps with 40 Walkers, server script lane 1.6 ms/frame.
   Not yet walked: the A13 route list (R1-R7), the staircase and vertical-chase tests, the
   low-end device pass; do them in the first play session on this build.
-- Static checks clean (stylua / selene / rojo build) at the Delta rework commit; luau-lsp
+- 2026-11-07: **Weller is a skinned mesh** (`Config.Player.SkinnedBody = true`;
+  `docs/CHARACTERS.md` C, `assets/3d/README.md` "Skinned Weller"). One 944-tri body with
+  the R15 bone tree over a hidden 15-part rig: `MeshAssets.buildSkinnedBody` loads the two
+  uploaded Model assets at boot, welds the skin to the root, renames the importer's
+  motors to the stock joint names and installs the result as `StarterPlayer.StarterCharacter`;
+  helmet and Pike carrier weld on as rigid gear. Verified in a playtest as an NPC on its own
+  Humanoid (R15 clips bend the skin at elbows and knees, feet on the ground at HipHeight
+  2.19, stock motor names, gear seated). Art-director pass: ship after the hand fix (fists
+  were boxing gloves; fixed and re-uploaded). The rigid fallback (tapered limbs, pads,
+  fist hands) is uploaded too and is what the bots wear. **Not yet seen: a player spawning
+  on it** (the Rojo plugin dropped during the Delta merge, so Studio ran the old
+  PlayerSetup); first thing next session: reconnect Rojo, Stop > Play, check walk / sprint
+  / prone / roll / vault, rifle in hand, headshots on `Head`, death clip, camera.
+- Static checks clean (stylua / selene / rojo build) at the skinned Weller commit; luau-lsp
   reports pre-existing nits only (Animations.luau, MeshAssets.dressModel narrowing).
 - 2026-11-05: decided the final product is **4-player co-op**. `src/` audited; 13 single-
   player shortcuts logged in `docs/MULTIPLAYER_READINESS.md` with a planned fix each, and
@@ -104,6 +117,12 @@ Read in this order:
 
 ## Open work, in priority order
 
+- **Skinned Weller shipped 2026-11-07, player spawn unverified.** Reconnect the Rojo plugin
+  (localhost:34872), Stop > Play, play a life on the skinned body (list in "Current state").
+  If anything breaks: `Config.Player.SkinnedBody = false` ships the tapered rigid Weller.
+  Art-director later pass: carrier straps to z 0.80, a 75/25 loop either side of the elbow
+  and knee rings, toe step on the boot. The other four Chosen stay rigid until a class
+  system exists (build `_pc_skin_body` for them then).
 - **Infected skin v2 shipped 2026-11-07** (owner direction: no "zombie green"). Open from
   the art-director pass, for the next body sprint: `Limb.lesion` cores rotated ~20°, eye rim
   `+0.06`, Walker rib slab bars varied, Brute `pallor_d` base if it still reads purple in

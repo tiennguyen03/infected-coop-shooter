@@ -327,6 +327,11 @@ this section; the bullets below describe the 2026-11-06 build still worn by the 
   (`assets/3d/README.md` > Infected bodies). Walker = olive fatigues + helmet + vest,
   Runner = tan civilian + hair + white shirt plate, Brute = dark armour + plate helmet +
   pauldrons + pack. Shipped 2026-11-06.
+- Weller (the body the camera sits behind) is one skinned mesh since 2026-11-07: a 944-tri
+  body with the R15 bone tree over a hidden 15-part rig, so elbows, knees and the waist
+  bend as a band of skin instead of a box corner swinging through the next limb
+  (`assets/3d/README.md` > Skinned Weller). Helmet and carrier stay rigid gear. One extra
+  skinned draw per player; the hidden limbs do not render.
 - The Chosen (player characters, see LORE.md): realistic silhouettes, one signature color
   patch per character (e.g. K-9 handler = tan, Epidemiologist = white, Recon = dark,
   Engineer = olive), gear in the palette, face left simple. Built 2026-11-06 as limb sets

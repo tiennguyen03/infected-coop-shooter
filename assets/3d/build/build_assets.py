@@ -11,6 +11,9 @@ things and `lineup_env.png` for the environment). Style rules: docs/STYLES.md se
 Units: 1 Blender unit = 1 Roblox stud (scene unit scale 0.28 m). Import FBX in Roblox with
 the 3D Importer's Scale Unit set to "Studs". Z is up here; FBX export converts to Y-up.
 Pivots: props at bottom center, weapon at the grip, hovering things at their center.
+Skinned bodies (RIGGED, pc_assault_skinned): one mesh + an R15 armature, origin at the
+HumanoidRootPart centre, exported three ways (rigged, mesh-only, 15-part) for Studio's
+Avatar Setup / 3D Importer; steps in assets/3d/README.md "Skinned Weller".
 """
 
 import math
@@ -125,17 +128,78 @@ def build_palette_material(img):
 class Builder:
     """Accumulates primitives into one bmesh; each primitive is painted with a swatch."""
 
-    def __init__(self):
+    def __init__(self, skinned=False):
         self.bm = bmesh.new()
         self.uv = self.bm.loops.layers.uv.verify()
+        # Skinned bodies only: vertex-group (bone) names in deform-layer index order. The
+        # deform layer must exist before the first vertex (adding it later invalidates them).
+        self.groups = []
+        self.deform = self.bm.verts.layers.deform.verify() if skinned else None
 
     def _paint(self, verts, swatch):
         u, v = swatch_uv(swatch)
         faces = {f for vert in verts for f in vert.link_faces}
+        self._paint_faces(faces, swatch)
+        return verts
+
+    def _paint_faces(self, faces, swatch):
+        u, v = swatch_uv(swatch)
         for f in faces:
             for loop in f.loops:
                 loop[self.uv].uv = (u, v)
+
+    # --- skinning (one deform layer; vertex groups are created from `groups` at finish)
+    def weight(self, verts, weights):
+        """Skins `verts` to bones: weights = {bone_name: w}, replacing any earlier weights."""
+        if self.deform is None:
+            raise RuntimeError("weight() needs Builder(skinned=True)")
+        for name in weights:
+            if name not in self.groups:
+                self.groups.append(name)
+        for v in verts:
+            dv = v[self.deform]
+            dv.clear()
+            for name, w in weights.items():
+                dv[self.groups.index(name)] = w
         return verts
+
+    def weight_split(self, verts, zj, upper, lower, band=0.03):
+        """Skins a piece that straddles a joint at height `zj`: verts above it to `upper`,
+        below to `lower`, verts on the joint 50/50 (the bridge loop rule)."""
+        for v in verts:
+            if v.co.z > zj + band:
+                self.weight([v], {upper: 1.0})
+            elif v.co.z < zj - band:
+                self.weight([v], {lower: 1.0})
+            else:
+                self.weight([v], {upper: 0.5, lower: 0.5})
+        return verts
+
+    def prism(self, rings, swatch="gun", loc=(0, 0, 0), sides=8, chamfer=0.78, cap_bottom=True, cap_top=True):
+        """A tube through `rings` = [(z, rx, ry), ...] listed bottom to top; each ring is an
+        octagon (sides=8: a chamfered box whose corners sit at `chamfer` of the half-size, the
+        tapered-limb profile) or a box (sides=4). `swatch` is one name for the whole tube or
+        one per band (len(rings) - 1); the caps take the first and last band's swatch. Returns
+        one vert list per ring, bottom to top, so a caller can skin each loop."""
+        bm = self.bm
+        ring_verts = []
+        for z, rx, ry in rings:
+            if sides == 4:
+                pts = ((-rx, -ry), (rx, -ry), (rx, ry), (-rx, ry))
+            else:
+                c = chamfer
+                pts = ((-rx * c, -ry), (rx * c, -ry), (rx, -ry * c), (rx, ry * c), (rx * c, ry), (-rx * c, ry), (-rx, ry * c), (-rx, -ry * c))
+            ring_verts.append([bm.verts.new((loc[0] + px, loc[1] + py, loc[2] + z)) for px, py in pts])
+        n = len(ring_verts[0])
+        bands = [swatch] * (len(rings) - 1) if isinstance(swatch, str) else list(swatch)
+        for i, (lo, hi) in enumerate(zip(ring_verts, ring_verts[1:])):
+            faces = [bm.faces.new((lo[k], lo[(k + 1) % n], hi[(k + 1) % n], hi[k])) for k in range(n)]
+            self._paint_faces(faces, bands[i])
+        if cap_bottom:
+            self._paint_faces([bm.faces.new(tuple(reversed(ring_verts[0])))], bands[0])
+        if cap_top:
+            self._paint_faces([bm.faces.new(tuple(ring_verts[-1]))], bands[-1])
+        return ring_verts
 
     def _xform(self, verts, size=None, rot=None, loc=None):
         if size is not None:
@@ -204,6 +268,8 @@ class Builder:
         obj = bpy.data.objects.new(name, me)
         collection.objects.link(obj)
         obj["tri_count"] = sum(len(p.vertices) - 2 for p in me.polygons)
+        for group in self.groups:  # same order as the deform-layer indices
+            obj.vertex_groups.new(name=group)
         return obj
 
 
@@ -961,11 +1027,13 @@ R15_LIMB = {
     "foot": (1.01, 1.0, 0.31),
 }
 
-# R15 limb centres (hip at z=0) for the assembled preview figures.
+# R15 limb centres (HumanoidRootPart centre at z=0, ground at -3.19) for the assembled
+# preview figures and the skinned body's detail pieces. Measured on a stock R15 rig in
+# Studio (2026-11-07, same snippet as R15_JOINTS below): the limbs overlap at the joints.
 R15_POSE = {
-    "head": (0, 0, 1.59), "upper_torso": (0, 0, 0.20), "lower_torso": (0, 0, -0.80),
-    "upper_arm": (1.47, 0, 0.37), "lower_arm": (1.47, 0, -0.22), "hand": (1.47, 0, -0.85),
-    "upper_leg": (0.5, 0, -1.42), "lower_leg": (0.5, 0, -2.20), "foot": (0.5, 0, -2.85),
+    "head": (0, 0, 1.674), "upper_torso": (0, 0, 0.25), "lower_torso": (0, 0, -0.80),
+    "upper_arm": (1.47, 0, 0.428), "lower_arm": (1.47, 0, -0.22), "hand": (1.47, 0, -0.85),
+    "upper_leg": (0.5, 0, -1.471), "lower_leg": (0.5, 0, -2.334), "foot": (0.5, 0, -3.036),
 }
 
 # Whole-body triangle caps (15 limbs, both sides), art director v2. The build prints each body.
@@ -979,22 +1047,45 @@ FACE_NORMAL = {
 
 
 class Limb:
-    """Primitive helpers offset to one limb's origin."""
+    """Primitive helpers offset to one limb's origin. With `bone` set (skinned bodies) every
+    primitive it builds is skinned 100% to that bone."""
 
-    def __init__(self, b, o=(0, 0, 0)):
-        self.b, self.o = b, o
+    def __init__(self, b, o=(0, 0, 0), bone=None):
+        self.b, self.o, self.bone = b, o, bone
 
     def _at(self, loc):
         return (self.o[0] + loc[0], self.o[1] + loc[1], self.o[2] + loc[2])
 
+    def _skin(self, verts):
+        if self.bone:
+            self.b.weight(verts, {self.bone: 1.0})
+        return verts
+
     def box(self, size, loc=(0, 0, 0), swatch="gun", rot=None):
-        self.b.box(size, self._at(loc), rot=rot, swatch=swatch)
+        return self._skin(self.b.box(size, self._at(loc), rot=rot, swatch=swatch))
 
     def cyl(self, r, depth, loc=(0, 0, 0), swatch="gun", rot=None, segs=8, r2=None):
-        self.b.cyl(r, depth, self._at(loc), segs=segs, r2=r2, rot=rot, swatch=swatch)
+        return self._skin(self.b.cyl(r, depth, self._at(loc), segs=segs, r2=r2, rot=rot, swatch=swatch))
 
     def ico(self, r, loc=(0, 0, 0), swatch="gun", subdiv=1):
-        self.b.ico(r, self._at(loc), subdiv=subdiv, swatch=swatch)
+        return self._skin(self.b.ico(r, self._at(loc), subdiv=subdiv, swatch=swatch))
+
+    def prism(self, rings, swatch="gun", loc=(0, 0, 0), **kw):
+        rings_verts = self.b.prism(rings, swatch=swatch, loc=self._at(loc), **kw)
+        for ring in rings_verts:
+            self._skin(ring)
+        return rings_verts
+
+    def taper(self, size, loc=(0, 0, 0), bottom=0.75, swatch="gun", sides=8):
+        """A limb segment that narrows to `bottom` of its width at the bottom: the tapered
+        forearm/shin of the art sheet (70-80%), octagonal so the corners never swing out."""
+        W, D, H = size
+        return self.prism([(-H / 2, W / 2 * bottom, D / 2 * bottom), (H / 2, W / 2, D / 2)], swatch=swatch, loc=loc, sides=sides)
+
+    def pad(self, r, depth, loc=(0, 0, 0), swatch="gun"):
+        """A joint cap: a short cylinder across the limb (axis X) at the joint, so the round
+        end stays filled when the next limb bends away (the Chosen's elbow/knee pad)."""
+        return self.cyl(r, depth, loc, rot=(0, 90, 0), segs=8, swatch=swatch)
 
     # --- limb shapes (geometry v2)
     def oct(self, r, h, loc=(0, 0, 0), swatch="gun", r_top=None):
@@ -1419,6 +1510,15 @@ PC_CLASSES = {
 
 LEFT = -0.62  # the carrier's left shoulder strap (x); the patch side
 
+# Fallback body (2026-11-07, art v2 §B): the rigid per-limb Chosen get tapered octagonal
+# forearms and shins (PC_TAPER_AT of the width at wrist/ankle) and a round joint cap at the
+# bottom of each upper arm / upper leg, so a bent elbow or knee shows a pad instead of a box
+# corner. False rebuilds the 2026-11-07 full-box limbs that are uploaded today. The skinned
+# Weller (below) always tapers.
+PC_TAPER = True
+PC_TAPER_AT = 0.75
+CAP_R = 0.46  # joint cap radius: just inside the tapered limb's top so it hides at rest
+
 
 def _pc_face(L, sw, brow="tan_d"):
     W, D, H = R15_LIMB["head"]
@@ -1428,6 +1528,70 @@ def _pc_face(L, sw, brow="tan_d"):
     L.box((0.9, 0.1, 0.08), (0, -0.59, 0.24), swatch=brow)  # brow line
     L.box((0.16, 0.12, 0.22), (0, -0.62, -0.06), swatch=sw["skin"])  # nose
     L.box((0.4, 0.08, 0.05), (0, -0.6, -0.28), swatch="dark_d")  # mouth
+
+
+def _pc_headgear(L, sw, cname):
+    """Everything on the head that is not the head: helmet, cap, hood, hard hat, respirator.
+    Separate from the face so the skinned body can wear it as a rigid accessory."""
+    head = sw["head"]
+    if head == "helmet":
+        L.box((1.3, 1.3, 0.46), (0, 0, 0.4), swatch="dark")  # ballistic helmet
+        L.box((1.34, 0.26, 0.1), (0, -0.7, 0.2), swatch="dark")  # brim
+        L.box((0.36, 0.3, 0.26), (0, -0.62, 0.52), swatch="dark_d")  # NVG mount
+        L.box((0.3, 0.1, 0.14), (0, 0.66, 0.5), swatch="gun_l")  # IR strobe
+        L.box((1.2, 0.06, 0.08), (0, -0.5, -0.42), swatch="dark")  # chin strap
+    elif head == "cap":
+        L.box((1.24, 1.2, 0.3), (0, 0.02, 0.46), swatch="tan")  # patrol cap
+        L.box((1.0, 0.42, 0.06), (0, -0.78, 0.33), swatch="tan")  # flat brim
+    elif head == "mask":
+        L.box((1.28, 1.28, 0.5), (0, 0.04, 0.4), swatch="white")  # hood up
+        L.box((1.28, 0.3, 0.9), (0, 0.5, -0.1), swatch="white")
+        for x in (-0.6, 0.6):
+            L.box((0.16, 1.1, 0.9), (x, 0.08, -0.1), swatch="white")
+        L.box((1.0, 0.22, 0.42), (0, -0.62, -0.24), swatch="gun_d")  # half-face respirator
+        for x in (-0.36, 0.36):
+            L.box((0.26, 0.2, 0.26), (x, -0.64, -0.32), swatch="gun")  # filters
+        L.box((1.2, 0.12, 0.16), (0, 0, 0.1), swatch="dark")  # goggle strap
+        for x in (-0.24, 0.24):
+            L.box((0.3, 0.1, 0.22), (x, -0.63, 0.1), swatch="gun_l")  # goggle lenses
+    elif head == "hood":
+        L.box((1.28, 1.28, 0.5), (0, 0.04, 0.4), swatch="dark")  # hood
+        L.box((1.28, 0.3, 0.9), (0, 0.5, -0.1), swatch="dark")
+        for x in (-0.6, 0.6):
+            L.box((0.16, 1.1, 0.9), (x, 0.08, -0.1), swatch="dark")
+        L.box((1.5, 1.5, 0.06), (0, 0, 0.4), swatch="dark")  # boonie brim
+        L.box((1.0, 0.12, 0.38), (0, -0.6, -0.32), swatch="dark_d")  # face wrap to the nose
+    else:  # hardhat
+        L.box((1.26, 1.26, 0.4), (0, 0, 0.44), swatch="warning_orange")
+        L.box((1.5, 1.5, 0.08), (0, 0, 0.26), swatch="warning_orange")  # brim
+        L.box((0.5, 0.3, 0.12), (0, -0.56, 0.44), swatch="dark")  # headlamp
+        L.box((0.5, 0.06, 0.1), (0, -0.66, 0.56), swatch="dark_d")  # KANE in marker
+
+
+def _pc_head(L, sw, cname, gear=True):
+    """The head itself: face, hair, beard; headgear on top when `gear`."""
+    head = sw["head"]
+    if head == "helmet":
+        _pc_face(L, sw)
+        for x in (-0.58, 0.58):
+            L.box((0.08, 1.0, 0.3), (x, 0, 0.1), swatch="dark_d")  # short hair at the sides
+        L.box((0.7, 0.08, 0.1), (0, -0.6, -0.44), swatch="dark_d")  # beard line
+    elif head == "cap":
+        _pc_face(L, sw)
+        for x in (-0.59, 0.59):
+            L.box((0.08, 0.6, 0.3), (x, 0, 0.14), swatch="gun_l")  # grey at the temples
+    elif head == "mask":
+        W, D, H = R15_LIMB["head"]
+        L.box((W, D, H), swatch=sw["skin"])
+        L.box((0.9, 0.12, 0.12), (0, -0.56, 0.3), swatch="dark_d")  # hair under the hood
+    elif head == "hood":
+        _pc_face(L, sw, brow="dark")
+        L.box((0.08, 0.5, 0.08), (0.62, -0.1, 0.2), swatch="tan_d")  # pencil behind the ear
+    else:  # hardhat
+        _pc_face(L, sw)
+        L.box((0.44, 0.08, 0.08), (0, -0.62, -0.18), swatch="tan_d")  # moustache
+    if gear:
+        _pc_headgear(L, sw, cname)
 
 
 def _pc_carrier(L, sw, cname):
@@ -1445,89 +1609,55 @@ def _pc_carrier(L, sw, cname):
     L.box((0.5, 0.06, 0.1), (0.45, -0.68, 0.52), swatch="dark_d" if cname == "recon" else "white")  # name tape
 
 
-def _pc_limb(b, limb, sw, cname, o=(0, 0, 0)):
+def _pc_torso_gear(L, sw, cname):
+    """Carrier plus the class's pouches and kit on the upper torso (a rigid accessory on the
+    skinned body)."""
+    _pc_carrier(L, sw, cname)
+    if cname == "assault":
+        for x in (-0.4, 0.0, 0.4):
+            L.box((0.3, 0.16, 0.42), (x, -0.7, -0.35), swatch="gun_d")  # mag pouches
+        L.box((0.6, 0.16, 0.16), (-0.1, -0.68, 0.2), swatch="dark")  # radio
+        for x in (-0.62, 0.62):
+            L.box((0.12, 0.2, 0.5), (x, -0.6, 0.02), swatch="red_d")  # two tourniquets
+    elif cname == "k9":
+        for x in (-0.3, 0.3):
+            L.box((0.3, 0.16, 0.42), (x, -0.7, -0.35), swatch="gun_d")
+        L.box((0.4, 0.3, 0.5), (0.78, -0.3, -0.45), swatch="tan_d")  # tug pouch, right side
+        L.box((0.1, 0.14, 0.3), (0.78, -0.42, -0.75), swatch="tan_l")  # chewed tug toy hanging
+        L.box((0.14, 0.04, 0.2), (0.08, -0.6, 0.2), swatch="gun_l")  # Kilo's spare tag
+    elif cname == "epi":
+        L.box((0.6, 0.2, 0.5), (0.4, -0.7, -0.25), swatch="white_d")  # sample pouch
+        for x in (0.24, 0.4, 0.56):
+            L.box((0.08, 0.1, 0.3), (x, -0.78, -0.2), swatch="white_l")  # vials
+            L.box((0.08, 0.1, 0.06), (x, -0.78, -0.02), swatch="red_d")  # caps
+        L.box((0.06, 0.1, 0.3), (-0.4, -0.68, 0.1), swatch="white")  # sharpie
+        L.box((0.2, 0.06, 0.26), (-0.1, -0.7, -0.55), swatch="white")  # hospital ID badge
+        L.box((0.04, 0.1, 0.5), (-0.1, -0.68, -0.2), swatch="gun_l")  # on its lanyard
+    elif cname == "recon":
+        L.box((0.5, 0.2, 0.4), (0.5, 0.68, 0.3), swatch="dark")  # radio on the back panel
+        L.box((0.06, 0.06, 1.2), (0.5, 0.72, 0.5), swatch="gun_d")  # whip antenna
+        L.box((0.36, 0.1, 0.3), (-0.4, -0.68, -0.1), swatch="dark_d")  # notebook
+        L.box((0.1, 0.14, 0.6), (LEFT, -0.6, -0.1), swatch="dark")  # sheathed knife
+    else:  # engineer
+        L.box((1.0, 0.3, 0.9), (0, 0.66, -0.1), swatch="gun")  # tool pack
+        L.box((0.12, 0.1, 1.9), (0, 0.72, 0.05), rot=(0, 35, 0), swatch="rust_l")  # pry bar across it
+        L.box((0.3, 0.16, 0.42), (-0.4, -0.7, -0.35), swatch=sw["top_d"])  # one pouch
+
+
+def _pc_pad(sw):
+    return sw["knee"] or sw["top_d"]
+
+
+def _pc_limb(b, limb, sw, cname, o=(0, 0, 0), gear=True):
     L = Limb(b, o)
     W, D, H = R15_LIMB[limb]
-    head = sw["head"]
     if limb == "head":
-        if head == "helmet":
-            _pc_face(L, sw)
-            L.box((1.3, 1.3, 0.46), (0, 0, 0.4), swatch="dark")  # ballistic helmet
-            L.box((1.34, 0.26, 0.1), (0, -0.7, 0.2), swatch="dark")  # brim
-            L.box((0.36, 0.3, 0.26), (0, -0.62, 0.52), swatch="dark_d")  # NVG mount
-            L.box((0.3, 0.1, 0.14), (0, 0.66, 0.5), swatch="gun_l")  # IR strobe
-            L.box((1.2, 0.06, 0.08), (0, -0.5, -0.42), swatch="dark")  # chin strap
-            for x in (-0.58, 0.58):
-                L.box((0.08, 1.0, 0.3), (x, 0, 0.1), swatch="dark_d")  # short hair at the sides
-            L.box((0.7, 0.08, 0.1), (0, -0.6, -0.44), swatch="dark_d")  # beard line
-        elif head == "cap":
-            _pc_face(L, sw)
-            L.box((1.24, 1.2, 0.3), (0, 0.02, 0.46), swatch="tan")  # patrol cap
-            L.box((1.0, 0.42, 0.06), (0, -0.78, 0.33), swatch="tan")  # flat brim
-            for x in (-0.59, 0.59):
-                L.box((0.08, 0.6, 0.3), (x, 0, 0.14), swatch="gun_l")  # grey at the temples
-        elif head == "mask":
-            L.box((W, D, H), swatch=sw["skin"])
-            L.box((1.28, 1.28, 0.5), (0, 0.04, 0.4), swatch="white")  # hood up
-            L.box((1.28, 0.3, 0.9), (0, 0.5, -0.1), swatch="white")
-            for x in (-0.6, 0.6):
-                L.box((0.16, 1.1, 0.9), (x, 0.08, -0.1), swatch="white")
-            L.box((0.9, 0.12, 0.12), (0, -0.56, 0.3), swatch="dark_d")  # hair under the hood
-            L.box((1.0, 0.22, 0.42), (0, -0.62, -0.24), swatch="gun_d")  # half-face respirator
-            for x in (-0.36, 0.36):
-                L.box((0.26, 0.2, 0.26), (x, -0.64, -0.32), swatch="gun")  # filters
-            L.box((1.2, 0.12, 0.16), (0, 0, 0.1), swatch="dark")  # goggle strap
-            for x in (-0.24, 0.24):
-                L.box((0.3, 0.1, 0.22), (x, -0.63, 0.1), swatch="gun_l")  # goggle lenses
-        elif head == "hood":
-            _pc_face(L, sw, brow="dark")
-            L.box((1.28, 1.28, 0.5), (0, 0.04, 0.4), swatch="dark")  # hood
-            L.box((1.28, 0.3, 0.9), (0, 0.5, -0.1), swatch="dark")
-            for x in (-0.6, 0.6):
-                L.box((0.16, 1.1, 0.9), (x, 0.08, -0.1), swatch="dark")
-            L.box((1.5, 1.5, 0.06), (0, 0, 0.4), swatch="dark")  # boonie brim
-            L.box((1.0, 0.12, 0.38), (0, -0.6, -0.32), swatch="dark_d")  # face wrap to the nose
-            L.box((0.08, 0.5, 0.08), (0.62, -0.1, 0.2), swatch="tan_d")  # pencil behind the ear
-        else:  # hardhat
-            _pc_face(L, sw)
-            L.box((1.26, 1.26, 0.4), (0, 0, 0.44), swatch="warning_orange")
-            L.box((1.5, 1.5, 0.08), (0, 0, 0.26), swatch="warning_orange")  # brim
-            L.box((0.5, 0.3, 0.12), (0, -0.56, 0.44), swatch="dark")  # headlamp
-            L.box((0.5, 0.06, 0.1), (0, -0.66, 0.56), swatch="dark_d")  # KANE in marker
-            L.box((0.44, 0.08, 0.08), (0, -0.62, -0.18), swatch="tan_d")  # moustache
+        _pc_head(L, sw, cname, gear)
     elif limb == "upper_torso":
         L.box((W, D, H), swatch=sw["top"])
         L.box((1.0, 0.86, 0.14), (0, 0.04, 0.78), swatch=sw["top_d"])  # collar
-        _pc_carrier(L, sw, cname)
-        if cname == "assault":
-            for x in (-0.4, 0.0, 0.4):
-                L.box((0.3, 0.16, 0.42), (x, -0.7, -0.35), swatch="gun_d")  # mag pouches
-            L.box((0.6, 0.16, 0.16), (-0.1, -0.68, 0.2), swatch="dark")  # radio
-            for x in (-0.62, 0.62):
-                L.box((0.12, 0.2, 0.5), (x, -0.6, 0.02), swatch="red_d")  # two tourniquets
-        elif cname == "k9":
-            for x in (-0.3, 0.3):
-                L.box((0.3, 0.16, 0.42), (x, -0.7, -0.35), swatch="gun_d")
-            L.box((0.4, 0.3, 0.5), (0.78, -0.3, -0.45), swatch="tan_d")  # tug pouch, right side
-            L.box((0.1, 0.14, 0.3), (0.78, -0.42, -0.75), swatch="tan_l")  # chewed tug toy hanging
-            L.box((0.14, 0.04, 0.2), (0.08, -0.6, 0.2), swatch="gun_l")  # Kilo's spare tag
-        elif cname == "epi":
-            L.box((0.6, 0.2, 0.5), (0.4, -0.7, -0.25), swatch="white_d")  # sample pouch
-            for x in (0.24, 0.4, 0.56):
-                L.box((0.08, 0.1, 0.3), (x, -0.78, -0.2), swatch="white_l")  # vials
-                L.box((0.08, 0.1, 0.06), (x, -0.78, -0.02), swatch="red_d")  # caps
-            L.box((0.06, 0.1, 0.3), (-0.4, -0.68, 0.1), swatch="white")  # sharpie
-            L.box((0.2, 0.06, 0.26), (-0.1, -0.7, -0.55), swatch="white")  # hospital ID badge
-            L.box((0.04, 0.1, 0.5), (-0.1, -0.68, -0.2), swatch="gun_l")  # on its lanyard
-        elif cname == "recon":
-            L.box((0.5, 0.2, 0.4), (0.5, 0.68, 0.3), swatch="dark")  # radio on the back panel
-            L.box((0.06, 0.06, 1.2), (0.5, 0.72, 0.5), swatch="gun_d")  # whip antenna
-            L.box((0.36, 0.1, 0.3), (-0.4, -0.68, -0.1), swatch="dark_d")  # notebook
-            L.box((0.1, 0.14, 0.6), (LEFT, -0.6, -0.1), swatch="dark")  # sheathed knife
-        else:  # engineer
-            L.box((1.0, 0.3, 0.9), (0, 0.66, -0.1), swatch="gun")  # tool pack
-            L.box((0.12, 0.1, 1.9), (0, 0.72, 0.05), rot=(0, 35, 0), swatch="rust_l")  # pry bar across it
-            L.box((0.3, 0.16, 0.42), (-0.4, -0.7, -0.35), swatch=sw["top_d"])  # one pouch
+        if gear:
+            _pc_torso_gear(L, sw, cname)
     elif limb == "lower_torso":
         L.box((W, D, H), swatch=sw["trousers"])
         L.box((W + 0.02, D + 0.02, 0.16), (0, 0, 0.06), swatch="dark")  # belt
@@ -1554,15 +1684,21 @@ def _pc_limb(b, limb, sw, cname, o=(0, 0, 0)):
         if sw["border"]:
             L.box((0.4, 0.07, 0.26), (0, -0.53, 0.2), swatch=sw["border"])
         L.box((0.34, 0.1, 0.2), (0, -0.53, 0.2), swatch=sw["accent"])  # sleeve square
+        if PC_TAPER:
+            L.pad(CAP_R, 0.94, (0, 0, R15_JOINTS["elbow"][2] - R15_POSE["upper_arm"][2]), swatch=sw["skin"] if sw["rolled"] else _pc_pad(sw))  # elbow pad (bare elbow under a rolled sleeve)
     elif limb == "lower_arm":
-        L.box((W, D, H), swatch=sw["skin"] if sw["rolled"] else sw["top"])
-        L.box((1.04, 1.04, 0.24), (0, 0, -0.44), swatch=sw["glove"])  # glove cuff
+        skin = sw["skin"] if sw["rolled"] else sw["top"]
+        if PC_TAPER:
+            L.taper((W, D, H), bottom=PC_TAPER_AT, swatch=skin)  # forearm narrows to the wrist
+        else:
+            L.box((W, D, H), swatch=skin)
+        L.box((0.84, 0.84, 0.24), (0, 0, -0.44), swatch=sw["glove"])  # glove cuff
         if cname == "engineer":
             L.box((1.06, 1.06, 0.1), (0, 0, -0.26), swatch="warning_orange")  # marking tape on the wrist
     elif limb == "hand":
-        L.box((W, D, H), swatch=sw["glove"])
+        L.box((0.82, 0.86, 0.32), swatch=sw["glove"])  # a fist, not a boxing glove
         for x in (-0.2, 0.2):
-            L.box((0.06, 0.5, 0.33), (x, -0.27, 0), swatch="dark_d")  # finger gaps
+            L.box((0.06, 0.5, 0.33), (x, -0.2, 0), swatch="dark_d")  # finger gaps
     elif limb == "upper_leg":
         L.box((W, D, H), swatch=sw["trousers"])
         if sw["knee"]:
@@ -1571,9 +1707,15 @@ def _pc_limb(b, limb, sw, cname, o=(0, 0, 0)):
             L.box((0.5, 0.26, 0.5), (0.4, -0.42, 0.1), swatch="tan_d")  # stuffed cargo pocket
         elif cname != "engineer":
             L.box((0.36, 0.22, 0.4), (0.4, -0.45, 0.2), swatch=sw["top_d"])  # thigh pouch
+        if PC_TAPER:
+            L.pad(CAP_R, 0.94, (0, 0, R15_JOINTS["knee"][2] - R15_POSE["upper_leg"][2]), swatch=sw["knee"] or sw["trousers"])  # knee cap
     elif limb == "lower_leg":
-        L.box((W, D, 0.8), (0, 0, 0.25), swatch=sw["trousers"])
-        L.box((W + 0.02, D + 0.02, 0.5), (0, 0, -0.4), swatch=sw["boot"])  # boot shaft
+        if PC_TAPER:
+            L.taper((W, D, 0.8), (0, 0, 0.25), bottom=0.8, swatch=sw["trousers"])  # shin narrows to the boot
+            L.taper((W + 0.02, D + 0.02, 0.5), (0, 0, -0.4), bottom=0.86, swatch=sw["boot"], sides=4)  # boot shaft
+        else:
+            L.box((W, D, 0.8), (0, 0, 0.25), swatch=sw["trousers"])
+            L.box((W + 0.02, D + 0.02, 0.5), (0, 0, -0.4), swatch=sw["boot"])  # boot shaft
     elif limb == "foot":
         L.shoe(sw["boot"])
         if cname == "engineer":
@@ -1592,6 +1734,184 @@ def _register_chosen():
                 for s in ((1,) if x == 0 else (-1, 1)):
                     _pc_limb(b, limb, _sw, c, (s * x, y, z))
         ASSETS[f"ref_pc_{cname}"] = (preview, "_Reference", "bottom")
+
+    # Weller's gear as rigid accessories for the skinned body (same origin as the limb they
+    # sit on: head / upper torso centre), so they weld with the same offset rule as a limb.
+    sw = PC_CLASSES["assault"]
+    ASSETS["pc_assault_gear_helmet"] = (lambda b: _pc_headgear(Limb(b), sw, "assault"), "Chosen", "center")
+    ASSETS["pc_assault_gear_carrier"] = (lambda b: _pc_torso_gear(Limb(b), sw, "assault"), "Chosen", "center")
+
+
+# R15 joint positions (Blender axes: x right, -y forward, z up; HumanoidRootPart centre at
+# the origin, so the ground is at z -3.19: stock HipHeight 2.19 under a 2-stud HRP). These
+# are the stock rig's RigAttachment positions, MEASURED in Studio on a fresh
+# Players:CreateHumanoidModelFromDescription rig (2026-11-07), not estimated from the limb
+# boxes: the root joint pivots at the HRP bottom (hip height), the shoulder sits 0.85 up
+# and inside the torso edge, elbow/knee/ankle in the overlap of the two limbs. Right-side
+# values; the left mirrors x. They place the skinned Weller's bones and `_Att` points
+# (which the importer turns into the Motor6D pivots, so the R15 clips bend where the stock
+# rig bends) and the rigid fallback's joint caps. Re-measure before editing, in the Studio
+# command bar with a stock rig selected:
+#   local c = game.Selection:Get()[1] for _, a in c:GetDescendants() do if a:IsA("Attachment") and a.Name:match("RigAttachment$") then print(a.Parent.Name, a.Name, a.WorldPosition - c.HumanoidRootPart.Position) end end
+# (`root` is the HRP centre itself: the HumanoidRootNode bone the importer makes the HRP from.)
+R15_JOINTS = {
+    "root": (0.0, 0.0, 0.0),
+    "root_rig": (0.0, 0.0, -1.0),
+    "waist": (0.0, 0.0, -0.6),
+    "neck": (0.0, 0.0, 1.099),
+    "head_top": (0.0, 0.0, 2.264),
+    "shoulder": (0.972, 0.0, 0.847),
+    "elbow": (1.47, 0.0, 0.073),
+    "wrist": (1.47, 0.0, -0.734),
+    "hand_end": (1.47, 0.0, -1.023),
+    "hip": (0.498, 0.0, -1.0),
+    "knee": (0.498, 0.0, -1.921),
+    "ankle": (0.498, 0.0, -2.930),
+    "foot_end": (0.498, -0.5, -3.19),
+}
+
+# The R15 skeleton with Roblox's exact bone names: (bone, parent, head joint, tail joint).
+# Side bones are listed once and mirrored. HumanoidRootNode is the root (Studio turns it
+# into the HumanoidRootPart); every other bone becomes the limb MeshPart of that name.
+R15_BONES = [
+    ("HumanoidRootNode", None, "root", (0.0, 0.0, 0.3)),
+    ("LowerTorso", "HumanoidRootNode", "root_rig", "waist"),
+    ("UpperTorso", "LowerTorso", "waist", "neck"),
+    ("Head", "UpperTorso", "neck", "head_top"),
+    ("{S}UpperArm", "UpperTorso", "shoulder", "elbow"),
+    ("{S}LowerArm", "{S}UpperArm", "elbow", "wrist"),
+    ("{S}Hand", "{S}LowerArm", "wrist", "hand_end"),
+    ("{S}UpperLeg", "LowerTorso", "hip", "knee"),
+    ("{S}LowerLeg", "{S}UpperLeg", "knee", "ankle"),
+    ("{S}Foot", "{S}LowerLeg", "ankle", "foot_end"),
+]
+
+
+def r15_bones():
+    """Expands R15_BONES into [(name, parent, head_xyz, tail_xyz)] for both sides."""
+    joints = R15_JOINTS
+
+    def at(j, s):
+        p = joints[j] if isinstance(j, str) else j
+        return (p[0] * s, p[1], p[2])
+
+    out = []
+    for name, parent, head, tail in R15_BONES:
+        if "{S}" in name:
+            for side, s in (("Left", -1), ("Right", 1)):
+                out.append((name.format(S=side), parent.format(S=side) if parent else None, at(head, s), at(tail, s)))
+        else:
+            out.append((name, parent, at(head, 1), at(tail, 1)))
+    return out
+
+
+# ------------------------------------------------------------------ skinned Weller
+# One mesh for the whole body (art v2 §B hybrid decision): each limb chain is a tube with a
+# vertex loop at every joint; those loops are skinned 50/50 to the two bones that meet there
+# (the bridge), everything else 100% to its limb, so a bent elbow stretches a band of skin
+# instead of swinging a box corner through the next limb. Detail pieces (belt, pads, cuffs,
+# face) are the rigid Chosen's boxes skinned to their limb. Helmet and carrier are NOT in
+# this mesh: they stay rigid (pc_assault_gear_*) and weld on in game, as the rifle does.
+OCT_CHAMFER = 0.8  # chamfer of the limb octagons (1.0 = box)
+
+
+def _pc_skin_body(b, sw, cname):
+    J = R15_JOINTS
+    top, trousers, skin, glove, boot = sw["top"], sw["trousers"], sw["skin"], sw["glove"], sw["boot"]
+    W, D, H = R15_LIMB["upper_torso"]
+
+    # torso: one tube from the hips to the shoulders, waist loop 50/50
+    rings = b.prism(
+        [(J["hip"][2], 0.97, 0.49), (J["waist"][2], 0.995, 0.5), (-0.2, 0.97, 0.5), (0.75, 0.97, 0.5), (1.1, 0.8, 0.42)],
+        swatch=[trousers, top, top, top], chamfer=OCT_CHAMFER,
+    )
+    b.weight(rings[0], {"LowerTorso": 1.0})
+    b.weight(rings[1], {"LowerTorso": 0.5, "UpperTorso": 0.5})
+    for r in rings[2:]:
+        b.weight(r, {"UpperTorso": 1.0})
+    # neck: hidden inside the torso cap and the head, shows only when the head turns
+    rings = b.prism([(0.95, 0.36, 0.33), (J["neck"][2], 0.36, 0.33), (1.25, 0.36, 0.33)], swatch=skin, cap_bottom=False, cap_top=False, chamfer=OCT_CHAMFER)
+    b.weight(rings[0], {"UpperTorso": 1.0})
+    b.weight(rings[1], {"UpperTorso": 0.5, "Head": 0.5})
+    b.weight(rings[2], {"Head": 1.0})
+
+    LT = Limb(b, R15_POSE["lower_torso"], bone="LowerTorso")
+    W2, D2, _ = R15_LIMB["lower_torso"]
+    LT.box((W2 + 0.02, D2 + 0.02, 0.16), (0, 0, 0.06), swatch="dark")  # belt
+    LT.box((0.3, 0.12, 0.18), (0, -0.53, 0.06), swatch="brass")  # buckle
+    for x in (-0.6, 0.6):
+        LT.box((0.3, 0.22, 0.3), (x, -0.5, -0.04), swatch="dark")  # belt pouches
+    UT = Limb(b, R15_POSE["upper_torso"], bone="UpperTorso")
+    UT.box((1.0, 0.86, 0.14), (0, 0.04, 0.78), swatch=sw["top_d"])  # collar
+    _pc_head(Limb(b, R15_POSE["head"], bone="Head"), sw, cname, gear=False)
+
+    for side, s in (("Left", -1), ("Right", 1)):
+        ua, la, ha = f"{side}UpperArm", f"{side}LowerArm", f"{side}Hand"
+        x = s * R15_POSE["upper_arm"][0]
+        sleeve = skin if sw["rolled"] else top
+        # arm: rounded shoulder, elbow loop, forearm tapering to the wrist loop, glove
+        rings = b.prism(
+            [(J["hand_end"][2], 0.40, 0.42), (-0.77, 0.40, 0.42), (J["wrist"][2], 0.5 * PC_TAPER_AT, 0.5 * PC_TAPER_AT),
+             (-0.33, 0.46, 0.46), (J["elbow"][2], 0.5, 0.5), (0.9, 0.5, 0.5), (1.04, 0.42, 0.42)],
+            swatch=[glove, glove, sleeve, sleeve, top, top], loc=(x, 0, 0), chamfer=OCT_CHAMFER,
+        )
+        b.weight(rings[0] + rings[1], {ha: 1.0})
+        b.weight(rings[2], {la: 0.5, ha: 0.5})
+        b.weight(rings[3], {la: 1.0})
+        b.weight(rings[4], {ua: 0.5, la: 0.5})
+        b.weight(rings[5] + rings[6], {ua: 1.0})
+        UA = Limb(b, (x, 0, R15_POSE["upper_arm"][2]), bone=ua)
+        UA.box((1.04, 1.04, 0.24), (0, 0, 0.48), swatch=sw["top_d"])  # shoulder seam
+        if s < 0:  # the square is on the LEFT sleeve only (one mesh: no mirrored patch)
+            if sw["border"]:
+                UA.box((0.4, 0.07, 0.26), (0, -0.53, 0.2), swatch=sw["border"])
+            UA.box((0.34, 0.1, 0.2), (0, -0.53, 0.2), swatch=sw["accent"])
+        pad = b.box((0.56, 0.24, 0.5), (x, 0.44, J["elbow"][2]), swatch=_pc_pad(sw))  # elbow pad, behind the joint
+        b.weight_split(pad, J["elbow"][2], ua, la)
+        LA = Limb(b, (x, 0, R15_POSE["lower_arm"][2]), bone=la)
+        LA.box((0.84, 0.84, 0.24), (0, 0, -0.44), swatch=glove)  # glove cuff
+        HA = Limb(b, (x, 0, R15_POSE["hand"][2]), bone=ha)
+        for fx in (-0.2, 0.2):
+            HA.box((0.06, 0.5, 0.33), (fx, -0.2, 0), swatch="dark_d")  # finger gaps
+
+        ul, ll, ft = f"{side}UpperLeg", f"{side}LowerLeg", f"{side}Foot"
+        x = s * R15_POSE["upper_leg"][0]
+        # leg: thigh, knee loop, shin tapering, boot shaft step, ankle loop, foot
+        rings = b.prism(
+            [(J["foot_end"][2], 0.505, 0.5), (-3.05, 0.505, 0.5), (J["ankle"][2], 0.5, 0.49), (-2.49, 0.5, 0.49), (-2.43, 0.4, 0.39),
+             (J["knee"][2], 0.47, 0.46), (-1.25, 0.495, 0.485), (-0.79, 0.495, 0.485)],
+            swatch=[boot, boot, boot, boot, trousers, trousers, trousers], loc=(x, 0, 0), chamfer=OCT_CHAMFER,
+        )
+        b.weight(rings[0] + rings[1], {ft: 1.0})
+        b.weight(rings[2], {ll: 0.5, ft: 0.5})
+        b.weight(rings[3] + rings[4], {ll: 1.0})
+        b.weight(rings[5], {ul: 0.5, ll: 0.5})
+        b.weight(rings[6] + rings[7], {ul: 1.0})
+        UL = Limb(b, (x, 0, R15_POSE["upper_leg"][2]), bone=ul)
+        if sw["knee"]:
+            pad = b.box((0.8, 0.2, 0.46), (x, -0.5, J["knee"][2] + 0.03), swatch=sw["knee"])  # knee pad
+            b.weight_split(pad, J["knee"][2], ul, ll)
+        if cname != "engineer":
+            UL.box((0.36, 0.22, 0.4), (s * 0.35, -0.45, 0.2), swatch=sw["top_d"])  # thigh pouch, outer side
+        FT = Limb(b, (x, 0, R15_POSE["foot"][2]), bone=ft)
+        FT.box((1.01, 1.0, 0.08), (0, 0, -0.115), swatch="dark_d")  # sole
+
+
+RIGGED = {}
+
+
+def rigged(name, collection, deps=()):
+    def deco(fn):
+        RIGGED[name] = (fn, collection, tuple(deps))
+        return fn
+
+    return deco
+
+
+@rigged("pc_assault_skinned", "Chosen", deps=("pc_assault_gear_helmet", "pc_assault_gear_carrier"))
+def weller_skinned(b):
+    _pc_skin_body(b, PC_CLASSES["assault"], "assault")
+    return r15_bones()
 
 
 _register_chosen()
@@ -1635,6 +1955,198 @@ def export_fbx(obj, path):
         path_mode="STRIP",
         embed_textures=False,
     )
+
+
+def export_fbx_rigged(mesh_obj, arm_obj, path):
+    """FBX with the armature: same units/axes as export_fbx, deform bones only, no leaf bones
+    (Roblox would read them as extra joints), no animation. Modifiers other than the
+    armature are applied; the skin binds to the rest pose."""
+    bpy.ops.object.select_all(action="DESELECT")
+    mesh_obj.select_set(True)
+    arm_obj.select_set(True)
+    bpy.context.view_layer.objects.active = arm_obj
+    bpy.ops.export_scene.fbx(
+        filepath=path,
+        use_selection=True,
+        apply_unit_scale=False,
+        apply_scale_options="FBX_SCALE_NONE",
+        global_scale=1.0,
+        axis_forward="-Z",
+        axis_up="Y",
+        object_types={"MESH", "ARMATURE"},
+        mesh_smooth_type="OFF",
+        use_mesh_modifiers=True,
+        add_leaf_bones=False,
+        armature_nodetype="NULL",
+        primary_bone_axis="Y",
+        secondary_bone_axis="X",
+        use_armature_deform_only=True,
+        bake_anim=False,
+        path_mode="STRIP",
+        embed_textures=False,
+    )
+
+
+def make_armature(name, bones, collection):
+    """An armature from [(bone, parent, head, tail)] in rest pose, bones named exactly."""
+    arm_data = bpy.data.armatures.new(name)
+    arm = bpy.data.objects.new(name, arm_data)
+    collection.objects.link(arm)
+    bpy.context.view_layer.objects.active = arm
+    bpy.ops.object.mode_set(mode="EDIT")
+    edit = {}
+    for bone, parent, head, tail in bones:
+        eb = arm_data.edit_bones.new(bone)
+        eb.head, eb.tail = Vector(head), Vector(tail)
+        eb.use_deform = True
+        if parent:
+            eb.parent = edit[parent]
+        edit[bone] = eb
+    bpy.ops.object.mode_set(mode="OBJECT")
+    arm.show_in_front = True
+    return arm
+
+
+def build_rigged(name, fn, col_name, mat):
+    """Builds a skinned body: mesh with vertex groups + armature, mesh parented to it with an
+    Armature modifier. The mesh keeps the HumanoidRootPart-centred origin of the bones."""
+    b = Builder(skinned=True)
+    bones = fn(b)
+    col = get_collection(col_name)
+    obj = b.finish(name, col, mat, pivot="center")
+    bone_names = {bone for bone, _, _, _ in bones}
+    missing = [g for g in b.groups if g not in bone_names]
+    if missing:
+        raise RuntimeError(f"{name}: vertex groups without a bone: {missing}")
+    unweighted = sum(1 for v in obj.data.vertices if not v.groups or abs(sum(g.weight for g in v.groups) - 1.0) > 1e-4)
+    if unweighted:
+        raise RuntimeError(f"{name}: {unweighted} vertices are not fully skinned")
+    arm = make_armature(name + "_rig", bones, col)
+    obj.parent = arm
+    mod = obj.modifiers.new("Armature", "ARMATURE")
+    mod.object = arm
+    print(f"built {name}: {obj['tri_count']} tris, {len(bones)} bones, {len(b.groups)} groups")
+    return obj, arm
+
+
+def pose_bones(arm, pose):
+    """pose = {bone: (x_deg, y_deg, z_deg)} in each bone's local axes; {} resets to rest."""
+    for pb in arm.pose.bones:
+        pb.rotation_mode = "XYZ"
+        pb.rotation_euler = tuple(math.radians(d) for d in pose.get(pb.name, (0, 0, 0)))
+    bpy.context.view_layer.update()
+
+
+def hang_on_bone(obj, arm, bone):
+    """Keeps `obj` where it is in rest pose but following `bone` (an accessory on a limb)."""
+    con = obj.constraints.new("CHILD_OF")
+    con.target, con.subtarget = arm, bone
+    bpy.context.view_layer.update()
+    con.inverse_matrix = (arm.matrix_world @ arm.pose.bones[bone].matrix).inverted()
+    return con
+
+
+# R15 attachment points for the 15-part variant of a skinned body (`<name>_Att` empties
+# under the part's mesh, the Roblox custom-body FBX convention). Rig attachments sit on the
+# joints of R15_JOINTS (the measured stock pivots); the rest sit on the limb centres.
+# Right-side values; the left mirrors x.
+def r15_attachments():
+    J = R15_JOINTS
+    P = R15_POSE
+    common = {
+        "Head": [("NeckRigAttachment", J["neck"]), ("FaceCenterAttachment", P["head"]), ("FaceFrontAttachment", (0, -0.58, P["head"][2])),
+                 ("HairAttachment", J["head_top"]), ("HatAttachment", J["head_top"])],
+        "UpperTorso": [("NeckRigAttachment", J["neck"]), ("NeckAttachment", J["neck"]), ("WaistRigAttachment", J["waist"]),
+                       ("LeftShoulderRigAttachment", (-J["shoulder"][0], 0, J["shoulder"][2])), ("RightShoulderRigAttachment", J["shoulder"]),
+                       ("LeftCollarAttachment", (-1.0, 0, 1.0)), ("RightCollarAttachment", (1.0, 0, 1.0)),
+                       ("BodyFrontAttachment", (0, -0.5, P["upper_torso"][2])), ("BodyBackAttachment", (0, 0.5, P["upper_torso"][2]))],
+        "LowerTorso": [("RootRigAttachment", J["root_rig"]), ("WaistRigAttachment", J["waist"]),
+                       ("LeftHipRigAttachment", (-J["hip"][0], 0, J["hip"][2])), ("RightHipRigAttachment", J["hip"]),
+                       ("WaistCenterAttachment", P["lower_torso"]), ("WaistFrontAttachment", (0, -0.5, P["lower_torso"][2])),
+                       ("WaistBackAttachment", (0, 0.5, P["lower_torso"][2]))],
+    }
+    sided = {
+        "{S}UpperArm": [("{S}ShoulderRigAttachment", J["shoulder"]), ("{S}ElbowRigAttachment", J["elbow"]), ("{S}ShoulderAttachment", (P["upper_arm"][0], 0, 0.99))],
+        "{S}LowerArm": [("{S}ElbowRigAttachment", J["elbow"]), ("{S}WristRigAttachment", J["wrist"])],
+        "{S}Hand": [("{S}WristRigAttachment", J["wrist"]), ("{S}GripAttachment", P["hand"])],
+        "{S}UpperLeg": [("{S}HipRigAttachment", J["hip"]), ("{S}KneeRigAttachment", J["knee"])],
+        "{S}LowerLeg": [("{S}KneeRigAttachment", J["knee"]), ("{S}AnkleRigAttachment", J["ankle"])],
+        "{S}Foot": [("{S}AnkleRigAttachment", J["ankle"]), ("{S}FootAttachment", (P["foot"][0], 0, J["foot_end"][2]))],
+    }
+    out = dict(common)
+    for part, atts in sided.items():
+        for side, sgn in (("Left", -1), ("Right", 1)):
+            out[part.format(S=side)] = [(a.format(S=side), (p[0] * sgn, p[1], p[2])) for a, p in atts]
+    return out
+
+
+def split_rigged(obj, arm, name, collection):
+    """The 15-part variant: one mesh object per R15 part holding the faces whose summed
+    weights favour that bone (bridge faces keep their 50/50 verts), each skinned to the same
+    armature, with the part's `_Att` attachment empties. Returns [objects, empties]."""
+    me = obj.data
+    group_names = [g.name for g in obj.vertex_groups]
+    parts, empties = [], []
+    for part, atts in r15_attachments().items():
+        gi = group_names.index(part)
+        bm = bmesh.new()
+        bm.from_mesh(me)
+        dl = bm.verts.layers.deform.verify()
+        drop = []
+        for f in bm.faces:
+            scores = {}
+            for v in f.verts:
+                for k, w in v[dl].items():
+                    scores[k] = scores.get(k, 0.0) + w
+            if max(scores, key=scores.get) != gi:
+                drop.append(f)
+        bmesh.ops.delete(bm, geom=drop, context="FACES")
+        bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
+        part_me = bpy.data.meshes.new(f"{name}_{part}")
+        bm.to_mesh(part_me)
+        bm.free()
+        part_me.materials.append(me.materials[0])
+        for p in part_me.polygons:
+            p.use_smooth = False
+        pobj = bpy.data.objects.new(part, part_me)
+        collection.objects.link(pobj)
+        for g in group_names:
+            pobj.vertex_groups.new(name=g)
+        pobj.parent = arm
+        pobj.modifiers.new("Armature", "ARMATURE").object = arm
+        parts.append(pobj)
+        for att, pos in atts:
+            e = bpy.data.objects.new(att + "_Att", None)
+            e.empty_display_size = 0.1
+            e.location = pos
+            e.parent = pobj
+            collection.objects.link(e)
+            empties.append(e)
+    return parts, empties
+
+
+def export_fbx_parts(parts, empties, arm, path):
+    bpy.ops.object.select_all(action="DESELECT")
+    for o in parts + empties + [arm]:
+        o.select_set(True)
+    bpy.context.view_layer.objects.active = arm
+    bpy.ops.export_scene.fbx(
+        filepath=path, use_selection=True, apply_unit_scale=False, apply_scale_options="FBX_SCALE_NONE", global_scale=1.0,
+        axis_forward="-Z", axis_up="Y", object_types={"MESH", "ARMATURE", "EMPTY"}, mesh_smooth_type="OFF",
+        use_mesh_modifiers=True, add_leaf_bones=False, armature_nodetype="NULL", primary_bone_axis="Y",
+        secondary_bone_axis="X", use_armature_deform_only=True, bake_anim=False, path_mode="STRIP", embed_textures=False,
+    )
+
+
+# A quick bend to prove the weights: elbow, knee, waist and neck each move one bridge loop.
+PROOF_POSE = {
+    "LeftLowerArm": (-70, 0, 0),
+    "LeftUpperArm": (-35, 0, 0),
+    "RightUpperLeg": (-45, 0, 0),
+    "RightLowerLeg": (60, 0, 0),
+    "UpperTorso": (15, 0, 10),
+    "Head": (0, 0, -30),
+}
 
 
 def setup_render(scene):
@@ -1695,6 +2207,11 @@ def main():
     mat = build_palette_material(img)
     cam = setup_render(scene)
 
+    if only:  # a skinned body's previews need its gear
+        for name, (_, _, deps) in RIGGED.items():
+            if name in only:
+                only = list(only) + [d for d in deps if d not in only]
+
     built = {}
     for name, (fn, col_name, pivot) in ASSETS.items():
         if only and name not in only:
@@ -1726,6 +2243,39 @@ def main():
         if ref is not None:
             ref.location = (0, 0, 0)
 
+    # skinned bodies: mesh + armature, exported together; previews in rest pose with the
+    # rigid gear sitting on its limbs, then bent (PROOF_POSE) with the gear following the bones
+    rigs = {}
+    gear_on = {"pc_assault_gear_helmet": ("Head", R15_POSE["head"]), "pc_assault_gear_carrier": ("UpperTorso", R15_POSE["upper_torso"])}
+    for name, (fn, col_name, deps) in RIGGED.items():
+        if only and name not in only:
+            continue
+        obj, arm = build_rigged(name, fn, col_name, mat)
+        built[name] = obj
+        rigs[name] = arm
+        export_fbx_rigged(obj, arm, os.path.join(EXPORT, name + ".fbx"))
+        export_fbx(obj, os.path.join(EXPORT, name + "_mesh.fbx"))  # the same body unrigged, for Avatar Auto Setup
+        parts, empties = split_rigged(obj, arm, name, get_collection("_Reference"))
+        export_fbx_parts(parts, empties, arm, os.path.join(EXPORT, name + "_parts.fbx"))
+        print(f"split {name}: " + ", ".join(f"{p.name} {sum(len(f.vertices) - 2 for f in p.data.polygons)}" for p in parts))
+        for o in parts + empties:  # the split is export-only; the one-mesh body is the asset
+            bpy.data.objects.remove(o)
+        d = obj.dimensions
+        print(f"dims {name}: roblox Size = Vector3.new({d.x:.2f}, {d.z:.2f}, {d.y:.2f}); feet at z {min(v[2] for v in obj.bound_box):.2f}")
+        gear = [built[g] for g in deps if g in built]
+        for g in gear:
+            g.location = gear_on[g.name][1]
+        frame_and_render(scene, cam, [obj] + gear, os.path.join(PREVIEWS, name + ".png"), direction=(1.0, -1.4, 0.5))
+        cons = [hang_on_bone(g, arm, gear_on[g.name][0]) for g in gear]
+        pose_bones(arm, PROOF_POSE)
+        frame_and_render(scene, cam, [obj] + gear, os.path.join(PREVIEWS, name + "_posed.png"), direction=(1.0, -1.4, 0.5))
+        frame_and_render(scene, cam, [obj] + gear, os.path.join(PREVIEWS, name + "_posed_side.png"), direction=(-1.6, -0.5, 0.3))
+        pose_bones(arm, {})
+        for g, con in zip(gear, cons):
+            g.constraints.remove(con)
+            g.location = (0, 0, 0)
+
+
     # whole-body triangle counts (the assembled preview figure is exactly the 15 limbs)
     for tname, cap in BODY_TRI_CAP.items():
         fig = built.get(f"ref_inf_{tname}")
@@ -1742,8 +2292,11 @@ def main():
             obj = built[name]
             width = max(obj.dimensions.x, obj.dimensions.y, 1.0)
             x += width / 2 + 0.8
-            obj.location.x = x
-            obj.location.z = obj.dimensions.z / 2 if ASSETS[name][2] == "center" else 0.0
+            if name in rigs:  # the mesh follows its armature; stand it on the ground
+                rigs[name].location = (x, 0, -min(v[2] for v in obj.bound_box))
+            else:
+                obj.location.x = x
+                obj.location.z = obj.dimensions.z / 2 if ASSETS[name][2] == "center" else 0.0
             x += width / 2 + 0.8
             objs.append(obj)
         if objs:

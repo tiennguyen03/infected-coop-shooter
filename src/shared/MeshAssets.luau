@@ -395,28 +395,30 @@ local MESHES: { [string]: MeshDef } = {
 		size = Vector3.new(2.010, 0.400, 1.120),
 		offset = Vector3.new(0.000, 0.000, -0.050),
 	},
+	-- Tapered forearms/shins with elbow and knee pads, fist-sized hands (2026-11-07): the
+	-- rigid fallback for the skinned body, and the bots' body.
 	pc_assault_upper_arm = {
-		meshId = "rbxassetid://70752581527557",
-		size = Vector3.new(1.040, 1.240, 1.100),
-		offset = Vector3.new(0.000, 0.000, -0.030),
+		meshId = "rbxassetid://137615567202319",
+		size = Vector3.new(1.040, 1.440, 1.100),
+		offset = Vector3.new(0.000, -0.098, -0.030),
 	},
 	pc_assault_lower_arm = {
-		meshId = "rbxassetid://111242427197801",
-		size = Vector3.new(1.040, 1.120, 1.040),
+		meshId = "rbxassetid://135982743004456",
+		size = Vector3.new(1.000, 1.120, 1.000),
 		offset = Vector3.new(0.000, 0.000, 0.000),
 	},
 	pc_assault_hand = {
-		meshId = "rbxassetid://133846130665573",
-		size = Vector3.new(0.980, 0.330, 1.030),
-		offset = Vector3.new(0.000, 0.000, -0.002),
+		meshId = "rbxassetid://78025074389286",
+		size = Vector3.new(0.820, 0.330, 0.880),
+		offset = Vector3.new(0.000, 0.000, -0.010),
 	},
 	pc_assault_upper_leg = {
-		meshId = "rbxassetid://123449912579061",
-		size = Vector3.new(1.080, 1.360, 1.090),
-		offset = Vector3.new(0.043, 0.000, -0.058),
+		meshId = "rbxassetid://96325067678523",
+		size = Vector3.new(1.080, 1.590, 1.090),
+		offset = Vector3.new(0.043, -0.115, -0.058),
 	},
 	pc_assault_lower_leg = {
-		meshId = "rbxassetid://87884254546571",
+		meshId = "rbxassetid://131875477288797",
 		size = Vector3.new(1.010, 1.300, 0.990),
 		offset = Vector3.new(0.000, 0.000, 0.000),
 	},
@@ -424,6 +426,20 @@ local MESHES: { [string]: MeshDef } = {
 		meshId = "rbxassetid://79144855233866",
 		size = Vector3.new(1.010, 0.310, 1.000),
 		offset = Vector3.new(0.000, 0.000, 0.000),
+	},
+	-- Skinned Weller gear (Config.Player.SkinnedGear): rigid helmet and Pike carrier built
+	-- at the head / upper torso origin, welded onto the skinned body by PlayerSetup.
+	pc_assault_gear_helmet = {
+		meshId = "rbxassetid://106002887456604",
+		size = Vector3.new(1.340, 1.110, 1.540),
+		offset = Vector3.new(0.000, 0.095, -0.060),
+		castShadow = true,
+	},
+	pc_assault_gear_carrier = {
+		meshId = "rbxassetid://136938794151000",
+		size = Vector3.new(1.530, 1.440, 1.510),
+		offset = Vector3.new(-0.025, 0.120, -0.025),
+		castShadow = true,
 	},
 	-- Infected limb sets (assets/3d inf_<type>_<limb>): swapped onto the R15 rig by dressInfected.
 	-- Rebuilt 2026-11-07 to docs/CHARACTERS.md (walker, runner, brute, hocker); skin v2 repaint
@@ -831,6 +847,138 @@ function MeshAssets.dressModel(model: Model, prefix: string): boolean
 	end
 	humanoid:BuildRigFromAttachments()
 	return true
+end
+
+-- The mesh's bounds-centre offset from its design origin (nil when the mesh is not defined).
+-- Skinned bodies (2026-11-07): a Chosen as one skinned mesh. Two Model assets per body,
+-- both uploaded from assets/3d/export: `body` (<name>.fbx) is the single skinned MeshPart
+-- with the R15 bone tree; `parts` (<name>_parts.fbx) is the same geometry split into the 15
+-- R15 limbs, with the Motor6Ds Studio's importer builds from the rig attachments. The
+-- limbs stay invisible and carry what the game expects of an R15 character (joint names,
+-- Head for headshots, RightHand for the rifle, UpperTorso for the gear); the skinned mesh
+-- welds to the root and the Animator poses its bones by the same names as the motors, so
+-- every clip plays on both at once and the skin follows the hidden rig exactly.
+type SkinnedDef = { body: number, parts: number, hipHeight: number }
+local SKINNED_BODIES: { [string]: SkinnedDef } = {
+	pc_assault_skinned = { body = 87236345847400, parts = 89768415142935, hipHeight = 2.19 },
+}
+local IMPORT_SCALE = 0.01 -- the FBX pipeline writes centimetres; the importer keeps them as studs
+local MOTOR_NAMES = { -- importer name (by Part1) -> stock R15 joint name (StanceService uses Root)
+	LowerTorso = "Root",
+	UpperTorso = "Waist",
+	Head = "Neck",
+	LeftUpperArm = "LeftShoulder",
+	LeftLowerArm = "LeftElbow",
+	LeftHand = "LeftWrist",
+	RightUpperArm = "RightShoulder",
+	RightLowerArm = "RightElbow",
+	RightHand = "RightWrist",
+	LeftUpperLeg = "LeftHip",
+	LeftLowerLeg = "LeftKnee",
+	LeftFoot = "LeftAnkle",
+	RightUpperLeg = "RightHip",
+	RightLowerLeg = "RightKnee",
+	RightFoot = "RightAnkle",
+}
+
+-- Loads and assembles a skinned body as a character Model (Humanoid + Animator, R15 part
+-- names, HumanoidRootPart). Yields on the asset fetch; nil (with a warning) when either
+-- asset fails to load, so the caller keeps the limb-swap body.
+function MeshAssets.buildSkinnedBody(name: string): Model?
+	local def = SKINNED_BODIES[name]
+	if not def then
+		warn(`MeshAssets: no skinned body named {name}`)
+		return nil
+	end
+	local okParts, partsWrap = pcall(InsertService.LoadAsset, InsertService, def.parts)
+	local okBody, bodyWrap = pcall(InsertService.LoadAsset, InsertService, def.body)
+	local rig = if okParts and typeof(partsWrap) == "Instance"
+		then partsWrap:FindFirstChildWhichIsA("Model")
+		else nil
+	local bodyModel = if okBody and typeof(bodyWrap) == "Instance"
+		then bodyWrap:FindFirstChildWhichIsA("Model")
+		else nil
+	local skin = bodyModel and bodyModel:FindFirstChildWhichIsA("MeshPart")
+	local root = rig and rig:FindFirstChild("RootPart")
+	if not rig or not bodyModel or not skin or not root or not root:IsA("BasePart") then
+		warn(
+			`MeshAssets: could not load skinned body {name}: {tostring(partsWrap)} / {tostring(
+				bodyWrap
+			)}`
+		)
+		if typeof(partsWrap) == "Instance" then
+			partsWrap:Destroy()
+		end
+		if typeof(bodyWrap) == "Instance" then
+			bodyWrap:Destroy()
+		end
+		return nil
+	end
+	rig.Name = name
+	rig.PrimaryPart = root
+	rig:ScaleTo(IMPORT_SCALE)
+	bodyModel:ScaleTo(IMPORT_SCALE)
+	for _, leftover in { "InitialPoses", "AnimationController" } do
+		local child = rig:FindFirstChild(leftover)
+		if child then
+			child:Destroy()
+		end
+	end
+	root.Name = "HumanoidRootPart"
+	root.Size = Vector3.new(2, 2, 1)
+	root.Transparency = 1
+	root.Anchored = false
+	root.CanCollide = true
+	for _, part in rig:GetChildren() do
+		if part:IsA("MeshPart") then
+			part.Transparency = 1
+			part.CastShadow = false
+			part.Anchored = false
+			part.CanCollide = false
+			part.CanQuery = true
+			part.Massless = true
+			local motor = part:FindFirstChildOfClass("Motor6D")
+			if motor and MOTOR_NAMES[part.Name] then
+				motor.Name = MOTOR_NAMES[part.Name]
+			end
+		end
+	end
+	-- The skin's root bone sits on the hidden rig's root node (both are the build origin).
+	local rootBone = root:FindFirstChildOfClass("Bone")
+	local skinBone = skin:FindFirstChildOfClass("Bone")
+	local node = root.CFrame * (if rootBone then rootBone.CFrame else CFrame.identity)
+	skin.CFrame = node * (if skinBone then skinBone.CFrame:Inverse() else CFrame.identity)
+	skin.Name = "SkinnedBody"
+	skin.TextureID = PALETTE_TEXTURE
+	skin.Material = Enum.Material.SmoothPlastic
+	skin.Anchored = false
+	skin.CanCollide = false
+	skin.CanQuery = false -- bullets hit the hidden limbs (headshots stay per part)
+	skin.CanTouch = false
+	skin.Massless = true
+	skin.CastShadow = true
+	local weld = Instance.new("WeldConstraint")
+	weld.Part0 = root
+	weld.Part1 = skin
+	weld.Parent = skin
+	skin.Parent = rig
+	local humanoid = Instance.new("Humanoid")
+	humanoid.RigType = Enum.HumanoidRigType.R15
+	humanoid.HipHeight = def.hipHeight
+	humanoid.Parent = rig
+	Instance.new("Animator").Parent = humanoid
+	rig.Parent = nil
+	partsWrap:Destroy()
+	bodyWrap:Destroy()
+	return rig
+end
+
+function MeshAssets.offsetOf(name: string): Vector3?
+	local def = MESHES[name]
+	if not def then
+		return nil
+	end
+	return def.offset or Vector3.zero
 end
 
 function MeshAssets.dressInfected(model: Model, typeName: string): boolean

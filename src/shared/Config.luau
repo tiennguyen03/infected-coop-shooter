@@ -21,6 +21,21 @@ local Config = {
 			ProneHipHeight = 0.3,
 			ProneHeadroom = 4,
 		},
+		-- Skinned body (2026-11-07): with SkinnedBody true PlayerSetup installs
+		-- MeshAssets.buildSkinnedBody(SkinnedTemplate) (the one-mesh Weller from
+		-- assets/3d/export/pc_assault_skinned.fbx over its hidden 15-part rig; notes in
+		-- assets/3d/README.md "Skinned Weller") as StarterPlayer.StarterCharacter, so every
+		-- character spawns as that rig and the limb swap (dressModel) is skipped. Bots keep
+		-- the limb-swap body either way. False = tapered rigid limbs for players too.
+		SkinnedBody = true,
+		SkinnedTemplate = "pc_assault_skinned",
+		-- Rigid gear welded onto the skinned body at spawn: MeshAssets template -> limb part
+		-- (the rifle stays a Tool on RightHand). Each template is built at the limb's centre,
+		-- so its MeshAssets `offset` places it like a limb mesh.
+		SkinnedGear = {
+			{ mesh = "pc_assault_gear_helmet", part = "Head" },
+			{ mesh = "pc_assault_gear_carrier", part = "UpperTorso" },
+		},
 	},
 
 	-- Vault / climb (2026-11-07) replaces the stock jump: Space, or sprinting into cover,

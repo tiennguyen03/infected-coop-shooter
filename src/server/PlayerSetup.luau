@@ -167,6 +167,58 @@ end
 local PLAYER_BODY = "pc_assault_"
 PlayerSetup.BODY = PLAYER_BODY
 
+-- Skinned body (Config.Player.SkinnedBody, 2026-11-07): the whole body is one skinned mesh
+-- (assets/3d pc_assault_skinned) assembled at boot by MeshAssets.buildSkinnedBody from its
+-- two uploaded assets and installed as StarterPlayer.StarterCharacter, so every character
+-- spawns as that rig (R15 part names, Humanoid, Animator) and the limb swap is skipped; the
+-- helmet and carrier weld on like the rifle does. The asset fetch takes a moment: a
+-- character that spawns before it lands gets the limb-swap body for that life. Bots
+-- (BotService) keep the limb-swap body.
+local SKIN_PART = "SkinnedBody" -- the mesh buildSkinnedBody adds; marks a skinned character
+
+local function installSkinnedBody()
+	local template = MeshAssets.buildSkinnedBody(Config.Player.SkinnedTemplate)
+	if not template then
+		warn("[PlayerSetup] SkinnedBody is on but the body did not load; using the limb-swap body")
+		return
+	end
+	local existing = StarterPlayer:FindFirstChild("StarterCharacter")
+	if existing then
+		existing:Destroy()
+	end
+	template.Name = "StarterCharacter"
+	template.Parent = StarterPlayer
+end
+
+-- Welds the rigid gear meshes (Config.Player.SkinnedGear) onto the skinned body's limbs.
+-- A gear mesh that is not registered or not uploaded yet is skipped.
+local function attachGear(character: Model)
+	for _, gear in Config.Player.SkinnedGear do
+		local part = character:FindFirstChild(gear.part)
+		local offset = MeshAssets.offsetOf(gear.mesh)
+		if not part or not part:IsA("BasePart") or not offset then
+			continue
+		end
+		local template = MeshAssets.waitFor(gear.mesh, 5)
+		if not template then
+			continue
+		end
+		local mesh = template:Clone()
+		mesh.Anchored = false
+		mesh.Massless = true
+		mesh.CanCollide = false
+		mesh.CanQuery = false
+		mesh.CanTouch = false
+		mesh.CastShadow = true
+		mesh.CFrame = part.CFrame * CFrame.new(offset)
+		local weld = Instance.new("WeldConstraint")
+		weld.Part0 = part
+		weld.Part1 = mesh
+		weld.Parent = mesh
+		mesh.Parent = character
+	end
+end
+
 local function onCharacterAdded(character: Model)
 	local humanoid = character:WaitForChild("Humanoid") :: Humanoid
 	humanoid.MaxHealth = Config.Player.MaxHealth
@@ -182,7 +234,10 @@ local function onCharacterAdded(character: Model)
 	character:WaitForChild("RightHand")
 	-- Swap the stock R15 limbs for the class body before the rifle welds to the hand.
 	-- Templates build asynchronously at boot; a character that beats them keeps the stock body.
-	if MeshAssets.waitFor(PLAYER_BODY .. "head", 10) then
+	-- A skinned StarterCharacter already is the body: only its gear goes on.
+	if character:FindFirstChild(SKIN_PART) then
+		attachGear(character)
+	elseif MeshAssets.waitFor(PLAYER_BODY .. "head", 10) then
 		MeshAssets.dressModel(character, PLAYER_BODY)
 	end
 	PlayerSetup.attachRifle(character, humanoid)
@@ -199,6 +254,9 @@ function PlayerSetup.init()
 	-- Characters spawn as bare R15 rigs (no avatar clothing/accessories) so the class body
 	-- is the whole look and every player is the same silhouette.
 	StarterPlayer.LoadCharacterAppearance = false
+	if Config.Player.SkinnedBody then
+		task.spawn(installSkinnedBody) -- yields on the asset fetch
+	end
 	Players.PlayerAdded:Connect(onPlayerAdded)
 	for _, player in Players:GetPlayers() do
 		onPlayerAdded(player)
