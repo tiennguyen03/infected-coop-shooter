@@ -333,13 +333,41 @@ deaths within 30 s. Targets: 5–7 drops per 12 min solo, picks within 20 s, at 
 per three drops, consecutive drops 60+ studs apart. Fixes if missed: an overflow bonus
 (throw at 1.5x cost for a fourth card); or `Wave 14`, `LureRadius 160` if drops camp a corner.
 
+## The spine (decided by the owner 2026-11-07)
+
+Power comes from the loadout, not from in-run stat growth: the Helldivers 2 model, with
+one Hades-style twist. Replaces the Risk of Rain item economy above where they conflict;
+the Resupply flare, pallet and lure stay.
+
+- **Loadout.** A Chosen is a weapon, two abilities and a passive (docs/CHARACTERS.md), plus
+  two **call-in** slots chosen before the drop. The active items already built (Air Support,
+  Drone Beacon, Mines, Shock Coil, Plague Rat) become call-ins; passive stat items leave the
+  drop pool (delete or fold into field upgrades).
+- **Pallets are tactical.** Ammo, heals, call-in refills; the flare decision is survival.
+- **Field upgrades.** Three or four per sortie from pallets, Stores and Secondaries, each
+  big and legible: it changes how an ability or call-in works (a dash that leaves fire, a
+  breach charge that pulls), never a percentage. Pick one of three.
+- **Flat threat curve.** No per-minute health growth. Difficulty is the stage, the form mix
+  and the hold; the Infected get scarier by composition.
+- **Meta between runs.** Containment Board plus unlocks: call-ins, Chosen, field upgrades.
+- **Bot squadmates.** In single player the other Chosen fill the squad as server-side AI
+  (follow, shoot, use a call-in, revive, die); a real player joining replaces a bot. Built on
+  the same squad-member abstraction as Co-op Sprint A so every system that keys on a player
+  (targets, XP, downed state, spawn pads) sees a bot the same way.
+- **Order.** Co-op Sprint A (run state machine with squad members) → bots → loadout rework
+  (call-ins, pallets, field upgrades, flat curve) → the Warden → objective pools → Mile 14.
+
+The 2026-11-07 systems-designer numbers for the old economy (doubled item magnitudes,
+`Requisition.CostCap` 2000, additive-stacking fix in `PlayerStatsService`) are not applied;
+two of its findings carry over: pallets must keep landing through the Index window, and
+chosen upgrades must outscale automatic growth.
+
 ## Backlog (decided, not scheduled)
 
-- **Loadouts.** Pre-run menu: pick the class and one of two alternates per ability slot
-  (RoR2 style). Make abilities data-driven when the second class is built; the menu after.
-- **Sound day.** Hit and headshot sounds (headshot distinct), the Infected's wet, dense
-  register, Control's radio lines, Lantern's rotor, the Burn. Prompt list in
-  `assets/audio/README.md`.
+- **Loadouts.** Superseded by the spine above (call-in slots, not RoR2 alternates).
+- **Sound day.** Done 2026-11-07 for the player, hits and four Infected forms
+  (`assets/audio/README.md > Banks`); still to generate: Control's radio lines, Lantern's
+  rotor, the Burn, the pickup and item one-shots.
 - **Infected visual redesign.** Own limb sets per form, Hocker first; hollow breach ring.
 - **Field Manual** only speeds the owner's levels now; weak, rework later.
 
