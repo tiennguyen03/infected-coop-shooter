@@ -1,8 +1,9 @@
 --!strict
--- Sends Q (dash) / E (breach) ability requests to the server. The server validates and
--- performs the ability; this controller forwards input and draws the breach ghost: hold E
--- and a ring shows where the charge will land (the aim point, clamped to throw range,
--- dropped to the ground), release to throw it there. A tap throws at the crosshair.
+-- Sends Q (dash) / E (breach) ability requests and the F (Resupply flare) throw to the
+-- server. The server validates and performs them; this controller forwards input and draws
+-- the breach ghost: hold E and a ring shows where the charge will land (the aim point,
+-- clamped to throw range, dropped to the ground), release to throw it there. A tap throws
+-- at the crosshair. F throws the flare at the crosshair the same way.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -11,6 +12,7 @@ local UserInputService = game:GetService("UserInputService")
 
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
+local ThrowUtil = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("ThrowUtil"))
 local AnimationController = require(script.Parent.AnimationController)
 
 local GHOST_COLOR = Color3.fromRGB(255, 150, 60)
@@ -29,7 +31,7 @@ local function raycastParams(): RaycastParams
 	if character then
 		table.insert(exclude, character)
 	end
-	for _, name in { "Projectiles", "AssaultEffects", "BreachGhost" } do
+	for _, name in { "Projectiles", "AssaultEffects", "BreachGhost", "Resupply" } do
 		local folder = workspace:FindFirstChild(name)
 		if folder then
 			table.insert(exclude, folder)
@@ -39,8 +41,9 @@ local function raycastParams(): RaycastParams
 	return params
 end
 
--- Where the charge would land right now: aim point clamped to range, dropped to ground.
-local function landingPoint(): Vector3?
+-- Where a throw of `maxDistance` would land right now: aim point clamped to range,
+-- stopped at walls, dropped to the ground (ThrowUtil, same maths as the server).
+local function landingPoint(maxDistance: number): Vector3?
 	local camera = workspace.CurrentCamera
 	local character = Players.LocalPlayer.Character
 	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
@@ -54,14 +57,7 @@ local function landingPoint(): Vector3?
 	local aim = if hit
 		then hit.Position
 		else ray.Origin + ray.Direction * Config.Weapon.MaxAimDistance
-	local flat = Vector3.new(aim.X - root.Position.X, 0, aim.Z - root.Position.Z)
-	local reach = math.min(flat.Magnitude, Config.Assault.BreachThrowDistance)
-	local dir = if flat.Magnitude > 0.5 then flat.Unit else root.CFrame.LookVector
-	local wall = workspace:Raycast(root.Position, dir * reach, params)
-	local landXZ = if wall then wall.Position - dir * 2 else root.Position + dir * reach
-	local ground =
-		workspace:Raycast(landXZ + Vector3.new(0, 30, 0), Vector3.new(0, -200, 0), params)
-	return if ground then ground.Position else landXZ
+	return ThrowUtil.landingPoint(root, aim, maxDistance, params.FilterDescendantsInstances)
 end
 
 local function buildGhost(): Model
@@ -98,7 +94,7 @@ local function buildGhost(): Model
 end
 
 local function updateGhost()
-	local point = landingPoint()
+	local point = landingPoint(Config.Assault.BreachThrowDistance)
 	ghostTarget = point
 	if not ghost or not point then
 		return
@@ -135,6 +131,7 @@ end
 
 function AbilityController.init()
 	local useAbility = Remotes.get("UseAbility")
+	local resupply = Remotes.get("Resupply")
 
 	UserInputService.InputBegan:Connect(function(input, gameProcessed)
 		if gameProcessed then
@@ -148,6 +145,8 @@ function AbilityController.init()
 			useAbility:FireServer("dash")
 		elseif input.KeyCode == Enum.KeyCode.E then
 			startTargeting()
+		elseif input.KeyCode == Enum.KeyCode.F then
+			resupply:FireServer("flare", landingPoint(Config.Requisition.FlareThrowDistance))
 		end
 	end)
 

@@ -22,6 +22,12 @@ local XPOrbService = {}
 
 local orbFolder: Folder
 local orbs: { Orb } = {}
+local collectListeners: { (xp: number) -> () } = {}
+
+-- Called once per collected orb with its base XP (RequisitionService feeds the pool).
+function XPOrbService.addCollectListener(listener: (xp: number) -> ())
+	table.insert(collectListeners, listener)
+end
 
 local function nearestAlivePlayer(position: Vector3): (Player?, BasePart?, number)
 	local bestPlayer: Player? = nil
@@ -97,6 +103,9 @@ local function stepOrbs(deltaTime: number)
 			* (1 + ((player:GetAttribute("OrbMagnetMult") :: number?) or 0))
 		if distance <= Config.XP.CollectRadius then
 			XPService.addXP(player, orb.xp)
+			for _, listener in collectListeners do
+				listener(orb.xp)
+			end
 			removeOrb(index)
 		elseif distance <= magnetRadius then
 			local direction = (root.Position - orb.part.Position).Unit

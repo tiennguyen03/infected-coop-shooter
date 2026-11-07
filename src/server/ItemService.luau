@@ -1,8 +1,8 @@
 --!strict
--- Owns player item inventories and the level-up selection flow: each level
--- gained queues one offer; offers present one at a time (game soft-pauses
--- while one is open). The client picks via the ItemSelection remote; picks
--- are validated against the offered choices.
+-- Owns player item inventories and the card roll every crate uses. Items reach a player
+-- only through addItem (RequisitionService validates a card pick, dev tools grant). The
+-- old level-up offer flow is gone: a level grows the body (PassiveItemService), the draft
+-- happens at a pallet in the world (docs/PROGRESSION.md > Resupply).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -10,12 +10,11 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage.Shared.Config)
 local ItemDefinitions = require(ReplicatedStorage.Shared.ItemDefinitions)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
-local PauseService = require(script.Parent.PauseService)
-local XPService = require(script.Parent.XPService)
+
+export type RarityWeights = { [string]: number }
 
 local ItemService = {}
 
-local selectionRemote: RemoteEvent
 local itemsUpdateRemote: RemoteEvent
 local inventoryChangedHandler: ((player: Player) -> ())? = nil
 
@@ -25,9 +24,6 @@ function ItemService.setInventoryChangedHandler(handler: (player: Player) -> ())
 end
 
 local inventories: { [Player]: { [string]: number } } = {}
-local pendingOffers: { [Player]: number } = {}
-local activeOffer: { [Player]: { string } } = {}
-local offerCount: { [Player]: number } = {} -- level-ups offered, for the guarantee
 
 -- Item ids grouped by rarity (built once at init).
 local poolsByRarity: { [string]: { string } } = {}
@@ -41,16 +37,15 @@ local function buildPools()
 	end
 end
 
-local function rollRarity(): string
-	local rarities = (Config.ItemRarities :: any) :: { [string]: { Weight: number } }
+local function rollRarity(weights: RarityWeights): string
 	local total = 0
-	for _, r in rarities do
-		total += r.Weight
+	for _, weight in weights do
+		total += weight
 	end
 	local roll = math.random() * total
-	for name, r in rarities do
-		roll -= r.Weight
-		if roll <= 0 then
+	for name, weight in weights do
+		roll -= weight
+		if roll <= 0 and weight > 0 then
 			return name
 		end
 	end
@@ -98,12 +93,16 @@ local function getInventory(player: Player): { [string]: number }
 	return inventory
 end
 
--- Weighted-rarity offer: each card rolls a rarity then a distinct item from
--- that pool (falling back to any rarity if exhausted). When `guarantee` is
--- true, ensures at least one Uncommon-or-better card.
-local function rollChoices(guarantee: boolean): { string }
+function ItemService.getInventory(player: Player): { [string]: number }
+	return getInventory(player)
+end
+
+-- One player's cards for one crate: each card rolls a rarity from `weights` then a
+-- distinct item from that pool (any rarity if exhausted). `guarantee` swaps a Common card
+-- for an Uncommon-or-better one when none rolled.
+function ItemService.rollChoices(weights: RarityWeights, guarantee: boolean): { string }
 	local count = math.min(
-		Config.Items.ChoicesPerLevel,
+		Config.Crates.CardsPerPlayer,
 		#(poolsByRarity.Common or {})
 			+ #(poolsByRarity.Uncommon or {})
 			+ #(poolsByRarity.Legendary or {})
@@ -113,7 +112,7 @@ local function rollChoices(guarantee: boolean): { string }
 	local hasUncommonPlus = false
 
 	for _ = 1, count do
-		local rarity = rollRarity()
+		local rarity = rollRarity(weights)
 		local id = pickFromRarity(rarity, chosen) or pickAny(chosen)
 		if id then
 			table.insert(choices, id)
@@ -124,7 +123,6 @@ local function rollChoices(guarantee: boolean): { string }
 		end
 	end
 
-	-- Guarantee: swap a Common card for an Uncommon-or-better one.
 	if guarantee and not hasUncommonPlus then
 		local upgrade = pickFromRarity("Uncommon", chosen) or pickFromRarity("Legendary", chosen)
 		if upgrade then
@@ -142,10 +140,10 @@ local function rollChoices(guarantee: boolean): { string }
 end
 
 -- Dev-only: tally rarity distribution over N simulated single cards.
-function ItemService.simulateOffers(samples: number): { [string]: number }
+function ItemService.simulateOffers(samples: number, weights: RarityWeights): { [string]: number }
 	local tally = { Common = 0, Uncommon = 0, Legendary = 0 }
 	for _ = 1, samples do
-		local rarity = rollRarity()
+		local rarity = rollRarity(weights)
 		local id = pickFromRarity(rarity, {}) or pickAny({})
 		if id then
 			local r = ItemDefinitions[id].Rarity or "Common"
@@ -153,19 +151,6 @@ function ItemService.simulateOffers(samples: number): { [string]: number }
 		end
 	end
 	return tally
-end
-
-local function presentOffer(player: Player)
-	offerCount[player] = (offerCount[player] or 0) + 1
-	local guarantee = offerCount[player] % Config.RarityGuaranteeEvery == 0
-	local choices = rollChoices(guarantee)
-	if #choices == 0 then
-		pendingOffers[player] = 0
-		return
-	end
-	activeOffer[player] = choices
-	PauseService.setPaused(true)
-	selectionRemote:FireClient(player, "offer", choices, getInventory(player))
 end
 
 function ItemService.addItem(player: Player, itemId: string)
@@ -188,85 +173,18 @@ function ItemService.getStacks(player: Player, itemId: string): number
 	return getInventory(player)[itemId] or 0
 end
 
-local function onLevelUp(player: Player, _newLevel: number)
-	pendingOffers[player] = (pendingOffers[player] or 0) + 1
-	if not activeOffer[player] then
-		presentOffer(player)
-	end
-end
-
--- On death, abandon any open/queued offer and unpause so the death screen is
--- unobstructed and restart works (the offer would otherwise keep the game
--- paused with the equipment screen up).
-local function cancelOffers(player: Player)
-	local hadOffer = activeOffer[player] ~= nil
-	pendingOffers[player] = nil
-	activeOffer[player] = nil
-	if hadOffer then
-		selectionRemote:FireClient(player, "cancel")
-		PauseService.setPaused(false)
-	end
-end
-
-local function watchPlayer(player: Player)
-	local function onCharacter(character: Model)
-		local humanoid = character:WaitForChild("Humanoid") :: Humanoid
-		humanoid.Died:Connect(function()
-			cancelOffers(player)
-		end)
-	end
-	player.CharacterAdded:Connect(onCharacter)
-	if player.Character then
-		onCharacter(player.Character)
-	end
-end
-
-local function onPick(player: Player, itemId: unknown)
-	local offer = activeOffer[player]
-	if not offer or typeof(itemId) ~= "string" or not table.find(offer, itemId) then
-		return
-	end
-	activeOffer[player] = nil
-	pendingOffers[player] = math.max((pendingOffers[player] or 1) - 1, 0)
-	ItemService.addItem(player, itemId)
-
-	if pendingOffers[player] > 0 then
-		presentOffer(player)
-	else
-		PauseService.setPaused(false)
-	end
-end
-
 function ItemService.resetPlayer(player: Player)
 	inventories[player] = {}
-	pendingOffers[player] = nil
-	activeOffer[player] = nil
-	offerCount[player] = nil
 	player:SetAttribute("ItemsCollected", 0)
 	itemsUpdateRemote:FireClient(player, {})
 end
 
 function ItemService.init()
 	buildPools()
-	selectionRemote = Remotes.get("ItemSelection")
 	itemsUpdateRemote = Remotes.get("ItemsUpdate")
 
-	XPService.addLevelUpListener(onLevelUp)
-	selectionRemote.OnServerEvent:Connect(onPick)
-
-	Players.PlayerAdded:Connect(watchPlayer)
-	for _, player in Players:GetPlayers() do
-		watchPlayer(player)
-	end
-
 	Players.PlayerRemoving:Connect(function(player)
-		if activeOffer[player] then
-			PauseService.setPaused(false)
-		end
 		inventories[player] = nil
-		pendingOffers[player] = nil
-		activeOffer[player] = nil
-		offerCount[player] = nil
 	end)
 end
 

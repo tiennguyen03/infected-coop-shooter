@@ -140,19 +140,59 @@ local Config = {
 		ThresholdGrowth = 1.25,
 	},
 
-	-- Item rarities (Sprint 14). Weights drive per-card rarity rolls.
-	ItemRarities = {
-		Common = { DisplayName = "Common", Color = Color3.fromRGB(170, 170, 170), Weight = 70 },
-		Uncommon = { DisplayName = "Uncommon", Color = Color3.fromRGB(80, 220, 120), Weight = 25 },
-		Legendary = { DisplayName = "Legendary", Color = Color3.fromRGB(255, 75, 75), Weight = 5 },
+	-- Automatic level growth (Resupply, 2026-11-06): a level no longer opens a draft; it
+	-- grows the body. Growth stops at MaxLevel so items carry the late game.
+	Progression = {
+		HealthPerLevel = 3,
+		DamagePerLevel = 0.03, -- +3% bullet damage per level
+		MaxLevel = 40,
 	},
-	-- Every Nth level-up guarantees at least one Uncommon-or-better card.
-	RarityGuaranteeEvery = 4,
+
+	-- Resupply (docs/PROGRESSION.md > Resupply): kills fill one run-wide pool; a player throws
+	-- the red flare when the pool covers the cost and a pallet lands DropDelay seconds later.
+	Requisition = {
+		BaseCost = 450,
+		CostGrowth = 1.35, -- per drop, run-wide
+		CostCap = 3000,
+		CostPerExtraPlayer = 0.8, -- 4 players: cost x3.4
+		FlareCooldown = 20, -- seconds after a pallet lands before the next flare
+		FlareThrowDistance = 35, -- studs, same arc as the breach charge
+		DropDelay = 20, -- seconds from flare to pallet (the lure window)
+		CardLifetime = 60, -- unpicked cards vanish
+		CardSpacing = 4.5, -- studs between the three cards
+		PickRadius = 2.5, -- walk this close to a card to take it
+		MaxCrates = 4, -- oldest pallet closes when a fifth lands (perf)
+		Lure = {
+			Radius = 120, -- Infected inside walk to the flare, not the player, until it lands
+			Wave = 10, -- spawned in a ring around the pallet as it lands
+			WavePerExtraPlayer = 3,
+			SpawnFactor = 0.7, -- spawn interval multiplier after a landing
+			SpawnFactorDuration = 30,
+		},
+	},
+
+	-- Item rarities (Sprint 14): display only; roll weights per crate source are in Crates.
+	ItemRarities = {
+		Common = { DisplayName = "Common", Color = Color3.fromRGB(170, 170, 170) },
+		Uncommon = { DisplayName = "Uncommon", Color = Color3.fromRGB(80, 220, 120) },
+		Legendary = { DisplayName = "Legendary", Color = Color3.fromRGB(255, 75, 75) },
+	},
+	-- Crates: every pallet shows each player CardsPerPlayer cards rolled with its source's
+	-- weights. Every GuaranteeEvery-th Resupply drop carries at least one Uncommon.
+	Crates = {
+		CardsPerPlayer = 3,
+		GuaranteeEvery = 4,
+		Weights = {
+			Requisition = { Common = 70, Uncommon = 25, Legendary = 5 },
+			Stores = { Common = 55, Uncommon = 38, Legendary = 7 },
+			Secondary = { Common = 40, Uncommon = 50, Legendary = 10 },
+			Boss = { Common = 0, Uncommon = 90, Legendary = 10 },
+		},
+	},
 
 	-- Items (Sprint 5). Definitions in shared/ItemDefinitions.luau; full spec
-	-- in docs/sprints/SPRINT_05_ITEMS_MVP.md. Level-up offers ChoicesPerLevel distinct items.
+	-- in docs/sprints/SPRINT_05_ITEMS_MVP.md.
 	Items = {
-		ChoicesPerLevel = 3,
 		-- Common Item Pack 1 (Sprint 15) passive per-stack values.
 		Passives = {
 			HighGrainPowder = 0.08, -- + bullet damage

@@ -60,6 +60,8 @@ local zombieTemplate: Model?
 local dressedTemplates: { [string]: Model } = {}
 local zombies: { Zombie } = {}
 local wasPaused = false
+-- Resupply lure: melee forms inside the radius walk to this point instead of a player.
+local lure: { position: Vector3, radius: number, expiresAt: number }? = nil
 
 local function buildTemplate(): Model?
 	local description = Instance.new("HumanoidDescription")
@@ -425,9 +427,21 @@ local function stepZombies()
 
 		if now >= zombie.nextRepathTime then
 			zombie.nextRepathTime = now + REPATH_INTERVAL
-			local targetRoot = nearestPlayerRoot(zombie.root.Position)
-			if targetRoot then
-				zombie.humanoid:MoveTo(targetRoot.Position)
+			local activeLure = lure
+			if activeLure and now >= activeLure.expiresAt then
+				lure = nil
+				activeLure = nil
+			end
+			if
+				activeLure
+				and (zombie.root.Position - activeLure.position).Magnitude <= activeLure.radius
+			then
+				zombie.humanoid:MoveTo(activeLure.position)
+			else
+				local targetRoot = nearestPlayerRoot(zombie.root.Position)
+				if targetRoot then
+					zombie.humanoid:MoveTo(targetRoot.Position)
+				end
 			end
 		end
 
@@ -537,6 +551,27 @@ function EnemyService.spawnWave(typeName: string, count: number, center: Vector3
 	end
 end
 
+-- Spawns `count` phase-weighted Infected in a ring around `center` (a pallet landing).
+function EnemyService.spawnMixedWave(count: number, center: Vector3)
+	for _ = 1, count do
+		spawnZombie(groundPositionNear(center, 25, 35), pickSpawnType())
+	end
+end
+
+-- Melee forms within `radius` of `position` walk to it for `duration` seconds (the
+-- Resupply flare). nil clears the lure.
+function EnemyService.setLure(position: Vector3?, radius: number?, duration: number?)
+	if position then
+		lure = {
+			position = position,
+			radius = radius or 0,
+			expiresAt = os.clock() + (duration or 0),
+		}
+	else
+		lure = nil
+	end
+end
+
 local function spawnLoop()
 	while true do
 		local interval = DifficultyService.getSpawnInterval()
@@ -547,6 +582,10 @@ local function spawnLoop()
 		-- And during extraction.
 		if workspace:GetAttribute("ExtractionActive") == true then
 			interval *= Config.Extraction.SpawnFactor
+		end
+		-- And for a while after a Resupply pallet lands.
+		if workspace:GetAttribute("ResupplyActive") == true then
+			interval *= Config.Requisition.Lure.SpawnFactor
 		end
 		task.wait(interval)
 		if not PauseService.isPaused() and #zombies < DifficultyService.getMaxAlive() then
@@ -583,6 +622,7 @@ end
 
 -- Clears all enemies for a fresh run.
 function EnemyService.reset()
+	lure = nil
 	EnemyService.clearAll()
 	scheduleInitialWave()
 end

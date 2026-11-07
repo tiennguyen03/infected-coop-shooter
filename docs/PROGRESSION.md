@@ -23,15 +23,14 @@ What stays from Risk of Rain 2: loot then commit, a continuous clock, a boss per
 exit on your own terms. What comes from Helldivers 2: objective pools, a mission timer, a
 called extraction, a war map the whole player base pushes. Names, places and numbers are ours.
 
-**Terminology fork for the owner:** "sortie" (Control's word for one stage) or plain "drop".
-This doc uses sortie.
+One stage is a **sortie** (Control's word; decided 2026-11-06).
 
 ## The loop
 
 | Step | What happens | Today |
 |---|---|---|
 | Insert | Lantern lands at the stage pad; squad spawns; Control reads the Primary, the Secondaries and the Burn timer (`Operation.MissionTimer`, 14:00) | spawn at a fixed point |
-| Explore | Loot stores, earn Resupply, level; clock runs (`Config.Difficulty`) | works |
+| Explore | Loot stores, earn Resupply, level; clock runs (`Config.Difficulty`) | Resupply shipped 2026-11-07 (no stores yet) |
 | Primary | One of the stage's pool, placed at one of its three sites or a named landmark; the squad starts it when ready | hold zone appears at one spot after 180 s |
 | Index | Completing the Primary calls the boss from its canon entry | pressure wave, no boss |
 | Call the bird | Green smoke at a pad; Lantern inbound 90 s; squad holds the LZ; everyone inside boards, anyone outside is left (Dead for the sortie) | 30 s hold, run ends |
@@ -104,9 +103,11 @@ above 5%.
 
 Every district carries a containment % raised by every extracted sortie. Delta starts at 25
 (today's tuning); other districts at 0; the next district unlocks at 50 of the previous.
-Perfect play reaches 100 in 6 operations; a first-timer in 10–12 (a weekend). Build the
-per-player profile first (one DataStore key per district); the shared version uses the same
-numbers later. Containment means the district stopped exporting hosts, not zero Infected.
+Perfect play reaches 100 in 6 operations; a first-timer in 10–12 (a weekend). The board is
+**shared across all players** from the start (owner, 2026-11-06): one global DataStore key
+per district, written with `UpdateAsync` so concurrent servers add, never overwrite; each
+server reads the board at run start and once per minute. Containment means the district
+stopped exporting hosts, not zero Infected.
 
 | Band | % | `InitialCount` | Clock start | Brute / Hocker first spawn | Stores | Visible (cheap) |
 |---|---|---|---|---|---|---|
@@ -289,9 +290,14 @@ Runner 2 / 1, Hocker 4 / 2, Brute 14 / 11.
    `StandOff`, `Windup`, `Projectile` + `Puddle`), `BodySet`, `ThroatSac`; caps keyed by
    type; `EnemyProjectileService` owns lobs, puddles and `damagePlayer`. Still to add as
    forms need them: `onDeath` (cloud | split), `mover` (none | flyer), `HeadshotMultiplier`.
-2. **Resupply.** `RequisitionService` (pool, flare, pallet, lure, cards), `Config.Crates`,
-   `Config.Progression` auto growth, `PauseService` out of gameplay, `ItemSelectionUI`
-   becomes world cards. Closes MULTIPLAYER_READINESS #2. The owner's most-felt pain; first.
+2. **Resupply.** Done 2026-11-07: `RequisitionService` (pool fed once per orb and per
+   objective, cost curve, F throws the flare through `ThrowUtil`, lure via
+   `EnemyService.setLure`, pallet tween + `spawnMixedWave`, personal card rolls, pick
+   validation by distance), `Config.Requisition / Crates / Progression`, `ItemService`
+   reduced to inventories + `rollChoices(weights)`, automatic level growth in
+   `PassiveItemService`, client `ResupplyUI` (meter above the HP bar, world cards as
+   billboards on local anchor parts, walk-in pick). The level-up pause is gone; `PauseService`
+   now only freezes the run end. Not yet: stores crates, boss pallet, pallet/rotor sounds.
 3. **ADS and headshots.** Small; slots anywhere after 2.
 4. **Run state machine + Operation.** `RunManager` owns `Insert → Explore → Primary → Index
    → Extract → (next sortie | Stand Down | Second Pass)` per run with stage index and pass
@@ -304,7 +310,7 @@ Runner 2 / 1, Hocker 4 / 2, Brute 14 / 11.
    Secondaries: Silence the Alarm, Light the Pad, Misdrop.
 6. **Index kit.** A boss is an Infected definition with `boss = true`, a health bar, an
    entry path and one mechanic hook. The Warden first.
-7. **Containment Board.** `WarMapService` (DataStore, per player first), band overrides at
+7. **Containment Board.** `WarMapService` (one shared DataStore board), band overrides at
    stage load, the board screen between runs.
 8. **Stage definitions.** `src/shared/StageDefinitions.luau`: landmark/hill/dressing tables,
    lighting preset, sites, Index entry, pads, stores, spawn phases, form unlocks, band
@@ -333,5 +339,4 @@ per three drops, consecutive drops 60+ studs apart. Fixes if missed: an overflow
 
 ## Open questions (for the owner)
 
-- "Sortie" or "drop" for one stage.
-- Whether the Containment Board is per player only, or shared across all players once it works.
+None open; both 2026-11-06 forks are decided above.

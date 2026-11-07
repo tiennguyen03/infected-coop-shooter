@@ -9,7 +9,7 @@ local REMOTE_NAMES = {
 	"FireWeapon", -- client -> server: (origin: Vector3, direction: Vector3)
 	"ObjectiveUpdate", -- server -> client: (kind: "started"|"progress"|"completed", progress: number)
 	"DamageDealt", -- server -> client: (position: Vector3, amount: number, kind: "hit"|"bleed")
-	"ItemSelection", -- server -> client: ("offer", choices, inventory); client -> server: (chosenItemId)
+	"Resupply", -- client -> server: ("flare", target) | ("pick", crateId, itemId); server -> client: ("called", thrower) | ("cards", crateId, choices, positions, inventory) | ("picked", crateId) | ("closed", crateId)
 	"ItemsUpdate", -- server -> client: (inventory: { [itemId]: stacks })
 	"BuffNotice", -- server -> client: (text: string) short on-screen buff announcement
 	"RestartRun", -- client -> server: request a fresh run after dying

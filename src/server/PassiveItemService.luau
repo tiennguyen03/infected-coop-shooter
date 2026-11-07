@@ -4,7 +4,8 @@
 -- PlayerStatsService; the rest publish player attributes that the relevant
 -- systems read (XPGainMult, OrbMagnetMult, IncomingDamageMult,
 -- DroneRangeMult, DroneDurationMult, HunterMarkRangeMult). MaxHP and
--- level-up healing are applied directly.
+-- level-up healing are applied directly. Also owns automatic level growth
+-- (Config.Progression): each level adds max HP and bullet damage, no draft.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -64,15 +65,23 @@ function PassiveItemService.recompute(player: Player)
 	end
 end
 
--- Field Dressing: heal on each level gained.
-local function onLevelUp(player: Player, _newLevel: number)
-	local count = stacks(player, "field_dressing")
-	if count == 0 then
-		return
-	end
+-- Level growth (up to MaxLevel) and Field Dressing's heal on each level gained.
+local function onLevelUp(player: Player, newLevel: number)
 	local character = player.Character
 	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-	if humanoid and humanoid.Health > 0 then
+	local growth = Config.Progression
+	if newLevel <= growth.MaxLevel then
+		PlayerStatsService.setBonus(player, "level", {
+			Damage = (newLevel - 1) * growth.DamagePerLevel,
+		})
+		if humanoid and humanoid.Health > 0 then
+			humanoid.MaxHealth += growth.HealthPerLevel
+			humanoid.Health += growth.HealthPerLevel
+		end
+	end
+
+	local count = stacks(player, "field_dressing")
+	if count > 0 and humanoid and humanoid.Health > 0 then
 		local heal = count * Config.Items.Passives.FieldDressing
 		humanoid.Health = math.min(humanoid.Health + heal, humanoid.MaxHealth)
 	end

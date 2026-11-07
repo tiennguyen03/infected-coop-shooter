@@ -12,6 +12,7 @@ local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local DifficultyService = require(script.Parent.DifficultyService)
 local EnemyService = require(script.Parent.EnemyService)
 local PauseService = require(script.Parent.PauseService)
+local RequisitionService = require(script.Parent.RequisitionService)
 local XPService = require(script.Parent.XPService)
 
 local ObjectiveService = {}
@@ -100,6 +101,7 @@ local function complete()
 	for _, player in Players:GetPlayers() do
 		XPService.addXP(player, Config.Objective.XPReward)
 	end
+	RequisitionService.addRequisition(Config.Objective.XPReward)
 
 	objectiveRemote:FireAllClients("completed", Config.Objective.RequiredSeconds)
 	print("[ObjectiveService] Objective complete -> extraction")

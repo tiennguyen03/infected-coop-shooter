@@ -29,6 +29,7 @@ local BINDINGS: { { key: Enum.KeyCode, label: string, send: { any } } } = {
 	{ key = Enum.KeyCode.F7, label = "F7  Restart run", send = { "RestartRun" } },
 	{ key = Enum.KeyCode.F8, label = "F8  Print run state", send = { "PrintRunState" } },
 	{ key = Enum.KeyCode.F9, label = "F9  Verify cleanup", send = { "VerifyCleanup" } },
+	{ key = Enum.KeyCode.F10, label = "F10 Fill resupply", send = { "FillResupply" } },
 }
 
 local function buildPanel(remote: RemoteEvent)

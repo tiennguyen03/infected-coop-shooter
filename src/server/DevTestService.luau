@@ -122,7 +122,8 @@ function DevTestService.clearItemObjects()
 end
 
 function DevTestService.simulateItemOffers(count: number)
-	local tally = require(script.Parent.ItemService).simulateOffers(count)
+	local tally =
+		require(script.Parent.ItemService).simulateOffers(count, Config.Crates.Weights.Requisition)
 	local total = tally.Common + tally.Uncommon + tally.Legendary
 	print(
 		string.format(
@@ -324,6 +325,12 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 	end,
 	ForceMissionSuccess = function()
 		DevTestService.forceMissionSuccess()
+	end,
+	FillResupply = function()
+		local service = require(script.Parent.RequisitionService)
+		local cost = (workspace:GetAttribute("ResupplyCost") :: number?) or 0
+		service.addRequisition(math.max(cost - service.getPool(), 0))
+		print("[DevTest] FillResupply -> pool covers the next flare")
 	end,
 	SimulateItemOffers = function(_player, count)
 		DevTestService.simulateItemOffers(tonumber(count) or 1000)

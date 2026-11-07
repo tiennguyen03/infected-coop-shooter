@@ -11,6 +11,7 @@ local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
+local ThrowUtil = require(ReplicatedStorage.Shared.ThrowUtil)
 local ItemEffectService = require(script.Parent.ItemEffectService)
 local PauseService = require(script.Parent.PauseService)
 local PlayerStatsService = require(script.Parent.PlayerStatsService)
@@ -181,24 +182,11 @@ local function doBreach(player: Player, requested: Vector3?)
 	local cfg = Config.Assault
 
 	-- Land point: where the client aimed (hold E to see it), clamped to throw range and
-	-- raycast-clamped so it never lands through a wall; facing-forward when no aim came.
-	local dir = Vector3.new(root.CFrame.LookVector.X, 0, root.CFrame.LookVector.Z).Unit
-	local reach = cfg.BreachThrowDistance
-	if typeof(requested) == "Vector3" then
-		local flat = Vector3.new(requested.X - root.Position.X, 0, requested.Z - root.Position.Z)
-		if flat.Magnitude > 0.5 then
-			dir = flat.Unit
-			reach = math.min(flat.Magnitude, cfg.BreachThrowDistance)
-		end
-	end
-	local params = RaycastParams.new()
-	params.FilterType = Enum.RaycastFilterType.Exclude
-	params.FilterDescendantsInstances = { character, chargeFolder }
-	local fwdHit = workspace:Raycast(root.Position, dir * reach, params)
-	local landXZ = if fwdHit then fwdHit.Position - dir * 2 else root.Position + dir * reach
-	local groundHit =
-		workspace:Raycast(landXZ + Vector3.new(0, 30, 0), Vector3.new(0, -200, 0), params)
-	local center = if groundHit then groundHit.Position + Vector3.new(0, 1, 0) else landXZ
+	-- stopped short of walls; facing-forward when no aim came.
+	local center = ThrowUtil.landingPoint(root, requested, cfg.BreachThrowDistance, {
+		character,
+		chargeFolder,
+	}) + Vector3.new(0, 1, 0)
 
 	-- Blinking charge.
 	local charge = Instance.new("Part")

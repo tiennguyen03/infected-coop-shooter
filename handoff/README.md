@@ -1,12 +1,12 @@
 # Handoff — Roguelike Arena Survivor (VS Code + Claude Code terminal)
 
 Start here when picking the project up in a fresh Claude Code session.
-Last updated: 2026-11-06 (progression redesign). Last verified commit on `main`: `8e49b71`.
+Last updated: 2026-11-07 (Resupply). Last verified commit on `main`: `79c522d`.
 
 ## What this is
 
 Roblox roguelike (Risk of Rain 2-style loop, grounded military bio-horror setting). **Final
-product is 4-player co-op**; the current build is single-player. Full loop works: spawn → fight → level up → pick 1 of 3 items → Hold Position
+product is 4-player co-op**; the current build is single-player. Full loop works: spawn → fight → earn Resupply → flare → pallet → walk into 1 of 3 cards → Hold Position
 objective → extraction → OPERATION COMPLETE → restart. 24 items, 4 Infected forms (Walker, Runner, Brute, Hocker), Assault
 class with Q dash / E breach / Combat Momentum, server-authoritative everything.
 
@@ -46,8 +46,8 @@ Read in this order:
    (lore-developer, systems-designer, level-designer, playtest-critic) argue the design
    before code; the lore developer owns canon.
    **Direction (decided 2026-11-06, in PROGRESSION.md):** Helldivers 2 structure on the
-   roguelike run. Build order from PROGRESSION.md > Technical plan: Resupply (supply-drop
-   draft replacing the pause level-up) → ADS + headshots → run state machine + Operation
+   roguelike run. Build order from PROGRESSION.md > Technical plan: Resupply (done
+   2026-11-07; F10 fills the pool, F throws the flare) → ADS + headshots → run state machine + Operation
    (= Co-op Sprint A) → objective pools on Delta → the Warden → Containment Board → stage
    definitions. Owner still to pick "sortie" vs "drop" for a stage.
    **Roblox's own Studio MCP** (`Roblox_Studio`, added 2026-11-06, local scope) is a second
@@ -145,10 +145,10 @@ Hard-won gotchas:
   module copy — calling service functions from eval hits nil remotes. Drive the real game by
   firing the `DevCommand` RemoteEvent from `client-1`; use eval only to read Instance/
   attribute state. Stateless modules (GroundUtil) are fine in eval.
-- DevCommand commands: GiveXP, ForceLevelUp, GrantItem(itemId, stacks), ClearItems,
+- DevCommand commands: GiveXP, ForceLevelUp, FillResupply, GrantItem(itemId, stacks), ClearItems,
   SpawnEnemy(type, count), ClearEnemies, KillPlayer, RestartRun, PrintRunState,
-  VerifyCleanup, ForceObjectiveComplete, ForceMissionSuccess. Pick an item via the
-  `ItemSelection` remote (client fires chosen item id).
+  VerifyCleanup, ForceObjectiveComplete, ForceMissionSuccess. Pick a card via the
+  `Resupply` remote (client fires "pick", crateId, itemId) or walk the character into it.
 - A running playtest never picks up synced code — always Stop → Play after a sync. Studio
   MCP sometimes can't tear down a wedged playtest; manual Stop → Play fixes it.
 - `grep_scripts` / `get_script_source` return "Unknown error" when Rojo isn't connected or
