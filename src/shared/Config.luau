@@ -400,6 +400,68 @@ local Config = {
 	},
 
 	-- The Infected. Base values at difficulty step 0; see Difficulty above.
+	-- Sound (sound day 2026-11-07). Clips are packed per speaker in SoundBanks; a group is a
+	-- clip name without its variant number. Volumes are per group (0-1, DefaultVolume when
+	-- unlisted); 3D sounds roll off between the two distances (studs).
+	Audio = {
+		DefaultVolume = 0.6,
+		Volumes = {
+			step_hard = 0.5,
+			step_soft = 0.5,
+			bodyshot = 0.55,
+			headshot = 0.8,
+			hurt = 0.6,
+			walker_idle = 0.5,
+			walker_attack = 0.7,
+			walker_hurt = 0.5,
+			walker_death = 0.7,
+			runner_idle = 0.45,
+			runner_attack = 0.7,
+			runner_hurt = 0.5,
+			runner_death = 0.7,
+			brute_idle = 0.65,
+			brute_attack = 0.9,
+			brute_hurt = 0.6,
+			brute_death = 0.9,
+			hocker_idle = 0.5,
+			hocker_windup = 0.65,
+			hocker_spit = 0.7,
+			hocker_hurt = 0.5,
+			hocker_death = 0.7,
+		},
+		-- Infected vocals and the player's pain grunts (server, WorldSounds).
+		Voice = {
+			RollOffMin = 12,
+			RollOffMax = 160,
+			IdleInterval = { 5, 11 }, -- seconds between one Infected's ambient lines (random in range)
+			IdleGlobalGap = 0.35, -- seconds between ambient lines across the whole horde
+			IdleMaxDistance = 140, -- studs from the nearest player beyond which ambient lines are skipped
+			HurtCooldown = 0.45, -- seconds between pain grunts from one body (rapid fire, one grunt)
+		},
+		-- Boot steps (client, FootstepController).
+		Footsteps = {
+			RollOffMin = 6,
+			RollOffMax = 70,
+			MinInterval = 0.1, -- seconds; blocks a double step when the dominant clip switches
+			WalkVolume = 0.7, -- multiplier on the surface group volume
+			RunVolume = 1,
+			-- Footfall phases (fraction of the loop) per locomotion clip: when the phase
+			-- crosses one, a foot has landed. Measured in Studio 2026-11-07 from the lowest
+			-- points of the LeftFoot/RightFoot parts over one loop (left, then right); {0, 0.5}
+			-- when a clip is unlisted.
+			Phases = {
+				loco_walk_f = { 0.43, 0.89 },
+				loco_walk_b = { 0.44, 0.91 },
+				loco_walk_l = { 0.48, 0.94 },
+				loco_walk_r = { 0.40, 0.86 },
+				loco_run_f = { 0.43, 0.90 },
+				loco_run_b = { 0.41, 0.87 },
+				loco_run_l = { 0.47, 0.93 },
+				loco_run_r = { 0.43, 0.96 },
+			},
+		},
+	},
+
 	Zombies = {
 		SpawnInterval = 2, -- base seconds between spawns (decays per minute)
 		InitialCount = 5, -- Walkers spawned right at run start

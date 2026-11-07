@@ -15,6 +15,7 @@ assets/icons/build/contact_sheet.png
 
 # Generated audio: regenerate with assets/audio/build/generate.py; uploaded ids in ASSET_IDS.md
 assets/audio/*.wav
+assets/audio/banks/
 assets/audio/build/.venv/
 
 # Mixamo source clips: licensed for use in the game, not for redistribution (assets/animations/README.md)

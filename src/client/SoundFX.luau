@@ -5,9 +5,13 @@
 -- template so rapid sounds overlap instead of restarting.
 
 local ContentProvider = game:GetService("ContentProvider")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local SoundService = game:GetService("SoundService")
 
-export type SoundName = "shoot" | "hit" | "headshot" | "death" | "levelup"
+local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
+local SoundBanks = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("SoundBanks"))
+
+export type SoundName = "shoot" | "hit" | "levelup"
 
 type Definition = { id: string, fallback: string?, volume: number, speed: number?, vary: number? }
 
@@ -19,11 +23,9 @@ local DEFINITIONS: { [string]: Definition } = {
 		volume = 0.5,
 		vary = 0.08,
 	},
+	-- Built-in snap for hits while the player_hits bank is not uploaded (playAt falls
+	-- back to it); body shots and headshots are bank groups once it is.
 	hit = { id = "rbxasset://sounds/snap.mp3", volume = 0.3, speed = 0.85 },
-	-- Placeholder until the sound day: the hit snap, sharper and louder, so a headshot
-	-- is heard before the number is read.
-	headshot = { id = "rbxasset://sounds/snap.mp3", volume = 0.55, speed = 1.35 },
-	death = { id = "rbxasset://sounds/uuhhh.mp3", volume = 0.5 },
 	levelup = { id = "rbxasset://sounds/electronicpingshort.wav", volume = 0.6 },
 }
 
@@ -49,7 +51,29 @@ function SoundFX.play(name: SoundName)
 	sound:Play()
 end
 
+-- A random variant of a bank group as a 3D one-shot at a world position (a bullet hitting
+-- a body, heard from where it hit). Plays the built-in `fallback` when the bank has no id.
+function SoundFX.playAt(bank: string, group: string, position: Vector3, fallback: SoundName?)
+	if not SoundBanks.has(bank) then
+		if fallback then
+			SoundFX.play(fallback)
+		end
+		return
+	end
+	local rolloff = Config.Audio.Voice
+	local attachment = Instance.new("Attachment")
+	attachment.WorldPosition = position
+	attachment.Parent = workspace.Terrain
+	local sound = SoundBanks.create(group, rolloff.RollOffMin, rolloff.RollOffMax)
+	sound.Parent = attachment
+	local duration = SoundBanks.play(sound, bank, group)
+	task.delay((duration or 0) + 0.1, function()
+		attachment:Destroy()
+	end)
+end
+
 function SoundFX.init()
+	SoundBanks.preload(SoundService)
 	for name, definition in DEFINITIONS do
 		local sound = Instance.new("Sound")
 		sound.SoundId = definition.id

@@ -27,7 +27,10 @@ fi
 docker run --rm --entrypoint sh \
 	-v "$(cygpath -w "$HF_CACHE"):/src:ro" -v "$VOLUME:/root/.cache/huggingface" \
 	"$IMAGE" -c "cp /src/token /root/.cache/huggingface/token 2>/dev/null || true"
+# The repo root is mounted too so build_banks can write src/shared/SoundBankData.luau.
+REPO_DIR="$(cd "$AUDIO_DIR/../.." && pwd)"
 docker run --rm \
 	-v "$(cygpath -w "$AUDIO_DIR"):/work" \
+	-v "$(cygpath -w "$REPO_DIR"):/repo" -e RAS_REPO=/repo \
 	-v "$VOLUME:/root/.cache/huggingface" \
 	"$IMAGE" "$@"

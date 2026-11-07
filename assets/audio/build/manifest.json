@@ -158,5 +158,240 @@
     "prompt": "distant helicopter approaching with rotor wash, outdoor, long",
     "seconds": 5.0,
     "seed": 95
+  },
+  "step_hard_1": {
+    "prompt": "single footstep of a heavy military boot on concrete, close, dry, very short",
+    "seconds": 0.5,
+    "seed": 101
+  },
+  "step_hard_2": {
+    "prompt": "one boot step on a concrete floor, firm heel then sole, close, very short",
+    "seconds": 0.5,
+    "seed": 102
+  },
+  "step_hard_3": {
+    "prompt": "single combat boot footstep on asphalt, scuff of grit, close, very short",
+    "seconds": 0.5,
+    "seed": 103
+  },
+  "step_hard_4": {
+    "prompt": "one heavy boot footstep on pavement, close mic, very short",
+    "seconds": 0.5,
+    "seed": 104
+  },
+  "step_soft_1": {
+    "prompt": "single boot footstep on dirt and gravel, crunch, close, very short",
+    "seconds": 0.5,
+    "seed": 105
+  },
+  "step_soft_2": {
+    "prompt": "one boot step on dry soil with small stones, soft crunch, close, very short",
+    "seconds": 0.5,
+    "seed": 106
+  },
+  "step_soft_3": {
+    "prompt": "single footstep on packed earth and dead grass, close, very short",
+    "seconds": 0.5,
+    "seed": 107
+  },
+  "bodyshot_1": {
+    "prompt": "bullet impact on a body, wet thud with a slap, close, short",
+    "seconds": 0.8,
+    "seed": 21
+  },
+  "bodyshot_2": {
+    "prompt": "rifle round hitting flesh, heavy wet smack, close, short",
+    "seconds": 0.8,
+    "seed": 111
+  },
+  "bodyshot_3": {
+    "prompt": "bullet punching into a torso, meaty thump with a splash, close, short",
+    "seconds": 0.8,
+    "seed": 112
+  },
+  "headshot_1": {
+    "prompt": "bullet hitting a skull, sharp wet crack with a splat, close, short",
+    "seconds": 0.7,
+    "seed": 113
+  },
+  "headshot_2": {
+    "prompt": "rifle round cracking bone with a wet burst, close, short",
+    "seconds": 0.7,
+    "seed": 114
+  },
+  "hurt_1": {
+    "prompt": "man grunting in pain from a hit, short, close",
+    "seconds": 0.8,
+    "seed": 91
+  },
+  "hurt_2": {
+    "prompt": "man gasping and grunting sharply in pain, short, close",
+    "seconds": 0.8,
+    "seed": 115
+  },
+  "walker_idle_1": {
+    "prompt": "sick man moaning, low wet rattling breath, hoarse human voice, close",
+    "seconds": 2.0,
+    "seed": 201
+  },
+  "walker_idle_2": {
+    "prompt": "man groaning weakly with a gurgling throat, slow hoarse exhale, close",
+    "seconds": 2.0,
+    "seed": 202
+  },
+  "walker_idle_3": {
+    "prompt": "hoarse rasping growl with wet breath, human voice, menacing, close",
+    "seconds": 2.0,
+    "seed": 203
+  },
+  "walker_attack_1": {
+    "prompt": "man lunging with an aggressive hoarse snarl, human voice, short",
+    "seconds": 1.0,
+    "seed": 204
+  },
+  "walker_attack_2": {
+    "prompt": "angry guttural shout, raspy human voice, short burst",
+    "seconds": 1.0,
+    "seed": 205
+  },
+  "walker_hurt_1": {
+    "prompt": "man grunting in pain, wet hoarse voice, short",
+    "seconds": 0.8,
+    "seed": 206
+  },
+  "walker_hurt_2": {
+    "prompt": "pained choking gasp, hoarse man, short",
+    "seconds": 0.8,
+    "seed": 207
+  },
+  "walker_death_1": {
+    "prompt": "man dying with a gurgling groan and collapsing to the ground, short",
+    "seconds": 1.6,
+    "seed": 208
+  },
+  "walker_death_2": {
+    "prompt": "choked death rattle fading out, body falling onto concrete",
+    "seconds": 1.6,
+    "seed": 209
+  },
+  "runner_idle_1": {
+    "prompt": "fast panting hoarse breathing with hissing, human, close",
+    "seconds": 1.6,
+    "seed": 211
+  },
+  "runner_idle_2": {
+    "prompt": "frantic raspy screech, high pitched human voice, close",
+    "seconds": 1.4,
+    "seed": 212
+  },
+  "runner_idle_3": {
+    "prompt": "ragged hyperventilating breath turning into a snarl, close",
+    "seconds": 1.6,
+    "seed": 213
+  },
+  "runner_attack_1": {
+    "prompt": "piercing raspy shriek while attacking, high human voice, short",
+    "seconds": 1.0,
+    "seed": 214
+  },
+  "runner_attack_2": {
+    "prompt": "high screaming snarl of a person lunging, short",
+    "seconds": 1.0,
+    "seed": 215
+  },
+  "runner_hurt_1": {
+    "prompt": "high yelp of pain, raspy human voice, short",
+    "seconds": 0.7,
+    "seed": 216
+  },
+  "runner_death_1": {
+    "prompt": "shrieking cry cut short by a heavy fall, short",
+    "seconds": 1.4,
+    "seed": 217
+  },
+  "runner_death_2": {
+    "prompt": "high gurgling scream fading as a body collapses",
+    "seconds": 1.6,
+    "seed": 218
+  },
+  "brute_idle_1": {
+    "prompt": "huge heavy breathing, deep chest rumble, slow, close",
+    "seconds": 2.2,
+    "seed": 221
+  },
+  "brute_idle_2": {
+    "prompt": "deep guttural growl with wet snorts, massive creature, close",
+    "seconds": 2.2,
+    "seed": 222
+  },
+  "brute_attack_1": {
+    "prompt": "monstrous deep roar while swinging a heavy arm, short",
+    "seconds": 1.4,
+    "seed": 223
+  },
+  "brute_attack_2": {
+    "prompt": "deep bellowing grunt of effort, heavy swing, short",
+    "seconds": 1.2,
+    "seed": 224
+  },
+  "brute_hurt_1": {
+    "prompt": "deep pained grunt of a huge creature, heavy, short",
+    "seconds": 0.9,
+    "seed": 225
+  },
+  "brute_death_1": {
+    "prompt": "huge monster dying bellow, collapsing heavily onto the ground, deep thud",
+    "seconds": 2.5,
+    "seed": 36
+  },
+  "brute_death_2": {
+    "prompt": "deep groan fading out and a heavy body thud on concrete",
+    "seconds": 2.2,
+    "seed": 226
+  },
+  "hocker_idle_1": {
+    "prompt": "wet gurgling throat bubbling, sick person, close",
+    "seconds": 1.8,
+    "seed": 231
+  },
+  "hocker_idle_2": {
+    "prompt": "phlegmy clicking gargle with hoarse breath, close",
+    "seconds": 1.8,
+    "seed": 232
+  },
+  "hocker_idle_3": {
+    "prompt": "liquid bubbling in a throat with a hiss, close",
+    "seconds": 1.8,
+    "seed": 233
+  },
+  "hocker_windup_1": {
+    "prompt": "long wet inhale swelling up, gurgling build-up rising in pitch",
+    "seconds": 1.3,
+    "seed": 234
+  },
+  "hocker_spit_1": {
+    "prompt": "thick wet spit launched hard, liquid splat burst, short",
+    "seconds": 0.8,
+    "seed": 235
+  },
+  "hocker_spit_2": {
+    "prompt": "heavy glob of liquid spat out with a wet pop, short",
+    "seconds": 0.8,
+    "seed": 236
+  },
+  "hocker_hurt_1": {
+    "prompt": "gurgling pained yelp, wet throat, short",
+    "seconds": 0.8,
+    "seed": 237
+  },
+  "hocker_death_1": {
+    "prompt": "wet gurgling collapse with liquid bursting out, short",
+    "seconds": 1.6,
+    "seed": 238
+  },
+  "hocker_death_2": {
+    "prompt": "choking liquid death rattle fading, body falling",
+    "seconds": 1.6,
+    "seed": 239
   }
 }

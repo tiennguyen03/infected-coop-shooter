@@ -20,6 +20,7 @@ local DifficultyService = require(script.Parent.DifficultyService)
 local EnemyProjectileService = require(script.Parent.EnemyProjectileService)
 local ItemEffectService = require(script.Parent.ItemEffectService)
 local PauseService = require(script.Parent.PauseService)
+local WorldSounds = require(script.Parent.WorldSounds)
 local XPOrbService = require(script.Parent.XPOrbService)
 
 local ENEMY_TAG = "Enemy"
@@ -35,6 +36,11 @@ local NUDGE_STUCK_DISTANCE = 1
 local NUDGE_DISTANCE = 8
 local SAC_OFFSET = CFrame.new(0, 0.95, -0.5) -- throat sac relative to UpperTorso (the rig faces -Z)
 local SAC_SIZE = 0.9
+-- Vocals (sound day 2026-11-07): each form has a bank named after it (SoundBanks) with
+-- <form>_idle / _attack / _hurt / _death groups (the Hocker adds _windup and _spit); lines
+-- play 3D from the head through WorldSounds. Ambient lines are spaced per body and across
+-- the horde (Config.Audio.Voice).
+local lastIdleVoiceAt = 0
 
 type Zombie = {
 	model: Model,
@@ -57,6 +63,9 @@ type Zombie = {
 	windupUntil: number?,
 	throwClear: boolean,
 	sac: BasePart?,
+	voicePart: BasePart,
+	nextIdleVoiceAt: number,
+	lastHurtVoiceAt: number,
 }
 
 local EnemyService = {}
@@ -149,8 +158,19 @@ local function attachHealthBar(humanoid: Humanoid, root: BasePart, scale: number
 	billboard.Parent = root
 end
 
+local function voice(zombie: Zombie, line: string)
+	local bank = string.lower(zombie.typeName)
+	WorldSounds.voice(zombie.voicePart, bank, bank .. "_" .. line)
+end
+
+local function randomIdleDelay(): number
+	local range = Config.Audio.Voice.IdleInterval
+	return range[1] + math.random() * (range[2] - range[1])
+end
+
 local function onZombieDied(zombie: Zombie)
 	CollectionService:RemoveTag(zombie.model, ENEMY_TAG)
+	voice(zombie, "death")
 	local animator = zombie.humanoid:FindFirstChildOfClass("Animator")
 	if animator then
 		for _, track in animator:GetPlayingAnimationTracks() do
@@ -288,12 +308,45 @@ local function spawnZombie(groundPosition: Vector3, typeName: string)
 		windupUntil = nil,
 		throwClear = false,
 		sac = sac,
+		voicePart = (model:FindFirstChild("Head") :: BasePart?) or root,
+		nextIdleVoiceAt = os.clock() + randomIdleDelay() * 0.5,
+		lastHurtVoiceAt = 0,
 	}
 	table.insert(zombies, zombie)
 
+	humanoid.HealthChanged:Connect(function(newHealth)
+		-- One pain grunt per burst of hits, not one per bullet.
+		local now = os.clock()
+		if newHealth > 0 and now - zombie.lastHurtVoiceAt >= Config.Audio.Voice.HurtCooldown then
+			zombie.lastHurtVoiceAt = now
+			zombie.nextIdleVoiceAt = math.max(zombie.nextIdleVoiceAt, now + 1.5)
+			voice(zombie, "hurt")
+		end
+	end)
 	humanoid.Died:Connect(function()
 		onZombieDied(zombie)
 	end)
+end
+
+-- Ambient lines: one body at a time, spaced out, only near someone who can hear them.
+local function idleVoice(zombie: Zombie, now: number)
+	if now < zombie.nextIdleVoiceAt then
+		return
+	end
+	local settings = Config.Audio.Voice
+	if now - lastIdleVoiceAt < settings.IdleGlobalGap then
+		return
+	end
+	zombie.nextIdleVoiceAt = now + randomIdleDelay()
+	local targetRoot = nearestPlayerRoot(zombie.root.Position)
+	if
+		not targetRoot
+		or (targetRoot.Position - zombie.root.Position).Magnitude > settings.IdleMaxDistance
+	then
+		return
+	end
+	lastIdleVoiceAt = now
+	voice(zombie, "idle")
 end
 
 local function removeZombie(index: number)
@@ -315,6 +368,8 @@ local function attackIfTouching(zombie: Zombie, now: number)
 		if targetHumanoid and targetHumanoid.Health > 0 then
 			EnemyProjectileService.damagePlayer(targetHumanoid, zombie.damage)
 			zombie.lastAttackTime = now
+			zombie.nextIdleVoiceAt = math.max(zombie.nextIdleVoiceAt, now + 2)
+			voice(zombie, "attack")
 			if zombie.attackTrack then
 				zombie.attackTrack:Play(0.1)
 			end
@@ -368,6 +423,7 @@ local function stepProjectileZombie(zombie: Zombie, now: number)
 			setSacScale(zombie, 1)
 			local head = zombie.model:FindFirstChild("Head") :: BasePart?
 			local origin = if head then head.Position else zombie.root.Position
+			voice(zombie, "spit")
 			EnemyProjectileService.fire(
 				origin,
 				targetRoot.Position,
@@ -402,6 +458,8 @@ local function stepProjectileZombie(zombie: Zombie, now: number)
 				Vector3.new(targetRoot.Position.X, zombie.root.Position.Y, targetRoot.Position.Z)
 			zombie.root.CFrame = CFrame.lookAt(zombie.root.Position, flat)
 			zombie.windupUntil = now + (behaviour.Windup or 0)
+			zombie.nextIdleVoiceAt = math.max(zombie.nextIdleVoiceAt, now + 3)
+			voice(zombie, "windup")
 			if zombie.attackTrack then
 				zombie.attackTrack:Play(0.1)
 			end
@@ -429,6 +487,7 @@ local function stepZombies()
 			removeZombie(index)
 			continue
 		end
+		idleVoice(zombie, now)
 
 		if zombie.behaviour.Attack == "projectile" then
 			stepProjectileZombie(zombie, now)

@@ -34,7 +34,34 @@ bash assets/audio/build/generate.sh --list      # print the prompt list
 
 Each sound has a fixed seed so a rerun reproduces it; change the seed to get a new take.
 Prompts work best as "what makes the sound, where, how close"; the shared negative prompt
-keeps music and speech out. CPU inference takes a few seconds per sound.
+keeps music and speech out. On this machine a sound takes about a minute on CPU (the
+autoencoder decode dominates, whatever the clip length), so a 46-clip batch is ~45 min.
+
+## Banks (sound day 2026-11-07)
+
+Roblox caps audio uploads per account per month, so variant clips are not uploaded one by
+one. `BANKS` in `generate.py` packs each speaker's clips into one
+`assets/audio/banks/<bank>.wav` (0.15 s of silence between clips) and writes the clip offsets
+to `src/shared/SoundBankData.luau` (generated; never edit it). One upload per bank:
+
+| bank | clips (group = name without `_<n>`) | played by |
+|---|---|---|
+| `player_steps` | `step_hard_1..4`, `step_soft_1..3` | `client/FootstepController` (surface from `FloorMaterial`) |
+| `player_hits` | `bodyshot_1..3`, `headshot_1..2`, `hurt_1..2` | `DamageNumberUI` at the hit point; `EnemyProjectileService.damagePlayer` on the head |
+| `walker`, `runner`, `brute`, `hocker` | `<form>_idle`, `_attack`, `_hurt`, `_death` (+ `hocker_windup`, `hocker_spit`) | `EnemyService` → `server/WorldSounds` on the head, 3D, replicated |
+
+`src/shared/SoundBanks.luau` holds the bank ids and the playback: `pick(bank, group)` draws
+a random variant that never repeats the previous one; `play(sound, bank, group)` seeks the
+Sound to the clip offset and stops it after the clip length. Group volumes and rolloff
+distances are in `Config.Audio`. Add a variant = add `<group>_<n>` to `SOUNDS`, list it in
+its bank, rerun (`generate.sh <names>` regenerates only those and repacks; `--banks` only
+repacks), re-upload that bank, update its id.
+
+Footsteps are synced to the locomotion clips, not to a timer: `FootstepController` reads the
+phase of the dominant walk/run track and steps when it crosses a footfall phase in
+`Config.Audio.Footsteps.Phases`, measured in Studio from the feet's lowest points (the
+measuring script is in handoff/README.md > Studio MCP gotchas). Re-measure if a locomotion
+clip changes.
 
 ## Upload and wire
 
@@ -43,4 +70,5 @@ keeps music and speech out. CPU inference takes a few seconds per sound.
    ones that matter first.
 2. Record `name → asset id` in `ASSET_IDS.md`.
 3. Put the id in `src/client/SoundFX.luau` `DEFINITIONS` (`rbxassetid://<id>`), keep the
-   `rbxasset://` built-in as the fallback until the upload is approved.
+   `rbxasset://` built-in as the fallback until the upload is approved. A bank id goes in
+   `src/shared/SoundBanks.luau` `IDS`; an empty id keeps that bank silent (no errors).

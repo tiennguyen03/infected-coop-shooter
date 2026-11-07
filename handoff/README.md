@@ -1,7 +1,7 @@
 # Handoff — Roguelike Arena Survivor (VS Code + Claude Code terminal)
 
 Start here when picking the project up in a fresh Claude Code session.
-Last updated: 2026-11-07 (Delta relaid to docs/LEVELS.md). Last verified commit on `main`: `f0d7759`.
+Last updated: 2026-11-07 (sound day: banks, footsteps, Infected vocals). Last verified commit on `main`: `b73e9b8` (the sound-day commit on top was playtested before committing).
 
 ## What this is
 
@@ -41,6 +41,12 @@ Read in this order:
   alternate pad) with the Infected nudge rule. Still to build, in order: the rest of the
   roster (Bloat, Shedder, Crawler), the Index hosts (the Warden first, A6), Kilo; the
   LEVELS.md items that need systems (A5/A7/A9/A10) land with those systems.
+- 2026-11-07: **sound day.** Six sound banks (one upload each, `SoundBanks` +
+  generated `SoundBankData`): boot steps synced to the locomotion clips (footfall phases
+  measured in Studio, `Config.Audio.Footsteps.Phases`), body-shot/headshot impacts at the
+  hit point, the player's pain grunt, and per-form Infected vocals with no-repeat random
+  variants (`EnemyService` → `WorldSounds`, 3D on the head, replicated). Pipeline and
+  the bank table: `assets/audio/README.md > Banks`.
 
 ## Open work, in priority order
 
@@ -50,6 +56,9 @@ Read in this order:
   doing the work. Means a new skin row set in `docs/STYLES.md` §2 replacing the three
   `infected` tints, and a re-paint pass on the four v2 Infected builders (geometry stays).
   Not scheduled; do it in one pass with the next body sprint.
+- **Backlog (owner, 2026-11-07): rifle reload.** A magazine, R to reload, a reload clip and
+  a reload sound (generate `reload_1..2` into a `player_weapon` bank with the rifle shot).
+  Goes with the ammo economy decision in PROGRESSION; not before Co-op Sprint A.
 
 0. **Progression (designed 2026-11-06):** `docs/PROGRESSION.md` — three-stage first loop
    (Checkpoint Delta, Mile 14, Aid Station Kestrel), player-started hold at one of three
@@ -74,9 +83,11 @@ Read in this order:
    `AnimationController`, per-type Infected clips, hold-E breach ghost). All 15 clips are
    published through Open Cloud (ids in `Config.Animations.Ids`, `assets/animations/
    ASSET_IDS.md`), so they play outside Studio too. Polish later: a hollow breach ring.
-1. **Plan Co-op Sprint A** from the decided design in `docs/MULTIPLAYER_READINESS.md`
-   (run state machine, no-pause level-up, downed/revive, spawn pads, reset split, client
-   screens). Verify with the Studio MCP `multiplayer_playtest` tool.
+1. **Co-op Sprint A is planned, next to build:** `docs/sprints/SPRINT_17_COOP_A.md`
+   (the `Squad` member abstraction that bots reuse, run state machine, downed/revive, four
+   LZ pads, reset split, client screens; seven playtest-verified steps). The spine it
+   serves: `docs/PROGRESSION.md > The spine` (decided 2026-11-07: loadout power, call-ins,
+   field upgrades, flat curve, bot squadmates after Sprint A).
 2. **Sprint 13 Full MVP Balance + Fun Test** — still OPEN. Needs 3 natural human playtests;
    tune `src/shared/Config.luau` only. Plan: `docs/sprints/SPRINT_13_FULL_MVP_BALANCE_TEST.md`.
    This is the gate for calling the MVP done (criteria in `docs/PLAN.md`).
@@ -94,11 +105,13 @@ Read in this order:
    off). K-9 / Epidemiologist / Recon / Engineer bodies are built and previewed in Blender,
    not uploaded (no class system yet). Pipeline `assets/3d/README.md`. Next: react to the
    owner's playtest, rock outcrops / a sunken road for more cover, class selection.
-4. **Generated SFX pipeline (2026-11-06):** `assets/audio/build/generate.py` makes sounds
-   from text prompts with Stable Audio Open Small, run in Docker (`generate.sh`; Windows
-   Smart App Control blocks PyTorch on the host; ~3 min per sound on CPU). The rifle shot is
-   generated, uploaded and wired (`SoundFX` `shoot`, with a built-in fallback). Next: run the
-   other 31 prompts, upload, wire the new events (`assets/audio/README.md`).
+4. **Generated SFX pipeline (2026-11-06, banks 2026-11-07):** `assets/audio/build/
+   generate.py` makes sounds from text prompts with Stable Audio Open Small, run in Docker
+   (`generate.sh`; Docker Desktop must be running; ~1 min per sound on CPU). Shipped: the
+   rifle shot (`SoundFX` `shoot`) and the six banks (steps, hits, four Infected forms).
+   Next: the remaining single prompts (xp/level/item pickups, crate, mine, drone, airstrike,
+   fire, shock, dash, breach, objective, extraction) as one or two more banks, then the
+   reload bank with the backlog item above (`assets/audio/README.md`).
 5. **Live Blender control (blender-mcp) — set up and socket-verified 2026-11-05**
    (`.mcp.json` + add-on; `assets/3d/README.md` > Live Blender). Not yet used from a Claude
    Code session (needs a restart to load the tools). Shipped meshes still go through the
@@ -170,6 +183,13 @@ Hard-won gotchas:
 - `grep_scripts` / `get_script_source` return "Unknown error" when Rojo isn't connected or
   when the playtest has ended (peers gone). Check `solo_playtest` status first.
 - NEVER create script instances in Studio for files Rojo manages (duplicates break boot).
+- **Measuring footfall phases** (`Config.Audio.Footsteps.Phases`): on `client-1`, anchor
+  the live character's root, load each locomotion clip from `Config.Animations.Ids` onto
+  its Animator at `Action4` priority, play it looped alone, sample `TimePosition / Length`
+  and `LeftFoot`/`RightFoot` `Position.Y - root.Position.Y` every Heartbeat for two loops,
+  and take the phase where each foot first drops within 0.06 studs of its minimum. The
+  character must be alive (a dead R15 has broken joints, so the feet never move) and the
+  scripted `MoveTo` route does not work while the control module runs.
 
 ## Security / housekeeping (do not relax)
 

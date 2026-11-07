@@ -4,6 +4,7 @@
 require(script.Parent.SoundFX).init()
 require(script.Parent.CameraController).init()
 require(script.Parent.AnimationController).init()
+require(script.Parent.FootstepController).init()
 require(script.Parent.SprintController).init()
 require(script.Parent.WeaponController).init()
 require(script.Parent.ObjectiveUI).init()

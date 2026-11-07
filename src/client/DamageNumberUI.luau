@@ -45,19 +45,19 @@ local BLEED_COLOR = Color3.fromRGB(255, 90, 70)
 
 local function showDamageNumber(position: Vector3, amount: number, kind: string?)
 	if kind == "death" then
-		-- No number; the enemy died — green burst and the classic groan.
+		-- No number; the enemy died: a burst here, the death cry comes from the body
+		-- itself (EnemyService plays the form's bank on the server).
 		burst(position, Color3.fromRGB(110, 185, 90), 14)
-		SoundFX.play("death")
 		return
 	end
 	if kind == "bleed" then
 		burst(position, BLEED_COLOR, 5)
 	elseif kind == "headshot" then
 		burst(position, HEADSHOT_COLOR, 10)
-		SoundFX.play("headshot")
+		SoundFX.playAt("player_hits", "headshot", position, "hit")
 	else
 		burst(position, HIT_COLOR, 7)
-		SoundFX.play("hit")
+		SoundFX.playAt("player_hits", "bodyshot", position, "hit")
 	end
 
 	local attachment = Instance.new("Attachment")

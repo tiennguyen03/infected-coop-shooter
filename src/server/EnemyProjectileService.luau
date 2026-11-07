@@ -15,6 +15,10 @@ local EnemyDefinitions = require(ReplicatedStorage.Shared.EnemyDefinitions)
 local GroundUtil = require(ReplicatedStorage.Shared.GroundUtil)
 local DifficultyService = require(script.Parent.DifficultyService)
 local PauseService = require(script.Parent.PauseService)
+local WorldSounds = require(script.Parent.WorldSounds)
+
+-- Last pain grunt per player humanoid (weak keys: a dead character drops out).
+local lastHurtVoiceAt: { [Humanoid]: number } = setmetatable({}, { __mode = "k" }) :: any
 
 export type Projectile = EnemyDefinitions.ProjectileSpec
 
@@ -57,6 +61,17 @@ function EnemyProjectileService.damagePlayer(humanoid: Humanoid, amount: number)
 	local victim = if character then Players:GetPlayerFromCharacter(character) else nil
 	local incomingMult = (victim and victim:GetAttribute("IncomingDamageMult") :: number?) or 1
 	humanoid:TakeDamage(amount * DifficultyService.getDamageMultiplier() * incomingMult)
+	-- A grunt from the body (3D, the squad hears who got hit), one per burst of hits.
+	local head = character and character:FindFirstChild("Head") :: BasePart?
+	local now = os.clock()
+	if
+		head
+		and humanoid.Health > 0
+		and now - (lastHurtVoiceAt[humanoid] or 0) >= Config.Audio.Voice.HurtCooldown
+	then
+		lastHurtVoiceAt[humanoid] = now
+		WorldSounds.voice(head, "player_hits", "hurt")
+	end
 end
 
 local function livePlayerHumanoids(): { { humanoid: Humanoid, root: BasePart } }
