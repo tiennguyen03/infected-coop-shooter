@@ -27,10 +27,6 @@ local ENEMY_TAG = "Enemy"
 
 local DevTestService = {}
 
-local function firstPlayer(): Player?
-	return Players:GetPlayers()[1]
-end
-
 local function getHumanoid(player: Player): Humanoid?
 	local character = player.Character
 	return character and character:FindFirstChildOfClass("Humanoid")
@@ -60,16 +56,16 @@ end
 -- Commands
 ----------------------------------------------------------------------
 
-function DevTestService.giveXP(amount: number, player: Player?)
-	local target = player or firstPlayer()
+function DevTestService.giveXP(amount: number, player: Player)
+	local target: Player? = player
 	if target then
 		XPService.addXP(target, amount)
 		print(`[DevTest] GiveXP {amount} -> {target.Name}`)
 	end
 end
 
-function DevTestService.forceLevelUp(player: Player?)
-	local target = player or firstPlayer()
+function DevTestService.forceLevelUp(player: Player)
+	local target: Player? = player
 	if not target then
 		return
 	end
@@ -79,8 +75,8 @@ function DevTestService.forceLevelUp(player: Player?)
 	print(`[DevTest] ForceLevelUp -> {target.Name}`)
 end
 
-function DevTestService.grantItem(itemId: string, stacks: number?, player: Player?)
-	local target = player or firstPlayer()
+function DevTestService.grantItem(itemId: string, stacks: number?, player: Player)
+	local target: Player? = player
 	local resolved = resolveItemId(itemId)
 	if not target or not resolved then
 		warn(`[DevTest] GrantItem: unknown item '{itemId}'`)
@@ -94,8 +90,8 @@ end
 
 -- Clears inventory and every active item effect for a live player without
 -- restarting the run (stats return to normal).
-function DevTestService.clearItems(player: Player?)
-	local target = player or firstPlayer()
+function DevTestService.clearItems(player: Player)
+	local target: Player? = player
 	if not target then
 		return
 	end
@@ -160,8 +156,8 @@ function DevTestService.clearEnemies()
 	print("[DevTest] ClearEnemies")
 end
 
-function DevTestService.killPlayer(player: Player?)
-	local target = player or firstPlayer()
+function DevTestService.killPlayer(player: Player)
+	local target: Player? = player
 	local humanoid = target and getHumanoid(target)
 	if humanoid then
 		humanoid.Health = 0
@@ -169,8 +165,8 @@ function DevTestService.killPlayer(player: Player?)
 	end
 end
 
-function DevTestService.restartRun(player: Player?)
-	local target = player or firstPlayer()
+function DevTestService.restartRun(player: Player)
+	local target: Player? = player
 	if target then
 		RunManager.startRun()
 		print(`[DevTest] RestartRun -> {target.Name}`)
@@ -178,14 +174,11 @@ function DevTestService.restartRun(player: Player?)
 end
 
 function DevTestService.printRunState(): { [string]: any }
-	local player = firstPlayer()
-	local humanoid = player and getHumanoid(player)
 	local zone = workspace:FindFirstChild("ObjectiveZone")
 
-	local state = {
+	local state: { [string]: any } = {
 		runState = workspace:GetAttribute("RunState"),
 		runResult = workspace:GetAttribute("RunResult"),
-		runActive = humanoid ~= nil and humanoid.Health > 0,
 		elapsed = math.floor(
 			(
 				workspace:GetServerTimeNow()
@@ -195,10 +188,6 @@ function DevTestService.printRunState(): { [string]: any }
 				)
 			)
 		),
-		level = player and player:GetAttribute("Level"),
-		xp = player and player:GetAttribute("XP"),
-		xpNeeded = player and player:GetAttribute("XPRequired"),
-		kills = player and player:GetAttribute("Kills"),
 		enemyCount = EnemyService.count(),
 		walkerCount = EnemyService.count("Walker"),
 		runnerCount = EnemyService.count("Runner"),
@@ -210,7 +199,6 @@ function DevTestService.printRunState(): { [string]: any }
 		firePoolCount = folderCount("FirePools"),
 		mineCount = folderCount("Mines"),
 		markedTargets = ItemEffectService.getActiveMarkCount(),
-		activeItemCount = player and player:GetAttribute("ItemsCollected") or 0,
 		objectiveActive = workspace:GetAttribute("ObjectiveActive") == true,
 		objectiveZoneExists = zone ~= nil,
 	}
@@ -218,6 +206,32 @@ function DevTestService.printRunState(): { [string]: any }
 	print("[DevTest] RunState:")
 	for key, value in state do
 		print(string.format("  %s = %s", tostring(key), tostring(value)))
+	end
+	-- Every squad member (players and bots), then each player's own progress.
+	local Squad = require(script.Parent.Squad)
+	for _, member in Squad.members() do
+		print(
+			string.format(
+				"  member %s (%s) %s, revives used %d",
+				member.name,
+				member.kind,
+				member.state,
+				member.revivesUsed
+			)
+		)
+	end
+	for _, player in Players:GetPlayers() do
+		print(
+			string.format(
+				"  player %s: level %s, xp %s/%s, kills %s, items %s",
+				player.Name,
+				tostring(player:GetAttribute("Level")),
+				tostring(player:GetAttribute("XP")),
+				tostring(player:GetAttribute("XPRequired")),
+				tostring(player:GetAttribute("Kills")),
+				tostring(player:GetAttribute("ItemsCollected"))
+			)
+		)
 	end
 	return state
 end
@@ -258,20 +272,22 @@ function DevTestService.verifyCleanup(): { pass: boolean, leftovers: { string } 
 		table.insert(leftovers, "ObjectiveCompleted still true")
 	end
 
-	local player = firstPlayer()
-	if player then
+	for _, player in Players:GetPlayers() do
 		for _, stat in { "Damage", "FireRate", "MoveSpeed" } do
 			local mult = (player:GetAttribute(stat .. "Mult") :: number?) or 1
 			if math.abs(mult - 1) > 0.001 then
-				table.insert(leftovers, `{stat} multiplier still {mult}`)
+				table.insert(leftovers, `{player.Name}: {stat} multiplier still {mult}`)
 			end
 		end
 		local humanoid = getHumanoid(player)
 		if humanoid and humanoid.MaxHealth > Config.Player.MaxHealth then
-			table.insert(leftovers, `MaxHealth still {humanoid.MaxHealth} (shield leftover)`)
+			table.insert(
+				leftovers,
+				`{player.Name}: MaxHealth still {humanoid.MaxHealth} (shield leftover)`
+			)
 		end
 		if (player:GetAttribute("ItemsCollected") :: number?) ~= 0 then
-			table.insert(leftovers, "item stacks remain")
+			table.insert(leftovers, `{player.Name}: item stacks remain`)
 		end
 	end
 

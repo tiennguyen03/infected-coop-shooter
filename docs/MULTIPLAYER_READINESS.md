@@ -49,7 +49,7 @@ may add to this list.
 | 8 | M | `ItemEffectService.resetPlayer`, `AssaultClassService.resetPlayer`, `ProjectileServer.reset` | Per-player reset wipes humanoid-keyed/global tables; run reset clears per-player `shotCount` but not `lastFireTime`. | Split strictly per the rule above. | Done 2026-11-07 (Sprint A step 2) |
 | 9 | M | `ItemEffectService` damage/death events | Every hit and kill is `FireAllClients`; each client plays every player's hit sounds. | Hit numbers to the damager only; death VFX to all but sound distance-attenuated or owner-only. | Co-op Sprint B |
 | 10 | M | `ArenaService` | One `SpawnLocation` at the origin. | 4 spawn pads in a cluster; revive happens in place, stage-start respawn at the pads. | Done 2026-11-07 (Sprint A step 4) |
-| 11 | M | `DevTestService` | Falls back to `GetPlayers()[1]`; run-state printouts inspect one player. | Dev commands target the invoking player; printouts loop players. | Any sprint (small) |
+| 11 | M | `DevTestService` | Falls back to `GetPlayers()[1]`; run-state printouts inspect one player. | Dev commands target the invoking player; printouts loop players. | Done 2026-11-07 (Sprint A step 7) |
 | 12 | C | `DeathScreenUI` | Hardcodes "Extracted: No"; Restart button resets the server's run for everyone. | Downed overlay (timer, "teammate reviving"), spectate on Dead, final screen only on run end. | Done 2026-11-07 (Sprint A step 6) |
 | 13 | C | `MissionSuccessUI` | ~~Shown to all, hidden only on the local `CharacterAdded`.~~ Done 2026-11-07 (Sprint A step 1): shown and hidden on `RunState`/`RunResult`. | Hide on the run-state change event, not on respawn. | Done |
 

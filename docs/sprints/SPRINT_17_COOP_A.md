@@ -1,6 +1,9 @@
 # Sprint 17 — Co-op Sprint A: squad members, run state machine, downed/revive, pads
 
-**Status: in progress. Step 1 (run state machine) done and playtest-verified 2026-11-07. Step 3 started early for the bots: `Squad` exists (players + bots, Alive/Dead from the humanoid) and drives Infected targeting and enemy splash; the rest of step 3 (XP, objective/extraction zones, Requisition, spawn ring, dev loops) still uses `GetPlayers`.** Execute in order; each step is one
+**Status: shipped 2026-11-07.** All seven steps done and playtest-verified (steps 3-6 with a
+2-client `multiplayer_playtest`); bot squadmates v1 were built on `Squad` during the sprint
+(owner request). Left for Co-op Sprint B: register rows 3, 5, 7, 9 and the extraction rule
+(Extracted / Left Behind: recommended, owner to confirm). Each step was one
 playtest-verified commit. Design decisions it implements: `docs/MULTIPLAYER_READINESS.md`
 decisions 1-6 and register rows 1, 4, 6, 8, 10, 11, 12, 13; the spine in
 `docs/PROGRESSION.md` (bot squadmates come next sprint on the `Squad` abstraction below).
@@ -166,7 +169,7 @@ and checks `RunResult`.
 6. **Done 2026-11-07.** Squad Alive/Downed/Dead with Config.Downed (30 s bleed-out, hold F 3 s within 8 studs, revive at 50%, 2 revives per run); a lethal enemy hit downs (EnemyProjectileService.damagePlayer), downed bodies take no damage and are not targets; fire/abilities/flare gated on Squad.canAct; the wipe check counts downed players as active; bots lie prone when downed, revive the nearest downed squadmate when no Infected is within 12 studs, and anchor on a downed player when nobody stands; client: prone + speed 0 + no firing while downed, DOWNED banner (bleed-out, who is reviving), own prompt hidden; the flare moved F -> 3; dev DownPlayer/RevivePlayer. Verified with 2 clients: downed P1 at speed 0 with regen paused, prompt only on client-2, Infected ignored the body, a real F hold revived P1 at half health, Cole revived P1 on his own, the third lethal hit killed outright, bleed-out killed after 30 s, 3 threw the flare. Downed/revive. Verify solo: `DownPlayer` → overlay timer → Dead → Ended; 2 clients:
    client-2 holds E within 8 studs → client-1 up at 50% HP, Infected ignored the downed
    body meanwhile; `MaxRevives` exhausted → straight to Dead.
-7. Docs: this file's status, HISTORY row, handoff state, register rows closed.
+7. **Done 2026-11-07.** Sprint status, HISTORY, handoff and register rows updated each step; DevTestService lost its GetPlayers()[1] fallback: every command acts on its sender, PrintRunState lists every squad member and player, VerifyCleanup checks every player (row 11). Verified solo: PrintRunState shows the player and three bots, VerifyCleanup PASS after a restart. Docs: this file's status, HISTORY row, handoff state, register rows closed.
 
 ## Judgment calls (owner)
 

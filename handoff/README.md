@@ -1,7 +1,7 @@
 # Handoff — Infected Co-op Shooter (VS Code + Claude Code terminal)
 
 Start here when picking the project up in a fresh Claude Code session.
-Last updated: 2026-11-07 (Co-op Sprint A step 6: downed and revive). Last verified commit on `main`: the Sprint A step 6 commit (playtested).
+Last updated: 2026-11-07 (Co-op Sprint A shipped). Last verified commit on `main`: the Sprint A step 7 commit (playtested).
 
 ## What this is
 
@@ -131,7 +131,7 @@ Read in this order:
    `AnimationController`, per-type Infected clips, hold-E breach ghost). All 15 clips are
    published through Open Cloud (ids in `Config.Animations.Ids`, `assets/animations/
    ASSET_IDS.md`), so they play outside Studio too. Polish later: a hollow breach ring.
-1. **Co-op Sprint A in progress (steps through 2 done 2026-11-07):** `docs/sprints/SPRINT_17_COOP_A.md`
+1. **Co-op Sprint A shipped 2026-11-07** (`docs/sprints/SPRINT_17_COOP_A.md`): `Squad` roster, run state machine, reset split, spawn pads, run-end screens + ready-up, downed/revive (F), bot squadmates. **Next per the spine:** the loadout rework (call-ins on 1-2, tactical pallets, field upgrades, flat curve, realistic time-to-kill), then the Warden; Co-op Sprint B (register rows 3/5/7/9, extraction rule) and the lobby place (decision 7) after.
    Planned after it (owner, 2026-11-07): a **lobby place** with a main menu where parties
    queue and teleport together into the match (`docs/MULTIPLAYER_READINESS.md` decision 7);
    number keys 1-4 take call-ins and the flare (decision 8).

@@ -59,5 +59,6 @@ git history; this file is the index. Current state and open work: `handoff/READM
 | 2026-11-07 | Co-op Sprint A step 4, spawn pads: four landing pads around the LZ helipad, one per squad member (players' RespawnLocation, bots on the rest). Verified with a 2-client multiplayer playtest | docs/sprints/SPRINT_17_COOP_A.md |
 | 2026-11-07 | Co-op Sprint A step 5, run end + ready-up: one RunEndUI keyed on the run state (K.I.A. banner mid-run, results on Ended), READY vote with a 10 s countdown. Verified with a 2-client multiplayer playtest | docs/sprints/SPRINT_17_COOP_A.md |
 | 2026-11-07 | Co-op Sprint A step 6, downed and revive: a lethal hit downs instead of killing (30 s bleed-out), hold F to revive, bots revive and get revived, 2 revives per run, flare moved to 3. Verified with a 2-client multiplayer playtest | docs/sprints/SPRINT_17_COOP_A.md |
+| 2026-11-07 | Co-op Sprint A shipped: dev tools act per player (no first-player fallback), squad-wide run-state printout; sprint closed | docs/sprints/SPRINT_17_COOP_A.md |
 
 Still open: Sprint 13 Full MVP Balance + Fun Test (docs/sprints/SPRINT_13_FULL_MVP_BALANCE_TEST.md).
