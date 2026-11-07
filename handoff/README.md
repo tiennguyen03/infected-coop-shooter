@@ -1,7 +1,7 @@
 # Handoff — Infected Co-op Shooter (VS Code + Claude Code terminal)
 
 Start here when picking the project up in a fresh Claude Code session.
-Last updated: 2026-11-07 (Co-op Sprint A shipped). Last verified commit on `main`: the Sprint A step 7 commit (playtested).
+Last updated: 2026-11-07 (roll and slide clips published, bots tuned). Last verified commit on `main`: the bot-tuning commit (playtested).
 
 ## What this is
 
@@ -48,9 +48,10 @@ Read in this order:
   hit point, the player's pain grunt, and per-form Infected vocals with no-repeat random
   variants (`EnemyService` → `WorldSounds`, 3D on the head, replicated). Pipeline and
   the bank table: `assets/audio/README.md > Banks`.
-- 2026-11-07: **bot squadmates v1.** Three bots (Cole, Reyes, Cross) fill the squad in solo
-  (`server/BotService`, `Config.Bots`) on the new `server/Squad` roster. They are strong:
-  the squad cleared 10 Walkers + a Brute in 18 s unaided; tune `Config.Bots` (Damage, FireCooldown, Range) after the owner plays with them.
+- 2026-11-07: **bot squadmates v1, tuned.** Three bots (Cole, Reyes, Cross) fill the squad in solo
+  (`server/BotService`, `Config.Bots`) on the `server/Squad` roster. Tuned to support, not
+  carry: ~27 DPS each (three bots ~ one player), 0.35 s reaction to a new target. With an
+  idle player they no longer clear a 10 Walker + Brute wave (one went down).
 - 2026-11-07: **movement weight, roll, slide.** `client/MomentumController` eases the
   body's velocity toward the input (`Config.Movement.Momentum`), so starts, stops and
   reversals take time. Sprint + LeftControl rolls (melee immunity via `CoverMoveService`),
@@ -93,12 +94,12 @@ Read in this order:
      the roster `MaxHealth` together (systems-designer call; flat curve per the spine).
   2. **More Infected vocal variety.** Three idle / two attack lines per form is thin; add
      variants to each bank (`generate.py` `SOUNDS` + `BANKS`, re-upload the bank).
-  3. **Publish the roll and slide clips.** `sprint_roll` is retargeted and plays as a Studio
-     preview only (`Config.Animations.Ids.sprint_roll = ""`). `running_slide` (Mixamo
-     "Running Slide", FBX without skin, 30 fps) still has to be downloaded into
-     `assets/animations/source/mixamo/running_slide.fbx`: Chrome blocked the second
-     automatic download from mixamo.com. Then retarget both and publish them in one pass
-     (`assets/animations/README.md` steps 2-4). Until then the slide plays standing upright (owner flagged it 2026-11-07: "not like I'm sliding on the ground").
+  3. **Low-health feedback (owner, 2026-11-07).** As health drops the screen greys out
+     (`ColorCorrectionEffect` saturation toward -1, a dark vignette), a heartbeat loop fades
+     in and speeds up, and the world's sound muffles (a low-pass `EqualizerSoundEffect` on
+     the world `SoundGroup`); all of it eases back as health returns. Client-only, one
+     module keyed on the local humanoid's health fraction, thresholds in Config; heartbeat
+     clip via the sound pipeline. Downed (Squad) is the floor of the same effect.
   5. **Movement keys rework (owner, 2026-11-07).** Shift+Ctrl roll and Shift+C slide are
      too many chords. Owner is weighing sprint as the default speed (no walk, or walk on a
      key) so roll and slide become single keys. Decide with the systems designer before

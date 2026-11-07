@@ -51,3 +51,5 @@ Mirror every id into `Config.Animations.Ids`.
 | zombie_crawl | 101414875993165 | 2026-11-07 |
 | zombie_stumble | 78987755637091 | 2026-11-07 |
 | zombie_scream | 91289969066728 | 2026-11-07 |
+| sprint_roll (Mixamo Sprinting Forward Roll) | 80433355485535 | 2026-11-07 |
+| running_slide (Mixamo Running Slide) | 138341516012248 | 2026-11-07 |

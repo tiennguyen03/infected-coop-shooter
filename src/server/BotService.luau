@@ -50,6 +50,7 @@ type Bot = {
 	nextShot: number,
 	respawnAt: number?,
 	spawning: boolean,
+	target: Humanoid?, -- the Infected it is shooting (a new one costs ReactionTime)
 	reviving: Squad.Member?, -- the downed member this bot is reviving
 	reviveProgress: number, -- seconds held next to them
 }
@@ -469,6 +470,10 @@ local function think(bot: Bot, now: number, params: RaycastParams)
 	if RunStates.isLive() then
 		enemy, aim = pickTarget(root.Position + Vector3.new(0, 1.5, 0), params)
 	end
+	if enemy and enemy ~= bot.target then
+		bot.target = enemy
+		bot.nextShot = math.max(bot.nextShot, now + Config.Bots.ReactionTime)
+	end
 	if enemy and aim then
 		humanoid.AutoRotate = false
 		root.CFrame = CFrame.lookAt(root.Position, Vector3.new(aim.X, root.Position.Y, aim.Z))
@@ -537,6 +542,7 @@ function BotService.startRun()
 			nextShot = 0,
 			respawnAt = nil,
 			spawning = false,
+			target = nil,
 			reviving = nil,
 			reviveProgress = 0,
 		})

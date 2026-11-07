@@ -94,11 +94,15 @@ local Config = {
 		FollowSlack = 4, -- closer than this to the slot: stand
 		RunBeyond = 16, -- further than this: run
 		TeleportBeyond = 80, -- further than this (stuck, fell behind): reappear in the slot
-		Range = 110, -- studs; the Infected beyond this are ignored
-		FireCooldown = 0.22, -- seconds between shots (the player: 0.15)
-		Damage = 9, -- per round (the player: 12)
-		Spread = 2.5, -- degrees, half-angle
-		HeadshotChance = 0.2, -- share of shots aimed at the head
+		-- Tuned 2026-11-07: bots support, the player carries. The player's rifle is ~80 DPS;
+		-- a bot is ~27 (8 / 0.3 s, a few headshots), so three bots together roughly equal
+		-- one player. Untuned v1 (9 / 0.22 s, 20% heads, no reaction) cleared waves alone.
+		Range = 90, -- studs; the Infected beyond this are ignored
+		FireCooldown = 0.3, -- seconds between shots (the player: 0.15)
+		Damage = 8, -- per round (the player: 12)
+		Spread = 3, -- degrees, half-angle
+		HeadshotChance = 0.1, -- share of shots aimed at the head
+		ReactionTime = 0.35, -- seconds between spotting a new target and the first shot
 		RespawnSeconds = 10, -- a dead bot rejoins at its slot after this
 		ReviveSearch = 60, -- studs: a bot goes to revive a downed squadmate this close
 		ReviveSafeRadius = 12, -- ...unless an Infected is this close to the downed body
@@ -206,7 +210,8 @@ local Config = {
 			-- Movement set (2026-11-07): vault/climb, crouch, prone; Infected climbs and
 			-- extras (Crawler move, flinch, Hocker scream) for later.
 			vault_low = "rbxassetid://122259453837052",
-			sprint_roll = "", -- Studio preview until published
+			sprint_roll = "rbxassetid://80433355485535",
+			running_slide = "rbxassetid://138341516012248",
 			climb_ledge = "rbxassetid://87799425638897",
 			climb_low = "rbxassetid://111567195502844",
 			climb_high = "rbxassetid://97579324656436",
@@ -273,7 +278,7 @@ local Config = {
 			},
 			vault = "vault_low", -- over jersey / hesco
 			roll = "sprint_roll", -- sprint + LeftControl
-			slide = "running_slide", -- sprint + C (no id until the clip is downloaded)
+			slide = "running_slide", -- sprint + C
 			climb = "climb_ledge", -- onto bunker / humvee / container
 		},
 		-- The Infected, per type (EnemyDefinitions).
