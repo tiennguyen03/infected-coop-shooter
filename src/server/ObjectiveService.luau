@@ -20,6 +20,7 @@ local ObjectiveService = {}
 local objectiveRemote: RemoteEvent
 -- ExtractionService registers here to start extraction on completion.
 local completionListeners: { () -> () } = {}
+local activationListeners: { () -> () } = {}
 
 local zonePart: BasePart?
 local progress = 0
@@ -110,7 +111,7 @@ local function complete()
 	end
 end
 
--- ExtractionService subscribes to start extraction when the objective is done.
+-- RunManager subscribes: Primary -> Index -> Extract when the hold is done.
 function ObjectiveService.onComplete(listener: () -> ())
 	table.insert(completionListeners, listener)
 end
@@ -160,6 +161,14 @@ local function activate()
 		EnemyService.spawnWave("Brute", 1, Config.Objective.ZonePosition)
 	end
 	print("[ObjectiveService] Objective active")
+	for _, listener in activationListeners do
+		listener()
+	end
+end
+
+-- RunManager: Explore -> Primary when the hold zone appears.
+function ObjectiveService.onActivated(listener: () -> ())
+	table.insert(activationListeners, listener)
 end
 
 local function scheduleActivation()
@@ -187,12 +196,16 @@ function ObjectiveService.reset()
 		zonePart = nil
 	end
 	objectiveRemote:FireAllClients("completed", 0) -- hides any open objective UI
+	runGeneration += 1 -- cancels a pending activation from the previous run
+end
+
+-- RunManager, on Explore: start the timer that brings the hold zone in.
+function ObjectiveService.arm()
 	scheduleActivation()
 end
 
 function ObjectiveService.init()
 	objectiveRemote = Remotes.get("ObjectiveUpdate")
-	scheduleActivation()
 end
 
 return ObjectiveService

@@ -1,5 +1,5 @@
 --!strict
--- Mission success results screen, shown when the MissionSuccess remote fires
+-- Mission success results screen, shown while RunState is Ended with RunResult Extracted
 -- (extraction complete). Mirrors the death screen but green/positive. Restart
 -- asks the server for a fresh run; hidden when the new character spawns.
 
@@ -103,10 +103,22 @@ local function show()
 	overlay = gui
 end
 
+-- Shown while the run is Ended with RunResult "Extracted" (RunManager); hidden as soon as
+-- a new run leaves Ended.
+local function refresh()
+	local extracted = workspace:GetAttribute("RunState") == "Ended"
+		and workspace:GetAttribute("RunResult") == "Extracted"
+	if extracted and not overlay then
+		show()
+	elseif not extracted then
+		hide()
+	end
+end
+
 function MissionSuccessUI.init()
-	Remotes.get("MissionSuccess").OnClientEvent:Connect(show)
-	-- A fresh run respawns the character; clear the screen then.
-	Players.LocalPlayer.CharacterAdded:Connect(hide)
+	workspace:GetAttributeChangedSignal("RunState"):Connect(refresh)
+	workspace:GetAttributeChangedSignal("RunResult"):Connect(refresh)
+	refresh()
 end
 
 return MissionSuccessUI

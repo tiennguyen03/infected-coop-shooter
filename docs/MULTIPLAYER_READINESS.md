@@ -39,7 +39,7 @@ may add to this list.
 
 | # | Sev | Where | Problem today | Planned shape | Fix when |
 |---|---|---|---|---|---|
-| 1 | B | `RunManager` | Death ends the run; `RestartRun` from any dead/extracted player resets global services but only the requester's per-player state, and respawns only the requester. No "all dead" handling. | Run state machine owned by the server: `Lobby → Running → Ended`. Per-player `Alive / Downed / Dead` (#3). Run ends when every player is dead or extraction completes. Start/restart = request + ready-up timer (#4), resets every player. | Co-op Sprint A |
+| 1 | B | `RunManager` | Death ends the run; `RestartRun` from any dead/extracted player resets global services but only the requester's per-player state, and respawns only the requester. No "all dead" handling. | Run state machine owned by the server: `Lobby → Running → Ended`. Per-player `Alive / Downed / Dead` (#3). Run ends when every player is dead or extraction completes. Start/restart = request + ready-up timer (#4), resets every player. | Co-op Sprint A (step 1 2026-11-07: `RunState` machine and all-dead → Ended/Wiped are in; ready-up and resetting every player remain) |
 | 2 | B | `PauseService`, `ItemService`, `AssaultClassService`, client `CameraController`/`WeaponController`/`AbilityController`/`AbilityUI` | ~~One player's level-up pauses the whole world.~~ Done 2026-11-07: level-up no longer pauses; the draft is a world pallet (Resupply). `GamePaused` remains only for the run-end freeze. | Decided (#1), shipped as Resupply. | Done |
 | 3 | B | `ObjectiveService`, `ExtractionService` | One zone, any single player inside counts, completion/pause broadcast to all. | Keep shared objective (co-op goal) but define the rule: N-of-players in zone, or any one. Extraction needs a "waiting for squad" state. | Co-op Sprint B |
 | 4 | M | `XPOrbService`, `ObjectiveService` | Orb XP goes to the nearest player only; objective XP goes in full to everyone. Inconsistent. | Decided (#2): shared XP, every orb pickup grants every living player. | Co-op Sprint A |
@@ -51,7 +51,7 @@ may add to this list.
 | 10 | M | `ArenaService` | One `SpawnLocation` at the origin. | 4 spawn pads in a cluster; revive happens in place, stage-start respawn at the pads. | Co-op Sprint A |
 | 11 | M | `DevTestService` | Falls back to `GetPlayers()[1]`; run-state printouts inspect one player. | Dev commands target the invoking player; printouts loop players. | Any sprint (small) |
 | 12 | C | `DeathScreenUI` | Hardcodes "Extracted: No"; Restart button resets the server's run for everyone. | Downed overlay (timer, "teammate reviving"), spectate on Dead, final screen only on run end. | Co-op Sprint A |
-| 13 | C | `MissionSuccessUI` | Shown to all, hidden only on the local `CharacterAdded`, so non-requesters keep it up after restart. | Hide on the run-state change event, not on respawn. | Co-op Sprint A |
+| 13 | C | `MissionSuccessUI` | ~~Shown to all, hidden only on the local `CharacterAdded`.~~ Done 2026-11-07 (Sprint A step 1): shown and hidden on `RunState`/`RunResult`. | Hide on the run-state change event, not on respawn. | Done |
 
 ## Design decisions (decided by the owner 2026-11-05)
 

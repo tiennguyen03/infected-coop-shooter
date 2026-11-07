@@ -1,6 +1,6 @@
 # Sprint 17 — Co-op Sprint A: squad members, run state machine, downed/revive, pads
 
-**Status: planned 2026-11-07, not started.** Execute in order; each step is one
+**Status: in progress. Step 1 (run state machine) done and playtest-verified 2026-11-07.** Execute in order; each step is one
 playtest-verified commit. Design decisions it implements: `docs/MULTIPLAYER_READINESS.md`
 decisions 1-6 and register rows 1, 4, 6, 8, 10, 11, 12, 13; the spine in
 `docs/PROGRESSION.md` (bot squadmates come next sprint on the `Squad` abstraction below).
@@ -142,10 +142,14 @@ and checks `RunResult`.
 
 ## 7. Steps (each: static checks, Stop → Play, verify, commit with docs)
 
-1. `RunStates` + `RunManager` attributes over the existing flow; objective/extraction
-   subscriptions move into RunManager; `MissionSuccess` removed. Verify solo:
-   `PrintRunState` walks Lobby → Insert → Explore → Primary → Index → Extract → Ended; a
-   full run still completes.
+1. **Done 2026-11-07.** `RunStates` + `RunManager` attributes over the existing flow;
+   objective/extraction subscriptions move into RunManager (`ObjectiveService.onActivated` /
+   `arm()`, `ExtractionService.onComplete`); `MissionSuccess` removed; first wave and the
+   objective timer start on Explore (`EnemyService.startSortie`), spawns gate on
+   `RunStates.isLive()`; all players dead → Ended/Wiped. Verified solo: Lobby → Insert →
+   Explore (3.0 s) → Primary (zone at 180 s) → Index → Extract → Ended/Extracted, success
+   screen shows and clears on restart, no enemies during Insert, KillPlayer → Ended/Wiped,
+   `VerifyCleanup` PASS.
 2. Reset split. Verify solo: `RestartRun` then `VerifyCleanup` PASS; `GrantItem
    shrapnel_magazine` burst count restarts after a restart.
 3. `Squad` (players only, Alive/Dead via `Died`) replacing every `GetPlayers` target /
@@ -166,12 +170,16 @@ and checks `RunResult`.
 
 ## Judgment calls (owner)
 
-- E is shared between breach and revive (prompt suppresses breach); the alternative is a
-  separate key.
+- **Decided (owner, 2026-11-07): revive and other interactions go on F.** F throws the
+  Resupply flare today, so the flare moves (G, or a call-in slot when the loadout rework
+  lands). E stays breach only; the prompt-suppresses-breach rule in section 3 is dropped.
 - The ready-up opens automatically on the first join so solo stays frictionless.
 - Spectate camera scope (follow nearest living member, or stay free).
-- Extraction this sprint counts every active member as Extracted; the N-of-squad rule is
-  Sprint B.
+- Extraction. **Recommended, owner to confirm:** the Helldivers 2 / Deep Rock model. The
+  operation succeeds if at least one member is on the pad when Lantern lifts; members on
+  the pad are Extracted, everyone else is Left Behind. Left Behind costs that player only
+  (carried samples/intel, reduced share) once meta progression exists. This sprint:
+  success if anyone extracts, per-member Extracted / Left Behind state, no reward effect yet.
 - Seam left for the bot sprint: `ItemEffectService.dealDamage(attacker: Player, …)` and
   `lastDamager` are Player-keyed; bot kills need `attacker: Member`. Nothing in A blocks it.
 

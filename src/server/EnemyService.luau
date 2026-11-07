@@ -21,6 +21,7 @@ local EnemyDefinitions = require(ReplicatedStorage.Shared.EnemyDefinitions)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
 local Animations = require(ReplicatedStorage.Shared.Animations)
 local Ledge = require(ReplicatedStorage.Shared.Ledge)
+local RunStates = require(ReplicatedStorage.Shared.RunStates)
 local DifficultyService = require(script.Parent.DifficultyService)
 local EnemyProjectileService = require(script.Parent.EnemyProjectileService)
 local ItemEffectService = require(script.Parent.ItemEffectService)
@@ -779,7 +780,11 @@ local function spawnLoop()
 			interval *= Config.Requisition.Lure.SpawnFactor
 		end
 		task.wait(interval)
-		if not PauseService.isPaused() and #zombies < DifficultyService.getMaxAlive() then
+		if
+			RunStates.isLive()
+			and not PauseService.isPaused()
+			and #zombies < DifficultyService.getMaxAlive()
+		then
 			local position = randomSpawnPosition()
 			if position then
 				spawnZombie(position, pickSpawnType())
@@ -788,10 +793,17 @@ local function spawnLoop()
 	end
 end
 
-local function scheduleInitialWave()
-	-- First contact within seconds of the run starting (Sprint 8 pacing).
+-- Bumped on every reset so a pending first wave never lands in the next run.
+local sortieGeneration = 0
+
+-- RunManager, on Explore: first contact within seconds (Sprint 8 pacing).
+function EnemyService.startSortie()
+	sortieGeneration += 1
+	local generation = sortieGeneration
 	task.delay(1.5, function()
-		EnemyService.spawnWave("Walker", Config.Zombies.InitialCount)
+		if generation == sortieGeneration and RunStates.isLive() then
+			EnemyService.spawnWave("Walker", Config.Zombies.InitialCount)
+		end
 	end)
 end
 
@@ -814,8 +826,8 @@ end
 -- Clears all enemies for a fresh run.
 function EnemyService.reset()
 	lure = nil
+	sortieGeneration += 1
 	EnemyService.clearAll()
-	scheduleInitialWave()
 end
 
 function EnemyService.init()
@@ -857,7 +869,6 @@ function EnemyService.init()
 	end
 	RunService.Heartbeat:Connect(stepZombies)
 	task.spawn(spawnLoop)
-	scheduleInitialWave()
 end
 
 return EnemyService

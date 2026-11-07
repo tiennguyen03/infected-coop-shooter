@@ -74,6 +74,11 @@ local Config = {
 		},
 	},
 
+	-- Run flow (RunManager, Shared.RunStates). Co-op Sprint A.
+	Run = {
+		InsertSeconds = 3, -- Insert -> Explore: the squad lands before the first wave
+	},
+
 	-- Over-the-shoulder camera (client-side, scriptable).
 	Camera = {
 		ShoulderOffset = Vector2.new(2.5, 0.5), -- right / up offset from the character

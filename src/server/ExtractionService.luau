@@ -1,9 +1,9 @@
 --!strict
--- Extraction phase (Sprint 12): begins when ObjectiveService reports the
--- objective complete. Spawns a glowing zone far from the objective; the
--- player must accumulate HoldDuration seconds inside it (pauses outside,
--- never resets). On completion the run ends as a success (game freezes,
--- enemies clear, success screen shows). Same hold-zone style as the objective.
+-- Extraction phase (Sprint 12): RunManager starts it when the objective completes
+-- (Extract state). Spawns a glowing zone far from the objective; the squad must
+-- accumulate HoldDuration seconds inside it (pauses outside, never resets). On completion
+-- the onComplete listeners fire and RunManager ends the run as Extracted. Same hold-zone
+-- style as the objective.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -12,13 +12,12 @@ local RunService = game:GetService("RunService")
 local Config = require(ReplicatedStorage.Shared.Config)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local EnemyService = require(script.Parent.EnemyService)
-local ObjectiveService = require(script.Parent.ObjectiveService)
 local PauseService = require(script.Parent.PauseService)
 
 local ExtractionService = {}
 
 local extractionRemote: RemoteEvent
-local successRemote: RemoteEvent
+local completionListeners: { () -> () } = {}
 
 local zonePart: BasePart?
 local progress = 0
@@ -84,7 +83,6 @@ local function complete()
 	completed = true
 	active = false
 	workspace:SetAttribute("ExtractionActive", false)
-	workspace:SetAttribute("Extracted", true)
 
 	if heartbeatConnection then
 		heartbeatConnection:Disconnect()
@@ -96,13 +94,15 @@ local function complete()
 	end
 
 	extractionRemote:FireAllClients("complete", Config.Extraction.HoldDuration)
-
-	-- Mission success: freeze the field (stops spawns + frees the cursor for
-	-- the results screen), clear the remaining horde, show success.
-	PauseService.setPaused(true)
-	EnemyService.clearAll()
-	successRemote:FireAllClients()
 	print("[ExtractionService] Extraction complete -> mission success")
+	-- RunManager ends the run (Ended / Extracted): freezes the field, clears the horde.
+	for _, listener in completionListeners do
+		listener()
+	end
+end
+
+function ExtractionService.onComplete(listener: () -> ())
+	table.insert(completionListeners, listener)
 end
 
 local function onHeartbeat(deltaTime: number)
@@ -161,7 +161,6 @@ function ExtractionService.reset()
 	progress = 0
 	timeSinceSync = 0
 	workspace:SetAttribute("ExtractionActive", false)
-	workspace:SetAttribute("Extracted", false)
 	if heartbeatConnection then
 		heartbeatConnection:Disconnect()
 		heartbeatConnection = nil
@@ -175,10 +174,7 @@ end
 
 function ExtractionService.init()
 	extractionRemote = Remotes.get("ExtractionUpdate")
-	successRemote = Remotes.get("MissionSuccess")
-	ObjectiveService.onComplete(ExtractionService.start)
 	workspace:SetAttribute("ExtractionActive", false)
-	workspace:SetAttribute("Extracted", false)
 end
 
 return ExtractionService

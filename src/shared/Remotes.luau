@@ -16,7 +16,6 @@ local REMOTE_NAMES = {
 	"RestartRun", -- client -> server: request a fresh run after dying
 	"DevCommand", -- client -> server: (command: string, ...) Studio/creator-only dev tools
 	"ExtractionUpdate", -- server -> client: (kind: "available"|"progress"|"returning"|"complete"|"hide", progress)
-	"MissionSuccess", -- server -> client: () show the operation-complete results screen
 	"UseAbility", -- client -> server: (abilityName: "dash"|"breach")
 	"AbilityUsed", -- server -> client: (abilityName: string, cooldown: number) for UI countdown
 	"CoverMove", -- client -> server: (kind: "vault"|"climb"|"roll") the body started going over cover or rolling

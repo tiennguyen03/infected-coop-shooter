@@ -1,7 +1,7 @@
 # Handoff — Infected Co-op Shooter (VS Code + Claude Code terminal)
 
 Start here when picking the project up in a fresh Claude Code session.
-Last updated: 2026-11-07 (movement weight, sprint-roll, slide). Last verified commit on `main`: the movement-weight commit (weight and roll playtested; slide not yet seen running).
+Last updated: 2026-11-07 (Co-op Sprint A step 1: run state machine). Last verified commit on `main`: the Sprint A step 1 commit (every transition playtested).
 
 ## What this is
 
@@ -95,7 +95,11 @@ Read in this order:
      "Running Slide", FBX without skin, 30 fps) still has to be downloaded into
      `assets/animations/source/mixamo/running_slide.fbx`: Chrome blocked the second
      automatic download from mixamo.com. Then retarget both and publish them in one pass
-     (`assets/animations/README.md` steps 2-4). Until then the slide runs in the run pose.
+     (`assets/animations/README.md` steps 2-4). Until then the slide plays standing upright (owner flagged it 2026-11-07: "not like I'm sliding on the ground").
+  5. **Movement keys rework (owner, 2026-11-07).** Shift+Ctrl roll and Shift+C slide are
+     too many chords. Owner is weighing sprint as the default speed (no walk, or walk on a
+     key) so roll and slide become single keys. Decide with the systems designer before
+     touching `SprintController` / `StanceController` / `MovementController` bindings.
   4. **Rework the map for the movement set.** Delta was laid out for a body that walks
      around cover; now it vaults, climbs and is climbed over. Redo `docs/LEVELS.md` with
      more climbable cover (containers, humvees, bunkers, stacked hesco), routes that use
@@ -124,7 +128,7 @@ Read in this order:
    `AnimationController`, per-type Infected clips, hold-E breach ghost). All 15 clips are
    published through Open Cloud (ids in `Config.Animations.Ids`, `assets/animations/
    ASSET_IDS.md`), so they play outside Studio too. Polish later: a hollow breach ring.
-1. **Co-op Sprint A is planned, next to build:** `docs/sprints/SPRINT_17_COOP_A.md`
+1. **Co-op Sprint A in progress (step 1 of 7 done 2026-11-07; next: step 2, reset split):** `docs/sprints/SPRINT_17_COOP_A.md`
    (the `Squad` member abstraction that bots reuse, run state machine, downed/revive, four
    LZ pads, reset split, client screens; seven playtest-verified steps). The spine it
    serves: `docs/PROGRESSION.md > The spine` (decided 2026-11-07: loadout power, call-ins,

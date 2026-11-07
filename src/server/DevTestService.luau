@@ -183,6 +183,8 @@ function DevTestService.printRunState(): { [string]: any }
 	local zone = workspace:FindFirstChild("ObjectiveZone")
 
 	local state = {
+		runState = workspace:GetAttribute("RunState"),
+		runResult = workspace:GetAttribute("RunResult"),
 		runActive = humanoid ~= nil and humanoid.Health > 0,
 		elapsed = math.floor(
 			(
@@ -249,8 +251,8 @@ function DevTestService.verifyCleanup(): { pass: boolean, leftovers: { string } 
 	if workspace:GetAttribute("ExtractionActive") == true then
 		table.insert(leftovers, "ExtractionActive still true")
 	end
-	if workspace:GetAttribute("Extracted") == true then
-		table.insert(leftovers, "Extracted still true")
+	if workspace:GetAttribute("RunState") == "Ended" then
+		table.insert(leftovers, "RunState still Ended")
 	end
 	if workspace:GetAttribute("ObjectiveCompleted") == true then
 		table.insert(leftovers, "ObjectiveCompleted still true")
