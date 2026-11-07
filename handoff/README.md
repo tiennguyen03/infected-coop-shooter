@@ -1,7 +1,7 @@
 # Handoff — Infected Co-op Shooter (VS Code + Claude Code terminal)
 
 Start here when picking the project up in a fresh Claude Code session.
-Last updated: 2026-11-07 (renamed to the working title Infected Co-op Shooter; movement set before that). Last verified commit on `main`: `513a8d8` (movement set, playtested before committing).
+Last updated: 2026-11-07 (surface materials on the map; renamed to Infected Co-op Shooter earlier today). Last verified commit on `main`: the surface-materials commit (playtested before committing).
 
 ## What this is
 
@@ -48,6 +48,10 @@ Read in this order:
   hit point, the player's pain grunt, and per-form Infected vocals with no-repeat random
   variants (`EnemyService` → `WorldSounds`, 3D on the head, replicated). Pipeline and
   the bank table: `assets/audio/README.md > Banks`.
+- 2026-11-07: **surface materials.** The map's ground, roads, concrete and nine
+  one-material meshes use Roblox built-in materials instead of flat colour (rules in
+  `docs/STYLES.md` §6 "Color and texture"). Multi-colour meshes and bodies still use the
+  flat palette; a textured palette is the open follow-up.
 - 2026-11-07: **movement set.** Crouch (LeftControl) and prone (C) stances
   (`client/StanceController`, speeds and transition times in `Config.Player.Stances`,
   camera pivot per stance in `Config.Camera.PivotHeight`); vault/climb in place of the

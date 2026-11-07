@@ -30,6 +30,30 @@ local HILL_COLOR = Color3.fromRGB(102, 96, 78)
 local SLOPE_COLOR = Color3.fromRGB(82, 74, 60)
 local WALL_COLOR = Color3.fromRGB(104, 100, 92)
 local PAINT_COLOR = Color3.fromRGB(214, 214, 208)
+local METAL_COLORS = {
+	Color3.fromRGB(48, 50, 54),
+	Color3.fromRGB(52, 56, 60),
+	Color3.fromRGB(40, 42, 46),
+}
+
+-- Roblox built-in materials give the flat ground parts surface texture for free (engine
+-- textures, no upload, scaled down on low graphics settings) and drive the footstep surface
+-- in FootstepController. Road paint stays SmoothPlastic. docs/STYLES.md §6 "Color and texture".
+local function surfaceMaterial(color: Color3): Enum.Material
+	if color == GROUND_COLOR or color == HILL_COLOR or color == SLOPE_COLOR then
+		return Enum.Material.Ground
+	elseif color == ROAD_COLOR then
+		return Enum.Material.Asphalt
+	elseif color == CONCRETE_COLOR or color == WALL_COLOR then
+		return Enum.Material.Concrete
+	end
+	for _, metal in METAL_COLORS do
+		if color == metal then
+			return Enum.Material.Metal
+		end
+	end
+	return Enum.Material.SmoothPlastic
+end
 
 -- Raised plateaus. `top` is the flat size (X, Z), `height` the rise above `base` (default
 -- y=0, so tiers stack). Each side gets a wedge embankment `height * 1.2` studs deep (~40
@@ -275,7 +299,7 @@ local function makePart(
 	part.CFrame = cframe
 	part.Anchored = true
 	part.CanCollide = true
-	part.Material = Enum.Material.SmoothPlastic
+	part.Material = surfaceMaterial(color)
 	part.Color = color
 	part.TopSurface = Enum.SurfaceType.Smooth
 	part.BottomSurface = Enum.SurfaceType.Smooth

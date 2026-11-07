@@ -211,8 +211,18 @@ Lower is always acceptable. Add triangles only where the silhouette needs them.
   Each face's UVs collapse to a single point inside its swatch. One texture ⇒ one material
   ⇒ one draw-call batch per mesh type. Keep the palette file in `assets/3d/palette.png` and
   its swatch map in `assets/3d/palette.md`.
-- Single-color props may skip the texture and use the MeshPart `Color` with
-  `Material = SmoothPlastic` instead; cheaper still.
+- **Surface materials (2026-11-07).** Flat colour read as plastic, so surfaces now carry
+  Roblox's built-in materials (engine textures: no upload, scaled down on low graphics
+  settings, they also drive the footstep surface). Arena Parts get theirs from their
+  colour in `ArenaService.surfaceMaterial`: dust/hills/slopes Ground, roads Asphalt,
+  pads/walls Concrete, generator Metal; road paint stays SmoothPlastic. A mesh whose
+  swatches are tones of one material drops the palette texture (a `TextureID` hides the
+  material) and takes a `surface = { material, color }` in `MeshAssets.MESHES`: T-wall
+  and jersey Concrete, rust container CorrodedMetal, olive container and lamp post Metal,
+  hesco/sandbags/tent Fabric, dead tree Wood. Their small accent swatches (stencil band,
+  reflectors) are lost; accepted. Multi-colour meshes (bus, humvee, ruin, towers,
+  checkpoint, characters, Infected, props) keep the palette until a textured palette
+  (detail painted into each swatch, real UVs) replaces the flat one.
 - No normal maps, no roughness/metalness maps, no `SurfaceAppearance`, no transparency on
   geometry (glass = opaque tinted facets).
 
@@ -380,6 +390,9 @@ when the player stands inside it, so a hollow ring is a later polish item.
   stroke already on the cards. Generator is the source of truth, not hand-edited SVGs.
 - 2026-11-05: Committed to low-poly flat-shaded 3D for all future assets with a single
   shared palette texture, driven by performance goals and the planned Blender workflow.
+- 2026-11-07: Owner wants texture, not plain colour. Built-in Roblox materials on the arena
+  Parts and on one-material meshes (§6 "Color and texture"); measured 60 fps, no frame
+  cost. Next: a textured palette for the multi-colour meshes.
 - 2026-11-07: Owner direction for the Infected: no "zombie green". Move the skin rows toward
   Resident Evil bio-horror (lesions, pustules, exposed flesh, bruised pale skin, wet red) with
   `rebuilt`/`strain` as the strain's two colours. Backlog; see handoff/README.md.

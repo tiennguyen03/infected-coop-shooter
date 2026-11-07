@@ -25,6 +25,10 @@ type MeshDef = {
 	solid: boolean?,
 	offset: Vector3?,
 	fidelity: Enum.CollisionFidelity?, -- default Box; thin/open pieces use a tighter hull
+	-- `surface` = a one-material mesh drawn with a Roblox built-in material instead of the
+	-- palette texture (the texture would hide it): `color` is its palette hex. Only for meshes
+	-- whose swatches are tones of one material; multi-colour meshes keep the palette.
+	surface: { material: Enum.Material, color: Color3 }?,
 }
 
 -- `size` is the in-game size in studs (the mesh is scaled to it). Blender sizes are in
@@ -56,11 +60,13 @@ local MESHES: { [string]: MeshDef } = {
 		meshId = "rbxassetid://83842095201437",
 		size = Vector3.new(6, 2.75, 2),
 		solid = true,
+		surface = { material = Enum.Material.Concrete, color = Color3.fromRGB(124, 122, 116) }, -- concrete
 	},
 	env_sandbag_bunker = {
 		meshId = "rbxassetid://72798329648015",
 		size = Vector3.new(12.8, 6.3, 10.8),
 		solid = true,
+		surface = { material = Enum.Material.Fabric, color = Color3.fromRGB(158, 131, 90) }, -- tan
 	},
 	env_guard_tower = {
 		meshId = "rbxassetid://140295675948906",
@@ -77,11 +83,13 @@ local MESHES: { [string]: MeshDef } = {
 		meshId = "rbxassetid://90739805417437",
 		size = Vector3.new(22.1, 9.55, 9.2),
 		solid = true,
+		surface = { material = Enum.Material.Metal, color = Color3.fromRGB(99, 110, 66) }, -- olive
 	},
 	env_container_rust = {
 		meshId = "rbxassetid://108583453603951",
 		size = Vector3.new(22.1, 9.55, 9.2),
 		solid = true,
+		surface = { material = Enum.Material.CorrodedMetal, color = Color3.fromRGB(122, 67, 40) }, -- rust
 	},
 	env_wreck_humvee = {
 		meshId = "rbxassetid://101500567016827",
@@ -92,11 +100,13 @@ local MESHES: { [string]: MeshDef } = {
 		meshId = "rbxassetid://123453107626792",
 		size = Vector3.new(8, 12.5, 2.6),
 		solid = true,
+		surface = { material = Enum.Material.Concrete, color = Color3.fromRGB(124, 122, 116) }, -- concrete
 	},
 	env_hesco = {
 		meshId = "rbxassetid://76249676881241",
 		size = Vector3.new(6.22, 4.58, 4.72),
 		solid = true,
+		surface = { material = Enum.Material.Fabric, color = Color3.fromRGB(158, 131, 90) }, -- tan
 	},
 	env_comm_tower = {
 		meshId = "rbxassetid://121850127656343",
@@ -115,6 +125,7 @@ local MESHES: { [string]: MeshDef } = {
 		size = Vector3.new(19.2, 8.6, 12),
 		solid = true,
 		fidelity = Enum.CollisionFidelity.PreciseConvexDecomposition, -- the gable roof is walkable
+		surface = { material = Enum.Material.Fabric, color = Color3.fromRGB(99, 110, 66) }, -- olive
 	},
 	env_checkpoint = {
 		meshId = "rbxassetid://71573561117915",
@@ -127,12 +138,14 @@ local MESHES: { [string]: MeshDef } = {
 		size = Vector3.new(4.97, 13.98, 7.09),
 		solid = true,
 		fidelity = Enum.CollisionFidelity.Hull,
+		surface = { material = Enum.Material.Wood, color = Color3.fromRGB(48, 53, 59) }, -- dark
 	},
 	env_lamp_post = {
 		meshId = "rbxassetid://132474171948585",
 		size = Vector3.new(4.9, 13, 1.2),
 		solid = true,
 		fidelity = Enum.CollisionFidelity.Hull,
+		surface = { material = Enum.Material.Metal, color = Color3.fromRGB(99, 109, 119) }, -- gun
 	},
 	-- The Chosen (assets/3d pc_<class>_<limb>): player bodies, swapped onto the player's R15
 	-- rig by PlayerSetup via dressModel. Only Assault is uploaded; the other four classes are
@@ -385,9 +398,16 @@ local function buildTemplate(folder: Folder, name: string, def: MeshDef)
 	end
 	local part = result :: MeshPart
 	part.Name = name
-	part.TextureID = PALETTE_TEXTURE
 	part.Size = def.size
-	part.Material = Enum.Material.SmoothPlastic
+	local surface = def.surface
+	if surface then
+		part.TextureID = ""
+		part.Material = surface.material
+		part.Color = surface.color
+	else
+		part.TextureID = PALETTE_TEXTURE
+		part.Material = Enum.Material.SmoothPlastic
+	end
 	part.Anchored = true
 	part.CanCollide = def.solid == true
 	part.CanQuery = def.solid == true
