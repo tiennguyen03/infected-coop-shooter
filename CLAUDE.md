@@ -18,7 +18,10 @@ Read on demand, not up front:
   decisions. Read before touching run flow, pause, XP, death, spawning, or objectives.
 - `docs/sprints/` — one doc per shipped sprint; linked from HISTORY.md.
 - `.claude/agents/` — design subagents: lore-developer, systems-designer, level-designer,
-  playtest-critic. Use them for design calls in their area before building.
+  playtest-critic. Use them for design calls in their area before building. They are
+  read-only and hand back paste-ready doc text: apply what the owner approves, in the same
+  commit as the work. performance-reviewer checks a feature against the STYLES budgets
+  before it ships.
 
 ## Guiding rule
 
