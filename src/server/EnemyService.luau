@@ -9,8 +9,13 @@
 -- EnemyDefinitions.ClimbHeight goes over it (Shared.Ledge; the root is anchored and driven
 -- along the ledge path for Config.Movement.Infected.Duration seconds while its climb clip
 -- plays); taller cover falls through to the nudge rule.
+-- Vertical chase (EQ-B1, 2026-11-07): a target more than Config.Enemies.PathfindVerticalGap
+-- above a melee form near a kit building (ArenaService footprints) is followed on a
+-- PathfindingService path (doors, stairs, ramps) by up to PathfindingMax bodies at once;
+-- a failed path, or no slot, falls back to the straight chase.
 
 local CollectionService = game:GetService("CollectionService")
+local PathfindingService = game:GetService("PathfindingService")
 local PhysicsService = game:GetService("PhysicsService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -22,6 +27,7 @@ local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
 local Animations = require(ReplicatedStorage.Shared.Animations)
 local Ledge = require(ReplicatedStorage.Shared.Ledge)
 local RunStates = require(ReplicatedStorage.Shared.RunStates)
+local ArenaService = require(script.Parent.ArenaService)
 local DifficultyService = require(script.Parent.DifficultyService)
 local EnemyProjectileService = require(script.Parent.EnemyProjectileService)
 local ItemEffectService = require(script.Parent.ItemEffectService)
@@ -74,7 +80,18 @@ type Zombie = {
 	lastHurtVoiceAt: number,
 	climb: Climb?,
 	climbTracks: { low: AnimationTrack?, high: AnimationTrack? },
+	-- Vertical chase: holds one of the PathfindingMax slots; the path being followed; a
+	-- ComputeAsync in flight; when the last one was requested.
+	pathing: boolean,
+	path: Path?,
+	pathPending: boolean,
+	pathObject: PathInstance?, -- one engine Path per body, reused across ComputeAsync calls
+	pathRequestedAt: number,
 }
+
+type Path = { waypoints: { PathWaypoint }, index: number }
+-- The engine's Path instance (the module's own `Path` type is the waypoint list above).
+type PathInstance = typeof(game:GetService("PathfindingService"):CreatePath())
 
 -- A climb in progress: the root is anchored and carried from `start` over the ledge.
 type Climb = {
@@ -220,6 +237,7 @@ local function spawnZombie(groundPosition: Vector3, typeName: string)
 
 	local model = template:Clone()
 	model.Name = definition.DisplayName
+	model.ModelStreamingMode = Enum.ModelStreamingMode.Atomic -- a rig never half-streams
 	model:SetAttribute("EnemyType", typeName)
 	if definition.Scale ~= 1 then
 		model:ScaleTo(definition.Scale)
@@ -333,6 +351,10 @@ local function spawnZombie(groundPosition: Vector3, typeName: string)
 		lastHurtVoiceAt = 0,
 		climb = nil,
 		climbTracks = {},
+		pathing = false,
+		path = nil,
+		pathPending = false,
+		pathRequestedAt = 0,
 	}
 	if definition.ClimbHeight then
 		pcall(function()
@@ -564,6 +586,65 @@ local function stepProjectileZombie(zombie: Zombie, now: number)
 	end
 end
 
+-- Vertical chase helpers. A body wants a path when its target is well above it near a kit
+-- building (a floor, a roof, a perch reached by stairs or a ramp the straight chase and the
+-- nudge rule never find).
+local function wantsPath(here: Vector3, goal: Vector3): boolean
+	local settings = Config.Enemies
+	return goal.Y - here.Y > settings.PathfindVerticalGap
+		and ArenaService.buildingDistance(goal) <= settings.PathfindBuildingRadius
+end
+
+local function requestPath(zombie: Zombie, here: Vector3, goal: Vector3, now: number)
+	zombie.pathPending = true
+	zombie.pathRequestedAt = now
+	local settings = Config.Enemies
+	local path = zombie.pathObject
+	if not path then
+		path = PathfindingService:CreatePath({
+			AgentRadius = settings.PathAgentRadius,
+			AgentHeight = settings.PathAgentHeight,
+			AgentCanJump = false,
+			AgentCanClimb = false, -- ladders are the squad's (Ladder collision group)
+			WaypointSpacing = settings.PathWaypointSpacing,
+		})
+		zombie.pathObject = path
+	end
+	local enginePath: PathInstance = path
+	task.spawn(function()
+		local ok = pcall(enginePath.ComputeAsync, enginePath, here, goal)
+		zombie.pathPending = false
+		if ok and enginePath.Status == Enum.PathStatus.Success and zombie.model.Parent then
+			zombie.path = { waypoints = enginePath:GetWaypoints(), index = 2 }
+		else
+			zombie.path = nil
+		end
+	end)
+end
+
+-- Moves toward the next waypoint; false when there is no usable path (chase straight).
+local function followPath(zombie: Zombie, here: Vector3): boolean
+	local path = zombie.path
+	if not path then
+		return false
+	end
+	local reach = Config.Enemies.PathWaypointReach
+	while path.index <= #path.waypoints do
+		local waypoint = path.waypoints[path.index].Position
+		if Vector3.new(waypoint.X - here.X, 0, waypoint.Z - here.Z).Magnitude > reach then
+			break
+		end
+		path.index += 1
+	end
+	local target = path.waypoints[path.index]
+	if not target then
+		zombie.path = nil
+		return false
+	end
+	zombie.humanoid:MoveTo(target.Position)
+	return true
+end
+
 local function stepZombies()
 	-- Soft pause: stop everything in place and skip AI/attacks.
 	local paused = PauseService.isPaused()
@@ -578,6 +659,12 @@ local function stepZombies()
 	end
 
 	local now = os.clock()
+	local pathingCount = 0
+	for _, zombie in zombies do
+		if zombie.pathing then
+			pathingCount += 1
+		end
+	end
 	for index = #zombies, 1, -1 do
 		local zombie = zombies[index]
 		if not zombie.model.Parent or zombie.humanoid.Health <= 0 then
@@ -619,6 +706,33 @@ local function stepZombies()
 				if targetRoot then
 					local here = zombie.root.Position
 					local goal = targetRoot.Position
+					-- Vertical chase: take or give back a pathing slot, follow the path.
+					local wants = wantsPath(here, goal)
+					if
+						wants
+						and not zombie.pathing
+						and pathingCount < Config.Enemies.PathfindingMax
+					then
+						zombie.pathing = true
+						pathingCount += 1
+					elseif not wants and zombie.pathing then
+						zombie.pathing = false
+						zombie.path = nil
+						pathingCount -= 1
+					end
+					if zombie.pathing then
+						if
+							not zombie.pathPending
+							and now - zombie.pathRequestedAt >= Config.Enemies.PathfindInterval
+						then
+							requestPath(zombie, here, goal, now)
+						end
+						if followPath(zombie, here) then
+							zombie.lastRepathPosition = here
+							attackIfTouching(zombie, now)
+							continue
+						end
+					end
 					local stuck = (here - zombie.lastRepathPosition).Magnitude
 						< NUDGE_STUCK_DISTANCE
 					if stuck and (goal - here).Magnitude > zombie.attackRange then
@@ -643,18 +757,64 @@ local function stepZombies()
 	end
 end
 
+-- Open ground: not a dressing piece, a perch, a gantry or a kit building (the Infected
+-- never appear on a roof or a container, and never inside a room). Terrain, roads, hills
+-- and the highway qualify.
+local BLOCKED_SPAWN_PARENTS = { "Dressing", "Buildings", "Perches", "DeckGantry", "Landmarks" }
+local function isOpenGround(hit: RaycastResult?): boolean
+	if not hit then
+		return false
+	end
+	local ancestor: Instance? = hit.Instance
+	while ancestor and ancestor ~= workspace do
+		if table.find(BLOCKED_SPAWN_PARENTS, ancestor.Name) then
+			return false
+		end
+		ancestor = ancestor.Parent
+	end
+	return true
+end
+
+-- A ring around `center`; retries (Config.Zombies.SpawnAttempts) until the candidate is open
+-- ground outside every building footprint, then settles for the last one.
 local function groundPositionNear(
 	center: Vector3,
 	minDistance: number,
 	maxDistance: number
 ): Vector3
-	local angle = math.random() * math.pi * 2
-	local distance = math.random(minDistance, maxDistance)
-	local x = center.X + math.cos(angle) * distance
-	local z = center.Z + math.sin(angle) * distance
-	local result = workspace:Raycast(Vector3.new(x, center.Y + 50, z), Vector3.new(0, -200, 0))
-	local groundY = if result then result.Position.Y else 0
-	return Vector3.new(x, groundY, z)
+	local candidate = center
+	-- Bodies are not ground: a spawn must not land on an Infected, a bot or a player.
+	local exclude: { Instance } = {}
+	for _, zombie in zombies do
+		table.insert(exclude, zombie.model)
+	end
+	for _, member in Squad.living() do
+		local root = member.root
+		local body = root and root.Parent
+		if body then
+			table.insert(exclude, body)
+		end
+	end
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances = exclude
+	for _ = 1, Config.Zombies.SpawnAttempts do
+		local angle = math.random() * math.pi * 2
+		local distance = math.random(minDistance, maxDistance)
+		local x = center.X + math.cos(angle) * distance
+		local z = center.Z + math.sin(angle) * distance
+		local result =
+			workspace:Raycast(Vector3.new(x, center.Y + 50, z), Vector3.new(0, -200, 0), params)
+		local groundY = if result then result.Position.Y else 0
+		candidate = Vector3.new(x, groundY, z)
+		if
+			isOpenGround(result)
+			and not ArenaService.insideBuilding(candidate, Config.Zombies.SpawnBuildingMargin)
+		then
+			return candidate
+		end
+	end
+	return candidate
 end
 
 -- Spawns ring a random living squad member (#6): never a dead body or an empty pad.

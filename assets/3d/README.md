@@ -5,10 +5,10 @@ at or hand-tweak anything. Collections inside it:
 
 | Collection | Contents |
 |---|---|
-| `Props` | world objects dropped by services: ammo crate, repulsor mine, drone, drone beacon, plague rat |
+| `Props` | world objects dropped by services: ammo crate, repulsor mine, drone, drone beacon, plague rat; set-dressing props (2026-11-07): cot, generator, light tower, fuel bladder, pallet, body bag, dumpster, plank, civilian car, portable toilet, chainlink panel, concertina |
 | `Weapons` | held tools (rifle) |
 | `Pickups` | XP orb |
-| `Environment` | Stage 1 set dressing, all built to the 5-stud character (`CHAR_H`, `DOOR_H`, `STOREY`, `COVER_H` constants in the script): barrier, sandbags, tower, ruin, containers, humvee wreck, T-wall, hesco, comm tower, tent, checkpoint, dead tree, lamp post, transit bus |
+| `Environment` | Stage 1 set dressing, all built to the 5-stud character (`CHAR_H`, `DOOR_H`, `STOREY`, `COVER_H`, `RUIN_*` constants in the script): barrier, sandbags, tower, ruin, containers, humvee wreck, T-wall, hesco (+ tall), comm tower, tent, checkpoint, dead tree, lamp post, transit bus, crib stack, deck plate |
 | `Chosen` | player limb sets `pc_<class>_<limb>` for assault (Weller), k9 (Cole), epi (Reyes), recon (Cross), engineer (Kane) (`PC_CLASSES`, `_pc_limb`, the shared `_pc_carrier`); only assault is uploaded and worn in game |
 | `Infected` | enemy limb sets: `inf_<walker|runner|brute|hocker>_<limb>`, 9 limbs per type (left/right share), one builder function per type (`walker_limb`...) from the sheets in `docs/CHARACTERS.md` |
 | `_Reference` | a 5-stud human block for scale; never exported |
@@ -50,30 +50,50 @@ Add `-- --only wpn_rifle prop_drone` to build a subset.
 | pick_xp_orb | 80 | center | XPOrbService sphere part |
 | prop_plague_rat | 204 | bottom | PlagueRatService body+head+tail parts |
 | env_barrier_jersey | 72 | bottom | 6 x 2.75 x 2 concrete traffic barrier |
-| env_sandbag_bunker | 552 | bottom | 12 x 10 U-emplacement, COVER_H (4) walls |
-| env_guard_tower | 564 | bottom | 10 x 10 timber tower, deck at 14, 27 overall (PreciseConvexDecomposition collision) |
-| env_ruin_building | 816 | bottom | 30 x 20 two-storey block (10.5-stud storeys, real doorway), sealed |
+| env_sandbag_bunker | 552 | bottom | 12 x 10 U-emplacement, COVER_H (4) walls; colliders: 3 walls, open top and +Z |
+| env_guard_tower | 564 | bottom | 10 x 10 timber tower, deck at 14, 27 overall; v3 2026-11-07 rail gate on the ladder (+Y) side; colliders: legs, deck, rails + TrussPart ladder |
+| env_ruin_building | ~900 | bottom | v2 2026-11-07: 30 x 20 block on 10-stud storeys, 4 x 8 doorway, windows sill 4 / head 9.4, back wall one storey with a 6-wide breach, slab top 10; colliders make it enterable (26) or a sealed shell (5) |
 | env_container_olive / _rust | 408 | bottom | ISO container 21.5 x 8.7 x 9.3 |
 | env_wreck_humvee | 392 | bottom | burnt truck 16.5 x 7.8 x 6.5, hood = COVER_H |
 | env_twall | 84 | bottom | concrete blast wall 8 x 12 |
 | env_hesco | 240 | bottom | gabion 6 x 4.5 x 4.4 |
-| env_comm_tower | 528 | bottom | 40-stud lattice mast, the Stage 1 landmark (PreciseConvexDecomposition collision) |
-| env_tent | 124 | bottom | 16 x 12 olive tent, ridge at 8, walkable roof slope (PreciseConvexDecomposition collision) |
-| env_checkpoint | 192 | bottom | guard booth + 14-stud boom (PreciseConvexDecomposition collision) |
+| env_hesco_tall | 360 | bottom | double-height gabion 6.2 x 8.9 x 4.7 (the Pens ring; placed with the hesco mesh stretched until uploaded) |
+| env_crib_stack | 168 | bottom | timber cribbing 1.2 x 2.8 x 2.6 under the Scrapes' T-walls (Parts stand in) |
+| env_deck_plate | 84 | bottom | steel plate 12 x 0.33 x 5 for container roof chains |
+| env_comm_tower | 528 | bottom | 40-stud lattice mast, the Stage 1 landmark (Box collision + composite colliders, 2026-11-07) |
+| env_tent | 124 | bottom | 16 x 12 olive tent, ridge at 8, walkable roof slope (Box collision + composite colliders, 2026-11-07) |
+| env_checkpoint | 192 | bottom | guard booth + 14-stud boom (Box collision + composite colliders, 2026-11-07) |
 | env_dead_tree | 96 | bottom | 14-stud bare tree (Hull collision) |
 | env_lamp_post | 76 | bottom | 13-stud street light (Hull collision) |
 | env_bus | 712 | bottom | 42-stud transit bus, 12.5 tall (Hocker-proof cover); the Gate bus line, Mile 14's jam |
+| prop_cot | 108 | bottom | field cot 6.5 x 2.1 x 3 (huts, tents, the ruin) |
+| prop_generator | 172 | bottom | towed generator 8 x 5.2 x 4.5 |
+| prop_light_tower | 260 | bottom | mast light tower 4.7 x 18 x 3.9, offset (0.35, 8.975, 0) |
+| prop_fuel_bladder | 92 | bottom | collapsible fuel bladder 11 x 3 x 7.4 |
+| prop_pallet | 228 | bottom | wooden pallet 4 x 0.57 x 4 |
+| prop_body_bag | 44 | bottom | 6.6 x 0.95 x 2.2, offset (0.1, 0.475, 0) |
+| prop_dumpster | 164 | bottom | 7.5 x 4.4 x 4.2 (a Walker step: climb 5 up, 4.6 more to a 9 roof) |
+| prop_plank | 48 | bottom | 10 x 0.4 x 2 |
+| prop_civilian_car | 384 | bottom | abandoned hatchback 15.7 x 4.8 x 7.5 |
+| prop_portable_toilet | 92 | bottom | 4.3 x 8.45 x 4.4, offset (0, 4.225, -0.045) |
+| prop_chainlink_panel | 268 | bottom | fence panel 12 x 7 x 0.3 (see-through) |
+| prop_concertina | 288 | bottom | razor wire coil 12.1 x 2.9 x 2.9 |
 | inf_walker_* / inf_runner_* / inf_brute_* / inf_hocker_* | 1.5k / 1.9k / 2.1k / 1.4k per body (caps 1.6k / 2.0k / 2.4k / 2.2k, `BODY_TRI_CAP`) | center | the 15 R15 limb MeshParts of each Infected (`MeshAssets.dressInfected`); skin v2 + limb geometry v2 2026-11-07 |
 | pc_assault_* | ~600 per body | center | Weller, the player's 15 R15 limb MeshParts (`PlayerSetup` -> `MeshAssets.dressModel`); v2 2026-11-07 |
 | pc_k9_* / pc_epi_* / pc_recon_* / pc_engineer_* | ~600 per body | center | Cole, Reyes, Cross, Kane: built + previewed, not uploaded (no class system yet) |
 | ref_inf_* / ref_pc_* | — | bottom | assembled preview figures, never exported |
 
 All far under the budgets in `docs/STYLES.md` section 6. Dressing positions live in
-`ArenaService.DRESSING` (x/z of the bounds centre + yaw; ground height is found by raycast so
-pieces sit on the hills). Buildings are solid blocks: the Infected have no pathfinding, so
-enterable interiors would be safe spots. Mesh pivots do not survive import (a MeshPart is
-centred on its bounds). Every `env_*` preview renders with the 5-stud reference figure beside
-it: check scale there before uploading.
+`ArenaService.DRESSING` / `PROPS` (x/z of the bounds centre + yaw; ground height is found by
+raycast so pieces sit on the hills; `lift`, `floor`, `shell`, `shadow` per entry). Collision
+is either the mesh's own Box/Hull or a list of invisible collider boxes in `MeshAssets`
+(`colliders`, written in the build's design coordinates: the build prints `offset <name>`,
+the bounds centre in Roblox axis order, for every asset). Enterable interiors are fine now
+that the Infected path up to a raised target (`docs/LEVELS.md` A8/A14). Mesh pivots do not
+survive import (a MeshPart is centred on its bounds). Every `env_*` preview renders with the
+5-stud reference figure beside it: check scale there before uploading. A mesh registered with
+`meshId = ""` (the new props, crib and deck plate) is skipped at boot and listed in the server
+log until its id is pasted in.
 
 ### Infected and player bodies (limb swap, not a custom rig)
 

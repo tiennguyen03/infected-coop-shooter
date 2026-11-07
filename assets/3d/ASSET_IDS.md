@@ -10,6 +10,9 @@ Palette texture (v4, 2026-11-07, skin v2: cells 25-27 and 43-56 become the `pall
 **`115366221483568`** (the `TextureID`). v3 was `120331040807954` → `110782102234723`, v2
 `88256641133314`, v1 `87519201884536`.
 
+Delta rework meshes (ruin v2, guard tower v3, tall hesco, crib stack, deck plate, 12 props)
+uploaded 2026-11-07 and wired; rows below.
+
 | Mesh | MeshId | Model asset (upload) | In-game Size (studs) | Placement note |
 |---|---|---|---|---|
 | pick_xp_orb | 95196197176639 | 134499655967097 | 1.0 x 1.0 x 1.0 | uniform; service sets Size per orb value |
@@ -21,16 +24,33 @@ Palette texture (v4, 2026-11-07, skin v2: cells 25-27 and 43-56 become the `pall
 | prop_plague_rat | 102065990394982 | 135041557109073 | 0.47 x 0.52 x 1.88 | 0.7x of Blender; PlagueRatService PrimaryPart, faces -Z |
 | env_barrier_jersey | 83842095201437 | 120043526542183 | 6 x 2.75 x 2 | solid; ArenaService dressing |
 | env_sandbag_bunker (v2) | 72798329648015 | 104090605242659 | 12.8 x 6.3 x 10.8 | solid; rebuilt 2026-11-06 to character scale |
-| env_guard_tower (v2) | 140295675948906 | 86672166489335 | 11 x 27.25 x 11 | solid; rebuilt 2026-11-06 |
-| env_ruin_building (v2) | 112569589520919 | 75991267203586 | 32.73 x 24.6 x 25.35 | solid; rebuilt 2026-11-06 (10.5-stud storeys) |
+| env_guard_tower (v2, superseded) | 140295675948906 | 86672166489335 | 11 x 27.25 x 11 | solid; rebuilt 2026-11-06 |
+| env_ruin_building (2026-11-06, superseded) | 112569589520919 | 75991267203586 | 32.73 x 24.6 x 25.35 | solid; rebuilt 2026-11-06 (10.5-stud storeys) |
 | env_container_olive | 90739805417437 | 132200158345619 | 22.1 x 9.55 x 9.2 | solid |
 | env_container_rust | 108583453603951 | 134169217220802 | 22.1 x 9.55 x 9.2 | solid |
 | env_wreck_humvee | 101500567016827 | 78504635684807 | 17 x 7.11 x 8.1 | solid; nose toward -X |
 | env_twall | 123453107626792 | 95876600065674 | 8 x 12.5 x 2.6 | solid |
 | env_hesco | 76249676881241 | 85372982024960 | 6.22 x 4.58 x 4.72 | solid |
+| env_crib_stack | 84277153513044 | 97934930804371 | 1.20 x 2.80 x 2.60 | pivot bottom, offset (0.000, 1.400, 0.000); cribbing under a lifted T-wall (Scrapes) |
+| env_deck_plate | 87378908913829 | 75563930153038 | 12.00 x 0.33 x 5.00 | pivot bottom, offset (0.000, 0.165, 0.000); walkable road plate between roofs |
+| env_guard_tower | 115469907629978 | 71139384321705 | 11.00 x 27.25 x 11.00 | pivot bottom, offset (0.000, 13.625, 0.000); v3 rail gate; composite colliders + TrussPart ladder; replaces 140295675948906 |
+| env_hesco_tall | 87652619532508 | 82867781130855 | 6.22 x 8.88 x 4.72 | pivot bottom, offset (0.000, 4.440, 0.000); two-high hesco (the Pens ring) |
+| env_ruin_building | 97636619216682 | 81543978894479 | 32.09 x 23.60 x 25.15 | pivot bottom, offset (0.847, 11.800, -0.517); v2 enterable; composite colliders, `shell` for outer ruins; replaces 112569589520919 |
+| prop_body_bag | 138563921819343 | 73076169933777 | 6.60 x 0.95 x 2.20 | pivot bottom, offset (0.100, 0.475, 0.000); prop (Delta rework 2026-11-07) |
+| prop_chainlink_panel | 135724153731021 | 125979502358349 | 12.06 x 7.00 x 0.30 | pivot bottom, offset (0.000, 3.500, 0.000); prop (Delta rework 2026-11-07) |
+| prop_civilian_car | 131007713996765 | 117334770094341 | 15.70 x 4.80 x 7.50 | pivot bottom, offset (0.000, 2.400, 0.000); prop (Delta rework 2026-11-07) |
+| prop_concertina | 110184084591558 | 137827068150629 | 12.13 x 2.89 x 2.93 | pivot bottom, offset (0.000, 1.447, 0.000); prop (Delta rework 2026-11-07) |
+| prop_cot | 111579390093659 | 137412438411439 | 6.50 x 2.10 x 2.95 | pivot bottom, offset (0.000, 1.048, 0.000); prop (Delta rework 2026-11-07) |
+| prop_dumpster | 135179607691394 | 108883133700802 | 7.50 x 4.40 x 4.24 | pivot bottom, offset (0.000, 2.200, 0.000); prop (Delta rework 2026-11-07) |
+| prop_fuel_bladder | 104420152748932 | 124744311184847 | 11.00 x 3.03 x 7.40 | pivot bottom, offset (0.000, 1.513, 0.000); prop (Delta rework 2026-11-07) |
+| prop_generator | 102465817431781 | 126567041190669 | 8.00 x 5.20 x 4.50 | pivot bottom, offset (0.000, 2.600, 0.000); prop (Delta rework 2026-11-07) |
+| prop_light_tower | 109327327787712 | 97029406002742 | 4.70 x 17.95 x 3.90 | pivot bottom, offset (0.350, 8.975, 0.000); prop (Delta rework 2026-11-07) |
+| prop_pallet | 85849726914721 | 95269029743380 | 4.05 x 0.57 x 4.00 | pivot bottom, offset (0.000, 0.285, 0.000); prop (Delta rework 2026-11-07) |
+| prop_plank | 85743587635839 | 81118116311720 | 10.00 x 0.40 x 2.00 | pivot bottom, offset (0.000, 0.200, 0.000); prop (Delta rework 2026-11-07) |
+| prop_portable_toilet | 106338287683599 | 137067132484823 | 4.30 x 8.45 x 4.39 | pivot bottom, offset (0.000, 4.225, -0.045); prop (Delta rework 2026-11-07) |
 | env_comm_tower | 121850127656343 | 136043833521905 | 8.04 x 44.7 x 8 | solid; landmark |
 | env_tent | 81822440803835 | 138062558436837 | 19.2 x 8.6 x 12 | solid; door on -X |
-| env_checkpoint | 71573561117915 | 129215637928455 | 22.05 x 9.5 x 7.4 | PreciseConvexDecomposition; booth at -X, boom along +X |
+| env_checkpoint | 71573561117915 | 129215637928455 | 22.05 x 9.5 x 7.4 | Box + composite colliders (2026-11-07); booth at -X, boom along +X |
 | env_dead_tree | 103119294791056 | 130464254006022 | 4.97 x 13.98 x 7.09 | Hull |
 | env_lamp_post | 132474171948585 | 84369687950095 | 4.9 x 13 x 1.2 | Hull; arm along +X |
 | inf_walker_head | 100636262646383 | 110247687735003 | 1.22, 1.29, 1.31 | R15 limb (skin v2 2026-11-07), offset -0.000, -0.016, -0.035 |

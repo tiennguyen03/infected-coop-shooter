@@ -217,7 +217,9 @@ Lower is always acceptable. Add triangles only where the silhouette needs them.
 - Model in **studs**: Blender scene unit scale `0.28` so 1 Blender unit = 1 stud
   (Roblox 1 stud ≈ 0.28 m). **Scale table** (constants in the build script, 2026-11-06):
   character 5, door 7.2 x 3.6, storey 10.5, window sill 3.2 / head 7.6, chest-high cover
-  4.0, ISO container 21.5 x 8.7 x 9.3, truck ~16 x 8 x 6.5. Every environment preview
+  4.0, ISO container 21.5 x 8.7 x 9.3, truck ~16 x 8 x 6.5. The ruin v2 (2026-11-07) and the
+  Part-built building kit use their own grid (`docs/LEVELS.md` B1: storey 9 / ruin 10, door
+  4 x 8, window sill 3.2 / head 8.6) sized to the vault and climb heights. Every environment preview
   renders with the 5-stud reference beside it. A standard R15 character is ~5 studs tall; doors ~7; a crate
   ~3. Apply all transforms before export.
 - Pivot: props at the bottom center; weapons at the grip point (where the hand holds it);
@@ -245,6 +247,17 @@ Lower is always acceptable. Add triangles only where the silhouette needs them.
   reflectors) are lost; accepted. Multi-colour meshes (bus, humvee, ruin, towers,
   checkpoint, characters, Infected, props) keep the palette until a textured palette
   (detail painted into each swatch, real UVs) replaces the flat one.
+- **Buildings and ground (2026-11-07).** The kit buildings (`docs/LEVELS.md` B) are plain
+  Parts in built-in materials per type, `Config.Arena.Materials`: Concrete for cinder block
+  (146,148,136), rendered shopfronts (158,148,126) and the Armoury (112,110,102); Brick
+  (118,86,70) for the church; WoodPlanks (98,80,58) for the Lines' huts and the pallet
+  ramps (110,88,60); CorrodedMetal (86,90,92) for the Shed; Metal (168,168,162) for
+  painted panel (the Pumps) and (58,60,64) for ladders and rails; DiamondPlate (92,94,98)
+  for the catwalk and the deck gantry; slabs (104,102,98) and roofs (84,82,78) Concrete.
+  Ground wear is thin no-collision sheets (`ArenaService.PATCHES`): Mud (70,60,48) at the
+  hill feet and as road puddles, Rock (96,92,86) in the yards, a darker Ground (74,68,58)
+  verge along both roads. The rust container is darker (92,50,30). No new meshes for any
+  of this.
 - No normal maps, no roughness/metalness maps, no `SurfaceAppearance`, no transparency on
   geometry (glass = opaque tinted facets).
 
@@ -258,15 +271,25 @@ Lower is always acceptable. Add triangles only where the silhouette needs them.
   `Anchored = true` (static), `CastShadow = false` for clutter under ~2 studs,
   `CollisionFidelity = Box` (or `Hull` for walkable geometry; never `PreciseConvex`
   for clutter), `RenderFidelity = Automatic`, `CanQuery = false` and `CanTouch = false`
-  for pure decoration.
+  for pure decoration. A piece the body moves through or onto (bunker, humvee, ruin,
+  towers, tent, checkpoint) lists **composite colliders** instead (`colliders = {{ size,
+  offset, yaw?, class? }}` in design coordinates; the build prints each asset's `offset`):
+  the MeshPart turns CanCollide off and `MeshAssets.addColliders` parents invisible boxes
+  (or a TrussPart ladder) to it, the whole thing an atomic Model. ~256 such boxes is the
+  ceiling for the stage.
 - Reuse by cloning one source MeshPart: identical `MeshId` shares geometry on the GPU.
 
 ### Performance budget (whole scene, the real priority)
 
 - Lighting `Technology = ShadowMap` (not Future), `GlobalShadows` on; only large
-  objects cast shadows. At most 4–6 dynamic lights alive at once (muzzle flashes die in
-  <0.1 s).
-- `StreamingEnabled = true` once maps exceed the current arena.
+  objects cast shadows: jerseys, bunkers, hesco and all but every ninth Gate T-wall cast
+  none (`MeshDef.castShadow`, `Dressing.shadow`). At most 4–6 dynamic lights alive at once
+  (muzzle flashes die in <0.1 s).
+- `StreamingEnabled = true` (2026-11-07, `default.project.json`: target radius 384, min
+  128). The arena terrain and the skyline (`workspace.TestArena`) are `Persistent`;
+  buildings and dressing live beside it in `workspace.Buildings` / `workspace.Dressing`
+  (a Persistent model's descendants never stream out), where each building, collider piece,
+  enemy and bot rig is an `Atomic` Model so nothing half-streams.
 - Particles: palette-colored flat sprites, emit bursts (`Emit(n)`) not continuous rates;
   cap concurrent burst emitters (death bursts ≤ 1 per enemy, rate-limited at 40+ alive).
 - Keep live Instance counts low: enemies ≤ 60, projectiles pooled (already done),

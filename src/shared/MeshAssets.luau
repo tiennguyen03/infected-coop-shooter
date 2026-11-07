@@ -6,6 +6,19 @@
 -- scale: MeshSize stays 0). Services call `MeshAssets.clone(name)` and fall back to their old
 -- placeholder Part when it returns nil (template missing or still loading), so a slow asset
 -- fetch never breaks gameplay. Asset ids are recorded in assets/3d/ASSET_IDS.md.
+--
+-- Composite colliders (Delta rework, 2026-11-07): a mesh with `colliders` renders only; its
+-- collision and raycast shape is the listed invisible Parts (walls, steps, decks, a
+-- TrussPart ladder), so bunkers, humvees, towers and the ruin have real openings and steps
+-- that the vault/climb code (Shared.Ledge: anchored, CanCollide parts) and the Infected
+-- climb read exactly. `offset` is the mesh bounds centre relative to the piece's design
+-- origin (the floor centre; printed by build_assets.py), so collider boxes are written in
+-- build coordinates. A `shell` is a cheaper sealed fallback set (outer ruins).
+-- An entry whose meshId is "" is registered but not uploaded yet: no template is built,
+-- `isUploaded` is false and ArenaService skips it without a warning. One that also names a
+-- `fallback` (an earlier upload of the same piece) is drawn as that earlier mesh, at its
+-- own size with plain solid collision: the new size and colliders describe the new FBX and
+-- must not be laid over the old one.
 
 local InsertService = game:GetService("InsertService")
 local RunService = game:GetService("RunService")
@@ -18,7 +31,15 @@ local PALETTE_TEXTURE = "rbxassetid://115366221483568"
 
 -- `solid` = a static obstacle: CanCollide + CastShadow on (buildings, barriers).
 -- `offset` = the mesh's bounds centre relative to its design origin (Infected limbs are
--- designed around the R15 limb centre; a MeshPart is centred on its bounds).
+-- designed around the R15 limb centre; environment pieces around the floor centre; a
+-- MeshPart is centred on its bounds).
+-- A collider box in design coordinates (Roblox axis order: x, up, z = Blender x, z, y).
+export type Collider = {
+	size: Vector3,
+	offset: Vector3, -- centre relative to the design origin
+	yaw: number?, -- degrees about the up axis (WedgePart roofs)
+	class: string?, -- "Part" (default), "WedgePart", "TrussPart" (a ladder)
+}
 type MeshDef = {
 	meshId: string,
 	size: Vector3,
@@ -29,6 +50,13 @@ type MeshDef = {
 	-- palette texture (the texture would hide it): `color` is its palette hex. Only for meshes
 	-- whose swatches are tones of one material; multi-colour meshes keep the palette.
 	surface: { material: Enum.Material, color: Color3 }?,
+	colliders: { Collider }?, -- composite collision; the mesh itself stops colliding
+	shell: { Collider }?, -- sealed cheaper set, chosen per placement (ArenaService `shell`)
+	castShadow: boolean?, -- override: small cover never casts (default = solid)
+	seeThrough: boolean?, -- fences and wire: solid to walk into, bullets and sight pass
+	-- The earlier upload that stands in while meshId is "" (see the header). At upload:
+	-- paste the new meshId and delete the fallback.
+	fallback: { meshId: string, size: Vector3, fidelity: Enum.CollisionFidelity? }?,
 }
 
 -- `size` is the in-game size in studs (the mesh is scaled to it). Blender sizes are in
@@ -61,23 +89,94 @@ local MESHES: { [string]: MeshDef } = {
 		size = Vector3.new(6, 2.75, 2),
 		solid = true,
 		surface = { material = Enum.Material.Concrete, color = Color3.fromRGB(124, 122, 116) }, -- concrete
+		castShadow = false,
 	},
+	-- Three sandbag walls (COVER_H 4: vaultable), open top, open toward +Z (yaw 0).
 	env_sandbag_bunker = {
 		meshId = "rbxassetid://72798329648015",
 		size = Vector3.new(12.8, 6.3, 10.8),
 		solid = true,
 		surface = { material = Enum.Material.Fabric, color = Color3.fromRGB(158, 131, 90) }, -- tan
+		offset = Vector3.new(0, 3.15, 0),
+		colliders = {
+			{ size = Vector3.new(0.8, 4, 10.8), offset = Vector3.new(-6, 2, 0) },
+			{ size = Vector3.new(0.8, 4, 10.8), offset = Vector3.new(6, 2, 0) },
+			{ size = Vector3.new(12.8, 4, 0.8), offset = Vector3.new(0, 2, -5) },
+		},
+		castShadow = false,
 	},
+	-- Legs, deck at 14, rails with a gate on the ladder (+Z) side, roof slab, and a TrussPart
+	-- ladder on the +Z face (Ladder collision group: the Infected never climb it).
+	-- v3 (rail gate) uploaded 2026-11-07.
 	env_guard_tower = {
-		meshId = "rbxassetid://140295675948906",
+		meshId = "rbxassetid://115469907629978",
 		size = Vector3.new(11, 27.25, 11),
 		solid = true,
-		fidelity = Enum.CollisionFidelity.PreciseConvexDecomposition, -- walk between the legs
+		offset = Vector3.new(0, 13.625, 0),
+		colliders = {
+			{ size = Vector3.new(0.7, 14, 0.7), offset = Vector3.new(-3.6, 7, -3.6) },
+			{ size = Vector3.new(0.7, 14, 0.7), offset = Vector3.new(3.6, 7, -3.6) },
+			{ size = Vector3.new(0.7, 14, 0.7), offset = Vector3.new(-3.6, 7, 3.6) },
+			{ size = Vector3.new(0.7, 14, 0.7), offset = Vector3.new(3.6, 7, 3.6) },
+			{ size = Vector3.new(9, 0.5, 9), offset = Vector3.new(0, 14.25, 0) },
+			{ size = Vector3.new(0.25, 4, 9), offset = Vector3.new(-4.4, 16.5, 0) },
+			{ size = Vector3.new(0.25, 4, 9), offset = Vector3.new(4.4, 16.5, 0) },
+			{ size = Vector3.new(9, 4, 0.25), offset = Vector3.new(0, 16.5, -4.4) },
+			{ size = Vector3.new(3.3, 4, 0.25), offset = Vector3.new(-2.85, 16.5, 4.4) },
+			{ size = Vector3.new(3.3, 4, 0.25), offset = Vector3.new(2.85, 16.5, 4.4) },
+			{ size = Vector3.new(11, 0.6, 11), offset = Vector3.new(0, 22.7, 0) },
+			{ size = Vector3.new(2, 14, 2), offset = Vector3.new(0, 7.5, 5), class = "TrussPart" },
+		},
 	},
+	-- Ruin v2 (2026-11-07): enterable ground floor (4 x 8 door in the -Z face, 6-wide breach
+	-- in the +Z face at x +7, vaultable front windows sill 4 / head 9.4), first floor slab at
+	-- 10.0 reached by mantling the one-storey back wall; no roof. `shell` seals it (5 parts)
+	-- for the outer ruins. v2 uploaded 2026-11-07.
 	env_ruin_building = {
-		meshId = "rbxassetid://112569589520919",
-		size = Vector3.new(32.73, 24.6, 25.35),
+		meshId = "rbxassetid://97636619216682",
+		size = Vector3.new(32.09, 23.6, 25.15),
 		solid = true,
+		offset = Vector3.new(0.847, 11.8, -0.517),
+		colliders = {
+			-- ground floor, front (-Z): sill bands, door lintel, head bands, jambs
+			{ size = Vector3.new(13, 4, 1), offset = Vector3.new(-8.5, 2, -9.5) },
+			{ size = Vector3.new(13, 4, 1), offset = Vector3.new(8.5, 2, -9.5) },
+			{ size = Vector3.new(7, 2, 1), offset = Vector3.new(0, 9, -9.5) },
+			{ size = Vector3.new(11.5, 0.6, 1), offset = Vector3.new(-9.25, 9.7, -9.5) },
+			{ size = Vector3.new(11.5, 0.6, 1), offset = Vector3.new(9.25, 9.7, -9.5) },
+			{ size = Vector3.new(1.2, 4, 1), offset = Vector3.new(-2.6, 6, -9.5) },
+			{ size = Vector3.new(1.2, 4, 1), offset = Vector3.new(2.6, 6, -9.5) },
+			-- ground floor sides (solid), back wall with the breach (x 4..10), its lintel
+			{ size = Vector3.new(1, 10, 20), offset = Vector3.new(-14.5, 5, 0) },
+			{ size = Vector3.new(1, 10, 20), offset = Vector3.new(14.5, 5, 0) },
+			{ size = Vector3.new(19, 10, 1), offset = Vector3.new(-5.5, 5, 9.5) },
+			{ size = Vector3.new(5, 10, 1), offset = Vector3.new(12.5, 5, 9.5) },
+			{ size = Vector3.new(6.4, 2, 1), offset = Vector3.new(7, 9, 9.5) },
+			-- slabs and the two interior pillars
+			{ size = Vector3.new(30, 0.3, 20), offset = Vector3.new(0, 0.15, 0) },
+			{ size = Vector3.new(30, 0.6, 20), offset = Vector3.new(0, 9.7, 0) },
+			{ size = Vector3.new(1, 9.4, 1), offset = Vector3.new(-5, 4.7, 0) },
+			{ size = Vector3.new(1, 9.4, 1), offset = Vector3.new(5, 4.7, 0) },
+			-- first floor: front sill (chest cover) and head band with the parapet, corners
+			{ size = Vector3.new(30, 3.2, 1), offset = Vector3.new(0, 11.6, -9.5) },
+			{ size = Vector3.new(30, 1.8, 1), offset = Vector3.new(0, 19.5, -9.5) },
+			{ size = Vector3.new(2.8, 5.4, 1), offset = Vector3.new(-13.6, 15.9, -9.5) },
+			{ size = Vector3.new(2.8, 5.4, 1), offset = Vector3.new(13.6, 15.9, -9.5) },
+			-- first floor sides: sill and head bands, back corner pillars
+			{ size = Vector3.new(1, 3.2, 20), offset = Vector3.new(-14.5, 11.6, 0) },
+			{ size = Vector3.new(1, 3.2, 20), offset = Vector3.new(14.5, 11.6, 0) },
+			{ size = Vector3.new(1, 1.4, 20), offset = Vector3.new(-14.5, 19.3, 0) },
+			{ size = Vector3.new(1, 1.4, 20), offset = Vector3.new(14.5, 19.3, 0) },
+			{ size = Vector3.new(1, 5.4, 2.8), offset = Vector3.new(-14.5, 15.9, 8.6) },
+			{ size = Vector3.new(1, 5.4, 2.8), offset = Vector3.new(14.5, 15.9, 8.6) },
+		},
+		shell = {
+			{ size = Vector3.new(30, 20.4, 1), offset = Vector3.new(0, 10.2, -9.5) },
+			{ size = Vector3.new(30, 10, 1), offset = Vector3.new(0, 5, 9.5) },
+			{ size = Vector3.new(1, 20, 20), offset = Vector3.new(-14.5, 10, 0) },
+			{ size = Vector3.new(1, 20, 20), offset = Vector3.new(14.5, 10, 0) },
+			{ size = Vector3.new(30, 0.6, 20), offset = Vector3.new(0, 9.7, 0) },
+		},
 	},
 	env_container_olive = {
 		meshId = "rbxassetid://90739805417437",
@@ -89,12 +188,19 @@ local MESHES: { [string]: MeshDef } = {
 		meshId = "rbxassetid://108583453603951",
 		size = Vector3.new(22.1, 9.55, 9.2),
 		solid = true,
-		surface = { material = Enum.Material.CorrodedMetal, color = Color3.fromRGB(122, 67, 40) }, -- rust
+		surface = { material = Enum.Material.CorrodedMetal, color = Color3.fromRGB(92, 50, 30) }, -- rust, darker (art pass 2026-11-07)
 	},
+	-- Three steps (nose toward -X): hood 4 (vault), cab 6.5 (climb), rear bed 4.8.
 	env_wreck_humvee = {
 		meshId = "rbxassetid://101500567016827",
 		size = Vector3.new(17, 7.11, 8.1),
 		solid = true,
+		offset = Vector3.new(-0.25, 3.557, 0),
+		colliders = {
+			{ size = Vector3.new(6.1, 4, 7.8), offset = Vector3.new(-5.7, 2, 0) },
+			{ size = Vector3.new(7.1, 6.5, 7.2), offset = Vector3.new(0.9, 3.25, 0) },
+			{ size = Vector3.new(3.8, 4.8, 7), offset = Vector3.new(6.35, 2.4, 0) },
+		},
 	},
 	env_twall = {
 		meshId = "rbxassetid://123453107626792",
@@ -107,12 +213,40 @@ local MESHES: { [string]: MeshDef } = {
 		size = Vector3.new(6.22, 4.58, 4.72),
 		solid = true,
 		surface = { material = Enum.Material.Fabric, color = Color3.fromRGB(158, 131, 90) }, -- tan
+		castShadow = false,
+	},
+	-- Two stacked units, 8.9 tall: Walkers (ClimbHeight 5) stop, Runners and players mantle.
+	env_hesco_tall = {
+		meshId = "rbxassetid://87652619532508",
+		size = Vector3.new(6.22, 8.88, 4.72),
+		solid = true,
+		surface = { material = Enum.Material.Fabric, color = Color3.fromRGB(158, 131, 90) }, -- tan
+	},
+	-- Concrete cribbing under a lifted T-wall (the Gate "Scrapes"): 1.2 wide, 2.8 tall.
+	env_crib_stack = {
+		meshId = "rbxassetid://84277153513044",
+		size = Vector3.new(1.2, 2.8, 2.6),
+		solid = true,
+		surface = { material = Enum.Material.Concrete, color = Color3.fromRGB(84, 82, 77) }, -- concrete_d
+		castShadow = false,
+	},
+	-- Steel road plate between roofs: 12 x 5, walkable.
+	env_deck_plate = {
+		meshId = "rbxassetid://87378908913829",
+		size = Vector3.new(12, 0.33, 5),
+		solid = true,
+		surface = { material = Enum.Material.DiamondPlate, color = Color3.fromRGB(99, 109, 119) }, -- gun
+		castShadow = false,
 	},
 	env_comm_tower = {
 		meshId = "rbxassetid://121850127656343",
 		size = Vector3.new(8.04, 44.7, 8),
 		solid = true,
-		fidelity = Enum.CollisionFidelity.PreciseConvexDecomposition,
+		offset = Vector3.new(0.022, 22.35, 0),
+		colliders = {
+			{ size = Vector3.new(8, 1.5, 8), offset = Vector3.new(0, 0.75, 0) },
+			{ size = Vector3.new(5.4, 43.2, 5.4), offset = Vector3.new(0, 23.1, 0) },
+		},
 	},
 	-- Transit bus (docs/LEVELS.md B): Hocker-proof cover, a lane wide across a road.
 	env_bus = {
@@ -120,18 +254,41 @@ local MESHES: { [string]: MeshDef } = {
 		size = Vector3.new(42.9, 12.75, 10.9),
 		solid = true,
 	},
+	-- Hull: the 4.5 walls (climbable) and two wedge roof slopes up to the ridge at 8.
 	env_tent = {
 		meshId = "rbxassetid://81822440803835",
 		size = Vector3.new(19.2, 8.6, 12),
 		solid = true,
-		fidelity = Enum.CollisionFidelity.PreciseConvexDecomposition, -- the gable roof is walkable
 		surface = { material = Enum.Material.Fabric, color = Color3.fromRGB(99, 110, 66) }, -- olive
+		offset = Vector3.new(0, 4.3, 0),
+		colliders = {
+			{ size = Vector3.new(16, 4.5, 12), offset = Vector3.new(0, 2.25, 0) },
+			{
+				size = Vector3.new(16, 3.5, 6),
+				offset = Vector3.new(0, 6.25, 3),
+				yaw = 180,
+				class = "WedgePart",
+			},
+			{
+				size = Vector3.new(16, 3.5, 6),
+				offset = Vector3.new(0, 6.25, -3),
+				class = "WedgePart",
+			},
+		},
 	},
+	-- Booth (9 tall, climbable) with its roof, the boom arm (4.4: vaultable) on its posts.
 	env_checkpoint = {
 		meshId = "rbxassetid://71573561117915",
 		size = Vector3.new(22.05, 9.5, 7.4),
 		solid = true,
-		fidelity = Enum.CollisionFidelity.PreciseConvexDecomposition, -- the boom arm, not a block
+		offset = Vector3.new(7.325, 4.75, 0),
+		colliders = {
+			{ size = Vector3.new(6, 9, 6), offset = Vector3.new(0, 4.5, 0) },
+			{ size = Vector3.new(7.4, 0.5, 7.4), offset = Vector3.new(0, 9.25, 0) },
+			{ size = Vector3.new(14, 0.45, 0.45), offset = Vector3.new(11.2, 4.2, -2) },
+			{ size = Vector3.new(0.8, 4.4, 0.8), offset = Vector3.new(4.2, 2.2, -2) },
+			{ size = Vector3.new(0.3, 3.4, 0.3), offset = Vector3.new(18.2, 1.7, -2) },
+		},
 	},
 	env_dead_tree = {
 		meshId = "rbxassetid://103119294791056",
@@ -147,6 +304,79 @@ local MESHES: { [string]: MeshDef } = {
 		fidelity = Enum.CollisionFidelity.Hull,
 		surface = { material = Enum.Material.Metal, color = Color3.fromRGB(99, 109, 119) }, -- gun
 	},
+	-- Delta props (assets/3d prop_*, built 2026-11-07, not uploaded: meshId "" until the ids
+	-- from assets/3d/ASSET_IDS.md land). Sizes are the build's Roblox dims. S = solid cover,
+	-- D = decoration (no collision), T = see-through (solid, bullets pass).
+	prop_cot = {
+		meshId = "rbxassetid://111579390093659",
+		size = Vector3.new(6.5, 2.1, 2.95),
+		solid = true,
+		castShadow = false,
+	}, -- S
+	prop_generator = {
+		meshId = "rbxassetid://102465817431781",
+		size = Vector3.new(8, 5.2, 4.5),
+		solid = true,
+	}, -- S
+	prop_light_tower = {
+		meshId = "rbxassetid://109327327787712",
+		size = Vector3.new(4.7, 17.95, 3.9),
+		solid = true,
+		offset = Vector3.new(0.35, 8.975, 0),
+	}, -- S
+	prop_fuel_bladder = {
+		meshId = "rbxassetid://104420152748932",
+		size = Vector3.new(11, 3.03, 7.4),
+		solid = true,
+		castShadow = false,
+	}, -- S
+	prop_pallet = {
+		meshId = "rbxassetid://85849726914721",
+		size = Vector3.new(4.05, 0.57, 4),
+		solid = true,
+		castShadow = false,
+	}, -- S
+	prop_body_bag = {
+		meshId = "rbxassetid://138563921819343",
+		size = Vector3.new(6.6, 0.95, 2.2),
+		offset = Vector3.new(0.1, 0.475, 0),
+	}, -- D
+	prop_dumpster = {
+		meshId = "rbxassetid://135179607691394",
+		size = Vector3.new(7.5, 4.4, 4.24),
+		solid = true,
+	}, -- S (a Walker step)
+	prop_plank = {
+		meshId = "rbxassetid://85743587635839",
+		size = Vector3.new(10, 0.4, 2),
+		solid = true,
+		castShadow = false,
+	}, -- S
+	prop_civilian_car = {
+		meshId = "rbxassetid://131007713996765",
+		size = Vector3.new(15.7, 4.8, 7.5),
+		solid = true,
+	}, -- S
+	prop_portable_toilet = {
+		meshId = "rbxassetid://106338287683599",
+		size = Vector3.new(4.3, 8.45, 4.39),
+		solid = true,
+		offset = Vector3.new(0, 4.225, -0.045),
+	}, -- S
+	prop_chainlink_panel = {
+		meshId = "rbxassetid://135724153731021",
+		size = Vector3.new(12.06, 7, 0.3),
+		solid = true,
+		seeThrough = true,
+		castShadow = false,
+	}, -- T
+	prop_concertina = {
+		meshId = "rbxassetid://110184084591558",
+		size = Vector3.new(12.13, 2.89, 2.93),
+		solid = true,
+		seeThrough = true,
+		castShadow = false,
+	}, -- T
 	-- The Chosen (assets/3d pc_<class>_<limb>): player bodies, swapped onto the player's R15
 	-- rig by PlayerSetup via dressModel. Only Assault is uploaded; the other four classes are
 	-- built in Blender (previews) and wait for a class system.
@@ -380,10 +610,36 @@ local MESHES: { [string]: MeshDef } = {
 	},
 }
 
+-- Swap in each pending entry's `fallback` (header): the earlier mesh at its own size, plain
+-- solid collision, none of the new entry's colliders or offset.
+do
+	local standIns: { [string]: MeshDef } = {}
+	for name, def in MESHES do
+		local fallback = def.fallback
+		if def.meshId == "" and fallback then
+			standIns[name] = {
+				meshId = fallback.meshId,
+				size = fallback.size,
+				fidelity = fallback.fidelity,
+				solid = def.solid,
+				surface = def.surface,
+				castShadow = def.castShadow,
+				seeThrough = def.seeThrough,
+			}
+		end
+	end
+	for name, def in standIns do
+		MESHES[name] = def
+	end
+end
+
 local templates: { [string]: MeshPart } = {}
 local warned: { [string]: boolean } = {}
 
 local function buildTemplate(folder: Folder, name: string, def: MeshDef)
+	if def.meshId == "" then
+		return -- registered, not uploaded yet (MeshAssets.isUploaded is false)
+	end
 	local ok, result = pcall(function()
 		-- Positional form: (meshId, collisionFidelity, renderFidelity). The options-table
 		-- form documented elsewhere fails here with "Argument 3 missing or nil".
@@ -410,12 +666,60 @@ local function buildTemplate(folder: Folder, name: string, def: MeshDef)
 		part.Material = Enum.Material.SmoothPlastic
 	end
 	part.Anchored = true
-	part.CanCollide = def.solid == true
-	part.CanQuery = def.solid == true
+	-- A piece with composite colliders only renders: the invisible Parts carry collision
+	-- and raycasts (see addColliders). See-through pieces collide but let rays through.
+	local physical = def.solid == true and def.colliders == nil
+	part.CanCollide = physical
+	part.CanQuery = physical and def.seeThrough ~= true
 	part.CanTouch = false
-	part.CastShadow = def.solid == true
+	part.CastShadow = if def.castShadow ~= nil then def.castShadow else def.solid == true
 	part.Parent = folder
 	templates[name] = part
+end
+
+-- True when the entry has an asset id (a template will exist once it has loaded).
+function MeshAssets.isUploaded(name: string): boolean
+	local def = MESHES[name]
+	return def ~= nil and def.meshId ~= ""
+end
+
+function MeshAssets.getSize(name: string): Vector3?
+	local def = MESHES[name]
+	return def and def.size
+end
+
+-- Builds the composite colliders of a placed piece as invisible anchored Parts parented to
+-- it (`useShell` picks the sealed fallback set). Returns how many were made. TrussParts go
+-- in the "Ladder" collision group (registered by ArenaService) so no Infected climbs one.
+function MeshAssets.addColliders(part: BasePart, name: string, useShell: boolean?): number
+	local def = MESHES[name]
+	if not def then
+		return 0
+	end
+	local list: { Collider }? = if useShell and def.shell then def.shell else def.colliders
+	if not list then
+		return 0
+	end
+	local origin = def.offset or Vector3.new(0, def.size.Y / 2, 0)
+	for index, collider in list do
+		local box = Instance.new((collider.class or "Part") :: any) :: BasePart
+		box.Name = `Collider{index}`
+		box.Size = collider.size
+		box.CFrame = part.CFrame
+			* CFrame.new(collider.offset - origin)
+			* CFrame.Angles(0, math.rad(collider.yaw or 0), 0)
+		box.Anchored = true
+		box.CanCollide = true
+		box.CanQuery = true
+		box.CanTouch = false
+		box.CastShadow = false
+		box.Transparency = 1
+		if box:IsA("TrussPart") then
+			box.CollisionGroup = "Ladder"
+		end
+		box.Parent = part
+	end
+	return #list
 end
 
 -- Yields until the template exists (or the timeout passes). For boot-time placement.

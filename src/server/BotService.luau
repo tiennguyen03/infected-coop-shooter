@@ -58,6 +58,8 @@ type Bot = {
 	target: Humanoid?, -- the Infected it is shooting (a new one costs ReactionTime)
 	reviving: Squad.Member?, -- the downed member this bot is reviving
 	reviveProgress: number, -- seconds held next to them
+	stuckFrom: Vector3?, -- where the follow last made progress, and when (Config.Bots.StuckSeconds)
+	stuckSince: number?,
 }
 
 local bots: { Bot } = {}
@@ -179,6 +181,7 @@ local function spawnBot(bot: Bot, position: Vector3)
 		MeshAssets.dressModel(rig, PlayerSetup.BODY)
 	end
 	rig:PivotTo(CFrame.new(position + Vector3.new(0, 3, 0)))
+	rig.ModelStreamingMode = Enum.ModelStreamingMode.Atomic -- a rig never half-streams
 	rig.Parent = folder
 	CollectionService:AddTag(rig, "SquadBot")
 	pcall(function()
@@ -447,6 +450,21 @@ local function tryRevive(bot: Bot, humanoid: Humanoid, root: BasePart): boolean
 	return true
 end
 
+-- The floor under a formation slot: the first surface below the leader's feet level plus a
+-- little, ignoring bodies. Falls back to the slot itself.
+local function floorAt(slot: Vector3, leader: BasePart, self: Model): Vector3
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	local exclude: { Instance } = { folder, self }
+	if leader.Parent then
+		table.insert(exclude, leader.Parent)
+	end
+	params.FilterDescendantsInstances = exclude
+	local origin = slot + Vector3.new(0, 2, 0)
+	local hit = workspace:Raycast(origin, Vector3.new(0, -40, 0), params)
+	return if hit then hit.Position else slot
+end
+
 local function think(bot: Bot, now: number, params: RaycastParams)
 	local humanoid, root, model = bot.humanoid, bot.root, bot.model
 	if not humanoid or not root or not model or humanoid.Health <= 0 then
@@ -468,14 +486,36 @@ local function think(bot: Bot, now: number, params: RaycastParams)
 		return
 	end
 
-	-- Follow: hold the formation slot behind the nearest player.
+	-- Follow: hold the formation slot behind the nearest player. Far behind, or stuck on a
+	-- doorway or a stair for StuckSeconds, the bot reappears in the slot at floor level
+	-- (the slot sits at the leader's root height, which may be a floor up).
 	local leader = leaderRoot(root.Position)
 	if leader then
 		local slot = slotPosition(bot, leader)
 		local distance =
 			Vector3.new(slot.X - root.Position.X, 0, slot.Z - root.Position.Z).Magnitude
-		if distance > Config.Bots.TeleportBeyond then
-			model:PivotTo(CFrame.new(slot + Vector3.new(0, 3, 0)))
+		local stuck = false
+		if distance > Config.Bots.FollowSlack then
+			local from = bot.stuckFrom
+			if from and (root.Position - from).Magnitude < Config.Bots.StuckDistance then
+				stuck = now - (bot.stuckSince or now) >= Config.Bots.StuckSeconds
+			else
+				bot.stuckFrom = root.Position
+				bot.stuckSince = now
+			end
+		else
+			bot.stuckFrom = nil
+			bot.stuckSince = nil
+		end
+		if distance > Config.Bots.TeleportBeyond or stuck then
+			model:PivotTo(
+				CFrame.new(
+					floorAt(slot, leader, model)
+						+ Vector3.new(0, humanoid.HipHeight + root.Size.Y / 2 + 0.2, 0)
+				)
+			)
+			bot.stuckFrom = nil
+			bot.stuckSince = nil
 		elseif distance > Config.Bots.FollowSlack then
 			humanoid.WalkSpeed = if distance > Config.Bots.RunBeyond
 				then Config.Bots.RunSpeed

@@ -1,7 +1,7 @@
 # Handoff — Infected Co-op Shooter (VS Code + Claude Code terminal)
 
 Start here when picking the project up in a fresh Claude Code session.
-Last updated: 2026-11-07 (Infected skin v2). Last verified commit on `main`: the skin v2 commit (playtested).
+Last updated: 2026-11-07 (Delta rework). Last verified commit on `main`: the Delta rework commit (playtested).
 
 ## What this is
 
@@ -45,7 +45,19 @@ Read in this order:
   templates) and in an edit-mode lineup. Art-director pass done before upload (four
   one-line fixes applied). Later pass, not blocking: rotate lesion cores, thinner eye rims,
   Brute to `pallor_d` + bruise patches if it reads purple under the stage light.
-- Static checks clean (stylua / selene / luau-lsp / rojo build) at the skin v2 commit.
+- 2026-11-07: **Delta rework shipped and playtested** (`docs/LEVELS.md` A + B, STYLES §6).
+  Building kit from plain Parts (`ArenaService.buildBuilding`, 10 models / 342 parts),
+  composite colliders on the existing meshes (194 of a 256 budget), ruin v2 and guard tower
+  v3, tall hesco Pens ring, Scrapes on cribbing, perches with ramps, 12 in-house props (all
+  uploaded, `assets/3d/ASSET_IDS.md`), ground patches; `StreamingEnabled` 384/128 with
+  atomic rigs; `EnemyService` spawn filter (40 dev Walkers: none on a roof) and vertical
+  chase through `PathfindingService` for up to 10; `BotService` unstick teleport;
+  `StanceService` prone (hip 0.3, stand refused under a ceiling; bodies standing over you no
+  longer count as a ceiling). Perf: 60 fps with 40 Walkers, server script lane 1.6 ms/frame.
+  Not yet walked: the A13 route list (R1-R7), the staircase and vertical-chase tests, the
+  low-end device pass; do them in the first play session on this build.
+- Static checks clean (stylua / selene / rojo build) at the Delta rework commit; luau-lsp
+  reports pre-existing nits only (Animations.luau, MeshAssets.dressModel narrowing).
 - 2026-11-05: decided the final product is **4-player co-op**. `src/` audited; 13 single-
   player shortcuts logged in `docs/MULTIPLAYER_READINESS.md` with a planned fix each, and
   all 6 co-op design decisions are answered there. No code changed yet.
@@ -119,10 +131,14 @@ Read in this order:
      too many chords. Owner is weighing sprint as the default speed (no walk, or walk on a
      key) so roll and slide become single keys. Decide with the systems designer before
      touching `SprintController` / `StanceController` / `MovementController` bindings.
-  4. **Rework the map for the movement set.** Delta was laid out for a body that walks
-     around cover; now it vaults, climbs and is climbed over. Redo `docs/LEVELS.md` with
-     more climbable cover (containers, humvees, bunkers, stacked hesco), routes that use
-     height, and Infected approach lines that go over low cover (level-designer call).
+  4. **Map rework shipped 2026-11-07** (`docs/LEVELS.md` A/B built in `ArenaService`).
+     Performance review passed (60 fps at 40 Walkers; spawn raycast now ignores bodies,
+     one engine Path per Infected). Left: bots are not in a collision group against the
+     `Ladder` trusses, the bot slot clamp is not implemented, a failed ComputeAsync keeps
+     its pathing slot, 10 permanent PointLights (6 skyline fires) and continuous fire
+     emitters predate this round and break the STYLES light/particle budget; A13 walk-
+     through still owed (routes, staircases, vertical chase, 2-client streaming, device
+     simulator, interior darkness check).
 
 0. **Progression (designed 2026-11-06):** `docs/PROGRESSION.md` — three-stage first loop
    (Checkpoint Delta, Mile 14, Aid Station Kestrel), player-started hold at one of three

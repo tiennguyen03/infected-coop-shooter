@@ -342,6 +342,11 @@ DOOR_H, DOOR_W = 7.2, 3.6
 STOREY = 10.5  # floor-to-floor
 SILL, HEAD = 3.2, 7.6  # window band: chest height to just above head room
 COVER_H = 4.0  # chest-high cover: sandbags, hesco, vehicle hoods
+# Ruin v2 (2026-11-07): storey 10.0 (slab top 10.0 = the mantle height), door 4 x 8, ground
+# floor windows sill 4 / head 9.4 (the 5-stud vault headroom clears a 9.4 head).
+RUIN_STOREY = 10.0
+RUIN_DOOR_W, RUIN_DOOR_H = 4.0, 8.0
+RUIN_SILL, RUIN_HEAD = 4.0, 9.4
 CORNERS = ((1, 1), (-1, 1), (1, -1), (-1, -1))
 
 
@@ -394,10 +399,14 @@ def guard_tower(b):
             for sgn in (1, -1):
                 b.box((length, 0.22, 0.22), (lx, ly, (z0 + z1) / 2), rot=(0, sgn * tilt, side * 90), swatch="tan_d")
     b.box((9.0, 9.0, 0.5), (0, 0, DECK + 0.25), swatch="tan")  # deck
-    for side in range(4):  # chest-high plank rail
+    for side in range(4):  # chest-high plank rail; the ladder side (+Y) has a 2.4-wide gate gap
         a = math.radians(side * 90)
         cx, cy = -math.sin(a) * 4.4, math.cos(a) * 4.4
-        b.box((9.0, 0.25, COVER_H), (cx, cy, DECK + 0.5 + COVER_H / 2), rot=(0, 0, side * 90), swatch="olive_d")
+        if side == 0:
+            for sx in (-1, 1):
+                b.box((3.3, 0.25, COVER_H), (sx * 2.85, cy, DECK + 0.5 + COVER_H / 2), swatch="olive_d")
+        else:
+            b.box((9.0, 0.25, COVER_H), (cx, cy, DECK + 0.5 + COVER_H / 2), rot=(0, 0, side * 90), swatch="olive_d")
     post_h = 7.7
     for sx, sy in CORNERS:
         b.box((0.4, 0.4, post_h), (sx * 4.3, sy * 4.3, DECK + 0.5 + post_h / 2), swatch="tan_d")
@@ -414,15 +423,20 @@ def guard_tower(b):
 
 @asset("env_ruin_building", "Environment")
 def ruin_building(b):
-    # Bombed-out two-storey concrete block at character scale: 30 x 20 footprint, two
-    # STOREY floors (~22 tall with the parapet), a real DOOR_W x DOOR_H doorway in the front
-    # (-Y) wall, window sills at chest height. Roof gone, back wall down to one storey.
-    # Box collision in game, so the openings are visual only.
+    # Bombed-out two-storey concrete block, v2 (2026-11-07): 30 x 20 footprint on RUIN_STOREY
+    # (10.0) floors, slab top at 10.0, a 4 x 8 doorway in the front (-Y) wall, windows at sill
+    # 4 / head 9.4 (vaultable with the 5-stud headroom rule), the back wall down to one storey
+    # with a 6-wide breach at x +7 (the Infected's way in; the wall top is the mantle route to
+    # the first floor). Collision comes from invisible Parts (MeshAssets colliders), so the
+    # openings are real: enterable ground floor, climbable first floor, no roof.
     T = 1.0
     W, D = 30.0, 20.0
     hx, hy = W / 2, D / 2
+    S = RUIN_STOREY
+    DW, DH = RUIN_DOOR_W, RUIN_DOOR_H
+    SILL2, HEAD2 = RUIN_SILL, RUIN_HEAD
 
-    def wall(axis, pos, storeys, door=False):
+    def wall(axis, pos, storeys, door=False, breach=None):
         length = W if axis == "x" else D
         bays = 4 if axis == "x" else 3
         pitch = length / bays
@@ -433,43 +447,59 @@ def ruin_building(b):
             else:
                 b.box((T, l, h), (pos, c, zc), swatch=swatch)
 
-        for s in range(storeys):
-            z0 = s * STOREY
-            sw = "concrete" if s == 0 else "white_d"
-            has_door = door and s == 0
+        for s_ in range(storeys):
+            z0 = s_ * S
+            sill = SILL2 if s_ == 0 else SILL
+            head = HEAD2 if s_ == 0 else HEAD
+            sw = "concrete" if s_ == 0 else "white_d"
+            has_door = door and s_ == 0
+            if breach and s_ == 0:
+                bx, bw = breach
+                left_w = bx - bw / 2 + length / 2
+                box(left_w, S, S / 2, -length / 2 + left_w / 2, sw)  # solid left of the breach
+                right_w = length / 2 - (bx + bw / 2)
+                box(right_w, S, S / 2, length / 2 - right_w / 2, sw)  # solid right of it
+                box(bw + 0.4, S - DH, (DH + S) / 2, bx, "asphalt")  # lintel over the breach
+                continue
             if has_door:
-                side = (length - DOOR_W) / 2
-                box(side, SILL, z0 + SILL / 2, -(DOOR_W + side) / 2, sw)
-                box(side, SILL, z0 + SILL / 2, (DOOR_W + side) / 2, sw)
-                box(DOOR_W + 2.4, HEAD - DOOR_H, z0 + (DOOR_H + HEAD) / 2, 0.0, "asphalt")  # lintel
+                side = (length - DW) / 2
+                box(side, sill, z0 + sill / 2, -(DW + side) / 2, sw)
+                box(side, sill, z0 + sill / 2, (DW + side) / 2, sw)
+                box(DW + 2.4, head - DH, z0 + (DH + head) / 2, 0.0, "asphalt")  # lintel
             else:
-                box(length, SILL, z0 + SILL / 2, 0.0, sw)
-            box(length, STOREY - HEAD, z0 + (HEAD + STOREY) / 2, 0.0, sw)  # head band
+                box(length, sill, z0 + sill / 2, 0.0, sw)
+            box(length, S - head, z0 + (head + S) / 2, 0.0, sw)  # head band
             for i in range(bays + 1):  # pillars between windows
                 c = -length / 2 + i * pitch
                 pw = 2.2 if 0 < i < bays else 2.8
                 c = max(-length / 2 + pw / 2, min(length / 2 - pw / 2, c))
                 if has_door and abs(c) < 0.1:
                     for sgn in (-1, 1):  # door jambs instead of the centre pillar
-                        box(1.2, DOOR_H, z0 + DOOR_H / 2, sgn * (DOOR_W / 2 + 0.6), sw)
+                        box(1.2, DH, z0 + DH / 2, sgn * (DW / 2 + 0.6), sw)
                     continue
-                box(pw, HEAD - SILL, z0 + (SILL + HEAD) / 2, c, sw)
+                box(pw, head - sill, z0 + (sill + head) / 2, c, sw)
 
     wall("x", -hy + T / 2, 2, door=True)  # front (faces -Y)
-    wall("x", hy - T / 2, 1)  # back, one storey (collapsed)
+    wall("x", hy - T / 2, 1, breach=(7.0, 6.0))  # back, one storey, breached
     wall("y", -hx + T / 2, 2)
     wall("y", hx - T / 2, 2)
     b.box((W, D, 0.3), (0, 0, 0.15), swatch="asphalt")  # ground slab
-    b.box((W, D, 0.6), (0, 0, STOREY + 0.3), swatch="asphalt")  # first-floor slab
-    b.box((W + 0.4, 1.4, 0.4), (0, -hy + 0.5, 2 * STOREY + 0.2), swatch="asphalt")  # front parapet
-    for x, h in ((-11, 3.6), (-4, 1.8), (5, 4.8), (11, 2.6)):  # broken stubs on the back wall
-        b.box((3.0, T, h), (x, hy - T / 2, STOREY + h / 2), swatch="white_d")
+    b.box((W, D, 0.6), (0, 0, S - 0.3), swatch="asphalt")  # first-floor slab, top at 10.0
+    b.box((W + 0.4, 1.4, 0.4), (0, -hy + 0.5, 2 * S + 0.2), swatch="asphalt")  # front parapet
+    for x in (-5.0, 5.0):  # interior pillars under the slab
+        b.box((1.0, 1.0, S - 0.6), (x, 0, (S - 0.6) / 2), swatch="concrete")
+    b.box((W - 2 * T, 0.3, 3.0), (0, -hy + T + 0.15, 1.5), swatch="white_d")  # interior liner (front)
+    b.box((4.0, 2.0, 0.3), (-9.0, 3.0, 2.85), swatch="tan_d")  # desk top (Recover Logs)
+    for x in (-10.8, -7.2):
+        b.box((0.3, 1.8, 2.7), (x, 3.0, 1.35), swatch="tan_d")  # desk sides
+    for x, h in ((-11, 3.6), (-4, 1.8), (12, 2.6)):  # broken stubs on the back wall
+        b.box((3.0, T, h), (x, hy - T / 2, S + h / 2), swatch="white_d")
     for y, h in ((-6, 2.8), (2, 1.4), (7, 3.6)):  # and on the right wall top
-        b.box((T, 3.0, h), (hx - T / 2, y, 2 * STOREY + h / 2), swatch="white_d")
-    for x, y in ((-7, hy + 0.7), (3, hy + 1.1), (10, hy + 0.5)):  # rebar
-        b.cyl(0.07, 3.6, (x, y, STOREY + 1.2), segs=4, rot=(30, 0, 0), swatch="rust")
-    for x, y, s in ((-13, -hy - 1.8, 2.0), (-10, -hy - 1.0, 1.2), (12, -hy - 2.0, 2.4), (hx + 1.6, 4, 1.6), (hx + 1.2, -5, 1.0)):
-        b.box((s, s * 0.8, s * 0.6), (x, y, s * 0.3), rot=(0, 0, x * 7), swatch="concrete")  # rubble
+        b.box((T, 3.0, h), (hx - T / 2, y, 2 * S + h / 2), swatch="white_d")
+    for x, y in ((-7, hy + 0.7), (3, hy + 1.1), (12, hy + 0.5)):  # rebar
+        b.cyl(0.07, 3.6, (x, y, S + 1.2), segs=4, rot=(30, 0, 0), swatch="rust")
+    for x, y, sz in ((-13, -hy - 1.6, 2.0), (-10, -hy - 1.0, 1.2), (12, -hy - 1.8, 2.4), (hx + 1.0, 4, 1.6), (hx + 0.8, -5, 1.0)):
+        b.box((sz, sz * 0.8, sz * 0.6), (x, y, sz * 0.3), rot=(0, 0, x * 7), swatch="concrete")  # rubble
     b.box((2.6, 0.12, 0.8), (-9, -hy - 0.5, 4.6), swatch="warning_orange")  # hazard sign at eye height
     b.box((2.2, 0.1, 0.6), (-9, -hy - 0.56, 4.6), swatch="dark_d")
 
@@ -687,6 +717,223 @@ def bus(b):
     b.box((6.0, 0.16, 2.0), (10.0, -(Wd / 2 + 0.1), 4.6), swatch="rust")  # scorch and rust
     b.box((4.0, 0.16, 1.4), (-8.0, (Wd / 2 + 0.1), 7.2), swatch="rust")
     b.box((2.4, 0.12, 0.9), (-L / 2 + 12.0, -(Wd / 2 + 0.14), 9.0), swatch="dark_d")  # one window blown out
+
+
+# ------------------------------------------------------------------ Delta rework pieces
+# Map pieces and props for the enterable Delta (docs/LEVELS.md section A, 2026-11-07). Every
+# piece is built against CHAR_H; sizes come from the level sheet's prop catalogue (S = solid,
+# D = decoration, T = see-through). Collision: Box unless MeshAssets lists colliders.
+
+
+@asset("env_hesco_tall", "Environment")
+def hesco_tall(b):
+    # Two stacked hesco units with a joint band, 8.7 tall: a Walker (ClimbHeight 5) can't take
+    # it, a Runner and a player can mantle it. Fabric surface in game (one material).
+    H = 4.35
+    for k in range(2):
+        z0 = k * H
+        b.box((6.0, 4.5, H), (0, 0, z0 + H / 2), swatch="tan")
+    b.box((6.2, 4.7, 0.3), (0, 0, H), swatch="tan_d")  # joint band
+    b.box((5.6, 4.1, 0.2), (0, 0, 2 * H + 0.08), swatch="tan_l")  # fill showing on top
+    for x in (-2.0, 0.0, 2.0):  # wire lines proud of the fabric
+        for sy in (-1, 1):
+            b.box((0.12, 0.12, 2 * H), (x, sy * 2.3, H), swatch="dark_l")
+    for sx in (-1, 1):
+        for y in (-1.5, 1.5):
+            b.box((0.12, 0.12, 2 * H), (sx * 3.05, y, H), swatch="dark_l")
+    for z in (1.5, 3.0, 5.85, 7.35):
+        for sy in (-1, 1):
+            b.box((6.1, 0.12, 0.12), (0, sy * 2.3, z), swatch="dark_l")
+        for sx in (-1, 1):
+            b.box((0.12, 4.6, 0.12), (sx * 3.05, 0, z), swatch="dark_l")
+
+
+@asset("env_crib_stack", "Environment")
+def crib_stack(b):
+    # Concrete cribbing a T-wall is lifted onto: 1.2 wide (X), 2.6 deep, 2.8 tall. Two under
+    # one T-wall leave a 5.6 x 2.8 crawl slot (the Gate "Scrapes"). Concrete surface in game.
+    for k in range(7):
+        z = k * 0.4 + 0.2
+        sw = "concrete" if k % 2 == 0 else "asphalt"
+        if k % 2 == 0:
+            for x in (-0.4, 0.4):
+                b.box((0.4, 2.6, 0.4), (x, 0, z), swatch=sw)
+        else:
+            for y in (-1.1, 1.1):
+                b.box((1.2, 0.4, 0.4), (0, y, z), swatch=sw)
+
+
+@asset("env_deck_plate", "Environment")
+def deck_plate(b):
+    # Steel road plate laid between roofs: 12 x 5 x 0.3 with raised cleats. DiamondPlate in game.
+    b.box((12.0, 5.0, 0.25), (0, 0, 0.125), swatch="gun")
+    for x in (-4.5, -2.7, -0.9, 0.9, 2.7, 4.5):
+        b.box((0.3, 4.6, 0.08), (x, 0, 0.29), swatch="gun_l")
+
+
+@asset("prop_cot", "Props")
+def cot(b):
+    # Field cot 6.5 x 3 x 2.2 (S, vaultable): legs, rails, canvas, blanket, pillow. ~110 tris.
+    for sx, sy in CORNERS:
+        b.box((0.25, 0.25, 1.6), (sx * 3.0, sy * 1.3, 0.8), swatch="dark_l")
+    for sy in (-1, 1):
+        b.box((6.5, 0.25, 0.25), (0, sy * 1.35, 1.6), swatch="dark_l")
+    b.box((6.3, 2.7, 0.15), (0, 0, 1.68), swatch="olive_d")  # canvas
+    b.box((3.2, 2.6, 0.3), (0.9, 0, 1.9), swatch="foliage")  # blanket
+    b.box((1.2, 2.0, 0.35), (-2.4, 0, 1.92), swatch="white_d")  # pillow
+
+
+@asset("prop_generator", "Props")
+def generator(b):
+    # Towed generator 8 x 4.5 x 5 (S): skid, housing, exhaust stack, control panel. ~150 tris.
+    b.box((8.0, 4.5, 0.4), (0, 0, 0.2), swatch="dark")
+    b.box((7.0, 4.0, 3.6), (0, 0, 0.4 + 1.8), swatch="gun_d")
+    b.box((7.2, 0.1, 1.2), (0, -2.02, 2.4), swatch="gun")  # louvre band
+    for x in (-2.4, -1.2, 0.0, 1.2, 2.4):
+        b.box((0.3, 0.12, 1.0), (x, -2.08, 2.4), swatch="dark_d")  # louvres
+    b.box((0.12, 1.6, 1.2), (3.56, 0.6, 2.6), swatch="dark_d")  # control panel
+    b.box((0.08, 0.3, 0.3), (3.62, 0.3, 2.9), swatch="warning_orange")  # its one lamp
+    b.cyl(0.4, 1.2, (-2.4, 1.0, 4.6), segs=6, swatch="dark_d")  # exhaust stack
+    b.cyl(0.25, 0.4, (-2.4, 1.0, 4.9), segs=6, swatch="rust")
+    b.box((1.0, 1.0, 0.2), (2.2, -1.2, 4.1), swatch="rust")  # fuel cap plate
+
+
+@asset("prop_light_tower", "Props")
+def light_tower(b):
+    # Trailer light tower 4 x 4 x 18 (S): trailer, generator box, three-stage mast, four heads.
+    b.box((4.0, 3.0, 0.5), (0, 0, 1.0), swatch="dark")  # trailer bed
+    for sy in (-1, 1):
+        b.cyl(0.8, 0.5, (0.6, sy * 1.7, 0.8), segs=8, rot=(90, 0, 0), swatch="dark_d")  # wheels
+    b.box((0.4, 0.4, 0.8), (-1.6, 0, 0.4), swatch="gun_d")  # jack leg
+    b.box((2.2, 2.0, 1.8), (-0.6, 0, 2.15), swatch="olive_d")  # generator box
+    b.cyl(0.32, 6.0, (1.2, 0, 4.0), segs=6, swatch="gun_d")  # mast stages
+    b.cyl(0.26, 6.0, (1.2, 0, 9.6), segs=6, swatch="gun")
+    b.cyl(0.2, 5.6, (1.2, 0, 15.0), segs=6, swatch="gun_l")
+    b.box((3.0, 0.3, 0.3), (1.2, 0, 17.6), swatch="gun_d")  # crossbar
+    for x in (-0.9, 0.9):
+        for sy in (-1, 1):
+            b.box((0.9, 0.5, 0.7), (1.2 + x, sy * 0.45, 17.6), swatch="dark")  # lamp housings
+            b.box((0.8, 0.06, 0.6), (1.2 + x, sy * 0.72, 17.6), swatch="brass_l")  # lenses
+
+
+@asset("prop_fuel_bladder", "Props")
+def fuel_bladder(b):
+    # Collapsible fuel bladder 12 x 8 x 2.9 (S, vaultable): pillow tank, top panel, valve.
+    b.box((11.0, 7.0, 2.1), (0, 0, 1.05), swatch="olive_d")
+    b.box((9.0, 5.0, 0.5), (0, 0, 2.3), swatch="olive")
+    for x in (-3.5, 0.0, 3.5):
+        b.box((0.3, 7.4, 2.2), (x, 0, 1.1), swatch="dark")  # tie-down straps
+    b.cyl(0.4, 0.5, (4.0, 2.0, 2.75), segs=6, swatch="gun")  # filler valve
+    b.box((0.5, 0.5, 0.15), (4.0, 2.0, 2.95), swatch="red")  # its cap
+
+
+@asset("prop_pallet", "Props")
+def pallet(b):
+    # Wooden pallet 4 x 4 x 0.6 (S): three runners, seven top boards. ~160 tris.
+    for y in (-1.7, 0.0, 1.7):
+        b.box((4.0, 0.5, 0.2), (0, y, 0.1), swatch="tan_d")
+    for y in (-1.7, 0.0, 1.7):
+        for x in (-1.6, 0.0, 1.6):
+            b.box((0.5, 0.5, 0.25), (x, y, 0.32), swatch="tan_d")  # blocks
+    for i in range(7):
+        b.box((0.45, 4.0, 0.12), (-1.8 + i * 0.6, 0, 0.51), swatch="tan")
+
+
+@asset("prop_body_bag", "Props")
+def body_bag(b):
+    # Body bag 6.5 x 2.4 x 1 (D, no collision): dark bag, zip strip, tag.
+    b.box((5.4, 2.2, 0.9), (-0.5, 0, 0.45), swatch="dark")
+    b.wedge((1.2, 2.2, 0.9), (2.8, 0, 0.45), swatch="dark")  # tapered foot
+    b.box((5.8, 0.1, 0.06), (-0.3, 0, 0.92), swatch="gun_l")  # zip
+    b.box((0.5, 0.4, 0.05), (-2.6, 0.6, 0.92), swatch="white")  # tag
+
+
+@asset("prop_dumpster", "Props")
+def dumpster(b):
+    # Steel dumpster 7 x 4 x 4.4 (S): a Walker's step onto a 9-stud roof. ~130 tris.
+    b.box((7.0, 4.0, 3.6), (0, 0, 0.5 + 1.8), swatch="olive_d")
+    for sx, sy in CORNERS:
+        b.cyl(0.25, 0.5, (sx * 2.9, sy * 1.6, 0.25), segs=6, swatch="dark_d")  # castors
+    for sx in (-1, 1):
+        b.box((3.4, 4.1, 0.3), (sx * 1.75, 0, 4.25), swatch="dark_l")  # lid halves
+        b.box((0.3, 0.6, 1.2), (sx * 3.6, 0, 1.6), swatch="gun_d")  # fork pockets
+    b.box((2.0, 0.12, 0.8), (-1.2, -2.06, 2.4), swatch="rust")  # rust patch
+    b.box((1.4, 0.12, 0.5), (1.8, 2.06, 2.0), swatch="white_d")  # stencil
+
+
+@asset("prop_plank", "Props")
+def plank(b):
+    # Scaffold plank 10 x 2 x 0.4 (S): bridges roof to roof. ~50 tris.
+    for y in (-0.5, 0.5):
+        b.box((10.0, 0.9, 0.3), (0, y, 0.15), swatch="tan_d")
+    for x in (-4.0, 4.0):
+        b.box((0.3, 2.0, 0.4), (x, 0, 0.2), swatch="dark_l")  # cleats
+
+
+@asset("prop_civilian_car", "Props")
+def civilian_car(b):
+    # Abandoned sedan 15 x 7 x 4.8 (S), nose toward -X: body, cabin, glass, wheels, lights.
+    L, Wd = 15.0, 6.6
+    b.box((L, Wd, 1.8), (0, 0, 1.9), swatch="white_d")  # body
+    b.box((7.5, 6.0, 2.0), (-0.3, 0, 3.8), swatch="white_d")  # cabin
+    b.box((0.2, 5.2, 1.6), (-4.1, 0, 3.8), rot=(0, -25, 0), swatch="dark_d")  # windscreen
+    b.box((0.2, 5.2, 1.5), (3.5, 0, 3.8), rot=(0, 20, 0), swatch="dark_d")  # rear glass
+    for sy in (-1, 1):
+        b.box((6.8, 0.2, 1.4), (-0.3, sy * 3.05, 3.8), swatch="dark_d")  # side glass
+        b.box((0.4, 0.5, 0.4), (-3.6, sy * 3.5, 3.4), swatch="dark")  # mirrors
+        for sx in (-1, 1):
+            b.cyl(1.1, 0.9, (sx * 4.8, sy * (Wd / 2 - 0.3), 1.1), segs=8, rot=(90, 0, 0), swatch="dark_d")
+            b.cyl(0.5, 1.0, (sx * 4.8, sy * (Wd / 2 - 0.3), 1.1), segs=6, rot=(90, 0, 0), swatch="gun_l")
+        b.box((0.3, 1.2, 0.5), (-L / 2 - 0.05, sy * 2.2, 2.2), swatch="white_l")  # headlights
+        b.box((0.3, 1.2, 0.5), (L / 2 + 0.05, sy * 2.2, 2.2), swatch="red")  # tail lights
+    for sx in (-1, 1):
+        b.box((0.5, Wd + 0.2, 0.6), (sx * (L / 2 + 0.1), 0, 1.4), swatch="dark")  # bumpers
+    b.box((4.6, 0.2, 0.9), (2.0, -(Wd / 2 + 0.05), 2.0), swatch="rust")  # rust / scorch
+    b.box((1.6, 0.16, 0.6), (-4.0, (Wd / 2 + 0.05), 2.3), swatch="dark_d")  # dent
+
+
+@asset("prop_portable_toilet", "Props")
+def portable_toilet(b):
+    # Portable toilet 4 x 4 x 8 (S, climbable): blue cabin, door, vent, white roof.
+    b.box((4.2, 4.2, 0.4), (0, 0, 0.2), swatch="dark")
+    b.box((4.0, 4.0, 7.2), (0, 0, 0.4 + 3.6), swatch="shield_blue")
+    b.box((2.4, 0.12, 6.4), (0, -2.04, 3.8), swatch="dark_l")  # door
+    b.box((1.6, 0.1, 0.5), (0, -2.1, 6.4), swatch="white_d")  # vent
+    b.box((0.2, 0.2, 0.5), (0.9, -2.14, 3.6), swatch="gun")  # handle
+    b.box((4.3, 4.3, 0.4), (0, 0, 7.8), swatch="white_d")  # roof
+    b.cyl(0.3, 0.5, (1.2, 1.2, 8.2), segs=6, swatch="white")  # roof vent
+
+
+@asset("prop_chainlink_panel", "Props")
+def chainlink_panel(b):
+    # Chain-link fence panel 12 x 7 (T: solid, see-through, bullets pass). Two posts, two rails,
+    # a wire grid of thin boxes. ~270 tris.
+    for sx in (-1, 1):
+        b.cyl(0.15, 7.0, (sx * 5.9, 0, 3.5), segs=6, swatch="gun_d")
+    for z in (0.3, 6.9):
+        b.box((12.0, 0.12, 0.12), (0, 0, z), swatch="gun_d")
+    for i in range(11):
+        b.box((0.05, 0.05, 6.6), (-5.0 + i * 1.0, 0, 3.6), swatch="gun_l")
+    for z in (1.3, 2.3, 3.3, 4.3, 5.3, 6.3):
+        b.box((12.0, 0.05, 0.05), (0, 0, z), swatch="gun_l")
+
+
+@asset("prop_concertina", "Props")
+def concertina(b):
+    # Concertina wire coil 12 x 3 x 3 (T): a helix of 24 thin segments along X. ~290 tris.
+    r = 1.4
+    turns, segs = 3, 24
+    pts = []
+    for i in range(segs + 1):
+        t = i / segs
+        ang = t * turns * 2 * math.pi
+        pts.append(Vector((-6.0 + 12.0 * t, math.cos(ang) * r, math.sin(ang) * r + 1.5)))
+    for p0, p1 in zip(pts[:-1], pts[1:]):
+        d = p1 - p0
+        length = d.length
+        pitch = -math.degrees(math.asin(d.z / length))
+        yaw = math.degrees(math.atan2(d.y, d.x))
+        b.box((length, 0.1, 0.1), ((p0 + p1) / 2), rot=(0, pitch, yaw), swatch="gun_l")
 
 
 # ------------------------------------------------------------------ Infected limb sets
@@ -1428,6 +1675,7 @@ def frame_and_render(scene, cam, objs, path, size=(640, 640), direction=(1.0, -1
     dist = radius / math.tan(fov / 2) * 1.15
     d = Vector(direction).normalized()
     cam.location = center + d * dist
+    cam.data.clip_end = max(cam.data.clip_end, dist + radius * 4)  # the lineup is hundreds of studs long
     cam.rotation_euler = (center - cam.location).to_track_quat("-Z", "Y").to_euler()
     scene.render.resolution_x, scene.render.resolution_y = size
     scene.render.filepath = path
@@ -1464,9 +1712,11 @@ def main():
             export_fbx(obj, os.path.join(EXPORT, name + ".fbx"))
         d = obj.dimensions
         print(f"dims {name}: roblox Size = Vector3.new({d.x:.2f}, {d.z:.2f}, {d.y:.2f})")
-        if ASSETS[name][2] == "center":
-            c = [(min(v[i] for v in obj.bound_box) + max(v[i] for v in obj.bound_box)) / 2 for i in range(3)]
-            print(f"offset {name}: Vector3.new({c[0]:.3f}, {c[2]:.3f}, {c[1]:.3f})")
+        # Bounds centre relative to the design origin, Roblox axis order: the `offset` of
+        # a MeshAssets entry (limbs: the R15 limb centre; env pieces: the floor centre, so
+        # collider boxes can be written in build coordinates).
+        c = [(min(v[i] for v in obj.bound_box) + max(v[i] for v in obj.bound_box)) / 2 for i in range(3)]
+        print(f"offset {name}: Vector3.new({c[0]:.3f}, {c[2]:.3f}, {c[1]:.3f})")
         objs = [obj]
         if ref is not None and ref is not obj and name.startswith("env_"):
             # environment pieces are judged against the character: stand the reference beside them

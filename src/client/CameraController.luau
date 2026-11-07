@@ -174,8 +174,11 @@ local function onRenderStep(deltaTime: number)
 
 	camera.CameraType = Enum.CameraType.Scriptable
 	local rotation = CFrame.fromEulerAnglesYXZ(pitch, yaw, 0)
+	-- A prone body's root sits lower (StanceService RootDrop); the pivot stays on the body.
+	local dropValue = root.Parent and root.Parent:GetAttribute("RootDrop")
+	local rootDrop = if typeof(dropValue) == "number" then dropValue else 0
 	local focus = root.Position
-		+ Vector3.new(0, pivotHeight, 0)
+		+ Vector3.new(0, pivotHeight + rootDrop, 0)
 		+ rotation:VectorToWorldSpace(Vector3.new(shoulder.X, shoulder.Y, 0))
 	camera.CFrame = CFrame.new(focus) * rotation * CFrame.new(0, 0, reach)
 

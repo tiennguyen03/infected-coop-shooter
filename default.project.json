@@ -2,6 +2,13 @@
   "name": "infected-coop-shooter",
   "tree": {
     "$className": "DataModel",
+    "Workspace": {
+      "$properties": {
+        "StreamingEnabled": true,
+        "StreamingTargetRadius": 384,
+        "StreamingMinRadius": 128
+      }
+    },
     "ReplicatedStorage": {
       "Shared": {
         "$path": "src/shared"

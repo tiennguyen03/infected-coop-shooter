@@ -15,6 +15,11 @@ local Config = {
 			-- Seconds the enter/exit clips take (their rate is scaled to this); no stance
 			-- change while one plays.
 			TransitionTime = { crouch = 0.45, prone = 0.8 },
+			-- Crawl spaces (StanceService, 2026-11-07): prone drops the HipHeight so the root
+			-- (2 tall, the body's only collider) fits under a 2.8 gap; standing needs this
+			-- much clear above the prone root, else the body stays down.
+			ProneHipHeight = 0.3,
+			ProneHeadroom = 4,
 		},
 	},
 
@@ -94,6 +99,10 @@ local Config = {
 		FollowSlack = 4, -- closer than this to the slot: stand
 		RunBeyond = 16, -- further than this: run
 		TeleportBeyond = 80, -- further than this (stuck, fell behind): reappear in the slot
+		-- Stuck on a doorway or a stair (2026-11-07): moved less than StuckDistance toward a
+		-- far slot for StuckSeconds -> reappear in the slot at floor level.
+		StuckSeconds = 3,
+		StuckDistance = 1,
 		-- Loadout rework 2026-11-07: a bot fires the service rifle (same Damage, magazine and
 		-- reload as the player: WeaponDefinitions) at a third of the player's rate, so three
 		-- bots roughly equal one player; its reserve is infinite. Fallback if they carry: 0.55.
@@ -615,11 +624,72 @@ local Config = {
 		},
 	},
 
+	-- Stage 1 building kit (ArenaService.buildBuilding; docs/LEVELS.md section B, 2026-11-07).
+	-- Studs. A storey is 9 with a 0.6 slab (8.4 clear: a 2x Brute needs a room built taller,
+	-- like the Shed's 12.5); doors 4 x 8; windows 5 wide at sill 3.2 / head 8.6 (a vault over
+	-- the sill, under the head); stairs are WedgeParts at ~33 degrees; every roof has a 1.2
+	-- parapet; upper floors up to LipMaxHeight (= Movement.ClimbMaxHeight) get a climb lip
+	-- outside; corridors and catwalks are never narrower than CorridorMin.
+	Arena = {
+		-- Invisible composite-collider Parts the dressing may place (docs/LEVELS.md A8);
+		-- ArenaService warns at boot past it.
+		ColliderBudget = 256,
+		Kit = {
+			Storey = 9,
+			WallThickness = 0.6,
+			Slab = 0.6,
+			Door = { Width = 4, Height = 8 },
+			Window = { Width = 5, Sill = 3.2, Head = 8.6 },
+			Breach = { Height = 6 },
+			StairAngle = 33,
+			StairWidth = 5,
+			Parapet = 1.2,
+			LipDepth = 2.5,
+			LipMaxHeight = 10.5,
+			LadderGap = 3, -- the parapet / lip opening where an outside ladder lands
+			CorridorMin = 6,
+		},
+		-- Built-in materials per building type (docs/STYLES.md §6): engine textures, no upload.
+		Materials = {
+			concrete = { Material = Enum.Material.Concrete, Color = Color3.fromRGB(112, 110, 102) },
+			cinder = { Material = Enum.Material.Concrete, Color = Color3.fromRGB(146, 148, 136) }, -- CMU block
+			brick = { Material = Enum.Material.Brick, Color = Color3.fromRGB(118, 86, 70) },
+			wood = { Material = Enum.Material.WoodPlanks, Color = Color3.fromRGB(98, 80, 58) }, -- barracks huts
+			metal = { Material = Enum.Material.CorrodedMetal, Color = Color3.fromRGB(86, 90, 92) }, -- the Shed
+			panel = { Material = Enum.Material.Metal, Color = Color3.fromRGB(168, 168, 162) }, -- painted: kiosk, canopy
+			render = { Material = Enum.Material.Concrete, Color = Color3.fromRGB(158, 148, 126) }, -- the Parade
+			slab = { Material = Enum.Material.Concrete, Color = Color3.fromRGB(104, 102, 98) },
+			roof = { Material = Enum.Material.Concrete, Color = Color3.fromRGB(84, 82, 78) },
+			ladder = { Material = Enum.Material.Metal, Color = Color3.fromRGB(58, 60, 64) },
+			catwalk = { Material = Enum.Material.DiamondPlate, Color = Color3.fromRGB(92, 94, 98) },
+		},
+	},
+
+	-- Vertical chase (EQ-B1, 2026-11-07): the Infected have no pathfinding except here. A
+	-- melee form whose target stands more than PathfindVerticalGap above it, within
+	-- PathfindBuildingRadius of a kit building, follows a PathfindingService path (stairs,
+	-- doors, ramps) recomputed no more than every PathfindInterval; at most PathfindingMax
+	-- bodies path at once, the rest (and any failed path) chase straight as before.
+	Enemies = {
+		PathfindingMax = 10,
+		PathfindInterval = 0.5,
+		PathfindVerticalGap = 4,
+		PathfindBuildingRadius = 40,
+		PathAgentRadius = 1.5, -- fits a 4-wide door
+		PathAgentHeight = 5,
+		PathWaypointSpacing = 4, -- studs between waypoints (the kit's stairs are 9-stud storeys)
+		PathWaypointReach = 3, -- studs: the next waypoint counts as reached
+	},
+
 	Zombies = {
 		SpawnInterval = 2, -- base seconds between spawns (decays per minute)
 		InitialCount = 5, -- Walkers spawned right at run start
 		MinSpawnDistance = 35, -- studs from the player
 		MaxSpawnDistance = 50,
+		-- A spawn point must be open ground (2026-11-07): not on dressing, a perch, a roof or
+		-- inside a building footprint (+ margin). Tries this many candidates, then takes the last.
+		SpawnAttempts = 6,
+		SpawnBuildingMargin = 2,
 		CorpseLifetime = 1.5, -- seconds before a dead zombie is removed
 		MaxPuddles = 8, -- caustic puddles alive at once (perf); the oldest goes first
 		ThroatSacSwell = 1.8, -- Hocker sac size multiplier at the end of the windup

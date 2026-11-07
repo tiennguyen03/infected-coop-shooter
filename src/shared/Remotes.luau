@@ -20,6 +20,7 @@ local REMOTE_NAMES = {
 	"UseAbility", -- client -> server: (abilityName: "dash"|"breach")
 	"AbilityUsed", -- server -> client: (abilityName: string, cooldown: number) for UI countdown
 	"CoverMove", -- client -> server: (kind: "vault"|"climb"|"roll"|"slide") the body started going over cover, rolling or sliding
+	"Stance", -- client -> server: (stance: "stand"|"crouch"|"prone"); server -> client: ("prone") stand-up refused under a ceiling
 }
 
 if RunService:IsServer() and not ReplicatedStorage:FindFirstChild("Remotes") then

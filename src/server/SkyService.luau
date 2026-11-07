@@ -121,6 +121,7 @@ end
 local function buildSkyline()
 	local model = Instance.new("Model")
 	model.Name = "DistantCity"
+	model.ModelStreamingMode = Enum.ModelStreamingMode.Persistent -- the skyline never streams out
 	for _, block in SKYLINE do
 		local a = math.rad(block.a)
 		local part = Instance.new("Part")
