@@ -42,6 +42,30 @@ local RunManager = {}
 -- Bumped on every run start so a pending Insert -> Explore timer never fires into a later run.
 local runGeneration = 0
 
+-- Ready-up after a run ends (decision #4): players who pressed READY, and a generation so
+-- a countdown from an earlier result screen never starts a later run.
+local ready: { [Player]: boolean } = {}
+local readyGeneration = 0
+
+local function publishReady()
+	local count = 0
+	for _, player in Players:GetPlayers() do
+		if ready[player] then
+			count += 1
+		end
+		player:SetAttribute("Ready", ready[player] == true)
+	end
+	workspace:SetAttribute("ReadyCount", count)
+	workspace:SetAttribute("ReadyNeeded", #Players:GetPlayers())
+end
+
+local function clearReady()
+	table.clear(ready)
+	readyGeneration += 1
+	workspace:SetAttribute("ReadyUpEndsAt", 0)
+	publishReady()
+end
+
 local function setState(state: RunStates.RunState, result: RunStates.RunResult?)
 	workspace:SetAttribute("RunState", state)
 	if result then
@@ -74,6 +98,7 @@ function RunManager.endRun(result: RunStates.RunResult)
 	runGeneration += 1
 	PauseService.setPaused(true)
 	EnemyService.clearAll()
+	clearReady()
 	setState("Ended", result)
 end
 
@@ -102,6 +127,7 @@ end
 -- A fresh run for the whole squad: every run-level service resets once, then every player
 -- is reset and respawned (register #8). Public so DevTestService can force one.
 function RunManager.startRun()
+	clearReady()
 	PauseService.setPaused(false)
 	EnemyService.reset()
 	EnemyProjectileService.reset()
@@ -132,12 +158,45 @@ function RunManager.startRun()
 	print("[RunManager] Run restarted for", #players, "player(s)")
 end
 
--- RESTART from the death or results screen. Only once the run is over: one player dying
--- mid-run in co-op no longer resets it for everyone (the ready-up vote lands in step 5).
-local function onRestartRequest(_player: Player)
-	if RunStates.current() == "Ended" then
-		RunManager.startRun()
+local function allReady(): boolean
+	local players = Players:GetPlayers()
+	if #players == 0 then
+		return false
 	end
+	for _, player in players do
+		if not ready[player] then
+			return false
+		end
+	end
+	return true
+end
+
+-- READY from the results screen. Only once the run is over (one player dying mid-run never
+-- resets it for the squad). The first READY opens Config.Run.ReadyUpSeconds; the next run
+-- starts when every player is ready or the countdown runs out.
+local function onRestartRequest(player: Player)
+	if RunStates.current() ~= "Ended" then
+		return
+	end
+	ready[player] = true
+	publishReady()
+	if allReady() then
+		RunManager.startRun()
+		return
+	end
+	if ((workspace:GetAttribute("ReadyUpEndsAt") :: number?) or 0) > 0 then
+		return
+	end
+	local generation = readyGeneration
+	workspace:SetAttribute(
+		"ReadyUpEndsAt",
+		workspace:GetServerTimeNow() + Config.Run.ReadyUpSeconds
+	)
+	task.delay(Config.Run.ReadyUpSeconds, function()
+		if generation == readyGeneration and RunStates.current() == "Ended" then
+			RunManager.startRun()
+		end
+	end)
 end
 
 local function watchCharacter(character: Model)
@@ -188,9 +247,21 @@ function RunManager.init()
 	for _, player in Players:GetPlayers() do
 		onPlayerAdded(player)
 	end
-	Players.PlayerRemoving:Connect(function()
-		task.defer(onDied)
+	Players.PlayerRemoving:Connect(function(player)
+		ready[player] = nil
+		task.defer(function()
+			onDied()
+			-- The one holding out left: everyone still here may already be ready.
+			if RunStates.current() == "Ended" then
+				publishReady()
+				if allReady() then
+					RunManager.startRun()
+				end
+			end
+		end)
 	end)
+	Players.PlayerAdded:Connect(publishReady)
+	clearReady()
 
 	Remotes.get("RestartRun").OnServerEvent:Connect(onRestartRequest)
 end

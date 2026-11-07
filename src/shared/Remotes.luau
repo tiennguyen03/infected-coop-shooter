@@ -13,7 +13,7 @@ local REMOTE_NAMES = {
 	"Resupply", -- client -> server: ("flare", target) | ("pick", crateId, itemId); server -> client: ("called", thrower) | ("cards", crateId, choices, positions, inventory) | ("picked", crateId) | ("closed", crateId)
 	"ItemsUpdate", -- server -> client: (inventory: { [itemId]: stacks })
 	"BuffNotice", -- server -> client: (text: string) short on-screen buff announcement
-	"RestartRun", -- client -> server: request a fresh run after dying
+	"RestartRun", -- client -> server: READY for the next run (only once the run has Ended)
 	"DevCommand", -- client -> server: (command: string, ...) Studio/creator-only dev tools
 	"ExtractionUpdate", -- server -> client: (kind: "available"|"progress"|"returning"|"complete"|"hide", progress)
 	"UseAbility", -- client -> server: (abilityName: "dash"|"breach")

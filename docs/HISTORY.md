@@ -57,5 +57,6 @@ git history; this file is the index. Current state and open work: `handoff/READM
 | 2026-11-07 | Co-op Sprint A step 2, reset split: run-level resets separated from per-player ones; a restart resets and respawns every player and is only honoured once the run has ended. Verified in a playtest | docs/sprints/SPRINT_17_COOP_A.md |
 | 2026-11-07 | Co-op Sprint A step 3, Squad everywhere: XP orbs (shared XP), hold and extraction zones, Requisition, spawn ring and the wipe check read the Squad roster. Verified with a 2-client multiplayer playtest | docs/sprints/SPRINT_17_COOP_A.md |
 | 2026-11-07 | Co-op Sprint A step 4, spawn pads: four landing pads around the LZ helipad, one per squad member (players' RespawnLocation, bots on the rest). Verified with a 2-client multiplayer playtest | docs/sprints/SPRINT_17_COOP_A.md |
+| 2026-11-07 | Co-op Sprint A step 5, run end + ready-up: one RunEndUI keyed on the run state (K.I.A. banner mid-run, results on Ended), READY vote with a 10 s countdown. Verified with a 2-client multiplayer playtest | docs/sprints/SPRINT_17_COOP_A.md |
 
 Still open: Sprint 13 Full MVP Balance + Fun Test (docs/sprints/SPRINT_13_FULL_MVP_BALANCE_TEST.md).

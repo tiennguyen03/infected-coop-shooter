@@ -105,6 +105,9 @@ local Config = {
 	-- Run flow (RunManager, Shared.RunStates). Co-op Sprint A.
 	Run = {
 		InsertSeconds = 3, -- Insert -> Explore: the squad lands before the first wave
+		-- After a run ends, the first READY opens this countdown; the next run starts when it
+		-- runs out or every player is ready (solo: at once). Decision #4.
+		ReadyUpSeconds = 10,
 		-- Four landing pads around the LZ helipad (offsets from Config.Extraction.ZonePosition),
 		-- one per squad member: players take the lowest free pad, bots the rest (Squad).
 		SpawnPads = {

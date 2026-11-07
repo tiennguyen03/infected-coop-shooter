@@ -159,7 +159,7 @@ and checks `RunResult`.
    ring only the living.
 4. **Done 2026-11-07.** Four invisible SpawnLocations SpawnPad1..4 on the LZ at Config.Run.SpawnPads; Squad.padFor hands each member the lowest free slot and points the player's RespawnLocation at it (a server PivotTo after spawn was overridden by the client, so the engine places them); bots land on the remaining pads at run start. Verified with 2 clients: Player1 lands at (-9,-9), Player2 at (9,9) from the LZ, RESTART from either respawns both on their pads. Spawn pads + `spawnAll` + start resets every member. Verify 2 clients land on different
    pads; `RestartRun` from either respawns both with clean attributes.
-5. Run end + ready-up + client screens on `RunState`. Verify: kill client-1 → no screen on
+5. **Done 2026-11-07.** client RunEndUI replaces DeathScreenUI + MissionSuccessUI: K.I.A. banner while the run is live, results screen (OPERATION COMPLETE / SQUAD WIPED) only on RunState Ended, READY + ready count + countdown; RunManager ready-up (ReadyCount/ReadyNeeded/ReadyUpEndsAt, Config.Run.ReadyUpSeconds 10). Verified with 2 clients: P1 dead -> banner on P1, nothing on P2; both dead -> both SQUAD WIPED; one READY -> 1/2 + 10 s countdown -> both respawn, screens clear; ForceMissionSuccess -> both OPERATION COMPLETE; both READY -> immediate start. Run end + ready-up + client screens on `RunState`. Verify: kill client-1 → no screen on
    client-2; kill both → Ended, both see K.I.A.; one READY → countdown → both respawn;
    `ForceMissionSuccess` → both see OPERATION COMPLETE, both screens clear on restart
    (closes #12, #13).
