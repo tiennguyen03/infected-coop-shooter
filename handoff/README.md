@@ -1,7 +1,9 @@
 # Handoff — Infected Co-op Shooter (VS Code + Claude Code terminal)
 
 Start here when picking the project up in a fresh Claude Code session.
-Last updated: 2026-11-07 (the Warden, Sprint 19; skinned Weller switched off). Last verified commit on `main`: the Warden commit (solo + 2-client playtests).
+Last updated: 2026-11-07, end of the build-round-1 session (the Warden shipped, player
+movement fixed, skinned Weller switched off). **Start the next session at "Open work"
+item 1: the Warden silhouette redesign the owner asked for.** Last verified commit on `main`: the Warden commit (solo + 2-client playtests).
 
 ## What this is
 
@@ -147,6 +149,26 @@ Read in this order:
   spray, MP roster) and the insert / wipe radio lines, a 4-player phone pass on phase
   2. First real fight on this build: 100-120 s is the target; retune
   `Config.Index.Warden` plate health if it drags.
+- **NEXT: the Warden silhouette redesign (owner, 2026-11-07).** After playing the shipped
+  Warden the owner said: "I like how he looks, I like the direction with the riot armor. I
+  just don't like that it's essentially just a Brute model with riot armor slapped on top
+  of it." Asked for: design him live in Blender through the Blender MCP (`mcp__blender__*`:
+  `get_addon_status`, `execute_blender_code`, `look`) so the owner can see renders and
+  direct changes before anything is ported to `build_assets.py`. State: the live Blender
+  scene was cleared (default cube removed); nothing built yet. Direction drafted, not yet
+  approved: upright and tall where the Brute is hunched; asymmetric (left side one armoured
+  mass of shield + shoulder dome + raised riot collar, right side the bare man); head sunk
+  into the collar so helmet and shoulders read as one dome; long legs with shin guards;
+  duty belt with canisters; the brassard. Keep the canon (fused helmet with cracked
+  visor, chest plate with the open handset, shield grown into the left forearm, six
+  breakable plates, scale 1.9) and the 5,000-tri boss cap. Build from low-poly primitives
+  with the STYLES §2 swatches, show front / side / three-quarter renders, iterate with the
+  owner, then port the approved shapes into `warden_limb` / `_warden_plate` and re-upload
+  (`assets/3d/ASSET_IDS.md`). Note: in that session the Agent tool listed no
+  `art-director` type even though `.claude/agents/` has it; check before relying on it.
+- **Owner also said "there's other problems"** with the current build beyond the player
+  body and the Warden look, not yet listed. Ask for them at the start of the next session
+  before building anything new.
 - **Skinned Weller is off (2026-11-07).** To bring it back: make the skin's bones follow
   the hidden rig (per frame after the animation step, `Bone.Transform` from each hidden
   part's CFrame and the bind-pose offset), or re-export the FBX so the bone rest frames
@@ -305,6 +327,17 @@ Studio must be open with the MCP plugin connected. Tools: `solo_playtest`, `exec
 `capture_screenshot`, `upload_asset`, `manage_instance`.
 
 Hard-won gotchas:
+- **Studio MCP gotchas found 2026-11-07.** (1) A runtime error inside `execute_luau`
+  comes back as "Unknown error" with no message: wrap the body in `pcall` and return the
+  error string. (2) `Player.Character.Archivable` is false, so `Character:Clone()` returns
+  nil; set it true around the clone. (3) If `solo_playtest` returns "Unknown error" and
+  `get_connected_instances` shows a stale standalone "Server" instance, drive play with
+  the other server's `mcp__Roblox_Studio__start_stop_play` (studio id from
+  `list_roblox_studios`) and keep using `mcp__robloxstudio__execute_luau` with
+  `instance_id` of the COD.rbxl instance. (4) Measuring movement: disable the
+  PlayerModule controls and `UnbindFromRenderStep("Momentum")` on the client, drive
+  `Humanoid:Move` yourself and sample `AssemblyLinearVelocity`; a healthy body reaches
+  WalkSpeed within 0.1 s. A hand-built minimal rig in the same spot is the reference.
 - **`execute_luau` runs in an isolated VM.** `require()` returns a fresh, un-`init()`ed
   module copy — calling service functions from eval hits nil remotes. Drive the real game by
   firing the `DevCommand` RemoteEvent from `client-1`; use eval only to read Instance/
