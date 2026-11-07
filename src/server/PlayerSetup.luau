@@ -171,9 +171,9 @@ PlayerSetup.BODY = PLAYER_BODY
 -- (assets/3d pc_assault_skinned) assembled at boot by MeshAssets.buildSkinnedBody from its
 -- two uploaded assets and installed as StarterPlayer.StarterCharacter, so every character
 -- spawns as that rig (R15 part names, Humanoid, Animator) and the limb swap is skipped; the
--- helmet and carrier weld on like the rifle does. The asset fetch takes a moment: a
--- character that spawns before it lands gets the limb-swap body for that life. Bots
--- (BotService) keep the limb-swap body.
+-- helmet and carrier weld on like the rifle does. The install yields on the asset fetch
+-- (about a second) so the first body of the run already spawns skinned (RunManager loads
+-- the characters after this init). Bots (BotService) keep the limb-swap body.
 local SKIN_PART = "SkinnedBody" -- the mesh buildSkinnedBody adds; marks a skinned character
 
 local function installSkinnedBody()
@@ -188,6 +188,14 @@ local function installSkinnedBody()
 	end
 	template.Name = "StarterCharacter"
 	template.Parent = StarterPlayer
+	-- In Studio the first player is in before any script runs and already has the stock
+	-- body (CharacterAutoLoads is still on at that point): give them the skinned one.
+	for _, player in Players:GetPlayers() do
+		local character = player.Character
+		if character and not character:FindFirstChild(SKIN_PART) then
+			player:LoadCharacter()
+		end
+	end
 end
 
 -- Welds the rigid gear meshes (Config.Player.SkinnedGear) onto the skinned body's limbs.
@@ -255,7 +263,7 @@ function PlayerSetup.init()
 	-- is the whole look and every player is the same silhouette.
 	StarterPlayer.LoadCharacterAppearance = false
 	if Config.Player.SkinnedBody then
-		task.spawn(installSkinnedBody) -- yields on the asset fetch
+		installSkinnedBody() -- yields on the asset fetch
 	end
 	Players.PlayerAdded:Connect(onPlayerAdded)
 	for _, player in Players:GetPlayers() do

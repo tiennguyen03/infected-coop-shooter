@@ -1,7 +1,7 @@
 # Handoff — Infected Co-op Shooter (VS Code + Claude Code terminal)
 
 Start here when picking the project up in a fresh Claude Code session.
-Last updated: 2026-11-07 (skinned Weller). Last verified commit on `main`: the skinned Weller commit (verified in a playtest as an NPC; first player spawn on it still to be watched after a Rojo reconnect).
+Last updated: 2026-11-07 (skinned Weller). Last verified commit on `main`: the skinned Weller commit (playtested as the player).
 
 ## What this is
 
@@ -65,10 +65,11 @@ Read in this order:
   Humanoid (R15 clips bend the skin at elbows and knees, feet on the ground at HipHeight
   2.19, stock motor names, gear seated). Art-director pass: ship after the hand fix (fists
   were boxing gloves; fixed and re-uploaded). The rigid fallback (tapered limbs, pads,
-  fist hands) is uploaded too and is what the bots wear. **Not yet seen: a player spawning
-  on it** (the Rojo plugin dropped during the Delta merge, so Studio ran the old
-  PlayerSetup); first thing next session: reconnect Rojo, Stop > Play, check walk / sprint
-  / prone / roll / vault, rifle in hand, headshots on `Head`, death clip, camera.
+  fist hands) is uploaded too and is what the bots wear. Played as the player: spawns
+  skinned from the first life (PlayerSetup respawns the pre-boot stock body), helmet and
+  carrier on, rifle in hand, prone drops and stands back up on the renamed `Root` motor,
+  death and restart respawn skinned. Not yet looked at closely: sprint / roll / vault
+  clips on the skin, the hit boxes under fire from a Hocker.
 - Static checks clean (stylua / selene / rojo build) at the skinned Weller commit; luau-lsp
   reports pre-existing nits only (Animations.luau, MeshAssets.dressModel narrowing).
 - 2026-11-05: decided the final product is **4-player co-op**. `src/` audited; 13 single-
@@ -117,9 +118,9 @@ Read in this order:
 
 ## Open work, in priority order
 
-- **Skinned Weller shipped 2026-11-07, player spawn unverified.** Reconnect the Rojo plugin
-  (localhost:34872), Stop > Play, play a life on the skinned body (list in "Current state").
-  If anything breaks: `Config.Player.SkinnedBody = false` ships the tapered rigid Weller.
+- **Skinned Weller shipped 2026-11-07.** Watch a full life on it (sprint, roll, vault,
+  downed crawl, a Hocker hit on the hidden limbs). If anything breaks:
+  `Config.Player.SkinnedBody = false` ships the tapered rigid Weller.
   Art-director later pass: carrier straps to z 0.80, a 75/25 loop either side of the elbow
   and knee rings, toe step on the boot. The other four Chosen stay rigid until a class
   system exists (build `_pc_skin_body` for them then).
