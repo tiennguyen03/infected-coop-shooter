@@ -4,11 +4,13 @@
 -- (BotService); targeting, splash damage and anything else that keys on "a squad body"
 -- reads members from here so a bot is seen the same way as a player. Per-owner state
 -- (items, XP, stat mults) stays on the Player; bots have none (`ownerAttribute` default).
--- This first cut tracks Alive/Dead from the humanoid; Downed/revive, pads and the ready
--- vote land in later Sprint A steps. Requires nothing but Players, so any service can
--- require it without a cycle.
+-- Tracks Alive/Dead from the humanoid and hands out landing pads (step 4); Downed/revive
+-- and the ready vote land in later Sprint A steps. Requires only Players and ArenaService,
+-- so any service can require it without a cycle.
 
 local Players = game:GetService("Players")
+
+local ArenaService = require(script.Parent.ArenaService)
 
 export type MemberKind = "player" | "bot"
 export type Member = {
@@ -19,6 +21,7 @@ export type Member = {
 	character: Model?,
 	humanoid: Humanoid?,
 	root: BasePart?,
+	padIndex: number?, -- landing pad slot, claimed on first spawn, freed on removal
 }
 
 local Squad = {}
@@ -66,6 +69,7 @@ function Squad.addBot(slot: number, name: string): Member
 		character = nil,
 		humanoid = nil,
 		root = nil,
+		padIndex = nil,
 	}
 	add(member)
 	return member
@@ -139,6 +143,31 @@ function Squad.nearestLiving(position: Vector3): (Member?, number)
 	return nearest, nearestDistance
 end
 
+-- The member's landing pad slot: the lowest one no other member holds (players claim
+-- theirs before the bots are rebuilt on a run start).
+function Squad.padFor(member: Member): number
+	if member.padIndex then
+		return member.padIndex
+	end
+	local taken: { [number]: boolean } = {}
+	for _, other in members do
+		if other.padIndex then
+			taken[other.padIndex] = true
+		end
+	end
+	local index = 1
+	while taken[index] do
+		index += 1
+	end
+	member.padIndex = index
+	return index
+end
+
+-- Where `member` lands at the start of a run.
+function Squad.spawnCFrame(member: Member): CFrame
+	return ArenaService.getSpawnPad(Squad.padFor(member))
+end
+
 -- A per-owner attribute (IncomingDamageMult, ...), or `default` for a bot.
 function Squad.ownerAttribute(member: Member, name: string, default: any): any
 	local owner = member.owner
@@ -161,11 +190,16 @@ local function onPlayerAdded(player: Player)
 		character = nil,
 		humanoid = nil,
 		root = nil,
+		padIndex = nil,
 	}
 	byPlayer[player] = member
 	add(member)
+	-- Every (re)spawn lands on the member's own pad around the LZ helipad.
+	local pad = ArenaService.getSpawnLocation(Squad.padFor(member))
+	if pad then
+		player.RespawnLocation = pad
+	end
 	player.CharacterAdded:Connect(function(character)
-		-- The humanoid and root exist by the time CharacterAdded fires for a loaded rig.
 		character:WaitForChild("HumanoidRootPart", 10)
 		Squad.bindCharacter(member, character)
 	end)

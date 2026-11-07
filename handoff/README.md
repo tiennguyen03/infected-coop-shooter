@@ -1,7 +1,7 @@
 # Handoff — Infected Co-op Shooter (VS Code + Claude Code terminal)
 
 Start here when picking the project up in a fresh Claude Code session.
-Last updated: 2026-11-07 (Co-op Sprint A step 3: Squad everywhere). Last verified commit on `main`: the Sprint A step 3 commit (playtested).
+Last updated: 2026-11-07 (Co-op Sprint A step 4: spawn pads). Last verified commit on `main`: the Sprint A step 4 commit (playtested).
 
 ## What this is
 

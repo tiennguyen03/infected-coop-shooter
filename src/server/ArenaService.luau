@@ -531,6 +531,27 @@ local function placeDressing(arena: Model)
 	end
 end
 
+local spawnPads: { [number]: SpawnLocation } = {}
+
+-- The SpawnLocation for squad slot `index` (players' RespawnLocation).
+function ArenaService.getSpawnLocation(index: number): SpawnLocation?
+	return spawnPads[((index - 1) % #Config.Run.SpawnPads) + 1]
+end
+
+-- The landing pad for squad slot `index` (1..4): a standing CFrame on the LZ helipad,
+-- facing the middle of the arena.
+function ArenaService.getSpawnPad(index: number): CFrame
+	local pads = Config.Run.SpawnPads
+	local offset = pads[((index - 1) % #pads) + 1]
+	local lz = Config.Extraction.ZonePosition
+	local position = Vector3.new(lz.X + offset.X, 3.5, lz.Z + offset.Z)
+	local toward = Vector3.new(-position.X, 0, -position.Z)
+	if toward.Magnitude < 0.01 then
+		toward = Vector3.new(0, 0, -1)
+	end
+	return CFrame.lookAlong(position, toward.Unit)
+end
+
 function ArenaService.init()
 	if workspace:FindFirstChild("TestArena") then
 		return
@@ -561,20 +582,29 @@ function ArenaService.init()
 	buildHelipad(arena, "AltHelipad", 255, 85, 0.3)
 	buildLandmarks(arena)
 
-	-- Players insert on the LZ pad (move existing SpawnLocation or create one). The pad
-	-- itself is the visual; the SpawnLocation is invisible.
-	local spawn = workspace:FindFirstChildWhichIsA("SpawnLocation", true)
-	if not spawn then
-		spawn = Instance.new("SpawnLocation")
-		spawn.Size = Vector3.new(6, 1, 6)
-		spawn.Neutral = true
+	-- Four invisible SpawnLocations on the LZ, one per squad slot (Config.Run.SpawnPads).
+	-- Squad points each player's RespawnLocation at their own pad, so the engine lands them
+	-- there; a stray SpawnLocation from the place file is disabled.
+	for _, stray in workspace:GetDescendants() do
+		if stray:IsA("SpawnLocation") then
+			stray.Enabled = false
+		end
 	end
-	spawn.Anchored = true
-	spawn.CanCollide = false
-	spawn.Transparency = 1
-	spawn.Size = Vector3.new(6, 0.2, 6)
-	spawn.Position = Vector3.new(lz.X, 0.6, lz.Z)
-	spawn.Parent = arena
+	for index = 1, #Config.Run.SpawnPads do
+		local pad = Instance.new("SpawnLocation")
+		pad.Name = "SpawnPad" .. index
+		pad.Neutral = true
+		pad.Anchored = true
+		pad.CanCollide = false
+		pad.CanQuery = false
+		pad.CanTouch = false
+		pad.Transparency = 1
+		pad.Duration = 0 -- no spawn forcefield
+		pad.Size = Vector3.new(4, 0.2, 4)
+		pad.CFrame = ArenaService.getSpawnPad(index) - Vector3.new(0, 2.9, 0)
+		pad.Parent = arena
+		spawnPads[index] = pad
+	end
 
 	local wy = WALL_HEIGHT / 2
 	local span = HALF * 2 + WALL_THICKNESS

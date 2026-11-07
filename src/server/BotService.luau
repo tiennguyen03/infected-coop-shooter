@@ -452,11 +452,10 @@ function BotService.startRun()
 		if generation ~= runGeneration then
 			return
 		end
+		-- A run start lands every bot on its own pad (Squad hands out the free ones).
 		for _, bot in bots do
-			local position = if leader
-				then slotPosition(bot, leader)
-				else Config.Extraction.ZonePosition
-			task.spawn(spawnBot, bot, position)
+			local pad = Squad.spawnCFrame(bot.member).Position - Vector3.new(0, 3, 0)
+			task.spawn(spawnBot, bot, pad)
 		end
 	end)
 end

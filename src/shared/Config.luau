@@ -105,6 +105,14 @@ local Config = {
 	-- Run flow (RunManager, Shared.RunStates). Co-op Sprint A.
 	Run = {
 		InsertSeconds = 3, -- Insert -> Explore: the squad lands before the first wave
+		-- Four landing pads around the LZ helipad (offsets from Config.Extraction.ZonePosition),
+		-- one per squad member: players take the lowest free pad, bots the rest (Squad).
+		SpawnPads = {
+			Vector3.new(-9, 0, -9),
+			Vector3.new(9, 0, -9),
+			Vector3.new(-9, 0, 9),
+			Vector3.new(9, 0, 9),
+		},
 	},
 
 	-- Over-the-shoulder camera (client-side, scriptable).

@@ -157,7 +157,7 @@ and checks `RunResult`.
    `multiplayer_playtest`, 2 clients: Infected chase the nearest living; `KillPlayer` on
    client-1 → they switch to client-2; orbs grant XP to both (`Level` attributes); spawns
    ring only the living.
-4. Spawn pads + `spawnAll` + start resets every member. Verify 2 clients land on different
+4. **Done 2026-11-07.** Four invisible SpawnLocations SpawnPad1..4 on the LZ at Config.Run.SpawnPads; Squad.padFor hands each member the lowest free slot and points the player's RespawnLocation at it (a server PivotTo after spawn was overridden by the client, so the engine places them); bots land on the remaining pads at run start. Verified with 2 clients: Player1 lands at (-9,-9), Player2 at (9,9) from the LZ, RESTART from either respawns both on their pads. Spawn pads + `spawnAll` + start resets every member. Verify 2 clients land on different
    pads; `RestartRun` from either respawns both with clean attributes.
 5. Run end + ready-up + client screens on `RunState`. Verify: kill client-1 → no screen on
    client-2; kill both → Ended, both see K.I.A.; one READY → countdown → both respawn;
