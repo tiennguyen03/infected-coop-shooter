@@ -16,13 +16,49 @@ decisions are always driven by [PLAN.md](PLAN.md) and sprint documents.
 
 Humanity is losing.
 
-A rapidly spreading infection has collapsed cities, overwhelmed military forces, and pushed
+An engineered strain has collapsed cities, overwhelmed military forces, and pushed
 civilization to the brink of extinction. Entire regions have gone dark. Communication
 networks are failing. Supply chains have collapsed. Millions are dead. Millions more are
-infected.
+infected. What it is and where it came from: [The strain](#the-strain) below.
 
 Small pockets of survivors remain scattered throughout the world. Most people are simply
 trying to survive another day. Very few are still fighting back.
+
+---
+
+# The strain
+
+It was a field-medicine program: an engineered agent meant to make wounded soldiers rebuild
+tissue fast and keep fighting. It works. It never got a stop signal. In a living host it
+keeps rebuilding, pulling bone, muscle and skin into whatever shape gets the agent to the
+next body, and it burns the host to do it. Nothing wants anything; a body is raw material
+being re-sorted. It spreads by fluid, so every form is a delivery method. Harlan Reservoir
+research station was the program's home and its cultures are the only clean copies.
+
+**The Infected** is Command's name for every form (and the model name). The Infected are not
+hungry and not dead; they are rebuilt. The soldiers' slang for each form, ordered by how far
+the agent has gone in one body: Walker, Runner, Brute, Hocker, Bloat, Shedder, Crawler,
+Kite, Growth. One rule per form; roster and stage of first appearance in
+[PROGRESSION.md](PROGRESSION.md).
+
+---
+
+# The Harlan Corridor
+
+Command lost the Harlan quarantine corridor. The Chosen go up it by helo, one fallen
+position at a time, toward the station that started it. Each place failed the same way:
+from the inside, by trying to help. Road signs count down the distance to Harlan; the sky
+goes from evening to night to dawn.
+
+1. **Checkpoint Delta** — the southern screening gate. Boss: the Warden.
+2. **Mile 14** — the stalled evacuation convoy on the highway. Boss: the Bloat.
+3. **Aid Station Kestrel** — a high school turned field hospital. Boss: the Patient.
+4. **Harlan Yard** — the rail yard. Boss: the Lineman.
+5. **Harlan Reservoir Station** — the dam and the research station. Boss: the Specimen.
+
+The helo is the only thing that stays the same and the only way out. **Stand Down** is the
+bird offering the seat home: board it and the run ends on your terms. Stay, and the corridor
+loops. Stage detail (landmarks, sites, story spots) is in [PROGRESSION.md](PROGRESSION.md).
 
 ---
 

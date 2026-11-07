@@ -21,7 +21,7 @@ level-up offers 3 distinct choices. Last updated 2026-06-12.
 | 13 | Hunter's Mark Optics | `hunters_mark_optics` | Uncommon | Priority debuff | unlimited |
 
 Rarities: 16 Common · 7 Uncommon · 1 Legendary (24 total). Offer weights 70/25/5; see
-[ITEM_RARITY_PLAN.md](ITEM_RARITY_PLAN.md).
+[SPRINT_14_ITEM_RARITY.md](sprints/SPRINT_14_ITEM_RARITY.md).
 
 ### Sprint 16
 | # | Name | Id | Rarity | Effect |

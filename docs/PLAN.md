@@ -23,6 +23,25 @@ progression loop is fun.
 
 ---
 
+## Design pillars
+
+Every design decision, by the team or by a subagent, is tested against these. If a feature
+serves none of them it is cut; if two conflict, the earlier one wins.
+
+1. **Always a reason to move.** Loot, a site, a log, a route up. Standing still is a choice
+   the game punishes gently and never the best plan.
+2. **Pressure is a clock the player can read.** Difficulty rises with time, never with a
+   hidden trigger. The player decides when to commit (start the hold) and feels the cost
+   of waiting.
+3. **Every Infected form is one rule.** A new enemy teaches one thing at a glance (it
+   throws, it bursts, it splits). Silhouette and behaviour match; no palette swaps.
+4. **Builds create stories.** Items and abilities combine into runs the player can
+   describe afterwards. A stat stick is filler; a stack that changes how you play is content.
+5. **Four players, one run.** Everything is per player or per run, scales by headcount, and
+   reads the same on a low-end phone and a desktop.
+
+---
+
 # MVP Core Loop
 
 Player spawns into arena. Player kills enemies. Enemies grant XP. Player levels up.
@@ -204,9 +223,9 @@ Do NOT begin these until MVP is complete.
   Victor Kane (field engineer)
 - **Item System:** replace simple stat upgrades with collectible items (chain lightning,
   crits, explosive bullets, drones, healing)
-- **Elite Enemies:** stronger enemy variants
-- **Boss System:** timed boss encounters
-- **Stage Progression:** multiple maps, teleporters, biome progression
+- **Stage progression, bosses and the Infected roster:** designed in
+  [PROGRESSION.md](PROGRESSION.md) (three-stage first loop, a boss per stage, Stand Down).
+  Elite variants come after the roster.
 - **Co-op (the final product):** Co-op Sprint A (run state machine, per-player level-up,
   downed/revive, spawn pads) then Sprint B (squad objective rules, player-count difficulty,
   shared pickups). Plan: [MULTIPLAYER_READINESS.md](MULTIPLAYER_READINESS.md)

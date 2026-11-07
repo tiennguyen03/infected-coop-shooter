@@ -147,7 +147,7 @@ then fill the `imageId` fields and run `wire.js`.
 
 After wiring: `stylua src && selene src`, Stop → Play in Studio, `DevCommand` ForceLevelUp
 to see three cards, GrantItem to see bar slots. Commit SVG sources + generator + Luau +
-ASSET_IDS.md. The old docs/ICON_PROMPTS.md (AI image prompts) is superseded by this file.
+ASSET_IDS.md. The old AI image-prompt doc was deleted 2026-11-06; subjects live in the generator.
 
 ---
 

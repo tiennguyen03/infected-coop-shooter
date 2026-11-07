@@ -1,11 +1,11 @@
 # Handoff — Roguelike Arena Survivor (VS Code + Claude Code terminal)
 
 Start here when picking the project up in a fresh Claude Code session.
-Last updated: 2026-11-06 (Stage 1 sky + 600-stud map). Last verified commit on `main`: `6bc164e`.
+Last updated: 2026-11-06 (progression design + design subagents). Last verified commit on `main`: `b5d1203`.
 
 ## What this is
 
-Roblox roguelike (Risk of Rain 2-style loop, grounded military zombie setting). **Final
+Roblox roguelike (Risk of Rain 2-style loop, grounded military bio-horror setting). **Final
 product is 4-player co-op**; the current build is single-player. Full loop works: spawn → fight → level up → pick 1 of 3 items → Hold Position
 objective → extraction → OPERATION COMPLETE → restart. 24 items, 3 enemy types, Assault
 class with Q dash / E breach / Combat Momentum, server-authoritative everything.
@@ -36,11 +36,21 @@ Read in this order:
 
 ## Open work, in priority order
 
+0. **Progression (designed 2026-11-06, not built):** `docs/PROGRESSION.md` — three-stage
+   first loop (Checkpoint Delta, Mile 14, Aid Station Kestrel), player-started hold at one
+   of three sites, a boss per stage, Stand Down, the nine-form Infected roster. Build order
+   is in the doc: data-driven enemy hooks first, then Hocker on Delta. Design subagents in
+   `.claude/agents/` (lore-developer, systems-designer, level-designer, playtest-critic)
+   argue the design before code; the lore developer owns canon.
+   **Animations (in progress, uncommitted):** Mixamo clips retargeted onto R15
+   (`assets/animations/`, `AnimationController`, per-type Infected clips, hold-E breach
+   ghost). Blocked on the owner clicking Connect in Studio's Rojo plugin, then Stop → Play
+   to verify, then the publish round (`assets/animations/README.md` step 4).
 1. **Plan Co-op Sprint A** from the decided design in `docs/MULTIPLAYER_READINESS.md`
    (run state machine, no-pause level-up, downed/revive, spawn pads, reset split, client
    screens). Verify with the Studio MCP `multiplayer_playtest` tool.
 2. **Sprint 13 Full MVP Balance + Fun Test** — still OPEN. Needs 3 natural human playtests;
-   tune `src/shared/Config.luau` only. Plan: `docs/SPRINT_13_FULL_MVP_BALANCE_TEST.md`.
+   tune `src/shared/Config.luau` only. Plan: `docs/sprints/SPRINT_13_FULL_MVP_BALANCE_TEST.md`.
    This is the gate for calling the MVP done (criteria in `docs/PLAN.md`).
 3. **Stage 1 "Checkpoint Delta" shipped 2026-11-06** (`ArenaService`: 600 x 600 studs,
    the central checkpoint plus four outer districts (Suburb north, Depot east, Scrapyard

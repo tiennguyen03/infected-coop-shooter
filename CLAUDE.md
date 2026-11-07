@@ -1,6 +1,6 @@
 # Roguelike Arena Survivor
 
-Roblox roguelike (Risk of Rain 2-inspired loop, original mechanics), grounded military zombie
+Roblox roguelike (Risk of Rain 2-inspired loop, original mechanics), grounded military bio-horror
 setting. **Final product is 4-player co-op**; single-player is the current build target. Enemies are "the Infected" (model name `Infected`).
 
 Read on demand, not up front:
@@ -9,10 +9,16 @@ Read on demand, not up front:
 - `docs/HISTORY.md` — what shipped, sprint by sprint, with links to each sprint doc.
 - `docs/PLAN.md` — scope rules + roadmap (what is explicitly out of scope).
 - `docs/LORE.md` — setting, tone, naming. Lore never overrides gameplay.
+- `docs/PROGRESSION.md` — run structure: stages, hold, bosses, loop, Stand Down, the
+  Infected roster, and the technical plan. Read before touching enemies, objectives or
+  run flow.
 - `docs/STYLES.md` — every visual decision: palette, icons, UI, low-poly 3D/Blender, VFX,
   performance budgets. Read before any visual work.
 - `docs/MULTIPLAYER_READINESS.md` — co-op rules, single-player debt register, open design
   decisions. Read before touching run flow, pause, XP, death, spawning, or objectives.
+- `docs/sprints/` — one doc per shipped sprint; linked from HISTORY.md.
+- `.claude/agents/` — design subagents: lore-developer, systems-designer, level-designer,
+  playtest-critic. Use them for design calls in their area before building.
 
 ## Guiding rule
 
@@ -69,7 +75,7 @@ staged with it. A commit that touches `src/` or `assets/` carries:
 1. `handoff/README.md` — replace the stale "current state" / "open work" lines (edit in
    place, never append a new section).
 2. `docs/HISTORY.md` — one table row for the sprint or feature that shipped.
-3. The feature's own doc (`docs/SPRINT_*.md`, `docs/STYLES.md` for visuals,
+3. The feature's own doc (`docs/sprints/SPRINT_*.md`, `docs/STYLES.md` for visuals,
    `assets/*/README.md` for pipelines) — only the facts that changed.
 
 Keep this file and handoff/README.md short; detail goes in the linked doc. State each fact in

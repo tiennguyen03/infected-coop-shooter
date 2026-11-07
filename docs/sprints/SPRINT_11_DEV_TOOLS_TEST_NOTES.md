@@ -102,7 +102,7 @@ was a stale playtest running pre-Sprint-12 code; source wiring was already corre
 ## Sprint 14 (Item Rarity Framework) — added 2026-06-12
 Rarities (Common/Uncommon/Legendary) on all 13 items, weighted-rarity offer rolls (70/25/5)
 with distinct cards + fallback, every-4th-level-up Uncommon+ guarantee, rarity colors/labels
-on level-up cards. Plan: [ITEM_RARITY_PLAN.md](ITEM_RARITY_PLAN.md). Static checks PASS.
+on level-up cards. Plan: [SPRINT_14_ITEM_RARITY.md](SPRINT_14_ITEM_RARITY.md). Static checks PASS.
 Rarity card UI confirmed in-engine (grey COMMON / green UNCOMMON labels + borders render).
 **Bug found + fixed:** dying while a level-up item offer was open left the equipment screen
 up and the game paused, blocking restart ("infinite deploying"). Fix: server cancels
