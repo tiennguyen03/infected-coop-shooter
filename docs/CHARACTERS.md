@@ -279,6 +279,10 @@ body the colour square sits on the left sleeve only; the rigid sets show it on b
 because left and right share one mesh.
 
 ### Isaac Weller, Assault (`pc_assault`)
+
+> **In game (2026-11-07):** the tapered rigid body (`PC_TAPER`). The skinned one-mesh body
+> is built and uploaded but switched off: its bones and the hidden Motor6D rig diverge
+> under the R15 clips (handoff/README.md open work).
 - **Silhouette:** helmet, squared shoulders, the straightest back in the squad.
 - **Head:** `dark.m` ballistic helmet with NVG mount, chin strap; face `tan.m`, short
   `dark.d` hair at the sides, a `dark.d` beard line; `gun.l` IR strobe on the helmet back.

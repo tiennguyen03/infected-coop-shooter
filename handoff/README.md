@@ -1,7 +1,7 @@
 # Handoff — Infected Co-op Shooter (VS Code + Claude Code terminal)
 
 Start here when picking the project up in a fresh Claude Code session.
-Last updated: 2026-11-07 (the Warden, Sprint 19; skinned-body scale fix). Last verified commit on `main`: the Warden commit (solo + 2-client playtests).
+Last updated: 2026-11-07 (the Warden, Sprint 19; skinned Weller switched off). Last verified commit on `main`: the Warden commit (solo + 2-client playtests).
 
 ## What this is
 
@@ -64,6 +64,13 @@ Read in this order:
   Bash / Charge / Gas Canister / Guard with handset tells on the new `BossBarUI`;
   Riot Call at 60% and 25%. Kill → priority pallet, heal, re-arm, `Extract`. Dev: F1
   `Warden (Gate)` / `Warden here`. 16 meshes uploaded (`assets/3d/ASSET_IDS.md`).
+- 2026-11-07: **Skinned Weller switched off** (`Config.Player.SkinnedBody = false`; players
+  wear the tapered rigid body the bots wear). The owner saw the helmet, carrier and
+  rifle turn away from the body: measured on the live character, the hidden rig parts
+  (driven by the R15 Motor6D clips, and what the gear and rifle weld to) and the skin's
+  bones diverge 30-120 degrees while animating; they agree only in the idle pose. The
+  skinned body stays built and uploaded; see open work for what it needs before it comes
+  back.
 - 2026-11-07: **Skinned-body movement fix.** The owner reported the player "sliding",
   "barely controllable", "like two players colliding". Root cause: `buildSkinnedBody`
   scaled the imported rig with `Model:ScaleTo(0.01)`, which leaves the character Model's
@@ -140,9 +147,12 @@ Read in this order:
   spray, MP roster) and the insert / wipe radio lines, a 4-player phone pass on phase
   2. First real fight on this build: 100-120 s is the target; retune
   `Config.Index.Warden` plate health if it drags.
-- **Skinned Weller shipped 2026-11-07.** Watch a full life on it (sprint, roll, vault,
-  downed crawl, a Hocker hit on the hidden limbs). If anything breaks:
-  `Config.Player.SkinnedBody = false` ships the tapered rigid Weller.
+- **Skinned Weller is off (2026-11-07).** To bring it back: make the skin's bones follow
+  the hidden rig (per frame after the animation step, `Bone.Transform` from each hidden
+  part's CFrame and the bind-pose offset), or re-export the FBX so the bone rest frames
+  match the R15 Motor6D C0/C1 frames; then weld gear to parts that match the skin. Check
+  with the probe: part CFrame vs `Bone.TransformedWorldCFrame` under 5 degrees while
+  the walk and aim clips play. Also keep `Model:GetScale() == 1`.
   Art-director later pass: carrier straps to z 0.80, a 75/25 loop either side of the elbow
   and knee rings, toe step on the boot. The other four Chosen stay rigid until a class
   system exists (build `_pc_skin_body` for them then).

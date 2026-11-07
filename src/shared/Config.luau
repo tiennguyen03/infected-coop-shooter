@@ -27,7 +27,10 @@ local Config = {
 		-- assets/3d/README.md "Skinned Weller") as StarterPlayer.StarterCharacter, so every
 		-- character spawns as that rig and the limb swap (dressModel) is skipped. Bots keep
 		-- the limb-swap body either way. False = tapered rigid limbs for players too.
-		SkinnedBody = true,
+		-- Off since 2026-11-07: the hidden rig (Motor6D clips) and the skin's bones diverge
+		-- 30-120 degrees while animating, so welded gear and the rifle float away from the
+		-- body. Back on only after the bind poses are matched (handoff/README.md open work).
+		SkinnedBody = false,
 		SkinnedTemplate = "pc_assault_skinned",
 		-- Rigid gear welded onto the skinned body at spawn: MeshAssets template -> limb part
 		-- (the rifle stays a Tool on RightHand). Each template is built at the limb's centre,
