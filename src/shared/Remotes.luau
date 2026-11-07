@@ -9,7 +9,7 @@ local REMOTE_NAMES = {
 	"FireWeapon", -- client -> server: (origin: Vector3, direction: Vector3, aiming: boolean)
 	"ShotTracer", -- server -> other clients: (origin: Vector3, endPoint: Vector3) draw a tracer
 	"ObjectiveUpdate", -- server -> client: (kind: "started"|"progress"|"completed", progress: number)
-	"DamageDealt", -- server -> client: (position: Vector3, amount: number, kind: "hit"|"headshot"|"bleed"|"death")
+	"DamageDealt", -- server -> client: (position: Vector3, amount: number, kind: "hit"|"headshot"|"bleed"|"death"|..., attacker: Player?)
 	"Resupply", -- client -> server: ("flare", target) | ("pick", crateId, itemId); server -> client: ("called", thrower) | ("cards", crateId, choices, positions, inventory) | ("picked", crateId) | ("closed", crateId)
 	"ItemsUpdate", -- server -> client: (inventory: { [itemId]: stacks })
 	"BuffNotice", -- server -> client: (text: string) short on-screen buff announcement
@@ -19,6 +19,7 @@ local REMOTE_NAMES = {
 	"MissionSuccess", -- server -> client: () show the operation-complete results screen
 	"UseAbility", -- client -> server: (abilityName: "dash"|"breach")
 	"AbilityUsed", -- server -> client: (abilityName: string, cooldown: number) for UI countdown
+	"CoverMove", -- client -> server: (kind: "vault"|"climb") the body started going over cover
 }
 
 if RunService:IsServer() and not ReplicatedStorage:FindFirstChild("Remotes") then

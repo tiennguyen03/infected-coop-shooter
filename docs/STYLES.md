@@ -162,8 +162,10 @@ ASSET_IDS.md. The old AI image-prompt doc was deleted 2026-11-06; subjects live 
 - Corners: 10 px cards/panels, 8 px icons on cards, 6 px bar slots. Strokes: rarity color,
   2 px Common / 3 px Uncommon / 4 px Legendary.
 - Bars: health green→red, XP in friendly blue, shield in shield blue.
-- Damage numbers: white normal, red bleed, orange burn, light blue shock, yellow crit
-  (if ever added). Numbers pop and fade; no outlines heavier than 1 px.
+- Hit marker (2026-11-07, replaced damage numbers): four diagonal ticks round the
+  crosshair, white on a hit, gold and larger on a headshot, red, larger and thicker on a
+  kill; only the attacker sees it, damage over time never marks. Sizes and timings in
+  `Config.HitMarker`. Sparks and 3D hit sounds stay at the hit point for everyone.
 - UI stays **code-generated** (disk is the single source of truth). No hand edits in Studio.
 - Never block the center of the screen except for the level-up card row and death /
   success screens, which pause the game.

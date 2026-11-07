@@ -1,7 +1,7 @@
 # Handoff — Infected Co-op Shooter (VS Code + Claude Code terminal)
 
 Start here when picking the project up in a fresh Claude Code session.
-Last updated: 2026-11-07 (surface materials on the map; renamed to Infected Co-op Shooter earlier today). Last verified commit on `main`: the surface-materials commit (playtested before committing).
+Last updated: 2026-11-07 (feel pass: hit marker, faster vault/climb, climb immunity, quieter steps). Last verified commit on `main`: the feel-pass commit (playtested before committing).
 
 ## What this is
 
@@ -48,6 +48,10 @@ Read in this order:
   hit point, the player's pain grunt, and per-form Infected vocals with no-repeat random
   variants (`EnemyService` → `WorldSounds`, 3D on the head, replicated). Pipeline and
   the bank table: `assets/audio/README.md > Banks`.
+- 2026-11-07: **feel pass.** Crosshair hit marker replaces damage numbers (`HitMarkerUI`,
+  `Config.HitMarker`; only the attacker sees it: `DamageDealt` now carries the attacker).
+  Vault 0.55 s / climb 1.1 s. Infected melee skips a body mid-vault/climb
+  (`CoverMoveService`, `CoverMove` remote, rate-limited window). Footsteps halved.
 - 2026-11-07: **surface materials.** The map's ground, roads, concrete and nine
   one-material meshes use Roblox built-in materials instead of flat colour (rules in
   `docs/STYLES.md` §6 "Color and texture"). Multi-colour meshes and bodies still use the
@@ -74,27 +78,18 @@ Read in this order:
 - **Backlog (owner, 2026-11-07): rifle reload.** A magazine, R to reload, a reload clip and
   a reload sound (generate `reload_1..2` into a `player_weapon` bank with the rifle shot).
   Goes with the ammo economy decision in PROGRESSION; not before Co-op Sprint A.
-- **Backlog (owner, 2026-11-07, after the movement set playtest).** In the owner's order:
-  1. **Hit marker instead of damage numbers.** Drop the floating number counter
-     (`DamageNumberUI`); a crosshair hit marker (and a distinct headshot/kill tick) replaces it.
-  2. **Realistic time-to-kill.** Shots-to-kill per form should read like real bullets into a
+- **Backlog (owner, 2026-11-07, after the movement set playtest).** Hit marker, faster
+  vault/climb, climb immunity and quieter footsteps shipped (feel pass, HISTORY). Left, in
+  the owner's order:
+  1. **Realistic time-to-kill.** Shots-to-kill per form should read like real bullets into a
      body, and differ per weapon once there is more than one; retune `Weapon.Damage` and
      the roster `MaxHealth` together (systems-designer call; flat curve per the spine).
-  3. **Faster vault and climb.** `Config.Movement.VaultDuration` / `ClimbDuration` (0.9 /
-     1.8 s) feel slow; cut them and let the clip rate follow.
-  4. **The body is hittable while it climbs.** Infected melee uses root distance, so a
-     climbing body still takes hits "stuck in the animation". Fix: the move is already
-     carrying the root; make the melee check use the live root (it does) but give the climb
-     a short damage immunity or push the Infected's reach check to the feet, so going over
-     cover is an escape, not a trap. Decide with item 3.
-  5. **More Infected vocal variety.** Three idle / two attack lines per form is thin; add
+  2. **More Infected vocal variety.** Three idle / two attack lines per form is thin; add
      variants to each bank (`generate.py` `SOUNDS` + `BANKS`, re-upload the bank).
-  6. **Quieter footsteps.** `Config.Audio.Footsteps.WalkVolume` / `RunVolume` (0.7 / 1) are
-     too loud and sit on top of the mix; halve them and lower the steps' rolloff.
-  7. **Roll.** Holding Shift (sprint) and pressing LeftControl rolls (a dodge roll clip from
+  3. **Roll.** Holding Shift (sprint) and pressing LeftControl rolls (a dodge roll clip from
      Mixamo, short i-frames, `MovementController`); crouch stays on LeftControl when not
-     sprinting.
-  8. **Rework the map for the movement set.** Delta was laid out for a body that walks
+     sprinting. Reuse `CoverMoveService`'s window for the i-frames.
+  4. **Rework the map for the movement set.** Delta was laid out for a body that walks
      around cover; now it vaults, climbs and is climbed over. Redo `docs/LEVELS.md` with
      more climbable cover (containers, humvees, bunkers, stacked hesco), routes that use
      height, and Infected approach lines that go over low cover (level-designer call).

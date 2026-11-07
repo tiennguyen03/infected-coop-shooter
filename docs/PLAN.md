@@ -110,7 +110,7 @@ damages enemies. Player can die.
 - Enemy health, enemy death, enemy destruction
 
 ### Damage Feedback
-- Floating damage numbers
+- Crosshair hit marker (replaced floating damage numbers 2026-11-07)
 - Enemy health bar
 
 **Acceptance Criteria:** Enemy spawns, chases player, takes damage, dies. Player can kill

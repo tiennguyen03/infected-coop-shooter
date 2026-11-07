@@ -458,6 +458,11 @@ local function attackIfTouching(zombie: Zombie, now: number)
 	end
 	if (targetRoot.Position - zombie.root.Position).Magnitude <= zombie.attackRange then
 		local character = targetRoot.Parent :: Model
+		-- A body going over cover can't be clawed (CoverMoveService): the climb is an escape.
+		local coverUntil = character:GetAttribute("CoverMoveUntil") :: number?
+		if coverUntil and os.clock() < coverUntil then
+			return
+		end
 		local targetHumanoid = character:FindFirstChildOfClass("Humanoid")
 		if targetHumanoid and targetHumanoid.Health > 0 then
 			EnemyProjectileService.damagePlayer(targetHumanoid, zombie.damage)

@@ -104,7 +104,7 @@ function ItemEffectService.dealDamage(
 	lastDamageKind[humanoid] = kind or "hit"
 	humanoid:TakeDamage(amount)
 	if position then
-		damageRemote:FireAllClients(position, amount, kind or "hit")
+		damageRemote:FireAllClients(position, amount, kind or "hit", attacker)
 	end
 end
 
@@ -223,7 +223,7 @@ function ItemEffectService.onEnemyKilled(humanoid: Humanoid)
 	local deathRoot = humanoid.RootPart
 	local deathPosition = deathRoot and deathRoot.Position
 	if deathPosition then
-		damageRemote:FireAllClients(deathPosition, 0, "death")
+		damageRemote:FireAllClients(deathPosition, 0, "death", killer)
 	end
 	if not killer or not killer.Parent then
 		return

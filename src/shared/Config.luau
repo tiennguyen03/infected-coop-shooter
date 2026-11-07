@@ -29,14 +29,35 @@ local Config = {
 		ClimbMaxHeight = 10.5, -- up to here it mantles onto the top (climb clip)
 		VaultDepth = 6.5, -- cover thinner than this, with ground behind, is vaulted over
 		Headroom = 5, -- clear studs needed above a landing to stand there
-		VaultDuration = 0.9, -- seconds; the clip rate is scaled to match
-		ClimbDuration = 1.8,
+		VaultDuration = 0.55, -- seconds; the clip rate is scaled to match (0.9 before 2026-11-07)
+		ClimbDuration = 1.1, -- (1.8 before 2026-11-07)
+		-- Infected melee skips a body going over cover (CoverMoveService): the window is the
+		-- move's duration plus Grace; a new window opens no sooner than Cooldown after the
+		-- last one closed, so spamming the remote never gives standing immunity.
+		CoverImmunity = { Grace = 0.15, Cooldown = 0.4 },
 		AutoVaultSprinting = true, -- sprinting into cover vaults without pressing Space
 		Infected = {
 			LowHeight = 5, -- a top above this uses the form's climbHigh clip (Runners)
 			-- Climb time per form; the clip rate scales to it. A form without a row (or
 			-- without EnemyDefinitions.ClimbHeight) never climbs.
 			Duration = { Walker = 2.2, Runner = 1.2 },
+		},
+	},
+
+	-- Hit marker (client HitMarkerUI): four ticks round the crosshair on your own hits,
+	-- replacing floating damage numbers (2026-11-07). Seconds and pixels.
+	HitMarker = {
+		Duration = 0.16,
+		KillDuration = 0.4,
+		Gap = 7, -- from the crosshair centre to the inner end of a tick
+		Length = 7,
+		Thickness = 2,
+		HeadshotScale = 1.35,
+		KillScale = 1.6,
+		Colors = {
+			hit = Color3.fromRGB(255, 255, 255),
+			headshot = Color3.fromRGB(255, 214, 90),
+			kill = Color3.fromRGB(235, 60, 50),
 		},
 	},
 
@@ -540,10 +561,10 @@ local Config = {
 		-- Boot steps (client, FootstepController).
 		Footsteps = {
 			RollOffMin = 6,
-			RollOffMax = 70,
+			RollOffMax = 40,
 			MinInterval = 0.1, -- seconds; blocks a double step when the dominant clip switches
-			WalkVolume = 0.7, -- multiplier on the surface group volume
-			RunVolume = 1,
+			WalkVolume = 0.35, -- multiplier on the surface group volume (halved 2026-11-07)
+			RunVolume = 0.5,
 			-- Footfall phases (fraction of the loop) per locomotion clip: when the phase
 			-- crosses one, a foot has landed. Measured in Studio 2026-11-07 from the lowest
 			-- points of the LeftFoot/RightFoot parts over one loop (left, then right); {0, 0.5}

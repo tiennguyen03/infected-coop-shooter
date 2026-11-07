@@ -15,6 +15,7 @@ local RunService = game:GetService("RunService")
 
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Ledge = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Ledge"))
+local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
 local AnimationController = require(script.Parent.AnimationController)
 local CameraController = require(script.Parent.CameraController)
 local SprintController = require(script.Parent.SprintController)
@@ -78,6 +79,7 @@ local function begin(humanoid: Humanoid, root: BasePart, ledge: Ledge.Ledge)
 	StanceController.setStance("stand")
 	CameraController.setBodyYawLocked(true)
 	AnimationController.playMove(kind, duration)
+	Remotes.get("CoverMove"):FireServer(kind)
 	local yaw = CFrame.lookAlong(Vector3.zero, ledge.forward)
 	root.CFrame = CFrame.new(root.Position) * yaw
 	root.AssemblyLinearVelocity = Vector3.zero
