@@ -1,7 +1,8 @@
 --!strict
 -- Hold LeftShift to sprint. WalkSpeed is set locally; the character is
 -- client-owned so this takes effect immediately without replication. Aiming down sights
--- (WeaponController) overrides sprint and slows the walk by Config.Weapon.ADS.MoveSpeedFactor.
+-- (WeaponController) overrides sprint and slows the walk by Config.Weapon.ADS.MoveSpeedFactor;
+-- a stance (StanceController) scales the walk and may forbid sprinting.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -13,6 +14,8 @@ local SprintController = {}
 
 local isSprinting = false
 local isAiming = false
+local stanceFactor = 1
+local sprintAllowed = true
 
 local function getHumanoid(): Humanoid?
 	local character = Players.LocalPlayer.Character
@@ -22,13 +25,16 @@ end
 local function applySpeed()
 	local humanoid = getHumanoid()
 	if humanoid then
-		local base = if isSprinting and not isAiming
+		local base = if isSprinting
+				and sprintAllowed
+				and not isAiming
 			then Config.Player.SprintSpeed
 			else Config.Player.WalkSpeed
 		local mult = (Players.LocalPlayer:GetAttribute("MoveSpeedMult") :: number?) or 1
 		if isAiming then
 			mult *= Config.Weapon.ADS.MoveSpeedFactor
 		end
+		mult *= stanceFactor
 		humanoid.WalkSpeed = base * mult
 	end
 end
@@ -41,6 +47,17 @@ end
 function SprintController.setAiming(aiming: boolean)
 	isAiming = aiming
 	applySpeed()
+end
+
+-- A stance scales the walk; sprint is only possible standing.
+function SprintController.setStanceFactor(factor: number, canSprint: boolean)
+	stanceFactor = factor
+	sprintAllowed = canSprint
+	applySpeed()
+end
+
+function SprintController.isSprinting(): boolean
+	return isSprinting and sprintAllowed and not isAiming
 end
 
 function SprintController.init()
@@ -59,6 +76,8 @@ function SprintController.init()
 	-- A respawned character starts at base speed even if Shift is held.
 	Players.LocalPlayer.CharacterAdded:Connect(function()
 		isAiming = false
+		stanceFactor = 1
+		sprintAllowed = true
 		setSprinting(false)
 	end)
 

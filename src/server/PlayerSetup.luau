@@ -171,6 +171,9 @@ local function onCharacterAdded(character: Model)
 	humanoid.MaxHealth = Config.Player.MaxHealth
 	humanoid.Health = Config.Player.MaxHealth
 	humanoid.WalkSpeed = Config.Player.WalkSpeed
+	-- No jump: cover is vaulted or climbed instead (client MovementController).
+	humanoid.UseJumpPower = true
+	humanoid.JumpPower = 0
 	-- The rig stays jointed on death so the death clip can play (AnimationController).
 	humanoid.BreakJointsOnDeath = false
 

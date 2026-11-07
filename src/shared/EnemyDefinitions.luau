@@ -42,6 +42,9 @@ export type EnemyDefinition = {
 	HeadshotMultiplier: number?, -- overrides Config.Weapon.HeadshotMultiplier (plated skulls)
 	BodySet: string?, -- limb set to wear (assets/3d inf_<set>_*); defaults to the type name
 	ThroatSac: boolean?, -- Hocker: a sac on the neck that swells during the windup
+	-- Tallest cover top (studs above the feet) this form climbs when it is pressed against
+	-- it (EnemyService; Config.Movement.Infected). nil = never climbs.
+	ClimbHeight: number?,
 }
 
 local MELEE: Behaviour = { Attack = "melee" }
@@ -60,6 +63,7 @@ local EnemyDefinitions: { [string]: EnemyDefinition } = {
 		FirstSpawnTime = 0,
 		Color = Color3.fromRGB(88, 154, 84),
 		Behaviour = MELEE,
+		ClimbHeight = 5, -- jersey, hesco; not the bunker
 	},
 	Runner = {
 		DisplayName = "Runner",
@@ -74,6 +78,7 @@ local EnemyDefinitions: { [string]: EnemyDefinition } = {
 		FirstSpawnTime = 75,
 		Color = Color3.fromRGB(168, 146, 66),
 		Behaviour = MELEE,
+		ClimbHeight = 10.5, -- everything but T-walls and buses
 	},
 	Brute = {
 		DisplayName = "Brute",

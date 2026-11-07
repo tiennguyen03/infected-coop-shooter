@@ -47,8 +47,9 @@ local clipByAnimationId: { [string]: string } = {}
 
 local function collectLocomotionClips()
 	local sets = Config.Animations.Assault
-	for _, setName in { "walk", "run" } do
-		for _, clip in (sets :: any)[setName] :: { [string]: string } do
+	-- Standing walk and run, and the crouch walk (the prone crawl makes no steps).
+	for _, set in { sets.walk, sets.run, sets.crouch.walk } do
+		for _, clip in set :: { [string]: string } do
 			local id = Animations.getId(clip)
 			if id then
 				clipByAnimationId[id] = clip

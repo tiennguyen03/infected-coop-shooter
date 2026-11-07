@@ -5,6 +5,10 @@
 -- director picks types by run time with fairness caps from Config.Spawning (count
 -- schedules and share caps keyed by type). Enemies pass through each other (Enemy collision
 -- group) but still hit players and the world. Player damage: EnemyProjectileService.damagePlayer.
+-- Climbing (2026-11-07): a melee form pressed against cover no taller than its
+-- EnemyDefinitions.ClimbHeight goes over it (Shared.Ledge; the root is anchored and driven
+-- along the ledge path for Config.Movement.Infected.Duration seconds while its climb clip
+-- plays); taller cover falls through to the nudge rule.
 
 local CollectionService = game:GetService("CollectionService")
 local PhysicsService = game:GetService("PhysicsService")
@@ -16,6 +20,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local EnemyDefinitions = require(ReplicatedStorage.Shared.EnemyDefinitions)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
 local Animations = require(ReplicatedStorage.Shared.Animations)
+local Ledge = require(ReplicatedStorage.Shared.Ledge)
 local DifficultyService = require(script.Parent.DifficultyService)
 local EnemyProjectileService = require(script.Parent.EnemyProjectileService)
 local ItemEffectService = require(script.Parent.ItemEffectService)
@@ -66,6 +71,18 @@ type Zombie = {
 	voicePart: BasePart,
 	nextIdleVoiceAt: number,
 	lastHurtVoiceAt: number,
+	climb: Climb?,
+	climbTracks: { low: AnimationTrack?, high: AnimationTrack? },
+}
+
+-- A climb in progress: the root is anchored and carried from `start` over the ledge.
+type Climb = {
+	ledge: Ledge.Ledge,
+	start: Vector3,
+	yaw: CFrame,
+	startedAt: number,
+	duration: number,
+	track: AnimationTrack?,
 }
 
 local EnemyService = {}
@@ -171,6 +188,11 @@ end
 local function onZombieDied(zombie: Zombie)
 	CollectionService:RemoveTag(zombie.model, ENEMY_TAG)
 	voice(zombie, "death")
+	-- Shot mid-climb: the corpse falls instead of hanging in the air.
+	if zombie.climb then
+		zombie.climb = nil
+		zombie.root.Anchored = false
+	end
 	local animator = zombie.humanoid:FindFirstChildOfClass("Animator")
 	if animator then
 		for _, track in animator:GetPlayingAnimationTracks() do
@@ -311,7 +333,23 @@ local function spawnZombie(groundPosition: Vector3, typeName: string)
 		voicePart = (model:FindFirstChild("Head") :: BasePart?) or root,
 		nextIdleVoiceAt = os.clock() + randomIdleDelay() * 0.5,
 		lastHurtVoiceAt = 0,
+		climb = nil,
+		climbTracks = {},
 	}
+	if definition.ClimbHeight then
+		pcall(function()
+			local animator = humanoid:FindFirstChildOfClass("Animator") :: Animator
+			local clips = Config.Animations.Infected[typeName]
+			if clips and clips.climb then
+				zombie.climbTracks.low =
+					Animations.load(animator, clips.climb, Enum.AnimationPriority.Action3)
+			end
+			if clips and clips.climbHigh then
+				zombie.climbTracks.high =
+					Animations.load(animator, clips.climbHigh, Enum.AnimationPriority.Action3)
+			end
+		end)
+	end
 	table.insert(zombies, zombie)
 
 	humanoid.HealthChanged:Connect(function(newHealth)
@@ -352,6 +390,62 @@ end
 local function removeZombie(index: number)
 	zombies[index] = zombies[#zombies]
 	zombies[#zombies] = nil
+end
+
+-- Pressed against cover it can take: starts the climb. Returns true when one started.
+local function tryClimb(zombie: Zombie, toward: Vector3, now: number): boolean
+	local definition = EnemyDefinitions[zombie.typeName]
+	local maxHeight = definition.ClimbHeight
+	local duration = Config.Movement.Infected.Duration[zombie.typeName]
+	if not maxHeight or not duration then
+		return false
+	end
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances = { zombie.model }
+	params.CollisionGroup = ENEMY_COLLISION_GROUP -- other Infected never block
+	local ledge = Ledge.find(zombie.root, zombie.humanoid, toward, maxHeight, params)
+	if not ledge then
+		return false
+	end
+	local track = if ledge.height > Config.Movement.Infected.LowHeight
+		then zombie.climbTracks.high
+		else zombie.climbTracks.low
+	local yaw = CFrame.lookAlong(Vector3.zero, ledge.forward)
+	zombie.humanoid:MoveTo(zombie.root.Position)
+	zombie.root.CFrame = CFrame.new(zombie.root.Position) * yaw
+	zombie.root.AssemblyLinearVelocity = Vector3.zero
+	zombie.root.Anchored = true
+	if track then
+		track:Play(0.1)
+		track:AdjustSpeed(math.max(track.Length, 0.01) / duration)
+	end
+	zombie.climb = {
+		ledge = ledge,
+		start = zombie.root.Position,
+		yaw = yaw,
+		startedAt = now,
+		duration = duration,
+		track = track,
+	}
+	return true
+end
+
+local function stepClimb(zombie: Zombie, climb: Climb, now: number)
+	local alpha = (now - climb.startedAt) / climb.duration
+	if alpha >= 1 then
+		zombie.root.CFrame = CFrame.new(climb.ledge.landing) * climb.yaw
+		zombie.root.Anchored = false
+		zombie.root.AssemblyLinearVelocity = Vector3.zero
+		if climb.track and climb.track.IsPlaying then
+			climb.track:Stop(0.2)
+		end
+		zombie.climb = nil
+		zombie.nextRepathTime = now
+		zombie.lastRepathPosition = Vector3.new(1e9, 0, 0)
+		return
+	end
+	zombie.root.CFrame = CFrame.new(Ledge.position(climb.start, climb.ledge, alpha)) * climb.yaw
 end
 
 local function attackIfTouching(zombie: Zombie, now: number)
@@ -489,6 +583,12 @@ local function stepZombies()
 		end
 		idleVoice(zombie, now)
 
+		local climb = zombie.climb
+		if climb then
+			stepClimb(zombie, climb, now)
+			continue
+		end
+
 		if zombie.behaviour.Attack == "projectile" then
 			stepProjectileZombie(zombie, now)
 			continue
@@ -515,6 +615,9 @@ local function stepZombies()
 						< NUDGE_STUCK_DISTANCE
 					if stuck and (goal - here).Magnitude > zombie.attackRange then
 						local toTarget = Vector3.new(goal.X - here.X, 0, goal.Z - here.Z)
+						if toTarget.Magnitude > 0.1 and tryClimb(zombie, toTarget, now) then
+							continue
+						end
 						if toTarget.Magnitude > 0.1 then
 							local side = Vector3.new(-toTarget.Z, 0, toTarget.X).Unit
 								* zombie.nudgeSign

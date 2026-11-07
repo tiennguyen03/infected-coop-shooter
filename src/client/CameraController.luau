@@ -7,7 +7,9 @@
 -- cursor position (screen center while locked), so shots land on the
 -- crosshair. Aiming down sights (WeaponController) eases the camera in over the
 -- shoulder, narrows the FOV and closes the crosshair; mouse sensitivity scales with the
--- FOV so the sights feel steady. No wall-occlusion handling yet - the arena is open ground.
+-- FOV so the sights feel steady. The pivot drops with the stance (StanceController) and the
+-- body's yaw can be locked while a vault/climb carries it (MovementController). No
+-- wall-occlusion handling yet - the arena is open ground.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -16,7 +18,6 @@ local UserInputService = game:GetService("UserInputService")
 
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 
-local PIVOT_HEIGHT = 2 -- studs above the root part, roughly head height
 local HIP_FOV = 70
 local CROSSHAIR_HIP = 22 -- ring diameter in pixels at the hip
 local CROSSHAIR_ADS = 8
@@ -29,9 +30,23 @@ local distance: number = Config.Camera.Distance
 local aiming = false
 local adsBlend = 0 -- 0 = hip, 1 = sights; eased each frame
 local crosshairRing: Frame? = nil
+local pivotHeight: number = Config.Camera.PivotHeight.stand
+local pivotTarget: number = pivotHeight
+local bodyYawLocked = false
 
 function CameraController.setAiming(on: boolean)
 	aiming = on
+end
+
+-- The pivot eases to the stance's height (Config.Camera.PivotHeight).
+function CameraController.setStance(stance: string)
+	pivotTarget = (Config.Camera.PivotHeight :: { [string]: number })[stance]
+		or Config.Camera.PivotHeight.stand
+end
+
+-- While locked the body keeps its heading; the camera still orbits.
+function CameraController.setBodyYawLocked(locked: boolean)
+	bodyYawLocked = locked
 end
 
 local function applyCharacterSettings(character: Model)
@@ -44,6 +59,9 @@ local function applyCharacterSettings(character: Model)
 	local _, rootYaw, _ = root.CFrame:ToOrientation()
 	yaw = rootYaw
 	pitch = math.rad(-10)
+	pivotTarget = Config.Camera.PivotHeight.stand
+	pivotHeight = pivotTarget
+	bodyYawLocked = false
 end
 
 local function createCrosshair()
@@ -138,15 +156,20 @@ local function onRenderStep(deltaTime: number)
 		ring.Size = UDim2.fromOffset(size, size)
 	end
 
+	local pivotRate = deltaTime
+		/ math.max(Config.Camera.PivotEaseTime, 0.01)
+		* math.abs(Config.Camera.PivotHeight.stand - Config.Camera.PivotHeight.prone)
+	pivotHeight += math.clamp(pivotTarget - pivotHeight, -pivotRate, pivotRate)
+
 	camera.CameraType = Enum.CameraType.Scriptable
 	local rotation = CFrame.fromEulerAnglesYXZ(pitch, yaw, 0)
 	local focus = root.Position
-		+ Vector3.new(0, PIVOT_HEIGHT, 0)
+		+ Vector3.new(0, pivotHeight, 0)
 		+ rotation:VectorToWorldSpace(Vector3.new(shoulder.X, shoulder.Y, 0))
 	camera.CFrame = CFrame.new(focus) * rotation * CFrame.new(0, 0, reach)
 
 	-- Character faces the aim direction while alive.
-	if humanoid and humanoid.Health > 0 then
+	if humanoid and humanoid.Health > 0 and not bodyYawLocked then
 		root.CFrame = CFrame.new(root.Position) * CFrame.Angles(0, yaw, 0)
 	end
 end

@@ -94,6 +94,33 @@ CLIPS = {
     "loco_run_b": {"loop": True, "step": 1, "in_place": True},
     "loco_run_l": {"loop": True, "step": 1, "in_place": True},
     "loco_run_r": {"loop": True, "step": 1, "in_place": True},
+    # Movement set (2026-11-07). Climb clips: `root_lock` drops every hip translation; the
+    # game moves the root along the climb itself (client StanceController / MovementController,
+    # server EnemyService) and reports the clip's hip rise and reach for tuning.
+    "vault_low": {"loop": False, "step": 1, "root_lock": True},  # players over jersey / hesco
+    "climb_ledge": {"loop": False, "step": 1, "root_lock": True},  # players onto bunker / container
+    "climb_low": {"loop": False, "step": 1, "root_lock": True},  # Walkers / Runners over hesco
+    "climb_high": {"loop": False, "step": 1, "root_lock": True},  # Runners onto containers
+    # Crouch: hip drop stays (vertical), horizontal travel stripped.
+    "crouch_idle": {"loop": True, "step": 2, "in_place": True},
+    "crouch_enter": {"loop": False, "step": 1, "in_place": True},
+    "crouch_exit": {"loop": False, "step": 1, "in_place": True},
+    "crouch_aim": {"loop": True, "step": 2, "in_place": True, "upper": True},
+    "crouch_walk_f": {"loop": True, "step": 1, "in_place": True},
+    "crouch_walk_b": {"loop": True, "step": 1, "in_place": True},
+    "crouch_walk_l": {"loop": True, "step": 1, "in_place": True},
+    "crouch_walk_r": {"loop": True, "step": 1, "in_place": True},
+    # Prone: the hips drop to the ground inside the clip (the root part stays at hip height).
+    "prone_idle": {"loop": True, "step": 2, "in_place": True},
+    "prone_enter": {"loop": False, "step": 1, "in_place": True},
+    "prone_exit": {"loop": False, "step": 1, "in_place": True},
+    "prone_fire": {"loop": True, "step": 2, "in_place": True, "upper": True},
+    "prone_walk_f": {"loop": True, "step": 1, "in_place": True},
+    "prone_walk_b": {"loop": True, "step": 1, "in_place": True},
+    # Infected extras for later: Crawler move, flinch, Hocker windup.
+    "zombie_crawl": {"loop": True, "step": 1, "in_place": True},
+    "zombie_stumble": {"loop": False, "step": 1, "in_place": True},
+    "zombie_scream": {"loop": False, "step": 1, "in_place": True},
 }
 
 
@@ -133,6 +160,7 @@ def retarget(name: str, cfg: dict):
     if frames[-1] != f1:
         frames.append(f1)
     in_place = bool(cfg.get("in_place", False))
+    root_lock = bool(cfg.get("root_lock", False))
     hips_bone = arm.pose.bones[bones["Hips"]]
     scene.frame_set(f0)
     hips_start = (arm.matrix_world @ hips_bone.head).copy()
@@ -140,6 +168,8 @@ def retarget(name: str, cfg: dict):
     hips_end = (arm.matrix_world @ hips_bone.head).copy()
     travel = M @ (hips_end - hips_start)
     ground_speed = Vector((travel.x, 0, travel.z)).length * STUDS_PER_METRE * fps / max(1, f1 - f0)
+    rise = travel.y * STUDS_PER_METRE
+    reach = Vector((travel.x, 0, travel.z)).length * STUDS_PER_METRE
     for f in frames:
         scene.frame_set(f)
         world = {"HumanoidRootPart": Matrix.Identity(3)}
@@ -155,7 +185,9 @@ def retarget(name: str, cfg: dict):
             if part == "LowerTorso":
                 hips = arm.matrix_world @ pb.head
                 pos = (M @ (hips - hips_rest)) * STUDS_PER_METRE
-                if in_place:
+                if root_lock:
+                    pos = Vector((0, 0, 0))
+                elif in_place:
                     pos = Vector((0, pos.y, 0))
             poses[part] = to_cframe_values(transform, pos)
         keyframes.append({"t": round((f - f0) / fps, 4), "poses": poses})
@@ -173,7 +205,8 @@ def retarget(name: str, cfg: dict):
     with open(os.path.join(OUT, name + ".json"), "w", encoding="utf-8", newline="\n") as fh:
         json.dump(clip, fh, separators=(",", ":"))
     print(f"{name}: {len(keyframes)} keyframes, {clip['duration']} s, loop={cfg['loop']}, "
-          f"ground speed {ground_speed:.1f} studs/s{' (stripped)' if in_place else ''}")
+          f"ground speed {ground_speed:.1f} studs/s{' (stripped)' if in_place else ''}"
+          + (f", hips rise {rise:.1f} reach {reach:.1f} studs (root locked)" if root_lock else ""))
 
 
 def main():

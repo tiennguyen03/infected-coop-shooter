@@ -7,6 +7,37 @@ local Config = {
 		MaxHealth = 100,
 		WalkSpeed = 16,
 		SprintSpeed = 24,
+		-- Stances (2026-11-07): LeftControl toggles crouch, C toggles prone; sprint, a vault
+		-- or a climb stands the body up. Speeds are factors of WalkSpeed (no sprint while low).
+		Stances = {
+			CrouchSpeedFactor = 0.5,
+			ProneSpeedFactor = 0.25,
+			-- Seconds the enter/exit clips take (their rate is scaled to this); no stance
+			-- change while one plays.
+			TransitionTime = { crouch = 0.45, prone = 0.8 },
+		},
+	},
+
+	-- Vault / climb (2026-11-07) replaces the stock jump: Space, or sprinting into cover,
+	-- sends the body over or onto whatever is in front of it. Heights are the ledge top
+	-- above the feet. Jersey 2.75, hesco 4.6, bunker 6.3, humvee 7.1, container 9.6 pass;
+	-- T-walls and buses (12.5) do not.
+	Movement = {
+		Reach = 3.2, -- studs ahead of the body that count as "in front"
+		MinHeight = 1.2,
+		VaultMaxHeight = 5, -- up to here the body goes over thin cover (vault clip)
+		ClimbMaxHeight = 10.5, -- up to here it mantles onto the top (climb clip)
+		VaultDepth = 6.5, -- cover thinner than this, with ground behind, is vaulted over
+		Headroom = 5, -- clear studs needed above a landing to stand there
+		VaultDuration = 0.9, -- seconds; the clip rate is scaled to match
+		ClimbDuration = 1.8,
+		AutoVaultSprinting = true, -- sprinting into cover vaults without pressing Space
+		Infected = {
+			LowHeight = 5, -- a top above this uses the form's climbHigh clip (Runners)
+			-- Climb time per form; the clip rate scales to it. A form without a row (or
+			-- without EnemyDefinitions.ClimbHeight) never climbs.
+			Duration = { Walker = 2.2, Runner = 1.2 },
+		},
 	},
 
 	-- Over-the-shoulder camera (client-side, scriptable).
@@ -17,6 +48,9 @@ local Config = {
 		MaxDistance = 16,
 		Sensitivity = 0.25, -- degrees of rotation per pixel of mouse movement
 		MaxPitch = 75, -- degrees up/down
+		-- Pivot height above the root part per stance (stand is roughly head height).
+		PivotHeight = { stand = 2, crouch = 0.6, prone = -1.2 },
+		PivotEaseTime = 0.25,
 	},
 
 	Weapon = {
@@ -77,6 +111,29 @@ local Config = {
 			loco_run_b = "rbxassetid://124184233710991",
 			loco_run_l = "rbxassetid://107986387272761",
 			loco_run_r = "rbxassetid://120945922251815",
+			-- Movement set (2026-11-07): vault/climb, crouch, prone; Infected climbs and
+			-- extras (Crawler move, flinch, Hocker scream) for later.
+			vault_low = "rbxassetid://122259453837052",
+			climb_ledge = "rbxassetid://87799425638897",
+			climb_low = "rbxassetid://111567195502844",
+			climb_high = "rbxassetid://97579324656436",
+			crouch_idle = "rbxassetid://113612526967682",
+			crouch_enter = "rbxassetid://71721301273830",
+			crouch_exit = "rbxassetid://107144927642142",
+			crouch_aim = "rbxassetid://71587042642064",
+			crouch_walk_f = "rbxassetid://77839768187391",
+			crouch_walk_b = "rbxassetid://138416813991518",
+			crouch_walk_l = "rbxassetid://83640530264066",
+			crouch_walk_r = "rbxassetid://112573925838638",
+			prone_idle = "rbxassetid://106012212148241",
+			prone_enter = "rbxassetid://128780493444612",
+			prone_exit = "rbxassetid://109680376138254",
+			prone_fire = "rbxassetid://133140641450239",
+			prone_walk_f = "rbxassetid://98858185080842",
+			prone_walk_b = "rbxassetid://88994657013818",
+			zombie_crawl = "rbxassetid://101414875993165",
+			zombie_stumble = "rbxassetid://78987755637091",
+			zombie_scream = "rbxassetid://91289969066728",
 		},
 		-- The Chosen (one class for now): which clip plays for each state.
 		Assault = {
@@ -100,11 +157,45 @@ local Config = {
 			hit = "hit_reaction", -- flinch on damage (upper body)
 			death = "death_from_the_front",
 			breach = "grenade_throw", -- E: throwing the breach charge (upper body)
+			-- Stances: each has an idle, a directional move blend and an aim overlay; enter
+			-- and exit clips play over the switch.
+			crouch = {
+				idle = "crouch_idle",
+				walk = {
+					forward = "crouch_walk_f",
+					back = "crouch_walk_b",
+					left = "crouch_walk_l",
+					right = "crouch_walk_r",
+				},
+				aim = "crouch_aim",
+				enter = "crouch_enter",
+				exit = "crouch_exit",
+			},
+			prone = {
+				idle = "prone_idle",
+				walk = { forward = "prone_walk_f", back = "prone_walk_b" }, -- sideways crawls forward
+				aim = "prone_fire",
+				enter = "prone_enter",
+				exit = "prone_exit",
+			},
+			vault = "vault_low", -- over jersey / hesco
+			climb = "climb_ledge", -- onto bunker / humvee / container
 		},
 		-- The Infected, per type (EnemyDefinitions).
 		Infected = {
-			Walker = { move = "zombie_walk", attack = "zombie_attack", death = "zombie_death" },
-			Runner = { move = "zombie_running", attack = "zombie_attack", death = "zombie_death" },
+			Walker = {
+				move = "zombie_walk",
+				attack = "zombie_attack",
+				death = "zombie_death",
+				climb = "climb_low",
+			},
+			Runner = {
+				move = "zombie_running",
+				attack = "zombie_attack",
+				death = "zombie_death",
+				climb = "climb_low",
+				climbHigh = "climb_high", -- above EnemyDefinitions ClimbLowHeight
+			},
 			Brute = { move = "mutant_walking", attack = "mutant_swiping", death = "zombie_death" },
 			Hocker = { move = "zombie_walk", attack = "hocker_spit", death = "zombie_death" },
 		},
@@ -125,6 +216,14 @@ local Config = {
 			zombie_walk = 8,
 			zombie_running = 16,
 			mutant_walking = 6,
+			crouch_walk_f = 5.6, -- measured by retarget.py
+			crouch_walk_b = 5.6,
+			crouch_walk_l = 5.6,
+			crouch_walk_r = 5.6,
+			-- The crawls were downloaded in place, so these are by eye.
+			prone_walk_f = 4,
+			prone_walk_b = 4,
+			zombie_crawl = 6,
 		},
 		WalkRunThreshold = 20, -- studs/s: faster than this plays the run clip (walk 16, sprint 24)
 	},

@@ -41,6 +41,20 @@ animations, played by `src/client/AnimationController.luau` (players) and
 | zombie_death (Zombie Death) | all Infected death | |
 | mutant_walking (Mutant Walking) | Brute move | in place |
 | mutant_swiping (Mutant Swiping) | Brute attack | |
+| *Movement set, 2026-11-07 (Mixamo rifle crouch/prone packs, climb and vault clips, zombie extras; file names only):* | | |
+| vault_low | Assault vault over jersey / hesco | `root_lock`: the game carries the root (`client/MovementController`) |
+| climb_ledge | Assault climb onto bunker / humvee / container | `root_lock` |
+| climb_low | Walker / Runner over hesco-height cover | `root_lock`; `server/EnemyService` |
+| climb_high | Runner onto container-height cover | `root_lock` |
+| crouch_idle / crouch_enter / crouch_exit | Assault crouch (LeftControl) | transitions rate-scaled to `Config.Player.Stances.TransitionTime` |
+| crouch_aim | Assault crouch aim, upper body | |
+| crouch_walk_f/b/l/r | Assault crouch walk, four-way blend | root motion stripped, 5.6 studs/s |
+| prone_idle / prone_enter / prone_exit | Assault prone (C) | the hips drop inside the clip; the root part stays at hip height |
+| prone_fire | Assault prone aim, upper body | |
+| prone_walk_f/b | Assault prone crawl, two-way blend (sideways folds into forward) | in place |
+| zombie_crawl (Zombie Crawl) | spare: the Crawler's move | in place |
+| zombie_stumble (Zombie Stumble) | spare: Infected flinch | |
+| zombie_scream (Zombie Scream) | spare: Hocker windup | |
 
 ## Pipeline
 
@@ -52,7 +66,9 @@ animations, played by `src/client/AnimationController.luau` (players) and
    ```
    Add new clips to `CLIPS` first (`loop`, `step` = keyframe stride, `upper` = upper-body
    overlay, `in_place` = strip horizontal hip travel from a clip with baked root motion; the
-   script prints the clip's authored ground speed for `Config.Animations.MoveClipSpeed`).
+   script prints the clip's authored ground speed for `Config.Animations.MoveClipSpeed`;
+   `root_lock` = drop every hip translation for a vault/climb clip the game carries itself,
+   the script prints the hip rise and reach instead).
    Mixamo packs download as a zip of FBX files with root motion baked in; copy the ones you
    need into `source/mixamo/` under the clip name and mark them `in_place`. The method: every Mixamo bone's world rotation delta from its rest pose, a fixed
    rest correspondence per R15 limb (Mixamo rests in a T-pose, R15 with the arms down), joint
@@ -66,12 +82,16 @@ animations, played by `src/client/AnimationController.luau` (players) and
    `AnimationBuilder.build(AnimationBuilder.loadClip(name))`, export each with the Studio
    MCP `export_rbxm` tool, upload each with `upload_asset` (`assetType = "Animation"`),
    write the ids into `Config.Animations.Ids` and `ASSET_IDS.md`, delete the folder. Done
-   for all 15 clips on 2026-11-06.
+   for all 15 clips on 2026-11-06 and the 21 movement-set clips on 2026-11-07.
 5. **Play**: `AnimationController` (client) and `EnemyService` (server) load clips by name
    through `Animations.load`. The player's walk and run states each blend four directional
    clips by the direction of travel in the body's frame (`AdjustWeight`), so strafing and
    backpedalling read; every locomotion track scales its rate with ground speed against
-   `Config.Animations.MoveClipSpeed` so feet do not slide.
+   `Config.Animations.MoveClipSpeed` so feet do not slide. Stances (crouch, prone) are
+   their own idle/move/aim sets with enter/exit clips over the switch
+   (`client/StanceController`); a vault or climb plays its clip at the rate that fits
+   `Config.Movement.*Duration` while the root is carried over the cover
+   (`client/MovementController`, `server/EnemyService`, both through `Shared.Ledge`).
 
 ## Why not the Animation Editor / a Blender rig addon
 

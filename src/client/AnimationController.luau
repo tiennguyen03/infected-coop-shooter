@@ -1,13 +1,16 @@
 --!strict
 -- Plays the Chosen's body animations (Config.Animations.Assault) in place of the stock
--- Roblox Animate script: idle, then a four-way directional blend (forward / back / left /
--- right) for walking and for running, picked from the character's ground speed and the
--- direction of travel relative to where the body faces (the body faces the camera, so
--- strafing and backpedalling are real). An aim pose while the trigger is held, a recoil
--- clip per shot, a flinch on damage, the death clip, and ability clips sit on top.
--- Upper-body clips (aim, fire, hit, breach) carry no leg poses so the legs keep moving
--- underneath them. Other controllers call in: WeaponController (setAiming, onShot),
--- AbilityController (playAbility).
+-- Roblox Animate script. Three stances (StanceController): standing has an idle, a four-way
+-- directional blend for walking and another for running; crouch has an idle and a four-way
+-- walk; prone has an idle and a two-way crawl. The blend weights come from the direction of
+-- travel relative to where the body faces (the body faces the camera, so strafing and
+-- backpedalling are real). Enter/exit clips play over a stance change. An aim pose per
+-- stance while the trigger is held, a recoil clip per shot, a flinch on damage, the death
+-- clip and ability clips sit on top; a vault or climb clip (MovementController) replaces
+-- the locomotion while the body is carried over cover. Upper-body clips (aim, fire, hit,
+-- breach) carry no leg poses so the legs keep moving underneath them. Other controllers
+-- call in: WeaponController (setAiming, onShot), AbilityController (playAbility),
+-- StanceController (setStance), MovementController (playMove).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -22,26 +25,41 @@ local MIN_CLIP_RATE, MAX_CLIP_RATE = 0.6, 1.8
 local MIN_WEIGHT = 0.001 -- a looped track at zero weight stops contributing but keeps time
 local DIRECTIONS = { "forward", "back", "left", "right" }
 
+export type Stance = "stand" | "crouch" | "prone"
+
 local AnimationController = {}
 
--- One locomotion set (walk or run): a looped track per direction, blended by weight.
+-- One locomotion set: a looped track per direction it has, blended by weight. Directions
+-- a set lacks fold into forward (the prone crawl has no sideways clips).
 type MoveSet = { tracks: { [string]: AnimationTrack }, clips: { [string]: string } }
 
-type Tracks = {
+-- Everything one stance plays.
+type StanceSet = {
 	idle: AnimationTrack?,
 	aim: AnimationTrack?,
+	walk: MoveSet?,
+	run: MoveSet?,
+	enter: AnimationTrack?,
+	exit: AnimationTrack?,
+}
+
+type Tracks = {
 	fire: AnimationTrack?,
 	hit: AnimationTrack?,
 	death: AnimationTrack?,
 	breach: AnimationTrack?,
+	vault: AnimationTrack?,
+	climb: AnimationTrack?,
 }
 
 local tracks: Tracks = {}
-local moveSets: { walk: MoveSet?, run: MoveSet? } = {}
+local stances: { [string]: StanceSet } = {}
+local stance: Stance = "stand"
 local currentSet: MoveSet? = nil
 local idlePlaying = false
 local aiming = false
 local dead = false
+local busyUntil = 0 -- a vault/climb clip owns the body until then
 local lastHealth = 0
 local stepConnection: RBXScriptConnection? = nil
 
@@ -51,27 +69,77 @@ local function stopAll(fade: number)
 			track:Stop(fade)
 		end
 	end
-	for _, set in moveSets :: { [string]: MoveSet } do
-		for _, track in set.tracks do
-			if track.IsPlaying then
+	for _, set in stances do
+		for _, key in { "idle", "aim", "enter", "exit" } do
+			local track = (set :: any)[key] :: AnimationTrack?
+			if track and track.IsPlaying then
 				track:Stop(fade)
+			end
+		end
+		for _, moveKey in { "walk", "run" } do
+			local moveSet = (set :: any)[moveKey] :: MoveSet?
+			if moveSet then
+				for _, track in moveSet.tracks do
+					if track.IsPlaying then
+						track:Stop(fade)
+					end
+				end
 			end
 		end
 	end
 end
 
-local function loadMoveSet(animator: Animator, clips: { [string]: string }): MoveSet?
+local function loadMoveSet(animator: Animator, clips: { [string]: string }?): MoveSet?
+	if not clips then
+		return nil
+	end
 	local set: MoveSet = { tracks = {}, clips = clips }
 	for _, direction in DIRECTIONS do
 		local clip = clips[direction]
-		local track = clip and Animations.load(animator, clip, Enum.AnimationPriority.Core)
-		if not track then
-			return nil
+		if clip then
+			local track = Animations.load(animator, clip, Enum.AnimationPriority.Core)
+			if not track then
+				return nil
+			end
+			track.Looped = true
+			set.tracks[direction] = track
 		end
-		track.Looped = true
-		set.tracks[direction] = track
+	end
+	if not set.tracks.forward then
+		return nil
 	end
 	return set
+end
+
+local function loadLooped(
+	animator: Animator,
+	clip: string?,
+	priority: Enum.AnimationPriority
+): AnimationTrack?
+	local track = clip and Animations.load(animator, clip, priority)
+	if track then
+		track.Looped = true
+	end
+	return track
+end
+
+local function loadStance(animator: Animator, clips: { [string]: any }): StanceSet
+	return {
+		idle = loadLooped(animator, clips.idle, Enum.AnimationPriority.Core),
+		aim = loadLooped(animator, clips.aim, Enum.AnimationPriority.Action),
+		walk = loadMoveSet(animator, clips.walk),
+		run = loadMoveSet(animator, clips.run),
+		enter = if clips.enter
+			then Animations.load(animator, clips.enter, Enum.AnimationPriority.Action2)
+			else nil,
+		exit = if clips.exit
+			then Animations.load(animator, clips.exit, Enum.AnimationPriority.Action2)
+			else nil,
+	}
+end
+
+local function current(): StanceSet
+	return stances[stance] or stances.stand
 end
 
 local function setIdle(on: boolean)
@@ -79,7 +147,7 @@ local function setIdle(on: boolean)
 		return
 	end
 	idlePlaying = on
-	local idle = tracks.idle
+	local idle = current().idle
 	if idle then
 		if on then
 			idle:Play(FADE)
@@ -107,8 +175,8 @@ local function switchSet(set: MoveSet?)
 end
 
 -- Blend weights from the direction of travel in the body's frame: the body faces -Z,
--- +X is its right. Diagonals split between two clips.
-local function blendWeights(localVelocity: Vector3): { [string]: number }
+-- +X is its right. Diagonals split between two clips; directions the set lacks go forward.
+local function blendWeights(localVelocity: Vector3, set: MoveSet): { [string]: number }
 	local forward = math.max(0, -localVelocity.Z)
 	local back = math.max(0, localVelocity.Z)
 	local right = math.max(0, localVelocity.X)
@@ -117,22 +185,48 @@ local function blendWeights(localVelocity: Vector3): { [string]: number }
 	if total <= 0 then
 		return { forward = 1, back = 0, left = 0, right = 0 }
 	end
-	return {
+	local weights = {
 		forward = forward / total,
 		back = back / total,
 		left = left / total,
 		right = right / total,
 	}
+	for _, direction in DIRECTIONS do
+		if direction ~= "forward" and not set.tracks[direction] then
+			weights.forward += weights[direction]
+			weights[direction] = 0
+		end
+	end
+	return weights
+end
+
+local function playAim(on: boolean)
+	local aim = current().aim
+	if not aim then
+		return
+	end
+	if on then
+		if not aim.IsPlaying then
+			aim:Play(0.15)
+		end
+	elseif aim.IsPlaying then
+		aim:Stop(0.25)
+	end
 end
 
 local function step(humanoid: Humanoid, root: BasePart)
 	if dead then
 		return
 	end
+	if os.clock() < busyUntil then
+		switchSet(nil)
+		setIdle(false)
+		return
+	end
 	local velocity = root.AssemblyLinearVelocity
 	local flat = Vector3.new(velocity.X, 0, velocity.Z)
 	local speed = flat.Magnitude
-	-- Off the ground: hold whatever is playing (no jump clip; the game has no jump).
+	-- Off the ground: hold whatever is playing (no jump clip; cover is vaulted instead).
 	if humanoid.FloorMaterial == Enum.Material.Air then
 		return
 	end
@@ -142,15 +236,18 @@ local function step(humanoid: Humanoid, root: BasePart)
 		return
 	end
 	setIdle(false)
-	local set = if speed < Config.Animations.WalkRunThreshold then moveSets.walk else moveSets.run
-	switchSet(set)
-	if not set then
+	local set = current()
+	local moveSet = if set.run and speed >= Config.Animations.WalkRunThreshold
+		then set.run
+		else set.walk
+	switchSet(moveSet)
+	if not moveSet then
 		return
 	end
-	local weights = blendWeights(root.CFrame:VectorToObjectSpace(flat))
-	for direction, track in set.tracks do
+	local weights = blendWeights(root.CFrame:VectorToObjectSpace(flat), moveSet)
+	for direction, track in moveSet.tracks do
 		track:AdjustWeight(math.max(weights[direction], MIN_WEIGHT), 0.1)
-		local reference = Config.Animations.MoveClipSpeed[set.clips[direction]] or speed
+		local reference = Config.Animations.MoveClipSpeed[moveSet.clips[direction]] or speed
 		track:AdjustSpeed(math.clamp(speed / reference, MIN_CLIP_RATE, MAX_CLIP_RATE))
 	end
 end
@@ -172,27 +269,29 @@ local function setup(character: Model)
 
 	local clips = Config.Animations.Assault
 	tracks = {
-		idle = Animations.load(animator, clips.idle, Enum.AnimationPriority.Core),
-		aim = Animations.load(animator, clips.aim, Enum.AnimationPriority.Action),
 		fire = Animations.load(animator, clips.fire, Enum.AnimationPriority.Action2),
 		hit = Animations.load(animator, clips.hit, Enum.AnimationPriority.Action3),
 		death = Animations.load(animator, clips.death, Enum.AnimationPriority.Action4),
 		breach = Animations.load(animator, clips.breach, Enum.AnimationPriority.Action3),
+		vault = Animations.load(animator, clips.vault, Enum.AnimationPriority.Action3),
+		climb = Animations.load(animator, clips.climb, Enum.AnimationPriority.Action3),
 	}
-	for _, key in { "idle", "aim" } do
-		local track = (tracks :: { [string]: AnimationTrack? })[key]
-		if track then
-			track.Looped = true
-		end
-	end
-	moveSets = {
-		walk = loadMoveSet(animator, clips.walk),
-		run = loadMoveSet(animator, clips.run),
+	stances = {
+		stand = loadStance(animator, {
+			idle = clips.idle,
+			aim = clips.aim,
+			walk = clips.walk,
+			run = clips.run,
+		}),
+		crouch = loadStance(animator, clips.crouch),
+		prone = loadStance(animator, clips.prone),
 	}
+	stance = "stand"
 	currentSet = nil
 	idlePlaying = false
 	dead = false
 	aiming = false
+	busyUntil = 0
 	lastHealth = humanoid.Health
 
 	humanoid.HealthChanged:Connect(function(health)
@@ -225,15 +324,7 @@ function AnimationController.setAiming(on: boolean)
 		return
 	end
 	aiming = on
-	local aim = tracks.aim
-	if not aim then
-		return
-	end
-	if on then
-		aim:Play(0.15)
-	else
-		aim:Stop(0.25)
-	end
+	playAim(on)
 end
 
 -- One recoil clip per shot fired.
@@ -249,6 +340,70 @@ function AnimationController.playAbility(name: string)
 	if track and not dead then
 		track:Play(0.1)
 	end
+end
+
+-- Switches stance: the old set stops, the transition clip (the old stance's exit or the
+-- new one's enter, whichever exists) plays over the new idle at the rate that makes it take
+-- `transitionTime` seconds.
+function AnimationController.setStance(newStance: Stance, transitionTime: number)
+	if newStance == stance or dead then
+		return
+	end
+	local old = current()
+	local wasAiming = aiming
+	if old.aim and old.aim.IsPlaying then
+		old.aim:Stop(0.1)
+	end
+	switchSet(nil)
+	if old.idle and old.idle.IsPlaying then
+		old.idle:Stop(FADE)
+	end
+	idlePlaying = false
+	local transition = if newStance == "stand" then old.exit else stances[newStance].enter
+	if newStance ~= "stand" and old.exit and stance ~= "stand" then
+		-- Crouch <-> prone: no direct clip; the old stance's exit then the new enter.
+		transition = stances[newStance].enter
+	end
+	stance = newStance
+	if transition and transitionTime > 0 then
+		transition:Play(0.1)
+		transition:AdjustSpeed(math.max(transition.Length, 0.01) / transitionTime)
+		task.delay(transitionTime, function()
+			if transition.IsPlaying then
+				transition:Stop(FADE)
+			end
+		end)
+	end
+	if wasAiming then
+		playAim(true)
+	end
+end
+
+function AnimationController.getStance(): Stance
+	return stance
+end
+
+-- Plays the vault or climb clip at the rate that fits `duration` and holds the locomotion
+-- off for that long. Returns false when the clip is not available.
+function AnimationController.playMove(kind: "vault" | "climb", duration: number): boolean
+	local track = (tracks :: { [string]: AnimationTrack? })[kind]
+	if dead then
+		return false
+	end
+	busyUntil = os.clock() + duration
+	switchSet(nil)
+	setIdle(false)
+	if not track then
+		return false
+	end
+	track:Play(0.1)
+	track:AdjustSpeed(math.max(track.Length, 0.01) / duration)
+	task.delay(duration, function()
+		if track.IsPlaying then
+			track:Stop(FADE)
+		end
+	end)
+	return true
 end
 
 function AnimationController.init()

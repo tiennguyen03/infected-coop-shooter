@@ -1,7 +1,7 @@
 # Handoff — Roguelike Arena Survivor (VS Code + Claude Code terminal)
 
 Start here when picking the project up in a fresh Claude Code session.
-Last updated: 2026-11-07 (sound day: banks, footsteps, Infected vocals). Last verified commit on `main`: `b73e9b8` (the sound-day commit on top was playtested before committing).
+Last updated: 2026-11-07 (movement set: stances, vault/climb, Infected climbing). Last verified commit on `main`: `d6dc391` (sound day; the movement commit on top was playtested before committing).
 
 ## What this is
 
@@ -47,6 +47,16 @@ Read in this order:
   hit point, the player's pain grunt, and per-form Infected vocals with no-repeat random
   variants (`EnemyService` → `WorldSounds`, 3D on the head, replicated). Pipeline and
   the bank table: `assets/audio/README.md > Banks`.
+- 2026-11-07: **movement set.** Crouch (LeftControl) and prone (C) stances
+  (`client/StanceController`, speeds and transition times in `Config.Player.Stances`,
+  camera pivot per stance in `Config.Camera.PivotHeight`); vault/climb in place of the
+  jump (`client/MovementController`, `Config.Movement`: Space or sprinting into cover
+  goes over jersey/hesco and onto bunker/humvee/container, never T-walls or buses;
+  `PlayerSetup` zeroes JumpPower); Walkers climb hesco-height and Runners
+  container-height cover (`EnemyDefinitions.ClimbHeight`, `EnemyService` tryClimb, root
+  anchored and carried along `Shared.Ledge`). Clip table: `assets/animations/README.md`.
+  Spare clips downloaded for later: zombie_crawl (Crawler), zombie_stumble (flinch),
+  zombie_scream (Hocker windup).
 
 ## Open work, in priority order
 
@@ -59,6 +69,30 @@ Read in this order:
 - **Backlog (owner, 2026-11-07): rifle reload.** A magazine, R to reload, a reload clip and
   a reload sound (generate `reload_1..2` into a `player_weapon` bank with the rifle shot).
   Goes with the ammo economy decision in PROGRESSION; not before Co-op Sprint A.
+- **Backlog (owner, 2026-11-07, after the movement set playtest).** In the owner's order:
+  1. **Hit marker instead of damage numbers.** Drop the floating number counter
+     (`DamageNumberUI`); a crosshair hit marker (and a distinct headshot/kill tick) replaces it.
+  2. **Realistic time-to-kill.** Shots-to-kill per form should read like real bullets into a
+     body, and differ per weapon once there is more than one; retune `Weapon.Damage` and
+     the roster `MaxHealth` together (systems-designer call; flat curve per the spine).
+  3. **Faster vault and climb.** `Config.Movement.VaultDuration` / `ClimbDuration` (0.9 /
+     1.8 s) feel slow; cut them and let the clip rate follow.
+  4. **The body is hittable while it climbs.** Infected melee uses root distance, so a
+     climbing body still takes hits "stuck in the animation". Fix: the move is already
+     carrying the root; make the melee check use the live root (it does) but give the climb
+     a short damage immunity or push the Infected's reach check to the feet, so going over
+     cover is an escape, not a trap. Decide with item 3.
+  5. **More Infected vocal variety.** Three idle / two attack lines per form is thin; add
+     variants to each bank (`generate.py` `SOUNDS` + `BANKS`, re-upload the bank).
+  6. **Quieter footsteps.** `Config.Audio.Footsteps.WalkVolume` / `RunVolume` (0.7 / 1) are
+     too loud and sit on top of the mix; halve them and lower the steps' rolloff.
+  7. **Roll.** Holding Shift (sprint) and pressing LeftControl rolls (a dodge roll clip from
+     Mixamo, short i-frames, `MovementController`); crouch stays on LeftControl when not
+     sprinting.
+  8. **Rework the map for the movement set.** Delta was laid out for a body that walks
+     around cover; now it vaults, climbs and is climbed over. Redo `docs/LEVELS.md` with
+     more climbable cover (containers, humvees, bunkers, stacked hesco), routes that use
+     height, and Infected approach lines that go over low cover (level-designer call).
 
 0. **Progression (designed 2026-11-06):** `docs/PROGRESSION.md` — three-stage first loop
    (Checkpoint Delta, Mile 14, Aid Station Kestrel), player-started hold at one of three
