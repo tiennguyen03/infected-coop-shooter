@@ -201,6 +201,12 @@ function ObjectiveService.reset()
 	runGeneration += 1 -- cancels a pending activation from the previous run
 end
 
+-- Dev: bring the hold zone in now instead of after Config.Objective.AppearDelay.
+function ObjectiveService.activateNow()
+	runGeneration += 1
+	activate()
+end
+
 -- RunManager, on Explore: start the timer that brings the hold zone in.
 function ObjectiveService.arm()
 	scheduleActivation()

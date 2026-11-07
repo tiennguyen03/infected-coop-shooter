@@ -63,6 +63,10 @@ function EnemyProjectileService.damagePlayer(humanoid: Humanoid, amount: number)
 	if member and member.state ~= "Alive" then
 		return
 	end
+	-- Dev god mode (DevTestService "God"): Studio / creator only.
+	if member and member.owner and member.owner:GetAttribute("DevGod") == true then
+		return
+	end
 	local incomingMult: number = if member
 		then Squad.ownerAttribute(member, "IncomingDamageMult", 1)
 		else 1

@@ -30,9 +30,19 @@ local distance: number = Config.Camera.Distance
 local aiming = false
 local adsBlend = 0 -- 0 = hip, 1 = sights; eased each frame
 local crosshairRing: Frame? = nil
+local cursorHolders: { [string]: boolean } = {}
 local pivotHeight: number = Config.Camera.PivotHeight.stand
 local pivotTarget: number = pivotHeight
 local bodyYawLocked = false
+
+-- A UI that needs the mouse (the dev panel) frees the cursor while it holds a reason.
+function CameraController.setCursorFree(reason: string, free: boolean)
+	if free then
+		cursorHolders[reason] = true
+	else
+		cursorHolders[reason] = nil
+	end
+end
 
 function CameraController.setAiming(on: boolean)
 	aiming = on
@@ -130,6 +140,7 @@ local function onRenderStep(deltaTime: number)
 	local needsCursor = workspace:GetAttribute("GamePaused") == true
 		or not humanoid
 		or humanoid.Health <= 0
+		or next(cursorHolders) ~= nil
 	UserInputService.MouseIconEnabled = needsCursor
 	-- Re-assert every frame; Roblox's scripts reset MouseBehavior.
 	UserInputService.MouseBehavior = if needsCursor

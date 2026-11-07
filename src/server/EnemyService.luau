@@ -770,6 +770,7 @@ local function spawnLoop()
 		task.wait(interval)
 		if
 			RunStates.isLive()
+			and workspace:GetAttribute("DevSpawnsOff") ~= true
 			and not PauseService.isPaused()
 			and #zombies < DifficultyService.getMaxAlive()
 		then

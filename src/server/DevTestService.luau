@@ -371,6 +371,58 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 	SimulateItemOffers = function(_player, count)
 		DevTestService.simulateItemOffers(tonumber(count) or 1000)
 	end,
+	-- Dev tools v2 (2026-11-07). Toggles answer with the new state in the output.
+	God = function(player)
+		local on = player:GetAttribute("DevGod") ~= true
+		player:SetAttribute("DevGod", on)
+		print(`[DevTest] God {if on then "ON" else "OFF"} -> {player.Name}`)
+	end,
+	Heal = function(player)
+		local Squad = require(script.Parent.Squad)
+		local member = Squad.fromPlayer(player)
+		if member and member.state == "Downed" then
+			Squad.revive(member, nil)
+		end
+		local humanoid = getHumanoid(player)
+		if humanoid and humanoid.Health > 0 then
+			humanoid.Health = humanoid.MaxHealth
+		end
+	end,
+	ToggleSpawns = function()
+		local off = workspace:GetAttribute("DevSpawnsOff") ~= true
+		workspace:SetAttribute("DevSpawnsOff", off)
+		print(`[DevTest] Infected spawning {if off then "OFF" else "ON"}`)
+	end,
+	ActivateObjective = function()
+		require(script.Parent.ObjectiveService).activateNow()
+		print("[DevTest] ActivateObjective")
+	end,
+	ForceWipe = function()
+		require(script.Parent.RunManager).endRun("Wiped")
+		print("[DevTest] ForceWipe")
+	end,
+	DownBot = function()
+		local Squad = require(script.Parent.Squad)
+		for _, member in Squad.living() do
+			if member.kind == "bot" then
+				Squad.down(member)
+				print(`[DevTest] DownBot -> {member.name}`)
+				return
+			end
+		end
+	end,
+	KillBots = function()
+		local Squad = require(script.Parent.Squad)
+		for _, member in Squad.members() do
+			if member.kind == "bot" then
+				Squad.kill(member)
+			end
+		end
+	end,
+	SetBots = function(_player, count)
+		require(script.Parent.BotService).setCount(tonumber(count) or 3)
+		print(`[DevTest] SetBots -> {tostring(count)}`)
+	end,
 }
 
 local function handleCommand(player: Player, command: unknown, ...: any)

@@ -1,7 +1,7 @@
 # Handoff — Infected Co-op Shooter (VS Code + Claude Code terminal)
 
 Start here when picking the project up in a fresh Claude Code session.
-Last updated: 2026-11-07 (roll and slide clips published, bots tuned). Last verified commit on `main`: the bot-tuning commit (playtested).
+Last updated: 2026-11-07 (dev tools v2). Last verified commit on `main`: the dev-tools commit (playtested).
 
 ## What this is
 
@@ -226,10 +226,18 @@ Hard-won gotchas:
   module copy — calling service functions from eval hits nil remotes. Drive the real game by
   firing the `DevCommand` RemoteEvent from `client-1`; use eval only to read Instance/
   attribute state. Stateless modules (GroundUtil) are fine in eval.
-- DevCommand commands: GiveXP, ForceLevelUp, FillResupply, GrantItem(itemId, stacks), ClearItems,
-  SpawnEnemy(type, count), ClearEnemies, KillPlayer, RestartRun, PrintRunState,
-  VerifyCleanup, ForceObjectiveComplete, ForceMissionSuccess. Pick a card via the
+- **Dev tools v2 (2026-11-07).** In game, F1 opens the dev panel (cursor freed; grouped
+  Player / Run / Infected / Squad / Teleport / Checks) with a live info line (fps, RunState,
+  Infected, GOD, SPAWNS OFF). Hotkeys with the panel closed: F2 god, F3 clear Infected, F4
+  10 Walkers, F5 restart, F6 fill Resupply, F7 spawning on/off. Teleports run client-side.
+- DevCommand commands (fire from `client-1`): God (toggle; player attribute DevGod skips
+  enemy damage), Heal (also revives), DownPlayer(botName?), RevivePlayer(botName?),
+  KillPlayer, DownBot, KillBots, SetBots(n), ToggleSpawns (workspace DevSpawnsOff),
+  ActivateObjective (hold zone now), ForceObjectiveComplete, ForceMissionSuccess, ForceWipe,
+  RestartRun, FillResupply, SpawnEnemy(type, count), ClearEnemies, GiveXP, ForceLevelUp,
+  GrantItem(itemId, stacks), ClearItems, PrintRunState, VerifyCleanup. Pick a card via the
   `Resupply` remote (client fires "pick", crateId, itemId) or walk the character into it.
+  For a deterministic test: God + ToggleSpawns + SetBots 0, then spawn exactly what you need.
 - A running playtest never picks up synced code — always Stop → Play after a sync. Studio
   MCP sometimes can't tear down a wedged playtest; manual Stop → Play fixes it.
 - `grep_scripts` / `get_script_source` return "Unknown error" when Rojo isn't connected or

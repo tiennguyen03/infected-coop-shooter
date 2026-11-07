@@ -509,8 +509,11 @@ local function step()
 	end
 end
 
+local countOverride: number? = nil -- dev SetBots
+
 local function wanted(): number
-	return math.clamp(Config.Bots.Count, 0, math.max(MAX_SQUAD - #Players:GetPlayers(), 0))
+	local count = countOverride or Config.Bots.Count
+	return math.clamp(count, 0, math.max(MAX_SQUAD - #Players:GetPlayers(), 0))
 end
 
 local function removeBot(bot: Bot)
@@ -565,6 +568,12 @@ function BotService.startRun()
 			task.spawn(spawnBot, bot, pad)
 		end
 	end)
+end
+
+-- Dev: change how many bots fill the squad and rebuild them now.
+function BotService.setCount(count: number)
+	countOverride = math.clamp(math.floor(count), 0, MAX_SQUAD)
+	BotService.startRun()
 end
 
 -- Bot bodies currently alive on the field (dev tools, tests).
