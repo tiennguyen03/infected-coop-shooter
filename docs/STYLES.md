@@ -380,3 +380,6 @@ when the player stands inside it, so a hollow ring is a later polish item.
   stroke already on the cards. Generator is the source of truth, not hand-edited SVGs.
 - 2026-11-05: Committed to low-poly flat-shaded 3D for all future assets with a single
   shared palette texture, driven by performance goals and the planned Blender workflow.
+- 2026-11-07: Owner direction for the Infected: no "zombie green". Move the skin rows toward
+  Resident Evil bio-horror (lesions, pustules, exposed flesh, bruised pale skin, wet red) with
+  `rebuilt`/`strain` as the strain's two colours. Backlog; see handoff/README.md.

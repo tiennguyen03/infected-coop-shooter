@@ -44,6 +44,13 @@ Read in this order:
 
 ## Open work, in priority order
 
+- **Backlog (owner, 2026-11-07): Infected skin direction.** The owner does not want "zombie
+  green" skin. Target is Resident Evil bio-horror: lesions, pustules, exposed flesh, wet
+  reds and pale bruised skin, with the `rebuilt` (scar) and `strain` (caustic fluid) rows
+  doing the work. Means a new skin row set in `docs/STYLES.md` §2 replacing the three
+  `infected` tints, and a re-paint pass on the four v2 Infected builders (geometry stays).
+  Not scheduled; do it in one pass with the next body sprint.
+
 0. **Progression (designed 2026-11-06):** `docs/PROGRESSION.md` — three-stage first loop
    (Checkpoint Delta, Mile 14, Aid Station Kestrel), player-started hold at one of three
    sites, a boss per stage, Stand Down, the nine-form Infected roster. **Built so far:**
