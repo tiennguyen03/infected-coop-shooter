@@ -89,6 +89,24 @@ uploaded 2026-11-07 and wired; rows below.
 | inf_hocker_upper_leg | 133917422037960 | 77578052851832 | 1.00, 1.40, 1.13 | R15 limb (skin v2 2026-11-07, Walker mesh), offset 0.000, -0.020, 0.016 |
 | inf_hocker_lower_leg | 129665594524599 | 139491515162004 | 0.99, 1.30, 0.97 | R15 limb (skin v2 2026-11-07, Walker mesh), offset 0.000, 0.000, 0.000 |
 | inf_hocker_foot | 79144855233866 | 139880549411227 | 1.01, 0.31, 1.00 | R15 limb (v2 2026-11-07), offset 0.000, 0.000, 0.000 |
+| inf_warden_head | 114272288507850 | 137776244732745 | 1.03, 1.20, 1.10 | R15 limb (the Warden v2); 2026-11-07, offset 0.015, 0.050, -0.050 |
+| inf_warden_upper_torso | 129465433234843 | 111029482210404 | 1.94, 2.60, 1.52 | R15 limb (the Warden v2); 2026-11-07, offset 0.000, 0.450, 0.000 |
+| inf_warden_lower_torso | 95229929171070 | 122177919361179 | 2.24, 1.12, 1.09 | R15 limb (the Warden v2); 2026-11-07, offset -0.011, -0.350, -0.065 |
+| inf_warden_upper_arm_l | 90178215038369 | 121014183188168 | 0.92, 1.27, 0.92 | R15 limb (the Warden v2, side-specific); 2026-11-07, offset 0.000, -0.015, 0.000 |
+| inf_warden_upper_arm_r | 114663756538931 | 76432220093143 | 0.91, 1.32, 0.93 | R15 limb (the Warden v2, side-specific); 2026-11-07, offset 0.013, -0.040, 0.023 |
+| inf_warden_lower_arm_l | 109428525195459 | 103450056135438 | 0.96, 1.21, 0.96 | R15 limb (the Warden v2, side-specific; wrist grown to the shield handle); 2026-11-07, offset 0.000, -0.025, 0.000 |
+| inf_warden_lower_arm_r | 108686202348825 | 87978240518037 | 1.20, 1.17, 1.06 | R15 limb (the Warden v2, side-specific); 2026-11-07, offset 0.081, -0.025, -0.012 |
+| inf_warden_hand_l | 87995320009567 | 138361026663887 | 0.90, 0.36, 0.70 | R15 limb (the Warden v2, side-specific); 2026-11-07, offset 0.000, 0.000, 0.100 |
+| inf_warden_hand_r | 118060365841446 | 87200468963000 | 1.10, 0.44, 1.12 | R15 limb (the Warden v2, side-specific); 2026-11-07, offset 0.000, 0.000, -0.040 |
+| inf_warden_upper_leg | 110518444449837 | 136268599288059 | 0.85, 1.43, 1.00 | R15 limb (the Warden v2); 2026-11-07, offset 0.000, -0.035, -0.078 |
+| inf_warden_lower_leg | 83521572303302 | 136245909527183 | 0.86, 1.30, 1.01 | R15 limb (the Warden v2); 2026-11-07, offset 0.000, 0.000, -0.075 |
+| inf_warden_foot | 108286072751669 | 132546098095942 | 1.05, 0.34, 1.08 | R15 limb (the Warden v2); 2026-11-07, offset 0.000, 0.020, -0.010 |
+| inf_warden_plate_helmet | 131116560609697 | 109284303024409 | 1.44, 1.46, 2.20 | Warden v2 plate (IndexService welds it to Head); 2026-11-07, offset 0.019, 0.060, 0.250 |
+| inf_warden_plate_chest | 126497846796573 | 105012452580269 | 1.56, 1.56, 0.59 | Warden v2 plate (IndexService welds it to UpperTorso); 2026-11-07, offset 0.000, -0.010, -0.755 |
+| inf_warden_plate_back | 93038447341544 | 91772239198090 | 1.59, 2.72, 0.57 | Warden v2 plate (IndexService welds it to UpperTorso); 2026-11-07, offset -0.015, 0.590, 0.745 |
+| inf_warden_plate_shoulder_l | 78932474946165 | 97144883804954 | 1.66, 1.06, 1.66 | Warden v2 plate (IndexService welds it to LeftUpperArm); 2026-11-07, offset 0.000, 0.280, 0.000 |
+| inf_warden_plate_shoulder_r | 94157814542903 | 118728353896085 | 1.11, 0.30, 1.11 | Warden v2 plate (IndexService welds it to RightUpperArm); 2026-11-07, offset 0.000, 0.480, 0.000 |
+| inf_warden_plate_shield | 125260664787765 | 117059108863414 | 2.28, 0.50, 4.28 | Warden v2 plate (IndexService welds it to LeftLowerArm; fist-grip plate past the hand, upright when the arm is bent across); 2026-11-07, offset 0.000, -0.850, -0.400 |
 | pc_assault_head | 113120416771558 | 108816968954550 | 1.34, 1.24, 1.54 | R15 limb (Weller v2 2026-11-07), offset 0.000, 0.030, -0.060 |
 | pc_assault_upper_torso | 109606627346841 | 101027325915224 | 1.94, 1.70, 1.51 | R15 limb (Weller v2 2026-11-07), offset 0.000, 0.000, -0.025 |
 | pc_assault_lower_torso | 130324769107274 | 103310952242998 | 2.01, 0.40, 1.12 | R15 limb (Weller v2 2026-11-07), offset 0.000, 0.000, -0.050 |
@@ -102,22 +120,6 @@ uploaded 2026-11-07 and wired; rows below.
 | pc_assault_skinned_parts (hidden rig) | 15 meshes | 89768415142935 | R15 boxes | the same geometry split per R15 limb with Motor6Ds (`SKINNED_BODIES.parts`; v2 2026-11-07) |
 | pc_assault_gear_helmet | 106002887456604 | 115206275662165 | 1.34, 1.11, 1.54 | rigid gear on Head, offset 0.000, 0.095, -0.060 |
 | pc_assault_gear_carrier | 136938794151000 | 103203928656779 | 1.53, 1.44, 1.51 | rigid gear on UpperTorso, offset -0.025, 0.120, -0.025 |
-| inf_warden_head | 91451946704174 | 125862857256724 | 1.26, 1.22, 1.26 | R15 limb (the Warden); 2026-11-07, offset 0.020, 0.020, -0.050 |
-| inf_warden_upper_torso | 127929460133902 | 70398955261052 | 2.10, 1.93, 1.23 | R15 limb (the Warden); 2026-11-07, offset 0.000, 0.115, -0.044 |
-| inf_warden_lower_torso | 135925546743840 | 71175322983905 | 2.36, 0.50, 1.13 | R15 limb (the Warden); 2026-11-07, offset 0.040, -0.040, -0.055 |
-| inf_warden_upper_arm_l | 128429828626584 | 87060185256263 | 0.90, 1.24, 0.87 | R15 limb (the Warden, side-specific arm); 2026-11-07, offset -0.018, 0.000, 0.000 |
-| inf_warden_upper_arm_r | 92719408011297 | 128852748802007 | 0.88, 1.24, 0.87 | R15 limb (the Warden, side-specific arm); 2026-11-07, offset 0.008, 0.000, 0.000 |
-| inf_warden_lower_arm_l | 119556389365321 | 88018299009582 | 1.28, 1.10, 0.99 | R15 limb (the Warden, side-specific arm); 2026-11-07, offset -0.160, -0.010, -0.015 |
-| inf_warden_lower_arm_r | 103182885123605 | 127119804504870 | 1.16, 1.10, 1.00 | R15 limb (the Warden, side-specific arm); 2026-11-07, offset 0.099, -0.010, -0.020 |
-| inf_warden_hand | 90513292529609 | 119267048723164 | 0.98, 0.41, 1.05 | R15 limb (the Warden); 2026-11-07, offset 0.000, -0.005, -0.035 |
-| inf_warden_upper_leg | 135036799820300 | 95714787492482 | 0.96, 1.38, 1.08 | R15 limb (the Warden); 2026-11-07, offset 0.000, -0.010, -0.060 |
-| inf_warden_lower_leg | 110791812728893 | 124541262283914 | 0.99, 1.30, 1.09 | R15 limb (the Warden); 2026-11-07, offset 0.000, 0.000, -0.058 |
-| inf_warden_foot | 88019661795689 | 121443990789556 | 1.01, 0.34, 1.05 | R15 limb (the Warden); 2026-11-07, offset 0.000, 0.017, -0.025 |
-| inf_warden_plate_helmet | 93019556832338 | 123255776325658 | 1.51, 1.12, 1.65 | Warden plate (IndexService welds it to Head); 2026-11-07, offset 0.025, 0.160, -0.065 |
-| inf_warden_plate_chest | 119813747852082 | 117709402038329 | 1.90, 1.42, 0.60 | Warden plate (IndexService welds it to UpperTorso); 2026-11-07, offset 0.000, -0.010, -0.770 |
-| inf_warden_plate_back | 117946002815095 | 82460354205839 | 1.90, 1.40, 0.53 | Warden plate (IndexService welds it to UpperTorso); 2026-11-07, offset 0.000, 0.000, 0.735 |
-| inf_warden_plate_shoulder | 138769670496956 | 79528139241232 | 1.33, 0.51, 1.33 | Warden plate (IndexService welds it to either UpperArm); 2026-11-07, offset 0.000, 0.515, 0.000 |
-| inf_warden_plate_shield | 81264490942347 | 114017635854116 | 2.08, 4.00, 0.68 | Warden plate (IndexService welds it to LeftLowerArm); 2026-11-07, offset -0.600, -0.300, -0.510 |
 | env_bus | 115848012015557 | 84471628520896 | 42.9 x 12.75 x 10.9 | solid; the Gate bus line (ArenaService), Mile 14 later; 2026-11-07 |
 
 Open Cloud imports the FBX at 100x (1 Blender unit → 100 studs) and clamps any axis to 2048,

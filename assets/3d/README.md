@@ -15,7 +15,13 @@ at or hand-tweak anything. Collections inside it:
 
 The `.blend` is **generated** by `build/build_assets.py`. Every asset is described in code
 (boxes, cylinders, icospheres painted with palette swatches), so edits made by hand in Blender
-will be overwritten the next time the build runs. To change an asset, edit its function in
+will be overwritten the next time the build runs. **One file per singular asset** (owner rule,
+2026-11-07): a boss or a body gets its own `build/<name>.py` exposing `register(ba)`, which
+`build_assets.py` imports and calls at the end of its asset list (`warden.py` is the pattern);
+sets of related things (building kit, props, the Infected roster's shared limbs) share
+`build_assets.py`. Design new bodies live first: the Blender MCP (`mcp__blender__*`) renders
+the primitives beside a 5-stud reference man so the owner can direct the shape before it is
+ported into a build file. To change an asset, edit its function in
 the script and rebuild; to keep a hand-made asset, add it to a new `.blend` next to this one
 or ask to have it ported into the script.
 
@@ -79,7 +85,7 @@ Add `-- --only wpn_rifle prop_drone` to build a subset.
 | prop_chainlink_panel | 268 | bottom | fence panel 12 x 7 x 0.3 (see-through) |
 | prop_concertina | 288 | bottom | razor wire coil 12.1 x 2.9 x 2.9 |
 | inf_walker_* / inf_runner_* / inf_brute_* / inf_hocker_* | 1.5k / 1.9k / 2.1k / 1.4k per body (caps 1.6k / 2.0k / 2.4k / 2.2k, `BODY_TRI_CAP`) | center | the 15 R15 limb MeshParts of each Infected (`MeshAssets.dressInfected`); skin v2 + limb geometry v2 2026-11-07 |
-| inf_warden_* / inf_warden_plate_* | 2,588 body + 572 plates (cap 5,000) | center | the Warden (Index host): 15 limbs with side-specific arms (`_l` shield grips, `_r` brassard; `INFECTED_SIDED`, `MeshAssets.limbMeshName`) plus six plate meshes welded on by `IndexService.buildPlates` (helmet, chest, back, shoulder ×2, shield); `warden_limb` / `_warden_plate` builders, 2026-11-07 |
+| inf_warden_* / inf_warden_plate_* | 2,604 with plates (cap 5,000) | center | the Warden (Index host), v2 2026-11-07: 12 limb meshes with sided upper arm / lower arm / hand (`_l` shield grip + seam, `_r` brassard; `warden.SIDED`, `MeshAssets.limbMeshName`) plus six plate meshes welded on by `IndexService.buildPlates` (helmet, chest, back, shoulder `_l` / `_r`, fist-grip shield); built by `build/warden.py` |
 | pc_assault_* | ~650 per body | center | Weller, the player's 15 R15 limb MeshParts (`PlayerSetup` -> `MeshAssets.dressModel`); v2 2026-11-07. `PC_TAPER` (on) tapers the forearm/shin to 75% and adds elbow/knee caps: the uploaded ids are the pre-taper build, re-upload lower_arm, lower_leg, upper_arm, upper_leg to ship it |
 | pc_k9_* / pc_epi_* / pc_recon_* / pc_engineer_* | ~650 per body | center | Cole, Reyes, Cross, Kane: built + previewed, not uploaded (no class system yet) |
 | pc_assault_skinned | 944 (+ gear 228) | HRP centre | Weller as one skinned mesh on an R15 armature (section "Skinned Weller"); exported as `.fbx` (rigged, uploaded = the skin), `_mesh.fbx` (unrigged, unused) and `_parts.fbx` (15 parts + attachments, uploaded = the hidden rig) |

@@ -127,6 +127,15 @@ CLIPS = {
     "zombie_crawl": {"loop": True, "step": 1, "in_place": True},
     "zombie_stumble": {"loop": False, "step": 1, "in_place": True},
     "zombie_scream": {"loop": False, "step": 1, "in_place": True},
+    # The Warden (2026-11-07): Mixamo Sword And Shield pack, shield on the left arm like his.
+    # Walk / run in place (locomotion), the rest keep their hip motion; guard and idle loop.
+    "warden_walk": {"loop": True, "step": 1, "in_place": True},
+    "warden_run": {"loop": True, "step": 1, "in_place": True},
+    "warden_idle": {"loop": True, "step": 2},
+    "warden_guard": {"loop": True, "step": 2, "upper": True},  # Sword And Shield Block Idle: shield up, the walk shows through the legs
+    "warden_bash": {"loop": False, "step": 1},  # Sword And Shield Power Slash
+    "warden_riot": {"loop": False, "step": 1},  # Sword And Shield Power Up
+    "warden_death": {"loop": False, "step": 2},  # Sword And Shield Falling Forward Death
 }
 
 

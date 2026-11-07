@@ -21,3 +21,6 @@ assets/audio/build/.venv/
 # Mixamo source clips: licensed for use in the game, not for redistribution (assets/animations/README.md)
 assets/animations/source/
 src/shared/AnimationClips/*.json
+
+# Python bytecode from the Blender build scripts
+__pycache__/

@@ -1,9 +1,11 @@
 # Handoff — Infected Co-op Shooter (VS Code + Claude Code terminal)
 
 Start here when picking the project up in a fresh Claude Code session.
-Last updated: 2026-11-07, end of the build-round-1 session (the Warden shipped, player
-movement fixed, skinned Weller switched off). **Start the next session at "Open work"
-item 1: the Warden silhouette redesign the owner asked for.** Last verified commit on `main`: the Warden commit (solo + 2-client playtests).
+Last updated: 2026-11-07, end of the Warden v2 session (new silhouette designed live in
+Blender, ported to the R15 rig, seven Mixamo clips published). **Start the next session by
+asking the owner for the "other problems" (Open work item 2) and by reconnecting the Rojo
+plugin** (it dropped mid-session; the Studio place already holds sources identical to disk).
+Last verified commit on `main`: the Warden v2 commit (solo playtest).
 
 ## What this is
 
@@ -65,7 +67,20 @@ Read in this order:
   meshes with their own health (rounds into a plate do 25%, into a bared limb 150%);
   Bash / Charge / Gas Canister / Guard with handset tells on the new `BossBarUI`;
   Riot Call at 60% and 25%. Kill → priority pallet, heal, re-arm, `Extract`. Dev: F1
-  `Warden (Gate)` / `Warden here`. 16 meshes uploaded (`assets/3d/ASSET_IDS.md`).
+  `Warden (Gate)` / `Warden here`.
+- 2026-11-07: **Warden v2 body + animation set shipped and playtested** (Sprint 19 doc
+  > *v2*). The owner did not want "a Brute model with riot armor slapped on top", so the
+  Warden was designed live in Blender through the Blender MCP and approved, then ported:
+  his own file `assets/3d/build/warden.py` (one file per singular asset, owner rule),
+  upright asymmetric silhouette (left side shield + shoulder dome + riot collar, right
+  side the bare MP), 18 meshes re-uploaded (2,604 tris with plates,
+  `assets/3d/ASSET_IDS.md`), shield rebuilt as a fist-grip plate so it reads in any pose.
+  Seven Mixamo clips retargeted and published (`warden_walk/run/idle/guard/bash/riot/
+  death`, `assets/animations/ASSET_IDS.md`) and wired in `IndexService` (walk rate-scaled,
+  idle only when the root is still, guard as an upper-body overlay cancelled on every
+  action change, bash timed to the windup, run while charging, roar on Riot Call, death
+  clip). Verified in a playtest with the published ids: all 21 parts dressed, each clip
+  seen, 60 fps.
 - 2026-11-07: **Skinned Weller switched off** (`Config.Player.SkinnedBody = false`; players
   wear the tapered rigid body the bots wear). The owner saw the helmet, carrier and
   rifle turn away from the body: measured on the live character, the hidden rig parts
@@ -144,28 +159,16 @@ Read in this order:
 ## Open work, in priority order
 
 - **The Warden shipped 2026-11-07** (`docs/sprints/SPRINT_19_WARDEN.md` > Open work):
-  handset hiss + squelch tell clip and his own vocals (audio pipeline), an upright
-  walk / shield-square charge clip instead of the mutant set, Gate dressing (chain,
-  spray, MP roster) and the insert / wipe radio lines, a 4-player phone pass on phase
-  2. First real fight on this build: 100-120 s is the target; retune
-  `Config.Index.Warden` plate health if it drags.
-- **NEXT: the Warden silhouette redesign (owner, 2026-11-07).** After playing the shipped
-  Warden the owner said: "I like how he looks, I like the direction with the riot armor. I
-  just don't like that it's essentially just a Brute model with riot armor slapped on top
-  of it." Asked for: design him live in Blender through the Blender MCP (`mcp__blender__*`:
-  `get_addon_status`, `execute_blender_code`, `look`) so the owner can see renders and
-  direct changes before anything is ported to `build_assets.py`. State: the live Blender
-  scene was cleared (default cube removed); nothing built yet. Direction drafted, not yet
-  approved: upright and tall where the Brute is hunched; asymmetric (left side one armoured
-  mass of shield + shoulder dome + raised riot collar, right side the bare man); head sunk
-  into the collar so helmet and shoulders read as one dome; long legs with shin guards;
-  duty belt with canisters; the brassard. Keep the canon (fused helmet with cracked
-  visor, chest plate with the open handset, shield grown into the left forearm, six
-  breakable plates, scale 1.9) and the 5,000-tri boss cap. Build from low-poly primitives
-  with the STYLES §2 swatches, show front / side / three-quarter renders, iterate with the
-  owner, then port the approved shapes into `warden_limb` / `_warden_plate` and re-upload
-  (`assets/3d/ASSET_IDS.md`). Note: in that session the Agent tool listed no
-  `art-director` type even though `.claude/agents/` has it; check before relying on it.
+  handset hiss + squelch tell clip and his own vocals (audio pipeline), Gate dressing
+  (chain, spray, MP roster) and the insert / wipe radio lines, a 4-player phone pass on
+  phase 2. First real fight on this build: 100-120 s is the target; retune
+  `Config.Index.Warden` plate health if it drags. Art-director later pass on the v2
+  body: see the Sprint 19 doc > *v2* > open.
+- **Warden silhouette redesign: done 2026-11-07** (see current state). Left from it:
+  the Rojo Studio plugin disconnected mid-session (`[Rojo-Warn] Disconnected ... Recv
+  failure`); the changed scripts were pushed into the place by hand (rojo-built rbxm →
+  `import_rbxm` → copy `.Source`), so the place matches disk, but reconnect the plugin
+  (`localhost:34872`) before the next sync or the next edit will not reach Studio.
 - **Owner also said "there's other problems"** with the current build beyond the player
   body and the Warden look, not yet listed. Ask for them at the start of the next session
   before building anything new.
@@ -338,6 +341,17 @@ Hard-won gotchas:
   PlayerModule controls and `UnbindFromRenderStep("Momentum")` on the client, drive
   `Humanoid:Move` yourself and sample `AssemblyLinearVelocity`; a healthy body reaches
   WalkSpeed within 0.1 s. A hand-built minimal rig in the same spot is the reference.
+- **Studio MCP gotchas found in the Warden v2 session (2026-11-07).** (5) When a stale
+  instance is listed, every `robloxstudio` tool needs `instance_id` (here
+  `instance:75r-q99`) or it returns "Unknown error"; `solo_playtest start` also needs
+  `mode: "play"`, and `execute_luau` takes the peer as `target` (`server` / `client-1`),
+  not as part of the instance id. (6) A playtest can boot into `Ended Wiped`; fire
+  `RestartRun` and wait for `RunState Explore` before any spawn command. (7) Client-side
+  `AnimationTrack.Animation.Name` is always "Animation" for server-loaded tracks: identify
+  tracks by `Length` on the client, by name on the server. (8) A server Humanoid driven by
+  `MoveTo` reports `MoveDirection` = 0; test "moving" with the root's
+  `AssemblyLinearVelocity`. (9) Published animation ids go into `Config.Animations.Ids`
+  with the `rbxassetid://` prefix; a bare number fails with "unknown AssetId protocol".
 - **`execute_luau` runs in an isolated VM.** `require()` returns a fresh, un-`init()`ed
   module copy — calling service functions from eval hits nil remotes. Drive the real game by
   firing the `DevCommand` RemoteEvent from `client-1`; use eval only to read Instance/

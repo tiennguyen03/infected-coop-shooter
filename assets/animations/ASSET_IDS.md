@@ -54,3 +54,10 @@ Mirror every id into `Config.Animations.Ids`.
 | sprint_roll (Mixamo Sprinting Forward Roll) | 80433355485535 | 2026-11-07 |
 | running_slide (Mixamo Running Slide) | 138341516012248 | 2026-11-07 |
 | downed_crawl (Mixamo Crawling, on hands and knees) | 131142341976869 | 2026-11-07 |
+| warden_walk (Mixamo, Warden boss) | 111642668033721 | 2026-11-07 |
+| warden_run (Mixamo, Warden boss) | 95287504134232 | 2026-11-07 |
+| warden_idle (Mixamo, Warden boss) | 106799884237155 | 2026-11-07 |
+| warden_guard (Mixamo, Warden boss) | 83995049942844 | 2026-11-07 |
+| warden_bash (Mixamo, Warden boss) | 89934779836389 | 2026-11-07 |
+| warden_riot (Mixamo, Warden boss) | 116185112877732 | 2026-11-07 |
+| warden_death (Mixamo, Warden boss) | 89208674584569 | 2026-11-07 |

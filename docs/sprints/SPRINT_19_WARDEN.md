@@ -1,7 +1,7 @@
 # Sprint 19 — The Warden: Delta's Index host
 
 **Status: shipped 2026-11-07, verified in a solo playtest and a 2-client playtest (results
-under the checklist).** The first boss, built to `docs/PROGRESSION.md` > *Index hosts* and
+under the checklist). Body and animation set replaced the same day: see *v2* at the end.** The first boss, built to `docs/PROGRESSION.md` > *Index hosts* and
 the sheets in `docs/CHARACTERS.md` B, `docs/LEVELS.md` A6 and `docs/LORE.md` > *Index
 hosts* (2026-11-07 lore / systems / level / art passes). Completing the Primary now calls
 the Warden at the Gate; he walks the screening route up the main road, and killing him is
@@ -23,7 +23,7 @@ what ends the sortie's Index step and opens extraction.
 | 7 | **Dev.** `SpawnWarden` (at the Gate, walking) and `WardenHere` (24 studs ahead, straight to the hunt) in the F1 panel. | `DevTestService`, `DevTestPanel` |
 
 All numbers in `Config.Index.Warden`; animation set `Config.Animations.Infected.Warden`
-(the mutant walk / swipe / death clips for now).
+(his own seven clips since v2; the mutant set at first).
 
 ## Verification
 
@@ -73,9 +73,34 @@ corpse time, STYLES palette on the bar, hit burst on a plate break).
 ## Open work
 
 - Handset carrier hiss + squelch tell clip and his own vocal set (audio pipeline).
-- Warden animation set (he wears the mutant clips; an upright walk and a shield-square
-  charge pose would sell the sheet).
 - Gate dressing: the chain and spray, the MP roster with the Gate NCOIC uncrossed, insert /
   wipe radio lines.
 - Perch cheese (LEVELS A14 item 7): watch whether the canister is enough.
 - Phase-2 pressure with 4 players on a phone (the Riot Call at +9 Walkers).
+
+## v2: his own body and clips (2026-11-07)
+
+After playing the shipped Warden the owner said he liked the riot-armour direction but not
+that "it's essentially just a Brute model with riot armor slapped on top". The redesign
+was done live in Blender through the Blender MCP (front / side / three-quarter renders
+beside a 5-stud reference man, iterated with the owner) and ported only once approved.
+
+![v2 on the walk: shield side forward, handset on the chest](images/sprint19_warden_v2_walk.jpg)
+![Close: fused helmet dome, riot collar, brassard on the bare arm](images/sprint19_warden_v2_close.jpg)
+![Riot Call: the roar clip with the bodies arriving](images/sprint19_warden_v2_riot.jpg)
+
+| # | Piece | Where |
+|---|---|---|
+| 1 | **Body.** Upright where the Brute hunches; asymmetric: the left side is one armoured mass (shield grown into the forearm, shoulder dome, raised riot collar), the right side the bare MP (brassard, bared forearm with the strain seam). Head sunk into the collar so helmet and shoulders read as one dome; long legs with shin guards; duty belt with the canisters. Built for the R15 rig: every limb inside its `R15_LIMB` box, sided upper arm / lower arm / hand (`SIDED`), plates as six separate meshes. 18 meshes, 2,604 tris with plates (cap 5,000), all re-uploaded. | `assets/3d/build/warden.py` (his own file: the owner's one-file-per-asset rule), `MeshAssets` Warden v2 block, `assets/3d/ASSET_IDS.md` |
+| 2 | **Shield.** The first port had the shield as a slab along the forearm, which lay flat in Mixamo poses. Rebuilt as a fist-grip plate: a tall curved plate held perpendicular to the forearm just past the fist, window and band on its face, handle behind. | `warden.py` `warden_plate(L, "shield")`, `MeshAssets` offset (0, -0.85, -0.40) |
+| 3 | **Clips.** Seven Mixamo clips retargeted (`retarget.py` `CLIPS`) and published: `warden_walk` (in place, 6 studs/s authored), `warden_run` (in place, 16), `warden_idle`, `warden_guard` (upper-body overlay), `warden_bash`, `warden_riot` (the roar), `warden_death`. | `assets/animations/ASSET_IDS.md`, `Config.Animations.Ids`, `Config.Animations.Infected.Warden`, `MoveClipSpeed` |
+| 4 | **Wiring.** `IndexService` keeps a track table per fight: walk at Core priority rate-scaled to ground speed; idle only while the root is slower than `Config.Index.Warden.IdleSpeed` (a `MoveTo` Humanoid reports `MoveDirection` 0, so the root velocity is the test); guard as an Action overlay that `cancelGuard` stops on every action change (stagger used to leave it stuck); bash played at the rate that puts the strike at `Bash.StrikeAt` of the windup; the canister uses the throw clip; charge plays run while the root is anchored; Riot Call plays the roar over `RiotCallHold` and takes over from guard or a windup (never from a running charge); death plays the death clip. | `IndexService` `play` / `stop` / `updateIdle` / `loadTracks` / `cancelGuard`, `Config.Index.Warden` `IdleSpeed`, `Bash.StrikeAt`, `RiotCallHold` |
+
+Verified in a solo playtest (published ids): all 21 parts wear the v2 meshes; walk at
+x1.33 only while moving, idle when still; guard overlay ends with the guard; bash lands on
+the tell; run while the charge winds; roar and 11 bodies at 55%; death clip on the kill;
+plate break exposes the limb; priority pallet drops; 60 fps.
+
+Open from v2: an art-director pass on the live build (the render review was done on the
+Blender design, not the in-game dress); the Rojo plugin dropped mid-session, so the changed
+scripts were hand-imported into the place (sources match disk; reconnect before syncing).

@@ -184,25 +184,32 @@ that was done to help it (a screening band, a bandage over the bite, cut restrai
 
 ## B. The Index hosts (5,000 tris, boss, health bar)
 
-### The Warden (Delta; scale 1.9; built 2026-11-07, 2,588 body + 572 plate tris)
+### The Warden (Delta; scale 1.9; v2 built 2026-11-07, 2,604 tris with the six plates)
 - **Was:** the Delta MP sergeant who ran the Gate, the Gate NCOIC. Bitten through the
   shield sleeve on the last day of screening; chained the Gate from outside under the
   containment order, shutting the garrison and the highway's refugees in with himself.
   The strain grew his riot kit into him. The only Index that stands upright.
+- **Silhouette (v2, owner-approved in Blender):** not a Brute in armour. Upright and tall;
+  asymmetric: the left side one armoured mass (shield grown into the forearm, shoulder
+  dome, raised riot collar), the right side the bare MP; the head sunk into the collar so
+  helmet and shoulders read as one dome; long legs; duty belt with the canisters.
 - **Head:** riot helmet fused to the skull, `dark.m` shell, `gun.l` visor cracked and set
   into the `rebuilt` brow; `strain.l` eyes in `dark.d` rims behind it.
 - **Torso:** the Brute's bone shelf under `dark` riot plates (chest, shoulders, back); a
   `white.m` **MP brassard** with `dark.d` letters on the upper arm; a `dark` radio handset
   on its coiled cord grown into the chest plate.
 - **Arms/hands:** `rebuilt` spurred forearms; the **riot shield** grown into the left
-  forearm as an attached part (`dark.l`, 2 studs wide, `gun.l` window).
+  forearm as an attached part (`dark.l`, a tall curved plate held fist-grip, perpendicular
+  to the forearm, `gun.l` window).
 - **Legs/feet:** `dark.d` shin guards, `olive.m` trousers, `dark.d` boots.
 - **Mechanic:** six plates (helmet shell, chest, back, both shoulders, shield) are attached
   parts with their own health; each one off reveals `rebuilt` bone and a `strain.l` seam
   (built as the limb geometry under the plate). Gas canisters on the right hip feed the
-  phase-2 lob. Built as `inf_warden_*` with side-specific arms (`_l` shield grips and
-  seam, `_r` brassard) and `inf_warden_plate_*`; numbers in `docs/PROGRESSION.md`
-  > *Index kit: the Warden*.
+  phase-2 lob. Built in `assets/3d/build/warden.py` as `inf_warden_*` with sided upper
+  arm / lower arm / hand (`_l` shield grip and seam, `_r` brassard) and
+  `inf_warden_plate_*` (helmet, chest, back, shoulder `_l` / `_r`, shield); numbers in
+  `docs/PROGRESSION.md` > *Index kit: the Warden*. Clips: `warden_*` in
+  `assets/animations/README.md`.
 
 ### The Bloat (Mile 14; scale 1.6, depth/width 1.5)
 - **Was:** the driver of the lead bus. Sealed the bitten aboard, then was bitten himself.

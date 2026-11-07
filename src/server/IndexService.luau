@@ -25,6 +25,7 @@ local Debris = game:GetService("Debris")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local Animations = require(ReplicatedStorage.Shared.Animations)
 local Config = require(ReplicatedStorage.Shared.Config)
 local EnemyDefinitions = require(ReplicatedStorage.Shared.EnemyDefinitions)
 local GroundUtil = require(ReplicatedStorage.Shared.GroundUtil)
@@ -83,6 +84,9 @@ type Fight = {
 	chargeCooldown: number,
 	nextRepathAt: number,
 	nextSyncAt: number,
+	-- His clips (Config.Animations.Infected.Warden): idle whenever he stands still (Idle
+	-- priority over the Core walk), the rest Action overlays played by the attacks.
+	tracks: { [string]: AnimationTrack },
 }
 
 local fight: Fight?
@@ -117,6 +121,47 @@ local function tell(kind: string)
 	end
 end
 
+-- Plays one of his clips (fade in), nil-safe for an unpublished clip outside Studio.
+local function play(current: Fight, name: string, fade: number?)
+	local track = current.tracks[name]
+	if track then
+		track:Play(fade or 0.1)
+	end
+	return track
+end
+
+local function stop(current: Fight, name: string, fade: number?)
+	local track = current.tracks[name]
+	if track and track.IsPlaying then
+		track:Stop(fade or 0.2)
+	end
+end
+
+local function loadTracks(handle: EnemyService.BossHandle): { [string]: AnimationTrack }
+	local tracks: { [string]: AnimationTrack } = {}
+	local animator = handle.humanoid:FindFirstChildOfClass("Animator")
+	local clips = Config.Animations.Infected[TYPE_NAME]
+	if not animator or not clips then
+		return tracks
+	end
+	local wanted = {
+		idle = Enum.AnimationPriority.Idle,
+		guard = Enum.AnimationPriority.Action,
+		charge = Enum.AnimationPriority.Action2,
+		riot = Enum.AnimationPriority.Action2,
+		throw = Enum.AnimationPriority.Action,
+	}
+	for name, priority in wanted do
+		local clip = (clips :: { [string]: string })[name]
+		local track = clip and Animations.load(animator :: Animator, clip, priority)
+		if track then
+			track.Looped = name == "idle" or name == "guard" or name == "charge"
+			tracks[name] = track
+		end
+	end
+	return tracks
+end
+
 local function plateFractions(current: Fight): { number }
 	local fractions = {}
 	for _, plate in current.plates do
@@ -140,6 +185,24 @@ end
 
 local function flat(v: Vector3): Vector3
 	return Vector3.new(v.X, 0, v.Z)
+end
+
+-- The idle: on when the body is not moving, off the moment it is (the walk shows again).
+local function updateIdle(current: Fight)
+	local idle = current.tracks.idle
+	if not idle then
+		return
+	end
+	-- MoveDirection stays zero on a MoveTo-driven server humanoid (measured 2026-11-07), so
+	-- the root's ground speed is the test; a charge (anchored root) counts as moving.
+	local root = current.handle.root
+	local moving = current.charge ~= nil
+		or flat(root.AssemblyLinearVelocity).Magnitude > cfg().IdleSpeed
+	if moving and idle.IsPlaying then
+		idle:Stop(0.2)
+	elseif not moving and not idle.IsPlaying then
+		idle:Play(0.2)
+	end
 end
 
 local function faceToward(root: BasePart, target: Vector3)
@@ -182,6 +245,18 @@ local function lineClear(current: Fight, target: BasePart): boolean
 		or (target.Parent ~= nil and hit.Instance:IsDescendantOf(target.Parent :: Instance))
 end
 
+-- Guard off: speed back, plates take full damage, shield down. Safe to call when he is not
+-- guarding; anything that takes over his action (a stagger, a windup) calls it.
+local function cancelGuard(current: Fight)
+	local humanoid = current.handle.humanoid
+	stop(current, "guard", 0.3)
+	current.handle.model:SetAttribute("GuardFactor", nil)
+	local base = (humanoid:GetAttribute("BaseWalkSpeed") :: number?) or humanoid.WalkSpeed
+	if not PauseService.isPaused() and humanoid.Health > 0 then
+		humanoid.WalkSpeed = base
+	end
+end
+
 -- --- plates
 
 local function breakPlate(current: Fight, plate: Plate)
@@ -220,6 +295,9 @@ local function breakPlate(current: Fight, plate: Plate)
 		current.action = nil
 	end
 	if not current.charge then
+		if current.action == "guard" then
+			cancelGuard(current)
+		end
 		current.action = "stagger"
 		current.busyUntil = math.max(current.busyUntil, os.clock() + settings.PlateBreakStagger)
 	end
@@ -331,6 +409,9 @@ end
 
 local function startWindup(current: Fight, kind: string, windup: number, target: BasePart?)
 	local now = os.clock()
+	if current.action == "guard" then
+		cancelGuard(current)
+	end
 	current.pending = kind
 	current.action = kind
 	current.resolveAt = now + windup
@@ -339,6 +420,19 @@ local function startWindup(current: Fight, kind: string, windup: number, target:
 	current.handle.humanoid:MoveTo(root.Position)
 	if target then
 		faceToward(root, target.Position)
+	end
+	if kind == "bash" then
+		local track = current.handle.attackTrack
+		if track then
+			stop(current, "idle", 0.05)
+			track:Play(0.05)
+			local length = track.Length
+			if length > 0 then
+				track:AdjustSpeed(length * cfg().Bash.StrikeAt / windup)
+			end
+		end
+	elseif kind == "canister" then
+		play(current, "throw")
 	end
 	tell(kind)
 end
@@ -361,9 +455,6 @@ local function resolveBash(current: Fight)
 		then
 			EnemyProjectileService.damagePlayer(humanoid, settings.Damage)
 		end
-	end
-	if current.handle.attackTrack then
-		current.handle.attackTrack:Play(0.1)
 	end
 	current.cooldowns.bash = os.clock() + settings.Cooldown
 	current.busyUntil = os.clock() + settings.Recovery
@@ -398,14 +489,14 @@ local function resolveCharge(current: Fight, target: BasePart?)
 	current.action = "charge"
 	current.busyUntil = now + settings.Distance / settings.Speed
 	current.cooldowns.charge = now + current.chargeCooldown
-	if current.handle.attackTrack then
-		current.handle.attackTrack:Play(0.1)
-	end
+	stop(current, "idle", 0.05)
+	play(current, "charge", 0.05)
 end
 
 local function endCharge(current: Fight, wall: boolean)
 	local root = current.handle.root
 	current.charge = nil
+	stop(current, "charge", 0.15)
 	root.Anchored = false
 	root.AssemblyLinearVelocity = Vector3.zero
 	local now = os.clock()
@@ -494,16 +585,12 @@ local function startGuard(current: Fight)
 	current.action = "guard"
 	current.busyUntil = now + settings.Duration
 	current.cooldowns.guard = now + settings.Cooldown
+	play(current, "guard", 0.2)
 	tell("guard")
 end
 
 local function endGuard(current: Fight)
-	local humanoid = current.handle.humanoid
-	current.handle.model:SetAttribute("GuardFactor", nil)
-	local base = (humanoid:GetAttribute("BaseWalkSpeed") :: number?) or humanoid.WalkSpeed
-	if not PauseService.isPaused() and humanoid.Health > 0 then
-		humanoid.WalkSpeed = base
-	end
+	cancelGuard(current)
 end
 
 local function resolvePending(current: Fight)
@@ -600,6 +687,20 @@ local function enterPhase(current: Fight, phase: number)
 	end
 	radio("RiotCall")
 	tell("riot")
+	-- The call is the beat: a guard or a windup in progress gives way to it (a charge already
+	-- running carries on and skips the roar).
+	if not current.charge then
+		if current.action == "guard" then
+			cancelGuard(current)
+		end
+		current.pending = nil
+		local now = os.clock()
+		current.handle.humanoid:MoveTo(current.handle.root.Position)
+		current.action = "riot"
+		current.busyUntil = now + settings.RiotCallHold
+		stop(current, "idle", 0.05)
+		play(current, "riot", 0.1)
+	end
 	sync(current)
 end
 
@@ -671,6 +772,7 @@ local function step()
 	end
 	local now = os.clock()
 	local settings = cfg()
+	updateIdle(current)
 
 	if now >= current.nextSyncAt then
 		current.nextSyncAt = now + settings.SyncInterval
@@ -709,7 +811,8 @@ local function step()
 		else
 			if targetRoot and not current.sighted then
 				if
-					(targetRoot.Position - handle.root.Position).Magnitude <= settings.SightingRange
+					(targetRoot.Position - handle.root.Position).Magnitude
+					<= settings.SightingRange
 				then
 					current.sighted = true
 					radio("Sighting")
@@ -789,6 +892,7 @@ local function spawn(groundPosition: Vector3, walk: boolean): boolean
 		chargeCooldown = settings.Charge.Cooldown,
 		nextRepathAt = 0,
 		nextSyncAt = 0,
+		tracks = loadTracks(handle),
 	}
 	fight = current
 	armPlates(current, healthMultiplier)

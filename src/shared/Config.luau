@@ -270,6 +270,15 @@ local Config = {
 			zombie_crawl = "rbxassetid://101414875993165",
 			zombie_stumble = "rbxassetid://78987755637091",
 			zombie_scream = "rbxassetid://91289969066728",
+			-- The Warden (2026-11-07): Mixamo Sword And Shield pack (shield on the left arm).
+			-- Empty id = Studio preview from the retargeted table until published.
+			warden_walk = "rbxassetid://111642668033721",
+			warden_run = "rbxassetid://95287504134232",
+			warden_idle = "rbxassetid://106799884237155",
+			warden_guard = "rbxassetid://83995049942844",
+			warden_bash = "rbxassetid://89934779836389",
+			warden_riot = "rbxassetid://116185112877732",
+			warden_death = "rbxassetid://89208674584569",
 		},
 		-- The Chosen (one class for now): which clip plays for each state.
 		Assault = {
@@ -337,7 +346,19 @@ local Config = {
 			},
 			Brute = { move = "mutant_walking", attack = "mutant_swiping", death = "zombie_death" },
 			Hocker = { move = "zombie_walk", attack = "hocker_spit", death = "zombie_death" },
-			Warden = { move = "mutant_walking", attack = "mutant_swiping", death = "zombie_death" },
+			-- The Warden stands upright: his own set. idle plays whenever he stands still,
+			-- guard is an upper-body overlay (shield up) over the walk, charge loops during
+			-- the Gate Charge, riot on each Riot Call, throw on the Gas Canister (upper body).
+			Warden = {
+				move = "warden_walk",
+				attack = "warden_bash",
+				death = "warden_death",
+				idle = "warden_idle",
+				guard = "warden_guard",
+				charge = "warden_run",
+				riot = "warden_riot",
+				throw = "grenade_throw",
+			},
 		},
 		-- Ground speed (studs/s) at which each locomotion clip plays at 1x; the track rate
 		-- scales with the actual speed so feet do not slide.
@@ -365,6 +386,9 @@ local Config = {
 			prone_walk_f = 4,
 			prone_walk_b = 4,
 			zombie_crawl = 6,
+			-- Downloaded in place (no root motion to measure), so by eye.
+			warden_walk = 6,
+			warden_run = 16,
 		},
 		WalkRunThreshold = 20, -- studs/s: faster than this plays the run clip (walk 16, sprint 24)
 	},
@@ -725,6 +749,8 @@ local Config = {
 			HideDelay = 2.5, -- boss bar stays this long after the fight
 			TellHold = 1.6, -- seconds a tell line stays on the boss bar
 			RiotCallSpacing = 1, -- frames between the bodies of a Riot Call (one burst would hitch)
+			RiotCallHold = 2.0, -- seconds he stands and roars on a Riot Call (the riot clip)
+			IdleSpeed = 1, -- studs/s of root speed below which the idle clip plays over the walk
 			SyncInterval = 0.2,
 			HealthPerExtraPlayer = 0.33,
 			ScaleReach = 1.9, -- the body's scale: reach distances below are at scale 1
@@ -743,12 +769,12 @@ local Config = {
 				},
 				ShoulderL = {
 					Limb = "LeftUpperArm",
-					Mesh = "inf_warden_plate_shoulder",
+					Mesh = "inf_warden_plate_shoulder_l",
 					Health = 300,
 				},
 				ShoulderR = {
 					Limb = "RightUpperArm",
-					Mesh = "inf_warden_plate_shoulder",
+					Mesh = "inf_warden_plate_shoulder_r",
 					Health = 300,
 				},
 				Shield = { Limb = "LeftLowerArm", Mesh = "inf_warden_plate_shield", Health = 600 },
@@ -766,6 +792,7 @@ local Config = {
 				Damage = 40,
 				Cooldown = 3,
 				Recovery = 0.6,
+				StrikeAt = 0.45, -- fraction of the bash clip where the blow lands (rate-scaled to Windup)
 			},
 			-- Gate Charge: a straight line at speed; hard cover in the way stuns him (WallStun).
 			Charge = {

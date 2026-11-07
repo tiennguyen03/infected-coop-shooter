@@ -58,6 +58,14 @@ animations, played by `src/client/AnimationController.luau` (players) and
 | downed_crawl (Crawling, hands and knees) | Downed crawl (client DownedController, bots hold it still) | `in_place`; 1.8 s loop, rate follows crawl speed, frozen when still; published 2026-11-07 |
 | zombie_stumble (Zombie Stumble) | spare: Infected flinch | |
 | zombie_scream (Zombie Scream) | spare: Hocker windup | |
+| *Warden set, 2026-11-07 (Mixamo clips picked for the boss fight; file names only):* | | |
+| warden_walk | Warden walk (`Config.Animations.Infected.Warden.move`) | `in_place`, 6 studs/s authored, rate follows ground speed |
+| warden_run | Warden charge | `in_place`, 16 studs/s; plays while the root is anchored for the wind-up |
+| warden_idle | Warden idle | only while the root is slower than `Config.Index.Warden.IdleSpeed` |
+| warden_guard | Warden guard, upper body | held for the guard; `IndexService.cancelGuard` stops it on any action change |
+| warden_bash | Warden bash | rate set so the strike lands at `Bash.StrikeAt` of the windup |
+| warden_riot | Warden Riot Call roar | held `RiotCallHold` |
+| warden_death | Warden death | |
 
 ## Pipeline
 
@@ -85,7 +93,8 @@ animations, played by `src/client/AnimationController.luau` (players) and
    `AnimationBuilder.build(AnimationBuilder.loadClip(name))`, export each with the Studio
    MCP `export_rbxm` tool, upload each with `upload_asset` (`assetType = "Animation"`),
    write the ids into `Config.Animations.Ids` and `ASSET_IDS.md`, delete the folder. Done
-   for all 15 clips on 2026-11-06 and the 21 movement-set clips on 2026-11-07.
+   for all 15 clips on 2026-11-06, the 21 movement-set clips and the 7 Warden clips on
+   2026-11-07. Ids are written with the `rbxassetid://` prefix (a bare number fails to load).
 5. **Play**: `AnimationController` (client) and `EnemyService` (server) load clips by name
    through `Animations.load`. The player's walk and run states each blend four directional
    clips by the direction of travel in the body's frame (`AdjustWeight`), so strafing and
