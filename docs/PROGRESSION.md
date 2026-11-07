@@ -129,7 +129,7 @@ goes on the kill feed. Each form is one rule (pillar 3).
 | Walker | slow melee | still a person, grey, old wounds closed | S1 | exists |
 | Runner | fast melee | dense rebuilt muscle, tendons like cable | S1 | exists |
 | Brute | melee tank | bone overgrowth, plated shoulders | S1 | exists |
-| Hocker | ranged | lobs caustic fluid; throat a swollen sac | S1 late | projectile + stand-off AI |
+| Hocker | ranged | lobs caustic fluid; throat a swollen sac | S1 late | shipped 2026-11-06 (Walker body + sac; own mesh backlog) |
 | Bloat | exploder, area denial | gas-swollen, translucent | S2 boss, common S3 | on-death cloud |
 | Shedder | splitter | body seamed into segments, extra limbs | S3 | on-death spawns 2–3 Crawlers |
 | Crawler | swarm | shed segment, fast, fragile | S3 (from Shedders) | small rig, no attack clip needed |
@@ -138,11 +138,14 @@ goes on the kill feed. Each form is one rule (pillar 3).
 
 ## Technical plan (debt first, then content)
 
-1. **Data-driven enemy behaviour.** `EnemyDefinitions` gains optional hooks per form:
-   `attack` (melee | projectile), `onDeath` (cloud | split), `mover` (humanoid | none |
-   flyer), `standOff` range. `EnemyService` reads them; no form-specific branches. This is
-   the payment that makes the roster cheap. Walker through Shedder and four of five bosses
-   are table entries plus a hook each.
+1. **Data-driven enemy behaviour.** Done 2026-11-06 for the first hook: every definition
+   carries a `Behaviour` table (`Attack = melee | projectile`, `StandOff`, `Windup`,
+   `Projectile` spec with optional `Puddle`), a `BodySet` (which limb set to wear) and
+   `ThroatSac`; spawn caps are `Config.Spawning.CapSchedule / CapLate / MaxShare` keyed by
+   type, so `EnemyService` has no per-type branches. Lobbed projectiles and puddles live in
+   `EnemyProjectileService`, which also owns `damagePlayer` (the one Infected-to-player
+   damage path). Still to add as forms need them: `onDeath` (cloud | split) and `mover`
+   (none | flyer).
 2. **Stage definitions.** `src/shared/StageDefinitions.luau`: per stage the landmark/hill/
    dressing tables (what `ArenaService` builds), lighting preset (`SkyService`), the three
    objective sites, boss entry point, helo pad, spawn phases (`Config.Spawning` moves per
@@ -156,7 +159,7 @@ goes on the kill feed. Each form is one rule (pillar 3).
 5. **Objective sites.** `ObjectiveService` picks one of the stage's three sites per run and
    shows a marker; the player activates it. The 180 s appear-delay goes away.
 
-Build order: 1 → Hocker on Delta (proves the hooks) → 2 + 3 with Delta as the only stage
+Build order: 1 → Hocker on Delta (both shipped 2026-11-06) → 2 + 3 with Delta as the only stage
 (proves the state machine) → Mile 14 + Bloat → Kestrel + Shedder/Crawler + Patient → Warden
 → Stand Down and loop → stages 4 and 5. Each step is one playtest-verified feature.
 

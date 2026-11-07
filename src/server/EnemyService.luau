@@ -1,9 +1,10 @@
 --!strict
--- Enemy system (Sprint 9): three archetypes share one chase-and-melee
--- behavior, differing only by stats/scale/color from EnemyDefinitions.
--- A phase-based spawn director picks types by run time with fairness caps
--- (Brute count schedule, Runner share of the horde). Enemies pass through
--- each other (Enemy collision group) but still hit players and the world.
+-- Enemy system (Sprint 9; behaviour hooks 2026-11-06): every Infected form is a row in
+-- EnemyDefinitions. Melee forms chase and hit on contact; projectile forms (Hocker) close to
+-- throw range, plant, wind up and lob through EnemyProjectileService. A phase-based spawn
+-- director picks types by run time with fairness caps from Config.Spawning (count
+-- schedules and share caps keyed by type). Enemies pass through each other (Enemy collision
+-- group) but still hit players and the world. Player damage: EnemyProjectileService.damagePlayer.
 
 local CollectionService = game:GetService("CollectionService")
 local PhysicsService = game:GetService("PhysicsService")
@@ -16,6 +17,7 @@ local EnemyDefinitions = require(ReplicatedStorage.Shared.EnemyDefinitions)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
 local Animations = require(ReplicatedStorage.Shared.Animations)
 local DifficultyService = require(script.Parent.DifficultyService)
+local EnemyProjectileService = require(script.Parent.EnemyProjectileService)
 local ItemEffectService = require(script.Parent.ItemEffectService)
 local PauseService = require(script.Parent.PauseService)
 local XPOrbService = require(script.Parent.XPOrbService)
@@ -25,6 +27,9 @@ local ENEMY_COLLISION_GROUP = "Enemy"
 local WALK_ANIMATION_ID = "rbxassetid://507777826" -- default R15 walk
 local REPATH_INTERVAL = 0.25
 local SPAWN_HIP_HEIGHT = 3.5 -- root height above ground at scale 1
+local BACK_OFF_DISTANCE = 8 -- studs a projectile form retreats when a player gets inside half its stand-off
+local SAC_OFFSET = CFrame.new(0, 0.95, -0.5) -- throat sac relative to UpperTorso (the rig faces -Z)
+local SAC_SIZE = 0.9
 
 type Zombie = {
 	model: Model,
@@ -40,6 +45,11 @@ type Zombie = {
 	attackTrack: AnimationTrack?,
 	deathTrack: AnimationTrack?,
 	nextRepathTime: number,
+	behaviour: EnemyDefinitions.Behaviour,
+	-- Projectile forms: the windup in progress and whether the last check had a clear throw.
+	windupUntil: number?,
+	throwClear: boolean,
+	sac: BasePart?,
 }
 
 local EnemyService = {}
@@ -150,9 +160,12 @@ end
 
 -- `groundPosition` is at ground level; the rig is pivoted up by hip height.
 local function spawnZombie(groundPosition: Vector3, typeName: string)
-	local template = dressedTemplates[typeName] or zombieTemplate
 	local definition = EnemyDefinitions[typeName]
-	if not template or not definition then
+	if not definition then
+		return
+	end
+	local template = dressedTemplates[definition.BodySet or typeName] or zombieTemplate
+	if not template then
 		return
 	end
 
@@ -177,6 +190,35 @@ local function spawnZombie(groundPosition: Vector3, typeName: string)
 		if part:IsA("BasePart") then
 			part.CollisionGroup = ENEMY_COLLISION_GROUP
 			part.Color = definition.Color
+		end
+	end
+
+	local sac: BasePart? = nil
+	if definition.ThroatSac then
+		local torso = model:FindFirstChild("UpperTorso") :: BasePart?
+		if torso then
+			local ball = Instance.new("Part")
+			ball.Name = "ThroatSac"
+			ball.Shape = Enum.PartType.Ball
+			ball.Size = Vector3.one * SAC_SIZE * definition.Scale
+			ball.Massless = true
+			ball.CanCollide = false
+			ball.CanQuery = false
+			ball.CanTouch = false
+			ball.CastShadow = false
+			ball.CollisionGroup = ENEMY_COLLISION_GROUP
+			ball.Material = Enum.Material.SmoothPlastic
+			local projectile = definition.Behaviour.Projectile
+			ball.Color = if projectile then projectile.Color else definition.Color
+			ball.Transparency = 0.15
+			ball.CFrame = torso.CFrame * SAC_OFFSET
+			local weld = Instance.new("Weld")
+			weld.Part0 = torso
+			weld.Part1 = ball
+			weld.C0 = SAC_OFFSET
+			weld.Parent = ball
+			ball.Parent = model
+			sac = ball
 		end
 	end
 
@@ -230,6 +272,10 @@ local function spawnZombie(groundPosition: Vector3, typeName: string)
 		attackTrack = attackTrack,
 		deathTrack = deathTrack,
 		nextRepathTime = 0,
+		behaviour = definition.Behaviour,
+		windupUntil = nil,
+		throwClear = false,
+		sac = sac,
 	}
 	table.insert(zombies, zombie)
 
@@ -255,14 +301,95 @@ local function attackIfTouching(zombie: Zombie, now: number)
 		local character = targetRoot.Parent :: Model
 		local targetHumanoid = character:FindFirstChildOfClass("Humanoid")
 		if targetHumanoid and targetHumanoid.Health > 0 then
-			-- Ballistic Weave: reduce incoming damage (player attribute, default 1).
-			local victim = Players:GetPlayerFromCharacter(character)
-			local incomingMult = (victim and victim:GetAttribute("IncomingDamageMult") :: number?)
-				or 1
-			targetHumanoid:TakeDamage(
-				zombie.damage * DifficultyService.getDamageMultiplier() * incomingMult
-			)
+			EnemyProjectileService.damagePlayer(targetHumanoid, zombie.damage)
 			zombie.lastAttackTime = now
+			if zombie.attackTrack then
+				zombie.attackTrack:Play(0.1)
+			end
+		end
+	end
+end
+
+-- A throw is clear when a ray from the mouth, or the lob's higher line, reaches the target.
+local function throwIsClear(zombie: Zombie, targetRoot: BasePart): boolean
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances = { zombie.model }
+	params.CollisionGroup = ENEMY_COLLISION_GROUP -- other Infected never block
+	local character = targetRoot.Parent
+	local function clear(from: Vector3, to: Vector3): boolean
+		local hit = workspace:Raycast(from, to - from, params)
+		return hit == nil or (character ~= nil and hit.Instance:IsDescendantOf(character))
+	end
+	local origin = zombie.root.Position + Vector3.new(0, 1.5, 0)
+	return clear(origin, targetRoot.Position)
+		or clear(origin + Vector3.new(0, 7, 0), targetRoot.Position + Vector3.new(0, 1, 0))
+end
+
+local function setSacScale(zombie: Zombie, scale: number)
+	local sac = zombie.sac
+	if sac then
+		local definition = EnemyDefinitions[zombie.typeName]
+		sac.Size = Vector3.one * SAC_SIZE * definition.Scale * scale
+	end
+end
+
+local function stepProjectileZombie(zombie: Zombie, now: number)
+	local targetRoot = nearestPlayerRoot(zombie.root.Position)
+	if not targetRoot then
+		return
+	end
+	local behaviour = zombie.behaviour
+	local spec = behaviour.Projectile
+	local windupUntil = zombie.windupUntil
+	if windupUntil and spec then
+		-- Planted: hold still, swell the sac, then throw.
+		zombie.humanoid:MoveTo(zombie.root.Position)
+		local windup = behaviour.Windup or 0
+		local progress = if windup > 0
+			then math.clamp(1 - (windupUntil - now) / windup, 0, 1)
+			else 1
+		setSacScale(zombie, 1 + (Config.Zombies.ThroatSacSwell - 1) * progress)
+		if now >= windupUntil then
+			zombie.windupUntil = nil
+			zombie.lastAttackTime = now
+			setSacScale(zombie, 1)
+			local head = zombie.model:FindFirstChild("Head") :: BasePart?
+			local origin = if head then head.Position else zombie.root.Position
+			EnemyProjectileService.fire(
+				origin,
+				targetRoot.Position,
+				targetRoot.AssemblyLinearVelocity,
+				spec,
+				zombie.damage
+			)
+		end
+		return
+	end
+
+	if now < zombie.nextRepathTime then
+		return
+	end
+	zombie.nextRepathTime = now + REPATH_INTERVAL
+	local offset = targetRoot.Position - zombie.root.Position
+	local distance = offset.Magnitude
+	local standOff = behaviour.StandOff or 0
+	zombie.throwClear = distance <= zombie.attackRange and throwIsClear(zombie, targetRoot)
+	if not zombie.throwClear then
+		zombie.humanoid:MoveTo(targetRoot.Position)
+	elseif distance < standOff * 0.5 then
+		-- Too close: scuttle back so the lob has room (and the player has a chase).
+		local away = Vector3.new(-offset.X, 0, -offset.Z)
+		if away.Magnitude > 0.1 then
+			zombie.humanoid:MoveTo(zombie.root.Position + away.Unit * BACK_OFF_DISTANCE)
+		end
+	else
+		zombie.humanoid:MoveTo(zombie.root.Position) -- plant
+		if spec and now - zombie.lastAttackTime >= zombie.attackCooldown then
+			local flat =
+				Vector3.new(targetRoot.Position.X, zombie.root.Position.Y, targetRoot.Position.Z)
+			zombie.root.CFrame = CFrame.lookAt(zombie.root.Position, flat)
+			zombie.windupUntil = now + (behaviour.Windup or 0)
 			if zombie.attackTrack then
 				zombie.attackTrack:Play(0.1)
 			end
@@ -288,6 +415,11 @@ local function stepZombies()
 		local zombie = zombies[index]
 		if not zombie.model.Parent or zombie.humanoid.Health <= 0 then
 			removeZombie(index)
+			continue
+		end
+
+		if zombie.behaviour.Attack == "projectile" then
+			stepProjectileZombie(zombie, now)
 			continue
 		end
 
@@ -344,8 +476,8 @@ local function phaseWeights(elapsed: number): { [string]: number }
 	return Config.Spawning.Phases[#Config.Spawning.Phases].Weights
 end
 
--- Weighted pick honoring first-spawn times, the Brute schedule, and the
--- Runner share cap. Falls back to Walker.
+-- Weighted pick honoring first-spawn times and the per-type caps in Config.Spawning
+-- (count schedules, share of the horde). Falls back to Walker.
 local function pickSpawnType(): string
 	local elapsed = DifficultyService.getElapsed()
 	local weights = phaseWeights(elapsed)
@@ -358,18 +490,17 @@ local function pickSpawnType(): string
 		if not definition or weight <= 0 or elapsed < definition.FirstSpawnTime then
 			continue
 		end
-		if typeName == "Brute" then
-			local cap = scheduleLookup(
-				Config.Spawning.BruteCapSchedule,
-				Config.Spawning.BruteCapLate,
-				elapsed
-			)
-			if countOfType("Brute") >= cap then
+		local capSchedule = Config.Spawning.CapSchedule[typeName]
+		if capSchedule then
+			local late = Config.Spawning.CapLate[typeName] or math.huge
+			if countOfType(typeName) >= scheduleLookup(capSchedule, late, elapsed) then
 				continue
 			end
-		elseif typeName == "Runner" then
-			local share = (countOfType("Runner") + 1) / (aliveTotal + 1)
-			if share > Config.Spawning.MaxRunnerRatio then
+		end
+		local maxShare = Config.Spawning.MaxShare[typeName]
+		if maxShare then
+			local share = (countOfType(typeName) + 1) / (aliveTotal + 1)
+			if share > maxShare then
 				continue
 			end
 		end
@@ -468,21 +599,26 @@ function EnemyService.init()
 		warn("[EnemyService] Enemy spawning disabled - no rig template")
 		return
 	end
-	-- Dress one template per type once its limb meshes exist (they build asynchronously).
-	for typeName in EnemyDefinitions do
+	-- Dress one template per body set once its limb meshes exist (they build asynchronously).
+	-- A form without its own set (Definition.BodySet) wears another form's.
+	local bodySets: { [string]: boolean } = {}
+	for typeName, definition in EnemyDefinitions do
+		bodySets[definition.BodySet or typeName] = true
+	end
+	for setName in bodySets do
 		task.spawn(function()
 			local deadline = os.clock() + 30
-			while not MeshAssets.hasInfectedSet(typeName) and os.clock() < deadline do
+			while not MeshAssets.hasInfectedSet(setName) and os.clock() < deadline do
 				task.wait(0.5)
 			end
 			local base = zombieTemplate
-			if not base or not MeshAssets.hasInfectedSet(typeName) then
-				warn(`[EnemyService] {typeName} keeps the bare rig: limb meshes not loaded`)
+			if not base or not MeshAssets.hasInfectedSet(setName) then
+				warn(`[EnemyService] {setName} keeps the bare rig: limb meshes not loaded`)
 				return
 			end
 			local dressed = base:Clone()
-			if MeshAssets.dressInfected(dressed, typeName) then
-				dressedTemplates[typeName] = dressed
+			if MeshAssets.dressInfected(dressed, setName) then
+				dressedTemplates[setName] = dressed
 			else
 				dressed:Destroy()
 			end

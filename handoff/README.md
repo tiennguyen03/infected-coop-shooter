@@ -1,13 +1,13 @@
 # Handoff — Roguelike Arena Survivor (VS Code + Claude Code terminal)
 
 Start here when picking the project up in a fresh Claude Code session.
-Last updated: 2026-11-06 (body animations). Last verified commit on `main`: `e05287a`.
+Last updated: 2026-11-06 (Hocker + behaviour hooks). Last verified commit on `main`: `bd6c008`.
 
 ## What this is
 
 Roblox roguelike (Risk of Rain 2-style loop, grounded military bio-horror setting). **Final
 product is 4-player co-op**; the current build is single-player. Full loop works: spawn → fight → level up → pick 1 of 3 items → Hold Position
-objective → extraction → OPERATION COMPLETE → restart. 24 items, 3 enemy types, Assault
+objective → extraction → OPERATION COMPLETE → restart. 24 items, 4 Infected forms (Walker, Runner, Brute, Hocker), Assault
 class with Q dash / E breach / Combat Momentum, server-authoritative everything.
 
 Repo: https://github.com/tiennguyen03/risk-of-blox — folder `~/roguelike-arena-survivor`.
@@ -36,12 +36,19 @@ Read in this order:
 
 ## Open work, in priority order
 
-0. **Progression (designed 2026-11-06, not built):** `docs/PROGRESSION.md` — three-stage
-   first loop (Checkpoint Delta, Mile 14, Aid Station Kestrel), player-started hold at one
-   of three sites, a boss per stage, Stand Down, the nine-form Infected roster. Build order
-   is in the doc: data-driven enemy hooks first, then Hocker on Delta. Design subagents in
-   `.claude/agents/` (lore-developer, systems-designer, level-designer, playtest-critic)
-   argue the design before code; the lore developer owns canon.
+0. **Progression (designed 2026-11-06):** `docs/PROGRESSION.md` — three-stage first loop
+   (Checkpoint Delta, Mile 14, Aid Station Kestrel), player-started hold at one of three
+   sites, a boss per stage, Stand Down, the nine-form Infected roster. **Built so far:**
+   behaviour hooks in `EnemyDefinitions` + `EnemyProjectileService`, and the Hocker on
+   Delta (verified 2026-11-06; wears the Walker limb set with a throat sac until it has its
+   own mesh). **Next per the build order:** stage definitions + run state machine with
+   Delta as the only stage, then Mile 14 + Bloat. Design subagents in `.claude/agents/`
+   (lore-developer, systems-designer, level-designer, playtest-critic) argue the design
+   before code; the lore developer owns canon.
+   **Roblox's own Studio MCP** (`Roblox_Studio`, added 2026-11-06, local scope) is a second
+   server: use it only for `generate_animation` (returns a published id; its clips play on
+   our R15 rigs, extra bones ignored), `open_cloud_invoke` and camera-positioned
+   `screen_capture`. The `robloxstudio` server stays the one that drives playtests.
    **Animations shipped 2026-11-06, verified in a playtest** (`assets/animations/`,
    `AnimationController`, per-type Infected clips, hold-E breach ghost). All 15 clips are
    published through Open Cloud (ids in `Config.Animations.Ids`, `assets/animations/
