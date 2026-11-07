@@ -34,7 +34,7 @@ local function clearExistingRifles(character: Model)
 	end
 end
 
-local function attachRifle(character: Model, humanoid: Humanoid)
+function PlayerSetup.attachRifle(character: Model, humanoid: Humanoid)
 	-- Never leave a stray rifle behind (avoids duplicates across respawns).
 	clearExistingRifles(character)
 
@@ -165,6 +165,7 @@ end
 
 -- The playable class body (assets/3d pc_<class>_*). One class for now.
 local PLAYER_BODY = "pc_assault_"
+PlayerSetup.BODY = PLAYER_BODY
 
 local function onCharacterAdded(character: Model)
 	local humanoid = character:WaitForChild("Humanoid") :: Humanoid
@@ -184,7 +185,7 @@ local function onCharacterAdded(character: Model)
 	if MeshAssets.waitFor(PLAYER_BODY .. "head", 10) then
 		MeshAssets.dressModel(character, PLAYER_BODY)
 	end
-	attachRifle(character, humanoid)
+	PlayerSetup.attachRifle(character, humanoid)
 end
 
 local function onPlayerAdded(player: Player)

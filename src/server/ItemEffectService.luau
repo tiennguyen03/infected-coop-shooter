@@ -83,9 +83,10 @@ function ItemEffectService.addKillListener(listener: (player: Player) -> ())
 end
 
 -- THE damage entry point. Every player-owned damage source calls this so
--- Hunter's Mark, kill credit, and damage numbers are applied consistently.
+-- Hunter's Mark, kill credit, and hit feedback are applied consistently. `attacker` is nil
+-- for a squad bot (BotService): no mark bonus, no kill credit, no hit marker.
 function ItemEffectService.dealDamage(
-	attacker: Player,
+	attacker: Player?,
 	humanoid: Humanoid,
 	amount: number,
 	position: Vector3?,
@@ -95,12 +96,15 @@ function ItemEffectService.dealDamage(
 		return
 	end
 
-	local mark = marks[attacker]
+	local mark = if attacker then marks[attacker] else nil
 	if mark and mark.humanoid == humanoid then
 		amount *= 1 + mark.bonus
 	end
 
-	lastDamager[humanoid] = attacker
+	-- A bot's hit (no attacker) leaves any player's kill credit on the target in place.
+	if attacker then
+		lastDamager[humanoid] = attacker
+	end
 	lastDamageKind[humanoid] = kind or "hit"
 	humanoid:TakeDamage(amount)
 	if position then

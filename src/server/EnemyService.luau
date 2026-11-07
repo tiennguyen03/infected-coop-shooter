@@ -27,6 +27,7 @@ local EnemyProjectileService = require(script.Parent.EnemyProjectileService)
 local ItemEffectService = require(script.Parent.ItemEffectService)
 local PauseService = require(script.Parent.PauseService)
 local WorldSounds = require(script.Parent.WorldSounds)
+local Squad = require(script.Parent.Squad)
 local XPOrbService = require(script.Parent.XPOrbService)
 
 local ENEMY_TAG = "Enemy"
@@ -109,22 +110,10 @@ local function buildTemplate(): Model?
 	return nil
 end
 
+-- The nearest living squad member's root: players and bots alike (Squad).
 local function nearestPlayerRoot(fromPosition: Vector3): BasePart?
-	local nearest: BasePart? = nil
-	local nearestDistance = math.huge
-	for _, player in Players:GetPlayers() do
-		local character = player.Character
-		local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
-		local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-		if root and humanoid and humanoid.Health > 0 then
-			local distance = (root.Position - fromPosition).Magnitude
-			if distance < nearestDistance then
-				nearestDistance = distance
-				nearest = root
-			end
-		end
-	end
-	return nearest
+	local member = Squad.nearestLiving(fromPosition)
+	return member and member.root
 end
 
 local function countOfType(typeName: string): number

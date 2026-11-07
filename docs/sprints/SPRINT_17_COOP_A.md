@@ -1,6 +1,6 @@
 # Sprint 17 — Co-op Sprint A: squad members, run state machine, downed/revive, pads
 
-**Status: in progress. Step 1 (run state machine) done and playtest-verified 2026-11-07.** Execute in order; each step is one
+**Status: in progress. Step 1 (run state machine) done and playtest-verified 2026-11-07. Step 3 started early for the bots: `Squad` exists (players + bots, Alive/Dead from the humanoid) and drives Infected targeting and enemy splash; the rest of step 3 (XP, objective/extraction zones, Requisition, spawn ring, dev loops) still uses `GetPlayers`.** Execute in order; each step is one
 playtest-verified commit. Design decisions it implements: `docs/MULTIPLAYER_READINESS.md`
 decisions 1-6 and register rows 1, 4, 6, 8, 10, 11, 12, 13; the spine in
 `docs/PROGRESSION.md` (bot squadmates come next sprint on the `Squad` abstraction below).

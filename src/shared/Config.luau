@@ -74,6 +74,34 @@ local Config = {
 		},
 	},
 
+	-- Bot squadmates (BotService, 2026-11-07): the other Chosen fill the squad in solo, one
+	-- fewer per real player. Server-side bodies on the Squad roster: the Infected target
+	-- them, they follow the nearest player in formation and shoot the nearest Infected they
+	-- can see. Downed/revive and call-ins come with Sprint A step 6 and the loadout rework.
+	Bots = {
+		Count = 3, -- bots when one player is on; squad size caps at 4
+		Names = { "Cole", "Reyes", "Cross" },
+		MaxHealth = 100,
+		WalkSpeed = 16,
+		RunSpeed = 24, -- used when the formation slot is far
+		ThinkInterval = 0.1, -- seconds between decisions per bot
+		-- Formation slots in the leader's frame (studs; +Z is behind, +X to the right).
+		Slots = {
+			Vector3.new(-7, 0, 6),
+			Vector3.new(7, 0, 6),
+			Vector3.new(0, 0, 10),
+		},
+		FollowSlack = 4, -- closer than this to the slot: stand
+		RunBeyond = 16, -- further than this: run
+		TeleportBeyond = 80, -- further than this (stuck, fell behind): reappear in the slot
+		Range = 110, -- studs; the Infected beyond this are ignored
+		FireCooldown = 0.22, -- seconds between shots (the player: 0.15)
+		Damage = 9, -- per round (the player: 12)
+		Spread = 2.5, -- degrees, half-angle
+		HeadshotChance = 0.2, -- share of shots aimed at the head
+		RespawnSeconds = 10, -- a dead bot rejoins at its slot after this
+	},
+
 	-- Run flow (RunManager, Shared.RunStates). Co-op Sprint A.
 	Run = {
 		InsertSeconds = 3, -- Insert -> Explore: the squad lands before the first wave

@@ -1,7 +1,7 @@
 # Handoff — Infected Co-op Shooter (VS Code + Claude Code terminal)
 
 Start here when picking the project up in a fresh Claude Code session.
-Last updated: 2026-11-07 (Co-op Sprint A step 1: run state machine). Last verified commit on `main`: the Sprint A step 1 commit (every transition playtested).
+Last updated: 2026-11-07 (bot squadmates v1). Last verified commit on `main`: the bots commit (playtested).
 
 ## What this is
 
@@ -48,6 +48,9 @@ Read in this order:
   hit point, the player's pain grunt, and per-form Infected vocals with no-repeat random
   variants (`EnemyService` → `WorldSounds`, 3D on the head, replicated). Pipeline and
   the bank table: `assets/audio/README.md > Banks`.
+- 2026-11-07: **bot squadmates v1.** Three bots (Cole, Reyes, Cross) fill the squad in solo
+  (`server/BotService`, `Config.Bots`) on the new `server/Squad` roster. They are strong:
+  the squad cleared 10 Walkers + a Brute in 18 s unaided; tune `Config.Bots` (Damage, FireCooldown, Range) after the owner plays with them.
 - 2026-11-07: **movement weight, roll, slide.** `client/MomentumController` eases the
   body's velocity toward the input (`Config.Movement.Momentum`), so starts, stops and
   reversals take time. Sprint + LeftControl rolls (melee immunity via `CoverMoveService`),

@@ -170,7 +170,11 @@ function WeaponController.init()
 	folder.Name = "Tracers"
 	folder.Parent = workspace
 	tracerFolder = folder
-	Remotes.get("ShotTracer").OnClientEvent:Connect(drawTracer)
+	-- Another squad member's shot (a player or a bot): the tracer plus a 3D gunshot.
+	Remotes.get("ShotTracer").OnClientEvent:Connect(function(origin: Vector3, endPoint: Vector3)
+		drawTracer(origin, endPoint)
+		SoundFX.playWorld("shoot", origin, 0.8)
+	end)
 
 	UserInputService.InputBegan:Connect(function(input, gameProcessed)
 		if gameProcessed then

@@ -354,6 +354,9 @@ the Resupply flare, pallet and lure stay.
   (follow, shoot, use a call-in, revive, die); a real player joining replaces a bot. Built on
   the same squad-member abstraction as Co-op Sprint A so every system that keys on a player
   (targets, XP, downed state, spawn pads) sees a bot the same way.
+- **Bots v1 shipped 2026-11-07, ahead of the rest of Sprint A** (owner: solo was boring to
+  test): `server/BotService` on `server/Squad`, `Config.Bots`. Follow in formation, shoot
+  the nearest visible Infected, respawn after 10 s. No downed/revive, call-ins or vaulting yet.
 - **Order.** Co-op Sprint A (run state machine with squad members) → bots → loadout rework
   (call-ins, pallets, field upgrades, flat curve) → the Warden → objective pools → Mile 14.
 

@@ -250,7 +250,7 @@ local function onFireRequest(player: Player, origin: unknown, direction: unknown
 	if character then
 		table.insert(exclude, character)
 	end
-	for _, name in { "Resupply", "ResupplyCards", "InfectedProjectiles", "XPOrbs" } do
+	for _, name in { "Resupply", "ResupplyCards", "InfectedProjectiles", "XPOrbs", "SquadBots" } do
 		local folder = workspace:FindFirstChild(name)
 		if folder then
 			table.insert(exclude, folder)

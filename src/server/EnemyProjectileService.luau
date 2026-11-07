@@ -6,7 +6,6 @@
 -- definition asks for one, leaves a puddle that ticks damage on anyone standing in it.
 -- Player damage from any Infected goes through `damagePlayer` (difficulty + armour).
 
-local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
@@ -15,6 +14,7 @@ local EnemyDefinitions = require(ReplicatedStorage.Shared.EnemyDefinitions)
 local GroundUtil = require(ReplicatedStorage.Shared.GroundUtil)
 local DifficultyService = require(script.Parent.DifficultyService)
 local PauseService = require(script.Parent.PauseService)
+local Squad = require(script.Parent.Squad)
 local WorldSounds = require(script.Parent.WorldSounds)
 
 -- Last pain grunt per player humanoid (weak keys: a dead character drops out).
@@ -58,8 +58,10 @@ function EnemyProjectileService.damagePlayer(humanoid: Humanoid, amount: number)
 		return
 	end
 	local character = humanoid.Parent
-	local victim = if character then Players:GetPlayerFromCharacter(character) else nil
-	local incomingMult = (victim and victim:GetAttribute("IncomingDamageMult") :: number?) or 1
+	local member = Squad.fromHumanoid(humanoid)
+	local incomingMult: number = if member
+		then Squad.ownerAttribute(member, "IncomingDamageMult", 1)
+		else 1
 	humanoid:TakeDamage(amount * DifficultyService.getDamageMultiplier() * incomingMult)
 	-- A grunt from the body (3D, the squad hears who got hit), one per burst of hits.
 	local head = character and character:FindFirstChild("Head") :: BasePart?
@@ -74,13 +76,12 @@ function EnemyProjectileService.damagePlayer(humanoid: Humanoid, amount: number)
 	end
 end
 
+-- Every living squad body (players and bots) a splash or puddle can hurt.
 local function livePlayerHumanoids(): { { humanoid: Humanoid, root: BasePart } }
 	local result = {}
-	for _, player in Players:GetPlayers() do
-		local character = player.Character
-		local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-		local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
-		if humanoid and root and humanoid.Health > 0 then
+	for _, member in Squad.living() do
+		local humanoid, root = member.humanoid, member.root
+		if humanoid and root then
 			table.insert(result, { humanoid = humanoid, root = root })
 		end
 	end

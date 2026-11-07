@@ -72,6 +72,32 @@ function SoundFX.playAt(bank: string, group: string, position: Vector3, fallback
 	end)
 end
 
+-- One of the named sounds as a 3D one-shot at a world position: another squad member's
+-- (player or bot) gunshot, heard from their muzzle. `volume` scales the template's.
+function SoundFX.playWorld(name: SoundName, position: Vector3, volume: number?)
+	local template = templates[name]
+	if not template then
+		return
+	end
+	local attachment = Instance.new("Attachment")
+	attachment.WorldPosition = position
+	attachment.Parent = workspace.Terrain
+	local sound = template:Clone()
+	sound.Volume *= volume or 1
+	sound.RollOffMode = Enum.RollOffMode.InverseTapered
+	sound.RollOffMinDistance = 10
+	sound.RollOffMaxDistance = 250
+	local vary = variances[name]
+	if vary then
+		sound.PlaybackSpeed += (math.random() * 2 - 1) * vary
+	end
+	sound.Parent = attachment
+	sound:Play()
+	task.delay(math.max(sound.TimeLength, 1) + 0.2, function()
+		attachment:Destroy()
+	end)
+end
+
 function SoundFX.init()
 	SoundBanks.preload(SoundService)
 	for name, definition in DEFINITIONS do

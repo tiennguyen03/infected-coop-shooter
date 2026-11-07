@@ -15,6 +15,7 @@ local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local RunStates = require(ReplicatedStorage.Shared.RunStates)
 local AmmoCacheService = require(script.Parent.AmmoCacheService)
 local AssaultClassService = require(script.Parent.AssaultClassService)
+local BotService = require(script.Parent.BotService)
 local DifficultyService = require(script.Parent.DifficultyService)
 local DroneService = require(script.Parent.DroneService)
 local EnemyProjectileService = require(script.Parent.EnemyProjectileService)
@@ -52,6 +53,7 @@ local function beginRun()
 	runGeneration += 1
 	local generation = runGeneration
 	setState("Insert", "")
+	BotService.startRun()
 	task.delay(Config.Run.InsertSeconds, function()
 		if generation ~= runGeneration or RunStates.current() ~= "Insert" then
 			return
