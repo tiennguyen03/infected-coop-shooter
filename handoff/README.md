@@ -1,7 +1,7 @@
 # Handoff — Roguelike Arena Survivor (VS Code + Claude Code terminal)
 
 Start here when picking the project up in a fresh Claude Code session.
-Last updated: 2026-11-07 (Resupply). Last verified commit on `main`: `79c522d`.
+Last updated: 2026-11-07 (ADS). Last verified commit on `main`: `b9fb853`.
 
 ## What this is
 
@@ -47,7 +47,8 @@ Read in this order:
    before code; the lore developer owns canon.
    **Direction (decided 2026-11-06, in PROGRESSION.md):** Helldivers 2 structure on the
    roguelike run. Build order from PROGRESSION.md > Technical plan: Resupply (done
-   2026-11-07; F10 fills the pool, F throws the flare) → ADS + headshots → run state machine + Operation
+   2026-11-07; F10 fills the pool, F throws the flare) → ADS (done 2026-11-07, hold RMB) →
+   headshots → run state machine + Operation
    (= Co-op Sprint A) → objective pools on Delta → the Warden → Containment Board → stage
    definitions. Owner still to pick "sortie" vs "drop" for a stage.
    **Roblox's own Studio MCP** (`Roblox_Studio`, added 2026-11-06, local scope) is a second

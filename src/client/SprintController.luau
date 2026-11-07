@@ -1,6 +1,7 @@
 --!strict
 -- Hold LeftShift to sprint. WalkSpeed is set locally; the character is
--- client-owned so this takes effect immediately without replication.
+-- client-owned so this takes effect immediately without replication. Aiming down sights
+-- (WeaponController) overrides sprint and slows the walk by Config.Weapon.ADS.MoveSpeedFactor.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -11,6 +12,7 @@ local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Co
 local SprintController = {}
 
 local isSprinting = false
+local isAiming = false
 
 local function getHumanoid(): Humanoid?
 	local character = Players.LocalPlayer.Character
@@ -20,14 +22,24 @@ end
 local function applySpeed()
 	local humanoid = getHumanoid()
 	if humanoid then
-		local base = if isSprinting then Config.Player.SprintSpeed else Config.Player.WalkSpeed
+		local base = if isSprinting and not isAiming
+			then Config.Player.SprintSpeed
+			else Config.Player.WalkSpeed
 		local mult = (Players.LocalPlayer:GetAttribute("MoveSpeedMult") :: number?) or 1
+		if isAiming then
+			mult *= Config.Weapon.ADS.MoveSpeedFactor
+		end
 		humanoid.WalkSpeed = base * mult
 	end
 end
 
 local function setSprinting(sprinting: boolean)
 	isSprinting = sprinting
+	applySpeed()
+end
+
+function SprintController.setAiming(aiming: boolean)
+	isAiming = aiming
 	applySpeed()
 end
 
@@ -46,6 +58,7 @@ function SprintController.init()
 
 	-- A respawned character starts at base speed even if Shift is held.
 	Players.LocalPlayer.CharacterAdded:Connect(function()
+		isAiming = false
 		setSprinting(false)
 	end)
 

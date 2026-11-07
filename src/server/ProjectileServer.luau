@@ -146,7 +146,26 @@ local function stepProjectiles(deltaTime: number)
 	end
 end
 
-local function onFireRequest(player: Player, origin: unknown, direction: unknown)
+-- A random direction inside the cone of `halfAngleDegrees` around `direction` (uniform
+-- over the cone's disc, so shots do not bunch at the centre).
+local function applySpread(direction: Vector3, halfAngleDegrees: number): Vector3
+	if halfAngleDegrees <= 0 then
+		return direction
+	end
+	local angle = math.rad(halfAngleDegrees) * math.sqrt(math.random())
+	local roll = math.random() * math.pi * 2
+	local frame = CFrame.lookAt(Vector3.zero, direction)
+	local offset = frame:VectorToWorldSpace(
+		Vector3.new(
+			math.cos(roll) * math.sin(angle),
+			math.sin(roll) * math.sin(angle),
+			-math.cos(angle)
+		)
+	)
+	return offset.Unit
+end
+
+local function onFireRequest(player: Player, origin: unknown, direction: unknown, aiming: unknown)
 	if typeof(origin) ~= "Vector3" or typeof(direction) ~= "Vector3" then
 		return
 	end
@@ -182,7 +201,10 @@ local function onFireRequest(player: Player, origin: unknown, direction: unknown
 	if character then
 		table.insert(exclude, character)
 	end
-	local aim = direction.Unit
+	-- The client says whether it is aiming down sights; that only tightens the cone (the
+	-- speed penalty is client-owned movement either way), so trusting it costs nothing.
+	local spread = if aiming == true then Config.Weapon.ADS.Spread else Config.Weapon.HipSpread
+	local aim = applySpread(direction.Unit, spread)
 	local baseDamage = Config.Weapon.Damage * PlayerStatsService.getMultiplier(player, "Damage")
 	ProjectileServer.fire({
 		owner = player,

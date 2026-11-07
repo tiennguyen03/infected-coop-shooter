@@ -26,6 +26,17 @@ local Config = {
 		ProjectileLifetime = 3, -- seconds before despawn
 		ProjectileSize = Vector3.new(0.4, 0.4, 1.4),
 		MaxAimDistance = 1000, -- how far the aim raycast reaches
+		-- Spread (2026-11-07): half-angle of the cone a shot can land in, degrees. Hip fire
+		-- puts a round about a stud off at 40 studs; aiming down sights (hold RMB) tightens it.
+		HipSpread = 1.5,
+		ADS = {
+			Spread = 0.3,
+			MoveSpeedFactor = 0.6, -- walk speed while aiming; sprint is off
+			CameraDistance = 5, -- closer over the shoulder (Camera.Distance is the hip value)
+			ShoulderOffset = Vector2.new(1.8, 0.4),
+			FOV = 55, -- degrees (hip is the engine default, 70)
+			EnterTime = 0.15, -- seconds to settle into or out of the sights
+		},
 	},
 
 	-- Body animations: clip names from assets/animations (Mixamo, retargeted by

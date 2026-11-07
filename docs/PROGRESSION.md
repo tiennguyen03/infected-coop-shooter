@@ -275,10 +275,11 @@ form gets its own limb set (lore developer + [STYLES.md](STYLES.md) first), Hock
 
 ## Gunplay quick wins (ADS, headshots)
 
-There is no spread today; ADS needs a hip spread to tighten. New `Weapon` keys:
-`HipSpread 1.5` degrees half-angle (about 1 stud off at 40 studs), `ADS = { Spread 0.3,
-MoveSpeedFactor 0.6, CameraDistance 5, FOV 55, EnterTime 0.15 }` on hold RMB, sprint off
-while aiming. `HeadshotMultiplier 2.0` on `Head` hits (all forms are R15; the Hocker sac is
+**ADS shipped 2026-11-07.** Shots now spread inside a cone (`Weapon.HipSpread 1.5` degrees
+half-angle, about 1 stud off at 40 studs); holding RMB aims down sights: `Weapon.ADS` =
+spread 0.3, walk x0.6 with sprint off, camera eased in to 5 studs over the shoulder, FOV 55,
+mouse sensitivity scaled with the FOV, crosshair ring closes. The client sends an `aiming`
+flag with each shot and the server picks the cone. Still to do: `HeadshotMultiplier 2.0` on `Head` hits (all forms are R15; the Hocker sac is
 `CanQuery false`), per-definition override for the Brute. `FireRequest` gains an `aiming`
 flag; the server picks the spread; `ProjectileServer` passes `"headshot"` as the damage kind
 for a distinct sound and number colour. Shots to kill at clock 0: Walker 3 body / 2 head,

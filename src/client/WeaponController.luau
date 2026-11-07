@@ -1,6 +1,9 @@
 --!strict
 -- Hold left mouse button to fire. Aims from the character toward whatever
 -- the cursor is pointing at, then asks the server to spawn the projectile.
+-- Hold right mouse button to aim down sights (ADS): tighter spread (server), slower
+-- walk and no sprint (SprintController), closer camera and narrower FOV
+-- (CameraController), rifle shouldered (AnimationController), crosshair closes.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -11,11 +14,28 @@ local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Co
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
 local SoundFX = require(script.Parent.SoundFX)
 local AnimationController = require(script.Parent.AnimationController)
+local CameraController = require(script.Parent.CameraController)
+local SprintController = require(script.Parent.SprintController)
 
 local WeaponController = {}
 
 local isFiring = false
+local isAiming = false
 local lastFireTime = 0
+
+function WeaponController.isAiming(): boolean
+	return isAiming
+end
+
+local function setAiming(on: boolean)
+	if isAiming == on then
+		return
+	end
+	isAiming = on
+	CameraController.setAiming(on)
+	SprintController.setAiming(on)
+	AnimationController.setAiming(on or isFiring)
+end
 
 local function getAimPoint(): Vector3?
 	local camera = workspace.CurrentCamera
@@ -80,7 +100,7 @@ local function tryFire()
 	end
 
 	lastFireTime = now
-	Remotes.get("FireWeapon"):FireServer(origin, direction.Unit)
+	Remotes.get("FireWeapon"):FireServer(origin, direction.Unit, isAiming)
 	AnimationController.onShot()
 
 	-- Local-only muzzle flash and shot sound for instant feedback.
@@ -114,16 +134,34 @@ function WeaponController.init()
 	end)
 
 	UserInputService.InputBegan:Connect(function(input, gameProcessed)
-		if not gameProcessed and input.UserInputType == Enum.UserInputType.MouseButton1 then
+		if gameProcessed then
+			return
+		end
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
 			isFiring = true
 			AnimationController.setAiming(true)
+		elseif input.UserInputType == Enum.UserInputType.MouseButton2 then
+			setAiming(true)
 		end
 	end)
 
 	UserInputService.InputEnded:Connect(function(input, _gameProcessed)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 then
 			isFiring = false
-			AnimationController.setAiming(false)
+			AnimationController.setAiming(isAiming)
+		elseif input.UserInputType == Enum.UserInputType.MouseButton2 then
+			setAiming(false)
+		end
+	end)
+
+	-- A respawn or the run-end freeze drops the sights.
+	Players.LocalPlayer.CharacterAdded:Connect(function()
+		isFiring = false
+		setAiming(false)
+	end)
+	workspace:GetAttributeChangedSignal("GamePaused"):Connect(function()
+		if workspace:GetAttribute("GamePaused") == true then
+			setAiming(false)
 		end
 	end)
 

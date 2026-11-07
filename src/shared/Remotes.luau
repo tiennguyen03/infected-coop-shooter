@@ -6,7 +6,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local REMOTE_NAMES = {
-	"FireWeapon", -- client -> server: (origin: Vector3, direction: Vector3)
+	"FireWeapon", -- client -> server: (origin: Vector3, direction: Vector3, aiming: boolean)
 	"ObjectiveUpdate", -- server -> client: (kind: "started"|"progress"|"completed", progress: number)
 	"DamageDealt", -- server -> client: (position: Vector3, amount: number, kind: "hit"|"bleed")
 	"Resupply", -- client -> server: ("flare", target) | ("pick", crateId, itemId); server -> client: ("called", thrower) | ("cards", crateId, choices, positions, inventory) | ("picked", crateId) | ("closed", crateId)
