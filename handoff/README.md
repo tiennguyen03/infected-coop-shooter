@@ -43,10 +43,9 @@ Read in this order:
    `.claude/agents/` (lore-developer, systems-designer, level-designer, playtest-critic)
    argue the design before code; the lore developer owns canon.
    **Animations shipped 2026-11-06, verified in a playtest** (`assets/animations/`,
-   `AnimationController`, per-type Infected clips, hold-E breach ghost). Still to do: the
-   **publish round** (`assets/animations/README.md` step 4: 14 clips, one Submit click
-   each, then ids into `Config.Animations.Ids` + `ASSET_IDS.md`). Until then the clips
-   play only in Studio (preview ids) and a published place falls back to the stock walk.
+   `AnimationController`, per-type Infected clips, hold-E breach ghost). All 15 clips are
+   published through Open Cloud (ids in `Config.Animations.Ids`, `assets/animations/
+   ASSET_IDS.md`), so they play outside Studio too. Polish later: a hollow breach ring.
 1. **Plan Co-op Sprint A** from the decided design in `docs/MULTIPLAYER_READINESS.md`
    (run state machine, no-pause level-up, downed/revive, spawn pads, reset split, client
    screens). Verify with the Studio MCP `multiplayer_playtest` tool.

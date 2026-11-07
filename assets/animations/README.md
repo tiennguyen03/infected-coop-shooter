@@ -55,17 +55,12 @@ animations, played by `src/client/AnimationController.luau` (players) and
 3. **Preview** in Studio: with `Config.Animations.Ids[clip] == ""`, `Animations.init()` on the
    server registers the retargeted clip through `KeyframeSequenceProvider` and the game plays
    it in a playtest (temporary id, Studio only). Verify every clip this way before publishing.
-4. **Publish** (the owner clicks): in Studio, build the sequence and open the save dialog, once
-   per clip:
-   ```lua
-   local AnimationBuilder = require(game.ReplicatedStorage.Shared.AnimationBuilder)
-   local seq = AnimationBuilder.build(AnimationBuilder.loadClip("rifle_idle"))
-   seq.Parent = game.ServerStorage
-   game.Selection:Set({ seq })
-   plugin:SaveSelectedToRoblox() -- runs from a plugin context (Studio MCP execute_luau)
-   ```
-   Submit the dialog, copy the animation id into `Config.Animations.Ids` and `ASSET_IDS.md`,
-   delete the sequence from ServerStorage.
+4. **Publish** (scripted, no clicks; Open Cloud accepts Animation uploads): in Studio edit
+   mode build every unpublished clip into `ServerStorage.AnimationPublish` with
+   `AnimationBuilder.build(AnimationBuilder.loadClip(name))`, export each with the Studio
+   MCP `export_rbxm` tool, upload each with `upload_asset` (`assetType = "Animation"`),
+   write the ids into `Config.Animations.Ids` and `ASSET_IDS.md`, delete the folder. Done
+   for all 15 clips on 2026-11-06.
 5. **Play**: `AnimationController` (client) and `EnemyService` (server) load clips by name
    through `Animations.load`. Locomotion tracks scale their rate with ground speed against
    `Config.Animations.MoveClipSpeed` so feet do not slide.
@@ -73,5 +68,5 @@ animations, played by `src/client/AnimationController.luau` (players) and
 ## Why not the Animation Editor / a Blender rig addon
 
 Everything else in the project is generated from scripts; animations follow suit so a clip
-can be swapped by changing one table entry and re-running the script. The only manual step
-Roblox forces is the publish click.
+can be swapped by changing one table entry and re-running the script. Publishing is
+scripted too, through the Open Cloud assets API.
