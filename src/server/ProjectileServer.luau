@@ -293,11 +293,16 @@ function ProjectileServer.reset()
 		projectile.part:Destroy()
 	end
 	table.clear(activeProjectiles)
-	table.clear(shotCount)
 	-- Sweep any stray part not in the table (guards a 1-frame fire/reset race).
 	if projectileFolder then
 		projectileFolder:ClearAllChildren()
 	end
+end
+
+-- One player's fire timing and Shrapnel Magazine shot counter.
+function ProjectileServer.resetPlayer(player: Player)
+	lastFireTime[player] = nil
+	shotCount[player] = nil
 end
 
 function ProjectileServer.init()

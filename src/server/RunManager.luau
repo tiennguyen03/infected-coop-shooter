@@ -93,8 +93,20 @@ local function onDied()
 	end
 end
 
--- Public so DevTestService can force a restart regardless of alive state.
-function RunManager.resetRun(player: Player)
+-- One player's run state, back to a fresh start (items, XP, class, stats, fire timing).
+local function resetPlayer(player: Player)
+	AssaultClassService.resetPlayer(player)
+	ItemEffectService.resetPlayer(player)
+	ItemService.resetPlayer(player)
+	PassiveItemService.resetPlayer(player)
+	XPService.resetPlayer(player)
+	PlayerStatsService.resetPlayer(player)
+	ProjectileServer.resetPlayer(player)
+end
+
+-- A fresh run for the whole squad: every run-level service resets once, then every player
+-- is reset and respawned (register #8). Public so DevTestService can force one.
+function RunManager.startRun()
 	PauseService.setPaused(false)
 	EnemyService.reset()
 	EnemyProjectileService.reset()
@@ -107,27 +119,29 @@ function RunManager.resetRun(player: Player)
 	ShockCoilService.reset()
 	PlagueRatService.reset()
 	RequisitionService.reset()
-	AssaultClassService.resetPlayer(player)
-	ItemEffectService.resetPlayer(player)
-	ItemService.resetPlayer(player)
-	PassiveItemService.resetPlayer(player)
-	XPService.resetPlayer(player)
-	PlayerStatsService.resetPlayer(player)
+	ItemEffectService.reset()
+	AssaultClassService.reset()
 	DifficultyService.restart()
 	ObjectiveService.reset()
 	ExtractionService.reset()
+	local players = Players:GetPlayers()
+	for _, player in players do
+		resetPlayer(player)
+	end
 	beginRun()
-	player:LoadCharacterAsync()
-	print("[RunManager] Run restarted for", player.Name)
+	for _, player in players do
+		task.spawn(function()
+			player:LoadCharacterAsync()
+		end)
+	end
+	print("[RunManager] Run restarted for", #players, "player(s)")
 end
 
-local function onRestartRequest(player: Player)
-	-- Honor restarts when the player is dead OR the run has ended.
-	local character = player.Character
-	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-	local dead = not character or not humanoid or humanoid.Health <= 0
-	if dead or RunStates.current() == "Ended" then
-		RunManager.resetRun(player)
+-- RESTART from the death or results screen. Only once the run is over: one player dying
+-- mid-run in co-op no longer resets it for everyone (the ready-up vote lands in step 5).
+local function onRestartRequest(_player: Player)
+	if RunStates.current() == "Ended" then
+		RunManager.startRun()
 	end
 end
 

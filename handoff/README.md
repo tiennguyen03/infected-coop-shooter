@@ -1,7 +1,7 @@
 # Handoff — Infected Co-op Shooter (VS Code + Claude Code terminal)
 
 Start here when picking the project up in a fresh Claude Code session.
-Last updated: 2026-11-07 (bot squadmates v1). Last verified commit on `main`: the bots commit (playtested).
+Last updated: 2026-11-07 (Co-op Sprint A step 2: reset split). Last verified commit on `main`: the Sprint A step 2 commit (playtested).
 
 ## What this is
 
@@ -131,7 +131,7 @@ Read in this order:
    `AnimationController`, per-type Infected clips, hold-E breach ghost). All 15 clips are
    published through Open Cloud (ids in `Config.Animations.Ids`, `assets/animations/
    ASSET_IDS.md`), so they play outside Studio too. Polish later: a hollow breach ring.
-1. **Co-op Sprint A in progress (step 1 of 7 done 2026-11-07; next: step 2, reset split):** `docs/sprints/SPRINT_17_COOP_A.md`
+1. **Co-op Sprint A in progress (steps through 2 done 2026-11-07):** `docs/sprints/SPRINT_17_COOP_A.md`
    Planned after it (owner, 2026-11-07): a **lobby place** with a main menu where parties
    queue and teleport together into the match (`docs/MULTIPLAYER_READINESS.md` decision 7);
    number keys 1-4 take call-ins and the flare (decision 8).

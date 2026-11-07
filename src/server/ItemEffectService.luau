@@ -484,10 +484,15 @@ function ItemEffectService.getActiveMarkCount(): number
 	return count
 end
 
-function ItemEffectService.resetPlayer(player: Player)
+-- Run state keyed by Infected (bleeds, kill credit): once per run start.
+function ItemEffectService.reset()
 	table.clear(bleeds)
 	table.clear(lastDamager)
 	table.clear(lastDamageKind)
+end
+
+-- One player's item state; RunManager calls it for every player on a run start.
+function ItemEffectService.resetPlayer(player: Player)
 	adrenalineApplied[player] = nil
 	killsTowardStrike[player] = nil
 	killsTowardHeal[player] = nil

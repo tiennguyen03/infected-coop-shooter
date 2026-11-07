@@ -309,6 +309,10 @@ function AssaultClassService.resetPlayer(player: Player)
 	breachReadyAt[player] = nil
 	player:SetAttribute("MomentumStacks", 0)
 	PlayerStatsService.setBonus(player, MOMENTUM_SOURCE, {})
+end
+
+-- Run state shared by everyone (breach charges and effects in the world).
+function AssaultClassService.reset()
 	if chargeFolder then
 		chargeFolder:ClearAllChildren()
 	end

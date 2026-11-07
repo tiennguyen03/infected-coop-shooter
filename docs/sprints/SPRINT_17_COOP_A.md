@@ -150,7 +150,7 @@ and checks `RunResult`.
    Explore (3.0 s) → Primary (zone at 180 s) → Index → Extract → Ended/Extracted, success
    screen shows and clears on restart, no enemies during Insert, KillPlayer → Ended/Wiped,
    `VerifyCleanup` PASS.
-2. Reset split. Verify solo: `RestartRun` then `VerifyCleanup` PASS; `GrantItem
+2. **Done 2026-11-07.** ItemEffectService/AssaultClassService gained run-level reset(); ProjectileServer.resetPlayer; RunManager.startRun resets every service once and every player, respawns all; RESTART only honoured once the run is Ended. Verified solo: restart refused mid-run, items/level/kills back to zero, bots rebuilt, VerifyCleanup PASS. Reset split. Verify solo: `RestartRun` then `VerifyCleanup` PASS; `GrantItem
    shrapnel_magazine` burst count restarts after a restart.
 3. `Squad` (players only, Alive/Dead via `Died`) replacing every `GetPlayers` target /
    placement / XP / zone site; DevTestService member loops. Verify with

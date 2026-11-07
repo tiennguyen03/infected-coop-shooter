@@ -172,7 +172,7 @@ end
 function DevTestService.restartRun(player: Player?)
 	local target = player or firstPlayer()
 	if target then
-		RunManager.resetRun(target)
+		RunManager.startRun()
 		print(`[DevTest] RestartRun -> {target.Name}`)
 	end
 end
