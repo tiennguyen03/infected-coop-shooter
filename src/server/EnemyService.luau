@@ -644,14 +644,13 @@ local function groundPositionNear(
 	return Vector3.new(x, groundY, z)
 end
 
+-- Spawns ring a random living squad member (#6): never a dead body or an empty pad.
 local function randomSpawnPosition(): Vector3?
-	local players = Players:GetPlayers()
-	if #players == 0 then
+	local living = Squad.living()
+	if #living == 0 then
 		return nil
 	end
-	local player = players[math.random(#players)]
-	local character = player.Character
-	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	local root = living[math.random(#living)].root
 	if not root then
 		return nil
 	end

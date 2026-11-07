@@ -22,6 +22,7 @@ local EnemyService = require(script.Parent.EnemyService)
 local ItemService = require(script.Parent.ItemService)
 local PauseService = require(script.Parent.PauseService)
 local XPOrbService = require(script.Parent.XPOrbService)
+local Squad = require(script.Parent.Squad)
 
 local FLARE_COLOR = Color3.fromRGB(255, 60, 40)
 local CRATE_DROP_HEIGHT = 60
@@ -63,15 +64,7 @@ local pressureUntil = 0
 local lastStep = 0
 
 local function livingPlayers(): { Player }
-	local result = {}
-	for _, player in Players:GetPlayers() do
-		local character = player.Character
-		local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-		if humanoid and humanoid.Health > 0 then
-			table.insert(result, player)
-		end
-	end
-	return result
+	return Squad.livingOwners()
 end
 
 local function currentCost(): number

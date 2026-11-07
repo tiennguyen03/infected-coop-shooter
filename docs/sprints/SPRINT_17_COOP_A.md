@@ -152,7 +152,7 @@ and checks `RunResult`.
    `VerifyCleanup` PASS.
 2. **Done 2026-11-07.** ItemEffectService/AssaultClassService gained run-level reset(); ProjectileServer.resetPlayer; RunManager.startRun resets every service once and every player, respawns all; RESTART only honoured once the run is Ended. Verified solo: restart refused mid-run, items/level/kills back to zero, bots rebuilt, VerifyCleanup PASS. Reset split. Verify solo: `RestartRun` then `VerifyCleanup` PASS; `GrantItem
    shrapnel_magazine` burst count restarts after a restart.
-3. `Squad` (players only, Alive/Dead via `Died`) replacing every `GetPlayers` target /
+3. **Done 2026-11-07.** Squad (players + bots) now drives Infected targeting, enemy splash, XP orbs (nearest living member collects, every living player gets the XP), the objective and extraction zones, Requisition offers, the spawn ring and the wipe check (players only). Verified with multiplayer_playtest, 2 clients: 2 bots instead of 3, identical shared XP, P1 dead -> run continues, no Infected on the body, dead P1 earns no XP while P2 gets 90, P2 dead -> Ended/Wiped, RESTART from client-2 respawns both. `Squad` (players only, Alive/Dead via `Died`) replacing every `GetPlayers` target /
    placement / XP / zone site; DevTestService member loops. Verify with
    `multiplayer_playtest`, 2 clients: Infected chase the nearest living; `KillPlayer` on
    client-1 → they switch to client-2; orbs grant XP to both (`Level` attributes); spawns

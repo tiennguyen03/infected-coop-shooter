@@ -35,6 +35,7 @@ local RequisitionService = require(script.Parent.RequisitionService)
 local ShockCoilService = require(script.Parent.ShockCoilService)
 local XPOrbService = require(script.Parent.XPOrbService)
 local XPService = require(script.Parent.XPService)
+local Squad = require(script.Parent.Squad)
 
 local RunManager = {}
 
@@ -76,15 +77,9 @@ function RunManager.endRun(result: RunStates.RunResult)
 	setState("Ended", result)
 end
 
+-- Bots never hold a run open on their own: it is over when no player is alive.
 local function anyoneAlive(): boolean
-	for _, player in Players:GetPlayers() do
-		local character = player.Character
-		local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-		if humanoid and humanoid.Health > 0 then
-			return true
-		end
-	end
-	return false
+	return #Squad.livingOwners() > 0
 end
 
 local function onDied()

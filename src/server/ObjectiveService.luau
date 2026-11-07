@@ -14,6 +14,7 @@ local EnemyService = require(script.Parent.EnemyService)
 local PauseService = require(script.Parent.PauseService)
 local RequisitionService = require(script.Parent.RequisitionService)
 local XPService = require(script.Parent.XPService)
+local Squad = require(script.Parent.Squad)
 
 local ObjectiveService = {}
 
@@ -35,8 +36,9 @@ local overlapParams = OverlapParams.new()
 overlapParams.FilterType = Enum.RaycastFilterType.Include
 
 local function isAnyPlayerInZone(zone: BasePart): boolean
-	for _, player in Players:GetPlayers() do
-		local character = player.Character
+	-- Any living squad member (player or bot) holds the zone.
+	for _, member in Squad.living() do
+		local character = member.character
 		if character then
 			overlapParams.FilterDescendantsInstances = { character }
 			if #workspace:GetPartsInPart(zone, overlapParams) > 0 then

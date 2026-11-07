@@ -5,7 +5,6 @@
 -- the onComplete listeners fire and RunManager ends the run as Extracted. Same hold-zone
 -- style as the objective.
 
-local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
@@ -13,6 +12,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local EnemyService = require(script.Parent.EnemyService)
 local PauseService = require(script.Parent.PauseService)
+local Squad = require(script.Parent.Squad)
 
 local ExtractionService = {}
 
@@ -30,8 +30,9 @@ local overlapParams = OverlapParams.new()
 overlapParams.FilterType = Enum.RaycastFilterType.Include
 
 local function isAnyPlayerInZone(zone: BasePart): boolean
-	for _, player in Players:GetPlayers() do
-		local character = player.Character
+	-- Any living squad member (player or bot) holds the zone.
+	for _, member in Squad.living() do
+		local character = member.character
 		if character then
 			overlapParams.FilterDescendantsInstances = { character }
 			if #workspace:GetPartsInPart(zone, overlapParams) > 0 then
