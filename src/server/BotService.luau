@@ -6,7 +6,9 @@
 -- formation slot, faces and shoots the nearest Infected it can see through the one damage
 -- entry point (ItemEffectService.dealDamage with no attacker: no kill credit, no hit
 -- marker), and rejoins at its slot RespawnSeconds after dying. Numbers in Config.Bots.
--- Not yet: downed/revive (Sprint A step 6), call-ins (loadout rework), vaulting.
+-- Downed (Squad): a downed bot lies prone and waits; a standing bot breaks formation to
+-- revive the nearest downed squadmate when no Infected is close (Config.Bots.Revive*).
+-- Not yet: call-ins (loadout rework), vaulting.
 
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
@@ -33,6 +35,7 @@ type Tracks = {
 	walk: AnimationTrack?,
 	run: AnimationTrack?,
 	fire: AnimationTrack?,
+	downed: AnimationTrack?,
 }
 
 type Bot = {
@@ -47,6 +50,8 @@ type Bot = {
 	nextShot: number,
 	respawnAt: number?,
 	spawning: boolean,
+	reviving: Squad.Member?, -- the downed member this bot is reviving
+	reviveProgress: number, -- seconds held next to them
 }
 
 local bots: { Bot } = {}
@@ -57,7 +62,12 @@ local runGeneration = 0
 local function leaderRoot(from: Vector3): BasePart?
 	local best: BasePart? = nil
 	local bestDistance = math.huge
-	for _, player in Squad.livingOwners() do
+	-- Standing players lead; with every player downed, the downed bodies anchor the bots.
+	local owners = Squad.livingOwners()
+	if #owners == 0 then
+		owners = Squad.activeOwners()
+	end
+	for _, player in owners do
 		local member = Squad.fromPlayer(player)
 		local root = member and member.root
 		if root then
@@ -111,8 +121,9 @@ local function loadTracks(bot: Bot, humanoid: Humanoid)
 		walk = Animations.load(found, clips.walk.forward, Enum.AnimationPriority.Movement),
 		run = Animations.load(found, clips.run.forward, Enum.AnimationPriority.Movement),
 		fire = Animations.load(found, clips.fire, Enum.AnimationPriority.Action2),
+		downed = Animations.load(found, clips.prone.idle, Enum.AnimationPriority.Action3),
 	}
-	for _, track in { bot.tracks.idle, bot.tracks.walk, bot.tracks.run } do
+	for _, track in { bot.tracks.idle, bot.tracks.walk, bot.tracks.run, bot.tracks.downed } do
 		if track then
 			track.Looped = true
 		end
@@ -340,10 +351,98 @@ local function tryRespawn(bot: Bot, now: number)
 	end
 end
 
+local function nearestInfectedDistance(position: Vector3): number
+	local best = math.huge
+	for _, tagged in CollectionService:GetTagged(ENEMY_TAG) do
+		local enemyRoot = tagged:FindFirstChild("HumanoidRootPart")
+		local humanoid = tagged:FindFirstChildOfClass("Humanoid")
+		if enemyRoot and enemyRoot:IsA("BasePart") and humanoid and humanoid.Health > 0 then
+			best = math.min(best, (enemyRoot.Position - position).Magnitude)
+		end
+	end
+	return best
+end
+
+-- Downed: lie prone, stop, wait for a revive.
+local function holdDowned(bot: Bot, humanoid: Humanoid, root: BasePart)
+	humanoid.WalkSpeed = 0
+	humanoid:MoveTo(root.Position)
+	humanoid.AutoRotate = false
+	bot.reviving = nil
+	bot.reviveProgress = 0
+	local tracks = bot.tracks
+	for _, track in { tracks.idle, tracks.walk, tracks.run } do
+		if track and track.IsPlaying then
+			track:Stop(0.2)
+		end
+	end
+	if tracks.downed and not tracks.downed.IsPlaying then
+		tracks.downed:Play(0.3)
+	end
+end
+
+-- Revive the nearest downed squadmate when it is safe enough. Returns true while busy.
+local function tryRevive(bot: Bot, humanoid: Humanoid, root: BasePart): boolean
+	local settings = Config.Bots
+	local target = bot.reviving
+	if not target or target.state ~= "Downed" then
+		target = nil
+		local best = settings.ReviveSearch
+		for _, member in Squad.downed() do
+			local downedRoot = member.root
+			if member ~= bot.member and downedRoot then
+				local distance = (downedRoot.Position - root.Position).Magnitude
+				if distance < best then
+					best, target = distance, member
+				end
+			end
+		end
+		bot.reviving = target
+		bot.reviveProgress = 0
+	end
+	local downedRoot = target and target.root
+	if not target or not downedRoot then
+		return false
+	end
+	if nearestInfectedDistance(downedRoot.Position) < settings.ReviveSafeRadius then
+		bot.reviveProgress = 0
+		return false -- too hot: fight first
+	end
+	local distance = (downedRoot.Position - root.Position).Magnitude
+	if distance > Config.Downed.ReviveRadius - 2 then
+		humanoid.WalkSpeed = settings.RunSpeed
+		humanoid:MoveTo(downedRoot.Position)
+		bot.reviveProgress = 0
+		return true
+	end
+	humanoid:MoveTo(root.Position)
+	bot.reviveProgress += settings.ThinkInterval
+	if bot.reviveProgress >= Config.Downed.ReviveHold then
+		Squad.revive(target, bot.member)
+		bot.reviving = nil
+		bot.reviveProgress = 0
+	end
+	return true
+end
+
 local function think(bot: Bot, now: number, params: RaycastParams)
 	local humanoid, root, model = bot.humanoid, bot.root, bot.model
 	if not humanoid or not root or not model or humanoid.Health <= 0 then
 		tryRespawn(bot, now)
+		return
+	end
+	if bot.member.state == "Downed" then
+		holdDowned(bot, humanoid, root)
+		return
+	end
+	local downedTrack = bot.tracks.downed
+	if downedTrack and downedTrack.IsPlaying then
+		downedTrack:Stop(0.3)
+	end
+	if tryRevive(bot, humanoid, root) then
+		humanoid.AutoRotate = true
+		local velocity = root.AssemblyLinearVelocity
+		animate(bot, Vector3.new(velocity.X, 0, velocity.Z).Magnitude)
 		return
 	end
 
@@ -438,6 +537,8 @@ function BotService.startRun()
 			nextShot = 0,
 			respawnAt = nil,
 			spawning = false,
+			reviving = nil,
+			reviveProgress = 0,
 		})
 	end
 	local generation = runGeneration

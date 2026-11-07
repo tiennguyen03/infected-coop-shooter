@@ -145,7 +145,7 @@ function AbilityController.init()
 			useAbility:FireServer("dash")
 		elseif input.KeyCode == Enum.KeyCode.E then
 			startTargeting()
-		elseif input.KeyCode == Enum.KeyCode.F then
+		elseif input.KeyCode == Enum.KeyCode.Three then
 			resupply:FireServer("flare", landingPoint(Config.Requisition.FlareThrowDistance))
 		end
 	end)

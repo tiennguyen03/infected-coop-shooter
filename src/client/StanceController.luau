@@ -84,6 +84,10 @@ function StanceController.init()
 		if lowKey and SprintController.isSprinting() then
 			return
 		end
+		local character = Players.LocalPlayer.Character
+		if character and character:GetAttribute("SquadState") == "Downed" then
+			return -- stays prone until revived
+		end
 		if input.KeyCode == Enum.KeyCode.LeftControl then
 			toggle("crouch")
 		elseif input.KeyCode == Enum.KeyCode.C then
@@ -93,7 +97,24 @@ function StanceController.init()
 		end
 	end)
 
-	Players.LocalPlayer.CharacterAdded:Connect(function()
+	-- Downed (Squad) drops the body prone; a revive stands it up. The body that already
+	-- exists at boot gets the hook too.
+	local function watchSquadState(character: Model)
+		character:GetAttributeChangedSignal("SquadState"):Connect(function()
+			local state = character:GetAttribute("SquadState")
+			lockedUntil = 0
+			if state == "Downed" then
+				StanceController.setStance("prone")
+			elseif state == "Alive" and stance == "prone" then
+				StanceController.setStance("stand")
+			end
+		end)
+	end
+	if Players.LocalPlayer.Character then
+		watchSquadState(Players.LocalPlayer.Character)
+	end
+	Players.LocalPlayer.CharacterAdded:Connect(function(character)
+		watchSquadState(character)
 		stance = "stand"
 		lockedUntil = 0
 		SprintController.setStanceFactor(1, true)

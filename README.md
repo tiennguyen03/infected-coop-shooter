@@ -27,12 +27,14 @@ single-player; every system is written for four.
 Controls: WASD move (the body has weight: it speeds up and slows down), **Shift** sprint,
 **LeftControl** crouch, **C** prone, **Space** vault or climb cover, **Shift + LeftControl**
 roll, **Shift + C** slide, **hold left-click** to shoot (over-the-shoulder aim, mouse wheel
-zooms), **Q** dash, **E** breach.
+zooms), **Q** dash, **E** breach, **3** Resupply flare, **hold F** revive a downed squadmate.
 
-The loop: the Infected hunt you and the pressure climbs on a clock you can read. Kills earn
-Resupply; a flare brings a pallet and you walk into 1 of 3 cards. Hold Position when you
-are ready, then extract. OPERATION COMPLETE ends the run with your stats; RESTART for a
-fresh one.
+The loop: you drop with a squad of four; in solo, three bot squadmates (Cole, Reyes, Cross)
+fill it. The Infected hunt you and the pressure climbs on a clock you can read. Kills earn
+Resupply; a flare brings a pallet and you walk into 1 of 3 cards. A lethal hit downs you
+instead of killing: a squadmate (or a bot) revives you before you bleed out. Hold Position
+when you are ready, then extract. The run ends with OPERATION COMPLETE or SQUAD WIPED; READY
+for the next one.
 
 ## Dev checks
 

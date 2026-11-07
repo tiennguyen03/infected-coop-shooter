@@ -1,18 +1,27 @@
 --!strict
--- Squad: the one roster every system asks "who is on our side" (Co-op Sprint A step 3,
+-- Squad: the one roster every system asks "who is on our side" (Co-op Sprint A,
 -- docs/sprints/SPRINT_17_COOP_A.md section 1). A member is a player or a server-side bot
--- (BotService); targeting, splash damage and anything else that keys on "a squad body"
--- reads members from here so a bot is seen the same way as a player. Per-owner state
--- (items, XP, stat mults) stays on the Player; bots have none (`ownerAttribute` default).
--- Tracks Alive/Dead from the humanoid and hands out landing pads (step 4); Downed/revive
--- and the ready vote land in later Sprint A steps. Requires only Players and ArenaService,
--- so any service can require it without a cycle.
+-- (BotService); targeting, splash damage, XP, zones and the wipe check read members from
+-- here, so a bot is seen the same way as a player. Per-owner state (items, XP, stat mults)
+-- stays on the Player; bots have none (`ownerAttribute` default).
+--
+-- State per member: Alive -> Downed (a lethal hit, decision #3) -> Alive (revived) or
+-- Dead (bled out, killed while out of revives). Downed bodies are not targets and take no
+-- damage; a squadmate holds F (ProximityPrompt) for Config.Downed.ReviveHold to stand them
+-- up; bots revive with Squad.revive. Replicated as character attributes SquadState,
+-- BleedOutAt (server time) and Reviver, mirrored on the Player for client UI. Also hands
+-- out landing pads (step 4). Requires only Players, Config and ArenaService, so any
+-- service can require it without a cycle.
 
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
+local Config = require(ReplicatedStorage.Shared.Config)
 local ArenaService = require(script.Parent.ArenaService)
 
 export type MemberKind = "player" | "bot"
+export type MemberState = "Alive" | "Downed" | "Dead"
 export type Member = {
 	id: string, -- "p:<UserId>" | "b:<slot>", stable across respawns
 	kind: MemberKind,
@@ -21,7 +30,11 @@ export type Member = {
 	character: Model?,
 	humanoid: Humanoid?,
 	root: BasePart?,
-	padIndex: number?, -- landing pad slot, claimed on first spawn, freed on removal
+	padIndex: number?, -- landing pad slot, claimed on first spawn
+	state: MemberState,
+	bleedOutAt: number?, -- os.clock, Downed only
+	revivesUsed: number, -- this run; at Config.Downed.MaxRevives a lethal hit kills
+	prompt: ProximityPrompt?,
 }
 
 local Squad = {}
@@ -29,17 +42,98 @@ local Squad = {}
 local members: { Member } = {}
 local byPlayer: { [Player]: Member } = {}
 local byHumanoid: { [Humanoid]: Member } = {}
+local stateListeners: { (member: Member, old: MemberState, new: MemberState) -> () } = {}
 
--- Points `member` at a (new) body; nil clears it.
+local function newMember(id: string, kind: MemberKind, owner: Player?, name: string): Member
+	return {
+		id = id,
+		kind = kind,
+		owner = owner,
+		name = name,
+		character = nil,
+		humanoid = nil,
+		root = nil,
+		padIndex = nil,
+		state = "Dead",
+		bleedOutAt = nil,
+		revivesUsed = 0,
+		prompt = nil,
+	}
+end
+
+local function publish(member: Member)
+	local bleedOutServer = 0
+	if member.state == "Downed" and member.bleedOutAt then
+		bleedOutServer = workspace:GetServerTimeNow() + (member.bleedOutAt - os.clock())
+	end
+	for _, target in { member.character :: Instance?, member.owner :: Instance? } do
+		if target then
+			target:SetAttribute("SquadState", member.state)
+			target:SetAttribute("BleedOutAt", bleedOutServer)
+		end
+	end
+end
+
+local function setReviver(member: Member, name: string)
+	for _, target in { member.character :: Instance?, member.owner :: Instance? } do
+		if target then
+			target:SetAttribute("Reviver", name)
+		end
+	end
+end
+
+local function clearPrompt(member: Member)
+	if member.prompt then
+		member.prompt:Destroy()
+		member.prompt = nil
+	end
+	setReviver(member, "")
+end
+
+local function setState(member: Member, state: MemberState)
+	local old: MemberState = member.state
+	if old == state then
+		return
+	end
+	member.state = state
+	if state ~= "Downed" then
+		member.bleedOutAt = nil
+		clearPrompt(member)
+	end
+	publish(member)
+	for _, listener in stateListeners do
+		task.spawn(function()
+			listener(member, old, state)
+		end)
+	end
+end
+
+-- Listeners run on every state change (RunManager's wipe check, BotService).
+function Squad.onStateChanged(listener: (member: Member, old: MemberState, new: MemberState) -> ())
+	table.insert(stateListeners, listener)
+end
+
+-- Points `member` at a (new) body; nil clears it. A new living body is Alive.
 function Squad.bindCharacter(member: Member, character: Model?)
 	if member.humanoid then
 		byHumanoid[member.humanoid] = nil
 	end
+	clearPrompt(member)
 	member.character = character
 	member.humanoid = character and character:FindFirstChildOfClass("Humanoid")
 	member.root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
-	if member.humanoid then
-		byHumanoid[member.humanoid] = member
+	local humanoid = member.humanoid
+	if humanoid then
+		byHumanoid[humanoid] = member
+		humanoid.Died:Connect(function()
+			if member.humanoid == humanoid then
+				setState(member, "Dead")
+			end
+		end)
+		member.state = "Dead" -- force the publish below
+		setState(member, if humanoid.Health > 0 then "Alive" else "Dead")
+	else
+		setState(member, "Dead")
 	end
 end
 
@@ -52,6 +146,7 @@ local function remove(member: Member)
 	if index then
 		table.remove(members, index)
 	end
+	clearPrompt(member)
 	if member.humanoid then
 		byHumanoid[member.humanoid] = nil
 	end
@@ -61,16 +156,7 @@ local function remove(member: Member)
 end
 
 function Squad.addBot(slot: number, name: string): Member
-	local member: Member = {
-		id = "b:" .. slot,
-		kind = "bot",
-		owner = nil,
-		name = name,
-		character = nil,
-		humanoid = nil,
-		root = nil,
-		padIndex = nil,
-	}
+	local member = newMember("b:" .. slot, "bot", nil, name)
 	add(member)
 	return member
 end
@@ -79,14 +165,32 @@ function Squad.removeBot(member: Member)
 	remove(member)
 end
 
-local function isAlive(member: Member): boolean
+local function hasBody(member: Member): boolean
 	local humanoid = member.humanoid
-	local root = member.root
 	return humanoid ~= nil
-		and root ~= nil
+		and member.root ~= nil
 		and humanoid.Health > 0
 		and member.character ~= nil
 		and member.character.Parent ~= nil
+end
+
+-- Alive and standing: a target, a shooter, a zone holder, a reviver.
+local function isAlive(member: Member): boolean
+	return member.state == "Alive" and hasBody(member)
+end
+
+function Squad.isAlive(member: Member): boolean
+	return isAlive(member)
+end
+
+-- Still in the fight: Alive or Downed (a downed member can still be revived).
+function Squad.isActive(member: Member): boolean
+	return (member.state == "Alive" or member.state == "Downed") and hasBody(member)
+end
+
+-- May act (fire, use abilities, throw the flare): Alive.
+function Squad.canAct(member: Member): boolean
+	return isAlive(member)
 end
 
 function Squad.members(): { Member }
@@ -103,8 +207,15 @@ function Squad.living(): { Member }
 	return result
 end
 
-function Squad.isAlive(member: Member): boolean
-	return isAlive(member)
+-- Members waiting for a revive.
+function Squad.downed(): { Member }
+	local result = {}
+	for _, member in members do
+		if member.state == "Downed" and hasBody(member) then
+			table.insert(result, member)
+		end
+	end
+	return result
 end
 
 -- Living players (owners), for things only a player can do (collect, vote, extract).
@@ -112,6 +223,17 @@ function Squad.livingOwners(): { Player }
 	local result = {}
 	for _, member in members do
 		if member.owner and isAlive(member) then
+			table.insert(result, member.owner)
+		end
+	end
+	return result
+end
+
+-- Players still in the fight (Alive or Downed): the run is wiped when this is empty.
+function Squad.activeOwners(): { Player }
+	local result = {}
+	for _, member in members do
+		if member.owner and Squad.isActive(member) then
 			table.insert(result, member.owner)
 		end
 	end
@@ -141,6 +263,100 @@ function Squad.nearestLiving(position: Vector3): (Member?, number)
 		end
 	end
 	return nearest, nearestDistance
+end
+
+-- Stands a downed member up at Config.Downed.ReviveHealthFraction health.
+function Squad.revive(member: Member, by: Member?)
+	if member.state ~= "Downed" or not hasBody(member) then
+		return
+	end
+	local humanoid = member.humanoid :: Humanoid
+	member.revivesUsed += 1
+	humanoid.Health = humanoid.MaxHealth * Config.Downed.ReviveHealthFraction
+	local regen = member.character and member.character:FindFirstChild("Health")
+	if regen and regen:IsA("Script") then
+		regen.Enabled = true
+	end
+	setState(member, "Alive")
+	print(`[Squad] {member.name} revived by {by and by.name or "?"} ({member.revivesUsed} used)`)
+end
+
+-- Kills a member outright (bleed-out, out of revives, dev tools).
+function Squad.kill(member: Member)
+	local humanoid = member.humanoid
+	if humanoid and humanoid.Health > 0 then
+		humanoid.Health = 0
+	end
+end
+
+local function addPrompt(member: Member)
+	local root = member.root
+	if not root then
+		return
+	end
+	local settings = Config.Downed
+	local prompt = Instance.new("ProximityPrompt")
+	prompt.Name = "RevivePrompt"
+	prompt.ActionText = "Revive"
+	prompt.ObjectText = member.name
+	prompt.KeyboardKeyCode = Enum.KeyCode.F
+	prompt.GamepadKeyCode = Enum.KeyCode.ButtonX
+	prompt.HoldDuration = settings.ReviveHold
+	prompt.MaxActivationDistance = settings.ReviveRadius
+	prompt.RequiresLineOfSight = false
+	prompt.Style = Enum.ProximityPromptStyle.Default
+	prompt.PromptButtonHoldBegan:Connect(function(player)
+		setReviver(member, player.DisplayName)
+	end)
+	prompt.PromptButtonHoldEnded:Connect(function()
+		setReviver(member, "")
+	end)
+	prompt.Triggered:Connect(function(player)
+		local reviver = byPlayer[player]
+		if not reviver or reviver == member or not isAlive(reviver) then
+			return
+		end
+		local reviverRoot = reviver.root :: BasePart
+		local downedRoot = member.root
+		if
+			downedRoot
+			and (reviverRoot.Position - downedRoot.Position).Magnitude
+				<= settings.ReviveRadius + 2
+		then
+			Squad.revive(member, reviver)
+		end
+	end)
+	prompt.Parent = root
+	member.prompt = prompt
+end
+
+-- A lethal hit: down the member (decision #3) unless they are out of revives.
+function Squad.down(member: Member)
+	if member.state ~= "Alive" or not hasBody(member) then
+		return
+	end
+	if member.revivesUsed >= Config.Downed.MaxRevives then
+		Squad.kill(member)
+		return
+	end
+	local humanoid = member.humanoid :: Humanoid
+	humanoid.Health = Config.Downed.DownedHealth
+	-- The stock regen script would refill a downed bar; it resumes on revive.
+	local regen = member.character and member.character:FindFirstChild("Health")
+	if regen and regen:IsA("Script") then
+		regen.Enabled = false
+	end
+	member.bleedOutAt = os.clock() + Config.Downed.BleedOutSeconds
+	setState(member, "Downed")
+	addPrompt(member)
+	print(`[Squad] {member.name} is down`)
+end
+
+-- RunManager, on every run start: revives are counted per run.
+function Squad.resetRun()
+	for _, member in members do
+		member.revivesUsed = 0
+	end
 end
 
 -- The member's landing pad slot: the lowest one no other member holds (players claim
@@ -182,16 +398,7 @@ function Squad.ownerAttribute(member: Member, name: string, default: any): any
 end
 
 local function onPlayerAdded(player: Player)
-	local member: Member = {
-		id = "p:" .. player.UserId,
-		kind = "player",
-		owner = player,
-		name = player.DisplayName,
-		character = nil,
-		humanoid = nil,
-		root = nil,
-		padIndex = nil,
-	}
+	local member = newMember("p:" .. player.UserId, "player", player, player.DisplayName)
 	byPlayer[player] = member
 	add(member)
 	-- Every (re)spawn lands on the member's own pad around the LZ helipad.
@@ -201,10 +408,24 @@ local function onPlayerAdded(player: Player)
 	end
 	player.CharacterAdded:Connect(function(character)
 		character:WaitForChild("HumanoidRootPart", 10)
+		character:WaitForChild("Humanoid", 10)
 		Squad.bindCharacter(member, character)
 	end)
 	if player.Character then
 		Squad.bindCharacter(member, player.Character)
+	end
+end
+
+-- Bleed-out: a downed member whose timer runs out dies.
+local function step()
+	local now = os.clock()
+	for _, member in members do
+		local bleedOutAt = member.bleedOutAt
+		if member.state == "Downed" and bleedOutAt and now >= bleedOutAt then
+			member.bleedOutAt = nil
+			print(`[Squad] {member.name} bled out`)
+			Squad.kill(member)
+		end
 	end
 end
 
@@ -219,6 +440,7 @@ function Squad.init()
 			remove(member)
 		end
 	end)
+	RunService.Heartbeat:Connect(step)
 end
 
 return Squad

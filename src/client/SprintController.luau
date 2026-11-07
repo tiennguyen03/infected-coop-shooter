@@ -25,7 +25,10 @@ end
 
 local function applySpeed()
 	local humanoid = getHumanoid()
-	if humanoid and overrideSpeed then
+	local character = Players.LocalPlayer.Character
+	if humanoid and character and character:GetAttribute("SquadState") == "Downed" then
+		humanoid.WalkSpeed = 0 -- downed (Squad): wait for a revive
+	elseif humanoid and overrideSpeed then
 		humanoid.WalkSpeed = overrideSpeed
 	elseif humanoid then
 		local base = if isSprinting
@@ -87,8 +90,14 @@ function SprintController.init()
 		end
 	end)
 
-	-- A respawned character starts at base speed even if Shift is held.
-	Players.LocalPlayer.CharacterAdded:Connect(function()
+	-- A respawned character starts at base speed even if Shift is held. The body that
+	-- already exists at boot gets the downed hook too.
+	local player = Players.LocalPlayer
+	if player.Character then
+		player.Character:GetAttributeChangedSignal("SquadState"):Connect(applySpeed)
+	end
+	player.CharacterAdded:Connect(function(character)
+		character:GetAttributeChangedSignal("SquadState"):Connect(applySpeed)
 		isAiming = false
 		overrideSpeed = nil
 		stanceFactor = 1

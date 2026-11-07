@@ -102,9 +102,10 @@ function RunManager.endRun(result: RunStates.RunResult)
 	setState("Ended", result)
 end
 
--- Bots never hold a run open on their own: it is over when no player is alive.
+-- Bots never hold a run open on their own: it is over when no player is Alive or Downed
+-- (a downed player can still be revived).
 local function anyoneAlive(): boolean
-	return #Squad.livingOwners() > 0
+	return #Squad.activeOwners() > 0
 end
 
 local function onDied()
@@ -145,6 +146,7 @@ function RunManager.startRun()
 	DifficultyService.restart()
 	ObjectiveService.reset()
 	ExtractionService.reset()
+	Squad.resetRun()
 	local players = Players:GetPlayers()
 	for _, player in players do
 		resetPlayer(player)

@@ -59,10 +59,19 @@ function EnemyProjectileService.damagePlayer(humanoid: Humanoid, amount: number)
 	end
 	local character = humanoid.Parent
 	local member = Squad.fromHumanoid(humanoid)
+	-- A downed body takes no damage (decision #3: a rescue, not a snack).
+	if member and member.state ~= "Alive" then
+		return
+	end
 	local incomingMult: number = if member
 		then Squad.ownerAttribute(member, "IncomingDamageMult", 1)
 		else 1
-	humanoid:TakeDamage(amount * DifficultyService.getDamageMultiplier() * incomingMult)
+	local dealt = amount * DifficultyService.getDamageMultiplier() * incomingMult
+	if member and humanoid.Health - dealt <= 0 then
+		Squad.down(member)
+		return
+	end
+	humanoid:TakeDamage(dealt)
 	-- A grunt from the body (3D, the squad hears who got hit), one per burst of hits.
 	local head = character and character:FindFirstChild("Head") :: BasePart?
 	local now = os.clock()

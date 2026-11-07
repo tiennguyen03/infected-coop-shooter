@@ -116,6 +116,9 @@ local function tryFire()
 	if not root or not humanoid or humanoid.Health <= 0 then
 		return
 	end
+	if character and character:GetAttribute("SquadState") == "Downed" then
+		return
+	end
 
 	local aimPoint = getAimPoint()
 	if not aimPoint then

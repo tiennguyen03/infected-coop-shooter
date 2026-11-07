@@ -100,6 +100,20 @@ local Config = {
 		Spread = 2.5, -- degrees, half-angle
 		HeadshotChance = 0.2, -- share of shots aimed at the head
 		RespawnSeconds = 10, -- a dead bot rejoins at its slot after this
+		ReviveSearch = 60, -- studs: a bot goes to revive a downed squadmate this close
+		ReviveSafeRadius = 12, -- ...unless an Infected is this close to the downed body
+	},
+
+	-- Downed / revive (decision #3, Squad). A lethal hit downs a member instead of killing:
+	-- prone, no moving or firing, not a target, takes no damage. A squadmate holds F next
+	-- to them (bots revive on their own) to stand them up; the timer running out kills.
+	Downed = {
+		BleedOutSeconds = 30,
+		ReviveHold = 3, -- seconds of holding F
+		ReviveRadius = 8, -- studs
+		ReviveHealthFraction = 0.5,
+		DownedHealth = 1,
+		MaxRevives = 2, -- per run; the next lethal hit after that kills outright
 	},
 
 	-- Run flow (RunManager, Shared.RunStates). Co-op Sprint A.

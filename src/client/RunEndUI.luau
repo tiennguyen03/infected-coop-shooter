@@ -1,6 +1,7 @@
 --!strict
 -- Run-end screens (Co-op Sprint A step 5; replaced DeathScreenUI and MissionSuccessUI).
 -- Everything keys on the server's run state, never on this client's respawn:
+--   * Downed (Squad): a DOWNED banner with the bleed-out countdown and who is reviving.
 --   * Dead while the run is live (squadmates or bots still fighting): a small K.I.A. banner,
 --     no restart; the squad finishes the operation.
 --   * RunState "Ended": the results screen for everyone, OPERATION COMPLETE (RunResult
@@ -9,6 +10,7 @@
 --   * The screen goes away when the next run leaves Ended.
 
 local Players = game:GetService("Players")
+local ProximityPromptService = game:GetService("ProximityPromptService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
@@ -167,6 +169,59 @@ local function showResults()
 	refreshStatus()
 end
 
+local downedBanner: ScreenGui? = nil
+local downedTimer: TextLabel? = nil
+
+local function hideDowned()
+	if downedBanner then
+		downedBanner:Destroy()
+		downedBanner = nil
+		downedTimer = nil
+	end
+end
+
+local function refreshDowned()
+	local timer = downedTimer
+	local character = Players.LocalPlayer.Character
+	if not timer or not character then
+		return
+	end
+	local endsAt = (character:GetAttribute("BleedOutAt") :: number?) or 0
+	local left = math.max(math.ceil(endsAt - workspace:GetServerTimeNow()), 0)
+	local reviver = character:GetAttribute("Reviver")
+	if typeof(reviver) == "string" and reviver ~= "" then
+		timer.Text = `{reviver} is reviving you  -  {left}s`
+	else
+		timer.Text = `Bleeding out in {left}s  -  hold on for a squadmate`
+	end
+end
+
+local function showDowned()
+	if downedBanner or results then
+		return
+	end
+	local gui = newGui("DownedBanner", 90)
+	local frame = Instance.new("Frame")
+	frame.AnchorPoint = Vector2.new(0.5, 0)
+	frame.Position = UDim2.new(0.5, 0, 0, 96)
+	frame.Size = UDim2.fromOffset(460, 64)
+	frame.BackgroundColor3 = Color3.fromRGB(40, 20, 6)
+	frame.BackgroundTransparency = 0.2
+	frame.BorderSizePixel = 0
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 10)
+	corner.Parent = frame
+	frame.Parent = gui
+	local title = label(frame, "DOWNED", 6, 30, Color3.fromRGB(240, 170, 60), Enum.Font.GothamBlack)
+	title.Size = UDim2.fromOffset(420, 30)
+	local sub = label(frame, "", 38, 20, Color3.fromRGB(225, 225, 225), Enum.Font.Gotham)
+	sub.Size = UDim2.fromOffset(420, 20)
+	gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+	downedBanner = gui
+	downedTimer = sub
+	refreshDowned()
+end
+
 local function showBanner()
 	if banner or results then
 		return
@@ -208,16 +263,24 @@ local function refresh()
 	hideResults()
 	local character = Players.LocalPlayer.Character
 	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	local downed = character ~= nil and character:GetAttribute("SquadState") == "Downed"
 	if humanoid and humanoid.Health <= 0 then
+		hideDowned()
 		showBanner()
+	elseif downed then
+		hideBanner()
+		showDowned()
 	else
 		hideBanner()
+		hideDowned()
 	end
 end
 
 local function onCharacterAdded(character: Model)
 	local humanoid = character:WaitForChild("Humanoid") :: Humanoid
 	humanoid.Died:Connect(refresh)
+	character:GetAttributeChangedSignal("SquadState"):Connect(refresh)
+	character:GetAttributeChangedSignal("Reviver"):Connect(refreshDowned)
 	refresh()
 end
 
@@ -234,13 +297,25 @@ function RunEndUI.init()
 	if player.Character then
 		task.spawn(onCharacterAdded, player.Character)
 	end
-	-- The countdown ticks down on screen.
+	-- The countdowns tick down on screen.
 	local lastTick = 0
 	RunService.Heartbeat:Connect(function()
 		local now = os.clock()
-		if statusLabel and now - lastTick >= 0.25 then
+		if now - lastTick >= 0.25 then
 			lastTick = now
-			refreshStatus()
+			if statusLabel then
+				refreshStatus()
+			end
+			if downedTimer then
+				refreshDowned()
+			end
+		end
+	end)
+	-- Never offer to revive yourself: our own body's prompt stays hidden on this client.
+	ProximityPromptService.PromptShown:Connect(function(prompt)
+		local character = player.Character
+		if character and prompt:IsDescendantOf(character) then
+			prompt.Enabled = false
 		end
 	end)
 	refresh()

@@ -16,6 +16,7 @@ local ItemEffectService = require(script.Parent.ItemEffectService)
 local ItemService = require(script.Parent.ItemService)
 local PauseService = require(script.Parent.PauseService)
 local PlayerStatsService = require(script.Parent.PlayerStatsService)
+local Squad = require(script.Parent.Squad)
 
 local ENEMY_TAG = "Enemy"
 -- How far a reported fire origin may be from the character before the
@@ -218,6 +219,11 @@ local function onFireRequest(player: Player, origin: unknown, direction: unknown
 	end
 
 	if PauseService.isPaused() then
+		return
+	end
+	-- Downed members cannot fire.
+	local member = Squad.fromPlayer(player)
+	if member and not Squad.canAct(member) then
 		return
 	end
 

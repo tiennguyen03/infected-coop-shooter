@@ -15,6 +15,7 @@ local ThrowUtil = require(ReplicatedStorage.Shared.ThrowUtil)
 local ItemEffectService = require(script.Parent.ItemEffectService)
 local PauseService = require(script.Parent.PauseService)
 local PlayerStatsService = require(script.Parent.PlayerStatsService)
+local Squad = require(script.Parent.Squad)
 
 local ENEMY_TAG = "Enemy"
 local MOMENTUM_SOURCE = "assault_momentum"
@@ -240,9 +241,8 @@ local function canAct(player: Player): boolean
 	if PauseService.isPaused() then
 		return false
 	end
-	local character = player.Character
-	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-	return humanoid ~= nil and humanoid.Health > 0
+	local member = Squad.fromPlayer(player)
+	return member ~= nil and Squad.canAct(member)
 end
 
 local function onUseAbility(player: Player, abilityName: unknown, target: unknown)

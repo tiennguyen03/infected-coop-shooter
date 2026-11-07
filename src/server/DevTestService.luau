@@ -313,6 +313,24 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 	KillPlayer = function(player)
 		DevTestService.killPlayer(player)
 	end,
+	-- Downs the caller (or the named bot) as if from a lethal hit.
+	DownPlayer = function(player, botName)
+		local Squad = require(script.Parent.Squad)
+		for _, member in Squad.members() do
+			if (botName and member.name == botName) or (not botName and member.owner == player) then
+				Squad.down(member)
+				print(`[DevTest] DownPlayer -> {member.name}`)
+			end
+		end
+	end,
+	RevivePlayer = function(player, botName)
+		local Squad = require(script.Parent.Squad)
+		for _, member in Squad.members() do
+			if (botName and member.name == botName) or (not botName and member.owner == player) then
+				Squad.revive(member, nil)
+			end
+		end
+	end,
 	RestartRun = function(player)
 		DevTestService.restartRun(player)
 	end,

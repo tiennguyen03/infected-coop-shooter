@@ -163,7 +163,7 @@ and checks `RunResult`.
    client-2; kill both → Ended, both see K.I.A.; one READY → countdown → both respawn;
    `ForceMissionSuccess` → both see OPERATION COMPLETE, both screens clear on restart
    (closes #12, #13).
-6. Downed/revive. Verify solo: `DownPlayer` → overlay timer → Dead → Ended; 2 clients:
+6. **Done 2026-11-07.** Squad Alive/Downed/Dead with Config.Downed (30 s bleed-out, hold F 3 s within 8 studs, revive at 50%, 2 revives per run); a lethal enemy hit downs (EnemyProjectileService.damagePlayer), downed bodies take no damage and are not targets; fire/abilities/flare gated on Squad.canAct; the wipe check counts downed players as active; bots lie prone when downed, revive the nearest downed squadmate when no Infected is within 12 studs, and anchor on a downed player when nobody stands; client: prone + speed 0 + no firing while downed, DOWNED banner (bleed-out, who is reviving), own prompt hidden; the flare moved F -> 3; dev DownPlayer/RevivePlayer. Verified with 2 clients: downed P1 at speed 0 with regen paused, prompt only on client-2, Infected ignored the body, a real F hold revived P1 at half health, Cole revived P1 on his own, the third lethal hit killed outright, bleed-out killed after 30 s, 3 threw the flare. Downed/revive. Verify solo: `DownPlayer` → overlay timer → Dead → Ended; 2 clients:
    client-2 holds E within 8 studs → client-1 up at 50% HP, Infected ignored the downed
    body meanwhile; `MaxRevives` exhausted → straight to Dead.
 7. Docs: this file's status, HISTORY row, handoff state, register rows closed.
@@ -174,9 +174,9 @@ and checks `RunResult`.
   match's `Lobby` state is staging for a party that will arrive by teleport; the ready-up
   in section 2 is the in-match fallback. Read any expected party from teleport data in
   `RunManager` only; never assume who is coming.
-- **Decided (owner, 2026-11-07): revive and other interactions go on F.** F throws the
-  Resupply flare today, so the flare moves (G, or a call-in slot when the loadout rework
-  lands). E stays breach only; the prompt-suppresses-breach rule in section 3 is dropped.
+- **Decided (owner, 2026-11-07): revive and other interactions go on F.** Shipped in step
+  6: the flare moved to 3 (decision #8). E stays breach only; the prompt-suppresses-breach
+  rule in section 3 is dropped.
 - The ready-up opens automatically on the first join so solo stays frictionless.
 - Spectate camera scope (follow nearest living member, or stay free).
 - Extraction. **Recommended, owner to confirm:** the Helldivers 2 / Deep Rock model. The

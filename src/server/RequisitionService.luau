@@ -241,6 +241,10 @@ local function onFlare(player: Player, target: unknown)
 	if pending or PauseService.isPaused() then
 		return
 	end
+	local member = Squad.fromPlayer(player)
+	if not member or not Squad.canAct(member) then
+		return
+	end
 	local now = os.clock()
 	if now < flareReadyAt or pool < currentCost() then
 		return
