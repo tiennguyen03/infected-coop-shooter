@@ -55,12 +55,13 @@ may add to this list.
 
 ## Design decisions (decided by the owner 2026-11-05)
 
-1. **Level-up in co-op: no world pause.** The chooser keeps moving and picks from a
-   non-blocking card row; the other three players never notice. `PauseService` leaves
+1. **Level-up in co-op: no world pause.** Superseded 2026-11-06 by Resupply
+   ([PROGRESSION.md](PROGRESSION.md)): the draft moves into the world (pallet with personal
+   cards, one pick per player), levels become automatic growth. `PauseService` leaves
    gameplay entirely (extraction/success can keep a run-end freeze).
 2. **XP is shared.** Every orb pickup grants its full XP to every living player. Objective XP
    already does this. Levels stay per player (same XP in, same level out, unless someone
-   joined late).
+   joined late). Base orb XP also feeds the squad's shared Resupply pool, once per orb.
 3. **Death: downed, revivable, respawn at the start of the next stage.** A player at 0 HP
    drops to a *Downed* state with a bleed-out timer; a teammate standing next to them for a
    short hold revives them. Owner's concern: late game, a downed player just gets eaten.
@@ -76,7 +77,8 @@ may add to this list.
    works the same way.
 5. **Items are per owner.** Inventories stay per player (already true). World pickups
    (ammo crates, future class drops) are **owner-only**: only the player whose item spawned it
-   can collect it. Reason: future classes should have distinct, self-built kits.
+   can collect it. Reason: future classes should have distinct, self-built kits. Resupply
+   pallets and stores are the exception by design: a shared trigger, personal cards.
 6. **Difficulty per extra player: more Infected, not tougher Infected.** Spawn rate and
    max-alive scale with living player count; HP/damage per Infected do not. Numbers in
    `Config.PlayerCountScaling`, with 1 player = today's values.

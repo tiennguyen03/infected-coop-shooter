@@ -56,9 +56,42 @@ goes from evening to night to dawn.
 4. **Harlan Yard** — the rail yard. Boss: the Lineman.
 5. **Harlan Reservoir Station** — the dam and the research station. Boss: the Specimen.
 
-The helo is the only thing that stays the same and the only way out. **Stand Down** is the
-bird offering the seat home: board it and the run ends on your terms. Stay, and the corridor
-loops. Stage detail (landmarks, sites, story spots) is in [PROGRESSION.md](PROGRESSION.md).
+**Control, Lantern, the Burn.** Harlan Control runs the corridor net; the squad is Pike; the
+helo that carries the Chosen is Lantern, the only thing that stays the same and the only way
+out. Command sanitizes what it cannot hold: each district has a scheduled incendiary fire
+mission, the Burn, and the skyline burning beyond the walls is the districts that already
+got theirs. A squad is inserted in the window before the Burn. Prove the district can be
+held and Control pushes the Burn back; stay past it and the fire does not wait. **Stand
+Down** is Lantern offering the seat home at the end of the operation: board it and the run
+ends on your terms. Ask for a Second Pass and the bird turns south into a corridor that has
+had time to get worse. Stage detail (landmarks, sites, story spots) is in
+[PROGRESSION.md](PROGRESSION.md).
+
+Control's voice is procedural, short, no banter: "Pike, Control. Green smoke on the Helipad."
+"Lantern 2-1, ninety seconds. Hold the LZ."
+
+## Containment
+
+Control keeps the Containment Board: every district (Delta, Mile 14, Kestrel, the Yard, the
+Reservoir) carries a containment percentage, raised by every sortie any squad brings home.
+Contained does not mean clean; it means the district has stopped exporting hosts, the lights
+are back on and the Burn is deferred. Lost, Contested, Held, Contained are the only four
+words Control uses for a place.
+
+## Index hosts
+
+Every fallen position has an index host: the body the strain finished first, the one that
+turned the place from the inside. Control calls them the Index; the soldiers call them what
+they look like (the Warden, the Bloat, the Patient, the Lineman, the Specimen). Putting one
+down is the only kill Control pays for on the spot.
+
+## Resupply
+
+Lantern does not come back for a squad that has not earned it. Kills and objectives build
+Resupply on Control's board; when it clears, a red flare brings a pallet down in twenty
+seconds, loud, with three issues on it and one pick per soldier. Green smoke brings the bird
+itself. The stores each position abandoned when it fell are still where they left them, if
+you can get the lid off quietly, which you cannot.
 
 ---
 

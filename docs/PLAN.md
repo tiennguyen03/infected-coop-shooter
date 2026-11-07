@@ -223,12 +223,14 @@ Do NOT begin these until MVP is complete.
   Victor Kane (field engineer)
 - **Item System:** replace simple stat upgrades with collectible items (chain lightning,
   crits, explosive bullets, drones, healing)
-- **Stage progression, bosses and the Infected roster:** designed in
-  [PROGRESSION.md](PROGRESSION.md) (three-stage first loop, a boss per stage, Stand Down).
-  Elite variants come after the roster.
-- **Co-op (the final product):** Co-op Sprint A (run state machine, per-player level-up,
-  downed/revive, spawn pads) then Sprint B (squad objective rules, player-count difficulty,
-  shared pickups). Plan: [MULTIPLAYER_READINESS.md](MULTIPLAYER_READINESS.md)
+- **Operations, Resupply, the Containment Board, bosses and the Infected roster:** designed
+  in [PROGRESSION.md](PROGRESSION.md) (Helldivers 2 structure on the roguelike run: objective
+  pools, the Burn timer, called extraction, a war map; supply-drop draft replaces the
+  pause-and-pick level-up). Elite variants come after the roster.
+- **Co-op (the final product):** Co-op Sprint A (run state machine, downed/revive, spawn
+  pads) then Sprint B (squad objective rules, player-count difficulty, shared pickups), both
+  threaded through the PROGRESSION build order. Plan:
+  [MULTIPLAYER_READINESS.md](MULTIPLAYER_READINESS.md)
 
 ---
 

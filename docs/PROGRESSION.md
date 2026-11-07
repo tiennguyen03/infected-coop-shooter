@@ -1,46 +1,165 @@
-# PROGRESSION.md — run structure, stages, bosses, the Infected roster
+# PROGRESSION.md — operations, the Containment Board, Resupply, stages, the Infected
 
-Design doc for the post-MVP run loop (decided 2026-11-06 with the owner, canon by the lore
-developer). This is the frame the systems designer, level designer and engineer work in.
-Canon lives in [LORE.md](LORE.md); tuning lives in `src/shared/Config.luau`; what has
-actually shipped is in [HISTORY.md](HISTORY.md). Pillars: [PLAN.md](PLAN.md).
+Design doc for the run loop (revised 2026-11-06 with the owner: Helldivers 2 structure on
+top of the roguelike run; canon by the lore developer, numbers by the systems designer).
+Canon lives in [LORE.md](LORE.md); tuning in `src/shared/Config.luau`; what has shipped in
+[HISTORY.md](HISTORY.md). Pillars: [PLAN.md](PLAN.md). Co-op rules:
+[MULTIPLAYER_READINESS.md](MULTIPLAYER_READINESS.md).
 
 ## The run in one paragraph
 
-A helo drops the Chosen at the bottom of the Harlan quarantine corridor. Each stage is one
-arena. The player explores, loots and levels while the difficulty clock runs, then walks to
-one of the stage's objective sites and starts the hold when they are ready. Starting the
-hold calls the stage boss. Clearing it opens extraction: the helo lands and lifts the squad
-to the next stage. After the last stage of the loop the helo offers **Stand Down**: board it
-and end the run on your terms (the obliterate), or stay and loop the corridor at a higher
-clock with the later Infected forms mixed in from the start.
+Harlan Control inserts the squad ("Pike") by helo ("Lantern") into a district of the Harlan
+quarantine corridor ahead of its scheduled fire mission, **the Burn**. Each district is one
+**sortie**: Control gives a **Primary** objective drawn from the stage's pool and two
+optional **Secondaries**. The squad explores, loots the position's abandoned **stores**,
+earns **Resupply** pallets and levels while the difficulty clock runs. Completing the
+Primary calls the district's **Index** host (the boss). When the squad is ready it pops
+green smoke and Lantern takes 90 seconds to arrive; the squad holds the LZ and boards. Three
+sorties (Delta, Mile 14, Kestrel) make an **operation**. Boarding at Kestrel is **Stand
+Down**: the run ends on your terms, scored. Every sortie brought home raises that district's
+**containment %** on Control's **Containment Board**, the meta-progression across runs.
 
-Risk of Rain 2 is the structural reference (loot then commit, a boss per stage, bosses that
-become regulars, a continuous clock, an exit on your own terms). Names, places and numbers
-are ours.
+What stays from Risk of Rain 2: loot then commit, a continuous clock, a boss per stage, an
+exit on your own terms. What comes from Helldivers 2: objective pools, a mission timer, a
+called extraction, a war map the whole player base pushes. Names, places and numbers are ours.
+
+**Terminology fork for the owner:** "sortie" (Control's word for one stage) or plain "drop".
+This doc uses sortie.
 
 ## The loop
 
 | Step | What happens | Today |
 |---|---|---|
-| Drop | Helo lands at the stage's pad; squad spawns there | spawn at a fixed point |
-| Explore | Loot, level, read the stage; clock runs (`Config.Difficulty`) | works |
-| Commit | Player activates the hold at one of **three fixed sites** (one chosen per run) | zone appears at one fixed spot after 180 s |
-| Hold | Hold zone + pressure wave + **the stage boss** arrives from its canon entry | hold + pressure wave, no boss |
-| Extract | Helo lands at the pad; squad boards; next stage loads | `ExtractionService` ends the run |
-| Loop / Stand Down | After stage 3: Stand Down (ends the run, scored) or loop at a higher clock | n/a |
+| Insert | Lantern lands at the stage pad; squad spawns; Control reads the Primary, the Secondaries and the Burn timer (`Operation.MissionTimer`, 14:00) | spawn at a fixed point |
+| Explore | Loot stores, earn Resupply, level; clock runs (`Config.Difficulty`) | works |
+| Primary | One of the stage's pool, placed at one of its three sites or a named landmark; the squad starts it when ready | hold zone appears at one spot after 180 s |
+| Index | Completing the Primary calls the boss from its canon entry | pressure wave, no boss |
+| Call the bird | Green smoke at a pad; Lantern inbound 90 s; squad holds the LZ; everyone inside boards, anyone outside is left (Dead for the sortie) | 30 s hold, run ends |
+| Next sortie | Dead players respawn at the next pad; clock, Resupply pool and drop counter carry over | n/a |
+| Stand Down | After Kestrel: board = run ends, scored; or ask for a **Second Pass** (same corridor, higher clock floor, later forms from drop, containment gains doubled) | n/a |
 
-First loop is **three stages**: Checkpoint Delta, Mile 14, Aid Station Kestrel. Harlan Yard
-and Harlan Reservoir Station are canon and come later as stages 4 and 5 of the same
-corridor; until then the loop point is after Kestrel.
+Failure: squad all dead = sortie lost, operation over; containment from sorties already
+extracted still counts. The Burn running out does not end the run (see Operation).
+
+## Resupply (replaces the level-up draft)
+
+The pause-and-pick-three level-up is gone. Kills still level the player, but a level is
+automatic growth; the draft moves into the world.
+
+- **Pool.** One run-wide Resupply meter on every HUD, fed by base orb XP once per orb
+  (XP itself stays shared per decision #2). Cost rises per drop run-wide and scales with
+  player count. New `Config.Requisition`: `BaseCost 450`, `CostGrowth 1.35`, `CostCap 3000`,
+  `CostPerExtraPlayer 0.8`, `BeaconCooldown 20`, `DropDelay 20`, `CardLifetime 60`,
+  `CarryOver true`. Target cadence: 6–7 drops per 12-minute sortie, 1 or 4 players.
+- **The red flare.** Any player throws it (35 studs, same arc as the breach charge) when the
+  pool covers the cost. HUD: "SUPPLY 0:20" and the thrower's name. Never call it a beacon
+  (item 3 is the Drone Beacon).
+- **The lure.** For the 20 s descent the Infected inside `LureRadius 120` walk to the flare,
+  not the player. The pallet lands loud: `Wave 10` (+3 per extra player) spawns in a 25–35
+  stud ring, phase-weighted, and spawn interval x0.7 for 30 s. The decision is *where and
+  when*: throw early at a defensible spot, or throw mid-fight and loot under fire.
+- **The pallet.** One crate, personal cards: each player sees their own three cards at the
+  crate (server rolls per player), walks into one to take it, the other two fade. One pick
+  per player per pallet; unpicked cards vanish at 60 s. Kill feed announces picks.
+- **Automatic level growth.** New `Config.Progression`: `HealthPerLevel 3`,
+  `DamagePerLevel 0.03`, `MaxLevel 40`. XP curve unchanged (100 x 1.25). Level-up is a sound
+  and a HUD pulse, no freeze. `PauseService` leaves gameplay.
+- **Stores.** Free crates at the position's abandoned stock (Depot containers, Ridge
+  armoury; convoy trucks, Rest Stop back room; pharmacy, triage stores). Hold E 3 s to open,
+  which is loud.
+- **Priority pallet.** An Index kill drops a pallet at the corpse, never Common.
+
+| Source (`Config.Crates`) | Common | Uncommon | Legendary | Guarantee |
+|---|---|---|---|---|
+| Requisition | 70 | 25 | 5 | every 4th drop has an Uncommon |
+| Stores (POI) | 55 | 38 | 7 | none |
+| Secondary | 40 | 50 | 10 | one Uncommon |
+| Boss | 0 | 90 | 10 | never Common; 80/20 once there are 3+ Legendaries |
+
+Config moves: `Items.ChoicesPerLevel` → `Crates.CardsPerPlayer`; `RarityGuaranteeEvery` →
+`Crates.GuaranteeEvery`; `ItemRarities.*.Weight` → `Crates.Requisition`. Flag: the
+Legendary pool is one item (Air Support); two more Legendaries before any source rolls it
+above 5%.
+
+## Operation: the Burn, extraction, scoring
+
+- **The Burn** (mission timer). `Operation.MissionTimer 840` for 1–4 players (more players
+  split objectives; time is the one resource more-not-tougher does not hand out). Only the
+  Burn counts down on the HUD; run time stays a plain readout (pillar 2). At 0:00 the
+  incendiaries land: burning dressing, no more pallets (`Overrun.NoSupplyDrops`), spawn
+  interval x0.5, max-alive +10, Brute/Hocker caps +2, Lantern takes 120 s instead of 90.
+  The run does not end; extracting after the Burn scores Partial. Calling the bird freezes
+  the timer.
+- **Extraction.** `Extraction.HoldDuration 90`; on call Walker 10 Runner 4 (+3 Walkers per
+  extra player), a second phase-weighted wave of 12 at 45 s, spawn interval x0.6. Progress
+  accrues while any living player is inside. Secondaries do not shorten it; 90 s is the
+  constant the squad plans around. Alternate pads come from the "Light the Pad" Secondary.
+- **Secondaries** reward a Secondary crate on site and +3 containment; no timer extension,
+  no Resupply.
+- **Score per sortie:** Win (Primary done, extracted before the Burn) 12; Partial (Primary
+  done, extracted after the Burn or wiped after it) 6; Loss (wiped before the Primary) 0;
+  each Secondary +3. Perfect operation = 18 per district.
+
+## The Containment Board (war map)
+
+Every district carries a containment % raised by every extracted sortie. Delta starts at 25
+(today's tuning); other districts at 0; the next district unlocks at 50 of the previous.
+Perfect play reaches 100 in 6 operations; a first-timer in 10–12 (a weekend). Build the
+per-player profile first (one DataStore key per district); the shared version uses the same
+numbers later. Containment means the district stopped exporting hosts, not zero Infected.
+
+| Band | % | `InitialCount` | Clock start | Brute / Hocker first spawn | Stores | Visible (cheap) |
+|---|---|---|---|---|---|---|
+| Lost | 0–24 | 8 | +60 s | 150 / 360 | 2 | as built: fires, lamps dark, siren/horn/PA looping |
+| Contested | 25–49 | 5 | 0 | 180 / 480 | 2 | today |
+| Held | 50–74 | 4 | 0 | 210 / 540 | 3 | main-road lamps lit, fires out, alarm silent, one extra Stores crate |
+| Contained | 75–99 | 3 | 0 | 240 / 600 | 4 | all lamps, no fire inside the walls, permanent second pad, ambient swap |
+| Secured | 100 | 3 | 0 | 240 / 600 | 4 | sweep ops, rewards x0.25 |
+
+Per-stage dressing per band is in the stage sections. Build cost per band: a PointLight
+toggle, `burning` flags, a fog tweak, a spawn table keyed by band, one ambient swap, one
+extra helipad. Nothing new to model.
+
+## Objective pools
+
+Completing the Primary calls the Index from its canon entry. Each objective is one rule
+(pillar 3) and is buildable with hold zone, kill count, interact-with-prop, carry, destroy,
+survive, reach.
+
+### Primaries
+
+| Name | Radio brief | Player rule | Stages | Showcases |
+|---|---|---|---|---|
+| Secure the Site | "Re-establish the perimeter at [site]. Hold until Control confirms." | 45 s accumulated inside the zone (today's hold) | all, at the three sites | the stage's pressure mix |
+| Sanitize | "Control wants fire at the pens, not confirmation. Three sites." | hold E at 3 marked props in any order; each ignites and spawns a wave | Delta Pens tents; Mile 14 sealed buses; Kestrel Ward bed rows | Runner; Shedder/Crawler flushed by fire |
+| Recover the Record | "Recover Delta's screening record. Control needs to know who went north." | pick up at A, carry to B; carrier cannot sprint; dropped when downed | Delta Ridge → comm tower; Mile 14 toll log → Overpass; Kestrel manifest → roof | Runner, Hocker |
+| Restore Comms | "Get the mast up. Control is blind north of the gate." | hold E 10 s (interruptible) at the high prop, then survive 60 s there | Delta comm tower; Mile 14 water tower; Kestrel roof | Hocker shelling high ground |
+| Confirm Casualties | "Control is tracking six heavy hosts in the Depot. Put them down." | kill N marked (outlined) spawns at a landmark | Delta Brutes in the Depot; Mile 14 Hockers on the deck; Kestrel Bloats in the Ward | Brute / Hocker / Bloat |
+| Open the Route | "The Gate is chained from outside. Open it; the next sortie walks through here." | destroy 3 shootable props, then one player reaches the point beyond | Delta the Gate (Warden walks through); Mile 14 the lead bus (the Bloat is inside) | the boss entry |
+| Evacuate the Holdouts | "Transponder in the Ward. Alive inside. Get them to the LZ." | 2–3 survivors follow the nearest player; must reach the pad alive | Kestrel (canon payoff), Mile 14 Rest Stop. Never Delta ("CLEARED 0") | Runner, Hocker puddles |
+
+### Secondaries (two offered per sortie)
+
+| Name | Radio brief | Player rule | Stages | Effect beyond the crate |
+|---|---|---|---|---|
+| Silence the Alarm | "Something's still running the alarm at the Gate. It's drawing them." | hold E on the looping sound source | Delta siren; Mile 14 bus horn; Kestrel PA | spawn rate drops in its radius |
+| Lights On | "Depot generator's intact. Get the lights on." | hold E 8 s at a generator | Delta Depot; Mile 14 Toll Plaza; Kestrel Field | the district's lamps light (preview of Held) |
+| Light the Pad | "There's a second pad on the Depot apron. Mark it." | hold E at a marked pad | Delta Depot; Mile 14 Rest Stop; Kestrel Triage Lot | extraction can be called there |
+| Sample Run | "Control wants tissue from a heavy host. Bag one." | kill the marked Brute/Bloat, hold E on the corpse, carry (no sprint) to the LZ | all | next pallet gets the Boss rarity shift |
+| Headcount | "Control has 212 names from the Delta roster. Confirm what's left." | reach and interact at the stage's 3 story spots | all | lore delivery, moves the player (pillar 1) |
+| Clear the Spitters | "Hockers on the Overpass are shelling the toll lane." | kill N of one form before a short timer | Mile 14, Delta late | XP burst |
+| Misdrop | "Lantern put a pallet in the Suburb. It's yours if you get there first." | reach a crate in an outer district within 4 min | all | the crate is the reward |
+| Sealed Bus | "Bus 7 reads NEG on the manifest. Confirm it." | hold E on a chained bus; Runner burst; kill all | Delta Gate, Mile 14 the Jam | dark beat (it was never NEG) |
+| Recover Logs | "Toll booth recorder is still live. Pull it." | walk-in pickup at one story spot | all | codex entry |
 
 ## Stages
 
 Every stage is a 600 x 600 arena with up to five height levels, built in code from hills,
 roads and dressing (see [STYLES.md](STYLES.md) > Stage 1). Each has four to six named
-landmarks, three objective sites, one boss entry, one helo pad and two storytelling spots.
-Stage lighting moves with the corridor: evening at Delta, full dark at Mile 14, dawn at
-Kestrel. Road signs count down the distance to Harlan.
+landmarks, three objective sites, one Index entry, one helo pad, two storytelling spots and
+two to four stores. Lighting moves with the corridor: evening at Delta, full dark at Mile
+14, dawn at Kestrel. The burning skyline beyond the walls is the districts that already got
+their Burn.
 
 ### Stage 1 — Checkpoint Delta (exists; rename and add)
 
@@ -52,14 +171,19 @@ Kestrel. Road signs count down the distance to Harlan.
   checkpoint on the main road in the Scrapyard), Ridge, Overlook, the highway. Main route:
   Gate → main road north under the bridge → Compound. Add a hesco ring round the Pens and a
   line of buses at the Gate. Cut nothing.
-- **Objective sites:** Screening Compound (high, climbable from every side, tower blocks
-  lines); the Pens (low and flat, hesco lanes funnel the Infected into three mouths); the
-  Overlook (tallest and narrow, Hockers below shell the summit).
-- **Boss:** the Warden walks out of the Gate and up the main road. Seen coming the whole way.
-- **Helo:** the helipad (south-west), extraction and Stand Down.
+- **Sites:** Screening Compound (high, climbable from every side, tower blocks lines); the
+  Pens (low and flat, hesco lanes funnel the Infected into three mouths); the Overlook
+  (tallest and narrow, Hockers below shell the summit).
+- **Primaries:** Secure, Sanitize (Pens tents), Recover the Record, Restore Comms, Confirm
+  Casualties (Brutes, Depot), Open the Route (the Gate). Not Evacuate.
+- **Index:** the Warden walks out of the Gate and up the main road. Seen coming the whole way.
+- **Helo:** the helipad (south-west); alternate pad on the Depot apron.
+- **Stores:** Depot QM containers, Ridge barracks armoury.
 - **Story spots:** burning Ridge barracks whiteboard "SCREENED 212 / CLEARED 0"; a Gate bus
   chained shut from outside, "NEG" sprayed then crossed out.
-- **Forms:** Walker 0:00, Runner ~2:00, Brute ~5:00, Hocker ~8:00.
+- **Band dressing:** Lost: as built, Gate siren looping. Held: main-road lamps lit, Ridge
+  fire to smoke, siren silent. Contained: all lamps, Depot pad permanent, intact humvee with
+  headlights at the Gate, wind instead of siren.
 
 ### Stage 2 — Mile 14
 
@@ -71,15 +195,20 @@ Kestrel. Road signs count down the distance to Harlan.
   deck, "the Jam" (convoy nose to tail); the Overpass (county road above the deck, two
   stairs down); a water tower beyond as the skyline landmark. Main route: Rest Stop → ramp →
   along the Jam → Overpass.
-- **Objective sites:** the Overpass (high, narrow, two approaches, Hockers arc up); the Toll
-  Plaza (lane barriers make chokepoints, booths block sight); the Rest Stop (low, open on
-  all sides, pumps burn when hit).
-- **Boss:** the Bloat bursts out of the lead bus in the Jam and comes down the ramp. Its
+- **Sites:** the Overpass (high, narrow, two approaches, Hockers arc up); the Toll Plaza
+  (lane barriers make chokepoints, booths block sight); the Rest Stop (low, open on all
+  sides, pumps burn when hit).
+- **Primaries:** Secure, Sanitize (sealed buses), Recover the Record, Restore Comms (water
+  tower), Confirm Casualties (Hockers on the deck), Open the Route (lead bus), Evacuate (diner).
+- **Index:** the Bloat bursts out of the lead bus in the Jam and comes down the ramp. Its
   death cloud sits on the main route.
-- **Helo:** the Toll Plaza's lane apron, east end.
+- **Helo:** the Toll Plaza's lane apron, east end; alternate pad at the Rest Stop lot.
+- **Stores:** convoy cargo trucks, Rest Stop back room.
 - **Story spots:** highway sign hand-amended "HARLAN 14 – NO ENTRY – QUARANTINE IN EFFECT";
   toll booth radio log ending "they're opening the buses, don't let them".
-- **Forms:** Walker, Runner, Brute, Hocker from 0:00; Hockers on the deck from ~3:00.
+- **Band dressing:** Lost: full dark, pumps burning, stuck horn. Held: Toll floodlights,
+  pumps out, one lane cleared through the Jam. Contained: lane lights, sign amended "ROUTE
+  OPEN – HOLD SOUTH", a convoy truck idling at the toll.
 
 ### Stage 3 — Aid Station Kestrel
 
@@ -89,29 +218,35 @@ Kestrel. Road signs count down the distance to Harlan.
   Bleachers (four steps of height along the field); the Triage Lot (tents on the car park);
   the Ward (the gym: roof collapsed, bed rows, walls all round, two doors); the Morgue (bus
   garage and loading dock); the Main Block roof (highest, external fire stairs).
-- **Objective sites:** the Ward (enclosed, two mouths, Shedders among the beds, no room to
-  kite); the Triage Lot (tents as cover, open to the field, Hockers lob from the
-  bleachers); the Roof (highest, one stair up, Runners climb everything).
-- **Boss:** the Patient comes out of the Morgue's isolation bay and arrives through the
+- **Sites:** the Ward (enclosed, two mouths, Shedders among the beds, no room to kite); the
+  Triage Lot (tents as cover, open to the field, Hockers lob from the bleachers); the Roof
+  (highest, one stair up, Runners climb everything).
+- **Primaries:** Secure, Sanitize (Ward beds), Evacuate (the "ALIVE INSIDE" payoff), Recover
+  the Record, Restore Comms (roof), Confirm Casualties (Bloats in the Ward). Not Open the Route.
+- **Index:** the Patient comes out of the Morgue's isolation bay and arrives through the
   Triage Lot.
-- **Helo:** the Field, on the painted LZ.
+- **Helo:** the Field, on the painted LZ; alternate pad at the Triage Lot.
+- **Stores:** pharmacy, triage stores.
 - **Story spots:** triage whiteboard "BITTEN → WARD B", "WARD B" crossed out, "ALL" written
   over; gym roof painted "ALIVE INSIDE" for the helos, paint still fresh.
-- **Forms:** Walker, Runner, Brute, Hocker from 0:00; Bloat common ~3:00; Shedder ~6:00.
+- **Band dressing:** Lost: tents burning, PA looping. Held: Field lights, PA silent, hesco at
+  the Ward doors. Contained: generator hum, a medical tent re-pitched with a Stores crate,
+  "EVAC'D" painted under "ALIVE INSIDE".
 
 ### Stages 4 and 5 (canon, not scheduled)
 
-Harlan Yard (rail yard; boss the Lineman, an alpha Runner that drags a player and calls the
+Harlan Yard (rail yard; Index the Lineman, an alpha Runner that drags a player and calls the
 map; Kites first appear). Harlan Reservoir Station (the dam and the program's research
-station; boss the Specimen, every form in one body; Growths everywhere).
+station; Index the Specimen, every form in one body; Growths everywhere). When they exist the
+operation is five sorties and Second Pass moves after the Reservoir.
 
-## Bosses
+## Index hosts (bosses)
 
-One per stage, called by starting the hold, arriving from a canon entry so the player sees
-it coming. Each boss is the next rung of the strain, and the Stage 2 boss becomes a common
-enemy on Stage 3 (the player learns it twice).
+One per district, called by completing the Primary, arriving from a canon entry so the
+squad sees it coming. Each is the next rung of the strain; the Mile 14 Index becomes a common
+form on Kestrel (the player learns it twice). An Index kill drops a priority pallet.
 
-| Boss | Stage | Body | Mechanic (one rule) |
+| Index | Stage | Body | Mechanic (one rule) |
 |---|---|---|---|
 | the Warden | Delta | MP Brute, riot plate grown into the bone | armoured: shoot the plates off, then the body |
 | the Bloat | Mile 14 | gas-swollen, translucent | area denial: bursts into a lingering cloud on death; kill it where you can afford the cloud |
@@ -122,50 +257,81 @@ enemy on Stage 3 (the player learns it twice).
 ## The Infected roster
 
 Ordered by how far the strain has gone in one body. Model name stays `Infected`; the slang
-goes on the kill feed. Each form is one rule (pillar 3).
+goes on the kill feed. Each form is one rule (pillar 3). **Visual redesign pending:** every
+form gets its own limb set (lore developer + [STYLES.md](STYLES.md) first), Hocker first.
 
 | Form | Role | Look | First seen | Engine note |
 |---|---|---|---|---|
 | Walker | slow melee | still a person, grey, old wounds closed | S1 | exists |
 | Runner | fast melee | dense rebuilt muscle, tendons like cable | S1 | exists |
-| Brute | melee tank | bone overgrowth, plated shoulders | S1 | exists |
-| Hocker | ranged | lobs caustic fluid; throat a swollen sac | S1 late | shipped 2026-11-06 (Walker body + sac; own mesh backlog) |
-| Bloat | exploder, area denial | gas-swollen, translucent | S2 boss, common S3 | on-death cloud |
+| Brute | melee tank | bone overgrowth, plated shoulders | S1 | exists; headshot x1.25 (plated skull), no weak point |
+| Hocker | ranged | lobs caustic fluid; throat a swollen sac | S1 late | shipped 2026-11-06 (Walker body + sac; own mesh first in the redesign) |
+| Bloat | exploder, area denial | gas-swollen, translucent | S2 Index, common S3 | on-death cloud |
 | Shedder | splitter | body seamed into segments, extra limbs | S3 | on-death spawns 2–3 Crawlers |
 | Crawler | swarm | shed segment, fast, fragile | S3 (from Shedders) | small rig, no attack clip needed |
 | Kite | flyer | shed tissue on ribbed membranes, dives | S4 | non-Humanoid mover (new) |
 | Growth | stationary spawner | host rooted in place, makes Crawlers | S4 nests, S5 | no mover; burn interaction |
 
+## Gunplay quick wins (ADS, headshots)
+
+There is no spread today; ADS needs a hip spread to tighten. New `Weapon` keys:
+`HipSpread 1.5` degrees half-angle (about 1 stud off at 40 studs), `ADS = { Spread 0.3,
+MoveSpeedFactor 0.6, CameraDistance 5, FOV 55, EnterTime 0.15 }` on hold RMB, sprint off
+while aiming. `HeadshotMultiplier 2.0` on `Head` hits (all forms are R15; the Hocker sac is
+`CanQuery false`), per-definition override for the Brute. `FireRequest` gains an `aiming`
+flag; the server picks the spread; `ProjectileServer` passes `"headshot"` as the damage kind
+for a distinct sound and number colour. Shots to kill at clock 0: Walker 3 body / 2 head,
+Runner 2 / 1, Hocker 4 / 2, Brute 14 / 11.
+
 ## Technical plan (debt first, then content)
 
-1. **Data-driven enemy behaviour.** Done 2026-11-06 for the first hook: every definition
-   carries a `Behaviour` table (`Attack = melee | projectile`, `StandOff`, `Windup`,
-   `Projectile` spec with optional `Puddle`), a `BodySet` (which limb set to wear) and
-   `ThroatSac`; spawn caps are `Config.Spawning.CapSchedule / CapLate / MaxShare` keyed by
-   type, so `EnemyService` has no per-type branches. Lobbed projectiles and puddles live in
-   `EnemyProjectileService`, which also owns `damagePlayer` (the one Infected-to-player
-   damage path). Still to add as forms need them: `onDeath` (cloud | split) and `mover`
-   (none | flyer).
-2. **Stage definitions.** `src/shared/StageDefinitions.luau`: per stage the landmark/hill/
-   dressing tables (what `ArenaService` builds), lighting preset (`SkyService`), the three
-   objective sites, boss entry point, helo pad, spawn phases (`Config.Spawning` moves per
-   stage), form unlock minutes. `ArenaService` builds whichever stage is active.
-3. **Run state machine.** `RunManager` owns `Drop → Explore → Hold → Extract → (next stage |
-   Stand Down | loop)`, per run, with the stage index and loop count. Co-op rules from
-   [MULTIPLAYER_READINESS.md](MULTIPLAYER_READINESS.md) apply (ready-up, stage respawn).
-   The clock carries across stages; looping raises its floor.
-4. **Boss kit.** A boss is an Infected definition with `boss = true`, a health bar, an
-   entry path (walks in from a named point) and one mechanic hook. No separate boss service.
-5. **Objective sites.** `ObjectiveService` picks one of the stage's three sites per run and
-   shows a marker; the player activates it. The 180 s appear-delay goes away.
+1. **Data-driven enemy behaviour.** Done 2026-11-06: `Behaviour` (melee | projectile,
+   `StandOff`, `Windup`, `Projectile` + `Puddle`), `BodySet`, `ThroatSac`; caps keyed by
+   type; `EnemyProjectileService` owns lobs, puddles and `damagePlayer`. Still to add as
+   forms need them: `onDeath` (cloud | split), `mover` (none | flyer), `HeadshotMultiplier`.
+2. **Resupply.** `RequisitionService` (pool, flare, pallet, lure, cards), `Config.Crates`,
+   `Config.Progression` auto growth, `PauseService` out of gameplay, `ItemSelectionUI`
+   becomes world cards. Closes MULTIPLAYER_READINESS #2. The owner's most-felt pain; first.
+3. **ADS and headshots.** Small; slots anywhere after 2.
+4. **Run state machine + Operation.** `RunManager` owns `Insert → Explore → Primary → Index
+   → Extract → (next sortie | Stand Down | Second Pass)` per run with stage index and pass
+   count; `OperationService` owns the Burn and overrun; extraction becomes a called 90 s
+   hold with waves; downed/revive, spawn pads, reset split, client screens
+   (= Co-op Sprint A). Delta is the only stage, which proves the machine.
+5. **Objective pools.** `ObjectiveService` draws a Primary and two Secondaries from the
+   stage's pool, places them at sites/landmarks, shows markers; the 180 s delay goes. First
+   four Primaries: Secure, Sanitize, Confirm Casualties, Open the Route. First three
+   Secondaries: Silence the Alarm, Light the Pad, Misdrop.
+6. **Index kit.** A boss is an Infected definition with `boss = true`, a health bar, an
+   entry path and one mechanic hook. The Warden first.
+7. **Containment Board.** `WarMapService` (DataStore, per player first), band overrides at
+   stage load, the board screen between runs.
+8. **Stage definitions.** `src/shared/StageDefinitions.luau`: landmark/hill/dressing tables,
+   lighting preset, sites, Index entry, pads, stores, spawn phases, form unlocks, band
+   dressing. `ArenaService` builds whichever stage is active. Then Mile 14 + Bloat, Kestrel +
+   Shedder/Crawler + Patient, Stand Down and Second Pass, stages 4 and 5.
 
-Build order: 1 → Hocker on Delta (both shipped 2026-11-06) → 2 + 3 with Delta as the only stage
-(proves the state machine) → Mile 14 + Bloat → Kestrel + Shedder/Crawler + Patient → Warden
-→ Stand Down and loop → stages 4 and 5. Each step is one playtest-verified feature.
+Build order: 2 → 3 → 4 → 5 (on Delta) → 6 → 7 → 8. Each step is one playtest-verified
+feature. Co-op Sprint B (player-count scaling, shared-pickup rules, event routing) threads
+through 4–7 as each system is touched.
 
-## Open questions (for the systems designer)
+First playtest of Resupply logs per drop: clock minute, pool minus cost at throw (always ~0
+means no "when" decision exists), distance from the previous drop, seconds to last pick,
+deaths within 30 s. Targets: 5–7 drops per 12 min solo, picks within 20 s, at most one death
+per three drops, consecutive drops 60+ studs apart. Fixes if missed: an overflow bonus
+(throw at 1.5x cost for a fourth card); or `Wave 14`, `LureRadius 160` if drops camp a corner.
 
-- Target stage length and the clock's floor per loop.
-- How much the hold scales with player count (more-not-tougher).
-- Whether bosses drop a guaranteed item (RoR2 does) or XP only.
-- Stand Down scoring: what the end screen shows so it feels like a win.
+## Backlog (decided, not scheduled)
+
+- **Loadouts.** Pre-run menu: pick the class and one of two alternates per ability slot
+  (RoR2 style). Make abilities data-driven when the second class is built; the menu after.
+- **Sound day.** Hit and headshot sounds (headshot distinct), the Infected's wet, dense
+  register, Control's radio lines, Lantern's rotor, the Burn. Prompt list in
+  `assets/audio/README.md`.
+- **Infected visual redesign.** Own limb sets per form, Hocker first; hollow breach ring.
+- **Field Manual** only speeds the owner's levels now; weak, rework later.
+
+## Open questions (for the owner)
+
+- "Sortie" or "drop" for one stage.
+- Whether the Containment Board is per player only, or shared across all players once it works.
