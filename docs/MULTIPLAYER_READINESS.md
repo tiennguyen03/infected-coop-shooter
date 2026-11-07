@@ -82,10 +82,32 @@ may add to this list.
 6. **Difficulty per extra player: more Infected, not tougher Infected.** Spawn rate and
    max-alive scale with living player count; HP/damage per Infected do not. Numbers in
    `Config.PlayerCountScaling`, with 1 player = today's values.
+7. **A lobby place with a main menu; the party teleports into a private match (owner,
+   2026-11-07).** Players land in a separate lobby place: main menu, party up (invite or
+   matchmade squad of up to 4), pick class and loadout, ready. The party is teleported
+   together (`TeleportService:TeleportAsync` to a reserved server) into the match place,
+   which is today's game. Rules that keep this cheap later:
+   - **The match server never assumes who is coming.** The expected party, each member's
+     class and loadout, and the squad's operation choice arrive as teleport data
+     (`player:GetJoinData().TeleportData`), read in one place (`RunManager`), with a
+     Studio/solo fallback to today's defaults. Late joiners and missing players are normal.
+   - **`Lobby` state in the match = staging, not the menu.** It waits for the party to load
+     (or a timeout), then the ready-up/Insert flow runs. The menu itself lives only in the
+     lobby place.
+   - **A run ends by returning the party to the lobby** (`TeleportAsync` back with results
+     as teleport data) once meta progression exists; until then RESTART stays in-match.
+   - **Persistent progress (unlocks, Containment Board) is saved by the server that earns
+     it** (DataStore, keyed by UserId), never trusted from teleport data.
+   - **Disk layout:** a second Rojo project (`lobby.project.json`) sharing `src/shared`; its
+     own `src/lobby/` client and server. Not built yet; not before Co-op Sprint A ships.
+8. **Keys (owner, 2026-11-07).** F = interact (revive, pickups, prompts). The number row
+   1-4 is free: call-in slots and the Resupply flare move there with the loadout rework
+   (proposal: 1-2 call-ins, 3 flare, 4 spare). Movement chords are under review (handoff
+   backlog: sprint-by-default).
 
 ## Sequencing
 
-All six decisions are made, so Co-op Sprint A can be planned at any time. Single-player MVP
+All eight decisions are made. Decision 7 (lobby place) is built after Co-op Sprint A; Sprint A only has to honour its rules (party arrives as teleport data, `Lobby` is staging). Single-player MVP
 balance (Sprint 13) is still the recommended first step. **Co-op Sprint A** (run state machine,
 per-player pause/choosing, death/downed, spawn pads, reset split, client screens) and
 **Co-op Sprint B** (objective/extraction rules, difficulty scaling, shared pickups, event

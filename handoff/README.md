@@ -129,6 +129,9 @@ Read in this order:
    published through Open Cloud (ids in `Config.Animations.Ids`, `assets/animations/
    ASSET_IDS.md`), so they play outside Studio too. Polish later: a hollow breach ring.
 1. **Co-op Sprint A in progress (step 1 of 7 done 2026-11-07; next: step 2, reset split):** `docs/sprints/SPRINT_17_COOP_A.md`
+   Planned after it (owner, 2026-11-07): a **lobby place** with a main menu where parties
+   queue and teleport together into the match (`docs/MULTIPLAYER_READINESS.md` decision 7);
+   number keys 1-4 take call-ins and the flare (decision 8).
    (the `Squad` member abstraction that bots reuse, run state machine, downed/revive, four
    LZ pads, reset split, client screens; seven playtest-verified steps). The spine it
    serves: `docs/PROGRESSION.md > The spine` (decided 2026-11-07: loadout power, call-ins,

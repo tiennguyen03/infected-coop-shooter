@@ -170,6 +170,10 @@ and checks `RunResult`.
 
 ## Judgment calls (owner)
 
+- **Lobby place (owner, 2026-11-07, `docs/MULTIPLAYER_READINESS.md` decision 7).** The
+  match's `Lobby` state is staging for a party that will arrive by teleport; the ready-up
+  in section 2 is the in-match fallback. Read any expected party from teleport data in
+  `RunManager` only; never assume who is coming.
 - **Decided (owner, 2026-11-07): revive and other interactions go on F.** F throws the
   Resupply flare today, so the flare moves (G, or a call-in slot when the loadout rework
   lands). E stays breach only; the prompt-suppresses-breach rule in section 3 is dropped.
