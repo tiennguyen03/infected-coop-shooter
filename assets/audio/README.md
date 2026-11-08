@@ -53,7 +53,7 @@ to `src/shared/SoundBankData.luau` (generated; never edit it). One upload per ba
 | `callins` | `pallet_land`, `flare_burn` (loop), `callin_throw`, `tripline_arm`, `tripline_blast`, `anvil_incoming`, `anvil_blast`, `pen_coil`, `magpie_hover` (loop) | `RequisitionService`, `CallInService`, `MineService`, `AirStrikeService`, `ShockCoilService`, `DroneService` via `WorldSounds` |
 | `warden` | `warden_handset_1..2` (the tell), `_impact`, `_pound`, `_swing`, `_step`, `_plate`, `_roar`, `_canister`, `_death` | `IndexService` via `WorldSounds`; death through `EnemyService` |
 | `ui_radio` | `radio_in`, `objective_complete`, `card_pick`, `kia`, `ui_click` | client `SoundFX.ui` (`BuffNoticeUI` radio lines, `ObjectiveUI`, `RunEndUI`); server `card_pick` (`RequisitionService`), `kia` (`Squad`, `WorldSounds.global`) |
-| `ambience` | `lantern_rotor`, `amb_city` (loop), `amb_wind` (loop), `amb_siren` (loop) | `ExtractionService` (rotor), `ObjectiveService` (the Gate siren through the hold, silenced when secured), client `SoundFX` (city and wind beds) |
+| `ambience` | `lantern_rotor`, `amb_city` (loop), `amb_wind` (loop), `amb_siren` (loop) | `ExtractionService` (rotor), `ObjectiveService` (the Gate siren through the hold, silenced when secured), client `SoundFX` (city and wind beds: **off** since 2026-11-08, owner found them painful; `SoundFX.BEDS` is empty until they are regenerated) |
 
 Loops use `SoundBanks.loop` (the playback and loop regions are the clip). Server shapes are in
 `server/WorldSounds` (`voice`/`on` a slot on a part, `at` a position, `loopOn`, `global`);

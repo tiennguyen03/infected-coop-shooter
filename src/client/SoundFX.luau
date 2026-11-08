@@ -29,7 +29,9 @@ local DEFINITIONS: { [string]: Definition } = {
 }
 
 -- Ambience beds under the whole run (2D, quiet; assets/audio README "ambience").
-local BEDS = { "amb_city", "amb_wind" }
+-- Off (owner 2026-11-08: the generated city/wind beds hurt to listen to). Put names back
+-- here ("amb_city", "amb_wind") once the beds are regenerated.
+local BEDS: { string } = {}
 
 local SoundFX = {}
 

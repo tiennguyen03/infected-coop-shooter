@@ -39,7 +39,8 @@ Read in this order:
   breathing), call-ins (throw, Tripline, Anvil, Pen Coil, Magpie hover, flare, pallet), the
   Warden's own bank (handset tell, roar, steps, swing, impacts, Pound, plates, canister,
   death), radio / UI (squelch on Control lines, objective complete, card pick, KIA, click)
-  and ambience (city + wind beds, the Gate siren through the hold, the Lantern rotor).
+  and ambience (the Gate siren through the hold, the Lantern rotor; the city + wind beds are
+  off, owner: they hurt to listen to, regenerate before re-enabling in `SoundFX.BEDS`).
   `WorldSounds.at / on / loopOn / global`, `SoundFX.ui / loop`. Verified in a playtest by
   clip offset (no audio capture): every hook fires the right clip. Owner decision: every
   boss gets its own bank, every speaker a sound profile (`generate.py PROFILES`).
