@@ -20,7 +20,12 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local ArenaService = require(script.Parent.ArenaService)
+-- LoadoutService requires Squad, so Squad reaches it lazily (knock only).
+local function loadoutService(): any
+	return require(script.Parent.LoadoutService) :: any
+end
 
 export type MemberKind = "player" | "bot"
 export type MemberState = "Alive" | "Downed" | "Dead"
@@ -200,9 +205,44 @@ function Squad.isActive(member: Member): boolean
 	return (member.state == "Alive" or member.state == "Downed") and hasBody(member)
 end
 
--- May act (fire, use abilities, throw the flare): Alive.
+-- Knocked down (Squad.knock): the KnockedUntil attribute is on the character while it lasts.
+function Squad.isKnocked(member: Member): boolean
+	local character = member.character
+	return character ~= nil and character:GetAttribute("KnockedUntil") ~= nil
+end
+
+-- May act (fire, use abilities, throw the flare): Alive and on their feet.
 function Squad.canAct(member: Member): boolean
-	return isAlive(member)
+	return isAlive(member) and not Squad.isKnocked(member)
+end
+
+-- Knocks a living member down for `seconds` (the Warden's Pound and Stomp): no moving,
+-- firing or abilities (canAct), the reload dropped, the fall and get-up clips on the client
+-- (Impact "knockdown"); bots read the attribute. Config.Knockdown.Grace after standing
+-- refuses the next knockdown so two of them cannot chain. Returns true when it took.
+function Squad.knock(member: Member, seconds: number): boolean
+	local character = member.character
+	if not isAlive(member) or not character then
+		return false
+	end
+	local now = os.clock()
+	local grace = character:GetAttribute("KnockGraceUntil") :: number?
+	if (grace and now < grace) or character:GetAttribute("KnockedUntil") ~= nil then
+		return false
+	end
+	local until_ = now + seconds
+	character:SetAttribute("KnockedUntil", until_)
+	if member.owner then
+		loadoutService().cancelReload(member.owner)
+		Remotes.get("Impact"):FireClient(member.owner, "knockdown", seconds)
+	end
+	task.delay(seconds, function()
+		if character.Parent and character:GetAttribute("KnockedUntil") == until_ then
+			character:SetAttribute("KnockedUntil", nil)
+			character:SetAttribute("KnockGraceUntil", os.clock() + Config.Knockdown.Grace)
+		end
+	end)
+	return true
 end
 
 function Squad.members(): { Member }

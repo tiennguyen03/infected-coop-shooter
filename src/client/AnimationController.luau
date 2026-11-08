@@ -52,6 +52,8 @@ type Tracks = {
 	climb: AnimationTrack?,
 	roll: AnimationTrack?,
 	slide: AnimationTrack?,
+	knockdown: AnimationTrack?,
+	getup: AnimationTrack?,
 }
 
 local tracks: Tracks = {}
@@ -279,6 +281,8 @@ local function setup(character: Model)
 		climb = Animations.load(animator, clips.climb, Enum.AnimationPriority.Action3),
 		roll = Animations.load(animator, clips.roll, Enum.AnimationPriority.Action3),
 		slide = Animations.load(animator, clips.slide, Enum.AnimationPriority.Action3),
+		knockdown = Animations.load(animator, clips.knockdown, Enum.AnimationPriority.Action3),
+		getup = Animations.load(animator, clips.getup, Enum.AnimationPriority.Action3),
 	}
 	stances = {
 		stand = loadStance(animator, {
@@ -411,6 +415,46 @@ function AnimationController.playMove(
 		end
 	end)
 	return true
+end
+
+-- Knocked down (KnockdownController): the fall clip over the first part of `seconds`, the
+-- get-up over the last Config.Knockdown.GetUp; the locomotion and the aim stay off.
+function AnimationController.playKnockdown(seconds: number)
+	if dead then
+		return
+	end
+	local getUp = math.min(Config.Knockdown.GetUp, seconds * 0.5)
+	local fallTime = seconds - getUp
+	busyUntil = os.clock() + seconds
+	switchSet(nil)
+	setIdle(false)
+	playAim(false)
+	local fall = tracks.knockdown
+	if fall then
+		fall:Play(0.05)
+		fall:AdjustSpeed(math.max(fall.Length, 0.01) / math.max(fallTime, 0.2))
+	end
+	task.delay(fallTime, function()
+		if dead then
+			return
+		end
+		if fall and fall.IsPlaying then
+			fall:Stop(0.1)
+		end
+		local rise = tracks.getup
+		if rise then
+			rise:Play(0.05)
+			rise:AdjustSpeed(math.max(rise.Length, 0.01) / math.max(getUp, 0.2))
+			task.delay(getUp, function()
+				if rise.IsPlaying then
+					rise:Stop(FADE)
+				end
+				if aiming then
+					playAim(true)
+				end
+			end)
+		end
+	end)
 end
 
 function AnimationController.init()

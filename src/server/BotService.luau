@@ -39,6 +39,8 @@ type Tracks = {
 	run: AnimationTrack?,
 	fire: AnimationTrack?,
 	downed: AnimationTrack?,
+	knockdown: AnimationTrack?,
+	getup: AnimationTrack?,
 }
 
 type Bot = {
@@ -60,6 +62,7 @@ type Bot = {
 	reviveProgress: number, -- seconds held next to them
 	stuckFrom: Vector3?, -- where the follow last made progress, and when (Config.Bots.StuckSeconds)
 	stuckSince: number?,
+	knocked: boolean?, -- on the ground (Squad.knock), clips started
 }
 
 local bots: { Bot } = {}
@@ -130,6 +133,8 @@ local function loadTracks(bot: Bot, humanoid: Humanoid)
 		run = Animations.load(found, clips.run.forward, Enum.AnimationPriority.Movement),
 		fire = Animations.load(found, clips.fire, Enum.AnimationPriority.Action2),
 		downed = Animations.load(found, clips.downed, Enum.AnimationPriority.Action3),
+		knockdown = Animations.load(found, clips.knockdown, Enum.AnimationPriority.Action3),
+		getup = Animations.load(found, clips.getup, Enum.AnimationPriority.Action3),
 	}
 	for _, track in { bot.tracks.idle, bot.tracks.walk, bot.tracks.run, bot.tracks.downed } do
 		if track then
@@ -466,6 +471,51 @@ local function floorAt(slot: Vector3, leader: BasePart, self: Model): Vector3
 	return if hit then hit.Position else slot
 end
 
+-- IndexService marks the Pound / Stomp disc or the Slam / Charge line on workspace
+-- attributes while it winds up; a bot inside walks out (radially, or sideways off a line).
+local function dodgeDanger(humanoid: Humanoid, root: BasePart, now: number): boolean
+	local untilTime = workspace:GetAttribute("BossDangerUntil") :: number?
+	if not untilTime or now >= untilTime then
+		return false
+	end
+	local center = workspace:GetAttribute("BossDanger") :: Vector3?
+	local radius = workspace:GetAttribute("BossDangerRadius") :: number?
+	if not center or not radius then
+		return false
+	end
+	local offset = Vector3.new(root.Position.X - center.X, 0, root.Position.Z - center.Z)
+	local kind = workspace:GetAttribute("BossDangerKind")
+	local margin = 3
+	if kind == "line" then
+		local direction = workspace:GetAttribute("BossDangerDir") :: Vector3?
+		local length = (workspace:GetAttribute("BossDangerLength") :: number?) or 0
+		if not direction then
+			return false
+		end
+		local along = offset:Dot(direction)
+		if along < -2 or along > length + margin then
+			return false
+		end
+		local side = offset - direction * along
+		if side.Magnitude > radius + margin then
+			return false
+		end
+		local out = if side.Magnitude > 0.1
+			then side.Unit
+			else Vector3.new(-direction.Z, 0, direction.X)
+		humanoid.WalkSpeed = Config.Bots.RunSpeed
+		humanoid:MoveTo(root.Position + out * (radius + margin + 2 - side.Magnitude))
+		return true
+	end
+	if offset.Magnitude > radius + margin then
+		return false
+	end
+	local out = if offset.Magnitude > 0.1 then offset.Unit else Vector3.xAxis
+	humanoid.WalkSpeed = Config.Bots.RunSpeed
+	humanoid:MoveTo(center + out * (radius + margin + 2))
+	return true
+end
+
 local function think(bot: Bot, now: number, params: RaycastParams)
 	local humanoid, root, model = bot.humanoid, bot.root, bot.model
 	if not humanoid or not root or not model or humanoid.Health <= 0 then
@@ -479,6 +529,48 @@ local function think(bot: Bot, now: number, params: RaycastParams)
 	local downedTrack = bot.tracks.downed
 	if downedTrack and downedTrack.IsPlaying then
 		downedTrack:Stop(0.3)
+	end
+	-- Knocked down (Squad.knock): on the ground until the attribute clears; the fall and
+	-- the get-up play at the rates that fit the knockdown.
+	local knockedUntil = model:GetAttribute("KnockedUntil") :: number?
+	if knockedUntil then
+		if not bot.knocked then
+			bot.knocked = true
+			humanoid:MoveTo(root.Position)
+			for _, track in { bot.tracks.idle, bot.tracks.walk, bot.tracks.run } do
+				if track and track.IsPlaying then
+					track:Stop(0.1)
+				end
+			end
+			local getUp = Config.Knockdown.GetUp
+			local fall = bot.tracks.knockdown
+			local total = knockedUntil - now
+			if fall then
+				fall:Play(0.05)
+				fall:AdjustSpeed(math.max(fall.Length, 0.01) / math.max(total - getUp, 0.2))
+			end
+			task.delay(math.max(total - getUp, 0), function()
+				local rise = bot.tracks.getup
+				if rise and bot.model == model then
+					if fall and fall.IsPlaying then
+						fall:Stop(0.1)
+					end
+					rise:Play(0.05)
+					rise:AdjustSpeed(math.max(rise.Length, 0.01) / getUp)
+				end
+			end)
+		end
+		return
+	end
+	bot.knocked = false
+	-- The Warden's ground attacks (IndexService danger attributes): step out of the ring or
+	-- the line while he winds up, nothing else.
+	if dodgeDanger(humanoid, root, now) then
+		animate(
+			bot,
+			Vector3.new(root.AssemblyLinearVelocity.X, 0, root.AssemblyLinearVelocity.Z).Magnitude
+		)
+		return
 	end
 	if tryRevive(bot, humanoid, root) then
 		humanoid.AutoRotate = true

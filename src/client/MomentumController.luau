@@ -118,6 +118,19 @@ function MomentumController.getVelocity(): Vector3
 	return velocity
 end
 
+-- A shove from outside (the Warden's Sweep, Impact "push"): the root takes the velocity at
+-- once (the client owns its physics) and the carried momentum follows it, so the body
+-- eases out of the shove instead of snapping back to the input.
+function MomentumController.push(shove: Vector3)
+	local character = Players.LocalPlayer.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if not root then
+		return
+	end
+	root.AssemblyLinearVelocity = shove
+	velocity = Vector3.new(shove.X, 0, shove.Z)
+end
+
 function MomentumController.init()
 	RunService:BindToRenderStep(STEP_NAME, Enum.RenderPriority.Input.Value + 1, step)
 	Players.LocalPlayer.CharacterAdded:Connect(function()

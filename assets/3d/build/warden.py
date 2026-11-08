@@ -199,20 +199,23 @@ def warden_plate(L, which):
         L.oct(0.6, 0.06, (0, 0, 0.37), swatch="dark_l")
         L.box((0.12, 1.02, 0.14), (0, 0, 0.4), swatch="olive_d")  # strap over
     elif which == "shield":
-        # Convex riot shield held fist-grip: the forearm runs square into its back, so it is a
-        # plate past the fist (limb -Z), its height along the limb's Y (top at -Y, which is up
-        # once the elbow is bent across the body: every sword-and-shield clip carries it so),
-        # its face toward -Z. Door-sized at scale 1.9. Hanging straight it lies flat at the
-        # thigh, which only the death clip shows.
-        cz = -0.97  # just past the fist
-        L.box((1.1, 4.0, 0.14), (0, -0.4, cz), swatch="dark_l")  # centre panel
-        for s in (-1, 1):
-            L.box((0.62, 4.0, 0.14), (s * 0.83, -0.4, cz + 0.13), rot=(0, s * 25, 0), swatch="dark_l")
-        L.box((1.1, 0.16, 0.1), (0, -2.46, cz - 0.02), swatch="dark")  # top edge
-        L.box((1.1, 0.16, 0.1), (0, 1.66, cz - 0.02), swatch="dark")  # bottom edge
-        L.box((0.9, 0.9, 0.06), (0, -1.5, cz - 0.1), swatch="gun_l")  # window
-        L.box((1.0, 0.3, 0.06), (0, 0.6, cz - 0.1), swatch="white_d")  # the band where the lettering was
-        L.box((0.56, 0.56, 0.3), (0, 0, cz + 0.22), swatch="rebuilt")  # the handle, grown to the fist
+        # Convex riot shield strapped along the OUTER forearm (limb -X), the way Mixamo's
+        # sword-and-shield clips carry a shield: in the idle and the guard the forearm lies
+        # horizontal across the chest with its outer side forward (measured in game
+        # 2026-11-07: limb -X = forward, limb +Z = down), so the plate's tall axis runs
+        # along the limb's Z (Blender Y) and its face points -X. Door-sized at scale 1.9:
+        # eye level to shin when he guards. Hanging straight it lies flat at the thigh,
+        # which only the death clip shows.
+        cx = -0.78  # just outside the vambrace
+        cy, cz = 0.3, -0.2  # a little low (limb +Z is down in the guard), toward the hand
+        L.box((0.14, 4.0, 1.1), (cx, cy, cz), swatch="dark_l")  # centre panel
+        for s in (-1, 1):  # side panels folded back toward the arm
+            L.box((0.14, 4.0, 0.62), (cx + 0.13, cy, cz + s * 0.83), rot=(0, s * 25, 0), swatch="dark_l")
+        L.box((0.1, 0.16, 1.1), (cx - 0.02, cy - 2.06, cz), swatch="dark")  # top edge
+        L.box((0.1, 0.16, 1.1), (cx - 0.02, cy + 2.06, cz), swatch="dark")  # bottom edge
+        L.box((0.06, 0.9, 0.9), (cx - 0.1, cy - 1.1, cz), swatch="gun_l")  # window, up by the visor
+        L.box((0.06, 0.3, 1.0), (cx - 0.1, cy + 0.9, cz), swatch="white_d")  # the band where the lettering was
+        L.box((0.3, 0.56, 0.56), (cx + 0.2, cy, cz), swatch="rebuilt")  # the strap, grown to the forearm
 
 
 def register(ba):

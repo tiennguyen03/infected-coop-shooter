@@ -467,9 +467,9 @@ local MESHES: { [string]: MeshDef } = {
 		offset = Vector3.new(0.000, 0.480, 0.000),
 	},
 	inf_warden_plate_shield = {
-		meshId = "rbxassetid://125260664787765",
-		size = Vector3.new(2.280, 0.500, 4.280),
-		offset = Vector3.new(0.000, -0.850, -0.400),
+		meshId = "rbxassetid://126685145123461",
+		size = Vector3.new(0.480, 2.280, 4.280),
+		offset = Vector3.new(-0.670, -0.200, 0.300),
 	},
 	pc_assault_head = {
 		meshId = "rbxassetid://113120416771558",

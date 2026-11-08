@@ -501,14 +501,11 @@ local function attackIfTouching(zombie: Zombie, now: number)
 	end
 	if (targetRoot.Position - zombie.root.Position).Magnitude <= zombie.attackRange then
 		local character = targetRoot.Parent :: Model
-		-- A body going over cover can't be clawed (CoverMoveService): the climb is an escape.
-		local coverUntil = character:GetAttribute("CoverMoveUntil") :: number?
-		if coverUntil and os.clock() < coverUntil then
-			return
-		end
+		-- A body going over cover can't be clawed (CoverMoveService): the claw is "melee",
+		-- which damagePlayer skips inside the window. The swing still plays.
 		local targetHumanoid = character:FindFirstChildOfClass("Humanoid")
 		if targetHumanoid and targetHumanoid.Health > 0 then
-			EnemyProjectileService.damagePlayer(targetHumanoid, zombie.damage)
+			EnemyProjectileService.damagePlayer(targetHumanoid, zombie.damage, "melee")
 			zombie.lastAttackTime = now
 			zombie.nextIdleVoiceAt = math.max(zombie.nextIdleVoiceAt, now + 2)
 			voice(zombie, "attack")

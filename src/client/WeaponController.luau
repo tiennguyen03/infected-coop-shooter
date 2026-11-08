@@ -163,6 +163,9 @@ local function tryFire()
 	then
 		return
 	end
+	if character and character:GetAttribute("KnockedUntil") ~= nil then
+		return -- knocked down (Squad.knock): the server refuses the shot too
+	end
 
 	local aimPoint = getAimPoint()
 	if not aimPoint then

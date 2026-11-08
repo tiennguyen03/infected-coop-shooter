@@ -1,11 +1,11 @@
 # Handoff — Infected Co-op Shooter (VS Code + Claude Code terminal)
 
 Start here when picking the project up in a fresh Claude Code session.
-Last updated: 2026-11-07, end of the Warden v2 session (new silhouette designed live in
-Blender, ported to the R15 rig, seven Mixamo clips published). **Start the next session by
-asking the owner for the "other problems" (Open work item 2) and by reconnecting the Rojo
-plugin** (it dropped mid-session; the Studio place already holds sources identical to disk).
-Last verified commit on `main`: the Warden v2 commit (solo playtest).
+Last updated: 2026-11-07, end of the Warden kit session (shield re-mounted, four new
+attacks, player knockdown, the roll fix, bots dodging tells). **Next: the map redesign the
+owner asked for** (Open work item 1: design Delta in Blender through the Blender MCP with
+the level designer, then import; ladders use the stock Roblox climb). Last verified commit
+on `main`: the Warden kit commit (solo playtest with the owner at the keyboard).
 
 ## What this is
 
@@ -81,6 +81,17 @@ Read in this order:
   action change, bash timed to the windup, run while charging, roar on Riot Call, death
   clip). Verified in a playtest with the published ids: all 21 parts dressed, each clip
   seen, 60 fps.
+- 2026-11-07: **Warden kit expansion + shield fix shipped** (Sprint 19 doc > *Kit
+  expansion and the shield*). Shield strapped along the outer forearm (was a slanted plate
+  past the fist). Four new attacks from the systems-designer pass: Ground Pound (ring on
+  the ground, AoE knockdown), Shield Sweep (180°, shove), Overhead Slam (punishes a
+  planted body), Stomp (a hugger, any side); reactions-then-bands selection with a beat
+  between attacks and a no-repeat rule; Guard is a reaction to plate fire. Player
+  knockdown state (`Squad.knock`, `KnockedUntil`, `KnockdownController`, fall + get-up
+  clips), `Config.Knockdown`. Bug fixed: the roll never dodged the Warden (`damagePlayer`
+  "melee" kind). Bots step out of marked danger shapes. Seven more clips published.
+  Watched live with the owner playing: every attack fired in one fight, no errors; a
+  player knockdown has not been seen on screen yet (God mode).
 - 2026-11-07: **Skinned Weller switched off** (`Config.Player.SkinnedBody = false`; players
   wear the tapered rigid body the bots wear). The owner saw the helmet, carrier and
   rifle turn away from the body: measured on the live character, the hidden rig parts
@@ -164,11 +175,20 @@ Read in this order:
   phase 2. First real fight on this build: 100-120 s is the target; retune
   `Config.Index.Warden` plate health if it drags. Art-director later pass on the v2
   body: see the Sprint 19 doc > *v2* > open.
-- **Warden silhouette redesign: done 2026-11-07** (see current state). Left from it:
-  the Rojo Studio plugin disconnected mid-session (`[Rojo-Warn] Disconnected ... Recv
-  failure`); the changed scripts were pushed into the place by hand (rojo-built rbxm →
-  `import_rbxm` → copy `.Source`), so the place matches disk, but reconnect the plugin
-  (`localhost:34872`) before the next sync or the next edit will not reach Studio.
+- **NEXT: map redesign in Blender (owner, 2026-11-07).** The owner: "the map has a lot
+  of problems... since you're working with it headless you can't see where you're placing
+  stuff; there's random pallets inside of the slants and the hills. Talk with the agents,
+  come up with a design for the level, build it inside of Blender and then just import it
+  into Roblox." Plan: a new build file for the map (one file per asset rule:
+  `assets/3d/build/delta_map.py` or similar), the level designer's layout (`docs/LEVELS.md`
+  A) checked against the live Blender scene through the Blender MCP (render, look, fix,
+  render), props placed on the ground in Blender rather than by headless formulas, then
+  export and import into the place. Ladders: the stock Roblox ladder climb (TrussPart or
+  climbable parts; the Humanoid climbs them without a clip), the owner said the default is
+  fine. Review the current `ArenaService` layout code and `docs/LEVELS.md` first.
+- **Warden kit: watch for** a player knockdown in a real fight (fall + get-up clips,
+  controls locked; only bots were knocked down on screen), the fight length, and the
+  Sweep's shove on a laggy client.
 - **Owner also said "there's other problems"** with the current build beyond the player
   body and the Warden look, not yet listed. Ask for them at the start of the next session
   before building anything new.
@@ -352,6 +372,12 @@ Hard-won gotchas:
   `MoveTo` reports `MoveDirection` = 0; test "moving" with the root's
   `AssemblyLinearVelocity`. (9) Published animation ids go into `Config.Animations.Ids`
   with the `rbxassetid://` prefix; a bare number fails with "unknown AssetId protocol".
+  (10) The owner may be playing the same Studio playtest you drive (their F1 commands and
+  call-ins show in the logs): read, do not hijack the camera or restart the run under
+  them. To photograph a body without them: `UnbindFromRenderStep("OTSCamera")` on
+  client-1 and set `CurrentCamera` Scriptable. (11) `execute_luau` with a `task.wait`
+  over ~30 s returns "Unknown error": wait in 10 s slices. (12) Vector3 values do not
+  JSON-serialise in a returned table: format them as strings.
 - **`execute_luau` runs in an isolated VM.** `require()` returns a fresh, un-`init()`ed
   module copy — calling service functions from eval hits nil remotes. Drive the real game by
   firing the `DevCommand` RemoteEvent from `client-1`; use eval only to read Instance/

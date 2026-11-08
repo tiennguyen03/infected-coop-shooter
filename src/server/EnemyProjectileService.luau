@@ -54,12 +54,20 @@ local spits: { Spit } = {}
 local puddles: { Puddle } = {}
 
 -- The one entry point for Infected damage to a player: difficulty scaling, then the
--- player's Armour Plate shield takes the hit before health.
-function EnemyProjectileService.damagePlayer(humanoid: Humanoid, amount: number)
+-- player's Armour Plate shield takes the hit before health. `kind` "melee" is a limb or a
+-- claw: a body inside its roll / vault / climb window (CoverMoveService, CoverMoveUntil)
+-- is missed. Ground attacks, projectiles and puddles pass no kind and always land.
+function EnemyProjectileService.damagePlayer(humanoid: Humanoid, amount: number, kind: string?)
 	if humanoid.Health <= 0 then
 		return
 	end
 	local character = humanoid.Parent
+	if kind == "melee" and character then
+		local coverUntil = character:GetAttribute("CoverMoveUntil") :: number?
+		if coverUntil and os.clock() < coverUntil then
+			return
+		end
+	end
 	local member = Squad.fromHumanoid(humanoid)
 	-- A downed body takes no damage (decision #3: a rescue, not a snack).
 	if member and member.state ~= "Alive" then

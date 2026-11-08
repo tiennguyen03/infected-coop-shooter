@@ -296,12 +296,22 @@ Numbers in `Config.Index.Warden`; the service is `src/server/IndexService.luau`.
   round into a limb whose plate is gone does 150%. At half a plate cracks (yellow pip);
   at zero it flies off, he staggers 1.5 s, the limb is bare. Order on the HUD: HELM,
   CHEST, BACK, L SHLD, R SHLD, SHIELD. Radio on the first and the last plate.
-- **Attacks**, each with the handset's words on the boss bar first: **Bash** (8 studs,
-  90° arc, 40 damage, 0.9 s windup); **Charge** (15-45 studs, 1.2 s windup, 45 studs at
-  40/s, 35 damage, hard cover stuns him 3 s; first one 6 s after spawning, every 10 s
-  after); **Gas Canister** (phase 2+, lobbed at the furthest member within 70 studs, 10 +
-  a 9-stud puddle for 6 s); **Guard** (8-16 studs: shield up 2.5 s, half speed, plates
-  take 25% except the back; "flank him").
+- **Attacks**, each with the handset's words on the boss bar first. Where you stand picks
+  his move (kit expansion 2026-11-07, `Config.Index.Warden`): **Bash** (0-15 studs, 70°
+  arc, 40, 0.9 s windup; roll through it); **Shield Sweep** (17 studs, 180°, 25 and a
+  shove; get behind him); **Overhead Slam** (a 17 x 6 line at a body that stopped moving
+  in reach, 60, 1.3 s; step aside); **Ground Pound** (fists into the road: a 23-stud ring
+  drawn on the ground through the 1.4 s windup, 30 and 2.4 s knocked down; the roll does
+  not beat it, distance or a ledge does; he is stuck 2.6 s after); **Stomp** (a body
+  within 7 studs on any side: 8.5-stud disc, 20 and 1.8 s knocked down, 0.6 s; roll it);
+  **Charge** (19-45 studs, 1.2 s windup, 45 studs at 40/s, 35, hard cover stuns him 3 s);
+  **Gas Canister** (phase 2+, or any phase at a perched member; furthest member within
+  70, 10 + a 9-stud puddle 6 s); **Guard** (his plates took 150 inside 3 s: shield up
+  2.5 s, half speed, frontal plates take 25%; flank him). He walks a beat between attacks
+  (1.0 / 0.7 / 0.4 s by phase), never repeats one except the Bash, never chains two
+  knockdowns. Limb attacks miss a rolling body; the Pound and the Charge do not. Knocked
+  down: no moving, firing or abilities; the Infected still bite; 1 s of knockdown
+  immunity on the get-up (`Config.Knockdown`). Bots step out of the ring and the lines.
 - **Phases** by body health: below 60% the **Riot Call** (6 Walkers + 2 Runners round
   him, +3 Walkers per extra player, one body per frame); below 25% a second call, charges
   every 5 s, walk 11. While he is up the wave loop spawns at ×1.5 interval, 8 fewer

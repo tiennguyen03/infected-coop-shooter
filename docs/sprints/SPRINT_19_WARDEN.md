@@ -58,9 +58,10 @@ corpse time, STYLES palette on the bar, hit burst on a plate break).
 
 - **Tells are text on the boss bar** (the handset's words) plus the Brute's attack bark.
   The open-handset carrier hiss + squelch clip the lore pass asked for needs the audio
-  pipeline (open work). Mapping from the lore sheet: Charge = charge, Overhead slam = Bash,
-  Shield sweep = Bash (one swing for now), Guard = Guard; the Gas Canister is the systems
-  sheet's range answer.
+  pipeline (open work). Mapping from the lore sheet: Charge = charge, Overhead Slam and
+  Shield Sweep are their own attacks since the kit expansion (were one Bash swing), Guard
+  = Guard; the Gas Canister is the systems sheet's range answer; the Pound and the Stomp
+  are the expansion's additions.
 - **Plate cracks are a HUD pip, not a crack overlay mesh.** One shared crack mesh per plate
   shape was in the plan; the pip reads at any distance and costs nothing.
 - **Scale 1.9, not 2.3** (CHARACTERS said 2.3; the bridge underside is 10.5). Reach numbers
@@ -102,5 +103,33 @@ the tell; run while the charge winds; roar and 11 bodies at 55%; death clip on t
 plate break exposes the limb; priority pallet drops; 60 fps.
 
 Open from v2: an art-director pass on the live build (the render review was done on the
-Blender design, not the in-game dress); the Rojo plugin dropped mid-session, so the changed
-scripts were hand-imported into the place (sources match disk; reconnect before syncing).
+Blender design, not the in-game dress).
+
+## Kit expansion and the shield (2026-11-07, same day)
+
+The owner played v2 and said two things: the shield "is kind of just slanted, he's not
+holding it right", and "there's only two animations for this boss fight; add more
+animations and give him different attacks; a ground pound should do AoE and we should get
+a fall-back knockdown animation". The systems designer drew the kit (numbers in
+`Config.Index.Warden`); everything below shipped and was watched in a live playtest with the
+owner at the keyboard.
+
+| # | Piece | Where |
+|---|---|---|
+| 1 | **Shield mount.** The v2 plate sat past the fist, perpendicular to the forearm, so in every Mixamo pose it leaned edge-on across his front. Measured in game: in the idle and the guard the left forearm lies across the chest with its outer side (limb -X) forward, so the plate is now strapped along the outer forearm, tall axis along the limb's Z, face -X: a door from eye level to shin when he guards, at his side when he walks. One mesh re-uploaded. | `assets/3d/build/warden.py` `warden_plate(L, "shield")`, `MeshAssets` (size 0.48 x 2.28 x 4.28, offset -0.67, -0.2, 0.3), `assets/3d/ASSET_IDS.md` |
+| 2 | **Four new attacks.** Ground Pound (ring 6-10 studs just past the Bash, or a close-band pick: 12-stud disc on the ground, 30, knockdown 2.4 s, recovery 2.6 s so he never follows his own pound; the client draws the ring through the windup, `BossUpdate "zone"`), Shield Sweep (180° arc, 25, a 40 studs/s shove: `Impact "push"`), Overhead Slam (a reaction to a body in reach moving slower than `PlantedSpeed`: 9 x 3 line, 60), Stomp (a reaction to a body inside `HugRange` on any side: 4.5 disc, 20, knockdown 1.8 s). All at scale 1, `ScaleReach` multiplies. Bash arc 90° → 70°, Charge MinRange 15 → 19 so the ring belongs to the Pound. | `IndexService` `resolveArc` / `resolveSlam` / `resolveDisc`, `Config.Index.Warden.Pound / Sweep / Slam / Stomp` |
+| 3 | **Selection: reactions, bands, a beat.** `chooseAttack` runs only after `AttackGap` (1.0 / 0.7 / 0.4 s by phase) has passed since the last recovery; reactions first (Stomp at a hugger, Guard when the plates took `TriggerPlateDamage` 150 inside `TriggerWindow` 3 s, Slam at a planted body), then the nearest member's band: hug → Bash; close → weighted {Bash 3, Sweep 2, Pound 1}, Sweep and Pound doubled with 2+ members in their shape; ring → Pound; far → Charge; perched (`PerchHeight` 4 above his feet) or beyond → Canister in any phase. Never the same attack twice except the Bash; never two knockdowns in a row. Phases shorten the Pound (11 / 8 s). | `IndexService` `chooseAttack`, `pickClose`, `allowed`, `ready` |
+| 4 | **Knockdown.** `Squad.knock(member, seconds)` sets `KnockedUntil` on the character: `Squad.canAct` is false (no fire, reload, call-in, dash, breach on the server), the client holds WalkSpeed 0 (`SprintController`), refuses vaults and rolls (`MovementController`) and the trigger (`WeaponController`), and plays the fall over the first part and the get-up over the last `Config.Knockdown.GetUp` 1.0 s (`AnimationController.playKnockdown`, `KnockdownController`, `Impact "knockdown"`). `Knockdown.Grace` 1 s after standing refuses the next knockdown. Bots lie down and get up the same way (`BotService`). Still a target for the Infected while down. | `Squad`, `KnockdownController` (new), `AnimationController`, `BotService`, `Config.Knockdown` |
+| 5 | **The roll now dodges him.** `EnemyProjectileService.damagePlayer(humanoid, amount, kind)`: `"melee"` is skipped inside the `CoverMoveUntil` window. The Infected claw and the Warden's limbs (Bash, Sweep, Slam, Stomp) pass it; the Pound, the Charge, splashes and puddles do not. Before this the Warden ignored the window entirely. | `EnemyProjectileService`, `EnemyService.attackIfTouching`, `IndexService` |
+| 6 | **Bots read the tells.** Every ground or line attack marks its shape on workspace attributes (`BossDanger*`) through the windup; a bot inside walks out radially (disc) or sideways (line) before anything else. | `IndexService.markDanger`, `BotService.dodgeDanger` |
+| 7 | **Clips.** Seven more Mixamo clips retargeted and published: `warden_pound` (Sword And Shield Jump Attack), `warden_sweep` (Cross Slash), `warden_slam` (Downward Slash), `warden_stomp` (Hard Floor Stomp), `warden_hit` (Sword And Shield Impact, on a plate break), `knockdown_back` (Knocked Out, falling to back, trimmed to the fall) and `getup_back` (Getting Up from back, trimmed to the rise). Each attack clip runs so its blow lands at `StrikeAt` of it when the windup ends. `retarget.py` gained `trim`. | `assets/animations/README.md`, `assets/animations/ASSET_IDS.md`, `Config.Animations` |
+
+Verified (solo playtest, the owner playing, `[IndexService] <attack>` log lines): every
+attack fired across one fight, bash x5 on the walk-in, charge, canister, pound (three bots
+down round him), stomp, sweep and slam in phase 3, the ring on the ground, the fight ended
+with the body down and the run moving on; no errors on the server or client. Not seen: a
+player knockdown (the owner had God on), which is the same resolver as the bots' one.
+
+Open from the expansion: the lore developer's handset lines for Pound / Sweep / Slam /
+Stomp (placeholders in `BossBarUI.TELL_TEXT`); measure the fight length (over 130 s solo:
+`Plates.Chest.Health` 500 → 400 first); the Sweep's shove on a client with high latency.

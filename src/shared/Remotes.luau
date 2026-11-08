@@ -21,6 +21,7 @@ local REMOTE_NAMES = {
 	"AbilityUsed", -- server -> client: (abilityName: string, cooldown: number) for UI countdown
 	"CoverMove", -- client -> server: (kind: "vault"|"climb"|"roll"|"slide") the body started going over cover, rolling or sliding
 	"BossUpdate", -- server -> client: ("show", name, plateNames) | ("state", body, plates, phase) | ("tell", kind) | ("hide"); client -> server: () resend the state
+	"Impact", -- server -> client: ("knockdown", seconds) the body is knocked down (Squad.knock) | ("push", velocity: Vector3) a shove the client applies to its root
 	"Stance", -- client -> server: (stance: "stand"|"crouch"|"prone"); server -> client: ("prone") stand-up refused under a ceiling
 }
 

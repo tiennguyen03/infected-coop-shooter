@@ -147,6 +147,13 @@ local Config = {
 		MaxRevives = 2, -- per run; the next lethal hit after that kills outright
 		CrawlSpeed = 3, -- studs/s: a downed body crawls on hands and knees toward cover or help
 	},
+	-- Knocked down (the Warden's Pound and Stomp; Squad.knock): KnockedUntil on the
+	-- character. No moving, firing, abilities or reloading; still a target for the Infected.
+	-- Seconds per attack live on the attack; the get-up is the last GetUp seconds of it.
+	Knockdown = {
+		GetUp = 1.0,
+		Grace = 1.0, -- after standing: no second knockdown (its damage still lands)
+	},
 
 	-- Run flow (RunManager, Shared.RunStates). Co-op Sprint A.
 	Run = {
@@ -279,6 +286,13 @@ local Config = {
 			warden_bash = "rbxassetid://89934779836389",
 			warden_riot = "rbxassetid://116185112877732",
 			warden_death = "rbxassetid://89208674584569",
+			warden_pound = "rbxassetid://77264782202250",
+			warden_sweep = "rbxassetid://107446849028459",
+			warden_slam = "rbxassetid://89512296972118",
+			warden_stomp = "rbxassetid://126036186892283",
+			warden_hit = "rbxassetid://101098537894560",
+			knockdown_back = "rbxassetid://74898159216267",
+			getup_back = "rbxassetid://84697770068141",
 		},
 		-- The Chosen (one class for now): which clip plays for each state.
 		Assault = {
@@ -302,6 +316,8 @@ local Config = {
 			hit = "hit_reaction", -- flinch on damage (upper body)
 			death = "death_from_the_front",
 			breach = "grenade_throw", -- E: throwing the breach charge (upper body)
+			knockdown = "knockdown_back", -- the Warden's Pound / Stomp: the fall (Config.Knockdown)
+			getup = "getup_back", -- and the get-up, the last Knockdown.GetUp seconds
 			-- Stances: each has an idle, a directional move blend and an aim overlay; enter
 			-- and exit clips play over the switch.
 			crouch = {
@@ -358,6 +374,11 @@ local Config = {
 				charge = "warden_run",
 				riot = "warden_riot",
 				throw = "grenade_throw",
+				pound = "warden_pound",
+				sweep = "warden_sweep",
+				slam = "warden_slam",
+				stomp = "warden_stomp",
+				hit = "warden_hit", -- a plate coming off
 			},
 		},
 		-- Ground speed (studs/s) at which each locomotion clip plays at 1x; the track rate
@@ -788,7 +809,7 @@ local Config = {
 			Bash = {
 				Range = 8,
 				Windup = 0.9,
-				ArcDegrees = 90,
+				ArcDegrees = 70, -- narrower since the Sweep: Bash = step aside, Sweep = get behind
 				Damage = 40,
 				Cooldown = 3,
 				Recovery = 0.6,
@@ -796,7 +817,7 @@ local Config = {
 			},
 			-- Gate Charge: a straight line at speed; hard cover in the way stuns him (WallStun).
 			Charge = {
-				MinRange = 15,
+				MinRange = 19, -- leaves the ring just past the Bash to the Pound
 				MaxRange = 45,
 				Windup = 1.2,
 				Distance = 45,
@@ -828,23 +849,88 @@ local Config = {
 				},
 			},
 			-- Guard: shield over the visor. Slow, frontal plates take PlateDamageFactor; flank him.
+			-- A reaction: his plates took TriggerPlateDamage inside TriggerWindow seconds.
 			Guard = {
-				MinRange = 8,
-				MaxRange = 16,
+				TriggerPlateDamage = 150,
+				TriggerWindow = 3,
 				Duration = 2.5,
 				Cooldown = 9,
 				SpeedFactor = 0.5,
 				PlateDamageFactor = 0.25,
 			},
+			-- Kit expansion (systems-designer pass 2026-11-07): where you stand picks his move.
+			-- Beat (IndexService.chooseAttack): seconds he walks between one recovery ending
+			-- and the next decision, by phase. The pause is what makes a rhythm, not a spam.
+			AttackGap = { 1.0, 0.7, 0.4 },
+			-- Close-band weights among ready attacks; a crowd (CrowdCount members inside the
+			-- shape) doubles Sweep and Pound. Never the same attack twice in a row except the
+			-- Bash; a knockdown attack is never followed by another.
+			CloseWeights = { bash = 3, sweep = 2, pound = 1 },
+			CrowdCount = 2,
+			HugRange = 3.5, -- a body this close (any side) is "in his boots": the Stomp
+			PlantedSpeed = 4, -- studs/s; a body slower than this in reach is planted: the Slam
+			PerchHeight = 4, -- a body this far above his feet: no Pound or melee; Canister in any phase
+			-- Ground Pound: both fists into the road. Everyone on the ground inside Radius is
+			-- knocked down. Not dodged by the roll (the ground moves): get out, or get up a
+			-- ledge. The client draws the ring on the ground through the windup.
+			Pound = {
+				MinRange = 6, -- trigger ring, just past the Bash
+				MaxRange = 10,
+				Radius = 12,
+				HitHeight = 4,
+				Windup = 1.4,
+				Recovery = 2.6, -- longer than Knockdown: he can never follow his own pound
+				Cooldown = 16, -- Phases override (PoundCooldown)
+				Damage = 30,
+				Knockdown = 2.4,
+				StrikeAt = 0.55, -- fraction of the clip where the fists land (rate-scaled to Windup)
+			},
+			-- Shield Sweep: the shield across the whole front. Get behind him or out of reach.
+			Sweep = {
+				Range = 9,
+				ArcDegrees = 180,
+				Windup = 1.1,
+				Recovery = 0.8,
+				Cooldown = 8,
+				Damage = 25,
+				Pushback = 40, -- studs/s shove away from him (client Impact "push")
+				StrikeAt = 0.5,
+			},
+			-- Overhead Slam: at a body that stopped moving in reach. Narrow: a step aside beats it.
+			Slam = {
+				Length = 9,
+				Width = 3,
+				Windup = 1.3,
+				Recovery = 1.2,
+				Cooldown = 10,
+				Damage = 60,
+				StrikeAt = 0.5,
+			},
+			-- Stomp: a boot for anyone in his boots, any side. Fast and small; the roll beats it.
+			Stomp = {
+				Radius = 4.5,
+				Windup = 0.6,
+				Recovery = 2.0,
+				Cooldown = 6,
+				Damage = 20,
+				Knockdown = 1.8,
+				StrikeAt = 0.45,
+			},
 			-- Phases, entered at or below a body fraction; each opens with a Riot Call
 			-- (spawnWave round him, 25-35 studs) and may retune him.
 			Phases = {
-				{ Below = 0.6, RiotCall = { Walker = 6, Runner = 2 }, WalkersPerExtraPlayer = 3 },
+				{
+					Below = 0.6,
+					RiotCall = { Walker = 6, Runner = 2 },
+					WalkersPerExtraPlayer = 3,
+					PoundCooldown = 11,
+				},
 				{
 					Below = 0.25,
 					RiotCall = { Walker = 6, Runner = 2 },
 					WalkersPerExtraPlayer = 3,
 					ChargeCooldown = 5,
+					PoundCooldown = 8,
 					WalkSpeed = 11,
 				},
 			},

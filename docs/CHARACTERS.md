@@ -199,8 +199,9 @@ that was done to help it (a screening band, a bandage over the bite, cut restrai
   `white.m` **MP brassard** with `dark.d` letters on the upper arm; a `dark` radio handset
   on its coiled cord grown into the chest plate.
 - **Arms/hands:** `rebuilt` spurred forearms; the **riot shield** grown into the left
-  forearm as an attached part (`dark.l`, a tall curved plate held fist-grip, perpendicular
-  to the forearm, `gun.l` window).
+  forearm as an attached part (`dark.l`, a tall curved plate strapped along the outer
+  forearm the way the Mixamo shield clips carry one: a door from eye level to shin when he
+  guards, at his side on the walk; `gun.l` window).
 - **Legs/feet:** `dark.d` shin guards, `olive.m` trousers, `dark.d` boots.
 - **Mechanic:** six plates (helmet shell, chest, back, both shoulders, shield) are attached
   parts with their own health; each one off reveals `rebuilt` bone and a `strain.l` seam

@@ -26,7 +26,9 @@ end
 local function applySpeed()
 	local humanoid = getHumanoid()
 	local character = Players.LocalPlayer.Character
-	if humanoid and character and character:GetAttribute("SquadState") == "Downed" then
+	if humanoid and character and character:GetAttribute("KnockedUntil") ~= nil then
+		humanoid.WalkSpeed = 0 -- knocked down (Squad.knock): on the ground until the get-up
+	elseif humanoid and character and character:GetAttribute("SquadState") == "Downed" then
 		humanoid.WalkSpeed = Config.Downed.CrawlSpeed -- downed (Squad): crawl toward help
 	elseif humanoid and overrideSpeed then
 		humanoid.WalkSpeed = overrideSpeed
@@ -95,9 +97,11 @@ function SprintController.init()
 	local player = Players.LocalPlayer
 	if player.Character then
 		player.Character:GetAttributeChangedSignal("SquadState"):Connect(applySpeed)
+		player.Character:GetAttributeChangedSignal("KnockedUntil"):Connect(applySpeed)
 	end
 	player.CharacterAdded:Connect(function(character)
 		character:GetAttributeChangedSignal("SquadState"):Connect(applySpeed)
+		character:GetAttributeChangedSignal("KnockedUntil"):Connect(applySpeed)
 		isAiming = false
 		overrideSpeed = nil
 		stanceFactor = 1

@@ -42,6 +42,11 @@ local TELL_TEXT: { [string]: string } = {
 	guard = "GUARD UP: flank him",
 	stun = "STUNNED",
 	["break"] = "PLATE OFF",
+	-- Kit expansion (placeholders in the MP's voice until the lore pass).
+	pound = "...GET DOWN. Get down, get down...",
+	sweep = "...clear the lane. CLEAR THE LANE...",
+	slam = "...hold still. HOLD STILL...",
+	stomp = "...off the wire. OFF THE WIRE...",
 }
 
 local frame: Frame
@@ -136,6 +141,36 @@ local function hide()
 	frame.Visible = false
 end
 
+-- The Pound's ring on the ground through its windup: one flat cylinder, no particles.
+local zonePart: BasePart? = nil
+local function zone(position: Vector3, radius: number, seconds: number)
+	if zonePart then
+		zonePart:Destroy()
+	end
+	local part = Instance.new("Part")
+	part.Name = "BossZone"
+	part.Shape = Enum.PartType.Cylinder
+	part.Size = Vector3.new(0.2, radius * 2, radius * 2)
+	part.CFrame = CFrame.new(position + Vector3.new(0, 0.15, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	part.Anchored = true
+	part.CanCollide = false
+	part.CanQuery = false
+	part.CanTouch = false
+	part.CastShadow = false
+	part.Material = Enum.Material.Neon
+	part.Color = TELL_COLOR
+	part.Transparency = 0.55
+	part.Parent = workspace
+	zonePart = part
+	TweenService:Create(part, TweenInfo.new(seconds), { Transparency = 0.15 }):Play()
+	task.delay(seconds + 0.15, function()
+		if zonePart == part then
+			zonePart = nil
+		end
+		part:Destroy()
+	end)
+end
+
 local function onUpdate(kind: string, ...: any)
 	if kind == "show" then
 		show(...)
@@ -143,8 +178,14 @@ local function onUpdate(kind: string, ...: any)
 		state(...)
 	elseif kind == "tell" then
 		tell(...)
+	elseif kind == "zone" then
+		zone(...)
 	elseif kind == "hide" then
 		hide()
+		if zonePart then
+			zonePart:Destroy()
+			zonePart = nil
+		end
 	end
 end
 

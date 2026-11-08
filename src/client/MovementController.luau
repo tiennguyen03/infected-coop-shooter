@@ -140,7 +140,13 @@ local function onSpace(_name: string, state: Enum.UserInputState): Enum.ContextA
 		return Enum.ContextActionResult.Sink
 	end
 	local model, humanoid, root = character()
-	if not model or not humanoid or not root or model:GetAttribute("SquadState") == "Downed" then
+	if
+		not model
+		or not humanoid
+		or not root
+		or model:GetAttribute("SquadState") == "Downed"
+		or model:GetAttribute("KnockedUntil") ~= nil
+	then
 		return Enum.ContextActionResult.Sink
 	end
 	local ledge = findLedge(model, humanoid, root, Config.Movement.ClimbMaxHeight)
@@ -191,7 +197,13 @@ function MovementController.tryDash(kind: "roll" | "slide"): boolean
 		return false
 	end
 	local model, humanoid, root = character()
-	if not model or not humanoid or not root or model:GetAttribute("SquadState") == "Downed" then
+	if
+		not model
+		or not humanoid
+		or not root
+		or model:GetAttribute("SquadState") == "Downed"
+		or model:GetAttribute("KnockedUntil") ~= nil
+	then
 		return false
 	end
 	local heading = MomentumController.getVelocity()

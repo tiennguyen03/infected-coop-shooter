@@ -106,7 +106,7 @@ uploaded 2026-11-07 and wired; rows below.
 | inf_warden_plate_back | 93038447341544 | 91772239198090 | 1.59, 2.72, 0.57 | Warden v2 plate (IndexService welds it to UpperTorso); 2026-11-07, offset -0.015, 0.590, 0.745 |
 | inf_warden_plate_shoulder_l | 78932474946165 | 97144883804954 | 1.66, 1.06, 1.66 | Warden v2 plate (IndexService welds it to LeftUpperArm); 2026-11-07, offset 0.000, 0.280, 0.000 |
 | inf_warden_plate_shoulder_r | 94157814542903 | 118728353896085 | 1.11, 0.30, 1.11 | Warden v2 plate (IndexService welds it to RightUpperArm); 2026-11-07, offset 0.000, 0.480, 0.000 |
-| inf_warden_plate_shield | 125260664787765 | 117059108863414 | 2.28, 0.50, 4.28 | Warden v2 plate (IndexService welds it to LeftLowerArm; fist-grip plate past the hand, upright when the arm is bent across); 2026-11-07, offset 0.000, -0.850, -0.400 |
+| inf_warden_plate_shield | 126685145123461 | 102529640193242 | 0.48 x 2.28 x 4.28 | v3 2026-11-07: strapped along the outer forearm (face -X), offset (-0.67, -0.2, 0.3) |
 | pc_assault_head | 113120416771558 | 108816968954550 | 1.34, 1.24, 1.54 | R15 limb (Weller v2 2026-11-07), offset 0.000, 0.030, -0.060 |
 | pc_assault_upper_torso | 109606627346841 | 101027325915224 | 1.94, 1.70, 1.51 | R15 limb (Weller v2 2026-11-07), offset 0.000, 0.000, -0.025 |
 | pc_assault_lower_torso | 130324769107274 | 103310952242998 | 2.01, 0.40, 1.12 | R15 limb (Weller v2 2026-11-07), offset 0.000, 0.000, -0.050 |

@@ -118,3 +118,11 @@ per-player pause/choosing, death/downed, spawn pads, reset split, client screens
 **Co-op Sprint B** (objective/extraction rules, difficulty scaling, shared pickups, event
 routing). Both are designed with the `multiplayer_playtest` Studio MCP tool (2+ clients)
 as the verification step; single-player must keep working throughout.
+
+## Addendum 2026-11-07: knockdown
+
+The Warden's Pound and Stomp knock bodies down (`Squad.knock`). The state is an attribute
+on each character (`KnockedUntil`, `KnockGraceUntil`), the clips play on that client
+(`Impact "knockdown"` to the owner) and bots read the attribute: nothing is keyed to one
+player. A Pound that catches all four is 30 each and 2.4 s down with him stuck for 2.6 s
+and the next pick never a knockdown; the Riot Call adds are what bites a downed squad.

@@ -61,3 +61,10 @@ Mirror every id into `Config.Animations.Ids`.
 | warden_bash (Mixamo, Warden boss) | 89934779836389 | 2026-11-07 |
 | warden_riot (Mixamo, Warden boss) | 116185112877732 | 2026-11-07 |
 | warden_death (Mixamo, Warden boss) | 89208674584569 | 2026-11-07 |
+| warden_pound (Mixamo Sword And Shield Jump Attack, Warden Ground Pound) | 77264782202250 | 2026-11-07 |
+| warden_sweep (Mixamo Sword And Shield Cross Slash, Warden Shield Sweep) | 107446849028459 | 2026-11-07 |
+| warden_slam (Mixamo Sword And Shield Downward Slash, Warden Overhead Slam) | 89512296972118 | 2026-11-07 |
+| warden_stomp (Mixamo Hard Floor Stomp, Warden Stomp) | 126036186892283 | 2026-11-07 |
+| warden_hit (Mixamo Sword And Shield Impact, Warden plate break) | 101098537894560 | 2026-11-07 |
+| knockdown_back (Mixamo Knocked Out, trimmed to the fall; Assault + bots) | 74898159216267 | 2026-11-07 |
+| getup_back (Mixamo Getting Up from back, trimmed to the rise; Assault + bots) | 84697770068141 | 2026-11-07 |

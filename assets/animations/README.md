@@ -66,6 +66,13 @@ animations, played by `src/client/AnimationController.luau` (players) and
 | warden_bash | Warden bash | rate set so the strike lands at `Bash.StrikeAt` of the windup |
 | warden_riot | Warden Riot Call roar | held `RiotCallHold` |
 | warden_death | Warden death | |
+| warden_pound (Sword And Shield Jump Attack) | Warden Ground Pound | `in_place`; the fists land at `Pound.StrikeAt` of it when the windup ends |
+| warden_sweep (Sword And Shield Cross Slash) | Warden Shield Sweep | `in_place`, `Sweep.StrikeAt` |
+| warden_slam (Sword And Shield Downward Slash) | Warden Overhead Slam | `in_place`, `Slam.StrikeAt` |
+| warden_stomp (Stomp, Hard Floor Stomp) | Warden Stomp | `in_place`, `Stomp.StrikeAt` |
+| warden_hit (Sword And Shield Impact, head) | Warden flinch on a plate break | `in_place` |
+| knockdown_back (Knocked Out, falling to back) | Assault + bots knocked down: the fall | `in_place`, `trim` (0, 0.45): the fall without the lying still; rate fits the knockdown minus `Config.Knockdown.GetUp` |
+| getup_back (Getting Up, from back) | Assault + bots knocked down: the get-up | `in_place`, `trim` (0.55, 1): the rise; rate fits `Config.Knockdown.GetUp` |
 
 ## Pipeline
 
@@ -79,7 +86,8 @@ animations, played by `src/client/AnimationController.luau` (players) and
    overlay, `in_place` = strip horizontal hip travel from a clip with baked root motion; the
    script prints the clip's authored ground speed for `Config.Animations.MoveClipSpeed`;
    `root_lock` = drop every hip translation for a vault/climb clip the game carries itself,
-   the script prints the hip rise and reach instead).
+   the script prints the hip rise and reach instead; `trim` = (start, end) fractions of the
+   clip to keep, for a long Mixamo clip of which only one part is wanted).
    Mixamo packs download as a zip of FBX files with root motion baked in; copy the ones you
    need into `source/mixamo/` under the clip name and mark them `in_place`. The method: every Mixamo bone's world rotation delta from its rest pose, a fixed
    rest correspondence per R15 limb (Mixamo rests in a T-pose, R15 with the arms down), joint
@@ -93,8 +101,8 @@ animations, played by `src/client/AnimationController.luau` (players) and
    `AnimationBuilder.build(AnimationBuilder.loadClip(name))`, export each with the Studio
    MCP `export_rbxm` tool, upload each with `upload_asset` (`assetType = "Animation"`),
    write the ids into `Config.Animations.Ids` and `ASSET_IDS.md`, delete the folder. Done
-   for all 15 clips on 2026-11-06, the 21 movement-set clips and the 7 Warden clips on
-   2026-11-07. Ids are written with the `rbxassetid://` prefix (a bare number fails to load).
+   for all 15 clips on 2026-11-06, the 21 movement-set clips, the 7 Warden clips and the 7
+   kit-expansion clips (5 Warden, 2 knockdown) on 2026-11-07. Ids are written with the `rbxassetid://` prefix (a bare number fails to load).
 5. **Play**: `AnimationController` (client) and `EnemyService` (server) load clips by name
    through `Animations.load`. The player's walk and run states each blend four directional
    clips by the direction of travel in the body's frame (`AdjustWeight`), so strafing and
