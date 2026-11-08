@@ -10,6 +10,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local EnemyDefinitions = require(ReplicatedStorage.Shared.EnemyDefinitions)
 local GroundUtil = require(ReplicatedStorage.Shared.GroundUtil)
@@ -64,7 +65,7 @@ function EnemyProjectileService.damagePlayer(humanoid: Humanoid, amount: number,
 	end
 	local character = humanoid.Parent
 	if kind == "melee" and character then
-		local coverUntil = character:GetAttribute("CoverMoveUntil") :: number?
+		local coverUntil = character:GetAttribute(Attributes.CoverMoveUntil) :: number?
 		if coverUntil and os.clock() < coverUntil then
 			return
 		end
@@ -75,7 +76,7 @@ function EnemyProjectileService.damagePlayer(humanoid: Humanoid, amount: number,
 		return
 	end
 	-- Dev god mode (DevTestService "God"): Studio / creator only.
-	if member and member.owner and member.owner:GetAttribute("DevGod") == true then
+	if member and member.owner and member.owner:GetAttribute(Attributes.DevGod) == true then
 		return
 	end
 	local dealt = amount * DifficultyService.getDamageMultiplier()

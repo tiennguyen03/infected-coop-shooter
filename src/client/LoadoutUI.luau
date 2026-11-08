@@ -11,6 +11,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attributes"))
 
 local CallInDefinitions =
 	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("CallInDefinitions"))
@@ -114,10 +115,10 @@ end
 
 local function updateAmmo()
 	local player = Players.LocalPlayer
-	local weapon = WeaponDefinitions.get(player:GetAttribute("Weapon") :: string?)
-	local mag = (player:GetAttribute("Mag") :: number?) or 0
-	local reserve = (player:GetAttribute("Reserve") :: number?) or 0
-	local reloadUntil = (player:GetAttribute("ReloadUntil") :: number?) or 0
+	local weapon = WeaponDefinitions.get(player:GetAttribute(Attributes.Weapon) :: string?)
+	local mag = (player:GetAttribute(Attributes.Mag) :: number?) or 0
+	local reserve = (player:GetAttribute(Attributes.Reserve) :: number?) or 0
+	local reloadUntil = (player:GetAttribute(Attributes.ReloadUntil) :: number?) or 0
 	local now = workspace:GetServerTimeNow()
 	if reloadUntil > now then
 		ammoLabel.Text = "RELOADING"
@@ -140,14 +141,16 @@ end
 local function updateStrip()
 	local player = Players.LocalPlayer
 	for slot = 1, 2 do
-		local definition = CallInDefinitions.get(player:GetAttribute(`CallIn{slot}`) :: string?)
+		local definition =
+			CallInDefinitions.get(player:GetAttribute(Attributes.callIn(slot)) :: string?)
 		local label = callInLabels[slot]
 		label.Text = if definition then `{slot}  {definition.Name}` else `{slot}  -`
 		label.TextColor3 = if definition then definition.Color else DIM
 	end
 	for _, slot in STRIP_SLOTS do
 		local label = slotLabels[slot]
-		local definition = UpgradeDefinitions.get(player:GetAttribute("Upgrade" .. slot) :: string?)
+		local definition =
+			UpgradeDefinitions.get(player:GetAttribute(Attributes.upgrade(slot)) :: string?)
 		local slotName = slot
 		if slot == "CallInA" or slot == "CallInB" then
 			local callIn = CallInDefinitions.get(
@@ -178,7 +181,7 @@ function LoadoutUI.init()
 		player:GetAttributeChangedSignal(name):Connect(updateStrip)
 	end
 	for _, slot in STRIP_SLOTS do
-		player:GetAttributeChangedSignal("Upgrade" .. slot):Connect(updateStrip)
+		player:GetAttributeChangedSignal(Attributes.upgrade(slot)):Connect(updateStrip)
 	end
 	updateStrip()
 	RunService.RenderStepped:Connect(updateAmmo)

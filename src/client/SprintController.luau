@@ -8,6 +8,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 
+local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attributes"))
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 
 local SprintController = {}
@@ -26,9 +27,9 @@ end
 local function applySpeed()
 	local humanoid = getHumanoid()
 	local character = Players.LocalPlayer.Character
-	if humanoid and character and character:GetAttribute("KnockedUntil") ~= nil then
+	if humanoid and character and character:GetAttribute(Attributes.KnockedUntil) ~= nil then
 		humanoid.WalkSpeed = 0 -- knocked down (Squad.knock): on the ground until the get-up
-	elseif humanoid and character and character:GetAttribute("SquadState") == "Downed" then
+	elseif humanoid and character and character:GetAttribute(Attributes.SquadState) == "Downed" then
 		humanoid.WalkSpeed = Config.Downed.CrawlSpeed -- downed (Squad): crawl toward help
 	elseif humanoid and overrideSpeed then
 		humanoid.WalkSpeed = overrideSpeed
@@ -38,7 +39,7 @@ local function applySpeed()
 				and not isAiming
 			then Config.Player.SprintSpeed
 			else Config.Player.WalkSpeed
-		local mult = (Players.LocalPlayer:GetAttribute("MoveSpeedMult") :: number?) or 1
+		local mult = (Players.LocalPlayer:GetAttribute(Attributes.MoveSpeedMult) :: number?) or 1
 		if isAiming then
 			mult *= Config.Weapon.ADS.MoveSpeedFactor
 		end
@@ -96,12 +97,12 @@ function SprintController.init()
 	-- already exists at boot gets the downed hook too.
 	local player = Players.LocalPlayer
 	if player.Character then
-		player.Character:GetAttributeChangedSignal("SquadState"):Connect(applySpeed)
-		player.Character:GetAttributeChangedSignal("KnockedUntil"):Connect(applySpeed)
+		player.Character:GetAttributeChangedSignal(Attributes.SquadState):Connect(applySpeed)
+		player.Character:GetAttributeChangedSignal(Attributes.KnockedUntil):Connect(applySpeed)
 	end
 	player.CharacterAdded:Connect(function(character)
-		character:GetAttributeChangedSignal("SquadState"):Connect(applySpeed)
-		character:GetAttributeChangedSignal("KnockedUntil"):Connect(applySpeed)
+		character:GetAttributeChangedSignal(Attributes.SquadState):Connect(applySpeed)
+		character:GetAttributeChangedSignal(Attributes.KnockedUntil):Connect(applySpeed)
 		isAiming = false
 		overrideSpeed = nil
 		stanceFactor = 1
@@ -110,7 +111,7 @@ function SprintController.init()
 	end)
 
 	-- Items/buffs can change the multiplier mid-run; reapply immediately.
-	Players.LocalPlayer:GetAttributeChangedSignal("MoveSpeedMult"):Connect(applySpeed)
+	Players.LocalPlayer:GetAttributeChangedSignal(Attributes.MoveSpeedMult):Connect(applySpeed)
 end
 
 return SprintController

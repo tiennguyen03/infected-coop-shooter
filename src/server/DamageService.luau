@@ -10,6 +10,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local Lifecycle = require(script.Parent.Lifecycle)
 
@@ -44,14 +45,14 @@ function DamageService.dealDamage(
 	if humanoid.Health <= 0 then
 		return
 	end
-	local plateHealth = part and part:GetAttribute("PlateHealth")
+	local plateHealth = part and part:GetAttribute(Attributes.PlateHealth)
 	if part and typeof(plateHealth) == "number" then
 		local model = part:FindFirstAncestorOfClass("Model")
-		local guard = model and model:GetAttribute("GuardFactor")
-		if typeof(guard) == "number" and part:GetAttribute("Flank") ~= true then
+		local guard = model and model:GetAttribute(Attributes.GuardFactor)
+		if typeof(guard) == "number" and part:GetAttribute(Attributes.Flank) ~= true then
 			amount *= guard
 		end
-		part:SetAttribute("PlateHealth", math.max(0, plateHealth - amount))
+		part:SetAttribute(Attributes.PlateHealth, math.max(0, plateHealth - amount))
 		if attacker then
 			lastDamager[humanoid] = attacker
 		end
@@ -90,7 +91,10 @@ function DamageService.onEnemyKilled(humanoid: Humanoid)
 	if not killer or not killer.Parent then
 		return
 	end
-	killer:SetAttribute("Kills", ((killer:GetAttribute("Kills") :: number?) or 0) + 1)
+	killer:SetAttribute(
+		Attributes.Kills,
+		((killer:GetAttribute(Attributes.Kills) :: number?) or 0) + 1
+	)
 	for _, listener in killListeners do
 		listener(killer)
 	end
@@ -104,7 +108,7 @@ end
 
 -- One player's stats; RunManager calls it for every player on a run start.
 function DamageService.resetPlayer(player: Player)
-	player:SetAttribute("Kills", 0)
+	player:SetAttribute(Attributes.Kills, 0)
 end
 
 function DamageService.init()
@@ -114,7 +118,7 @@ function DamageService.init()
 	})
 	damageRemote = Remotes.get("DamageDealt")
 	Players.PlayerAdded:Connect(function(player)
-		player:SetAttribute("Kills", 0)
+		player:SetAttribute(Attributes.Kills, 0)
 	end)
 end
 

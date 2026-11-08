@@ -10,6 +10,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local RunStates = require(ReplicatedStorage.Shared.RunStates)
@@ -38,23 +39,23 @@ local function publishReady()
 		if ready[player] then
 			count += 1
 		end
-		player:SetAttribute("Ready", ready[player] == true)
+		player:SetAttribute(Attributes.Ready, ready[player] == true)
 	end
-	workspace:SetAttribute("ReadyCount", count)
-	workspace:SetAttribute("ReadyNeeded", #Players:GetPlayers())
+	workspace:SetAttribute(Attributes.ReadyCount, count)
+	workspace:SetAttribute(Attributes.ReadyNeeded, #Players:GetPlayers())
 end
 
 local function clearReady()
 	table.clear(ready)
 	readyGeneration += 1
-	workspace:SetAttribute("ReadyUpEndsAt", 0)
+	workspace:SetAttribute(Attributes.ReadyUpEndsAt, 0)
 	publishReady()
 end
 
 local function setState(state: RunStates.RunState, result: RunStates.RunResult?)
-	workspace:SetAttribute("RunState", state)
+	workspace:SetAttribute(Attributes.RunState, state)
 	if result then
-		workspace:SetAttribute("RunResult", result)
+		workspace:SetAttribute(Attributes.RunResult, result)
 	end
 	print("[RunManager] RunState ->", state, result or "")
 end
@@ -145,7 +146,7 @@ local function onRestartRequest(player: Player)
 		RunManager.startRun()
 		return
 	end
-	if ((workspace:GetAttribute("ReadyUpEndsAt") :: number?) or 0) > 0 then
+	if ((workspace:GetAttribute(Attributes.ReadyUpEndsAt) :: number?) or 0) > 0 then
 		return
 	end
 	local generation = readyGeneration

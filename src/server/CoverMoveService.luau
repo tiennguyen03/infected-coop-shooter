@@ -9,6 +9,8 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Messages = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Messages"))
+local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attributes"))
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
 local LoadoutService = require(script.Parent.LoadoutService)
@@ -19,7 +21,12 @@ local CoverMoveService = {}
 local windowEnds: { [Player]: number } = {}
 
 local function onCoverMove(player: Player, kind: unknown)
-	if kind ~= "vault" and kind ~= "climb" and kind ~= "roll" and kind ~= "slide" then
+	if
+		kind ~= Messages.CoverMove.Vault
+		and kind ~= Messages.CoverMove.Climb
+		and kind ~= Messages.CoverMove.Roll
+		and kind ~= Messages.CoverMove.Slide
+	then
 		return
 	end
 	local character = player.Character
@@ -28,7 +35,7 @@ local function onCoverMove(player: Player, kind: unknown)
 		return
 	end
 	LoadoutService.cancelReload(player)
-	if kind == "slide" then
+	if kind == Messages.CoverMove.Slide then
 		return
 	end
 	local settings = Config.Movement
@@ -37,13 +44,13 @@ local function onCoverMove(player: Player, kind: unknown)
 	if lastEnd and now < lastEnd + settings.CoverImmunity.Cooldown then
 		return
 	end
-	local duration = if kind == "vault"
+	local duration = if kind == Messages.CoverMove.Vault
 		then settings.VaultDuration
-		elseif kind == "roll" then settings.Roll.Duration
+		elseif kind == Messages.CoverMove.Roll then settings.Roll.Duration
 		else settings.ClimbDuration
 	local ends = now + duration + settings.CoverImmunity.Grace
 	windowEnds[player] = ends
-	character:SetAttribute("CoverMoveUntil", ends)
+	character:SetAttribute(Attributes.CoverMoveUntil, ends)
 end
 
 function CoverMoveService.init()

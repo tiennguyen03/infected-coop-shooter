@@ -5,6 +5,8 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+-- Each remote's message kinds (the first argument) are constants in Messages.luau; the
+-- comments below document the payloads.
 local REMOTE_NAMES = {
 	"FireWeapon", -- client -> server: (origin: Vector3, direction: Vector3, aiming: boolean)
 	"Reload", -- client -> server: start a reload (LoadoutService; Mag/Reserve/ReloadUntil are player attributes)

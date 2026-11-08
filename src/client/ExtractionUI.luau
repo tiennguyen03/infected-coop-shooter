@@ -6,6 +6,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Messages = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Messages"))
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
 
@@ -24,23 +25,23 @@ end
 
 local function onUpdate(kind: string, progress: number)
 	local required = Config.Extraction.HoldDuration
-	if kind == "available" then
+	if kind == Messages.ExtractionUpdate.Available then
 		setText("EXTRACTION AVAILABLE", "Reach the extraction zone", Color3.fromRGB(120, 255, 170))
-	elseif kind == "progress" then
+	elseif kind == Messages.ExtractionUpdate.Progress then
 		setText(
 			"EXTRACTION IN PROGRESS",
 			string.format("Hold: %.1f / %d", progress, required),
 			Color3.fromRGB(120, 255, 170)
 		)
-	elseif kind == "returning" then
+	elseif kind == Messages.ExtractionUpdate.Returning then
 		setText(
 			"RETURN TO EXTRACTION",
 			string.format("Progress: %.1f / %d", progress, required),
 			Color3.fromRGB(255, 200, 90)
 		)
-	elseif kind == "complete" then
+	elseif kind == Messages.ExtractionUpdate.Complete then
 		setText("EXTRACTION COMPLETE", "Operation successful", Color3.fromRGB(120, 255, 170))
-	elseif kind == "hide" then
+	elseif kind == Messages.ExtractionUpdate.Hide then
 		frame.Visible = false
 	end
 end

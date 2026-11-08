@@ -8,6 +8,8 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local Messages = require(ReplicatedStorage.Shared.Messages)
+local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local EnemyService = require(script.Parent.EnemyService)
@@ -84,7 +86,7 @@ local function complete()
 	end
 	completed = true
 	active = false
-	workspace:SetAttribute("ExtractionActive", false)
+	workspace:SetAttribute(Attributes.ExtractionActive, false)
 
 	if heartbeatConnection then
 		heartbeatConnection:Disconnect()
@@ -95,7 +97,10 @@ local function complete()
 		zonePart = nil
 	end
 
-	extractionRemote:FireAllClients("complete", Config.Extraction.HoldDuration)
+	extractionRemote:FireAllClients(
+		Messages.ExtractionUpdate.Complete,
+		Config.Extraction.HoldDuration
+	)
 	print("[ExtractionService] Extraction complete -> mission success")
 	-- RunManager ends the run (Ended / Extracted): freezes the field, clears the horde.
 	for _, listener in completionListeners do
@@ -121,7 +126,9 @@ local function onHeartbeat(deltaTime: number)
 	timeSinceSync += deltaTime
 	if timeSinceSync >= Config.Extraction.SyncInterval then
 		timeSinceSync = 0
-		local kind = if inside then "progress" else "returning"
+		local kind = if inside
+			then Messages.ExtractionUpdate.Progress
+			else Messages.ExtractionUpdate.Returning
 		extractionRemote:FireAllClients(kind, math.min(progress, Config.Extraction.HoldDuration))
 	end
 
@@ -137,9 +144,9 @@ function ExtractionService.start()
 	active = true
 	progress = 0
 	timeSinceSync = 0
-	workspace:SetAttribute("ExtractionActive", true)
+	workspace:SetAttribute(Attributes.ExtractionActive, true)
 	zonePart = createZone()
-	extractionRemote:FireAllClients("available", 0)
+	extractionRemote:FireAllClients(Messages.ExtractionUpdate.Available, 0)
 
 	for typeName, count in Config.Extraction.PressureWave :: { [string]: number } do
 		EnemyService.spawnWave(typeName, count, Config.Extraction.ZonePosition)
@@ -162,7 +169,7 @@ function ExtractionService.reset()
 	completed = false
 	progress = 0
 	timeSinceSync = 0
-	workspace:SetAttribute("ExtractionActive", false)
+	workspace:SetAttribute(Attributes.ExtractionActive, false)
 	if heartbeatConnection then
 		heartbeatConnection:Disconnect()
 		heartbeatConnection = nil
@@ -171,7 +178,7 @@ function ExtractionService.reset()
 		zonePart:Destroy()
 		zonePart = nil
 	end
-	extractionRemote:FireAllClients("hide", 0)
+	extractionRemote:FireAllClients(Messages.ExtractionUpdate.Hide, 0)
 end
 
 function ExtractionService.init()
@@ -179,7 +186,7 @@ function ExtractionService.init()
 		onRunStart = ExtractionService.reset,
 	})
 	extractionRemote = Remotes.get("ExtractionUpdate")
-	workspace:SetAttribute("ExtractionActive", false)
+	workspace:SetAttribute(Attributes.ExtractionActive, false)
 end
 
 return ExtractionService

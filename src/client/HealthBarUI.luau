@@ -4,6 +4,8 @@
 -- is a blue overlay from the left over the health fill with a "+N" tag.
 
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attributes"))
 
 local HealthBarUI = {}
 
@@ -24,7 +26,7 @@ local function update(humanoid: Humanoid)
 end
 
 local function updateShield()
-	local shield = (Players.LocalPlayer:GetAttribute("Shield") :: number?) or 0
+	local shield = (Players.LocalPlayer:GetAttribute(Attributes.Shield) :: number?) or 0
 	local character = Players.LocalPlayer.Character
 	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
 	local maxHealth = if humanoid then math.max(humanoid.MaxHealth, 1) else 100
@@ -125,7 +127,7 @@ function HealthBarUI.init()
 	if Players.LocalPlayer.Character then
 		watchCharacter(Players.LocalPlayer.Character)
 	end
-	Players.LocalPlayer:GetAttributeChangedSignal("Shield"):Connect(updateShield)
+	Players.LocalPlayer:GetAttributeChangedSignal(Attributes.Shield):Connect(updateShield)
 	Players.LocalPlayer.CharacterAdded:Connect(function()
 		task.defer(updateShield)
 	end)

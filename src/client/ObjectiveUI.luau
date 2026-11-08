@@ -5,6 +5,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Messages = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Messages"))
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
 
@@ -73,13 +74,13 @@ local function createPanel()
 end
 
 local function onObjectiveUpdate(kind: string, progress: number)
-	if kind == "started" then
+	if kind == Messages.ObjectiveUpdate.Started then
 		createPanel()
-	elseif kind == "progress" then
+	elseif kind == Messages.ObjectiveUpdate.Progress then
 		if progressLabel then
 			progressLabel.Text = formatProgress(progress)
 		end
-	elseif kind == "completed" then
+	elseif kind == Messages.ObjectiveUpdate.Completed then
 		destroyPanel()
 	end
 end

@@ -13,6 +13,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local CallInDefinitions = require(ReplicatedStorage.Shared.CallInDefinitions)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
@@ -61,9 +62,9 @@ local function get(player: Player): Loadout
 end
 
 local function publishAmmo(player: Player, loadout: Loadout)
-	player:SetAttribute("Weapon", loadout.weapon)
-	player:SetAttribute("Mag", loadout.mag)
-	player:SetAttribute("Reserve", loadout.reserve)
+	player:SetAttribute(Attributes.Weapon, loadout.weapon)
+	player:SetAttribute(Attributes.Mag, loadout.mag)
+	player:SetAttribute(Attributes.Reserve, loadout.reserve)
 	local reloadUntil = loadout.reloadUntil
 	player:SetAttribute(
 		"ReloadUntil",
@@ -72,12 +73,12 @@ local function publishAmmo(player: Player, loadout: Loadout)
 end
 
 local function publishLoadout(player: Player, loadout: Loadout)
-	player:SetAttribute("CallIn1", loadout.callIns[1] or "")
-	player:SetAttribute("CallIn2", loadout.callIns[2] or "")
+	player:SetAttribute(Attributes.callIn(1), loadout.callIns[1] or "")
+	player:SetAttribute(Attributes.callIn(2), loadout.callIns[2] or "")
 	for _, slot in UpgradeDefinitions.SLOTS do
-		player:SetAttribute("Upgrade" .. slot, loadout.upgrades[slot] or "")
+		player:SetAttribute(Attributes.upgrade(slot), loadout.upgrades[slot] or "")
 	end
-	player:SetAttribute("Shield", loadout.shield)
+	player:SetAttribute(Attributes.Shield, loadout.shield)
 end
 
 local function publish(player: Player, loadout: Loadout)
@@ -119,7 +120,7 @@ function LoadoutService.consumeRound(player: Player): boolean
 		return false
 	end
 	loadout.mag -= 1
-	player:SetAttribute("Mag", loadout.mag)
+	player:SetAttribute(Attributes.Mag, loadout.mag)
 	return true
 end
 
@@ -145,7 +146,7 @@ function LoadoutService.startReload(player: Player): boolean
 	if not member or not Squad.canAct(member) or PauseService.isPaused() then
 		return false
 	end
-	local stacks = (player:GetAttribute("MomentumStacks") :: number?) or 0
+	local stacks = (player:GetAttribute(Attributes.MomentumStacks) :: number?) or 0
 	if
 		LoadoutService.hasUpgrade(player, "combat_reload")
 		and stacks >= Config.Upgrades.CombatReload.MomentumStacks
@@ -327,7 +328,7 @@ end
 function LoadoutService.addShield(player: Player, amount: number)
 	local loadout = get(player)
 	loadout.shield = math.min(loadout.shield + amount, Config.Crates.ShieldCap)
-	player:SetAttribute("Shield", loadout.shield)
+	player:SetAttribute(Attributes.Shield, loadout.shield)
 end
 
 -- Soaks `amount` of incoming damage on the plate; returns what reaches health.
@@ -338,7 +339,7 @@ function LoadoutService.absorb(player: Player, amount: number): number
 	end
 	local soaked = math.min(loadout.shield, amount)
 	loadout.shield -= soaked
-	player:SetAttribute("Shield", loadout.shield)
+	player:SetAttribute(Attributes.Shield, loadout.shield)
 	return amount - soaked
 end
 

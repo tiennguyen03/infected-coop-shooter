@@ -15,6 +15,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local CallInDefinitions = require(ReplicatedStorage.Shared.CallInDefinitions)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local UpgradeDefinitions = require(ReplicatedStorage.Shared.UpgradeDefinitions)
@@ -154,13 +155,13 @@ function DevTestService.printRunState(): { [string]: any }
 	local zone = workspace:FindFirstChild("ObjectiveZone")
 
 	local state: { [string]: any } = {
-		runState = workspace:GetAttribute("RunState"),
-		runResult = workspace:GetAttribute("RunResult"),
+		runState = workspace:GetAttribute(Attributes.RunState),
+		runResult = workspace:GetAttribute(Attributes.RunResult),
 		elapsed = math.floor(
 			(
 				workspace:GetServerTimeNow()
 				- (
-					(workspace:GetAttribute("RunStartTime") :: number?)
+					(workspace:GetAttribute(Attributes.RunStartTime) :: number?)
 					or workspace:GetServerTimeNow()
 				)
 			)
@@ -175,9 +176,9 @@ function DevTestService.printRunState(): { [string]: any }
 		firePoolCount = folderCount("FirePools"),
 		mineCount = folderCount("Mines"),
 		strikeEffectCount = folderCount("StrikeEffects"),
-		resupplyPool = workspace:GetAttribute("ResupplyPool"),
-		resupplyCost = workspace:GetAttribute("ResupplyCost"),
-		objectiveActive = workspace:GetAttribute("ObjectiveActive") == true,
+		resupplyPool = workspace:GetAttribute(Attributes.ResupplyPool),
+		resupplyCost = workspace:GetAttribute(Attributes.ResupplyCost),
+		objectiveActive = workspace:GetAttribute(Attributes.ObjectiveActive) == true,
 		objectiveZoneExists = zone ~= nil,
 	}
 
@@ -201,7 +202,7 @@ function DevTestService.printRunState(): { [string]: any }
 	for _, player in Players:GetPlayers() do
 		local upgrades = {}
 		for _, slot in UpgradeDefinitions.SLOTS do
-			local id = player:GetAttribute("Upgrade" .. slot)
+			local id = player:GetAttribute(Attributes.upgrade(slot))
 			if typeof(id) == "string" and id ~= "" then
 				table.insert(upgrades, `{slot}={id}`)
 			end
@@ -210,15 +211,15 @@ function DevTestService.printRunState(): { [string]: any }
 			string.format(
 				"  player %s: %s mag %s/%s, kills %s, shield %s, call-ins %s(%s) %s(%s), upgrades [%s]",
 				player.Name,
-				tostring(player:GetAttribute("Weapon")),
-				tostring(player:GetAttribute("Mag")),
-				tostring(player:GetAttribute("Reserve")),
-				tostring(player:GetAttribute("Kills")),
-				tostring(player:GetAttribute("Shield")),
-				tostring(player:GetAttribute("CallIn1")),
-				tostring(player:GetAttribute("CallIn1Charges")),
-				tostring(player:GetAttribute("CallIn2")),
-				tostring(player:GetAttribute("CallIn2Charges")),
+				tostring(player:GetAttribute(Attributes.Weapon)),
+				tostring(player:GetAttribute(Attributes.Mag)),
+				tostring(player:GetAttribute(Attributes.Reserve)),
+				tostring(player:GetAttribute(Attributes.Kills)),
+				tostring(player:GetAttribute(Attributes.Shield)),
+				tostring(player:GetAttribute(Attributes.callIn(1))),
+				tostring(player:GetAttribute(Attributes.callInCharges(1))),
+				tostring(player:GetAttribute(Attributes.callIn(2))),
+				tostring(player:GetAttribute(Attributes.callInCharges(2))),
 				table.concat(upgrades, ", ")
 			)
 		)
@@ -251,13 +252,13 @@ function DevTestService.verifyCleanup(): { pass: boolean, leftovers: { string } 
 	if workspace:FindFirstChild("ObjectiveZone") then
 		table.insert(leftovers, "objective zone still exists")
 	end
-	if workspace:GetAttribute("ExtractionActive") == true then
+	if workspace:GetAttribute(Attributes.ExtractionActive) == true then
 		table.insert(leftovers, "ExtractionActive still true")
 	end
-	if workspace:GetAttribute("RunState") == "Ended" then
+	if workspace:GetAttribute(Attributes.RunState) == "Ended" then
 		table.insert(leftovers, "RunState still Ended")
 	end
-	if workspace:GetAttribute("ObjectiveCompleted") == true then
+	if workspace:GetAttribute(Attributes.ObjectiveCompleted) == true then
 		table.insert(leftovers, "ObjectiveCompleted still true")
 	end
 
@@ -269,14 +270,14 @@ function DevTestService.verifyCleanup(): { pass: boolean, leftovers: { string } 
 			end
 		end
 		local weapon = LoadoutService.getWeapon(player)
-		if (player:GetAttribute("Mag") :: number?) ~= weapon.MagazineSize then
+		if (player:GetAttribute(Attributes.Mag) :: number?) ~= weapon.MagazineSize then
 			table.insert(leftovers, `{player.Name}: magazine not full`)
 		end
-		if ((player:GetAttribute("Shield") :: number?) or 0) ~= 0 then
+		if ((player:GetAttribute(Attributes.Shield) :: number?) or 0) ~= 0 then
 			table.insert(leftovers, `{player.Name}: shield remains`)
 		end
 		for _, slot in UpgradeDefinitions.SLOTS do
-			local id = player:GetAttribute("Upgrade" .. slot)
+			local id = player:GetAttribute(Attributes.upgrade(slot))
 			if typeof(id) == "string" and id ~= "" then
 				table.insert(leftovers, `{player.Name}: upgrade {id} remains in {slot}`)
 			end
@@ -388,14 +389,14 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 		DevTestService.forceMissionSuccess()
 	end,
 	FillResupply = function()
-		local cost = (workspace:GetAttribute("ResupplyCost") :: number?) or 0
+		local cost = (workspace:GetAttribute(Attributes.ResupplyCost) :: number?) or 0
 		RequisitionService.addRequisition(math.max(cost - RequisitionService.getPool(), 0))
 		print("[DevTest] FillResupply -> pool covers the next flare")
 	end,
 	-- Dev tools v2. Toggles answer with the new state in the output.
 	God = function(player)
-		local on = player:GetAttribute("DevGod") ~= true
-		player:SetAttribute("DevGod", on)
+		local on = player:GetAttribute(Attributes.DevGod) ~= true
+		player:SetAttribute(Attributes.DevGod, on)
 		print(`[DevTest] God {if on then "ON" else "OFF"} -> {player.Name}`)
 	end,
 	Heal = function(player)
@@ -410,8 +411,8 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 		end
 	end,
 	ToggleSpawns = function()
-		local off = workspace:GetAttribute("DevSpawnsOff") ~= true
-		workspace:SetAttribute("DevSpawnsOff", off)
+		local off = workspace:GetAttribute(Attributes.DevSpawnsOff) ~= true
+		workspace:SetAttribute(Attributes.DevSpawnsOff, off)
 		print(`[DevTest] Infected spawning {if off then "OFF" else "ON"}`)
 	end,
 	ActivateObjective = function()

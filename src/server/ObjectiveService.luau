@@ -8,6 +8,8 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local Messages = require(ReplicatedStorage.Shared.Messages)
+local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local DifficultyService = require(script.Parent.DifficultyService)
@@ -91,8 +93,8 @@ local function complete()
 		return
 	end
 	completed = true
-	workspace:SetAttribute("ObjectiveActive", false)
-	workspace:SetAttribute("ObjectiveCompleted", true)
+	workspace:SetAttribute(Attributes.ObjectiveActive, false)
+	workspace:SetAttribute(Attributes.ObjectiveCompleted, true)
 	if heartbeatConnection then
 		heartbeatConnection:Disconnect()
 		heartbeatConnection = nil
@@ -104,7 +106,10 @@ local function complete()
 
 	RequisitionService.addRequisition(Config.Objective.SupplyReward)
 
-	objectiveRemote:FireAllClients("completed", Config.Objective.RequiredSeconds)
+	objectiveRemote:FireAllClients(
+		Messages.ObjectiveUpdate.Completed,
+		Config.Objective.RequiredSeconds
+	)
 	print("[ObjectiveService] Objective complete -> extraction")
 	for _, listener in completionListeners do
 		listener()
@@ -150,10 +155,10 @@ local function activate()
 		return
 	end
 	zonePart = createZone()
-	objectiveRemote:FireAllClients("started", 0)
+	objectiveRemote:FireAllClients(Messages.ObjectiveUpdate.Started, 0)
 	heartbeatConnection = RunService.Heartbeat:Connect(onHeartbeat)
 	-- Pressure: faster spawns while active + a typed wave around the zone.
-	workspace:SetAttribute("ObjectiveActive", true)
+	workspace:SetAttribute(Attributes.ObjectiveActive, true)
 	for typeName, count in Config.Objective.PressureWave :: { [string]: number } do
 		EnemyService.spawnWave(typeName, count, Config.Objective.ZonePosition)
 	end
@@ -196,8 +201,8 @@ function ObjectiveService.reset()
 	completed = false
 	progress = 0
 	timeSinceSync = 0
-	workspace:SetAttribute("ObjectiveActive", false)
-	workspace:SetAttribute("ObjectiveCompleted", false)
+	workspace:SetAttribute(Attributes.ObjectiveActive, false)
+	workspace:SetAttribute(Attributes.ObjectiveCompleted, false)
 	if heartbeatConnection then
 		heartbeatConnection:Disconnect()
 		heartbeatConnection = nil
@@ -206,7 +211,7 @@ function ObjectiveService.reset()
 		zonePart:Destroy()
 		zonePart = nil
 	end
-	objectiveRemote:FireAllClients("completed", 0) -- hides any open objective UI
+	objectiveRemote:FireAllClients(Messages.ObjectiveUpdate.Completed, 0) -- hides any open objective UI
 	runGeneration += 1 -- cancels a pending activation from the previous run
 end
 

@@ -9,6 +9,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
+local Messages = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Messages"))
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
 
@@ -125,9 +126,9 @@ local function tell(kind: string)
 	tellGeneration += 1
 	local generation = tellGeneration
 	tellLabel.Text = TELL_TEXT[kind] or string.upper(kind)
-	tellLabel.TextColor3 = if kind == "stun" then STUN_COLOR else TELL_COLOR
+	tellLabel.TextColor3 = if kind == Messages.BossTell.Stun then STUN_COLOR else TELL_COLOR
 	tellLabel.TextTransparency = 0
-	local hold = if kind == "stun"
+	local hold = if kind == Messages.BossTell.Stun
 		then Config.Index.Warden.Charge.WallStun
 		else Config.Index.Warden.TellHold
 	task.delay(hold, function()
@@ -172,15 +173,15 @@ local function zone(position: Vector3, radius: number, seconds: number)
 end
 
 local function onUpdate(kind: string, ...: any)
-	if kind == "show" then
+	if kind == Messages.BossUpdate.Show then
 		show(...)
-	elseif kind == "state" then
+	elseif kind == Messages.BossUpdate.State then
 		state(...)
-	elseif kind == "tell" then
+	elseif kind == Messages.BossUpdate.Tell then
 		tell(...)
-	elseif kind == "zone" then
+	elseif kind == Messages.BossUpdate.Zone then
 		zone(...)
-	elseif kind == "hide" then
+	elseif kind == Messages.BossUpdate.Hide then
 		hide()
 		if zonePart then
 			zonePart:Destroy()

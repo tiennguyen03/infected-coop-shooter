@@ -20,6 +20,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
+local Messages = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Messages"))
+local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attributes"))
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Ledge = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Ledge"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
@@ -97,7 +99,9 @@ end
 local function begin(humanoid: Humanoid, root: BasePart, ledge: Ledge.Ledge)
 	local settings = Config.Movement
 	local kind: "vault" | "climb" = if ledge.over then "vault" else "climb"
-	local duration = if kind == "vault" then settings.VaultDuration else settings.ClimbDuration
+	local duration = if kind == Messages.CoverMove.Vault
+		then settings.VaultDuration
+		else settings.ClimbDuration
 	StanceController.setStance("stand")
 	CameraController.setBodyYawLocked(true)
 	MomentumController.suspend()
@@ -136,7 +140,7 @@ local function onSpace(_name: string, state: Enum.UserInputState): Enum.ContextA
 	if state ~= Enum.UserInputState.Begin then
 		return Enum.ContextActionResult.Sink
 	end
-	if move or dash or workspace:GetAttribute("GamePaused") == true then
+	if move or dash or workspace:GetAttribute(Attributes.GamePaused) == true then
 		return Enum.ContextActionResult.Sink
 	end
 	local model, humanoid, root = character()
@@ -144,8 +148,8 @@ local function onSpace(_name: string, state: Enum.UserInputState): Enum.ContextA
 		not model
 		or not humanoid
 		or not root
-		or model:GetAttribute("SquadState") == "Downed"
-		or model:GetAttribute("KnockedUntil") ~= nil
+		or model:GetAttribute(Attributes.SquadState) == "Downed"
+		or model:GetAttribute(Attributes.KnockedUntil) ~= nil
 	then
 		return Enum.ContextActionResult.Sink
 	end
@@ -170,7 +174,7 @@ local function endDash(current: Dash)
 		MomentumController.resume(Vector3.zero)
 	end
 	readyAt[current.kind] = os.clock()
-		+ Config.Movement[if current.kind == "roll" then "Roll" else "Slide"].Cooldown
+		+ Config.Movement[if current.kind == Messages.CoverMove.Roll then "Roll" else "Slide"].Cooldown
 end
 
 local function stepDash(current: Dash)
@@ -190,7 +194,7 @@ end
 
 -- Sprint + LeftControl (roll) or sprint + C (slide). Returns true when it started.
 function MovementController.tryDash(kind: "roll" | "slide"): boolean
-	if move or dash or workspace:GetAttribute("GamePaused") == true then
+	if move or dash or workspace:GetAttribute(Attributes.GamePaused) == true then
 		return false
 	end
 	if os.clock() < readyAt[kind] then
@@ -201,8 +205,8 @@ function MovementController.tryDash(kind: "roll" | "slide"): boolean
 		not model
 		or not humanoid
 		or not root
-		or model:GetAttribute("SquadState") == "Downed"
-		or model:GetAttribute("KnockedUntil") ~= nil
+		or model:GetAttribute(Attributes.SquadState) == "Downed"
+		or model:GetAttribute(Attributes.KnockedUntil) ~= nil
 	then
 		return false
 	end
@@ -217,7 +221,7 @@ function MovementController.tryDash(kind: "roll" | "slide"): boolean
 	local direction = heading.Unit
 	local settings = Config.Movement
 	local duration, startSpeed, endSpeed
-	if kind == "roll" then
+	if kind == Messages.CoverMove.Roll then
 		duration, startSpeed, endSpeed =
 			settings.Roll.Duration, settings.Roll.Speed, settings.Roll.Speed
 	else

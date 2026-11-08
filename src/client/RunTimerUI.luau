@@ -4,6 +4,8 @@
 -- traffic and no drift.
 
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attributes"))
 
 local UPDATE_INTERVAL = 0.2 -- seconds
 
@@ -41,7 +43,7 @@ function RunTimerUI.init()
 
 	task.spawn(function()
 		while gui.Parent do
-			local startTime = workspace:GetAttribute("RunStartTime") :: number?
+			local startTime = workspace:GetAttribute(Attributes.RunStartTime) :: number?
 			if startTime then
 				label.Text = formatTime(math.max(workspace:GetServerTimeNow() - startTime, 0))
 			end

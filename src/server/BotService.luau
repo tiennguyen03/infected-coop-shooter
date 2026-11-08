@@ -16,6 +16,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Animations = require(ReplicatedStorage.Shared.Animations)
 local Config = require(ReplicatedStorage.Shared.Config)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
@@ -474,21 +475,21 @@ end
 -- IndexService marks the Pound / Stomp disc or the Slam / Charge line on workspace
 -- attributes while it winds up; a bot inside walks out (radially, or sideways off a line).
 local function dodgeDanger(humanoid: Humanoid, root: BasePart, now: number): boolean
-	local untilTime = workspace:GetAttribute("BossDangerUntil") :: number?
+	local untilTime = workspace:GetAttribute(Attributes.BossDangerUntil) :: number?
 	if not untilTime or now >= untilTime then
 		return false
 	end
-	local center = workspace:GetAttribute("BossDanger") :: Vector3?
-	local radius = workspace:GetAttribute("BossDangerRadius") :: number?
+	local center = workspace:GetAttribute(Attributes.BossDanger) :: Vector3?
+	local radius = workspace:GetAttribute(Attributes.BossDangerRadius) :: number?
 	if not center or not radius then
 		return false
 	end
 	local offset = Vector3.new(root.Position.X - center.X, 0, root.Position.Z - center.Z)
-	local kind = workspace:GetAttribute("BossDangerKind")
+	local kind = workspace:GetAttribute(Attributes.BossDangerKind)
 	local margin = 3
 	if kind == "line" then
-		local direction = workspace:GetAttribute("BossDangerDir") :: Vector3?
-		local length = (workspace:GetAttribute("BossDangerLength") :: number?) or 0
+		local direction = workspace:GetAttribute(Attributes.BossDangerDir) :: Vector3?
+		local length = (workspace:GetAttribute(Attributes.BossDangerLength) :: number?) or 0
 		if not direction then
 			return false
 		end
@@ -532,7 +533,7 @@ local function think(bot: Bot, now: number, params: RaycastParams)
 	end
 	-- Knocked down (Squad.knock): on the ground until the attribute clears; the fall and
 	-- the get-up play at the rates that fit the knockdown.
-	local knockedUntil = model:GetAttribute("KnockedUntil") :: number?
+	local knockedUntil = model:GetAttribute(Attributes.KnockedUntil) :: number?
 	if knockedUntil then
 		if not bot.knocked then
 			bot.knocked = true

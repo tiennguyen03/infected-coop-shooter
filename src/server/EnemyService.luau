@@ -21,6 +21,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local EnemyDefinitions = require(ReplicatedStorage.Shared.EnemyDefinitions)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
@@ -256,7 +257,7 @@ local function spawnZombie(
 	local model = template:Clone()
 	model.Name = definition.DisplayName
 	model.ModelStreamingMode = Enum.ModelStreamingMode.Atomic -- a rig never half-streams
-	model:SetAttribute("EnemyType", typeName)
+	model:SetAttribute(Attributes.EnemyType, typeName)
 	if prepare then
 		prepare(model)
 	end
@@ -271,7 +272,7 @@ local function spawnZombie(
 	humanoid.Health = health
 	humanoid.WalkSpeed = definition.WalkSpeed
 	-- EnemyService.slow restores this after a slow without corrupting it.
-	humanoid:SetAttribute("BaseWalkSpeed", definition.WalkSpeed)
+	humanoid:SetAttribute(Attributes.BaseWalkSpeed, definition.WalkSpeed)
 	humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
 	if not definition.Boss then
 		attachHealthBar(humanoid, root, definition.Scale) -- a boss has the boss bar (BossBarUI)
@@ -898,7 +899,7 @@ local function pickSpawnType(): string
 			end
 		end
 		-- While the Index is up: his pressure caps (no Brutes).
-		local indexCap = if workspace:GetAttribute("IndexActive") == true
+		local indexCap = if workspace:GetAttribute(Attributes.IndexActive) == true
 			then Config.Index.Warden.Pressure.Caps[typeName]
 			else nil
 		if indexCap and countOfType(typeName) >= indexCap then
@@ -990,7 +991,7 @@ function EnemyService.slow(humanoid: Humanoid, factor: number, duration: number)
 	if humanoid.Health <= 0 then
 		return
 	end
-	local base = (humanoid:GetAttribute("BaseWalkSpeed") :: number?) or humanoid.WalkSpeed
+	local base = (humanoid:GetAttribute(Attributes.BaseWalkSpeed) :: number?) or humanoid.WalkSpeed
 	local generation = (slowGeneration[humanoid] or 0) + 1
 	slowGeneration[humanoid] = generation
 	humanoid.WalkSpeed = base * factor
@@ -1018,20 +1019,20 @@ local function spawnLoop()
 	while true do
 		local interval = DifficultyService.getSpawnInterval()
 		-- Extra pressure while the objective is being held.
-		if workspace:GetAttribute("ObjectiveActive") == true then
+		if workspace:GetAttribute(Attributes.ObjectiveActive) == true then
 			interval *= Config.Difficulty.ObjectiveSpawnFactor
 		end
 		-- And during extraction.
-		if workspace:GetAttribute("ExtractionActive") == true then
+		if workspace:GetAttribute(Attributes.ExtractionActive) == true then
 			interval *= Config.Extraction.SpawnFactor
 		end
 		-- And for a while after a Resupply pallet lands.
-		if workspace:GetAttribute("ResupplyActive") == true then
+		if workspace:GetAttribute(Attributes.ResupplyActive) == true then
 			interval *= Config.Requisition.Lure.SpawnFactor
 		end
 		-- Less while the Index is up: the fight is the pressure (Config.Index.Warden.Pressure).
 		local maxAlive = DifficultyService.getMaxAlive()
-		if workspace:GetAttribute("IndexActive") == true then
+		if workspace:GetAttribute(Attributes.IndexActive) == true then
 			local pressure = Config.Index.Warden.Pressure
 			interval *= pressure.SpawnFactor
 			maxAlive = math.max(4, maxAlive - pressure.MaxAliveReduction)
@@ -1039,7 +1040,7 @@ local function spawnLoop()
 		task.wait(interval)
 		if
 			RunStates.isLive()
-			and workspace:GetAttribute("DevSpawnsOff") ~= true
+			and workspace:GetAttribute(Attributes.DevSpawnsOff) ~= true
 			and not PauseService.isPaused()
 			and #zombies < maxAlive
 		then

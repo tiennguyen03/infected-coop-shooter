@@ -13,6 +13,8 @@ local UserInputService = game:GetService("UserInputService")
 
 local CallInDefinitions =
 	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("CallInDefinitions"))
+local Messages = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Messages"))
+local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attributes"))
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
 local ThrowUtil = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("ThrowUtil"))
@@ -146,17 +148,18 @@ end
 -- Key 1 or 2: the call-in in that slot, thrown at the crosshair when it is a throw kind.
 local function useCallIn(slot: number)
 	local player = Players.LocalPlayer
-	local definition = CallInDefinitions.get(player:GetAttribute(`CallIn{slot}`) :: string?)
+	local definition =
+		CallInDefinitions.get(player:GetAttribute(Attributes.callIn(slot)) :: string?)
 	if not definition then
 		return
 	end
-	local charges = (player:GetAttribute(`CallIn{slot}Charges`) :: number?) or 0
+	local charges = (player:GetAttribute(Attributes.callInCharges(slot)) :: number?) or 0
 	-- Daisy Chain: the Tripline key still goes out on an empty slot (the server blows the
 	-- armed mines without a charge).
 	local daisyChain = definition.Id == "tripline"
 		and (
-			player:GetAttribute("UpgradeCallInA") == "command_detonation"
-			or player:GetAttribute("UpgradeCallInB") == "command_detonation"
+			player:GetAttribute(Attributes.UpgradeCallInA) == "command_detonation"
+			or player:GetAttribute(Attributes.UpgradeCallInB) == "command_detonation"
 		)
 	if charges <= 0 and not daisyChain then
 		return
@@ -179,11 +182,11 @@ function AbilityController.init()
 			return
 		end
 		-- Nothing fires while the field is frozen (run end).
-		if workspace:GetAttribute("GamePaused") == true then
+		if workspace:GetAttribute(Attributes.GamePaused) == true then
 			return
 		end
 		if input.KeyCode == Enum.KeyCode.Q then
-			useAbility:FireServer("dash")
+			useAbility:FireServer(Messages.Ability.Dash)
 		elseif input.KeyCode == Enum.KeyCode.E then
 			startTargeting()
 		elseif input.KeyCode == Enum.KeyCode.One then
@@ -191,15 +194,18 @@ function AbilityController.init()
 		elseif input.KeyCode == Enum.KeyCode.Two then
 			useCallIn(2)
 		elseif input.KeyCode == Enum.KeyCode.Three then
-			resupply:FireServer("flare", landingPoint(Config.Requisition.FlareThrowDistance))
+			resupply:FireServer(
+				Messages.Resupply.Flare,
+				landingPoint(Config.Requisition.FlareThrowDistance)
+			)
 		end
 	end)
 
 	UserInputService.InputEnded:Connect(function(input, _gameProcessed)
 		if input.KeyCode == Enum.KeyCode.E then
 			local target = stopTargeting()
-			if target and workspace:GetAttribute("GamePaused") ~= true then
-				useAbility:FireServer("breach", target)
+			if target and workspace:GetAttribute(Attributes.GamePaused) ~= true then
+				useAbility:FireServer(Messages.Ability.Breach, target)
 				AnimationController.playAbility("breach")
 			end
 		end
@@ -215,8 +221,8 @@ function AbilityController.init()
 	Players.LocalPlayer.CharacterAdded:Connect(function()
 		stopTargeting()
 	end)
-	workspace:GetAttributeChangedSignal("GamePaused"):Connect(function()
-		if workspace:GetAttribute("GamePaused") == true then
+	workspace:GetAttributeChangedSignal(Attributes.GamePaused):Connect(function()
+		if workspace:GetAttribute(Attributes.GamePaused) == true then
 			stopTargeting()
 		end
 	end)

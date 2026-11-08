@@ -11,6 +11,7 @@ local RunService = game:GetService("RunService")
 
 local CallInDefinitions =
 	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("CallInDefinitions"))
+local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attributes"))
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
 
@@ -88,15 +89,16 @@ end
 
 local function updateCallInTile(tile: CallInTile, slot: number)
 	local player = Players.LocalPlayer
-	local definition = CallInDefinitions.get(player:GetAttribute(`CallIn{slot}`) :: string?)
+	local definition =
+		CallInDefinitions.get(player:GetAttribute(Attributes.callIn(slot)) :: string?)
 	if not definition then
 		tile.frame.Visible = false
 		return
 	end
 	tile.frame.Visible = true
 	local cfg = (Config.CallIns :: { [string]: any })[definition.ConfigKey]
-	local charges = (player:GetAttribute(`CallIn{slot}Charges`) :: number?) or 0
-	local readyAt = (player:GetAttribute(`CallIn{slot}ReadyAt`) :: number?) or 0
+	local charges = (player:GetAttribute(Attributes.callInCharges(slot)) :: number?) or 0
+	local readyAt = (player:GetAttribute(Attributes.callInReadyAt(slot)) :: number?) or 0
 	tile.label.Text = `[{slot}] {definition.Name}`
 	for index, pip in tile.pips do
 		pip.Visible = index <= cfg.Charges
@@ -159,7 +161,7 @@ function AbilityUI.init()
 		lastClock = now
 		-- Freeze the countdown while the field is frozen (run end) so the display matches
 		-- the server, which also pauses cooldown progress.
-		local paused = workspace:GetAttribute("GamePaused") == true
+		local paused = workspace:GetAttribute(Attributes.GamePaused) == true
 		for _, slot in slots do
 			if paused and slot.readyUntil > now then
 				slot.readyUntil += dt
@@ -176,7 +178,7 @@ function AbilityUI.init()
 		for slot, tile in callInTiles do
 			updateCallInTile(tile, slot)
 		end
-		local stacks = (Players.LocalPlayer:GetAttribute("MomentumStacks") :: number?) or 0
+		local stacks = (Players.LocalPlayer:GetAttribute(Attributes.MomentumStacks) :: number?) or 0
 		momentumLabel.Text = if stacks > 0 then `MOMENTUM x{stacks}` else ""
 	end)
 end

@@ -10,6 +10,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Messages = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Messages"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
 local AnimationController = require(script.Parent.AnimationController)
 local MomentumController = require(script.Parent.MomentumController)
@@ -17,12 +18,12 @@ local MomentumController = require(script.Parent.MomentumController)
 local KnockdownController = {}
 
 local function onImpact(kind: string, ...: any)
-	if kind == "knockdown" then
+	if kind == Messages.Impact.Knockdown then
 		local seconds = ... :: number
 		if typeof(seconds) == "number" and seconds > 0 then
 			AnimationController.playKnockdown(seconds)
 		end
-	elseif kind == "push" then
+	elseif kind == Messages.Impact.Push then
 		local shove = ... :: Vector3
 		if typeof(shove) == "Vector3" then
 			MomentumController.push(shove)

@@ -19,6 +19,8 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local Messages = require(ReplicatedStorage.Shared.Messages)
+local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local ArenaService = require(script.Parent.ArenaService)
@@ -84,9 +86,9 @@ local function publish(member: Member)
 	end
 	for _, target in { member.character :: Instance?, member.owner :: Instance? } do
 		if target then
-			target:SetAttribute("SquadState", member.state)
-			target:SetAttribute("BleedOutAt", bleedOutServer)
-			target:SetAttribute("SelfReviveAt", selfReviveServer)
+			target:SetAttribute(Attributes.SquadState, member.state)
+			target:SetAttribute(Attributes.BleedOutAt, bleedOutServer)
+			target:SetAttribute(Attributes.SelfReviveAt, selfReviveServer)
 		end
 	end
 end
@@ -94,7 +96,7 @@ end
 local function setReviver(member: Member, name: string)
 	for _, target in { member.character :: Instance?, member.owner :: Instance? } do
 		if target then
-			target:SetAttribute("Reviver", name)
+			target:SetAttribute(Attributes.Reviver, name)
 		end
 	end
 end
@@ -209,7 +211,7 @@ end
 -- Knocked down (Squad.knock): the KnockedUntil attribute is on the character while it lasts.
 function Squad.isKnocked(member: Member): boolean
 	local character = member.character
-	return character ~= nil and character:GetAttribute("KnockedUntil") ~= nil
+	return character ~= nil and character:GetAttribute(Attributes.KnockedUntil) ~= nil
 end
 
 -- May act (fire, use abilities, throw the flare): Alive and on their feet.
@@ -227,20 +229,20 @@ function Squad.knock(member: Member, seconds: number): boolean
 		return false
 	end
 	local now = os.clock()
-	local grace = character:GetAttribute("KnockGraceUntil") :: number?
-	if (grace and now < grace) or character:GetAttribute("KnockedUntil") ~= nil then
+	local grace = character:GetAttribute(Attributes.KnockGraceUntil) :: number?
+	if (grace and now < grace) or character:GetAttribute(Attributes.KnockedUntil) ~= nil then
 		return false
 	end
 	local until_ = now + seconds
-	character:SetAttribute("KnockedUntil", until_)
+	character:SetAttribute(Attributes.KnockedUntil, until_)
 	if member.owner then
 		loadoutService().cancelReload(member.owner)
-		Remotes.get("Impact"):FireClient(member.owner, "knockdown", seconds)
+		Remotes.get("Impact"):FireClient(member.owner, Messages.Impact.Knockdown, seconds)
 	end
 	task.delay(seconds, function()
-		if character.Parent and character:GetAttribute("KnockedUntil") == until_ then
-			character:SetAttribute("KnockedUntil", nil)
-			character:SetAttribute("KnockGraceUntil", os.clock() + Config.Knockdown.Grace)
+		if character.Parent and character:GetAttribute(Attributes.KnockedUntil) == until_ then
+			character:SetAttribute(Attributes.KnockedUntil, nil)
+			character:SetAttribute(Attributes.KnockGraceUntil, os.clock() + Config.Knockdown.Grace)
 		end
 	end)
 	return true
@@ -406,7 +408,7 @@ function Squad.down(member: Member)
 	-- Spare Tourniquet: the body gets itself up, once per run.
 	if
 		not member.tourniquetUsed
-		and Squad.ownerAttribute(member, "UpgradeKit", "") == "tourniquet"
+		and Squad.ownerAttribute(member, Attributes.UpgradeKit, "") == "tourniquet"
 	then
 		member.tourniquetUsed = true
 		member.selfReviveAt = os.clock() + Config.Upgrades.Tourniquet.Seconds

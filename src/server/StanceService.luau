@@ -14,19 +14,18 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Messages = require(ReplicatedStorage.Shared.Messages)
+local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 
 local StanceService = {}
 
-local STAND_HIP_ATTRIBUTE = "StandHipHeight"
-local ROOT_DROP_ATTRIBUTE = "RootDrop"
 -- While prone every body part but the root is in this group, which touches nothing: the
 -- prone and crawl clips press the torso and head into the floor, and a solid torso there
 -- props the root above its floor ray (Freefall, no friction: the body slides). The root
 -- stays the one collider, as the prone rules assume (owner bug report).
 local PRONE_GROUP = "ProneBody"
-local SETTLE_ATTRIBUTE = "StanceSettle" -- bumps on every stand-up: a stale settle wait gives up
 local SETTLE_TIMEOUT = 1 -- seconds: the longest a standing body stays non-colliding
 
 local function rootMotor(character: Model): Motor6D?
@@ -87,7 +86,7 @@ local function setBodyGroup(character: Model, prone: boolean)
 end
 
 local function setProne(character: Model, humanoid: Humanoid, prone: boolean)
-	local drop = character:GetAttribute(ROOT_DROP_ATTRIBUTE)
+	local drop = character:GetAttribute(Attributes.RootDrop)
 	local isProne = typeof(drop) == "number" and drop > 0
 	if prone == isProne then
 		return
@@ -96,23 +95,23 @@ local function setProne(character: Model, humanoid: Humanoid, prone: boolean)
 		local standHip = humanoid.HipHeight
 		local proneHip = Config.Player.Stances.ProneHipHeight
 		local lift = math.max(standHip - proneHip, 0)
-		character:SetAttribute(STAND_HIP_ATTRIBUTE, standHip)
-		character:SetAttribute(ROOT_DROP_ATTRIBUTE, lift)
+		character:SetAttribute(Attributes.StandHipHeight, standHip)
+		character:SetAttribute(Attributes.RootDrop, lift)
 		humanoid.HipHeight = proneHip
 		liftRig(character, lift)
 		setBodyGroup(character, true)
 		character:SetAttribute(
-			SETTLE_ATTRIBUTE,
-			(character:GetAttribute(SETTLE_ATTRIBUTE) :: number? or 0) + 1
+			Attributes.StanceSettle,
+			(character:GetAttribute(Attributes.StanceSettle) :: number? or 0) + 1
 		)
 	else
-		local standHip = character:GetAttribute(STAND_HIP_ATTRIBUTE)
+		local standHip = character:GetAttribute(Attributes.StandHipHeight)
 		local lift = if typeof(drop) == "number" then drop else 0
 		if typeof(standHip) == "number" then
 			humanoid.HipHeight = standHip
 		end
 		liftRig(character, -lift)
-		character:SetAttribute(ROOT_DROP_ATTRIBUTE, 0)
+		character:SetAttribute(Attributes.RootDrop, 0)
 		-- The rig is now back down at standing offset while the root is still at prone
 		-- height, so the legs sit ~`lift` studs inside the floor. Turning their collision
 		-- back on now makes the solver push them out downward and the body falls through
@@ -121,8 +120,8 @@ local function setProne(character: Model, humanoid: Humanoid, prone: boolean)
 		-- if the body is still standing and not downed by then.
 		local root = character:FindFirstChild("HumanoidRootPart") :: BasePart?
 		local startY = if root then root.Position.Y else 0
-		local token = (character:GetAttribute(SETTLE_ATTRIBUTE) :: number? or 0) + 1
-		character:SetAttribute(SETTLE_ATTRIBUTE, token)
+		local token = (character:GetAttribute(Attributes.StanceSettle) :: number? or 0) + 1
+		character:SetAttribute(Attributes.StanceSettle, token)
 		task.spawn(function()
 			local deadline = os.clock() + SETTLE_TIMEOUT
 			while os.clock() < deadline do
@@ -131,12 +130,12 @@ local function setProne(character: Model, humanoid: Humanoid, prone: boolean)
 				end
 				RunService.Heartbeat:Wait()
 			end
-			if character:GetAttribute(SETTLE_ATTRIBUTE) ~= token then
+			if character:GetAttribute(Attributes.StanceSettle) ~= token then
 				return -- another stance change since
 			end
-			local nowDrop = character:GetAttribute(ROOT_DROP_ATTRIBUTE)
+			local nowDrop = character:GetAttribute(Attributes.RootDrop)
 			local stillStanding = not (typeof(nowDrop) == "number" and nowDrop > 0)
-			if stillStanding and character:GetAttribute("SquadState") ~= "Downed" then
+			if stillStanding and character:GetAttribute(Attributes.SquadState) ~= "Downed" then
 				setBodyGroup(character, false)
 			end
 		end)
@@ -152,7 +151,11 @@ function StanceService.init()
 	end
 	local remote = Remotes.get("Stance")
 	remote.OnServerEvent:Connect(function(player: Player, stance: unknown)
-		if stance ~= "stand" and stance ~= "crouch" and stance ~= "prone" then
+		if
+			stance ~= Messages.Stance.Stand
+			and stance ~= Messages.Stance.Crouch
+			and stance ~= Messages.Stance.Prone
+		then
 			return
 		end
 		local character = player.Character
@@ -164,22 +167,22 @@ function StanceService.init()
 		if humanoid.Health <= 0 then
 			return
 		end
-		if stance == "prone" then
+		if stance == Messages.Stance.Prone then
 			-- Downed bodies crawl on hands and knees (DownedController) at the standing hip
 			-- height: the crawl clip is authored for a standing root, so dropping the hip
 			-- leaves the torso and head (solid) holding the root up off its floor ray, the
 			-- Humanoid falls into Freefall (no friction) and contact jitter throws the body
 			-- across the map (owner bug report).
-			if character:GetAttribute("SquadState") == "Downed" then
+			if character:GetAttribute(Attributes.SquadState) == "Downed" then
 				return
 			end
 			setProne(character, humanoid, true)
 			return
 		end
-		local drop = character:GetAttribute(ROOT_DROP_ATTRIBUTE)
+		local drop = character:GetAttribute(Attributes.RootDrop)
 		local isProne = typeof(drop) == "number" and drop > 0
 		if isProne and not StanceService.headroomClear(character, root) then
-			remote:FireClient(player, "prone") -- under a ceiling: stays down
+			remote:FireClient(player, Messages.Stance.Prone) -- under a ceiling: stays down
 			return
 		end
 		setProne(character, humanoid, false)
@@ -187,13 +190,13 @@ function StanceService.init()
 	-- A new body starts standing; the attributes die with the old one.
 	Players.PlayerAdded:Connect(function(player)
 		player.CharacterAdded:Connect(function(character)
-			character:SetAttribute(ROOT_DROP_ATTRIBUTE, 0)
+			character:SetAttribute(Attributes.RootDrop, 0)
 			-- Going down while already prone: stand the hip back up for the crawl (above),
 			-- unless a ceiling is in the way (the Scrapes), where the prone hip stays.
-			character:GetAttributeChangedSignal("SquadState"):Connect(function()
-				if character:GetAttribute("SquadState") ~= "Downed" then
+			character:GetAttributeChangedSignal(Attributes.SquadState):Connect(function()
+				if character:GetAttribute(Attributes.SquadState) ~= "Downed" then
 					-- Revived: the body collides again unless it is still prone.
-					local drop = character:GetAttribute(ROOT_DROP_ATTRIBUTE)
+					local drop = character:GetAttribute(Attributes.RootDrop)
 					if not (typeof(drop) == "number" and drop > 0) then
 						setBodyGroup(character, false)
 					end

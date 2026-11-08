@@ -12,6 +12,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
+local Messages = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Messages"))
+local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attributes"))
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
 local UpgradeDefinitions =
@@ -47,9 +49,9 @@ local openCrates: { [number]: CrateCards } = {}
 ----------------------------------------------------------------------
 
 local function updateMeter()
-	local pool = (workspace:GetAttribute("ResupplyPool") :: number?) or 0
-	local cost = (workspace:GetAttribute("ResupplyCost") :: number?) or 1
-	local dropIn = (workspace:GetAttribute("ResupplyDropIn") :: number?) or -1
+	local pool = (workspace:GetAttribute(Attributes.ResupplyPool) :: number?) or 0
+	local cost = (workspace:GetAttribute(Attributes.ResupplyCost) :: number?) or 1
+	local dropIn = (workspace:GetAttribute(Attributes.ResupplyDropIn) :: number?) or -1
 	local now = os.clock()
 	if pool > lastPool then
 		gainPulseUntil = now + GAIN_PULSE_SECONDS
@@ -299,7 +301,7 @@ local function checkPicks()
 				Vector3.new(root.Position.X - card.position.X, 0, root.Position.Z - card.position.Z)
 			if flat.Magnitude <= Config.Requisition.PickRadius then
 				crate.pickSent = true
-				resupplyRemote:FireServer("pick", crate.id, card.cardId)
+				resupplyRemote:FireServer(Messages.Resupply.Pick, crate.id, card.cardId)
 				-- Optimistic: fade the others now; the server's "picked" clears the rest.
 				closeCards(crate.id, card.cardId)
 				SoundFX.play("levelup")
@@ -323,12 +325,12 @@ function ResupplyUI.init()
 	createMeter()
 
 	resupplyRemote.OnClientEvent:Connect(function(kind: string, ...: any)
-		if kind == "cards" then
+		if kind == Messages.Resupply.Cards then
 			showCards(...)
-		elseif kind == "picked" or kind == "closed" then
+		elseif kind == Messages.Resupply.Picked or kind == Messages.Resupply.Closed then
 			local crateId = ...
 			closeCards(crateId)
-		elseif kind == "called" then
+		elseif kind == Messages.Resupply.Called then
 			local thrower = ...
 			noticeText = if thrower == Players.LocalPlayer.Name
 				then "FLARE OUT - PALLET INBOUND"

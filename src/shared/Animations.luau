@@ -8,9 +8,8 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local Attributes = require(script.Parent.Attributes)
 local Config = require(script.Parent.Config)
-
-local ATTRIBUTE_PREFIX = "Anim_"
 
 local Animations = {}
 
@@ -29,7 +28,7 @@ function Animations.getId(clip: string): string?
 	if previewIds[clip] then
 		return previewIds[clip]
 	end
-	local attribute = shared():GetAttribute(ATTRIBUTE_PREFIX .. clip)
+	local attribute = shared():GetAttribute(Attributes.animPreview(clip))
 	if typeof(attribute) == "string" and attribute ~= "" then
 		return attribute
 	end
@@ -70,7 +69,7 @@ function Animations.init()
 		local ok, previewId = pcall(AnimationBuilder.previewId, clip)
 		if ok and previewId then
 			previewIds[clip] = previewId
-			shared():SetAttribute(ATTRIBUTE_PREFIX .. clip, previewId)
+			shared():SetAttribute(Attributes.animPreview(clip), previewId)
 		else
 			warn(`[Animations] no preview for clip "{clip}": {tostring(previewId)}`)
 		end

@@ -16,6 +16,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
+local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attributes"))
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 
 local HIP_FOV = 70
@@ -139,7 +140,7 @@ local function onRenderStep(deltaTime: number)
 
 	-- Free the cursor while soft-paused (item selection) or dead (death
 	-- screen); otherwise hold it locked for aiming.
-	local needsCursor = workspace:GetAttribute("GamePaused") == true
+	local needsCursor = workspace:GetAttribute(Attributes.GamePaused) == true
 		or not humanoid
 		or humanoid.Health <= 0
 		or next(cursorHolders) ~= nil
@@ -169,7 +170,7 @@ local function onRenderStep(deltaTime: number)
 		-- Bloom (server-owned, ProjectileServer): the ring opens while the trigger is held and
 		-- closes as it recovers; mirror the recovery locally between shots.
 		local player = Players.LocalPlayer
-		local bloomValue = (player:GetAttribute("Bloom") :: number?) or 0
+		local bloomValue = (player:GetAttribute(Attributes.Bloom) :: number?) or 0
 		if bloomValue > 0 then
 			local shotAt = bloomShotAt or os.clock()
 			local idle = os.clock() - shotAt - Config.Weapon.BloomRecoveryDelay
@@ -189,7 +190,7 @@ local function onRenderStep(deltaTime: number)
 	camera.CameraType = Enum.CameraType.Scriptable
 	local rotation = CFrame.fromEulerAnglesYXZ(pitch, yaw, 0)
 	-- A prone body's root sits lower (StanceService RootDrop); the pivot stays on the body.
-	local dropValue = root.Parent and root.Parent:GetAttribute("RootDrop")
+	local dropValue = root.Parent and root.Parent:GetAttribute(Attributes.RootDrop)
 	local rootDrop = if typeof(dropValue) == "number" then dropValue else 0
 	local focus = root.Position
 		+ Vector3.new(0, pivotHeight + rootDrop, 0)
@@ -221,7 +222,7 @@ function CameraController.init()
 	createCrosshair()
 	-- WeaponController stamps LastShotAt (local only) on every shot, so the ring holds its
 	-- bloom at the cap too (an attribute set to the same value fires no change).
-	player:GetAttributeChangedSignal("LastShotAt"):Connect(function()
+	player:GetAttributeChangedSignal(Attributes.LastShotAt):Connect(function()
 		bloomShotAt = os.clock()
 	end)
 

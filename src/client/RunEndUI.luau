@@ -14,6 +14,7 @@ local ProximityPromptService = game:GetService("ProximityPromptService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attributes"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
 
 local RunEndUI = {}
@@ -80,9 +81,9 @@ local function refreshStatus()
 	if not status then
 		return
 	end
-	local count = (workspace:GetAttribute("ReadyCount") :: number?) or 0
-	local needed = (workspace:GetAttribute("ReadyNeeded") :: number?) or 1
-	local endsAt = (workspace:GetAttribute("ReadyUpEndsAt") :: number?) or 0
+	local count = (workspace:GetAttribute(Attributes.ReadyCount) :: number?) or 0
+	local needed = (workspace:GetAttribute(Attributes.ReadyNeeded) :: number?) or 1
+	local endsAt = (workspace:GetAttribute(Attributes.ReadyUpEndsAt) :: number?) or 0
 	local text = `{count} / {needed} ready`
 	if endsAt > 0 then
 		text ..= `  -  next deployment in {math.max(
@@ -92,7 +93,7 @@ local function refreshStatus()
 	end
 	status.Text = text
 	local button = readyButton
-	if button and Players.LocalPlayer:GetAttribute("Ready") == true then
+	if button and Players.LocalPlayer:GetAttribute(Attributes.Ready) == true then
 		button.Text = "READY ✓"
 		button.Active = false
 		button.AutoButtonColor = false
@@ -103,11 +104,11 @@ local function showResults()
 	hideResults()
 	hideBanner()
 	local player = Players.LocalPlayer
-	local extracted = workspace:GetAttribute("RunResult") == "Extracted"
-	local startTime = (workspace:GetAttribute("RunStartTime") :: number?) or 0
+	local extracted = workspace:GetAttribute(Attributes.RunResult) == "Extracted"
+	local startTime = (workspace:GetAttribute(Attributes.RunStartTime) :: number?) or 0
 	local survived = math.max(workspace:GetServerTimeNow() - startTime, 0)
-	local kills = (player:GetAttribute("Kills") :: number?) or 0
-	local objectiveDone = workspace:GetAttribute("ObjectiveCompleted") == true
+	local kills = (player:GetAttribute(Attributes.Kills) :: number?) or 0
+	local objectiveDone = workspace:GetAttribute(Attributes.ObjectiveCompleted) == true
 
 	local gui = newGui("RunEndUI", 100)
 	local dim = Instance.new("Frame")
@@ -182,9 +183,9 @@ local function refreshDowned()
 	if not timer or not character then
 		return
 	end
-	local endsAt = (character:GetAttribute("BleedOutAt") :: number?) or 0
+	local endsAt = (character:GetAttribute(Attributes.BleedOutAt) :: number?) or 0
 	local left = math.max(math.ceil(endsAt - workspace:GetServerTimeNow()), 0)
-	local reviver = character:GetAttribute("Reviver")
+	local reviver = character:GetAttribute(Attributes.Reviver)
 	if typeof(reviver) == "string" and reviver ~= "" then
 		timer.Text = `{reviver} is reviving you  -  {left}s`
 	else
@@ -250,7 +251,7 @@ local function showBanner()
 end
 
 local function refresh()
-	if workspace:GetAttribute("RunState") == "Ended" then
+	if workspace:GetAttribute(Attributes.RunState) == "Ended" then
 		if not results then
 			showResults()
 		end
@@ -259,7 +260,7 @@ local function refresh()
 	hideResults()
 	local character = Players.LocalPlayer.Character
 	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-	local downed = character ~= nil and character:GetAttribute("SquadState") == "Downed"
+	local downed = character ~= nil and character:GetAttribute(Attributes.SquadState) == "Downed"
 	if humanoid and humanoid.Health <= 0 then
 		hideDowned()
 		showBanner()
@@ -275,8 +276,8 @@ end
 local function onCharacterAdded(character: Model)
 	local humanoid = character:WaitForChild("Humanoid") :: Humanoid
 	humanoid.Died:Connect(refresh)
-	character:GetAttributeChangedSignal("SquadState"):Connect(refresh)
-	character:GetAttributeChangedSignal("Reviver"):Connect(refreshDowned)
+	character:GetAttributeChangedSignal(Attributes.SquadState):Connect(refresh)
+	character:GetAttributeChangedSignal(Attributes.Reviver):Connect(refreshDowned)
 	refresh()
 end
 
@@ -288,7 +289,7 @@ function RunEndUI.init()
 	for _, name in { "ReadyCount", "ReadyNeeded", "ReadyUpEndsAt" } do
 		workspace:GetAttributeChangedSignal(name):Connect(refreshStatus)
 	end
-	player:GetAttributeChangedSignal("Ready"):Connect(refreshStatus)
+	player:GetAttributeChangedSignal(Attributes.Ready):Connect(refreshStatus)
 	player.CharacterAdded:Connect(onCharacterAdded)
 	if player.Character then
 		task.spawn(onCharacterAdded, player.Character)

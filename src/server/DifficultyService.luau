@@ -9,6 +9,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Squad = require(script.Parent.Squad)
 local Lifecycle = require(script.Parent.Lifecycle)
@@ -21,7 +22,7 @@ local startClock = 0
 -- from it.
 function DifficultyService.restart()
 	startClock = workspace:GetServerTimeNow()
-	workspace:SetAttribute("RunStartTime", startClock)
+	workspace:SetAttribute(Attributes.RunStartTime, startClock)
 end
 
 function DifficultyService.init()

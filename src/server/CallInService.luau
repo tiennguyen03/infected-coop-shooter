@@ -12,6 +12,8 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local Messages = require(ReplicatedStorage.Shared.Messages)
+local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local CallInDefinitions = require(ReplicatedStorage.Shared.CallInDefinitions)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
@@ -68,7 +70,7 @@ local function cooldownFor(player: Player, slot: number): number
 end
 
 local function publish(player: Player, slot: number, state: Slot)
-	player:SetAttribute(`CallIn{slot}Charges`, state.charges)
+	player:SetAttribute(Attributes.callInCharges(slot), state.charges)
 	local nextChargeAt = state.nextChargeAt
 	player:SetAttribute(
 		`CallIn{slot}ReadyAt`,
@@ -181,7 +183,7 @@ local function onCallIn(player: Player, slot: unknown, requested: unknown)
 		and MineService.armedCount(player) > 0
 	then
 		local blown = MineService.detonateAll(player)
-		usedRemote:FireClient(player, "callin", slotIndex, "detonate")
+		usedRemote:FireClient(player, Messages.Ability.CallIn, slotIndex, "detonate")
 		print(`[CallIn] {player.Name} blew {blown} mine(s) (Daisy Chain)`)
 		return
 	end
@@ -198,7 +200,7 @@ local function onCallIn(player: Player, slot: unknown, requested: unknown)
 		state.nextChargeAt = os.clock() + cooldownFor(player, slotIndex)
 	end
 	publish(player, slotIndex, state)
-	usedRemote:FireClient(player, "callin", slotIndex, definition.Id)
+	usedRemote:FireClient(player, Messages.Ability.CallIn, slotIndex, definition.Id)
 	print(`[CallIn] {player.Name} used {definition.Name} ({state.charges} left)`)
 end
 

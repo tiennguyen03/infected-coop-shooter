@@ -35,6 +35,8 @@ local Debris = game:GetService("Debris")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local Messages = require(ReplicatedStorage.Shared.Messages)
+local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Animations = require(ReplicatedStorage.Shared.Animations)
 local Config = require(ReplicatedStorage.Shared.Config)
 local EnemyDefinitions = require(ReplicatedStorage.Shared.EnemyDefinitions)
@@ -141,7 +143,7 @@ local function tell(kind: string)
 	if not current then
 		return
 	end
-	bossRemote:FireAllClients("tell", kind)
+	bossRemote:FireAllClients(Messages.BossUpdate.Tell, kind)
 	local head = current.handle.model:FindFirstChild("Head") :: BasePart?
 	if head then
 		-- The handset's carrier hiss is open work (needs the audio pipeline); the Brute's
@@ -199,7 +201,7 @@ end
 local function plateFractions(current: Fight): { number }
 	local fractions = {}
 	for _, plate in current.plates do
-		local health = plate.part:GetAttribute("PlateHealth")
+		local health = plate.part:GetAttribute(Attributes.PlateHealth)
 		local value = if plate.broken or typeof(health) ~= "number" then 0 else health / plate.max
 		table.insert(fractions, math.clamp(value, 0, 1))
 	end
@@ -210,7 +212,7 @@ local function sync(current: Fight)
 	local humanoid = current.handle.humanoid
 	local fraction = if humanoid.MaxHealth > 0 then humanoid.Health / humanoid.MaxHealth else 0
 	bossRemote:FireAllClients(
-		"state",
+		Messages.BossUpdate.State,
 		math.clamp(fraction, 0, 1),
 		plateFractions(current),
 		current.phase
@@ -264,16 +266,16 @@ local function markDanger(
 	direction: Vector3?,
 	length: number?
 )
-	workspace:SetAttribute("BossDangerKind", kind)
-	workspace:SetAttribute("BossDanger", center)
-	workspace:SetAttribute("BossDangerRadius", radius)
-	workspace:SetAttribute("BossDangerDir", direction or Vector3.zAxis)
-	workspace:SetAttribute("BossDangerLength", length or 0)
-	workspace:SetAttribute("BossDangerUntil", untilTime)
+	workspace:SetAttribute(Attributes.BossDangerKind, kind)
+	workspace:SetAttribute(Attributes.BossDanger, center)
+	workspace:SetAttribute(Attributes.BossDangerRadius, radius)
+	workspace:SetAttribute(Attributes.BossDangerDir, direction or Vector3.zAxis)
+	workspace:SetAttribute(Attributes.BossDangerLength, length or 0)
+	workspace:SetAttribute(Attributes.BossDangerUntil, untilTime)
 end
 
 local function clearDanger()
-	workspace:SetAttribute("BossDangerUntil", 0)
+	workspace:SetAttribute(Attributes.BossDangerUntil, 0)
 end
 
 -- Plate damage taken inside Guard.TriggerWindow seconds.
@@ -356,8 +358,8 @@ end
 local function cancelGuard(current: Fight)
 	local humanoid = current.handle.humanoid
 	stop(current, "guard", 0.3)
-	current.handle.model:SetAttribute("GuardFactor", nil)
-	local base = (humanoid:GetAttribute("BaseWalkSpeed") :: number?) or humanoid.WalkSpeed
+	current.handle.model:SetAttribute(Attributes.GuardFactor, nil)
+	local base = (humanoid:GetAttribute(Attributes.BaseWalkSpeed) :: number?) or humanoid.WalkSpeed
 	if not PauseService.isPaused() and humanoid.Health > 0 then
 		humanoid.WalkSpeed = base
 	end
@@ -373,9 +375,9 @@ local function breakPlate(current: Fight, plate: Plate)
 	current.platesBroken += 1
 	local settings = cfg()
 	local part = plate.part
-	part:SetAttribute("PlateHealth", nil)
-	part:SetAttribute("PlateMax", nil)
-	plate.limb:SetAttribute("Exposed", true)
+	part:SetAttribute(Attributes.PlateHealth, nil)
+	part:SetAttribute(Attributes.PlateMax, nil)
+	plate.limb:SetAttribute(Attributes.Exposed, true)
 	for _, child in part:GetChildren() do
 		if child:IsA("WeldConstraint") or child:IsA("Weld") then
 			child:Destroy()
@@ -413,7 +415,7 @@ local function breakPlate(current: Fight, plate: Plate)
 		stop(current, "idle", 0.05)
 		play(current, "hit", 0.05)
 	end
-	bossRemote:FireAllClients("tell", "break")
+	bossRemote:FireAllClients(Messages.BossUpdate.Tell, Messages.BossTell.Break)
 	if current.platesBroken == 1 then
 		radio("FirstPlate")
 	elseif current.platesBroken == #current.plates then
@@ -424,11 +426,11 @@ end
 
 local function watchPlate(current: Fight, plate: Plate)
 	local settings = cfg()
-	plate.part:GetAttributeChangedSignal("PlateHealth"):Connect(function()
+	plate.part:GetAttributeChangedSignal(Attributes.PlateHealth):Connect(function()
 		if fight ~= current or plate.broken then
 			return
 		end
-		local health = plate.part:GetAttribute("PlateHealth")
+		local health = plate.part:GetAttribute(Attributes.PlateHealth)
 		if typeof(health) ~= "number" then
 			return
 		end
@@ -440,7 +442,7 @@ local function watchPlate(current: Fight, plate: Plate)
 			breakPlate(current, plate)
 		elseif not plate.cracked and health <= plate.max * settings.CrackFraction then
 			plate.cracked = true
-			plate.part:SetAttribute("Cracked", true)
+			plate.part:SetAttribute(Attributes.Cracked, true)
 			sync(current)
 		end
 	end)
@@ -481,7 +483,7 @@ local function buildPlates(model: Model)
 		plate.CastShadow = true
 		plate.CollisionGroup = ENEMY_COLLISION_GROUP
 		if spec.Flank then
-			plate:SetAttribute("Flank", true)
+			plate:SetAttribute(Attributes.Flank, true)
 		end
 		local original = Instance.new("Vector3Value")
 		original.Name = "OriginalSize"
@@ -506,8 +508,8 @@ local function armPlates(current: Fight, healthMultiplier: number)
 			continue
 		end
 		local health = spec.Health * healthMultiplier
-		plate:SetAttribute("PlateHealth", health)
-		plate:SetAttribute("PlateMax", health)
+		plate:SetAttribute(Attributes.PlateHealth, health)
+		plate:SetAttribute(Attributes.PlateMax, health)
 		local record: Plate = {
 			name = name,
 			part = plate,
@@ -566,7 +568,7 @@ local function startWindup(current: Fight, kind: string, windup: number, target:
 	if kind == "pound" then
 		local radius = settings.Pound.Radius * reach
 		markDanger("disc", ground, radius, current.resolveAt)
-		bossRemote:FireAllClients("zone", ground, radius, windup)
+		bossRemote:FireAllClients(Messages.BossUpdate.Zone, ground, radius, windup)
 	elseif kind == "stomp" then
 		markDanger("disc", ground, settings.Stomp.Radius * reach, current.resolveAt)
 	elseif kind == "slam" then
@@ -615,7 +617,7 @@ local function shove(current: Fight, member: Squad.Member, speed: number)
 		else flat(current.handle.root.CFrame.LookVector)
 	local velocity = direction * speed + Vector3.new(0, speed * 0.25, 0)
 	if member.owner then
-		Remotes.get("Impact"):FireClient(member.owner, "push", velocity)
+		Remotes.get("Impact"):FireClient(member.owner, Messages.Impact.Push, velocity)
 	else
 		targetRoot.AssemblyLinearVelocity = velocity
 	end
@@ -752,7 +754,7 @@ local function endCharge(current: Fight, wall: boolean)
 		current.action = "stun"
 		current.busyUntil = now + stun
 		EnemyService.stagger(current.handle.humanoid, stun)
-		bossRemote:FireAllClients("tell", "stun")
+		bossRemote:FireAllClients(Messages.BossUpdate.Tell, Messages.BossTell.Stun)
 	else
 		current.action = "recover"
 		current.busyUntil = now + cfg().Charge.Recovery
@@ -827,8 +829,8 @@ local function startGuard(current: Fight)
 	local settings = cfg().Guard
 	local now = os.clock()
 	local humanoid = current.handle.humanoid
-	local base = (humanoid:GetAttribute("BaseWalkSpeed") :: number?) or humanoid.WalkSpeed
-	current.handle.model:SetAttribute("GuardFactor", settings.PlateDamageFactor)
+	local base = (humanoid:GetAttribute(Attributes.BaseWalkSpeed) :: number?) or humanoid.WalkSpeed
+	current.handle.model:SetAttribute(Attributes.GuardFactor, settings.PlateDamageFactor)
 	humanoid.WalkSpeed = base * settings.SpeedFactor
 	current.action = "guard"
 	current.busyUntil = now + settings.Duration
@@ -1080,7 +1082,7 @@ local function enterPhase(current: Fight, phase: number)
 	end
 	if spec.WalkSpeed then
 		local humanoid = current.handle.humanoid
-		humanoid:SetAttribute("BaseWalkSpeed", spec.WalkSpeed)
+		humanoid:SetAttribute(Attributes.BaseWalkSpeed, spec.WalkSpeed)
 		if current.action ~= "guard" and not PauseService.isPaused() then
 			humanoid.WalkSpeed = spec.WalkSpeed
 		end
@@ -1129,7 +1131,7 @@ local function endFight(current: Fight, defeated: boolean)
 		return
 	end
 	fight = nil
-	workspace:SetAttribute("IndexActive", false)
+	workspace:SetAttribute(Attributes.IndexActive, false)
 	clearDanger()
 	if current.charge then
 		current.handle.root.Anchored = false
@@ -1156,7 +1158,7 @@ local function endFight(current: Fight, defeated: boolean)
 	end
 	task.delay(cfg().HideDelay, function()
 		if fight == nil then
-			bossRemote:FireAllClients("hide")
+			bossRemote:FireAllClients(Messages.BossUpdate.Hide)
 		end
 	end)
 end
@@ -1317,13 +1319,17 @@ local function spawn(groundPosition: Vector3, walk: boolean): boolean
 	}
 	fight = current
 	armPlates(current, healthMultiplier)
-	workspace:SetAttribute("IndexActive", true)
+	workspace:SetAttribute(Attributes.IndexActive, true)
 
 	local names = {}
 	for _, plate in current.plates do
 		table.insert(names, plate.name)
 	end
-	bossRemote:FireAllClients("show", EnemyDefinitions[TYPE_NAME].DisplayName, names)
+	bossRemote:FireAllClients(
+		Messages.BossUpdate.Show,
+		EnemyDefinitions[TYPE_NAME].DisplayName,
+		names
+	)
 	sync(current)
 
 	humanoid.Died:Connect(function()
@@ -1375,7 +1381,7 @@ function IndexService.reset()
 			current.handle.model:Destroy()
 		end
 	end
-	workspace:SetAttribute("IndexActive", false)
+	workspace:SetAttribute(Attributes.IndexActive, false)
 end
 
 -- Fresh clients (a late join mid-fight) get the current state on request.
@@ -1386,7 +1392,7 @@ function IndexService.init()
 	bossRemote = Remotes.get("BossUpdate")
 	noticeRemote = Remotes.get("BuffNotice")
 	damageRemote = Remotes.get("DamageDealt")
-	workspace:SetAttribute("IndexActive", false)
+	workspace:SetAttribute(Attributes.IndexActive, false)
 	bossRemote.OnServerEvent:Connect(function(player)
 		local current = fight
 		if current then
@@ -1394,11 +1400,16 @@ function IndexService.init()
 			for _, plate in current.plates do
 				table.insert(names, plate.name)
 			end
-			bossRemote:FireClient(player, "show", EnemyDefinitions[TYPE_NAME].DisplayName, names)
+			bossRemote:FireClient(
+				player,
+				Messages.BossUpdate.Show,
+				EnemyDefinitions[TYPE_NAME].DisplayName,
+				names
+			)
 			local humanoid = current.handle.humanoid
 			bossRemote:FireClient(
 				player,
-				"state",
+				Messages.BossUpdate.State,
 				math.clamp(humanoid.Health / math.max(humanoid.MaxHealth, 1), 0, 1),
 				plateFractions(current),
 				current.phase

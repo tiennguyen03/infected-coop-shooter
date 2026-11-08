@@ -12,6 +12,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
+local Messages = require(ReplicatedStorage.Shared.Messages)
+local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local ThrowUtil = require(ReplicatedStorage.Shared.ThrowUtil)
@@ -52,7 +54,7 @@ local function applyMomentum(player: Player)
 		Damage = stacks * Config.Assault.DamagePerStack,
 		MoveSpeed = stacks * Config.Assault.MoveSpeedPerStack,
 	})
-	player:SetAttribute("MomentumStacks", stacks)
+	player:SetAttribute(Attributes.MomentumStacks, stacks)
 end
 
 local function onCreditedKill(player: Player)
@@ -120,8 +122,8 @@ local function doDash(player: Player)
 		local smokeUntil = os.clock()
 			+ Config.Assault.DashDuration
 			+ Config.Upgrades.SmokeDash.ImmunitySeconds
-		local current = (character:GetAttribute("CoverMoveUntil") :: number?) or 0
-		character:SetAttribute("CoverMoveUntil", math.max(current, smokeUntil))
+		local current = (character:GetAttribute(Attributes.CoverMoveUntil) :: number?) or 0
+		character:SetAttribute(Attributes.CoverMoveUntil, math.max(current, smokeUntil))
 		local smoke = Instance.new("ParticleEmitter")
 		smoke.Color = ColorSequence.new(Color3.fromRGB(150, 150, 150), Color3.fromRGB(70, 70, 70))
 		smoke.Size = NumberSequence.new({
@@ -301,19 +303,19 @@ local function onUseAbility(player: Player, abilityName: unknown, target: unknow
 		return
 	end
 	local now = os.clock()
-	if abilityName == "dash" then
+	if abilityName == Messages.Ability.Dash then
 		if now < (dashReadyAt[player] or 0) then
 			return
 		end
 		dashReadyAt[player] = now + Config.Assault.DashCooldown
-		abilityUsedRemote:FireClient(player, "dash", Config.Assault.DashCooldown)
+		abilityUsedRemote:FireClient(player, Messages.Ability.Dash, Config.Assault.DashCooldown)
 		doDash(player)
-	elseif abilityName == "breach" then
+	elseif abilityName == Messages.Ability.Breach then
 		if now < (breachReadyAt[player] or 0) then
 			return
 		end
 		breachReadyAt[player] = now + Config.Assault.BreachCooldown
-		abilityUsedRemote:FireClient(player, "breach", Config.Assault.BreachCooldown)
+		abilityUsedRemote:FireClient(player, Messages.Ability.Breach, Config.Assault.BreachCooldown)
 		doBreach(player, if typeof(target) == "Vector3" then target else nil)
 	end
 end
@@ -357,7 +359,7 @@ function AssaultClassService.resetPlayer(player: Player)
 	momentumExpires[player] = nil
 	dashReadyAt[player] = nil
 	breachReadyAt[player] = nil
-	player:SetAttribute("MomentumStacks", 0)
+	player:SetAttribute(Attributes.MomentumStacks, 0)
 	PlayerStatsService.setBonus(player, MOMENTUM_SOURCE, {})
 end
 

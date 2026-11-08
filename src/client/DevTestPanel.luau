@@ -14,6 +14,7 @@ local UserInputService = game:GetService("UserInputService")
 
 local CallInDefinitions =
 	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("CallInDefinitions"))
+local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attributes"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
 local UpgradeDefinitions =
 	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("UpgradeDefinitions"))
@@ -312,15 +313,15 @@ local function updateInfo(dt: number)
 	frames, elapsed = 0, 0
 	local player = Players.LocalPlayer
 	local character = player.Character
-	local squadState = (character and character:GetAttribute("SquadState")) or "-"
+	local squadState = (character and character:GetAttribute(Attributes.SquadState)) or "-"
 	local text = string.format(
 		"%.0f fps  ·  %s  ·  %d Infected  ·  me %s%s%s",
 		fps,
-		tostring(workspace:GetAttribute("RunState") or "?"),
+		tostring(workspace:GetAttribute(Attributes.RunState) or "?"),
 		#CollectionService:GetTagged("Enemy"),
 		tostring(squadState),
-		if player:GetAttribute("DevGod") == true then "  ·  GOD" else "",
-		if workspace:GetAttribute("DevSpawnsOff") == true then "  ·  SPAWNS OFF" else ""
+		if player:GetAttribute(Attributes.DevGod) == true then "  ·  GOD" else "",
+		if workspace:GetAttribute(Attributes.DevSpawnsOff) == true then "  ·  SPAWNS OFF" else ""
 	)
 	if infoLabel then
 		infoLabel.Text = text .. `   [{keyName(TOGGLE_KEY)} dev tools]`

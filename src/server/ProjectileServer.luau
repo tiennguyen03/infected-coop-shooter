@@ -11,6 +11,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local EnemyDefinitions = require(ReplicatedStorage.Shared.EnemyDefinitions)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
@@ -188,17 +189,17 @@ function ProjectileServer.hitMultiplier(
 ): (number, string)
 	-- The Index's armour (IndexService): a plated part takes the round at the armoured rate
 	-- (DamageService routes it to the plate); a limb whose plate is gone is exposed.
-	if typeof(part:GetAttribute("PlateHealth")) == "number" then
+	if typeof(part:GetAttribute(Attributes.PlateHealth)) == "number" then
 		return Config.Index.Warden.ArmouredMultiplier, "plate"
 	end
 	if part.Name ~= "Head" then
-		if part:GetAttribute("Exposed") == true then
+		if part:GetAttribute(Attributes.Exposed) == true then
 			return Config.Index.Warden.ExposedMultiplier, "exposed"
 		end
 		return 1, "hit"
 	end
 	local model = humanoid.Parent
-	local typeName = model and model:GetAttribute("EnemyType")
+	local typeName = model and model:GetAttribute(Attributes.EnemyType)
 	local definition = if typeof(typeName) == "string" then EnemyDefinitions[typeName] else nil
 	local multiplier = (definition and definition.HeadshotMultiplier)
 		or headshotMultiplier
@@ -345,7 +346,7 @@ local function onFireRequest(player: Player, origin: unknown, direction: unknown
 	end
 	spread += previous
 	bloom[player] = math.min(previous + settings.BloomPerShot, settings.BloomMax)
-	player:SetAttribute("Bloom", bloom[player])
+	player:SetAttribute(Attributes.Bloom, bloom[player])
 	if lastStand then
 		spread *= Config.Upgrades.LastStand.SpreadMultiplier
 	end
@@ -376,7 +377,7 @@ end
 function ProjectileServer.resetPlayer(player: Player)
 	lastFireTime[player] = nil
 	bloom[player] = nil
-	player:SetAttribute("Bloom", 0)
+	player:SetAttribute(Attributes.Bloom, 0)
 end
 
 function ProjectileServer.init()

@@ -44,7 +44,9 @@ concern, not polish.
   ModuleScript exposing `init()`, started from Main's `BOOT` list in dependency order (a
   failing `init()` stops boot and is named in the log).
 - All tuning values live in `src/shared/Config.luau`. Never hardcode balance numbers.
-- RemoteEvents are declared in `src/shared/Remotes.luau` (`REMOTE_NAMES`).
+- RemoteEvents are declared in `src/shared/Remotes.luau` (`REMOTE_NAMES`); every message
+  kind a remote carries is a constant in `src/shared/Messages.luau`, every attribute name in
+  `src/shared/Attributes.luau`. Never inline either string.
 - Art sources: `assets/icons/build/icons.js` (icons), `assets/3d/build/build_assets.py`
   (meshes). Rendered PNG/FBX are outputs; edit the generator, not the output.
 

@@ -16,6 +16,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
+local Messages = require(ReplicatedStorage.Shared.Messages)
+local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local GroundUtil = require(ReplicatedStorage.Shared.GroundUtil)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
@@ -84,8 +86,8 @@ local function currentCost(): number
 end
 
 local function publish()
-	workspace:SetAttribute("ResupplyPool", math.floor(pool))
-	workspace:SetAttribute("ResupplyCost", currentCost())
+	workspace:SetAttribute(Attributes.ResupplyPool, math.floor(pool))
+	workspace:SetAttribute(Attributes.ResupplyCost, currentCost())
 	workspace:SetAttribute(
 		"ResupplyDropIn",
 		if pending then math.max(pending.landAt - os.clock(), 0) else -1
@@ -145,7 +147,7 @@ local function closeCrate(index: number)
 	local crate = crates[index]
 	crate.part:Destroy()
 	table.remove(crates, index)
-	resupplyRemote:FireAllClients("closed", crate.id)
+	resupplyRemote:FireAllClients(Messages.Resupply.Closed, crate.id)
 end
 
 local function cardPositions(center: Vector3, facing: Vector3): { Vector3 }
@@ -232,7 +234,7 @@ function RequisitionService.dropCrate(
 		local wave = cfg.Lure.Wave + cfg.Lure.WavePerExtraPlayer * math.max(#living - 1, 0)
 		EnemyService.spawnMixedWave(wave, ground)
 		pressureUntil = os.clock() + cfg.Lure.SpawnFactorDuration
-		workspace:SetAttribute("ResupplyActive", true)
+		workspace:SetAttribute(Attributes.ResupplyActive, true)
 	end
 
 	-- Personal cards: the same three positions for everyone, each player's own offer.
@@ -256,7 +258,14 @@ function RequisitionService.dropCrate(
 		local choices = offerFor(player, kind)
 		crate.offers[player] = choices
 		if #choices > 0 then
-			resupplyRemote:FireClient(player, "cards", crate.id, kind, choices, crate.cardPositions)
+			resupplyRemote:FireClient(
+				player,
+				Messages.Resupply.Cards,
+				crate.id,
+				kind,
+				choices,
+				crate.cardPositions
+			)
 		end
 	end
 	print(`[Requisition] {kind} crate {crate.id} down, {#living} players offered`)
@@ -305,7 +314,7 @@ local function onFlare(player: Player, target: unknown)
 		flare = buildFlare(landing),
 	}
 	EnemyService.setLure(landing, cfg.Lure.Radius, cfg.DropDelay)
-	resupplyRemote:FireAllClients("called", player.Name)
+	resupplyRemote:FireAllClients(Messages.Resupply.Called, player.Name)
 	publish()
 	print(`[Requisition] {player.Name} threw the flare; pallet in {cfg.DropDelay}s (drop {drops})`)
 end
@@ -369,7 +378,7 @@ local function onPick(player: Player, crateId: unknown, cardId: unknown)
 		return
 	end
 	crate.picked[player] = true
-	resupplyRemote:FireClient(player, "picked", crate.id)
+	resupplyRemote:FireClient(player, Messages.Resupply.Picked, crate.id)
 	for _, other in Players:GetPlayers() do
 		if other ~= player then
 			noticeRemote:FireClient(other, notice)
@@ -378,9 +387,9 @@ local function onPick(player: Player, crateId: unknown, cardId: unknown)
 end
 
 local function onRemote(player: Player, kind: unknown, ...: unknown)
-	if kind == "flare" then
+	if kind == Messages.Resupply.Flare then
 		onFlare(player, ...)
-	elseif kind == "pick" then
+	elseif kind == Messages.Resupply.Pick then
 		onPick(player, ...)
 	end
 end
@@ -435,7 +444,7 @@ local function step()
 	rearmNearby()
 	if pressureUntil > 0 and now >= pressureUntil then
 		pressureUntil = 0
-		workspace:SetAttribute("ResupplyActive", false)
+		workspace:SetAttribute(Attributes.ResupplyActive, false)
 	end
 	publish()
 end
@@ -454,7 +463,7 @@ function RequisitionService.reset()
 		closeCrate(index)
 	end
 	EnemyService.setLure(nil)
-	workspace:SetAttribute("ResupplyActive", false)
+	workspace:SetAttribute(Attributes.ResupplyActive, false)
 	publish()
 end
 
@@ -478,7 +487,7 @@ function RequisitionService.init()
 	EnemyService.addKillListener(function(supplyValue: number)
 		RequisitionService.addRequisition(supplyValue)
 	end)
-	workspace:SetAttribute("ResupplyActive", false)
+	workspace:SetAttribute(Attributes.ResupplyActive, false)
 	publish()
 	lastStep = os.clock()
 	RunService.Heartbeat:Connect(step)

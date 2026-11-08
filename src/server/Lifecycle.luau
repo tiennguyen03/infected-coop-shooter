@@ -33,7 +33,7 @@ type Entry = { name: string, hooks: Hooks }
 local entries: { Entry } = {}
 
 local function ordered(): { Entry }
-	local first, late = {}, {}
+	local first: { Entry }, late: { Entry } = {}, {}
 	for _, entry in entries do
 		table.insert(if entry.hooks.last then late else first, entry)
 	end
@@ -43,7 +43,7 @@ local function ordered(): { Entry }
 	return first
 end
 
-local function call(phase: string, name: string, hook: (...any) -> (), ...: any)
+local function call(phase: string, name: string, hook: (...any) -> ...any, ...: any)
 	local ok, err = pcall(hook, ...)
 	if not ok then
 		warn(`[Lifecycle] {name}.{phase} failed: {err}`)
