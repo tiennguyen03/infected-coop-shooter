@@ -22,7 +22,8 @@ Read on demand, not up front:
 - `.claude/agents/` — design subagents: lore-developer, systems-designer, level-designer,
   playtest-critic. Use them for design calls in their area before building. They are
   read-only and hand back paste-ready doc text: apply what the owner approves, in the same
-  commit as the work. performance-reviewer checks a feature against the STYLES budgets
+  commit as the work. Exception: the lore developer writes its own canon files (LORE.md,
+  CHARACTERS.md, docs/lore/) once the owner approves. performance-reviewer checks a feature against the STYLES budgets
   before it ships. art-director owns the look: build sheets from the lore developer's
   canon, then reviews the Blender preview renders (the engineer routes between them).
 
