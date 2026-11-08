@@ -192,3 +192,11 @@ every body part but the root is in the `ProneBody` collision group (touches noth
 the prone / crawl clips cannot prop the root off the floor. Verified: prone crawls at 4
 studs/s and stops dead, 0.7 studs of drift over 8 s idle, 0 Freefall; Downed crawls at 3
 and drifts 0.0 over 7 s; standing up restores the hip, the attachment and the group.
+
+**Falling through the floor on C spam (bug, same day).** Standing up restored the hip and
+lowered the rig in one step while the root was still at prone height, so the legs sat ~2
+studs inside the floor; switching their collision back on that frame made the solver push
+the body down through the map. The body parts now stay in `ProneBody` until the Humanoid
+has raised the root by 80% of the lift (or 1 s), and a newer stance change cancels the
+wait (`StanceSettle` token). Verified: 48 server toggles at 0.05-0.9 s gaps (root never
+below 1.5) and 8 rapid C taps: standing, grounded, colliding.

@@ -84,7 +84,8 @@ Read in this order:
 - 2026-11-07: **Balance pass + downed slide fix** (Sprint 18 doc > *Balance pass*): a
   third fewer spawns, 9 magazines, cheaper and steadier pallets; a downed body no longer
   or prone body no longer slides (the prone lift never reached the AnimationConstraint
-  rig; body parts now leave collision while prone or downed, `ProneBody` group).
+  rig; body parts now leave collision while prone or downed, `ProneBody` group, and
+  rejoin only once the root has risen, so spamming C no longer drops you through the floor).
 - 2026-11-07: **M16 pass shipped** (Sprint 18 doc > *M16 pass*): the service rifle is
   full auto at 750 rpm with a bloom on a held trigger, same damage, 7 magazines; bots
   0.30 s. TTK roughly halved. Watch the Brute (260 -> 360 if it melts). Backlog:

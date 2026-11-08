@@ -11,6 +11,7 @@
 local CollectionService = game:GetService("CollectionService")
 local PhysicsService = game:GetService("PhysicsService")
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
@@ -25,6 +26,8 @@ local ROOT_DROP_ATTRIBUTE = "RootDrop"
 -- props the root above its floor ray (Freefall, no friction: the body slides). The root
 -- stays the one collider, as the prone rules assume (owner bug report, 2026-11-07).
 local PRONE_GROUP = "ProneBody"
+local SETTLE_ATTRIBUTE = "StanceSettle" -- bumps on every stand-up: a stale settle wait gives up
+local SETTLE_TIMEOUT = 1 -- seconds: the longest a standing body stays non-colliding
 
 local function rootMotor(character: Model): Motor6D?
 	local lowerTorso = character:FindFirstChild("LowerTorso")
@@ -98,6 +101,10 @@ local function setProne(character: Model, humanoid: Humanoid, prone: boolean)
 		humanoid.HipHeight = proneHip
 		liftRig(character, lift)
 		setBodyGroup(character, true)
+		character:SetAttribute(
+			SETTLE_ATTRIBUTE,
+			(character:GetAttribute(SETTLE_ATTRIBUTE) :: number? or 0) + 1
+		)
 	else
 		local standHip = character:GetAttribute(STAND_HIP_ATTRIBUTE)
 		local lift = if typeof(drop) == "number" then drop else 0
@@ -105,8 +112,34 @@ local function setProne(character: Model, humanoid: Humanoid, prone: boolean)
 			humanoid.HipHeight = standHip
 		end
 		liftRig(character, -lift)
-		setBodyGroup(character, character:GetAttribute("SquadState") == "Downed")
 		character:SetAttribute(ROOT_DROP_ATTRIBUTE, 0)
+		-- The rig is now back down at standing offset while the root is still at prone
+		-- height, so the legs sit ~`lift` studs inside the floor. Turning their collision
+		-- back on now makes the solver push them out downward and the body falls through
+		-- the map (owner bug report: spamming C). Keep them non-colliding until the
+		-- Humanoid has raised the root by most of `lift` (or a second has passed), and only
+		-- if the body is still standing and not downed by then.
+		local root = character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		local startY = if root then root.Position.Y else 0
+		local token = (character:GetAttribute(SETTLE_ATTRIBUTE) :: number? or 0) + 1
+		character:SetAttribute(SETTLE_ATTRIBUTE, token)
+		task.spawn(function()
+			local deadline = os.clock() + SETTLE_TIMEOUT
+			while os.clock() < deadline do
+				if not root or not root.Parent or root.Position.Y - startY >= lift * 0.8 then
+					break
+				end
+				RunService.Heartbeat:Wait()
+			end
+			if character:GetAttribute(SETTLE_ATTRIBUTE) ~= token then
+				return -- another stance change since
+			end
+			local nowDrop = character:GetAttribute(ROOT_DROP_ATTRIBUTE)
+			local stillStanding = not (typeof(nowDrop) == "number" and nowDrop > 0)
+			if stillStanding and character:GetAttribute("SquadState") ~= "Downed" then
+				setBodyGroup(character, false)
+			end
+		end)
 	end
 end
 
