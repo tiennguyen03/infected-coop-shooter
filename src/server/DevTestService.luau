@@ -328,7 +328,15 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 		if LoadoutService.setWeapon(player, id) then
 			print(`[DevTest] SetWeapon {id} -> {player.Name}`)
 		else
-			warn(`[DevTest] SetWeapon: unknown weapon '{id}' (have: {table.concat(WeaponDefinitions.PRIMARIES, ", ")}, {table.concat(WeaponDefinitions.SECONDARIES, ", ")})`)
+			local known = table.clone(WeaponDefinitions.PRIMARIES)
+			table.move(
+				WeaponDefinitions.SECONDARIES,
+				1,
+				#WeaponDefinitions.SECONDARIES,
+				#known + 1,
+				known
+			)
+			warn(`[DevTest] SetWeapon: unknown weapon '{id}' (have: {table.concat(known, ", ")})`)
 		end
 	end,
 	DropUpgradeCrate = function(player)
