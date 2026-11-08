@@ -823,7 +823,7 @@ end
 -- Yields until the template exists (or the timeout passes). For boot-time placement.
 function MeshAssets.waitFor(name: string, timeoutSeconds: number): MeshPart?
 	local deadline = os.clock() + timeoutSeconds
-	while templates[name] == nil and os.clock() < deadline do
+	while not templates[name] and os.clock() < deadline do
 		task.wait(0.25)
 	end
 	return MeshAssets.clone(name)

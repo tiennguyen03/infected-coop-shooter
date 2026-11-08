@@ -63,7 +63,9 @@ function Animations.init()
 		return
 	end
 	local AnimationBuilder = require(script.Parent.AnimationBuilder)
-	for clip, id in Config.Animations.Ids do
+	-- Config.Animations.Ids is a sealed table, which iterates as unknown; read it as a map.
+	local ids: { [string]: string } = Config.Animations.Ids :: any
+	for clip, id in ids do
 		if id ~= "" then
 			continue
 		end
