@@ -136,7 +136,8 @@ local function tryFire()
 	local now = os.clock()
 	local weapon = WeaponDefinitions.get(player:GetAttribute("Weapon") :: string?)
 	local fireRateMult = (player:GetAttribute("FireRateMult") :: number?) or 1
-	if now - lastFireTime < weapon.FireCooldown / fireRateMult then
+	local cooldown = weapon.FireCooldown / fireRateMult
+	if now - lastFireTime < cooldown then
 		return
 	end
 	if WeaponController.isReloading() then
@@ -181,7 +182,10 @@ local function tryFire()
 		return
 	end
 
-	lastFireTime = now
+	-- Keep the cadence on low frame rates: the next shot is due one cooldown after this
+	-- one was, not after this frame (but never bank more than one shot after a pause).
+	lastFireTime = if now - lastFireTime < cooldown * 2 then lastFireTime + cooldown else now
+	player:SetAttribute("LastShotAt", now)
 	Remotes.get("FireWeapon"):FireServer(origin, direction.Unit, isAiming)
 	AnimationController.onShot()
 	drawTracer(origin, aimPoint)

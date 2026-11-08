@@ -81,6 +81,10 @@ Read in this order:
   action change, bash timed to the windup, run while charging, roar on Riot Call, death
   clip). Verified in a playtest with the published ids: all 21 parts dressed, each clip
   seen, 60 fps.
+- 2026-11-07: **M16 pass shipped** (Sprint 18 doc > *M16 pass*): the service rifle is
+  full auto at 750 rpm with a bloom on a held trigger, same damage, 7 magazines; bots
+  0.30 s. TTK roughly halved. Watch the Brute (260 -> 360 if it melts). Backlog:
+  dismemberment (`docs/PROGRESSION.md` > Backlog).
 - 2026-11-07: **Warden kit expansion + shield fix shipped** (Sprint 19 doc > *Kit
   expansion and the shield*). Shield strapped along the outer forearm (was a slanted plate
   past the fist). Four new attacks from the systems-designer pass: Ground Pound (ring on

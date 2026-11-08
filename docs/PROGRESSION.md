@@ -354,9 +354,11 @@ the `ShotTracer` remote). A `Head` hit deals `Weapon.HeadshotMultiplier 3.0` (th
 definition overrides to 1.25, bone overgrowth) and arrives as damage kind `"headshot"`:
 white, larger number and a sharper placeholder sound until the sound day. Drones still fly
 projectiles. Realistic time-to-kill since the loadout rework (`Weapon.Damage 20`, flat
-curve): Walker 3 body / 1 head, Runner 2 / 1, Hocker 4 / 2, Brute 13 / 11. Bots fire the
-same rifle at a third of the rate (`Bots.FireCooldown 0.45`) with the same magazine and an
-infinite reserve, and use `ProjectileServer.hitMultiplier` so the Brute's plate applies.
+curve): Walker 3 body / 1 head, Runner 2 / 1, Hocker 4 / 2, Brute 13 / 11. Since the M16
+pass (2026-11-07) the rifle is full auto at 750 rpm (`Weapon.FireCooldown 0.08`) with a
+bloom on a held trigger and 7 magazines; time-to-kill roughly halved (Walker 0.16 s body,
+Brute 0.96 s). Bots fire the same rifle slower (`Bots.FireCooldown 0.30`: three bots on
+sustained fire ~ one player) with the same magazine and an infinite reserve, and use `ProjectileServer.hitMultiplier` so the Brute's plate applies.
 
 ## Technical plan (debt first, then content)
 
@@ -438,8 +440,14 @@ open for a later Armory page.
   (`assets/audio/README.md > Banks`); still to generate: Control's radio lines, Lantern's
   rotor, the Burn, the pickup and item one-shots.
 - **Infected visual redesign.** Own limb sets per form, Hocker first; hollow breach ring.
+- **Dismemberment (owner, 2026-11-07).** Shooting an Infected knocks parts off it: a limb
+  that takes enough rounds detaches and falls (the R15 limb MeshParts already are separate
+  pieces, `MeshAssets.dressInfected`). Needs a design pass first (systems designer: per-limb
+  health or a share of damage per hit zone, what losing a leg / an arm does to speed and
+  attacks; performance reviewer: debris count, despawn within 10 s per `docs/STYLES.md` §6;
+  art director: the wound cap where the limb was).
 - **Hollow Point tuning.** The stagger lands on every hit; watch for chain-stunning a Brute
-  at 6.7 rounds/s (shorten `Upgrades.HollowPoint.StaggerSeconds` or add a per-body gap).
+  at 12.5 rounds/s since the M16 pass (shorten `Upgrades.HollowPoint.StaggerSeconds` or add a per-body gap).
 
 ## Open questions (for the owner)
 

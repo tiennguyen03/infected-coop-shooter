@@ -21,6 +21,7 @@ local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Co
 local HIP_FOV = 70
 local CROSSHAIR_HIP = 22 -- ring diameter in pixels at the hip
 local CROSSHAIR_ADS = 8
+local CROSSHAIR_PER_BLOOM = 10 -- extra ring diameter (px) per degree of bloom
 
 local CameraController = {}
 
@@ -30,6 +31,7 @@ local distance: number = Config.Camera.Distance
 local aiming = false
 local adsBlend = 0 -- 0 = hip, 1 = sights; eased each frame
 local crosshairRing: Frame? = nil
+local bloomShotAt: number? = nil -- when the Bloom attribute last changed (a shot)
 local cursorHolders: { [string]: boolean } = {}
 local pivotHeight: number = Config.Camera.PivotHeight.stand
 local pivotTarget: number = pivotHeight
@@ -164,6 +166,18 @@ local function onRenderStep(deltaTime: number)
 	local ring = crosshairRing
 	if ring then
 		local size = CROSSHAIR_HIP + (CROSSHAIR_ADS - CROSSHAIR_HIP) * adsBlend
+		-- Bloom (server-owned, ProjectileServer): the ring opens while the trigger is held and
+		-- closes as it recovers; mirror the recovery locally between shots.
+		local player = Players.LocalPlayer
+		local bloomValue = (player:GetAttribute("Bloom") :: number?) or 0
+		if bloomValue > 0 then
+			local shotAt = bloomShotAt or os.clock()
+			local idle = os.clock() - shotAt - Config.Weapon.BloomRecoveryDelay
+			if idle > 0 then
+				bloomValue = math.max(bloomValue - idle * Config.Weapon.BloomRecovery, 0)
+			end
+		end
+		size += bloomValue * CROSSHAIR_PER_BLOOM
 		ring.Size = UDim2.fromOffset(size, size)
 	end
 
@@ -205,6 +219,11 @@ function CameraController.init()
 	local player = Players.LocalPlayer
 	UserInputService.MouseIconEnabled = false
 	createCrosshair()
+	-- WeaponController stamps LastShotAt (local only) on every shot, so the ring holds its
+	-- bloom at the cap too (an attribute set to the same value fires no change).
+	player:GetAttributeChangedSignal("LastShotAt"):Connect(function()
+		bloomShotAt = os.clock()
+	end)
 
 	player.CharacterAdded:Connect(applyCharacterSettings)
 	if player.Character then

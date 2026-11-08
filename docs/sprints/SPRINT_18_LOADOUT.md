@@ -121,3 +121,37 @@ ForceObjectiveComplete adds 500 supply; ForceMissionSuccess → Extracted → RE
 with a full magazine, no shield, no upgrades. Not yet run: the 2-client checks (Last Flight,
 per-player cards). Perf: 60 fps with 20 Walkers plus mines and drones; the script lane is
 within 0.2 ms/frame of the pre-sprint capture.
+
+## M16 pass (owner, 2026-11-07)
+
+The owner: "our first gun should resemble what an M16 does in real life, so it should mimic
+that fire rate. But we also need to consider how that will affect the TTK." The systems
+designer's call: full auto at the M16A1's cyclic rate, per-round damage unchanged so
+rounds-to-kill stay realistic, a bloom so a held trigger sprays at range (trigger
+discipline is the skill, no fire-mode switch), the real basic load of 7 magazines.
+
+| Key (`Config.Weapon` / `Bots`) | Old | New |
+|---|---|---|
+| FireCooldown | 0.15 (400 rpm) | 0.08 (750 rpm) |
+| Damage | 20 | 20 |
+| ReserveStart / ReserveMax | 120 | 180 (30 + 180 = 7 mags) |
+| BloomPerShot / BloomMax / BloomRecovery / BloomRecoveryDelay | none | 0.3 deg / 3.5 deg / 12 deg/s / 0.1 s |
+| Bots.FireCooldown | 0.45 | 0.30 |
+
+| Form (body / head rounds) | TTK before | TTK now |
+|---|---|---|
+| Walker 3 / 1 | 0.30 s | 0.16 s |
+| Runner 2 / 1 | 0.15 s | 0.08 s |
+| Hocker 4 / 2 | 0.45 s | 0.24 s |
+| Brute 13 / 11 | 1.80 s | 0.96 s |
+
+Burst DPS 133 -> 250; sustained over a magazine plus reload 92 -> 133. A magazine empties in
+2.4 s, so the pressure window is the 2.2 s reload. The bloom is server-owned
+(`ProjectileServer`, per Player, cleared on leave / reset) and mirrored to the crosshair ring
+(`CameraController`, `Bloom` attribute + the local `LastShotAt` stamp). The client now
+carries the leftover time between shots (`WeaponController`), so 750 rpm holds at 30 fps.
+
+Verified (solo playtest): held trigger, rounds every 0.083 s (~720 rpm at the frame
+cadence), bloom 0.3 per round, magazine dry then reload to 30. Watch in play: if the Brute
+melts, raise its `MaxHealth` 260 -> 360 (18 body rounds); if holds feel easy, `Spawning.
+MaxAliveLate` 30 -> 34. Measure first.

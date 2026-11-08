@@ -67,6 +67,8 @@ local projectileFolder: Folder
 local tracerRemote: RemoteEvent
 local activeProjectiles: { Projectile } = {}
 local lastFireTime: { [Player]: number } = {}
+-- Bloom (Config.Weapon.Bloom*): extra spread in degrees per player, as of lastFireTime.
+local bloom: { [Player]: number } = {}
 
 local function findEnemyHumanoid(hit: Instance): Humanoid?
 	local model = hit:FindFirstAncestorOfClass("Model")
@@ -327,11 +329,22 @@ local function onFireRequest(player: Player, origin: unknown, direction: unknown
 		return
 	end
 
+	local previousShot = lastFireTime[player]
 	lastFireTime[player] = now
 	local exclude = excludeList(character)
 	-- The client says whether it is aiming down sights; that only tightens the cone (the
 	-- speed penalty is client-owned movement either way), so trusting it costs nothing.
 	local spread = if aiming == true and not lastStand then weapon.AdsSpread else weapon.HipSpread
+	-- Bloom: recover what the pause since the previous shot earned, add this shot's kick.
+	local settings = Config.Weapon
+	local previous = bloom[player] or 0
+	local idle = now - (previousShot or now) - settings.BloomRecoveryDelay
+	if idle > 0 then
+		previous = math.max(previous - idle * settings.BloomRecovery, 0)
+	end
+	spread += previous
+	bloom[player] = math.min(previous + settings.BloomPerShot, settings.BloomMax)
+	player:SetAttribute("Bloom", bloom[player])
 	if lastStand then
 		spread *= Config.Upgrades.LastStand.SpreadMultiplier
 	end
@@ -361,6 +374,8 @@ end
 -- One player's fire timing.
 function ProjectileServer.resetPlayer(player: Player)
 	lastFireTime[player] = nil
+	bloom[player] = nil
+	player:SetAttribute("Bloom", 0)
 end
 
 function ProjectileServer.init()
@@ -374,6 +389,7 @@ function ProjectileServer.init()
 
 	Players.PlayerRemoving:Connect(function(player)
 		lastFireTime[player] = nil
+		bloom[player] = nil
 	end)
 end
 

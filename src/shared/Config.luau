@@ -122,10 +122,11 @@ local Config = {
 		StuckSeconds = 3,
 		StuckDistance = 1,
 		-- Loadout rework 2026-11-07: a bot fires the service rifle (same Damage, magazine and
-		-- reload as the player: WeaponDefinitions) at a third of the player's rate, so three
-		-- bots roughly equal one player; its reserve is infinite. Fallback if they carry: 0.55.
+		-- reload as the player: WeaponDefinitions) slower than the player, so three bots on
+		-- sustained fire (3 x ~57 DPS) roughly equal one player (133); its reserve is infinite.
+		-- M16 pass 2026-11-07: 0.45 -> 0.30 with the player's 750 rpm (fallback 0.35).
 		Range = 90, -- studs; the Infected beyond this are ignored
-		FireCooldown = 0.45, -- seconds between shots (the player: 0.15)
+		FireCooldown = 0.30, -- seconds between shots (the player: 0.08)
 		Damage = 20, -- per round (the player: 20)
 		Spread = 3, -- degrees, half-angle
 		HeadshotChance = 0.1, -- share of shots aimed at the head
@@ -186,16 +187,28 @@ local Config = {
 
 	-- The service rifle (WeaponDefinitions.service_rifle reads these). Realistic time-to-kill
 	-- (loadout rework 2026-11-07): Walker 3 body / 1 head, Runner 2 / 1, Hocker 4 / 2,
-	-- Brute 13 / 11 at the flat curve.
+	-- Brute 13 / 11 at the flat curve. M16 pass (owner, 2026-11-07): full auto at the
+	-- M16A1's ~750 rpm cyclic, same rounds-to-kill, so TTK roughly halves (Walker 0.16 s,
+	-- Brute 0.96 s body); the bloom below makes a held trigger spray at range, so trigger
+	-- discipline (3-5 round bursts) is the skill. Burst DPS 250, sustained over mag + reload 133.
 	Weapon = {
 		Damage = 20,
-		FireCooldown = 0.15, -- 6.7 rounds/s; DPS 133
+		FireCooldown = 0.08, -- 750 rpm (M16A1 cyclic): 12.5 rounds/s
 		-- Magazine (loadout rework): the server owns Mag / Reserve per player, refuses a shot on
 		-- empty, R reloads (cancelled by a roll, a slide or going down). Pallets re-arm.
 		MagazineSize = 30,
 		ReloadTime = 2.2, -- seconds
-		ReserveStart = 120, -- rounds in reserve at insert
-		ReserveMax = 120,
+		ReserveStart = 180, -- rounds in reserve at insert (+ the 30 loaded: 7 mags, a basic load)
+		ReserveMax = 180,
+		-- Bloom (M16 pass): each round widens the cone by BloomPerShot degrees up to BloomMax
+		-- on top of the hip / ADS spread; it recovers at BloomRecovery degrees per second
+		-- once BloomRecoveryDelay has passed without a shot. ADS: 3 rounds stay on a head at
+		-- 40 studs, by round 6 the cone is ~1.3 studs off at 40. Server-owned (ProjectileServer),
+		-- mirrored to the crosshair ring through the player's `Bloom` attribute.
+		BloomPerShot = 0.3,
+		BloomMax = 3.5,
+		BloomRecovery = 12,
+		BloomRecoveryDelay = 0.1,
 		-- The rifle is hitscan (2026-11-07): one raycast per shot, damage lands the same
 		-- frame. Range caps the ray; the tracer is client-drawn feedback only.
 		Range = 400,
