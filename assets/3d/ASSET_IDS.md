@@ -10,8 +10,12 @@ Palette texture (v5, 2026-11-08, cells 57-60 `glass`, `glass_l`, `paint_maroon`,
 `TextureID`). v4 (skin v2) was `80401218749683` → `115366221483568`; v3 was `120331040807954` → `110782102234723`, v2
 `88256641133314`, v1 `87519201884536`.
 
-Distant city window grid (2026-11-08, `build/city_windows.py`): decal `115304423103431` →
-image **`75759991359237`** (`SkyService.WINDOW_TEXTURE`).
+Distant city window grid (2026-11-08, retired the same day for the `city.py` towers):
+decal `115304423103431` → image `75759991359237`.
+
+Z-fight re-upload (2026-11-08): `env_ruin_building`, `env_bus`, `env_guard_tower`,
+`env_tent`, `env_wreck_humvee`, `env_twall`, `env_hesco_tall` and the five vehicles were
+rebuilt with `Builder.resolve_zfight` and uploaded again; their rows carry the new ids.
 
 Delta rework meshes (ruin v2, guard tower v3, tall hesco, crib stack, deck plate, 12 props)
 uploaded 2026-11-07 and wired; rows below.
@@ -25,25 +29,37 @@ uploaded 2026-11-07 and wired; rows below.
 | prop_drone_beacon | 117405323536844 | 71937735064271 | 1.56 x 3.21 x 1.36 | pivot bottom: place at ground + 1.60; not used by a service yet |
 | wpn_rifle | 86613539481097 | 77112302177721 | 0.195 x 0.84 x 2.9 | 0.65x of the Blender size; grip offset handled in PlayerSetup |
 | prop_plague_rat | 102065990394982 | 135041557109073 | 0.47 x 0.52 x 1.88 | 0.7x of Blender; PlagueRatService PrimaryPart, faces -Z |
-| prop_car_sedan | 105869341810919 | 86339396656865 | 14.88 x 4.57 x 6.61 | offset (0, 2.286, -0.098); 2026-11-08, `props.py` |
-| prop_car_hatch | 87378239343743 | 95489557589678 | 12.88 x 5.6 x 8.24 | offset (0, 2.8, -0.919) |
-| prop_car_pickup | 120184047356067 | 78626743790644 | 18.14 x 5.4 x 7 | offset (0.38, 2.7, 0) |
-| prop_car_van | 111460228402848 | 107757202591905 | 17.81 x 7.2 x 7.2 | offset (0.467, 3.6, 0) |
-| prop_cargo_truck | 92195219892794 | 132497576320566 | 24.28 x 9.82 x 9.75 | offset (0.392, 4.912, 0); Open Cloud clamps the import to 2048, the in-game Size restores it |
+| prop_car_sedan | 133589928038621 | 139871373094934 | 14.88 x 4.57 x 6.61 | offset (0, 2.286, -0.098); 2026-11-08, `props.py` |
+| prop_car_hatch | 97663934153782 | 136632195416849 | 12.88 x 5.6 x 8.24 | offset (0, 2.8, -0.919) |
+| prop_car_pickup | 117043997323617 | 94883927074894 | 18.14 x 5.4 x 7 | offset (0.38, 2.7, 0) |
+| prop_car_van | 107756699293007 | 90984423879699 | 17.81 x 7.2 x 7.2 | offset (0.467, 3.6, 0) |
+| prop_cargo_truck | 109079007816233 | 77214428896979 | 24.28 x 9.82 x 9.75 | offset (0.392, 4.912, 0); Open Cloud clamps the import to 2048, the in-game Size restores it |
+| env_city_office | 99343457194346 | 114000808366452 | 65.6 x 178.5 x 45.6 | office slab; SkyService skyline, offsets in MeshAssets |
+| env_city_office_lit | 137262251701871 | 114932257491485 | 64.34 x 146.1 x 44.34 | its lit windows (Neon) |
+| env_city_residential | 105255167927156 | 100403444152439 | 52.2 x 126.5 x 37 | apartment block |
+| env_city_residential_lit | 77011644815213 | 131589267004783 | 50.34 x 102.6 x 32.34 |  |
+| env_city_deco | 74663241301810 | 96482232581851 | 58 x 253 x 58 | stepped deco tower |
+| env_city_deco_lit | 108427367633529 | 88192651672325 | 56.34 x 252.5 x 56.34 |  |
+| env_city_glass | 94468053772491 | 125300114956251 | 51.39 x 202.2 x 51.39 | glass curtain wall |
+| env_city_glass_lit | 109060226686011 | 134878974427574 | 48.34 x 167.8 x 48.34 |  |
+| env_city_ruined | 91159310318208 | 119279001694730 | 55.6 x 132.64 x 37.85 | burned-out shell |
+| env_city_ruined_lit | 128244578925003 | 125945574546312 | 53.47 x 65.2 x 29.47 |  |
+| env_city_midrise | 131802731205834 | 97416410693850 | 93.2 x 85 x 43.2 | wide mid-rise with a billboard |
+| env_city_midrise_lit | 92670539790330 | 117149048575756 | 91.34 x 58.1 x 42.34 |  |
 | env_barrier_jersey | 83842095201437 | 120043526542183 | 6 x 2.75 x 2 | solid; ArenaService dressing |
 | env_sandbag_bunker (v2) | 72798329648015 | 104090605242659 | 12.8 x 6.3 x 10.8 | solid; rebuilt 2026-11-06 to character scale |
 | env_guard_tower (v2, superseded) | 140295675948906 | 86672166489335 | 11 x 27.25 x 11 | solid; rebuilt 2026-11-06 |
 | env_ruin_building (2026-11-06, superseded) | 112569589520919 | 75991267203586 | 32.73 x 24.6 x 25.35 | solid; rebuilt 2026-11-06 (10.5-stud storeys) |
 | env_container_olive | 90739805417437 | 132200158345619 | 22.1 x 9.55 x 9.2 | solid |
 | env_container_rust | 108583453603951 | 134169217220802 | 22.1 x 9.55 x 9.2 | solid |
-| env_wreck_humvee | 101500567016827 | 78504635684807 | 17 x 7.11 x 8.1 | solid; nose toward -X |
-| env_twall | 123453107626792 | 95876600065674 | 8 x 12.5 x 2.6 | solid |
+| env_wreck_humvee | 87433680532014 | 93009747032303 | 17 x 7.11 x 8.1 | solid; nose toward -X |
+| env_twall | 107388028009682 | 81832347321551 | 8.05 x 12.5 x 2.6 | solid |
 | env_hesco | 76249676881241 | 85372982024960 | 6.22 x 4.58 x 4.72 | solid |
 | env_crib_stack | 84277153513044 | 97934930804371 | 1.20 x 2.80 x 2.60 | pivot bottom, offset (0.000, 1.400, 0.000); cribbing under a lifted T-wall (Scrapes) |
 | env_deck_plate | 87378908913829 | 75563930153038 | 12.00 x 0.33 x 5.00 | pivot bottom, offset (0.000, 0.165, 0.000); walkable road plate between roofs |
-| env_guard_tower | 115469907629978 | 71139384321705 | 11.00 x 27.25 x 11.00 | pivot bottom, offset (0.000, 13.625, 0.000); v3 rail gate; composite colliders + TrussPart ladder; replaces 140295675948906 |
-| env_hesco_tall | 87652619532508 | 82867781130855 | 6.22 x 8.88 x 4.72 | pivot bottom, offset (0.000, 4.440, 0.000); two-high hesco (the Pens ring) |
-| env_ruin_building | 97636619216682 | 81543978894479 | 32.09 x 23.60 x 25.15 | pivot bottom, offset (0.847, 11.800, -0.517); v2 enterable; composite colliders, `shell` for outer ruins; replaces 112569589520919 |
+| env_guard_tower | 85279268257603 | 85957259038112 | 11.00 x 27.25 x 11.00 | pivot bottom, offset (0.000, 13.625, 0.000); v3 rail gate; composite colliders + TrussPart ladder; replaces 140295675948906 |
+| env_hesco_tall | 80810183774155 | 71019273814951 | 6.32 x 8.88 x 4.72 | pivot bottom, offset (0.000, 4.440, 0.000); two-high hesco (the Pens ring) |
+| env_ruin_building | 72875984069129 | 139021877568612 | 32.09 x 23.60 x 25.15 | pivot bottom, offset (0.847, 11.800, -0.517); v2 enterable; composite colliders, `shell` for outer ruins; replaces 112569589520919 |
 | prop_body_bag | 138563921819343 | 73076169933777 | 6.60 x 0.95 x 2.20 | pivot bottom, offset (0.100, 0.475, 0.000); prop (Delta rework 2026-11-07) |
 | prop_chainlink_panel | 135724153731021 | 125979502358349 | 12.06 x 7.00 x 0.30 | pivot bottom, offset (0.000, 3.500, 0.000); prop (Delta rework 2026-11-07) |
 | prop_civilian_car (retired 2026-11-08) | 131007713996765 | 117334770094341 | 15.70 x 4.80 x 7.50 | replaced by the four `prop_car_*` |
@@ -57,7 +73,7 @@ uploaded 2026-11-07 and wired; rows below.
 | prop_plank | 85743587635839 | 81118116311720 | 10.00 x 0.40 x 2.00 | pivot bottom, offset (0.000, 0.200, 0.000); prop (Delta rework 2026-11-07) |
 | prop_portable_toilet | 106338287683599 | 137067132484823 | 4.30 x 8.45 x 4.39 | pivot bottom, offset (0.000, 4.225, -0.045); prop (Delta rework 2026-11-07) |
 | env_comm_tower | 121850127656343 | 136043833521905 | 8.04 x 44.7 x 8 | solid; landmark |
-| env_tent | 81822440803835 | 138062558436837 | 19.2 x 8.6 x 12 | solid; door on -X |
+| env_tent | 96064782371543 | 119391750870040 | 19.2 x 8.6 x 12 | solid; door on -X |
 | env_checkpoint | 71573561117915 | 129215637928455 | 22.05 x 9.5 x 7.4 | Box + composite colliders (2026-11-07); booth at -X, boom along +X |
 | env_dead_tree | 103119294791056 | 130464254006022 | 4.97 x 13.98 x 7.09 | Hull |
 | env_lamp_post | 132474171948585 | 84369687950095 | 4.9 x 13 x 1.2 | Hull; arm along +X |
@@ -128,7 +144,7 @@ uploaded 2026-11-07 and wired; rows below.
 | pc_assault_skinned_parts (hidden rig) | 15 meshes | 89768415142935 | R15 boxes | the same geometry split per R15 limb with Motor6Ds (`SKINNED_BODIES.parts`; v2 2026-11-07) |
 | pc_assault_gear_helmet | 106002887456604 | 115206275662165 | 1.34, 1.11, 1.54 | rigid gear on Head, offset 0.000, 0.095, -0.060 |
 | pc_assault_gear_carrier | 136938794151000 | 103203928656779 | 1.53, 1.44, 1.51 | rigid gear on UpperTorso, offset -0.025, 0.120, -0.025 |
-| env_bus | 115848012015557 | 84471628520896 | 42.9 x 12.75 x 10.9 | solid; the Gate bus line (ArenaService), Mile 14 later; 2026-11-07 |
+| env_bus | 132803646952127 | 113262814642765 | 42.9 x 12.75 x 10.9 | solid; the Gate bus line (ArenaService), Mile 14 later; 2026-11-07 |
 
 Open Cloud imports the FBX at 100x (1 Blender unit → 100 studs) and clamps any axis to 2048,
 so the imported size is meaningless; `MeshAssets.luau` sets the intended stud size (Blender

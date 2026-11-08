@@ -128,6 +128,41 @@ def build_palette_material(img):
 
 
 # ------------------------------------------------------------------ bmesh helpers
+# Static set pieces get the z-fight pass in Builder.finish; bodies and limbs do not.
+ZFIGHT_COLLECTIONS = {"Environment", "Props", "Pickups", "Weapons", "City"}
+ZFIGHT_SKIP = {"prop_plague_rat"}  # a creature: its overlaps are sub-stud and its size is tuned
+
+
+def _inside_2d(x, y, poly):
+    c = False
+    j = len(poly) - 1
+    for i in range(len(poly)):
+        xi, yi = poly[i]
+        xj, yj = poly[j]
+        if (yi > y) != (yj > y) and x < (xj - xi) * (y - yi) / (yj - yi + 1e-12) + xi:
+            c = not c
+        j = i
+    return c
+
+
+def _overlap_2d(pa, pb, min_area=0.02, n=8):
+    """True when two planar polygons (2D point lists) share more than `min_area`."""
+    x0 = max(min(p[0] for p in pa), min(p[0] for p in pb))
+    x1 = min(max(p[0] for p in pa), max(p[0] for p in pb))
+    y0 = max(min(p[1] for p in pa), min(p[1] for p in pb))
+    y1 = min(max(p[1] for p in pa), max(p[1] for p in pb))
+    if x1 - x0 < 0.05 or y1 - y0 < 0.05:
+        return False
+    hits = 0
+    for i in range(n):
+        for j in range(n):
+            x = x0 + (i + 0.5) / n * (x1 - x0)
+            y = y0 + (j + 0.5) / n * (y1 - y0)
+            if _inside_2d(x, y, pa) and _inside_2d(x, y, pb):
+                hits += 1
+    return hits / (n * n) * (x1 - x0) * (y1 - y0) > min_area
+
+
 class Builder:
     """Accumulates primitives into one bmesh; each primitive is painted with a swatch."""
 
@@ -256,9 +291,79 @@ class Builder:
         self.bm.from_mesh(me)
         bpy.data.meshes.remove(me)
 
+    def resolve_zfight(self, push=0.05, passes=8):
+        """Coplanar, same-facing, overlapping faces of different swatches flicker in Roblox
+        (owner, 2026-11-08: "two objects trying to occupy the same space"). For each such
+        pair the smaller primitive (connected island, by surface area) moves `push` studs
+        out along that face's normal, so the detail sits in front of what it lies on.
+        Downward faces on the floor are skipped (never seen). Returns the islands moved."""
+        bm = self.bm
+        bm.verts.index_update()
+        parent = list(range(len(bm.verts)))
+
+        def root(i):
+            while parent[i] != i:
+                parent[i] = parent[parent[i]]
+                i = parent[i]
+            return i
+
+        for e in bm.edges:
+            a, b = root(e.verts[0].index), root(e.verts[1].index)
+            if a != b:
+                parent[a] = b
+        zmin = min(v.co.z for v in bm.verts)
+        island_area = {}
+        for f in bm.faces:
+            k = root(f.verts[0].index)
+            island_area[k] = island_area.get(k, 0.0) + f.calc_area()
+        moved = 0
+        for _ in range(passes):
+            groups = {}
+            for f in bm.faces:
+                n = f.normal
+                if f.calc_area() < 0.01 or (n.z < -0.9 and abs(f.verts[0].co.z - zmin) < 0.02):
+                    continue
+                key = (round(n.x, 2), round(n.y, 2), round(n.z, 2), round(n.dot(f.verts[0].co) / 0.02))
+                groups.setdefault(key, []).append(f)
+            shifts = {}
+            for fs in groups.values():
+                if len(fs) < 2:
+                    continue
+                n = fs[0].normal.copy()
+                a = Vector((1, 0, 0)) if abs(n.x) < 0.9 else Vector((0, 1, 0))
+                u = n.cross(a).normalized()
+                v = n.cross(u).normalized()
+                polys = []
+                for f in fs:
+                    p = [(u.dot(x.co), v.dot(x.co)) for x in f.verts]
+                    uv0 = f.loops[0][self.uv].uv
+                    polys.append((f, p, (round(uv0.x, 4), round(uv0.y, 4)), root(f.verts[0].index)))
+                for i in range(len(polys)):
+                    fa, pa, ca, ia = polys[i]
+                    for j in range(i + 1, len(polys)):
+                        fb, pb, cb, ib = polys[j]
+                        if ca == cb or ia == ib or not _overlap_2d(pa, pb):
+                            continue
+                        small = ib if island_area[ib] <= island_area[ia] else ia
+                        if small not in shifts:
+                            shifts[small] = n * push
+            if not shifts:
+                break
+            for vert in bm.verts:
+                s = shifts.get(root(vert.index))
+                if s is not None:
+                    vert.co += s
+            moved += len(shifts)
+            bm.normal_update()
+        return moved
+
     def finish(self, name, collection, material, pivot="bottom"):
         bm = self.bm
         bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+        if self.deform is None and collection.name in ZFIGHT_COLLECTIONS and name not in ZFIGHT_SKIP:
+            moved = self.resolve_zfight()
+            if moved:
+                print(f"z-fight {name}: {moved} primitives pushed forward")
         if pivot == "bottom":
             zmin = min(v.co.z for v in bm.verts)
             bmesh.ops.translate(bm, vec=(0, 0, -zmin), verts=bm.verts)
@@ -1146,6 +1251,11 @@ warden.register(sys.modules[__name__])
 import props  # noqa: E402
 
 props.register(sys.modules[__name__])
+
+# The distant skyline towers (and their lit-window twins) live in city.py (owner, 2026-11-08).
+import city  # noqa: E402
+
+city.register(sys.modules[__name__])
 
 
 # ------------------------------------------------------------------ The Chosen (player bodies)

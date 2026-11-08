@@ -233,7 +233,7 @@ local DRESSING: { Dressing } = {
 	{ name = "env_container_rust", x = 198, z = 44, yaw = 90 },
 	{ name = "env_container_olive", x = 224, z = 20, yaw = 90 },
 	{ name = "env_container_rust", x = 224, z = 44, yaw = 90 },
-	{ name = "env_container_rust", x = 250, z = 20, yaw = 90, perch = true },
+	{ name = "env_container_rust", x = 250, z = 20, yaw = 90, perch = true, floor = 0.28 }, -- floor: the raycast lands on the Stack's ramp
 	{ name = "env_container_olive", x = 250, z = 44, yaw = 90 },
 	{ name = "env_container_rust", x = 174, z = 86, yaw = 90 }, -- against the Shed's west wall: its roof route
 	{ name = "env_hesco", x = 170, z = 70, yaw = 0 },
@@ -338,7 +338,7 @@ table.insert(DRESSING, { name = "env_container_olive", x = 56, z = -45, yaw = 0,
 -- `floor` pins pieces inside a building to its floor (the raycast would find the roof).
 local PROPS: { Dressing } = {
 	-- The LZ
-	{ name = "prop_light_tower", x = -60, z = -118, yaw = 30 },
+	{ name = "prop_light_tower", x = -74, z = -104, yaw = 30 }, -- beside its generator, clear of the checkpoint
 	{ name = "prop_generator", x = -63, z = -108, yaw = 0 },
 	{ name = "prop_pallet", x = -125, z = -118, yaw = 0, lift = 0 }, -- pallets stack beside their source, never singles (LEVELS A12b)
 	{ name = "prop_pallet", x = -125, z = -118, yaw = 4, lift = 0.57 },
@@ -383,7 +383,7 @@ local PROPS: { Dressing } = {
 	{ name = "prop_chainlink_panel", x = -126, z = 40, yaw = 90 },
 	{ name = "prop_chainlink_panel", x = -126, z = 52, yaw = 90 },
 	-- The Inner Gate (z -112)
-	{ name = "prop_concertina", x = -55, z = -107, yaw = 0 },
+	{ name = "prop_concertina", x = -44, z = -107, yaw = 0 }, -- clear of the generator (ends x -59)
 	{ name = "prop_concertina", x = 6, z = -106, yaw = 0 },
 	{ name = "prop_light_tower", x = -70, z = -132, yaw = 0 },
 	{ name = "prop_generator", x = -4, z = -126, yaw = 0 },
@@ -411,9 +411,9 @@ local PROPS: { Dressing } = {
 	{ name = "prop_car_hatch", x = 180, z = 196, yaw = -4 },
 	{ name = "prop_dumpster", x = 108, z = 167, yaw = 0 }, -- the Walker step to the Parade roof
 	{ name = "prop_dumpster", x = 70, z = 196, yaw = 15 },
-	{ name = "prop_body_bag", x = 56, z = 240, yaw = 0 },
-	{ name = "prop_body_bag", x = 60, z = 240, yaw = 0 },
-	{ name = "prop_body_bag", x = 64, z = 240, yaw = 0 },
+	{ name = "prop_body_bag", x = 56, z = 240, yaw = 90 }, -- side by side (a bag is 6.6 long)
+	{ name = "prop_body_bag", x = 60, z = 240, yaw = 90 },
+	{ name = "prop_body_bag", x = 64, z = 240, yaw = 90 },
 	{ name = "prop_plank", x = 30, z = 270, yaw = 20 },
 	{ name = "prop_plank", x = -60, z = 230, yaw = 70 },
 	{ name = "prop_portable_toilet", x = 100, z = 164, yaw = 0 },
@@ -482,9 +482,9 @@ local PROPS: { Dressing } = {
 	{ name = "prop_chainlink_panel", x = -184, z = 112, yaw = 90 },
 	{ name = "prop_concertina", x = -250, z = 160, yaw = 0 },
 	{ name = "prop_body_bag", x = -240, z = 100, yaw = 0 },
-	{ name = "prop_body_bag", x = -240, z = 103, yaw = 0 },
-	{ name = "prop_body_bag", x = -236, z = 100, yaw = 0 },
-	{ name = "prop_body_bag", x = -236, z = 103, yaw = 0 },
+	{ name = "prop_body_bag", x = -240, z = 103.5, yaw = 0 },
+	{ name = "prop_body_bag", x = -232, z = 100, yaw = 0 }, -- 8 apart: a bag is 6.6 long
+	{ name = "prop_body_bag", x = -232, z = 103.5, yaw = 0 },
 	{ name = "prop_pallet", x = -224, z = 4, yaw = 0, lift = 0 },
 	{ name = "prop_pallet", x = -224, z = 4, yaw = 4, lift = 0.57 },
 	{ name = "prop_pallet", x = -224, z = 4, yaw = -3, lift = 1.14 },
@@ -691,7 +691,7 @@ local function buildLandmarks(parent: Instance)
 		model
 	makePart(
 		"WhiteboardLegs",
-		Vector3.new(0.3, 2, 5),
+		Vector3.new(0.2, 2, 4.8),
 		CFrame.new(-87, 9, 48),
 		Color3.fromRGB(48, 50, 54)
 	).Parent =
@@ -769,12 +769,13 @@ local PATCHES: { Patch } = {
 local function buildGroundPatches(parent: Instance)
 	local model = Instance.new("Model")
 	model.Name = "GroundPatches"
-	for _, patch in PATCHES do
+	for index, patch in PATCHES do
 		local look = PATCH_LOOKS[patch.kind]
 		local part = Instance.new("Part")
 		part.Name = "Patch"
 		part.Size = Vector3.new(patch.w, 0.24, patch.d)
-		part.CFrame = CFrame.new(patch.x, 0, patch.z)
+		-- Each patch a hair higher than the last, so two that overlap never share a top face.
+		part.CFrame = CFrame.new(patch.x, -0.04 + index * 0.003, patch.z)
 			* CFrame.Angles(0, math.rad(patch.yaw or 0), 0)
 		part.Anchored = true
 		part.CanCollide = false
@@ -870,7 +871,7 @@ local function buildGantry(parent: Instance)
 			local leg = steel(
 				"Leg",
 				Vector3.new(1.2, floorY - HIGHWAY_Y, 1.2),
-				CFrame.new(40 + sx * 4.4, (floorY + HIGHWAY_Y) / 2, -45 + sz * 9.4)
+				CFrame.new(40 + sx * 4.3, (floorY + HIGHWAY_Y) / 2, -45 + sz * 9.3) -- inset: no face shared with the floor
 			)
 			leg.Material = Enum.Material.Metal
 		end
@@ -1425,8 +1426,8 @@ local BUILDINGS: { BuildingSpec } = {
 			-- Catwalk: first floor (9) east to the Compound top (8); the slope under its far end.
 			{
 				name = "Catwalk",
-				size = Vector3.new(16, 0.6, Config.Arena.Kit.CorridorMin),
-				at = Vector3.new(20, 8.7, 0),
+				size = Vector3.new(16, 0.5, Config.Arena.Kit.CorridorMin),
+				at = Vector3.new(20, 8.77, 0), -- 0.02 proud of the floor and the lip it crosses
 				material = "catwalk",
 			},
 			{
@@ -1441,11 +1442,12 @@ local BUILDINGS: { BuildingSpec } = {
 				at = Vector3.new(20, 9.6, -2.85),
 				material = "ladder",
 			},
-			-- The Recover Logs desk, ground floor north-west corner.
+			-- The Recover Logs desk, ground floor south-west corner under the window (the
+			-- north-west corner is the stair run).
 			{
 				name = "Desk",
 				size = Vector3.new(6, 2.6, 2.4),
-				at = Vector3.new(-8, 1.3, 5.5),
+				at = Vector3.new(-8, 1.3, -5.5),
 				material = "wood",
 			},
 		},
@@ -2086,9 +2088,13 @@ local function buildBuilding(parent: Instance, spec: BuildingSpec): Model
 		end
 	end
 
-	local footprint: Rect = { x0 = -hw, x1 = hw, z0 = -hd, z1 = hd }
+	-- Slab edges never sit flush with the wall faces (a shared face flickers): floors stop
+	-- just inside the walls, the roof overhangs them as an eave.
+	local inset: Rect = { x0 = -hw + 0.05, x1 = hw - 0.05, z0 = -hd + 0.05, z1 = hd - 0.05 }
+	local EAVE = 0.3
+	local eaves: Rect = { x0 = -hw - EAVE, x1 = hw + EAVE, z0 = -hd - EAVE, z1 = hd + EAVE }
 	for storey = 2, spec.storeys do
-		slab("Floor", footprint, (storey - 1) * H, slabMaterial)
+		slab("Floor", inset, (storey - 1) * H, slabMaterial)
 	end
 	local mezzanines: { Mezzanine } = spec.mezzanines or {}
 	for _, mezzanine in mezzanines do
@@ -2126,7 +2132,7 @@ local function buildBuilding(parent: Instance, spec: BuildingSpec): Model
 	end
 	local top = spec.storeys * H
 	if spec.roof ~= false then
-		slab("Roof", footprint, top, roofMaterial)
+		slab("Roof", eaves, top, roofMaterial)
 		if spec.parapet ~= false then
 			local p = kit.Parapet
 			run("Parapet", "x", -hd + T / 2, 0, spec.width, top, p, T, gaps.south, material, false)

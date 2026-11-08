@@ -112,7 +112,7 @@ local MESHES: { [string]: MeshDef } = {
 	-- ladder on the +Z face (Ladder collision group: the Infected never climb it).
 	-- v3 (rail gate) uploaded.
 	env_guard_tower = {
-		meshId = "rbxassetid://115469907629978",
+		meshId = "rbxassetid://85279268257603",
 		size = Vector3.new(11, 27.25, 11),
 		solid = true,
 		offset = Vector3.new(0, 13.625, 0),
@@ -136,7 +136,7 @@ local MESHES: { [string]: MeshDef } = {
 	-- 10.0 reached by mantling the one-storey back wall; no roof. `shell` seals it (5 parts)
 	-- for the outer ruins. v2 uploaded.
 	env_ruin_building = {
-		meshId = "rbxassetid://97636619216682",
+		meshId = "rbxassetid://72875984069129",
 		size = Vector3.new(32.09, 23.6, 25.15),
 		solid = true,
 		offset = Vector3.new(0.847, 11.8, -0.517),
@@ -195,7 +195,7 @@ local MESHES: { [string]: MeshDef } = {
 	},
 	-- Three steps (nose toward -X): hood 4 (vault), cab 6.5 (climb), rear bed 4.8.
 	env_wreck_humvee = {
-		meshId = "rbxassetid://101500567016827",
+		meshId = "rbxassetid://87433680532014",
 		size = Vector3.new(17, 7.11, 8.1),
 		solid = true,
 		offset = Vector3.new(-0.25, 3.557, 0),
@@ -206,8 +206,8 @@ local MESHES: { [string]: MeshDef } = {
 		},
 	},
 	env_twall = {
-		meshId = "rbxassetid://123453107626792",
-		size = Vector3.new(8, 12.5, 2.6),
+		meshId = "rbxassetid://107388028009682",
+		size = Vector3.new(8.05, 12.5, 2.6),
 		solid = true,
 		surface = { material = Enum.Material.Concrete, color = Color3.fromRGB(124, 122, 116) }, -- concrete
 	},
@@ -220,8 +220,8 @@ local MESHES: { [string]: MeshDef } = {
 	},
 	-- Two stacked units, 8.9 tall: Walkers (ClimbHeight 5) stop, Runners and players mantle.
 	env_hesco_tall = {
-		meshId = "rbxassetid://87652619532508",
-		size = Vector3.new(6.22, 8.88, 4.72),
+		meshId = "rbxassetid://80810183774155",
+		size = Vector3.new(6.32, 8.88, 4.72),
 		solid = true,
 		surface = { material = Enum.Material.Fabric, color = Color3.fromRGB(158, 131, 90) }, -- tan
 	},
@@ -253,13 +253,13 @@ local MESHES: { [string]: MeshDef } = {
 	},
 	-- Transit bus (docs/LEVELS.md B): Hocker-proof cover, a lane wide across a road.
 	env_bus = {
-		meshId = "rbxassetid://115848012015557",
+		meshId = "rbxassetid://132803646952127",
 		size = Vector3.new(42.9, 12.75, 10.9),
 		solid = true,
 	},
 	-- Hull: the 4.5 walls (climbable) and two wedge roof slopes up to the ridge at 8.
 	env_tent = {
-		meshId = "rbxassetid://81822440803835",
+		meshId = "rbxassetid://96064782371543",
 		size = Vector3.new(19.2, 8.6, 12),
 		solid = true,
 		surface = { material = Enum.Material.Fabric, color = Color3.fromRGB(99, 110, 66) }, -- olive
@@ -360,7 +360,7 @@ local MESHES: { [string]: MeshDef } = {
 	-- Sedan and hatch: VAULT side-on (top 4.4-4.6). Pickup: stand in the bed (2.6), climb the
 	-- cab (5.4). Van: CLIMB only (7.2, a Walker cannot reach the roof).
 	prop_car_sedan = {
-		meshId = "rbxassetid://105869341810919",
+		meshId = "rbxassetid://133589928038621",
 		size = Vector3.new(14.88, 4.57, 6.61),
 		solid = true,
 		offset = Vector3.new(0, 2.286, -0.098),
@@ -370,7 +370,7 @@ local MESHES: { [string]: MeshDef } = {
 		},
 	}, -- S
 	prop_car_hatch = {
-		meshId = "rbxassetid://87378239343743",
+		meshId = "rbxassetid://97663934153782",
 		size = Vector3.new(12.88, 5.6, 8.24),
 		solid = true,
 		offset = Vector3.new(0, 2.8, -0.919),
@@ -380,7 +380,7 @@ local MESHES: { [string]: MeshDef } = {
 		},
 	}, -- S
 	prop_car_pickup = {
-		meshId = "rbxassetid://120184047356067",
+		meshId = "rbxassetid://117043997323617",
 		size = Vector3.new(18.14, 5.4, 7),
 		solid = true,
 		offset = Vector3.new(0.38, 2.7, 0),
@@ -393,7 +393,7 @@ local MESHES: { [string]: MeshDef } = {
 		},
 	}, -- S
 	prop_car_van = {
-		meshId = "rbxassetid://111460228402848",
+		meshId = "rbxassetid://107756699293007",
 		size = Vector3.new(17.81, 7.2, 7.2),
 		solid = true,
 		offset = Vector3.new(0.467, 3.6, 0),
@@ -405,7 +405,7 @@ local MESHES: { [string]: MeshDef } = {
 	-- Army cargo truck (docs/LEVELS.md D1): cab CLIMB at 8, bed CLIMB at 5.7, and CRAWL-UNDER
 	-- the bed between the axles (clearance 2.9): no collider fills that gap.
 	prop_cargo_truck = {
-		meshId = "rbxassetid://92195219892794",
+		meshId = "rbxassetid://109079007816233",
 		size = Vector3.new(24.28, 9.82, 9.75),
 		solid = true,
 		offset = Vector3.new(0.392, 4.912, 0),
@@ -437,6 +437,88 @@ local MESHES: { [string]: MeshDef } = {
 		seeThrough = true,
 		castShadow = false,
 	}, -- T
+	-- The distant city (assets/3d/build/city.py, 2026-11-08): skyline towers placed by
+	-- SkyService 470-560 studs out, never collide or cast. Each `_lit` twin is the tower's
+	-- lit windows on the same origin, rendered Neon (SkyService recolours sodium /
+	-- fluorescent); `offset` is each mesh's bounds centre above the shared base.
+	env_city_office = {
+		meshId = "rbxassetid://99343457194346",
+		size = Vector3.new(65.6, 178.5, 45.6),
+		offset = Vector3.new(0, 89.25, 0),
+		castShadow = false,
+	},
+	env_city_office_lit = {
+		meshId = "rbxassetid://137262251701871",
+		size = Vector3.new(64.34, 146.1, 44.34),
+		offset = Vector3.new(0, 74.45, 0),
+		surface = { material = Enum.Material.Neon, color = Color3.fromRGB(255, 170, 90) }, -- sodium
+		castShadow = false,
+	},
+	env_city_residential = {
+		meshId = "rbxassetid://105255167927156",
+		size = Vector3.new(52.2, 126.5, 37),
+		offset = Vector3.new(0, 63.25, 0),
+		castShadow = false,
+	},
+	env_city_residential_lit = {
+		meshId = "rbxassetid://77011644815213",
+		size = Vector3.new(50.34, 102.6, 32.34),
+		offset = Vector3.new(0, 54, 0),
+		surface = { material = Enum.Material.Neon, color = Color3.fromRGB(255, 170, 90) }, -- sodium
+		castShadow = false,
+	},
+	env_city_deco = {
+		meshId = "rbxassetid://74663241301810",
+		size = Vector3.new(58, 253, 58),
+		offset = Vector3.new(0, 126.5, 0),
+		castShadow = false,
+	},
+	env_city_deco_lit = {
+		meshId = "rbxassetid://108427367633529",
+		size = Vector3.new(56.34, 252.5, 56.34),
+		offset = Vector3.new(0, 127.95, 0),
+		surface = { material = Enum.Material.Neon, color = Color3.fromRGB(255, 170, 90) }, -- sodium
+		castShadow = false,
+	},
+	env_city_glass = {
+		meshId = "rbxassetid://94468053772491",
+		size = Vector3.new(51.39, 202.2, 51.39),
+		offset = Vector3.new(0, 101.1, 0),
+		castShadow = false,
+	},
+	env_city_glass_lit = {
+		meshId = "rbxassetid://109060226686011",
+		size = Vector3.new(48.34, 167.8, 48.34),
+		offset = Vector3.new(0, 85, 0),
+		surface = { material = Enum.Material.Neon, color = Color3.fromRGB(255, 170, 90) }, -- sodium
+		castShadow = false,
+	},
+	env_city_ruined = {
+		meshId = "rbxassetid://91159310318208",
+		size = Vector3.new(55.6, 132.64, 37.85),
+		offset = Vector3.new(0, 66.32, -0.125),
+		castShadow = false,
+	},
+	env_city_ruined_lit = {
+		meshId = "rbxassetid://128244578925003",
+		size = Vector3.new(53.47, 65.2, 29.47),
+		offset = Vector3.new(-0.435, 35, 3.435),
+		surface = { material = Enum.Material.Neon, color = Color3.fromRGB(255, 170, 90) }, -- sodium
+		castShadow = false,
+	},
+	env_city_midrise = {
+		meshId = "rbxassetid://131802731205834",
+		size = Vector3.new(93.2, 85, 43.2),
+		offset = Vector3.new(0, 42.5, 0),
+		castShadow = false,
+	},
+	env_city_midrise_lit = {
+		meshId = "rbxassetid://92670539790330",
+		size = Vector3.new(91.34, 58.1, 42.34),
+		offset = Vector3.new(0.5, 30.25, 0),
+		surface = { material = Enum.Material.Neon, color = Color3.fromRGB(255, 170, 90) }, -- sodium
+		castShadow = false,
+	},
 	-- The Chosen (assets/3d pc_<class>_<limb>): player bodies, swapped onto the player's R15
 	-- rig by PlayerSetup via dressModel. Only Assault is uploaded; the other four classes are
 	-- built in Blender (previews) and wait for a class system.
@@ -854,6 +936,16 @@ end
 function MeshAssets.getSize(name: string): Vector3?
 	local def = MESHES[name]
 	return def and def.size
+end
+
+-- The mesh's bounds centre above its design origin (Roblox axes); the bottom-centre pivot
+-- (half the height up) when the entry names none.
+function MeshAssets.getOffset(name: string): Vector3
+	local def = MESHES[name]
+	if not def then
+		return Vector3.zero
+	end
+	return def.offset or Vector3.new(0, def.size.Y / 2, 0)
 end
 
 -- Builds the composite colliders of a placed piece as invisible anchored Parts parented to

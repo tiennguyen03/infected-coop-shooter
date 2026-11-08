@@ -265,6 +265,24 @@ silhouette (the cars); `props.panel()` lays glass on a sloped edge. Cars are bui
 5-stud figure (roof 4.4-7.2) with composite colliders. Note: `--only <names>` saves
 `arena_survivor.blend` and the lineups with only those assets; run a full build afterwards.
 
+## The distant city lives in `build/city.py` (owner, 2026-11-08)
+
+Six skyline towers (`env_city_office`, `_residential`, `_deco`, `_glass`, `_ruined`,
+`_midrise`) built floor by floor with `city.facade()` (glass core, a spandrel ring per
+storey, piers on the bay grid), plus `parapet`, `roof_slab`, `plant`, `tank`, `mast`. Each
+tower registers a `<name>_lit` twin: the lit-window slabs from the same seeded pass, on the
+tower's origin (pivot `origin`, not re-seated), so one placement lines both up through their
+`offset`s. SkyService places them (docs/STYLES.md §7). 960-1,870 tris a tower.
+
+## Z-fighting pass (`Builder.resolve_zfight`, 2026-11-08)
+
+Two faces in one plane flicker in Roblox. `Builder.finish` finds coplanar, same-facing,
+overlapping faces of different swatches in every Environment / Props / Pickups / Weapons /
+City mesh (bodies and the rat excluded) and moves the smaller primitive (by surface area)
+0.05 out along the face normal, repeating until none are left. The build log prints
+`z-fight <name>: N primitives pushed forward`; a mesh listed there for the first time changed
+and needs a re-upload. Still model details proud (0.03+) so the pass has little to do.
+
 ## Getting a mesh into Roblox (the pipeline that shipped 2026-11-06)
 
 1. **Upload** the FBX with the Studio MCP `upload_asset` tool (`assetType: "Model"`), and

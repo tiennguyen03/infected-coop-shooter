@@ -33,6 +33,13 @@ Read in this order:
 
 ## Current state (verified 2026-11-08 in a live playtest)
 
+- 2026-11-08: **Skyline towers + clipping pass** (`docs/STYLES.md` §7 and modeling rules,
+  `assets/3d/README.md` city.py and z-fight pass, `docs/LEVELS.md` overlap pass). 23
+  modelled towers (six types, `assets/3d/build/city.py`) with lit-window twins replace the
+  flat slabs. `Builder.resolve_zfight` removed 172 flickering coplanar spots; 12 meshes
+  re-uploaded. Part buildings got eaves and inset floors. Six placement overlaps moved.
+  Ambience beds off (owner: harsh). Verified in a playtest: 0 slope warnings, the scan
+  lists only intended overlaps, the pickup's rear window is clean.
 - 2026-11-08: **Sound pass** (`assets/audio/README.md` banks, tone rules, sound profiles).
   40 new clips in five banks, all uploaded (`assets/audio/ASSET_IDS.md`): player gear
   (reload, roll, vault, knockdown, downed, revive, breach, dash, dry fire, low-health
@@ -211,9 +218,12 @@ Read in this order:
 
 ## Open work, in priority order
 
-- **Delta traversal: owner calls + playtest** (`docs/LEVELS.md` A12b second pass): concertina
-  no-vault, generator to 4.8, light-tower collision as two boxes; walk the traversal
-  checklist (vault a sedan side-on, crawl under the cargo truck, stand in a pickup bed).
+- **Delta traversal: owner calls + playtest** (`docs/LEVELS.md` A12b second pass): generator
+  to 4.8 (explained to the owner 2026-11-08, waiting on a yes), light-tower collision as two
+  boxes; walk the traversal checklist (vault a sedan side-on, crawl under the cargo truck,
+  stand in a pickup bed). Concertina is never vaulted (decided, already true).
+- **Movement keys vs Helldivers 2** (owner asked 2026-11-08 how Helldivers does it, to
+  discuss before deciding): see the session summary; no change until the owner picks.
 - **Foundation backlog (2026-11-08 code review, `docs/ARCHITECTURE.md`).** Ranked concerns
   and items F1-F11: renames, lifecycle hooks, shared attribute/message constants, the open
   co-op debt (#3/#5/#9), CI + unit tests, then stage data split before objective pools,
@@ -296,7 +306,8 @@ Read in this order:
    2026-11-07; F10 fills the pool, F throws the flare) → ADS, hitscan rifle and headshots
    (done 2026-11-07) → run state machine + Operation
    (= Co-op Sprint A) → objective pools on Delta → the Warden → Containment Board → stage
-   definitions. Owner still to pick "sortie" vs "drop" for a stage.
+   definitions. A stage is a **sortie** (owner 2026-11-08; Helldivers 2 does not use the
+   word: it says mission, operation, dive).
    **Roblox's own Studio MCP** (`Roblox_Studio`, added 2026-11-06, local scope) is a second
    server: use it only for `generate_animation` (returns a published id; its clips play on
    our R15 rigs, extra bones ignored), `open_cloud_invoke` and camera-positioned

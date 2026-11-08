@@ -141,7 +141,7 @@ the checks still owed. Section B is the building kit.
 | Secure the Site | any of the 3 sites | zones as in A3 |
 | Sanitize | the Pens | interact points at the tents' east faces (-254,6,102/120/138) |
 | Recover the Record | Ridge to comm tower | A (-90,8,56); B (88,16,88) |
-| Recover Logs | Screening Block | the desk, ground floor NW corner (-10,1.3,75.5) |
+| Recover Logs | Screening Block | the desk, ground floor SW corner under the window (-10,1.3,64.5); the NW corner is the stair run |
 | Restore Comms | Compound upper tier | prop (88,16,88); survive 60 s on the 24x24 tier |
 | Confirm Casualties | Depot aisles + the Shed | 6 marked Brutes at aisle ends (185,2),(185,62),(211,2),(211,62),(237,2),(237,62); 2 in the Shed (190,86),(202,80) |
 | Open the Route | the Gate | 4 jersey barriers across the lane at z-274, x-39,-33,-27,-21; 3 lock blocks at (-36,2.9,-274),(-30,2.9,-274),(-24,2.9,-274); point beyond (-30,0,-288) |
@@ -313,9 +313,19 @@ face; climb to 10.5 with 5 of headroom; prone root 0.3-2.3):
 | CRAWL-UNDER | gap 2.8+ | the Scrapes 2.8, cargo truck bed 2.9 (between the axles), checkpoint boom 3.97 |
 
 Walkers climb to about 4.6, Runners to 9.6; bots climb nothing, so every crawl or climb route
-keeps a walk-around within 40 studs. Open (owner calls, recommendations): concertina no-vault
-(a NoVault attribute in `Ledge.find`), generator to 4.8 so it vaults, light-tower collision as
-two boxes (its 18-tall Box is an invisible wall in the air).
+keeps a walk-around within 40 studs. Concertina: never vaulted (owner 2026-11-08: "what
+would the alternative even be"). Already true by construction: wire is CanQuery off, so
+`Ledge.find` never sees it, and JumpPower is 0 (checked in a playtest: no ledge, the body
+stops or walks round the end). Open (owner calls, recommendations): generator to 4.8 so it
+vaults, light-tower collision as two boxes (its 18-tall Box is an invisible wall in the air).
+
+Overlap pass (2026-11-08, owner: pieces "clipping through each other"): a Studio scan of
+every placed piece against every other moved the LZ light tower beside its generator
+(-74,-104, was inside the checkpoint), the Inner Gate wire to x -44 (was through the
+generator), the Depot's perch container to `floor = 0.28` (its raycast landed on the
+Stack's ramp and sat it on top), the Lines and churchyard body bags apart, and the
+Screening Block desk out of the stair run. What the scan still lists is meant: the cots
+inside the ruin, the siren on its lamp post, roads over pads.
 
 ## A15. The perimeter (level designer, built 2026-11-07)
 

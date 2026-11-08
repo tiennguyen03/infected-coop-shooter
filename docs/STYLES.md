@@ -247,6 +247,12 @@ Lower is always acceptable. Add triangles only where the silhouette needs them.
 
 - **Flat shading everywhere** (Blender: Shade Flat, no Auto Smooth, no subdivision). Low
   facet counts on cylinders (8–12 sides). Hard edges are the look.
+- **No two surfaces in one plane** (owner 2026-11-08: they "clip through each other"). A
+  window, panel or patch laid flush on a face flickers in Roblox. Set details 0.03+ proud;
+  `Builder.finish` also pushes the smaller of any coplanar, overlapping, different-swatch
+  pair 0.05 forward (`resolve_zfight`: static pieces and the city). Part-built geometry
+  follows the same rule: roofs overhang their walls as eaves, floors stop inside them,
+  overlapping ground patches step up 0.003 each.
 - Model in **studs**: Blender scene unit scale `0.28` so 1 Blender unit = 1 stud
   (Roblox 1 stud ≈ 0.28 m). **Scale table** (constants in the build script, 2026-11-06):
   character 5, door 7.2 x 3.6, storey 10.5, window sill 3.2 / head 7.6, chest-high cover
@@ -450,14 +456,16 @@ yellow-brown). ColorCorrection Brightness 0.03, Contrast 0.14, Tint `rgb(255,240
 Bloom 0.35 / 20 / threshold 1.7 (Neon, fire and the sun bloom; geometry does not). Terrain
 Clouds: Cover 0.65, Density 0.5, Color `rgb(128,86,64)`. Outside the
 perimeter fence (`docs/LEVELS.md` A15: no solid walls since 2026-11-07; the ground and
-scenery run on past it to 700) a ring of 23 flat `DistantCity` silhouettes (`rgb(30,27,30)`, 470-560 studs out,
-60-220 tall, clustered north-east) with slow smoke columns and fire glow on six of them.
-Each block's arena face carries a few lit windows (Neon strips on a 10-stud storey grid,
-`floor(h/45)+1` per block, seeded per block: 70% sodium, 20% fluorescent, fire high up on
-the burning ones); blocks 100+ tall get a setback crown and a water tank, the three tallest
-an antenna with a static red Neon tip (~100 parts, no lights, CanQuery off). A shared
-64 px window-grid Texture (`assets/3d/build/city_windows.py`, 20 studs per tile, image
-`75759991359237`) covers the three faces that can be seen;
+scenery run on past it to 700) the `DistantCity`: 23 modelled towers 470-560 studs out,
+clustered north-east (owner 2026-11-08: the flat slabs looked "goofy"; `SkyService.SKYLINE`).
+Six types from `assets/3d/build/city.py` (office slab, apartment block, stepped deco tower,
+glass curtain wall, a burned-out shell, a wide mid-rise), each built floor by floor on the
+character's grid (storey 10, bay 4-9): glass core, a spandrel ring per storey, piers,
+setbacks, parapet, rooftop plant / tanks / masts, 960-1,870 tris. Placed at a uniform
+0.75-1.05 scale (a storey still reads 8-12) with the long face toward the arena and a yaw
+jitter. Each tower's `_lit` twin mesh holds its lit windows, one slab per window, painted
+Neon: sodium in most, fluorescent in a quarter, fire orange in the six burning ones (smoke
+and fire at 60% height). 46 MeshParts, ~42k tris in all, no lights, no collision or queries;
 `SkyService.burn(part)` puts the same fire + smoke on a dressing piece (`burning = true`
 in `ArenaService.DRESSING`). Smoke is the stock `smoke_main` particle at rate 5,
 14-22 s life, a light westerly drift; fire is `fire_main`, with a PointLight (Range 36,
@@ -528,3 +536,10 @@ when the player stands inside it, so a hollow ring is a later polish item.
   the character's scale from extruded side profiles (`assets/3d/build/props.py`: sedan,
   hatch, pickup, van, plus an army cargo truck you crawl under), with real glass
   (`glass` rows); every small set piece moved into `props.py`.
+- 2026-11-08: Owner: background buildings "goofy", and pieces "clipping through each
+  other". The skyline is now modelled towers (`city.py`) with lit-window twins instead of
+  slabs, Neon bars and a window texture (`city_windows.py` retired). Clipping was two
+  things: coplanar faces flickering (172 spots in 13 meshes, fixed in the generator and
+  re-uploaded; roof and floor edges in the Part buildings) and pieces placed inside each
+  other (light tower in the checkpoint, wire through a generator, a container on a ramp,
+  body bags, the Screening Block desk in the stairs), all moved.

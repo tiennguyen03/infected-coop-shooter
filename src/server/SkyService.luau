@@ -1,11 +1,14 @@
 --!strict
 -- The sky for Stage 1: the first days of the outbreak. Late afternoon under a smoke-stained
 -- overcast, orange haze on the horizon, the city beyond the perimeter wall burning. Built
--- from Lighting/Atmosphere/Clouds settings plus a ring of flat skyline silhouettes outside
--- the arena with slow smoke columns and fire glow (docs/STYLES.md > Stage 1 sky).
--- Everything here is static and cheap: ~30 boxes, a handful of low-rate particle emitters.
+-- from Lighting/Atmosphere/Clouds settings plus a ring of skyline towers outside the arena
+-- (assets/3d/build/city.py meshes) with slow smoke columns and fire glow (docs/STYLES.md >
+-- Stage 1 sky). Everything here is static: 46 meshes, a handful of low-rate emitters.
 
 local Lighting = game:GetService("Lighting")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local MeshAssets = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("MeshAssets"))
 
 local SkyService = {}
 
@@ -17,33 +20,35 @@ local FIRE_COLOR = ColorSequence.new({
 	ColorSequenceKeypoint.new(1, Color3.fromRGB(120, 30, 10)),
 })
 
--- Distant city blocks: { angle degrees from +X around the arena, distance, width, height }.
--- Clustered north and east (the city the checkpoint was guarding), thinner elsewhere.
-type Block = { a: number, d: number, w: number, h: number, smoke: boolean? }
-local SKYLINE: { Block } = {
-	{ a = 20, d = 520, w = 70, h = 150 },
-	{ a = 28, d = 480, w = 50, h = 95, smoke = true },
-	{ a = 36, d = 560, w = 90, h = 200 },
-	{ a = 44, d = 500, w = 60, h = 120 },
-	{ a = 52, d = 540, w = 80, h = 170, smoke = true },
-	{ a = 60, d = 470, w = 45, h = 80 },
-	{ a = 68, d = 530, w = 75, h = 140 },
-	{ a = 76, d = 500, w = 55, h = 110, smoke = true },
-	{ a = 84, d = 560, w = 95, h = 220 },
-	{ a = 92, d = 490, w = 50, h = 90 },
-	{ a = 100, d = 540, w = 70, h = 160 },
-	{ a = 110, d = 510, w = 60, h = 100, smoke = true },
-	{ a = 122, d = 560, w = 85, h = 130 },
-	{ a = 136, d = 500, w = 50, h = 70 },
-	{ a = 152, d = 540, w = 65, h = 90 },
-	{ a = 175, d = 520, w = 55, h = 60 },
-	{ a = 205, d = 540, w = 60, h = 75, smoke = true },
-	{ a = 240, d = 520, w = 70, h = 85 },
-	{ a = 275, d = 560, w = 80, h = 110 },
-	{ a = 300, d = 530, w = 55, h = 70 },
-	{ a = 330, d = 500, w = 65, h = 95, smoke = true },
-	{ a = 350, d = 550, w = 75, h = 130 },
-	{ a = 5, d = 480, w = 45, h = 85 },
+-- The distant city: { angle degrees from +X around the arena, distance, tower kind (an
+-- `env_city_<kind>` mesh and its `_lit` twin), uniform scale, yaw jitter, burning }.
+-- Clustered north and east (the city the checkpoint was guarding), thinner and lower
+-- elsewhere. Scales stay 0.8-1.2 so a storey reads 8-12 studs.
+type Tower = { a: number, d: number, kind: string, s: number, yaw: number?, smoke: boolean? }
+local SKYLINE: { Tower } = {
+	{ a = 5, d = 480, kind = "midrise", s = 1.0, yaw = 8 },
+	{ a = 20, d = 520, kind = "office", s = 0.95 },
+	{ a = 28, d = 480, kind = "ruined", s = 0.85, yaw = -10, smoke = true },
+	{ a = 36, d = 560, kind = "deco", s = 0.9 },
+	{ a = 44, d = 500, kind = "residential", s = 1.0, yaw = 15 },
+	{ a = 52, d = 540, kind = "glass", s = 0.95, smoke = true },
+	{ a = 60, d = 470, kind = "midrise", s = 0.9, yaw = -12 },
+	{ a = 68, d = 530, kind = "office", s = 0.85, yaw = 180 },
+	{ a = 76, d = 500, kind = "ruined", s = 0.9, yaw = 12, smoke = true },
+	{ a = 84, d = 560, kind = "deco", s = 1.05, yaw = 45 },
+	{ a = 92, d = 490, kind = "residential", s = 0.85 },
+	{ a = 100, d = 540, kind = "glass", s = 0.85, yaw = 20 },
+	{ a = 110, d = 510, kind = "residential", s = 0.9, yaw = -8, smoke = true },
+	{ a = 122, d = 560, kind = "office", s = 0.8 },
+	{ a = 136, d = 500, kind = "midrise", s = 0.85, yaw = 10 },
+	{ a = 152, d = 540, kind = "residential", s = 0.8, yaw = 180 },
+	{ a = 175, d = 520, kind = "midrise", s = 0.8, yaw = -15 },
+	{ a = 205, d = 540, kind = "ruined", s = 0.75, smoke = true },
+	{ a = 240, d = 520, kind = "residential", s = 0.75, yaw = 12 },
+	{ a = 275, d = 560, kind = "office", s = 0.8, yaw = -10 },
+	{ a = 300, d = 530, kind = "midrise", s = 0.8 },
+	{ a = 330, d = 500, kind = "glass", s = 0.8, yaw = 30, smoke = true },
+	{ a = 350, d = 550, kind = "office", s = 0.9, yaw = 6 },
 }
 
 local function smokeColumn(parent: BasePart, size: number)
@@ -123,122 +128,74 @@ function SkyService.burn(piece: BasePart)
 	top.Parent = piece
 end
 
--- Skyline detail (docs/STYLES.md §7, art direction 2026-11-08): the face toward the arena
--- (local -X) carries a window-grid Texture (WINDOW_TEXTURE, "" = none) and a few lit
--- windows as Neon strips; tall blocks get a setback crown and a tank or an antenna (the
--- three tallest a red tip). Seeded per block, so the city is the same every run.
-local WINDOW_TEXTURE = "rbxassetid://75759991359237" -- assets/3d/build/city_windows.py
-local WINDOW_CELL = 10 -- studs per window (one storey)
+-- Skyline towers (docs/STYLES.md §7; owner 2026-11-08: the flat slabs looked "goofy").
+-- Each tower is a palette mesh plus its lit-window twin painted Neon: sodium in most, a
+-- cold fluorescent in some, fire-orange in the burning ones. Seeded per tower, so the city
+-- is the same every run. A tower whose mesh never loads becomes a plain dark block.
 local SODIUM = Color3.fromRGB(255, 170, 90)
 local FLUORESCENT = Color3.fromRGB(210, 220, 214)
 local FIRE_WINDOW = Color3.fromRGB(255, 110, 40)
 
-local function decorPart(
-	model: Model,
-	name: string,
-	size: Vector3,
-	cframe: CFrame,
-	color: Color3,
-	neon: boolean?
-): BasePart
-	local part = Instance.new("Part")
-	part.Name = name
-	part.Size = size
-	part.CFrame = cframe
+local function quiet(part: BasePart)
 	part.Anchored = true
 	part.CanCollide = false
 	part.CanQuery = false
 	part.CanTouch = false
 	part.CastShadow = false
-	part.Material = if neon then Enum.Material.Neon else Enum.Material.SmoothPlastic
-	part.Color = color
-	part.Parent = model
-	return part
 end
 
--- 70% sodium, 20% fluorescent, 10% fire (fire only high up on a burning block).
-local function litColor(rng: Random, high: boolean, smoke: boolean?): Color3
-	local roll = rng:NextNumber()
-	if roll < 0.1 and smoke and high then
-		return FIRE_WINDOW
-	elseif roll < 0.8 then
-		return SODIUM
-	end
-	return FLUORESCENT
+local function emitterTop(model: Model, cframe: CFrame, width: number)
+	local top = Instance.new("Part")
+	top.Name = "Burning"
+	top.Size = Vector3.new(width * 0.5, 1, width * 0.4)
+	top.CFrame = cframe
+	top.Transparency = 1
+	quiet(top)
+	smokeColumn(top, 28)
+	fire(top, 18, 6)
+	top.Parent = model
 end
 
-local function detailBlock(
-	model: Model,
-	part: BasePart,
-	block: Block,
-	index: number,
-	tallest: { [number]: boolean }
-)
-	local rng = Random.new(index * 7919)
-	local depth, height, faceWidth = part.Size.X, part.Size.Y, part.Size.Z
-	if WINDOW_TEXTURE ~= "" then
-		for _, face in { Enum.NormalId.Left, Enum.NormalId.Front, Enum.NormalId.Back } do
-			local texture = Instance.new("Texture")
-			texture.Texture = WINDOW_TEXTURE
-			texture.Face = face
-			texture.StudsPerTileU = WINDOW_CELL * 2
-			texture.StudsPerTileV = WINDOW_CELL * 2
-			texture.Parent = part
+local function placeTower(model: Model, tower: Tower, index: number)
+	local a = math.rad(tower.a)
+	local ground = Vector3.new(math.cos(a) * tower.d, -2, math.sin(a) * tower.d)
+	-- The long face toward the arena (a mesh's -Z), then the per-tower jitter.
+	local base = CFrame.lookAt(ground, Vector3.new(0, -2, 0))
+		* CFrame.Angles(0, math.rad(tower.yaw or 0), 0)
+	local name = "env_city_" .. tower.kind
+	local body = MeshAssets.waitFor(name, 30)
+	local size = MeshAssets.getSize(name) or Vector3.new(60, 150, 40)
+	local height = size.Y * tower.s
+	if body then
+		body.Size = size * tower.s
+		body.CFrame = base * CFrame.new(MeshAssets.getOffset(name) * tower.s)
+		quiet(body)
+		body.Parent = model
+		local lit = MeshAssets.waitFor(name .. "_lit", 30)
+		local litSize = MeshAssets.getSize(name .. "_lit")
+		if lit and litSize then
+			local rng = Random.new(index * 7919)
+			lit.Size = litSize * tower.s
+			lit.CFrame = base * CFrame.new(MeshAssets.getOffset(name .. "_lit") * tower.s)
+			lit.Color = if tower.smoke
+				then FIRE_WINDOW
+				elseif rng:NextNumber() < 0.25 then FLUORESCENT
+				else SODIUM
+			quiet(lit)
+			lit.Parent = model
 		end
+	else
+		local block = Instance.new("Part")
+		block.Name = "Block"
+		block.Size = Vector3.new(size.X, size.Y, size.Z) * tower.s
+		block.CFrame = base * CFrame.new(0, height / 2, 0)
+		block.Material = Enum.Material.SmoothPlastic
+		block.Color = SILHOUETTE_COLOR
+		quiet(block)
+		block.Parent = model
 	end
-	-- Lit windows: 1-3 cells wide, on the cell grid of the arena-facing face.
-	local columns = math.max(math.floor(faceWidth / WINDOW_CELL), 1)
-	local rows = math.max(math.floor(height / WINDOW_CELL) - 1, 1)
-	for _ = 1, math.floor(height / 45) + 1 do
-		local span = math.min(rng:NextInteger(1, 3), columns)
-		local column = rng:NextInteger(0, columns - span)
-		local row = rng:NextInteger(1, rows)
-		local z = -faceWidth / 2 + (column + span / 2) * WINDOW_CELL
-		local y = -height / 2 + (row + 0.5) * WINDOW_CELL
-		decorPart(
-			model,
-			"LitWindow",
-			Vector3.new(0.4, WINDOW_CELL * 0.6, span * WINDOW_CELL - 3),
-			part.CFrame * CFrame.new(-depth / 2 - 0.1, y, z),
-			litColor(rng, row > rows * 2 / 3, block.smoke),
-			true
-		)
-	end
-	if block.h >= 100 then
-		local crown = Vector3.new(depth * 0.7, height * 0.15, faceWidth * 0.7)
-		local crownPart = decorPart(
-			model,
-			"Crown",
-			crown,
-			part.CFrame * CFrame.new(0, height / 2 + crown.Y / 2, 0),
-			SILHOUETTE_COLOR
-		)
-		local top = crownPart.CFrame * CFrame.new(0, crown.Y / 2, 0)
-		if tallest[index] then
-			local mast = decorPart(
-				model,
-				"Antenna",
-				Vector3.new(1.5, 40, 1.5),
-				top * CFrame.new(0, 20, 0),
-				SILHOUETTE_COLOR
-			)
-			decorPart(
-				model,
-				"AntennaTip",
-				Vector3.new(3, 3, 3),
-				mast.CFrame * CFrame.new(0, 21, 0),
-				Color3.fromRGB(220, 40, 30),
-				true
-			)
-		elseif rng:NextNumber() < 0.6 then
-			decorPart(
-				model,
-				"Tank",
-				Vector3.new(12, 10, 12),
-				top * CFrame.new(rng:NextNumber(-8, 8), 5, rng:NextNumber(-6, 6)),
-				SILHOUETTE_COLOR
-			)
-		end
+	if tower.smoke then
+		emitterTop(model, base * CFrame.new(0, height * 0.6, 0), size.X * tower.s)
 	end
 end
 
@@ -246,47 +203,11 @@ local function buildSkyline()
 	local model = Instance.new("Model")
 	model.Name = "DistantCity"
 	model.ModelStreamingMode = Enum.ModelStreamingMode.Persistent -- the skyline never streams out
-	local byHeight = {}
-	for index in SKYLINE do
-		table.insert(byHeight, index)
-	end
-	table.sort(byHeight, function(a, b)
-		return SKYLINE[a].h > SKYLINE[b].h
-	end)
-	local tallest = { [byHeight[1]] = true, [byHeight[2]] = true, [byHeight[3]] = true }
-	for index, block in SKYLINE do
-		local a = math.rad(block.a)
-		local part = Instance.new("Part")
-		part.Name = "Block"
-		part.Size = Vector3.new(block.w, block.h, block.w * 0.7)
-		part.CFrame = CFrame.new(math.cos(a) * block.d, block.h / 2 - 2, math.sin(a) * block.d)
-			* CFrame.Angles(0, -a, 0)
-		part.Anchored = true
-		part.CanCollide = false
-		part.CanQuery = false
-		part.CanTouch = false
-		part.CastShadow = false
-		part.Material = Enum.Material.SmoothPlastic
-		part.Color = SILHOUETTE_COLOR
-		part.Parent = model
-		detailBlock(model, part, block, index, tallest)
-		if block.smoke then
-			local top = Instance.new("Part")
-			top.Name = "Burning"
-			top.Size = Vector3.new(block.w * 0.5, 1, block.w * 0.4)
-			top.CFrame = part.CFrame * CFrame.new(0, block.h / 2 - 1, 0)
-			top.Transparency = 1
-			top.Anchored = true
-			top.CanCollide = false
-			top.CanQuery = false
-			top.CanTouch = false
-			top.CastShadow = false
-			smokeColumn(top, 28)
-			fire(top, 18, 6)
-			top.Parent = model
-		end
-	end
 	model.Parent = workspace
+	-- Mesh templates build asynchronously at boot: place without holding up the boot.
+	for index, tower in SKYLINE do
+		task.spawn(placeTower, model, tower, index)
+	end
 end
 
 function SkyService.init()
