@@ -73,12 +73,21 @@ local function createPanel()
 	progressLabel = progress
 end
 
-local function onObjectiveUpdate(kind: string, progress: number)
+local function onObjectiveUpdate(
+	kind: string,
+	progress: number,
+	playersIn: number?,
+	playersLiving: number?
+)
 	if kind == Messages.ObjectiveUpdate.Started then
 		createPanel()
 	elseif kind == Messages.ObjectiveUpdate.Progress then
 		if progressLabel then
-			progressLabel.Text = formatProgress(progress)
+			local text = formatProgress(progress)
+			if playersLiving and playersLiving > 1 then
+				text ..= string.format("  (%d / %d in)", playersIn or 0, playersLiving)
+			end
+			progressLabel.Text = text
 		end
 	elseif kind == Messages.ObjectiveUpdate.Completed then
 		destroyPanel()

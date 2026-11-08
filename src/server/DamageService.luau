@@ -34,6 +34,15 @@ end
 -- hit marker. `kind` names the source ("hit", "headshot", "breach", "fire", ...). `part` is
 -- the part the round hit when known: an Index plate (PlateHealth attribute, IndexService)
 -- takes the hit instead of the body, at GuardFactor while he guards (the Flank plate never).
+-- A hit is reported to the player who landed it only (MULTIPLAYER_READINESS #9): their
+-- hit marker, spark and hit sound. Squadmates do not receive every round anyone fires; a
+-- bot's hit (no attacker) is not reported. Kills still go to everyone (onEnemyKilled).
+local function reportHit(attacker: Player?, position: Vector3?, amount: number, kind: string)
+	if attacker and position and attacker.Parent then
+		damageRemote:FireClient(attacker, position, amount, kind, attacker)
+	end
+end
+
 function DamageService.dealDamage(
 	attacker: Player?,
 	humanoid: Humanoid,
@@ -56,9 +65,7 @@ function DamageService.dealDamage(
 		if attacker then
 			lastDamager[humanoid] = attacker
 		end
-		if position then
-			damageRemote:FireAllClients(position, amount, kind or "plate", attacker)
-		end
+		reportHit(attacker, position, amount, kind or "plate")
 		return
 	end
 	-- A bot's hit (no attacker) leaves any player's kill credit on the target in place.
@@ -67,9 +74,7 @@ function DamageService.dealDamage(
 	end
 	lastDamageKind[humanoid] = kind or "hit"
 	humanoid:TakeDamage(amount)
-	if position then
-		damageRemote:FireAllClients(position, amount, kind or "hit", attacker)
-	end
+	reportHit(attacker, position, amount, kind or "hit")
 end
 
 -- Credit a kill without dealing damage (kept for sources that bypass TakeDamage).

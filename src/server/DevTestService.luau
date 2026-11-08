@@ -27,6 +27,8 @@ local LoadoutService = require(script.Parent.LoadoutService)
 local PlayerStatsService = require(script.Parent.PlayerStatsService)
 local RequisitionService = require(script.Parent.RequisitionService)
 local RunManager = require(script.Parent.RunManager)
+local DifficultyService = require(script.Parent.DifficultyService)
+local PauseService = require(script.Parent.PauseService)
 
 local CREATOR_USER_ID = 67169996
 local ENEMY_TAG = "Enemy"
@@ -166,6 +168,8 @@ function DevTestService.printRunState(): { [string]: any }
 				)
 			)
 		),
+		threatClock = math.floor(DifficultyService.getElapsed()), -- unpaused seconds
+		spawnInterval = math.floor(DifficultyService.getSpawnInterval() * 100) / 100,
 		enemyCount = EnemyService.count(),
 		walkerCount = EnemyService.count("Walker"),
 		runnerCount = EnemyService.count("Runner"),
@@ -339,6 +343,18 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 	ClearEnemies = function()
 		DevTestService.clearEnemies()
 	end,
+	-- Ends the Warden fight at once (his body to 0): the run moves on to extraction.
+	KillWarden = function()
+		for _, model in CollectionService:GetTagged("Enemy") do
+			if model:GetAttribute(Attributes.EnemyType) == "Warden" then
+				local humanoid = model:FindFirstChildOfClass("Humanoid")
+				if humanoid then
+					humanoid.Health = 0
+				end
+			end
+		end
+		print("[DevTest] KillWarden")
+	end,
 	-- The Index: the full entrance from the Gate, or the Warden in front of you (no walk).
 	SpawnWarden = function()
 		print("[DevTest] SpawnWarden (the Gate) ->", IndexService.start())
@@ -375,6 +391,11 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 	end,
 	RestartRun = function(player)
 		DevTestService.restartRun(player)
+	end,
+	-- Freezes / unfreezes the field (the threat clock, cooldowns and timers stop).
+	TogglePause = function()
+		PauseService.setPaused(not PauseService.isPaused())
+		print(`[DevTest] Paused -> {PauseService.isPaused()}`)
 	end,
 	PrintRunState = function()
 		DevTestService.printRunState()

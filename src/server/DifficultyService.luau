@@ -1,8 +1,9 @@
 --!strict
--- Tracks run time and derives the spawn pressure from it. Stateless beyond
--- the run start timestamp: every getter computes from elapsed time, so
--- there is no scaling loop to keep in sync. The start time is published as
--- a workspace attribute for client UI (run timer). The threat curve is flat
+-- Tracks run time and derives the spawn pressure from it. The threat clock is accumulated
+-- unpaused time (MULTIPLAYER_READINESS #5): a paused field (PauseService, the run-end
+-- freeze) does not advance the spawn ramp or the max-alive schedule. Every getter computes
+-- from that clock, so there is no scaling loop to keep in sync. The wall-clock start is
+-- published as a workspace attribute for the HUD run timer. The threat curve is flat
 -- (Config.Difficulty health/damage at 1x since the loadout rework): pressure comes from
 -- the spawn interval decay, the max-alive schedule and the player count
 -- (Config.PlayerCountScaling: more Infected, never tougher ones).
@@ -12,16 +13,22 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Squad = require(script.Parent.Squad)
+local PauseService = require(script.Parent.PauseService)
+local RunService = game:GetService("RunService")
 local Lifecycle = require(script.Parent.Lifecycle)
 
 local DifficultyService = {}
 
 local startClock = 0
+local elapsed = 0 -- unpaused seconds since the run started
+local lastStep = os.clock()
 
 -- Starts (or restarts) the run clock; scaling and the run timer both derive
 -- from it.
 function DifficultyService.restart()
 	startClock = workspace:GetServerTimeNow()
+	elapsed = 0
+	lastStep = os.clock()
 	workspace:SetAttribute(Attributes.RunStartTime, startClock)
 end
 
@@ -30,10 +37,18 @@ function DifficultyService.init()
 		onRunStart = DifficultyService.restart,
 	})
 	DifficultyService.restart()
+	RunService.Heartbeat:Connect(function()
+		local now = os.clock()
+		if not PauseService.isPaused() then
+			elapsed += now - lastStep
+		end
+		lastStep = now
+	end)
 end
 
+-- Unpaused seconds since the run started (the threat clock).
 function DifficultyService.getElapsed(): number
-	return workspace:GetServerTimeNow() - startClock
+	return elapsed
 end
 
 local function elapsedMinutes(): number
@@ -69,10 +84,10 @@ function DifficultyService.getSpawnInterval(): number
 end
 
 function DifficultyService.getMaxAlive(): number
-	local elapsed = DifficultyService.getElapsed()
+	local clock = DifficultyService.getElapsed()
 	local base = Config.Difficulty.MaxAliveLate
 	for _, entry in Config.Difficulty.MaxAliveSchedule do
-		if elapsed <= entry[1] then
+		if clock <= entry[1] then
 			base = entry[2]
 			break
 		end

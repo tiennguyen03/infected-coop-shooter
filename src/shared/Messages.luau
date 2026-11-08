@@ -30,6 +30,7 @@ local Messages = table.freeze({
 		Available = "available",
 		Progress = "progress",
 		Returning = "returning",
+		Waiting = "waiting", -- (progress, playersIn, playersLiving): some of the squad is on the pad
 		Complete = "complete",
 		Hide = "hide",
 	}),

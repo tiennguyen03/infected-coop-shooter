@@ -284,6 +284,33 @@ function Squad.livingOwners(): { Player }
 	return result
 end
 
+-- Who is inside a hold zone (MULTIPLAYER_READINESS #3): whether any living member (player
+-- or bot) is in it, how many living players are, and how many living players there are.
+-- Downed bodies count for neither; bots never count toward the player totals.
+local zoneOverlap = OverlapParams.new()
+zoneOverlap.FilterType = Enum.RaycastFilterType.Include
+function Squad.zoneCount(zone: BasePart): (boolean, number, number)
+	local anyone, playersIn, playersLiving = false, 0, 0
+	for _, member in members do
+		if isAlive(member) then
+			local inside = false
+			local character = member.character
+			if character then
+				zoneOverlap.FilterDescendantsInstances = { character }
+				inside = #workspace:GetPartsInPart(zone, zoneOverlap) > 0
+			end
+			anyone = anyone or inside
+			if member.owner then
+				playersLiving += 1
+				if inside then
+					playersIn += 1
+				end
+			end
+		end
+	end
+	return anyone, playersIn, playersLiving
+end
+
 -- Players still in the fight (Alive or Downed): the run is wiped when this is empty.
 function Squad.activeOwners(): { Player }
 	local result = {}

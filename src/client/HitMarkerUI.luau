@@ -1,7 +1,8 @@
 --!strict
--- Hit feedback. The server reports every
--- hit with DamageDealt(position, amount, kind, attacker). Everyone sees the spark burst and
--- hears the 3D hit sound at the hit point; only the attacker gets the crosshair hit marker:
+-- Hit feedback. The server reports each hit to the player who landed it only, and every
+-- kill to everyone, with DamageDealt(position, amount, kind, attacker). The shooter sees
+-- the spark burst and hears the 3D hit sound at the hit point; everyone sees a kill's
+-- burst. Only the attacker gets the crosshair hit marker:
 -- four diagonal ticks, white on a hit, larger and gold on a headshot, larger and red on a
 -- kill. Damage over time (bleed, fire, rats) bursts but never marks, so the marker stays
 -- tied to the trigger. Sizes and timings in Config.HitMarker.

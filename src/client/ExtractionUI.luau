@@ -23,7 +23,7 @@ local function setText(title: string, detail: string, color: Color3)
 	detailLabel.Text = detail
 end
 
-local function onUpdate(kind: string, progress: number)
+local function onUpdate(kind: string, progress: number, playersIn: number?, playersLiving: number?)
 	local required = Config.Extraction.HoldDuration
 	if kind == Messages.ExtractionUpdate.Available then
 		setText("EXTRACTION AVAILABLE", "Reach the extraction zone", Color3.fromRGB(120, 255, 170))
@@ -32,6 +32,12 @@ local function onUpdate(kind: string, progress: number)
 			"EXTRACTION IN PROGRESS",
 			string.format("Hold: %.1f / %d", progress, required),
 			Color3.fromRGB(120, 255, 170)
+		)
+	elseif kind == Messages.ExtractionUpdate.Waiting then
+		setText(
+			string.format("WAITING FOR SQUAD (%d / %d)", playersIn or 0, playersLiving or 0),
+			string.format("Hold: %.1f / %d", progress, required),
+			Color3.fromRGB(255, 200, 90)
 		)
 	elseif kind == Messages.ExtractionUpdate.Returning then
 		setText(

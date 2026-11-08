@@ -1,7 +1,8 @@
 --!strict
 -- Extraction phase (Sprint 12): RunManager starts it when the objective completes
 -- (Extract state). Spawns a glowing zone far from the objective; the squad must
--- accumulate HoldDuration seconds inside it (pauses outside, never resets). On completion
+-- accumulate HoldDuration seconds with every living player inside it (pauses otherwise,
+-- never resets). On completion
 -- the onComplete listeners fire and RunManager ends the run as Extracted. Same hold-zone
 -- style as the objective.
 
@@ -28,23 +29,6 @@ local active = false
 local completed = false
 local timeSinceSync = 0
 local heartbeatConnection: RBXScriptConnection?
-
-local overlapParams = OverlapParams.new()
-overlapParams.FilterType = Enum.RaycastFilterType.Include
-
-local function isAnyPlayerInZone(zone: BasePart): boolean
-	-- Any living squad member (player or bot) holds the zone.
-	for _, member in Squad.living() do
-		local character = member.character
-		if character then
-			overlapParams.FilterDescendantsInstances = { character }
-			if #workspace:GetPartsInPart(zone, overlapParams) > 0 then
-				return true
-			end
-		end
-	end
-	return false
-end
 
 local function createZone(): BasePart
 	local part = Instance.new("Part")
@@ -118,18 +102,28 @@ local function onHeartbeat(deltaTime: number)
 		return
 	end
 
-	local inside = isAnyPlayerInZone(zone)
-	if inside then
+	-- The bird lifts the whole squad (MULTIPLAYER_READINESS #3): the hold runs only while
+	-- every living player is on the pad. Some of them on it: "waiting for squad". Downed
+	-- players and bots do not hold it up.
+	local _, playersIn, playersLiving = Squad.zoneCount(zone)
+	local everyone = playersLiving > 0 and playersIn >= playersLiving
+	if everyone then
 		progress += deltaTime
 	end
 
 	timeSinceSync += deltaTime
 	if timeSinceSync >= Config.Extraction.SyncInterval then
 		timeSinceSync = 0
-		local kind = if inside
+		local kind = if everyone
 			then Messages.ExtractionUpdate.Progress
+			elseif playersIn > 0 then Messages.ExtractionUpdate.Waiting
 			else Messages.ExtractionUpdate.Returning
-		extractionRemote:FireAllClients(kind, math.min(progress, Config.Extraction.HoldDuration))
+		extractionRemote:FireAllClients(
+			kind,
+			math.min(progress, Config.Extraction.HoldDuration),
+			playersIn,
+			playersLiving
+		)
 	end
 
 	if progress >= Config.Extraction.HoldDuration then

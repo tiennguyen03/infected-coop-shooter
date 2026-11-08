@@ -4,8 +4,8 @@ Start here when picking the project up in a fresh Claude Code session.
 Last updated: 2026-11-08, start of the foundation work on branch `foundation`: the owner
 asked for the "do now" items of the code review (`docs/ARCHITECTURE.md` F1-F5) before more
 features. Plan: `docs/superpowers/plans/2026-11-08-foundation-f1-f5.md`; F1 (renames)
-F2 (`Lifecycle` hooks, boot list) and F3 (`Attributes` / `Messages`
-contract) done. Last verified
+F2 (`Lifecycle` hooks, boot list), F3 (`Attributes` / `Messages`
+contract) and F4 (co-op debt #3/#5/#9) done. Last verified
 commit on `main`: the open perimeter (solo playtest).
 
 ## What this is

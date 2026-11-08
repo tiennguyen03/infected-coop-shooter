@@ -35,23 +35,6 @@ local timeSinceSync = 0
 -- run never fires into the new one.
 local runGeneration = 0
 
-local overlapParams = OverlapParams.new()
-overlapParams.FilterType = Enum.RaycastFilterType.Include
-
-local function isAnyPlayerInZone(zone: BasePart): boolean
-	-- Any living squad member (player or bot) holds the zone.
-	for _, member in Squad.living() do
-		local character = member.character
-		if character then
-			overlapParams.FilterDescendantsInstances = { character }
-			if #workspace:GetPartsInPart(zone, overlapParams) > 0 then
-				return true
-			end
-		end
-	end
-	return false
-end
-
 local function createZone(): BasePart
 	local part = Instance.new("Part")
 	part.Name = "ObjectiveZone"
@@ -132,7 +115,9 @@ local function onHeartbeat(deltaTime: number)
 		return
 	end
 
-	if isAnyPlayerInZone(zone) then
+	-- Any living member (player or bot) holds the zone; the HUD shows how many players are in.
+	local anyone, playersIn, playersLiving = Squad.zoneCount(zone)
+	if anyone then
 		progress += deltaTime
 	end
 
@@ -140,8 +125,10 @@ local function onHeartbeat(deltaTime: number)
 	if timeSinceSync >= Config.Objective.SyncInterval then
 		timeSinceSync = 0
 		objectiveRemote:FireAllClients(
-			"progress",
-			math.min(progress, Config.Objective.RequiredSeconds)
+			Messages.ObjectiveUpdate.Progress,
+			math.min(progress, Config.Objective.RequiredSeconds),
+			playersIn,
+			playersLiving
 		)
 	end
 
