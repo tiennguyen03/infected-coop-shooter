@@ -852,7 +852,6 @@ local Config = {
 			},
 		},
 	},
-
 }
 
 return Config

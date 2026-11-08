@@ -68,13 +68,7 @@ local function detonate(mine: Mine)
 			local root = model:FindFirstChild("HumanoidRootPart") :: BasePart?
 			if humanoid and humanoid.Health > 0 and root then
 				if (root.Position - center).Magnitude <= cfg.BlastRadius then
-					DamageService.dealDamage(
-						mine.owner,
-						humanoid,
-						cfg.Damage,
-						root.Position,
-						"hit"
-					)
+					DamageService.dealDamage(mine.owner, humanoid, cfg.Damage, root.Position, "hit")
 				end
 			end
 		end
