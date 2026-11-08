@@ -1,11 +1,10 @@
 # Handoff — Infected Co-op Shooter (VS Code + Claude Code terminal)
 
 Start here when picking the project up in a fresh Claude Code session.
-Last updated: 2026-11-07, end of the Warden kit session (shield re-mounted, four new
-attacks, player knockdown, the roll fix, bots dodging tells). **Next: the map redesign the
-owner asked for** (Open work item 1: design Delta in Blender through the Blender MCP with
-the level designer, then import; ladders use the stock Roblox climb). Last verified commit
-on `main`: the Warden kit commit (solo playtest with the owner at the keyboard).
+Last updated: 2026-11-08, start of the foundation work on branch `foundation`: the owner
+asked for the "do now" items of the code review (`docs/ARCHITECTURE.md` F1-F5) before more
+features. Plan: `docs/superpowers/plans/2026-11-08-foundation-f1-f5.md`. Last verified
+commit on `main`: the open perimeter (solo playtest).
 
 ## What this is
 
@@ -189,6 +188,13 @@ Read in this order:
 
 ## Open work, in priority order
 
+- **Foundation backlog (2026-11-08 code review, `docs/ARCHITECTURE.md`).** Ranked concerns
+  and items F1-F11: renames, lifecycle hooks, shared attribute/message constants, the open
+  co-op debt (#3/#5/#9), CI + unit tests, then stage data split before objective pools,
+  weapon/upgrade hooks, class interface, save service, lobby place, and how private match
+  servers and the shared Containment Board scale. **The owner, 2026-11-08: do F1-F5 now**,
+  "I want our foundation to be strong before we drift off into more niche features"
+  (branch `foundation`, plan in `docs/superpowers/plans/`).
 - **The Warden shipped 2026-11-07** (`docs/sprints/SPRINT_19_WARDEN.md` > Open work):
   handset hiss + squelch tell clip and his own vocals (audio pipeline), Gate dressing
   (chain, spray, MP roster) and the insert / wipe radio lines, a 4-player phone pass on
