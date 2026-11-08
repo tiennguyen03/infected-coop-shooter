@@ -41,6 +41,7 @@ local Attributes = table.freeze({
 	MomentumStacks = "MomentumStacks",
 	MoveSpeedMult = "MoveSpeedMult",
 	FireRateMult = "FireRateMult",
+	DamageMult = "DamageMult",
 	Ready = "Ready",
 	DevGod = "DevGod",
 	Bloom = "Bloom",
@@ -85,6 +86,11 @@ local Attributes = table.freeze({
 	end,
 	callInReadyAt = function(slot: number): string
 		return `CallIn{slot}ReadyAt`
+	end,
+	-- Player: a PlayerStatsService multiplier ("MoveSpeed" -> MoveSpeedMult, "FireRate",
+	-- "Damage"); the fixed names above are what the readers use.
+	statMult = function(stat: string): string
+		return stat .. "Mult"
 	end,
 	-- ReplicatedStorage.Shared: a Studio preview id for an unpublished animation clip.
 	animPreview = function(clip: string): string

@@ -37,4 +37,5 @@ for _, file in files do
 end
 
 print(`{passed} passed, {failed} failed`)
-process.exit(if failed > 0 then 1 else 0)
+-- No specs found (a moved folder, a wrong working directory) is a failure, not a pass.
+process.exit(if failed > 0 or passed == 0 then 1 else 0)

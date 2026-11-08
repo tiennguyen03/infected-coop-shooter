@@ -154,7 +154,7 @@ local function updateStrip()
 		local slotName = slot
 		if slot == "CallInA" or slot == "CallInB" then
 			local callIn = CallInDefinitions.get(
-				player:GetAttribute(if slot == "CallInA" then "CallIn1" else "CallIn2") :: string?
+				player:GetAttribute(Attributes.callIn(if slot == "CallInA" then 1 else 2)) :: string?
 			)
 			slotName = if callIn then callIn.Name else slot
 		end
@@ -177,7 +177,7 @@ function LoadoutUI.init()
 	gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
 
 	local player = Players.LocalPlayer
-	for _, name in { "CallIn1", "CallIn2" } do
+	for _, name in { Attributes.callIn(1), Attributes.callIn(2) } do
 		player:GetAttributeChangedSignal(name):Connect(updateStrip)
 	end
 	for _, slot in STRIP_SLOTS do

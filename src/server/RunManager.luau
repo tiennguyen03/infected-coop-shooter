@@ -151,7 +151,7 @@ local function onRestartRequest(player: Player)
 	end
 	local generation = readyGeneration
 	workspace:SetAttribute(
-		"ReadyUpEndsAt",
+		Attributes.ReadyUpEndsAt,
 		workspace:GetServerTimeNow() + Config.Run.ReadyUpSeconds
 	)
 	task.delay(Config.Run.ReadyUpSeconds, function()

@@ -268,7 +268,7 @@ function DevTestService.verifyCleanup(): { pass: boolean, leftovers: { string } 
 
 	for _, player in Players:GetPlayers() do
 		for _, stat in { "Damage", "FireRate", "MoveSpeed" } do
-			local mult = (player:GetAttribute(stat .. "Mult") :: number?) or 1
+			local mult = (player:GetAttribute(Attributes.statMult(stat)) :: number?) or 1
 			if math.abs(mult - 1) > 0.001 then
 				table.insert(leftovers, `{player.Name}: {stat} multiplier still {mult}`)
 			end

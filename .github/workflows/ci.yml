@@ -1,6 +1,8 @@
 # Static checks and unit tests on every push and pull request (docs/ARCHITECTURE.md F5).
 # The same commands run locally:
 #   stylua --check src tests && selene src && rojo build -o build.rbxlx && lune run tests/run
+#   rojo sourcemap default.project.json -o sourcemap.json
+#   luau-lsp analyze --sourcemap sourcemap.json --defs=globalTypes.d.luau src
 name: CI
 
 on:
@@ -31,6 +33,12 @@ jobs:
 
       - name: Build (Rojo)
         run: rojo build -o build.rbxlx
+
+      - name: Types (luau-lsp; a misspelt Attributes / Messages key fails here)
+        run: |
+          curl -sSfL -o globalTypes.d.luau https://raw.githubusercontent.com/JohnnyMorganz/luau-lsp/main/scripts/globalTypes.d.luau
+          rojo sourcemap default.project.json -o sourcemap.json
+          luau-lsp analyze --sourcemap sourcemap.json --defs=globalTypes.d.luau src
 
       - name: Unit tests (Lune)
         run: lune run tests/run

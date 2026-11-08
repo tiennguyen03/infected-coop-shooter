@@ -68,7 +68,9 @@ concern, not polish.
 
 - `rojo serve default.project.json` — sync (restart + reconnect after any project.json change)
 - `stylua src tests && selene src && rojo build -o build.rbxlx && lune run tests/run` — static
-  checks + unit tests, run after every change (CI runs the same on every push:
+  checks + unit tests, run after every change; types: `rojo sourcemap default.project.json
+  -o sourcemap.json && luau-lsp analyze --sourcemap sourcemap.json --defs=globalTypes.d.luau
+  src` must report nothing (CI runs all of it on every push:
   `.github/workflows/ci.yml`). Pure game rules live in `src/shared/Rules/` with a
   `tests/<Rule>.spec.luau` each; a new rule gets its spec first.
 - Live verification: Studio MCP `solo_playtest` → `execute_luau` (fire `DevCommand` from

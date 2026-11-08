@@ -68,7 +68,7 @@ local function publishAmmo(player: Player, loadout: Loadout)
 	player:SetAttribute(Attributes.Reserve, loadout.reserve)
 	local reloadUntil = loadout.reloadUntil
 	player:SetAttribute(
-		"ReloadUntil",
+		Attributes.ReloadUntil,
 		if reloadUntil then workspace:GetServerTimeNow() + (reloadUntil - os.clock()) else 0
 	)
 end

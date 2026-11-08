@@ -6,6 +6,8 @@
 local Lifecycle = require(script.Parent.Lifecycle)
 
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Attributes = require(ReplicatedStorage.Shared.Attributes)
 
 local STATS = { "Damage", "FireRate", "MoveSpeed" }
 
@@ -23,7 +25,7 @@ local function recompute(player: Player)
 				total += sourceBonuses[stat] or 0
 			end
 		end
-		player:SetAttribute(stat .. "Mult", total)
+		player:SetAttribute(Attributes.statMult(stat), total)
 	end
 end
 
@@ -43,7 +45,7 @@ function PlayerStatsService.setBonus(
 end
 
 function PlayerStatsService.getMultiplier(player: Player, stat: string): number
-	return (player:GetAttribute(stat .. "Mult") :: number?) or 1
+	return (player:GetAttribute(Attributes.statMult(stat)) :: number?) or 1
 end
 
 function PlayerStatsService.resetPlayer(player: Player)

@@ -519,7 +519,8 @@ local function buildHill(parent: Instance, hill: Hill)
 		model
 	-- A WedgePart rises from its -Z edge to its +Z face, so each embankment is yawed to put
 	-- the tall face against the plateau.
-	local sides = {
+	type Side = { x: number, z: number, yaw: number, w: number }
+	local sides: { [string]: Side } = {
 		south = { x = 0, z = -(hz + slope / 2), yaw = 0, w = hill.top.X },
 		north = { x = 0, z = hz + slope / 2, yaw = 180, w = hill.top.X },
 		east = { x = hx + slope / 2, z = 0, yaw = -90, w = hill.top.Y },

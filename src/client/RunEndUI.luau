@@ -283,10 +283,10 @@ end
 
 function RunEndUI.init()
 	local player = Players.LocalPlayer
-	for _, name in { "RunState", "RunResult" } do
+	for _, name in { Attributes.RunState, Attributes.RunResult } do
 		workspace:GetAttributeChangedSignal(name):Connect(refresh)
 	end
-	for _, name in { "ReadyCount", "ReadyNeeded", "ReadyUpEndsAt" } do
+	for _, name in { Attributes.ReadyCount, Attributes.ReadyNeeded, Attributes.ReadyUpEndsAt } do
 		workspace:GetAttributeChangedSignal(name):Connect(refreshStatus)
 	end
 	player:GetAttributeChangedSignal(Attributes.Ready):Connect(refreshStatus)

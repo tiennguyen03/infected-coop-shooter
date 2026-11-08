@@ -74,7 +74,7 @@ local function publish(player: Player, slot: number, state: Slot)
 	player:SetAttribute(Attributes.callInCharges(slot), state.charges)
 	local nextChargeAt = state.nextChargeAt
 	player:SetAttribute(
-		`CallIn{slot}ReadyAt`,
+		Attributes.callInReadyAt(slot),
 		if nextChargeAt then workspace:GetServerTimeNow() + (nextChargeAt - os.clock()) else 0
 	)
 end
@@ -189,7 +189,9 @@ local function onCallIn(player: Player, slot: unknown, requested: unknown)
 		return
 	end
 	local state = get(player)[slotIndex]
-	if state.charges <= 0 then
+	-- CallInCharges.use is the gate: an empty slot refuses before anything is thrown.
+	local canUse = CallInCharges.use(state.charges, state.nextChargeAt, os.clock(), 0)
+	if not canUse then
 		return
 	end
 	local point = if typeof(requested) == "Vector3" then requested else nil

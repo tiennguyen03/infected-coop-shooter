@@ -50,9 +50,9 @@ local BOOT: { ModuleScript } = {
 
 local started: { string } = {}
 for _, module in BOOT do
-	local ok, err = pcall(function()
+	local ok, err = xpcall(function()
 		(require(module) :: any).init()
-	end)
+	end, debug.traceback)
 	if not ok then
 		warn(`[Server] started before the failure: {table.concat(started, ", ")}`)
 		error(`[Server] {module.Name}.init() failed, boot stopped: {err}`, 0)

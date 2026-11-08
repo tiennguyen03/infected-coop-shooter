@@ -89,7 +89,7 @@ local function publish()
 	workspace:SetAttribute(Attributes.ResupplyPool, math.floor(pool))
 	workspace:SetAttribute(Attributes.ResupplyCost, currentCost())
 	workspace:SetAttribute(
-		"ResupplyDropIn",
+		Attributes.ResupplyDropIn,
 		if pending then math.max(pending.landAt - os.clock(), 0) else -1
 	)
 end

@@ -62,7 +62,7 @@ function Animations.init()
 		return
 	end
 	local AnimationBuilder = require(script.Parent.AnimationBuilder)
-	for clip, id in Config.Animations.Ids do
+	for clip: string, id: string in Config.Animations.Ids :: { [string]: string } do
 		if id ~= "" then
 			continue
 		end
