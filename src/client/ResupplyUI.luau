@@ -1,5 +1,5 @@
 --!strict
--- Resupply on the client: the HUD meter above the HP bar (pool / cost, "[3] FLARE" when it
+-- Resupply on the client: the HUD meter top left under the abilities (pool / cost, "[3] FLARE" when it
 -- covers the cost, the drop countdown while a pallet is inbound; a short pulse when a kill
 -- feeds the pool) and the world cards. When a crate lands the server sends this player
 -- their own card ids (supply cards on a pallet, field upgrades on an upgrade crate:
@@ -19,11 +19,12 @@ local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("R
 local UpgradeDefinitions =
 	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("UpgradeDefinitions"))
 local SoundFX = require(script.Parent.SoundFX)
+local HudTheme = require(script.Parent.HudTheme)
+local BuffNoticeUI = require(script.Parent.BuffNoticeUI)
+
+local C = HudTheme.Color
 
 local CARD_STUDS = Vector2.new(2.6, 3.4) -- billboard size in studs
-local AMBER = Color3.fromRGB(232, 181, 75)
-local READY = Color3.fromRGB(255, 120, 60)
-local DIM = Color3.fromRGB(20, 20, 20)
 local SUPPLY_COLOR = Color3.fromRGB(107, 122, 74)
 local UPGRADE_COLOR = Color3.fromRGB(63, 167, 214)
 local CALL_NOTICE_SECONDS = 3
@@ -48,6 +49,15 @@ local openCrates: { [number]: CrateCards } = {}
 -- HUD meter
 ----------------------------------------------------------------------
 
+local function setText(text: string, color: Color3)
+	if label.Text ~= text then
+		label.Text = text
+	end
+	if label.TextColor3 ~= color then
+		label.TextColor3 = color
+	end
+end
+
 local function updateMeter()
 	local pool = (workspace:GetAttribute(Attributes.ResupplyPool) :: number?) or 0
 	local cost = (workspace:GetAttribute(Attributes.ResupplyCost) :: number?) or 1
@@ -59,65 +69,53 @@ local function updateMeter()
 	lastPool = pool
 
 	if dropIn >= 0 then
-		fill.Size = UDim2.fromScale(1 - math.clamp(dropIn / Config.Requisition.DropDelay, 0, 1), 1)
-		fill.BackgroundColor3 = READY
-		label.Text = if now < noticeUntil
-			then noticeText
-			else `SUPPLY DROP 0:{string.format("%02d", math.ceil(dropIn))}`
+		-- Inbound: the bar drains to the landing.
+		fill.Size = UDim2.fromScale(math.clamp(dropIn / Config.Requisition.DropDelay, 0, 1), 1)
+		fill.BackgroundColor3 = C.Yellow
+		if now < noticeUntil then
+			setText(noticeText, C.Yellow)
+		else
+			setText(`PALLET 0:{string.format("%02d", math.ceil(dropIn))}`, C.Yellow)
+		end
 		return
 	end
 	local ratio = math.clamp(pool / math.max(cost, 1), 0, 1)
 	fill.Size = UDim2.fromScale(ratio, 1)
 	if pool >= cost then
-		-- Ready: a slow pulse so the eye finds it without a pop-up.
+		-- Ready: the bar pulses so the eye finds it without a pop-up.
 		local pulse = 0.5 + 0.5 * math.sin(now * 4)
-		fill.BackgroundColor3 = AMBER:Lerp(READY, pulse)
-		label.Text = "RESUPPLY READY   [3] FLARE"
+		fill.BackgroundColor3 = C.Yellow:Lerp(C.White, pulse)
+		setText(`RESUPPLY READY  {HudTheme.tint("[3] FLARE", C.Yellow)}`, C.Text)
 	else
 		-- A kill just fed the pool: a brief brighten.
 		local gain = math.clamp((gainPulseUntil - now) / GAIN_PULSE_SECONDS, 0, 1)
-		fill.BackgroundColor3 = AMBER:Lerp(Color3.fromRGB(255, 230, 160), gain)
-		label.Text = `RESUPPLY {math.floor(pool)} / {cost}`
+		fill.BackgroundColor3 = C.TextDim:Lerp(C.White, gain)
+		setText(`RESUPPLY {math.floor(pool)}/{cost}`, C.Text)
 	end
 end
 
+-- Top left under the ability circles (HudTheme): a 14 pt line and a thin bar with ticks at
+-- the quarters; no panel.
 local function createMeter()
-	local gui = Instance.new("ScreenGui")
-	gui.Name = "ResupplyUI"
-	gui.ResetOnSpawn = false
+	local gui = HudTheme.gui("ResupplyUI")
+	local root = Instance.new("Frame")
+	root.BackgroundTransparency = 1
+	root.Position = UDim2.fromOffset(HudTheme.Margin, 108)
+	root.Size = UDim2.fromOffset(240, 24)
+	root.Parent = gui
 
-	local bar = Instance.new("Frame")
-	bar.AnchorPoint = Vector2.new(0.5, 1)
-	bar.Position = UDim2.new(0.5, 0, 1, -50) -- above the HP bar (-24)
-	bar.Size = UDim2.fromOffset(420, 18)
-	bar.BackgroundColor3 = DIM
-	bar.BackgroundTransparency = 0.35
-	bar.BorderSizePixel = 0
-	bar.Parent = gui
-	local barCorner = Instance.new("UICorner")
-	barCorner.CornerRadius = UDim.new(0, 6)
-	barCorner.Parent = bar
+	label = HudTheme.label(root, { size = 14, rich = true })
+	label.Text = `RESUPPLY 0/{Config.Requisition.BaseCost}`
 
-	fill = Instance.new("Frame")
-	fill.Size = UDim2.fromScale(0, 1)
-	fill.BackgroundColor3 = AMBER
-	fill.BackgroundTransparency = 0.15
-	fill.BorderSizePixel = 0
-	fill.Parent = bar
-	local fillCorner = Instance.new("UICorner")
-	fillCorner.CornerRadius = UDim.new(0, 6)
-	fillCorner.Parent = fill
+	local bar = HudTheme.rect(root, UDim2.fromOffset(240, 4), C.Track, HudTheme.TrackTransparency)
+	bar.Position = UDim2.fromOffset(0, 19)
+	fill = HudTheme.rect(bar, UDim2.fromScale(0, 1), C.TextDim)
+	for _, quarter in { 0.25, 0.5, 0.75 } do
+		local tick = HudTheme.rect(bar, UDim2.fromOffset(1, 6), C.White, 0.4)
+		tick.Position = UDim2.new(quarter, 0, 0, -1)
+	end
 
-	label = Instance.new("TextLabel")
-	label.Size = UDim2.fromScale(1, 1)
-	label.BackgroundTransparency = 1
-	label.Text = `RESUPPLY 0 / {Config.Requisition.BaseCost}`
-	label.TextColor3 = Color3.fromRGB(235, 235, 235)
-	label.TextScaled = true
-	label.Font = Enum.Font.GothamBold
-	label.Parent = bar
-
-	gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+	HudTheme.parent(gui)
 end
 
 ----------------------------------------------------------------------
@@ -333,9 +331,10 @@ function ResupplyUI.init()
 		elseif kind == Messages.Resupply.Called then
 			local thrower = ...
 			noticeText = if thrower == Players.LocalPlayer.Name
-				then "FLARE OUT - PALLET INBOUND"
+				then "FLARE OUT · PALLET INBOUND"
 				else `{string.upper(thrower)} CALLED SUPPLY`
 			noticeUntil = os.clock() + CALL_NOTICE_SECONDS
+			BuffNoticeUI.card(noticeText)
 		end
 	end)
 

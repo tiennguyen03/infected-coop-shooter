@@ -55,6 +55,11 @@ local Messages = table.freeze({
 		Crouch = "crouch",
 		Prone = "prone",
 	}),
+	-- BuffNotice: (text, kind) — a radio line shows as a subtitle, anything else as a card.
+	Notice = table.freeze({
+		Radio = "radio",
+		Pickup = "pickup",
+	}),
 	CoverMove = table.freeze({
 		Vault = "vault",
 		Climb = "climb",

@@ -381,7 +381,7 @@ local function onPick(player: Player, crateId: unknown, cardId: unknown)
 	resupplyRemote:FireClient(player, Messages.Resupply.Picked, crate.id)
 	for _, other in Players:GetPlayers() do
 		if other ~= player then
-			noticeRemote:FireClient(other, notice)
+			noticeRemote:FireClient(other, notice, Messages.Notice.Pickup)
 		end
 	end
 end
@@ -407,7 +407,7 @@ local function rearmNearby()
 			if root and (root.Position - crate.position).Magnitude <= radius then
 				crate.rearmed[player] = true
 				LoadoutService.refillAmmo(player)
-				noticeRemote:FireClient(player, "RE-ARMED")
+				noticeRemote:FireClient(player, "RE-ARMED", Messages.Notice.Pickup)
 			end
 		end
 	end

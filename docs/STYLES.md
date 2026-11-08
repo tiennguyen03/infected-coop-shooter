@@ -164,31 +164,62 @@ ASSET_IDS.md. The old AI image-prompt doc was deleted 2026-11-06; subjects live 
 
 ## 5. UI
 
-- Backgrounds: `rgb(28,30,34)` panels; cards tint toward the kind color
-  (`kind:Lerp(rgb(28,30,34), 0.82)`, supply olive or upgrade blue). Icon slots `rgb(32,34,38)`.
-- Text: `rgb(240,240,240)` primary, Gotham family (`GothamBold` for names, `GothamBlack`
-  for big numbers, `Gotham` for body). Kind label ("SUPPLY", "<SLOT> UPGRADE") in the kind
-  color, 12 px uppercase.
-- Corners: 10 px cards/panels, 8 px icons on cards, 6 px bar slots. Strokes: kind color, 2 px.
-- Bars: health green→red at the bottom centre (`-24`), the Armour Plate shield as a shield
-  blue overlay from the left with a "+N" tag, Resupply amber above it (`-50`, pulses on a
-  kill, "[3] FLARE" when it covers the cost). No XP bar.
-- Ammo counter (loadout rework 2026-11-07): `MAG / RESERVE` in `GothamBlack` just right of
-  and below the crosshair (`+70, +34` from centre), white; amber under a quarter magazine;
-  "RELOADING" with a draining amber bar during a reload; red "DRY [R]" on empty.
-- Call-in tiles: bottom right next to Q / E, `[1] Magpie` / `[2] Tripline` (lore names),
-  amber charge pips under the name (one per charge, dim when spent), "READY" or the
-  seconds to the next charge; a tile with no charge goes the cooling grey.
-- Loadout strip: top left under the run timer, two call-in names in their accent colour then
-  the six upgrade slots (Dash, Breach, Rifle, Kit, the two call-ins) showing the upgrade's
-  lore name or a dim "<slot>: -".
-- Hit marker (2026-11-07, replaced damage numbers): four diagonal ticks round the
-  crosshair, white on a hit, gold and larger on a headshot, red, larger and thicker on a
-  kill; only the attacker sees it, damage over time never marks. Sizes and timings in
-  `Config.HitMarker`. Sparks and 3D hit sounds stay at the hit point for everyone.
+**HUD language (2026-11-08, after Prototype 2's HUD; owner direction "the UI should resemble
+Prototype 2").** Research and per-element spec by the `ui-ux-designer` agent; the 18
+reference screenshots it looked at are in `.superpowers/ui-refs/prototype2/` (git-ignored,
+local). Code: `src/client/HudTheme.luau` holds every rule below; every HUD script builds its
+ScreenGui through `HudTheme.gui` (one UIScale) and its text through `HudTheme.label`.
+
+- **No panels behind HUD text.** Text is white (240,240,240) with a black stroke at 0.55.
+  Panels only on the notification cards, the results screen and the world cards.
+- **Shapes:** hard-edged rectangles, no corner radius on bars or cards. Circles only for the
+  ability icons and the boss emblem. A 45-degree square is the "upgraded" mark.
+- **Strokes:** 1 px. Bar outline white at 0.75; a "hot" outline (low health) is red.l at 0.
+- **Palette roles:** text (240,240,240), dim text (150,154,160); health red.m (185,52,52)
+  with a red.l (232,90,90) top facet (a hard-step UIGradient, the one gradient allowed on the
+  HUD: §3 exception); damage trail white at 0.2; shield the white secondary bar; track
+  (18,19,22) at 0.3; enemies, alerts and "returning" red.l; places, bonus targets, charges
+  and "ready" objective yellow (230,189,96); squadmates friendly blue (63,167,214); menus
+  (22,8,8) at 0.1 with red.m 1 px boxes and a cream (232,222,196) selected / button fill with
+  dark text. No green on the HUD (green is the strain).
+- **Type:** `Enum.Font` only. GothamBlack for headlines and numbers, GothamBold for HUD
+  lines, Gotham for second lines. Fixed TextSize, never TextScaled: 36-40 banners and
+  headers, 26 ammo, 22 mission line, 18 second lines, 16 names, 14 labels, 11-12 minimum.
+  Caps for verbs, targets and labels, lowercase for linking words, the key word coloured
+  with RichText (`HudTheme.tint`). Menu headers take the `//` prefix.
+- **Scale and safe areas:** one UIScale per HUD ScreenGui, `clamp(viewport.Y / 1080, 0.62,
+  1)`, set on ViewportSize change. 16 px edge margin. Touch-only devices (no keyboard) move
+  the mission line and subtitles to top centre, clear of the thumbstick and buttons.
+- **Motion:** appear 0.18 s Quad Out (fade + 8 px rise or a 40 px slide for cards),
+  disappear 0.3 s fade; the health trail holds 0.35 s then shrinks 0.25 s; pulses are
+  computed at 15 Hz, not tweened. Nothing on the HUD runs per frame except the crosshair
+  (and the ammo bar while a reload runs).
+
+**Layout (1080p offsets):**
+
+| Element | Where | What |
+|---|---|---|
+| Health stack (`HealthBarUI`) | top left (16,12) | 400x16 red bar, white damage trail; shield 400x6 white bar under it with a "+N" tag; low health: red outline + red edge vignette pulsing; downed: dim fill, vignette held |
+| Abilities (`AbilityUI`) | top left (16,44) | four 38 px circles Q / E / 1 / 2: key letter, name under (PC); cooling: white fill rising, seconds; call-in charges as yellow squares under the circle; a diamond marks an upgrade in the slot |
+| Resupply (`ResupplyUI`) | top left (16,108) | 14 pt line + 240x4 bar with quarter ticks; ready: "RESUPPLY READY [3] FLARE" with the bar pulsing; inbound: "PALLET 0:14", bar drains |
+| Momentum (`AbilityUI`) | top left (16,132) | "MOMENTUM xN" yellow, hidden at 0 |
+| Run timer (`RunTimerUI`) | top centre (0,8) | 16 pt, no panel |
+| Ammo (`LoadoutUI`) | crosshair (+40,+40) | magazine GothamBlack 26 + " / reserve" 16 dim; yellow low, "RELOADING" + bar, red "DRY [R]"; attribute-driven |
+| Mission line (`MissionLine`, driven by `ObjectiveUI` / `ExtractionUI`) | lower centre (0.5, 0.8) | "SECURE the AREA" / "HOLD the LZ" / "WAITING FOR SQUAD n/m" / red "RETURN to the LZ", a second line, a 300x3 bar; extraction outranks the objective |
+| Subtitles (`BuffNoticeUI.subtitle`) | under the mission line | "CONTROL: radio line" (BuffNotice kind radio), the Warden's "HANDSET: ..." tells |
+| Notification cards (`BuffNoticeUI.card`) | top right (-16,12), y 120 during a boss | dark strip, red-outlined square, bold title; pickups, picks, the flare call, an upgrade landing; max 3 |
+| Boss bar (`BossBarUI`) | top right (-16,12) | name in red right-aligned, 380x16 faceted body bar ending in a round emblem (blue while stunned), six 56x6 plate bars with labels |
+| Downed / K.I.A. (`RunEndUI`) | centre (0.5, 0.22) | "DOWNED" 40 red + 360x4 bleed-out bar + line; "K.I.A." + line; no panel |
+| Results (`RunEndUI`) | full screen | menu style: dark red field, corner L-brackets, "//OPERATION COMPLETE" yellow or "//SQUAD WIPED" red, stats in a red-outlined box, cream READY |
+| Crosshair / hit marker | centre | unchanged |
+
+- The always-on loadout strip is gone: an upgrade shows as a card when it lands and as a
+  diamond on its ability circle.
+- Not built yet (designer's D4 / D5): world markers (objective, LZ, pallet diamonds with
+  distance) and a squad roster; both need the server to publish positions and squad state.
+- Cards in the world (pallet billboards) keep their layout.
 - UI stays **code-generated** (disk is the single source of truth). No hand edits in Studio.
-- Never block the center of the screen except for the run-end screens, which freeze the
-  field. Cards live in the world (billboards at the pallet), never as a pop-up.
+- Never block the centre of the screen except for the run-end screens.
 
 ---
 

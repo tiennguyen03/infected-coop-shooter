@@ -7,7 +7,8 @@ features. Plan: `docs/superpowers/plans/2026-11-08-foundation-f1-f5.md`; F1 (ren
 all five done: F1 renames, F2 `Lifecycle` hooks + boot list, F3
 `Attributes` / `Messages` contract, F4 co-op debt #3/#5/#9, F5 Lune tests + CI. The branch
 waits for the owner to review, push and merge; the first CI run happens on that push. Also on
-the branch: the black-bodies fix (`PaletteController`). Last verified
+the branch: the black-bodies fix (`PaletteController`). The HUD restyle after Prototype 2 is on branch `hud-p2` (off
+`foundation`, docs/STYLES.md section 5); world markers and a squad roster are next. Last verified
 commit on `main`: the open perimeter (solo playtest).
 
 ## What this is

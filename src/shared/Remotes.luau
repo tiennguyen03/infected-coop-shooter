@@ -15,7 +15,7 @@ local REMOTE_NAMES = {
 	"ObjectiveUpdate", -- server -> client: (kind: "started"|"progress"|"completed", progress: number, playersIn: number?, playersLiving: number?)
 	"DamageDealt", -- server -> client (hits: the attacker only; kills: everyone): (position: Vector3, amount: number, kind: "hit"|"headshot"|"fire"|"breach"|"death"|..., attacker: Player?)
 	"Resupply", -- client -> server: ("flare", target) | ("pick", crateId, cardId); server -> client: ("called", thrower) | ("cards", crateId, kind, choices, positions) | ("picked", crateId) | ("closed", crateId)
-	"BuffNotice", -- server -> client: (text: string) short on-screen announcement
+	"BuffNotice", -- server -> client: (text: string, kind: Messages.Notice) a radio line (subtitle) or a pickup / pick notice (card)
 	"RestartRun", -- client -> server: READY for the next run (only once the run has Ended)
 	"DevCommand", -- client -> server: (command: string, ...) Studio/creator-only dev tools
 	"ExtractionUpdate", -- server -> client: (kind: "available"|"progress"|"waiting"|"returning"|"complete"|"hide", progress, playersIn?, playersLiving?)

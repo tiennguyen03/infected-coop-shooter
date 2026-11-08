@@ -134,7 +134,7 @@ end
 local function radio(key: string)
 	local line = cfg().Radio[key]
 	if line then
-		noticeRemote:FireAllClients(line)
+		noticeRemote:FireAllClients(line, Messages.Notice.Radio)
 	end
 end
 
