@@ -1,6 +1,7 @@
 --!strict
 -- Client bootstrap. Requires each controller module and starts it.
 
+require(script.Parent.PaletteController).init()
 require(script.Parent.SoundFX).init()
 require(script.Parent.CameraController).init()
 require(script.Parent.AnimationController).init()

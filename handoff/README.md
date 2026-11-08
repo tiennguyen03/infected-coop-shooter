@@ -6,7 +6,8 @@ asked for the "do now" items of the code review (`docs/ARCHITECTURE.md` F1-F5) b
 features. Plan: `docs/superpowers/plans/2026-11-08-foundation-f1-f5.md`; F1 (renames)
 all five done: F1 renames, F2 `Lifecycle` hooks + boot list, F3
 `Attributes` / `Messages` contract, F4 co-op debt #3/#5/#9, F5 Lune tests + CI. The branch
-waits for the owner to review, push and merge; the first CI run happens on that push. Last verified
+waits for the owner to review, push and merge; the first CI run happens on that push. Also on
+the branch: the black-bodies fix (`PaletteController`). Last verified
 commit on `main`: the open perimeter (solo playtest).
 
 ## What this is

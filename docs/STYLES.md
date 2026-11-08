@@ -278,6 +278,10 @@ Lower is always acceptable. Add triangles only where the silhouette needs them.
   (or a TrussPart ladder) to it, the whole thing an atomic Model. ~256 such boxes is the
   ceiling for the stage.
 - Reuse by cloning one source MeshPart: identical `MeshId` shares geometry on the GPU.
+- The palette texture can fail on a client's first request ("Asset content representation
+  is being generated"); a MeshPart never retries, so `src/client/PaletteController.luau`
+  re-applies it once it loads. Palette meshes carry a grey base colour (rgb 118,122,128) so
+  a failed texture reads grey, never black; `dressModel` removes any BodyColors.
 
 ### Performance budget (whole scene, the real priority)
 

@@ -28,6 +28,9 @@ local MeshAssets = {}
 
 -- Shared palette texture (assets/3d/palette.png as an Image asset).
 local PALETTE_TEXTURE = "rbxassetid://115366221483568"
+-- What a palette mesh shows if its texture has not loaded (the client retries it:
+-- PaletteController): a neutral mid grey, never the black a leftover BodyColors gave.
+local PALETTE_FALLBACK = Color3.fromRGB(118, 122, 128)
 
 -- `solid` = a static obstacle: CanCollide + CastShadow on (buildings, barriers).
 -- `offset` = the mesh's bounds centre relative to its design origin (Infected limbs are
@@ -771,6 +774,7 @@ local function buildTemplate(folder: Folder, name: string, def: MeshDef)
 	else
 		part.TextureID = PALETTE_TEXTURE
 		part.Material = Enum.Material.SmoothPlastic
+		part.Color = PALETTE_FALLBACK
 	end
 	part.Anchored = true
 	-- A piece with composite colliders only renders: the invisible Parts carry collision
@@ -915,7 +919,14 @@ function MeshAssets.dressModel(model: Model, prefix: string): boolean
 		return false
 	end
 	for _, child in model:GetChildren() do
-		if child:IsA("Accoutrement") or child:IsA("Clothing") or child:IsA("ShirtGraphic") then
+		-- BodyColors would tint the new limbs (bots came out black when the palette texture
+		-- failed to load): the palette carries every colour.
+		if
+			child:IsA("Accoutrement")
+			or child:IsA("Clothing")
+			or child:IsA("ShirtGraphic")
+			or child:IsA("BodyColors")
+		then
 			child:Destroy()
 		end
 	end
@@ -1102,6 +1113,9 @@ end
 function MeshAssets.dressInfected(model: Model, typeName: string): boolean
 	return MeshAssets.dressModel(model, `inf_{string.lower(typeName)}_`)
 end
+
+-- The shared palette texture every palette mesh uses (PaletteController re-applies it).
+MeshAssets.PALETTE_TEXTURE = PALETTE_TEXTURE
 
 function MeshAssets.clone(name: string): MeshPart?
 	local template = templates[name]
