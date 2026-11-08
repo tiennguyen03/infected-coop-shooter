@@ -257,7 +257,8 @@ The owner: "there's random pallets inside of the slants and the hills." Every dr
 piece is placed by one raycast at its centre, so a footprint across an embankment sinks or
 floats. Rules (level designer), checked twice: `assets/3d/build/delta_map.py` rebuilds the
 layout in Blender and paints a breaking piece red, and `ArenaService.placePiece` raycasts a
-piece's four corners at boot and warns past `Config.Arena.StraddleTolerance` (0.6).
+piece's four corners at boot and warns past `Config.Arena.StraddleTolerance` (0.35 since
+2026-11-08).
 
 | Rule | Value |
 |---|---|
@@ -276,6 +277,45 @@ the Pens ring pulled in, overlaps between props), the new Compound ramp, the Gat
 75th wall removed. The Blender check reads 0 problems. At boot the corner check still names
 pieces that are meant to touch other geometry (the Stack and gantry containers under their
 ramps and floors, the Apron containers' ramps, the siren on its lamp): accepted.
+
+**Second pass (2026-11-08, level designer).** Owner: pallets and body bags "on the slants", a
+car "inside the slant", and "keep in mind the character's traversal". Changes:
+- Tolerance 0.6 -> **0.35** (`Config.Arena.StraddleTolerance` and `delta_map.py`); boot prints
+  0 warnings. Perch containers whose own pallet ramp runs under them carry `perch = true`
+  (the Stack, the Apron and the gantry containers) and skip the check; the Gate lamp post
+  carries `floor = 0` (the raycast was landing on its own siren head, 11.8 up).
+- **Pallets are stacks of four beside their source, never singles** (lift 0 / 0.57 / 1.14 /
+  1.71): the LZ stacks at the supply truck's tail, the Compound stores, the Depot aisle, the
+  Armoury, the Scrapyard. Litter singles removed (Ridge, Overlook crest, Depot alt pad).
+- Moves: the LZ toilet off the ramp, the Compound rust container off the Shelf ramp's foot,
+  the Compound humvee off the cots, the cots and body bags off the upper-tier toe, the Ridge
+  tower off the crest, the bags out of the checkpoint mesh, the Deck humvee square across
+  the deck, the Apron sedan off the highway toe, the Overlook light tower, the SouthRise
+  dumpster, the LZ lamp and two generators off pad edges.
+- **Vehicles v2** (`assets/3d/build/props.py`): the 14 `prop_civilian_car` became sedans,
+  hatchbacks, pickups and vans (2:2:1:1, vans at the Gate queue and the Scrapyard) plus two
+  north-road cars; two army cargo trucks: the LZ supply truck (-143,-120) and the Depot's
+  south line (242,-10), which you crawl under into the yard.
+- **Deck jersey line** (D3): five jerseys at z -38.5 (x 64, 72, 84, 118, 126), low cover on
+  R2 against the Apron and the Compound.
+
+**Traversal classes** (from `Ledge.find`: vault 1.2-5 above the feet with ground 6.5 past the
+face; climb to 10.5 with 5 of headroom; prone root 0.3-2.3):
+
+| Class | Rule | Pieces (top) |
+|---|---|---|
+| WALK | top under 1.0 | single pallet 0.57, plank 0.4; body bags have no collision |
+| dead band | 1.0-1.2 | build nothing with collision at this height |
+| VAULT | 1.2-5, thinner than 6.5 | cot 2.1, pallet stack 2.28, jersey 2.75, hesco 4.58, dumpster side-on 4.4, sedan / hatch side-on 4.4-4.6, bunker walls 4 |
+| CLIMB-low | 1.2-5, deeper than 6.5 | fuel bladder 3.03, dumpster and sedan end-on |
+| CLIMB | 5-10.5, flat top | generator 5.2, pickup cab 5.4 (bed 2.6), humvee 7.1, van 7.2, truck bed 5.7 and cab 8, toilet 8.45, tall hesco 8.88, container 9.55 |
+| WALL | over 10.5, or a top under 0.6 thick | T-wall 12.5, bus 12.75, chainlink (bullets pass), lamp, tree, light tower |
+| CRAWL-UNDER | gap 2.8+ | the Scrapes 2.8, cargo truck bed 2.9 (between the axles), checkpoint boom 3.97 |
+
+Walkers climb to about 4.6, Runners to 9.6; bots climb nothing, so every crawl or climb route
+keeps a walk-around within 40 studs. Open (owner calls, recommendations): concertina no-vault
+(a NoVault attribute in `Ledge.find`), generator to 4.8 so it vaults, light-tower collision as
+two boxes (its 18-tall Box is an invisible wall in the air).
 
 ## A15. The perimeter (level designer, built 2026-11-07)
 

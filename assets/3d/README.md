@@ -80,7 +80,11 @@ Add `-- --only wpn_rifle prop_drone` to build a subset.
 | prop_body_bag | 44 | bottom | 6.6 x 0.95 x 2.2, offset (0.1, 0.475, 0) |
 | prop_dumpster | 164 | bottom | 7.5 x 4.4 x 4.2 (a Walker step: climb 5 up, 4.6 more to a 9 roof) |
 | prop_plank | 48 | bottom | 10 x 0.4 x 2 |
-| prop_civilian_car | 384 | bottom | abandoned hatchback 15.7 x 4.8 x 7.5 |
+| prop_car_sedan | 896 | bottom | silver three-box sedan 14.9 x 4.6 x 6.6 (roof 4.4: VAULT side-on), rear tyre flat; 2 colliders |
+| prop_car_hatch | 968 | bottom | maroon hatchback 12.9 x 5.6 x 8.2: driver window smashed, door open, roof rack with a tarp and a suitcase; 2 colliders |
+| prop_car_pickup | 948 | bottom | rusted pickup 18.1 x 5.4 x 7: open bed (stand in it at 2.6), mattress and a crate, cab 5.4; 5 colliders |
+| prop_car_van | 948 | bottom | white panel van 17.8 x 7.2 x 7.2 (CLIMB only), side door open on a dark interior; 2 colliders |
+| prop_cargo_truck | 856 | bottom | army cargo truck 24.3 x 9.8 x 9.8: cab 8, bed deck 2.9-3.7, CRAWL-UNDER between the axles; 5 colliders |
 | prop_portable_toilet | 92 | bottom | 4.3 x 8.45 x 4.4, offset (0, 4.225, -0.045) |
 | prop_chainlink_panel | 268 | bottom | fence panel 12 x 7 x 0.3 (see-through) |
 | prop_concertina | 288 | bottom | razor wire coil 12.1 x 2.9 x 2.9 |
@@ -248,6 +252,18 @@ importer):
    and offsets from the build output into `MeshAssets`) for the tapered rigid limbs with
    joint caps; nothing else changes. (Done 2026-11-07 for Weller: the tapered set with
    fist hands is uploaded and is what the bots wear.)
+
+## Small set pieces live in `build/props.py` (owner, 2026-11-08)
+
+Vehicles, gates, barriers, walls, containers and every `prop_*` dressing piece share one
+file, registered with `props.register(ba)` like `warden.py` (mesh names unchanged, so the
+moved pieces export identical FBX: checked by a geometry fingerprint before and after the
+move). `build_assets.py` keeps the palette, the Builder, service-spawned items (crate, mine,
+drone, beacon, rat, orb, rifle), structures and landmarks (ruin, guard tower, comm tower,
+tent, sandbag bunker, dead tree, lamp post) and the bodies. `props.profile()` extrudes a side
+silhouette (the cars); `props.panel()` lays glass on a sloped edge. Cars are built to the
+5-stud figure (roof 4.4-7.2) with composite colliders. Note: `--only <names>` saves
+`arena_survivor.blend` and the lineups with only those assets; run a full build afterwards.
 
 ## Getting a mesh into Roblox (the pipeline that shipped 2026-11-06)
 

@@ -735,7 +735,7 @@ local Config = {
 		-- SpawnInset so none lands in the fence band or outside it.
 		BoundaryHeight = 80,
 		SpawnInset = 292,
-		StraddleTolerance = 0.6, -- studs of ground-height spread across a dressing footprint before boot warns (and the Blender view paints it red)
+		StraddleTolerance = 0.35, -- studs of ground-height spread across a dressing footprint before boot warns (and the Blender view paints it red)
 		Kit = {
 			Storey = 9,
 			WallThickness = 0.6,

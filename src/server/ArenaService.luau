@@ -133,6 +133,9 @@ type Dressing = {
 	floor: number?, -- ground height to use instead of the raycast (a piece inside a building)
 	-- Scenery past the perimeter (A15): no collision, no queries, no shadow, no colliders.
 	decor: boolean?,
+	-- A perch container whose own pallet ramp runs under its footprint by design: the
+	-- straddle check skips it (every other piece must stand on one flat height).
+	perch: boolean?,
 }
 local DRESSING: { Dressing } = {
 	-- The Compound lower tier (top x 25..115, z 25..115; zone 27..73; the upper tier's
@@ -144,8 +147,8 @@ local DRESSING: { Dressing } = {
 	{ name = "env_tent", x = 42, z = 104, yaw = 0 },
 	{ name = "env_tent", x = 42, z = 88, yaw = 0 },
 	{ name = "env_container_olive", x = 100, z = 44, yaw = 0 },
-	{ name = "env_container_rust", x = 103, z = 55, yaw = 8 },
-	{ name = "env_wreck_humvee", x = 62, z = 104, yaw = -30 },
+	{ name = "env_container_rust", x = 106, z = 60, yaw = 90 },
+	{ name = "env_wreck_humvee", x = 61, z = 107.5, yaw = -10 },
 	{ name = "env_sandbag_bunker", x = 86, z = 34, yaw = 180 },
 	{ name = "env_hesco", x = 34, z = 40, yaw = 0 },
 	{ name = "env_hesco", x = 34, z = 47, yaw = 0 },
@@ -154,7 +157,7 @@ local DRESSING: { Dressing } = {
 	{ name = "env_twall", x = 63, z = 34, yaw = 0 },
 	-- The Ridge (hill top x -130..-70, z 23..67)
 	{ name = "env_ruin_building", x = -104, z = 48, yaw = 0, burning = true },
-	{ name = "env_guard_tower", x = -78, z = 30, yaw = 0 },
+	{ name = "env_guard_tower", x = -78, z = 31, yaw = 0 },
 	{ name = "env_barrier_jersey", x = -82, z = 60, yaw = 20 },
 	-- Main road (x = -30, north-south) and the Inner Gate across it at z = -112 (lane x -42..-18)
 	{ name = "env_checkpoint", x = -58, z = -120, yaw = 0 },
@@ -167,7 +170,7 @@ local DRESSING: { Dressing } = {
 	{ name = "env_container_rust", x = -8, z = -84, yaw = 70 },
 	{ name = "env_container_olive", x = 30, z = -10, yaw = -15 },
 	-- On the highway (ground height is found by raycast, so these sit on the deck)
-	{ name = "env_wreck_humvee", x = 100, z = -45, yaw = -80 },
+	{ name = "env_wreck_humvee", x = 100, z = -45, yaw = -10 },
 	{ name = "env_barrier_jersey", x = 20, z = -44, yaw = 5 },
 	{ name = "env_barrier_jersey", x = -100, z = -46, yaw = -8 }, -- was x -120: the deck container's spot
 	{ name = "env_lamp_post", x = -42, z = -80, yaw = 0 },
@@ -180,7 +183,7 @@ local DRESSING: { Dressing } = {
 	-- Helipad (extraction, -90,-90) and the south-west
 	{ name = "env_lamp_post", x = -114, z = -114, yaw = 45 },
 	{ name = "env_lamp_post", x = -66, z = -114, yaw = 135 },
-	{ name = "env_lamp_post", x = -114, z = -72, yaw = -45 },
+	{ name = "env_lamp_post", x = -115, z = -72, yaw = -45 },
 	{ name = "env_barrier_jersey", x = -60, z = -74, yaw = 45 },
 	{ name = "env_barrier_jersey", x = -100, z = -116, yaw = 0 },
 	{ name = "env_barrier_jersey", x = -80, z = -116, yaw = 0 },
@@ -230,7 +233,7 @@ local DRESSING: { Dressing } = {
 	{ name = "env_container_rust", x = 198, z = 44, yaw = 90 },
 	{ name = "env_container_olive", x = 224, z = 20, yaw = 90 },
 	{ name = "env_container_rust", x = 224, z = 44, yaw = 90 },
-	{ name = "env_container_rust", x = 250, z = 20, yaw = 90 },
+	{ name = "env_container_rust", x = 250, z = 20, yaw = 90, perch = true },
 	{ name = "env_container_olive", x = 250, z = 44, yaw = 90 },
 	{ name = "env_container_rust", x = 174, z = 86, yaw = 90 }, -- against the Shed's west wall: its roof route
 	{ name = "env_hesco", x = 170, z = 70, yaw = 0 },
@@ -254,7 +257,7 @@ local DRESSING: { Dressing } = {
 	-- in code below) with one lane at x -42..-18, the booth beside it, a siren on a lamp post,
 	-- and the bus line queued inside the wire (Hocker-proof cover on the Gate approach).
 	{ name = "env_checkpoint", x = -54, z = -262, yaw = 0 },
-	{ name = "env_lamp_post", x = -14, z = -264, yaw = 0 },
+	{ name = "env_lamp_post", x = -14, z = -264, yaw = 0, floor = 0 }, -- floor: the raycast would land on its own siren head
 	{ name = "env_bus", x = -4, z = -150, yaw = 90 },
 	{ name = "env_bus", x = -4, z = -196, yaw = 90 },
 	{ name = "env_bus", x = -4, z = -242, yaw = 90 },
@@ -324,11 +327,11 @@ end
 -- Perches (A9): containers the squad can hold, each with a pallet ramp (buildPerches).
 table.insert(DRESSING, { name = "env_container_olive", x = -124, z = -82, yaw = 0 }) -- LZ north-west
 table.insert(DRESSING, { name = "env_container_rust", x = -130, z = -45, yaw = 0 }) -- on the highway deck
-table.insert(DRESSING, { name = "env_container_rust", x = -10, z = -10, yaw = 90 }) -- Apron, 40 from (30,-10)
+table.insert(DRESSING, { name = "env_container_rust", x = -10, z = -10, yaw = 90, perch = true }) -- Apron, 40 from (30,-10)
 -- The Stack: a third container across the two of Depot column D (lands in the 2-stud gap
 -- between them at z 32, so its raycast finds the pad, then `lift` puts it on their tops).
 table.insert(DRESSING, { name = "env_container_rust", x = 250, z = 32, yaw = 90, lift = 9.55 })
-table.insert(DRESSING, { name = "env_container_olive", x = 56, z = -45, yaw = 0 }) -- deck gantry step
+table.insert(DRESSING, { name = "env_container_olive", x = 56, z = -45, yaw = 0, perch = true }) -- deck gantry step
 
 -- Props (A11; assets/3d/README.md prop table). Registered meshes without an asset id yet are
 -- skipped at boot, so these placements are live the moment the ids land in MeshAssets.
@@ -336,13 +339,18 @@ table.insert(DRESSING, { name = "env_container_olive", x = 56, z = -45, yaw = 0 
 local PROPS: { Dressing } = {
 	-- The LZ
 	{ name = "prop_light_tower", x = -60, z = -118, yaw = 30 },
-	{ name = "prop_generator", x = -66, z = -108, yaw = 0 },
-	{ name = "prop_pallet", x = -116, z = -94, yaw = 0 },
-	{ name = "prop_pallet", x = -116, z = -90, yaw = 12 },
-	{ name = "prop_pallet", x = -117, z = -98, yaw = -8 },
+	{ name = "prop_generator", x = -63, z = -108, yaw = 0 },
+	{ name = "prop_pallet", x = -125, z = -118, yaw = 0, lift = 0 }, -- pallets stack beside their source, never singles (LEVELS A12b)
+	{ name = "prop_pallet", x = -125, z = -118, yaw = 4, lift = 0.57 },
+	{ name = "prop_pallet", x = -125, z = -118, yaw = -3, lift = 1.14 },
+	{ name = "prop_pallet", x = -125, z = -118, yaw = 2, lift = 1.71 },
+	{ name = "prop_pallet", x = -120.5, z = -118, yaw = 0, lift = 0 },
+	{ name = "prop_pallet", x = -120.5, z = -118, yaw = 4, lift = 0.57 },
+	{ name = "prop_pallet", x = -120.5, z = -118, yaw = -3, lift = 1.14 },
+	{ name = "prop_pallet", x = -120.5, z = -118, yaw = 2, lift = 1.71 },
 	{ name = "prop_body_bag", x = -64, z = -96, yaw = 90 },
 	{ name = "prop_body_bag", x = -61, z = -96, yaw = 86 },
-	{ name = "prop_portable_toilet", x = -118, z = -100, yaw = 90 },
+	{ name = "prop_portable_toilet", x = -116, z = -106, yaw = 90 },
 	{ name = "prop_fuel_bladder", x = -136, z = -100, yaw = 0 },
 	-- The Apron and the Screening Block
 	{ name = "prop_body_bag", x = -8, z = 53, yaw = 90 },
@@ -354,47 +362,53 @@ local PROPS: { Dressing } = {
 	{ name = "prop_portable_toilet", x = 7, z = 84, yaw = 180 },
 	{ name = "prop_portable_toilet", x = 11.6, z = 84, yaw = 180 },
 	{ name = "prop_generator", x = -16, z = 84, yaw = 0 },
-	{ name = "prop_civilian_car", x = 50, z = -10, yaw = 100 },
+	{ name = "prop_car_sedan", x = 52, z = -4, yaw = 100 },
 	{ name = "prop_dumpster", x = -8, z = 30, yaw = 20 },
 	-- The Compound (hill top y 8)
 	{ name = "prop_generator", x = 106, z = 30, yaw = 0 },
-	{ name = "prop_pallet", x = 30, z = 96, yaw = 0 },
-	{ name = "prop_pallet", x = 30, z = 100, yaw = 15 },
-	{ name = "prop_cot", x = 54, z = 100, yaw = 0 },
-	{ name = "prop_cot", x = 54, z = 106, yaw = 0 },
+	{ name = "prop_pallet", x = 30, z = 98, yaw = 0, lift = 0 },
+	{ name = "prop_pallet", x = 30, z = 98, yaw = 4, lift = 0.57 },
+	{ name = "prop_pallet", x = 30, z = 98, yaw = -3, lift = 1.14 },
+	{ name = "prop_pallet", x = 30, z = 98, yaw = 2, lift = 1.71 },
+	{ name = "prop_cot", x = 56, z = 92, yaw = 0 },
+	{ name = "prop_cot", x = 56, z = 96, yaw = 0 },
 	{ name = "prop_light_tower", x = 60, z = 40, yaw = 0 },
-	{ name = "prop_body_bag", x = 68, z = 90, yaw = 0 },
-	{ name = "prop_body_bag", x = 68, z = 93, yaw = 0 },
-	{ name = "prop_body_bag", x = 68, z = 96, yaw = 0 },
+	{ name = "prop_body_bag", x = 66, z = 90, yaw = 0 },
+	{ name = "prop_body_bag", x = 66, z = 93, yaw = 0 },
+	{ name = "prop_body_bag", x = 66, z = 96, yaw = 0 },
 	-- The Ridge (hill top y 8; the ruin's ground floor)
 	{ name = "prop_cot", x = -96, z = 42, yaw = 0, floor = 8 },
 	{ name = "prop_cot", x = -96, z = 46, yaw = 0, floor = 8 },
 	{ name = "prop_generator", x = -76, z = 44, yaw = 0 },
 	{ name = "prop_chainlink_panel", x = -126, z = 40, yaw = 90 },
 	{ name = "prop_chainlink_panel", x = -126, z = 52, yaw = 90 },
-	{ name = "prop_pallet", x = -84, z = 54, yaw = 0 },
 	-- The Inner Gate (z -112)
 	{ name = "prop_concertina", x = -55, z = -107, yaw = 0 },
 	{ name = "prop_concertina", x = 6, z = -106, yaw = 0 },
 	{ name = "prop_light_tower", x = -70, z = -132, yaw = 0 },
 	{ name = "prop_generator", x = -4, z = -126, yaw = 0 },
-	{ name = "prop_body_bag", x = -72, z = -122, yaw = 0 },
-	{ name = "prop_body_bag", x = -72, z = -125, yaw = 0 },
+	{ name = "prop_body_bag", x = -75, z = -121, yaw = 0 },
+	{ name = "prop_body_bag", x = -75, z = -124, yaw = 0 },
 	-- The highway deck (y 12)
-	{ name = "prop_civilian_car", x = -200, z = -43, yaw = 10 },
-	{ name = "prop_civilian_car", x = -70, z = -47, yaw = -8 },
-	{ name = "prop_civilian_car", x = 160, z = -43, yaw = 5 },
-	{ name = "prop_civilian_car", x = 240, z = -47, yaw = -12 },
+	{ name = "prop_car_hatch", x = -200, z = -43, yaw = 10 },
+	{ name = "prop_car_sedan", x = -70, z = -47, yaw = -8 },
+	{ name = "prop_car_pickup", x = 160, z = -43, yaw = 5 },
+	{ name = "prop_car_hatch", x = 240, z = -47, yaw = -12 },
 	-- The Overlook (y 14)
 	{ name = "prop_generator", x = 116, z = -116, yaw = 0 },
-	{ name = "prop_pallet", x = 90, z = -122, yaw = 0 },
-	{ name = "prop_pallet", x = 94, z = -122, yaw = 20 },
-	{ name = "prop_light_tower", x = 121, z = -89, yaw = 0 },
+	{ name = "prop_light_tower", x = 120, z = -90, yaw = 0 },
+	{ name = "env_barrier_jersey", x = 64, z = -38.5, yaw = 0 }, -- Deck jersey line (LEVELS D3)
+	{ name = "env_barrier_jersey", x = 72, z = -38.5, yaw = 0 },
+	{ name = "env_barrier_jersey", x = 84, z = -38.5, yaw = 0 },
+	{ name = "env_barrier_jersey", x = 118, z = -38.5, yaw = 0 },
+	{ name = "env_barrier_jersey", x = 126, z = -38.5, yaw = 0 },
 	-- The Suburb: the Parade, the church, the north road
-	{ name = "prop_civilian_car", x = -100, z = 192, yaw = 80 },
-	{ name = "prop_civilian_car", x = 0, z = 208, yaw = -5 },
-	{ name = "prop_civilian_car", x = 156, z = 196, yaw = 100 },
-	{ name = "prop_civilian_car", x = 220, z = 208, yaw = 3 },
+	{ name = "prop_car_sedan", x = -100, z = 192, yaw = 80 },
+	{ name = "prop_car_hatch", x = 0, z = 208, yaw = -5 },
+	{ name = "prop_car_pickup", x = 156, z = 196, yaw = 100 },
+	{ name = "prop_car_sedan", x = 220, z = 208, yaw = 3 },
+	{ name = "prop_car_sedan", x = -160, z = 204, yaw = 178 },
+	{ name = "prop_car_hatch", x = 180, z = 196, yaw = -4 },
 	{ name = "prop_dumpster", x = 108, z = 167, yaw = 0 }, -- the Walker step to the Parade roof
 	{ name = "prop_dumpster", x = 70, z = 196, yaw = 15 },
 	{ name = "prop_body_bag", x = 56, z = 240, yaw = 0 },
@@ -407,13 +421,19 @@ local PROPS: { Dressing } = {
 	{ name = "prop_chainlink_panel", x = -168, z = 165, yaw = 0 },
 	{ name = "prop_concertina", x = -10, z = 268, yaw = 0 },
 	-- The Depot (pad y 0.3)
-	{ name = "prop_pallet", x = 162, z = 24, yaw = 0 },
-	{ name = "prop_pallet", x = 162, z = 30, yaw = 0 },
-	{ name = "prop_pallet", x = 162, z = 36, yaw = 10 },
-	{ name = "prop_pallet", x = 162, z = 42, yaw = 0 },
-	{ name = "prop_pallet", x = 226, z = 70, yaw = 0 },
-	{ name = "prop_pallet", x = 232, z = 70, yaw = 5 },
-	{ name = "prop_generator", x = 230, z = 100, yaw = 0 },
+	{ name = "prop_pallet", x = 162, z = 26, yaw = 0, lift = 0 },
+	{ name = "prop_pallet", x = 162, z = 26, yaw = 4, lift = 0.57 },
+	{ name = "prop_pallet", x = 162, z = 26, yaw = -3, lift = 1.14 },
+	{ name = "prop_pallet", x = 162, z = 26, yaw = 2, lift = 1.71 },
+	{ name = "prop_pallet", x = 162, z = 38, yaw = 0, lift = 0 },
+	{ name = "prop_pallet", x = 162, z = 38, yaw = 4, lift = 0.57 },
+	{ name = "prop_pallet", x = 162, z = 38, yaw = -3, lift = 1.14 },
+	{ name = "prop_pallet", x = 162, z = 38, yaw = 2, lift = 1.71 },
+	{ name = "prop_pallet", x = 229, z = 70, yaw = 0, lift = 0 },
+	{ name = "prop_pallet", x = 229, z = 70, yaw = 4, lift = 0.57 },
+	{ name = "prop_pallet", x = 229, z = 70, yaw = -3, lift = 1.14 },
+	{ name = "prop_pallet", x = 229, z = 70, yaw = 2, lift = 1.71 },
+	{ name = "prop_generator", x = 228, z = 100, yaw = 0 },
 	{ name = "prop_light_tower", x = 282, z = 110, yaw = 0 },
 	{ name = "prop_light_tower", x = 166, z = 0, yaw = 0 },
 	{ name = "prop_dumpster", x = 176, z = 104, yaw = 0 },
@@ -425,14 +445,16 @@ local PROPS: { Dressing } = {
 	-- The Pumps
 	{ name = "prop_fuel_bladder", x = 100, z = -168, yaw = 0 },
 	{ name = "prop_fuel_bladder", x = 112, z = -170, yaw = 0 },
-	{ name = "prop_civilian_car", x = 130, z = -174, yaw = 95 },
+	{ name = "prop_car_hatch", x = 130, z = -174, yaw = 95 },
 	{ name = "prop_generator", x = 158, z = -168, yaw = 0 },
 	-- The Scrapyard and the Gate
-	{ name = "prop_civilian_car", x = -120, z = -230, yaw = 40 },
-	{ name = "prop_civilian_car", x = -80, z = -250, yaw = -30 },
-	{ name = "prop_civilian_car", x = 16, z = -258, yaw = 20 },
-	{ name = "prop_civilian_car", x = 130, z = -220, yaw = 70 },
-	{ name = "prop_dumpster", x = -150, z = -200, yaw = 0 },
+	{ name = "prop_car_van", x = -120, z = -230, yaw = 40 },
+	{ name = "prop_car_van", x = -80, z = -250, yaw = -30 },
+	{ name = "prop_cargo_truck", x = -143, z = -120, yaw = 0 }, -- LZ supply truck: the pallet stacks sit at its tail (LEVELS D1)
+	{ name = "prop_cargo_truck", x = 242, z = -10, yaw = 0 }, -- closes the Depot south line: crawl under the bed into the yard
+	{ name = "prop_car_sedan", x = 16, z = -258, yaw = 20 },
+	{ name = "prop_car_hatch", x = 130, z = -220, yaw = 70 },
+	{ name = "prop_dumpster", x = -150, z = -198, yaw = 0 },
 	{ name = "prop_dumpster", x = 70, z = -200, yaw = 30 },
 	{ name = "prop_concertina", x = -200, z = -270, yaw = 0 },
 	{ name = "prop_concertina", x = -120, z = -268, yaw = 0 },
@@ -463,19 +485,21 @@ local PROPS: { Dressing } = {
 	{ name = "prop_body_bag", x = -240, z = 103, yaw = 0 },
 	{ name = "prop_body_bag", x = -236, z = 100, yaw = 0 },
 	{ name = "prop_body_bag", x = -236, z = 103, yaw = 0 },
-	{ name = "prop_pallet", x = -224, z = 2, yaw = 0 },
-	{ name = "prop_pallet", x = -224, z = 6, yaw = 0 },
+	{ name = "prop_pallet", x = -224, z = 4, yaw = 0, lift = 0 },
+	{ name = "prop_pallet", x = -224, z = 4, yaw = 4, lift = 0.57 },
+	{ name = "prop_pallet", x = -224, z = 4, yaw = -3, lift = 1.14 },
+	{ name = "prop_pallet", x = -224, z = 4, yaw = 2, lift = 1.71 },
 	{ name = "prop_generator", x = -196, z = 4, yaw = 0 },
 	{ name = "prop_chainlink_panel", x = -236, z = -12, yaw = 0 },
 	{ name = "prop_chainlink_panel", x = -224, z = -12, yaw = 0 },
 	-- Outer hills
 	{ name = "prop_light_tower", x = -172, z = -224, yaw = 0 }, -- SouthRise
-	{ name = "prop_pallet", x = -210, z = -245, yaw = 0 },
-	{ name = "prop_pallet", x = -204, z = -245, yaw = 0 },
+	{ name = "prop_pallet", x = -207, z = -245, yaw = 0, lift = 0 },
+	{ name = "prop_pallet", x = -207, z = -245, yaw = 4, lift = 0.57 },
+	{ name = "prop_pallet", x = -207, z = -245, yaw = -3, lift = 1.14 },
+	{ name = "prop_pallet", x = -207, z = -245, yaw = 2, lift = 1.71 },
 	{ name = "prop_generator", x = 250, z = -220, yaw = 0 }, -- Depot mound
-	{ name = "prop_pallet", x = 222, z = -190, yaw = 0 },
 	{ name = "prop_generator", x = -216, z = 248, yaw = 0 }, -- NorthBluff
-	{ name = "prop_pallet", x = -244, z = 248, yaw = 0 },
 }
 for _, prop in PROPS do
 	table.insert(DRESSING, prop)
@@ -1178,7 +1202,7 @@ local function placePiece(folder: Folder, params: RaycastParams, entry: Dressing
 			local y = if cornerHit then cornerHit.Position.Y else 0
 			low, high = math.min(low, y), math.max(high, y)
 		end
-		if high - low > Config.Arena.StraddleTolerance and not entry.decor then
+		if high - low > Config.Arena.StraddleTolerance and not entry.decor and not entry.perch then
 			warn(
 				`[ArenaService] {name} at ({x}, {z}) straddles a slope (ground {low} .. {high}): move it`
 			)

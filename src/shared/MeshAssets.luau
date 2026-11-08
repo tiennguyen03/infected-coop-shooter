@@ -27,7 +27,7 @@ local ServerStorage = game:GetService("ServerStorage")
 local MeshAssets = {}
 
 -- Shared palette texture (assets/3d/palette.png as an Image asset).
-local PALETTE_TEXTURE = "rbxassetid://115366221483568"
+local PALETTE_TEXTURE = "rbxassetid://121741835746247" -- palette v3 (vehicle glass, 2026-11-08)
 -- What a palette mesh shows if its texture has not loaded (the client retries it:
 -- PaletteController): a neutral mid grey, never the black a leftover BodyColors gave.
 local PALETTE_FALLBACK = Color3.fromRGB(118, 122, 128)
@@ -355,10 +355,67 @@ local MESHES: { [string]: MeshDef } = {
 		solid = true,
 		castShadow = false,
 	}, -- S
-	prop_civilian_car = {
-		meshId = "rbxassetid://131007713996765",
-		size = Vector3.new(15.7, 4.8, 7.5),
+	-- Vehicles v2 (assets/3d/build/props.py, 2026-11-08): built to the 5-stud figure, composite
+	-- colliders (no mirrors or open doors in them, so the vault check sees the true width).
+	-- Sedan and hatch: VAULT side-on (top 4.4-4.6). Pickup: stand in the bed (2.6), climb the
+	-- cab (5.4). Van: CLIMB only (7.2, a Walker cannot reach the roof).
+	prop_car_sedan = {
+		meshId = "rbxassetid://105869341810919",
+		size = Vector3.new(14.88, 4.57, 6.61),
 		solid = true,
+		offset = Vector3.new(0, 2.286, -0.098),
+		colliders = {
+			{ size = Vector3.new(14.4, 2.75, 6), offset = Vector3.new(0, 1.68, 0) },
+			{ size = Vector3.new(7.4, 1.4, 5.2), offset = Vector3.new(0.7, 3.7, 0) },
+		},
+	}, -- S
+	prop_car_hatch = {
+		meshId = "rbxassetid://87378239343743",
+		size = Vector3.new(12.88, 5.6, 8.24),
+		solid = true,
+		offset = Vector3.new(0, 2.8, -0.919),
+		colliders = {
+			{ size = Vector3.new(12.4, 2.7, 5.8), offset = Vector3.new(0, 1.65, 0) },
+			{ size = Vector3.new(8.5, 1.6, 5), offset = Vector3.new(1.45, 3.8, 0) },
+		},
+	}, -- S
+	prop_car_pickup = {
+		meshId = "rbxassetid://120184047356067",
+		size = Vector3.new(18.14, 5.4, 7),
+		solid = true,
+		offset = Vector3.new(0.38, 2.7, 0),
+		colliders = {
+			{ size = Vector3.new(16.9, 2.1, 6.4), offset = Vector3.new(0, 1.55, 0) }, -- body to the bed floor
+			{ size = Vector3.new(6.65, 0.8, 6.4), offset = Vector3.new(-4.9, 3, 0) }, -- bonnet
+			{ size = Vector3.new(2.8, 2.1, 5.8), offset = Vector3.new(-3, 4.35, 0) }, -- cab
+			{ size = Vector3.new(9.85, 1.2, 0.3), offset = Vector3.new(3.3, 3, 3.05) }, -- bed rails
+			{ size = Vector3.new(9.85, 1.2, 0.3), offset = Vector3.new(3.3, 3, -3.05) },
+		},
+	}, -- S
+	prop_car_van = {
+		meshId = "rbxassetid://111460228402848",
+		size = Vector3.new(17.81, 7.2, 7.2),
+		solid = true,
+		offset = Vector3.new(0.467, 3.6, 0),
+		colliders = {
+			{ size = Vector3.new(14, 6.6, 6.6), offset = Vector3.new(1, 3.9, 0) },
+			{ size = Vector3.new(2, 3, 6.6), offset = Vector3.new(-7, 2.1, 0) }, -- nose
+		},
+	}, -- S
+	-- Army cargo truck (docs/LEVELS.md D1): cab CLIMB at 8, bed CLIMB at 5.7, and CRAWL-UNDER
+	-- the bed between the axles (clearance 2.9): no collider fills that gap.
+	prop_cargo_truck = {
+		meshId = "rbxassetid://92195219892794",
+		size = Vector3.new(24.28, 9.82, 9.75),
+		solid = true,
+		offset = Vector3.new(0.392, 4.912, 0),
+		colliders = {
+			{ size = Vector3.new(6.5, 7.7, 8.4), offset = Vector3.new(-7.75, 4.15, 0) }, -- cab
+			{ size = Vector3.new(15.1, 0.8, 9), offset = Vector3.new(3.45, 3.3, 0) }, -- bed deck
+			{ size = Vector3.new(15.1, 2, 0.35), offset = Vector3.new(3.45, 4.7, 4.33) }, -- bed sides
+			{ size = Vector3.new(15.1, 2, 0.35), offset = Vector3.new(3.45, 4.7, -4.33) },
+			{ size = Vector3.new(3, 2.9, 9), offset = Vector3.new(7.6, 1.45, 0) }, -- rear axle
+		},
 	}, -- S
 	prop_portable_toilet = {
 		meshId = "rbxassetid://106338287683599",

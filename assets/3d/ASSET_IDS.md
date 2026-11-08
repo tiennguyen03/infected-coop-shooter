@@ -5,9 +5,9 @@ palette). Mesh ids were read in Studio with `InsertService:LoadAsset(<modelAsset
 wired into `src/shared/MeshAssets.luau` (server-built MeshPart templates). Old env v1 model
 uploads (126781711029053, 110183901153071, 111918726514098) are superseded.
 
-Palette texture (v4, 2026-11-07, skin v2: cells 25-27 and 43-56 become the `pallor` /
-`flesh` / `bruise` / `wound` / `pus` rows plus `concrete_l/_d`): decal `80401218749683` → image
-**`115366221483568`** (the `TextureID`). v3 was `120331040807954` → `110782102234723`, v2
+Palette texture (v5, 2026-11-08, cells 57-60 `glass`, `glass_l`, `paint_maroon`,
+`paint_navy` appended): decal `120194869942486` → image **`121741835746247`** (the
+`TextureID`). v4 (skin v2) was `80401218749683` → `115366221483568`; v3 was `120331040807954` → `110782102234723`, v2
 `88256641133314`, v1 `87519201884536`.
 
 Delta rework meshes (ruin v2, guard tower v3, tall hesco, crib stack, deck plate, 12 props)
@@ -22,6 +22,11 @@ uploaded 2026-11-07 and wired; rows below.
 | prop_drone_beacon | 117405323536844 | 71937735064271 | 1.56 x 3.21 x 1.36 | pivot bottom: place at ground + 1.60; not used by a service yet |
 | wpn_rifle | 86613539481097 | 77112302177721 | 0.195 x 0.84 x 2.9 | 0.65x of the Blender size; grip offset handled in PlayerSetup |
 | prop_plague_rat | 102065990394982 | 135041557109073 | 0.47 x 0.52 x 1.88 | 0.7x of Blender; PlagueRatService PrimaryPart, faces -Z |
+| prop_car_sedan | 105869341810919 | 86339396656865 | 14.88 x 4.57 x 6.61 | offset (0, 2.286, -0.098); 2026-11-08, `props.py` |
+| prop_car_hatch | 87378239343743 | 95489557589678 | 12.88 x 5.6 x 8.24 | offset (0, 2.8, -0.919) |
+| prop_car_pickup | 120184047356067 | 78626743790644 | 18.14 x 5.4 x 7 | offset (0.38, 2.7, 0) |
+| prop_car_van | 111460228402848 | 107757202591905 | 17.81 x 7.2 x 7.2 | offset (0.467, 3.6, 0) |
+| prop_cargo_truck | 92195219892794 | 132497576320566 | 24.28 x 9.82 x 9.75 | offset (0.392, 4.912, 0); Open Cloud clamps the import to 2048, the in-game Size restores it |
 | env_barrier_jersey | 83842095201437 | 120043526542183 | 6 x 2.75 x 2 | solid; ArenaService dressing |
 | env_sandbag_bunker (v2) | 72798329648015 | 104090605242659 | 12.8 x 6.3 x 10.8 | solid; rebuilt 2026-11-06 to character scale |
 | env_guard_tower (v2, superseded) | 140295675948906 | 86672166489335 | 11 x 27.25 x 11 | solid; rebuilt 2026-11-06 |
@@ -38,7 +43,7 @@ uploaded 2026-11-07 and wired; rows below.
 | env_ruin_building | 97636619216682 | 81543978894479 | 32.09 x 23.60 x 25.15 | pivot bottom, offset (0.847, 11.800, -0.517); v2 enterable; composite colliders, `shell` for outer ruins; replaces 112569589520919 |
 | prop_body_bag | 138563921819343 | 73076169933777 | 6.60 x 0.95 x 2.20 | pivot bottom, offset (0.100, 0.475, 0.000); prop (Delta rework 2026-11-07) |
 | prop_chainlink_panel | 135724153731021 | 125979502358349 | 12.06 x 7.00 x 0.30 | pivot bottom, offset (0.000, 3.500, 0.000); prop (Delta rework 2026-11-07) |
-| prop_civilian_car | 131007713996765 | 117334770094341 | 15.70 x 4.80 x 7.50 | pivot bottom, offset (0.000, 2.400, 0.000); prop (Delta rework 2026-11-07) |
+| prop_civilian_car (retired 2026-11-08) | 131007713996765 | 117334770094341 | 15.70 x 4.80 x 7.50 | replaced by the four `prop_car_*` |
 | prop_concertina | 110184084591558 | 137827068150629 | 12.13 x 2.89 x 2.93 | pivot bottom, offset (0.000, 1.447, 0.000); prop (Delta rework 2026-11-07) |
 | prop_cot | 111579390093659 | 137412438411439 | 6.50 x 2.10 x 2.95 | pivot bottom, offset (0.000, 1.048, 0.000); prop (Delta rework 2026-11-07) |
 | prop_dumpster | 135179607691394 | 108883133700802 | 7.50 x 4.40 x 4.24 | pivot bottom, offset (0.000, 2.200, 0.000); prop (Delta rework 2026-11-07) |

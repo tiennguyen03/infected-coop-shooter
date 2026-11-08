@@ -31,8 +31,15 @@ Read in this order:
 5. `docs/PLAN.md` — scope rules + roadmap. `docs/LORE.md` — setting/naming.
 6. `docs/MULTIPLAYER_READINESS.md` — co-op rules + debt register, before touching run flow.
 
-## Current state (verified 2026-11-07 in a live playtest)
+## Current state (verified 2026-11-08 in a live playtest)
 
+- 2026-11-08: **Delta visual + traversal pass** (`docs/LEVELS.md` A12b second pass,
+  `docs/STYLES.md` §7 sky, `assets/3d/README.md` props.py). Brighter sky (ClockTime 16.9,
+  thinner haze, ColorCorrection + Bloom on Neon only), skyline lit windows / crowns /
+  antennas; four new car meshes + an army cargo truck (crawl under the bed) from the new
+  `assets/3d/build/props.py`, which now holds every small set piece; palette v5 (glass,
+  car paints); pallets as stacks, 20 placement fixes, stricter slope check (0.35, 0 boot
+  warnings), Deck jersey line. Colliders 242 of 256.
 - 2026-11-07: **Sprint 18, loadout rework shipped and playtested**
   (`docs/sprints/SPRINT_18_LOADOUT.md`). The item economy, XP orbs and levels are gone;
   power is the loadout: service rifle with a 30-round magazine (R reloads, pallets re-arm),
@@ -193,6 +200,10 @@ Read in this order:
 
 ## Open work, in priority order
 
+- **Delta traversal: owner calls + playtest** (`docs/LEVELS.md` A12b second pass): concertina
+  no-vault, generator to 4.8, light-tower collision as two boxes; walk the traversal
+  checklist (vault a sedan side-on, crawl under the cargo truck, stand in a pickup bed). The
+  skyline window Texture (`SkyService.WINDOW_TEXTURE`) is not generated/uploaded yet.
 - **Foundation backlog (2026-11-08 code review, `docs/ARCHITECTURE.md`).** Ranked concerns
   and items F1-F11: renames, lifecycle hooks, shared attribute/message constants, the open
   co-op debt (#3/#5/#9), CI + unit tests, then stage data split before objective pools,

@@ -9,7 +9,7 @@ local Lighting = game:GetService("Lighting")
 
 local SkyService = {}
 
-local SILHOUETTE_COLOR = Color3.fromRGB(44, 40, 42)
+local SILHOUETTE_COLOR = Color3.fromRGB(30, 27, 30)
 local SMOKE_COLOR = Color3.fromRGB(92, 80, 74)
 local FIRE_COLOR = ColorSequence.new({
 	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 190, 90)),
@@ -72,7 +72,7 @@ local function smokeColumn(parent: BasePart, size: number)
 	emitter.Parent = parent
 end
 
-local function fire(parent: BasePart, size: number, rate: number)
+local function fire(parent: BasePart, size: number, rate: number, withLight: boolean?)
 	local emitter = Instance.new("ParticleEmitter")
 	emitter.Name = "Fire"
 	emitter.Texture = "rbxasset://textures/particles/fire_main.dds"
@@ -94,11 +94,16 @@ local function fire(parent: BasePart, size: number, rate: number)
 	emitter.LightInfluence = 0
 	emitter.EmissionDirection = Enum.NormalId.Top
 	emitter.Parent = parent
-	local light = Instance.new("PointLight")
-	light.Color = Color3.fromRGB(255, 140, 60)
-	light.Brightness = 1
-	light.Range = size * 6
-	light.Parent = parent
+	-- Only fires inside the arena light anything; the skyline's glow is the particles'
+	-- LightEmission (a PointLight 470+ studs out lights nothing: STYLES §6).
+	if withLight then
+		local light = Instance.new("PointLight")
+		light.Color = Color3.fromRGB(255, 130, 55)
+		light.Brightness = 1.6
+		light.Range = 36
+		light.Shadows = false
+		light.Parent = parent
+	end
 end
 
 -- Marks a placed piece as burning: smoke and fire from an invisible emitter part on its top.
@@ -113,16 +118,143 @@ function SkyService.burn(piece: BasePart)
 	top.CanQuery = false
 	top.CanTouch = false
 	top.CastShadow = false
-	fire(top, 7, 20)
+	fire(top, 7, 20, true)
 	smokeColumn(top, 12)
 	top.Parent = piece
+end
+
+-- Skyline detail (docs/STYLES.md §7, art direction 2026-11-08): the face toward the arena
+-- (local -X) carries a window-grid Texture (WINDOW_TEXTURE, "" = none yet) and a few lit
+-- windows as Neon strips; tall blocks get a setback crown and a tank or an antenna (the
+-- three tallest a red tip). Seeded per block, so the city is the same every run.
+local WINDOW_TEXTURE = ""
+local WINDOW_CELL = 10 -- studs per window (one storey)
+local SODIUM = Color3.fromRGB(255, 170, 90)
+local FLUORESCENT = Color3.fromRGB(210, 220, 214)
+local FIRE_WINDOW = Color3.fromRGB(255, 110, 40)
+
+local function decorPart(
+	model: Model,
+	name: string,
+	size: Vector3,
+	cframe: CFrame,
+	color: Color3,
+	neon: boolean?
+): BasePart
+	local part = Instance.new("Part")
+	part.Name = name
+	part.Size = size
+	part.CFrame = cframe
+	part.Anchored = true
+	part.CanCollide = false
+	part.CanQuery = false
+	part.CanTouch = false
+	part.CastShadow = false
+	part.Material = if neon then Enum.Material.Neon else Enum.Material.SmoothPlastic
+	part.Color = color
+	part.Parent = model
+	return part
+end
+
+-- 70% sodium, 20% fluorescent, 10% fire (fire only high up on a burning block).
+local function litColor(rng: Random, high: boolean, smoke: boolean?): Color3
+	local roll = rng:NextNumber()
+	if roll < 0.1 and smoke and high then
+		return FIRE_WINDOW
+	elseif roll < 0.8 then
+		return SODIUM
+	end
+	return FLUORESCENT
+end
+
+local function detailBlock(
+	model: Model,
+	part: BasePart,
+	block: Block,
+	index: number,
+	tallest: { [number]: boolean }
+)
+	local rng = Random.new(index * 7919)
+	local depth, height, faceWidth = part.Size.X, part.Size.Y, part.Size.Z
+	if WINDOW_TEXTURE ~= "" then
+		for _, face in { Enum.NormalId.Left, Enum.NormalId.Front, Enum.NormalId.Back } do
+			local texture = Instance.new("Texture")
+			texture.Texture = WINDOW_TEXTURE
+			texture.Face = face
+			texture.StudsPerTileU = WINDOW_CELL * 2
+			texture.StudsPerTileV = WINDOW_CELL * 2
+			texture.Parent = part
+		end
+	end
+	-- Lit windows: 1-3 cells wide, on the cell grid of the arena-facing face.
+	local columns = math.max(math.floor(faceWidth / WINDOW_CELL), 1)
+	local rows = math.max(math.floor(height / WINDOW_CELL) - 1, 1)
+	for _ = 1, math.floor(height / 45) + 1 do
+		local span = math.min(rng:NextInteger(1, 3), columns)
+		local column = rng:NextInteger(0, columns - span)
+		local row = rng:NextInteger(1, rows)
+		local z = -faceWidth / 2 + (column + span / 2) * WINDOW_CELL
+		local y = -height / 2 + (row + 0.5) * WINDOW_CELL
+		decorPart(
+			model,
+			"LitWindow",
+			Vector3.new(0.4, WINDOW_CELL * 0.6, span * WINDOW_CELL - 3),
+			part.CFrame * CFrame.new(-depth / 2 - 0.1, y, z),
+			litColor(rng, row > rows * 2 / 3, block.smoke),
+			true
+		)
+	end
+	if block.h >= 100 then
+		local crown = Vector3.new(depth * 0.7, height * 0.15, faceWidth * 0.7)
+		local crownPart = decorPart(
+			model,
+			"Crown",
+			crown,
+			part.CFrame * CFrame.new(0, height / 2 + crown.Y / 2, 0),
+			SILHOUETTE_COLOR
+		)
+		local top = crownPart.CFrame * CFrame.new(0, crown.Y / 2, 0)
+		if tallest[index] then
+			local mast = decorPart(
+				model,
+				"Antenna",
+				Vector3.new(1.5, 40, 1.5),
+				top * CFrame.new(0, 20, 0),
+				SILHOUETTE_COLOR
+			)
+			decorPart(
+				model,
+				"AntennaTip",
+				Vector3.new(3, 3, 3),
+				mast.CFrame * CFrame.new(0, 21, 0),
+				Color3.fromRGB(220, 40, 30),
+				true
+			)
+		elseif rng:NextNumber() < 0.6 then
+			decorPart(
+				model,
+				"Tank",
+				Vector3.new(12, 10, 12),
+				top * CFrame.new(rng:NextNumber(-8, 8), 5, rng:NextNumber(-6, 6)),
+				SILHOUETTE_COLOR
+			)
+		end
+	end
 end
 
 local function buildSkyline()
 	local model = Instance.new("Model")
 	model.Name = "DistantCity"
 	model.ModelStreamingMode = Enum.ModelStreamingMode.Persistent -- the skyline never streams out
-	for _, block in SKYLINE do
+	local byHeight = {}
+	for index in SKYLINE do
+		table.insert(byHeight, index)
+	end
+	table.sort(byHeight, function(a, b)
+		return SKYLINE[a].h > SKYLINE[b].h
+	end)
+	local tallest = { [byHeight[1]] = true, [byHeight[2]] = true, [byHeight[3]] = true }
+	for index, block in SKYLINE do
 		local a = math.rad(block.a)
 		local part = Instance.new("Part")
 		part.Name = "Block"
@@ -137,6 +269,7 @@ local function buildSkyline()
 		part.Material = Enum.Material.SmoothPlastic
 		part.Color = SILHOUETTE_COLOR
 		part.Parent = model
+		detailBlock(model, part, block, index, tallest)
 		if block.smoke then
 			local top = Instance.new("Part")
 			top.Name = "Burning"
@@ -157,25 +290,29 @@ local function buildSkyline()
 end
 
 function SkyService.init()
-	-- Late afternoon, low sun through a smoke-stained sky: burnt orange, dark rust clouds.
-	Lighting.ClockTime = 17.6
+	-- Late afternoon through a smoke-stained sky: burnt orange, dark rust clouds. Gloomy but
+	-- readable: an Infected reads as a shape at 90 studs (STYLES §7, 2026-11-08 pass). No
+	-- Fog settings: an Atmosphere overrides them.
+	Lighting.ClockTime = 16.9
 	Lighting.GeographicLatitude = 30
-	Lighting.Brightness = 1.8
-	Lighting.Ambient = Color3.fromRGB(70, 56, 52)
-	Lighting.OutdoorAmbient = Color3.fromRGB(128, 96, 80)
-	Lighting.ColorShift_Top = Color3.fromRGB(230, 140, 70)
-	Lighting.ColorShift_Bottom = Color3.fromRGB(110, 60, 40)
-	Lighting.ExposureCompensation = 0.1
+	Lighting.Brightness = 2.3
+	Lighting.Ambient = Color3.fromRGB(96, 84, 80)
+	Lighting.OutdoorAmbient = Color3.fromRGB(150, 126, 112)
+	Lighting.ColorShift_Top = Color3.fromRGB(255, 176, 110)
+	Lighting.ColorShift_Bottom = Color3.fromRGB(96, 72, 62)
+	Lighting.ExposureCompensation = 0.15
 	Lighting.GlobalShadows = true
-	Lighting.ShadowSoftness = 0.3
-	Lighting.EnvironmentDiffuseScale = 0.55
-	Lighting.EnvironmentSpecularScale = 0.35
-	Lighting.FogColor = Color3.fromRGB(176, 104, 66)
-	Lighting.FogStart = 260
-	Lighting.FogEnd = 1500
+	Lighting.ShadowSoftness = 0.4
+	Lighting.EnvironmentDiffuseScale = 0.8
+	Lighting.EnvironmentSpecularScale = 0.25
 
 	for _, child in Lighting:GetChildren() do
-		if child:IsA("Sky") or child:IsA("Atmosphere") then
+		if
+			child:IsA("Sky")
+			or child:IsA("Atmosphere")
+			or child:IsA("ColorCorrectionEffect")
+			or child:IsA("BloomEffect")
+		then
 			child:Destroy()
 		end
 	end
@@ -187,20 +324,34 @@ function SkyService.init()
 	sky.Parent = Lighting
 
 	local atmosphere = Instance.new("Atmosphere")
-	atmosphere.Density = 0.36
-	atmosphere.Offset = 0.2
-	atmosphere.Color = Color3.fromRGB(214, 112, 58)
-	atmosphere.Decay = Color3.fromRGB(92, 38, 28)
-	atmosphere.Glare = 0.7
-	atmosphere.Haze = 6
+	atmosphere.Density = 0.3
+	atmosphere.Offset = 0.15
+	atmosphere.Color = Color3.fromRGB(205, 104, 58)
+	atmosphere.Decay = Color3.fromRGB(110, 44, 32)
+	atmosphere.Glare = 0.5
+	atmosphere.Haze = 5.2
 	atmosphere.Parent = Lighting
+
+	local grade = Instance.new("ColorCorrectionEffect")
+	grade.Brightness = 0.03
+	grade.Contrast = 0.14
+	grade.Saturation = 0
+	grade.TintColor = Color3.fromRGB(255, 240, 228)
+	grade.Parent = Lighting
+
+	-- Neon, fire and the sun bloom; plain geometry does not (threshold 1.7).
+	local bloom = Instance.new("BloomEffect")
+	bloom.Intensity = 0.35
+	bloom.Size = 20
+	bloom.Threshold = 1.7
+	bloom.Parent = Lighting
 
 	local terrain = workspace:FindFirstChildOfClass("Terrain")
 	if terrain then
 		local clouds = terrain:FindFirstChildOfClass("Clouds") or Instance.new("Clouds")
-		clouds.Cover = 0.72
-		clouds.Density = 0.6
-		clouds.Color = Color3.fromRGB(104, 66, 48)
+		clouds.Cover = 0.65
+		clouds.Density = 0.5
+		clouds.Color = Color3.fromRGB(128, 86, 64)
 		clouds.Enabled = true
 		clouds.Parent = terrain
 	end

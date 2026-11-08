@@ -53,12 +53,14 @@ generator, in UI code, and should be the swatches of the shared 3D palette textu
 | pus | `#efe2a8` | `#d2bd6c` | `#977f3c` | boils and pustules, milky eyes (`pus.l`), weep strips and soaked cloth (`pus.d`) |
 | rebuilt (strain tissue) | `#dccbbb` | `#b09686` | `#73584e` | closed wounds, bone overgrowth, membranes, seams |
 | strain (fluid) | `#d2e276` | `#bed73c` | `#768525` | sacs, bellies, open seams, anything about to burst; never skin |
+| glass | `#5d6c78` (`glass_l`) | `#36424c` | — | vehicle and window glass; `glass_l` is the sky-reflection strip; never `dark_d` (the tyre colour) |
+| paint | | maroon `#6a3a38`, navy `#4f5f73` | | faded civilian car paint (`paint_maroon`, `paint_navy`) |
 
 Skin v2 (art director, 2026-11-07): the old green-grey / yellow / dark-green infected tints
 are retired (their palette cells now hold `pallor` / `flesh` / `bruise`). Strain green lives
 only where the agent is working: open seams, the Hocker's throat and sac, Bloat veins, Warden
-seams. `assets/3d/palette.md` is the generated cell map (57 of 64 cells; `concrete` now has
-its `l`/`d` swatches for the building kit).
+seams. `assets/3d/palette.md` is the generated cell map (61 of 64 cells; `concrete` has its
+`l`/`d` swatches for the building kit; the vehicle glass and paints were appended 2026-11-08).
 
 ### Signal / accent colors (saturated, used sparingly)
 
@@ -320,6 +322,9 @@ Lower is always acceptable. Add triangles only where the silhouette needs them.
   objects cast shadows: jerseys, bunkers, hesco and all but every ninth Gate T-wall cast
   none (`MeshDef.castShadow`, `Dressing.shadow`). At most 4–6 dynamic lights alive at once
   (muzzle flashes die in <0.1 s).
+- Static practical lights: at most 20 in a stage and 12 inside any 150-stud circle, all
+  `Shadows = false`, Range ≤ 56 (floodlight SpotLights, sodium and fire PointLights).
+  Distant scenery carries no lights, only Neon (2026-11-08).
 - `StreamingEnabled = true` (2026-11-07, `default.project.json`: target radius 384, min
   128). The arena terrain and the skyline (`workspace.TestArena`) are `Persistent`;
   buildings and dressing live beside it in `workspace.Buildings` / `workspace.Dressing`
@@ -433,19 +438,30 @@ concrete `rgb(122,120,114)`, road paint `rgb(214,214,208)`. Layout in
 #### Stage 1 sky (`src/server/SkyService.luau`)
 
 The first evening of the outbreak: a low sun through a smoke-stained sky, the city beyond
-the perimeter burning. Everything is engine settings plus ~30 static parts, no skybox
-textures. Lighting: ClockTime 17.6, latitude 30, Brightness 1.8, ColorShift top
-`rgb(230,140,70)` / bottom `rgb(110,60,40)`, fog `rgb(176,104,66)` 260-1500. Atmosphere:
-Density 0.36, Offset 0.2, Color `rgb(214,112,58)`, Decay `rgb(92,38,28)`, Glare 0.7,
-Haze 6 (the haze is what turns the stock blue skybox orange; drop it and the sky goes
-green-grey). Terrain Clouds: Cover 0.72, Density 0.6, Color `rgb(104,66,48)`. Outside the
+the perimeter burning. Gloomy but readable: an Infected reads as a shape at 90 studs (owner
+2026-11-08: "a little too gloomy"; tuned live in Studio). Everything is engine settings plus
+static parts, no skybox textures. Lighting: ClockTime 16.9, latitude 30, Brightness 2.3,
+Ambient `rgb(96,84,80)`, OutdoorAmbient `rgb(150,126,112)`, ColorShift top
+`rgb(255,176,110)` / bottom `rgb(96,72,62)`, Exposure 0.15, EnvironmentDiffuse 0.8 /
+Specular 0.25, ShadowSoftness 0.4; no Fog settings (an Atmosphere overrides them).
+Atmosphere: Density 0.3, Offset 0.15, Color `rgb(205,104,58)`, Decay `rgb(110,44,32)`,
+Glare 0.5, Haze 5.2 (the haze turns the stock blue skybox orange; below ~4 the sky goes
+yellow-brown). ColorCorrection Brightness 0.03, Contrast 0.14, Tint `rgb(255,240,228)`;
+Bloom 0.35 / 20 / threshold 1.7 (Neon, fire and the sun bloom; geometry does not). Terrain
+Clouds: Cover 0.65, Density 0.5, Color `rgb(128,86,64)`. Outside the
 perimeter fence (`docs/LEVELS.md` A15: no solid walls since 2026-11-07; the ground and
-scenery run on past it to 700) a ring of 23 flat `DistantCity` silhouettes (`rgb(44,40,42)`, 470-560 studs out,
-60-220 tall, clustered north-east) with slow smoke columns and fire glow on six of them;
+scenery run on past it to 700) a ring of 23 flat `DistantCity` silhouettes (`rgb(30,27,30)`, 470-560 studs out,
+60-220 tall, clustered north-east) with slow smoke columns and fire glow on six of them.
+Each block's arena face carries a few lit windows (Neon strips on a 10-stud storey grid,
+`floor(h/45)+1` per block, seeded per block: 70% sodium, 20% fluorescent, fire high up on
+the burning ones); blocks 100+ tall get a setback crown and a water tank, the three tallest
+an antenna with a static red Neon tip (~100 parts, no lights, CanQuery off). A shared
+window-grid Texture is wired (`WINDOW_TEXTURE`) but not uploaded yet;
 `SkyService.burn(part)` puts the same fire + smoke on a dressing piece (`burning = true`
 in `ArenaService.DRESSING`). Smoke is the stock `smoke_main` particle at rate 5,
-14-22 s life, a light westerly drift; fire is `fire_main` with one PointLight. Budget: nine
-emitters in the whole scene.
+14-22 s life, a light westerly drift; fire is `fire_main`, with a PointLight (Range 36,
+Brightness 1.6, no shadows) only on the burning dressing in the arena: the skyline fires'
+glow is the particles' LightEmission. Budget: nine emitters in the whole scene.
 
 ### Body animation (shipped 2026-11-06)
 
@@ -505,3 +521,9 @@ when the player stands inside it, so a hollow ring is a later polish item.
   as geometry, milky eyes in a wound rim; `rebuilt`/`strain` stay the strain's two colours,
   strain only on seams and the Hocker's throat. Limbs went octagonal and tapered with joint
   caps at the same time (§7).
+- 2026-11-08: Owner: too gloomy, and "redo all the cars". Sun raised, haze thinned,
+  ColorCorrection and a threshold-1.7 Bloom added (Neon and fire only, not a glow filter on
+  geometry); the skyline got lit windows and crowns, its PointLights went. Cars rebuilt to
+  the character's scale from extruded side profiles (`assets/3d/build/props.py`: sedan,
+  hatch, pickup, van, plus an army cargo truck you crawl under), with real glass
+  (`glass` rows); every small set piece moved into `props.py`.

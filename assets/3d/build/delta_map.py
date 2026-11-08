@@ -41,7 +41,7 @@ BLEND = os.path.join(ROOT, "assets", "3d", "delta_map.blend")
 PREVIEWS = os.path.join(ROOT, "assets", "3d", "build", "previews")
 
 HALF = 300
-STRADDLE_TOLERANCE = 0.6  # studs of ground-height difference across a footprint
+STRADDLE_TOLERANCE = 0.35  # studs of ground-height difference across a footprint
 WARDEN_LANE = (-41.0, -19.0, -292.0, 2.0)  # x0, x1, z0, z1 (lamp posts sit on the -42 edge)
 LZ_PAD = (-110.0, -70.0, -110.0, -70.0)
 
@@ -508,7 +508,7 @@ def place_instances(layout, sources):
         if e.get("decor"):
             continue  # scenery past the fence: no placement rules
         corners = footprint_corners(x, z, size[0], size[2], yaw)
-        if floor is None:
+        if floor is None and not e.get("perch"):  # a perch's own ramp runs under it
             hs = [ground_height(hills, cx, cz) for cx, cz in corners] + [gy]
             spread = max(hs) - min(hs)
             if spread > STRADDLE_TOLERANCE:
