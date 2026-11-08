@@ -28,6 +28,13 @@ end
 Vector3.zero = Vector3.new(0, 0, 0)
 Vector3.one = Vector3.new(1, 1, 1)
 
+local Vector2 = {}
+function Vector2.new(x: number?, y: number?)
+	return { kind = "Vector2", X = x or 0, Y = y or 0 }
+end
+Vector2.zero = Vector2.new(0, 0)
+Vector2.one = Vector2.new(1, 1)
+
 local Enum = setmetatable({}, {
 	__index = function(_, enumName: string)
 		return setmetatable({}, {
@@ -41,24 +48,43 @@ local Enum = setmetatable({}, {
 local cache: { [string]: any } = {}
 local loadFile: (file: string) -> any
 
+-- Lune's fs calls yield, and a metamethod cannot yield, so the folder tree is read once
+-- up front and the __index below only looks names up in it.
+local function index(path: string): { [string]: any }
+	local entries = {}
+	for _, name in fs.readDir(path) do
+		local full = `{path}/{name}`
+		if fs.isDir(full) then
+			entries[name] = { dir = full }
+		else
+			local moduleName = string.match(name, "^(.+)%.luau$")
+			if moduleName then
+				entries[moduleName] = { file = full }
+			end
+		end
+	end
+	return entries
+end
+
 local function folder(path: string)
+	local entries = index(path)
 	return setmetatable({}, {
 		__index = function(_, name: string)
-			local file = `{path}/{name}.luau`
-			if fs.isFile(file) then
-				return { __file = file }
-			elseif fs.isDir(`{path}/{name}`) then
-				return folder(`{path}/{name}`)
+			local entry = entries[name]
+			if entry and entry.file then
+				return { __file = entry.file }
 			end
-			error(`no module at {path}/{name}`, 2)
+			error(`no module at {path}/{name} (tests resolve modules, not folders)`, 2)
 		end,
 	})
 end
 
+local sharedFolder: any = nil
+
 local game = {}
 function game.GetService(_self: any, name: string)
 	if name == "ReplicatedStorage" then
-		return { Shared = folder("src/shared") }
+		return { Shared = sharedFolder }
 	end
 	error(`game:GetService("{name}") is not available in tests (data modules only)`, 2)
 end
@@ -100,6 +126,7 @@ local function environment()
 		table = table,
 		utf8 = utf8,
 		Color3 = Color3,
+		Vector2 = Vector2,
 		Vector3 = Vector3,
 		Enum = Enum,
 		game = game,
@@ -108,6 +135,9 @@ local function environment()
 end
 
 function loadFile(file: string): any
+	if sharedFolder == nil then
+		sharedFolder = folder("src/shared")
+	end
 	if cache[file] == nil then
 		local env = environment()
 		local chunk = luau.load(fs.readFile(file), { debugName = file, environment = env })
