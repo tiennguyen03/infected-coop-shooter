@@ -1,12 +1,12 @@
 --!strict
--- The lifecycle registry (docs/ARCHITECTURE.md F2). Every service with run, sortie,
+-- The lifecycle registry (docs/ARCHITECTURE.md F2). Every service with run, mission,
 -- operation or per-player state registers its hooks here from its own init(); RunManager
 -- fires the phases and never names a service. A service that forgets to register is the one
 -- that leaks state, so registration lives next to the state it resets.
 --
 -- Phases:
 --   onRunStart       a fresh run (RunManager.startRun), every registered hook once
---   onSortieStart    a new sortie inside an operation (the campaign; fired when it exists)
+--   onMissionStart    a new mission inside an operation (the campaign; fired when it exists)
 --   onOperationStart a new operation (the campaign; fired when it exists)
 --   onPlayerReset    one player's state back to a fresh start, after onRunStart
 --   onPlayerRemoving one player left the server (connected once, here)
@@ -21,7 +21,7 @@ local Lifecycle = {}
 
 export type Hooks = {
 	onRunStart: (() -> ())?,
-	onSortieStart: (() -> ())?,
+	onMissionStart: (() -> ())?,
 	onOperationStart: (() -> ())?,
 	onPlayerReset: ((Player) -> ())?,
 	onPlayerRemoving: ((Player) -> ())?,
@@ -67,11 +67,11 @@ function Lifecycle.runStart()
 	end
 end
 
-function Lifecycle.sortieStart()
+function Lifecycle.missionStart()
 	for _, entry in ordered() do
-		local hook = entry.hooks.onSortieStart
+		local hook = entry.hooks.onMissionStart
 		if hook then
-			call("onSortieStart", entry.name, hook)
+			call("onMissionStart", entry.name, hook)
 		end
 	end
 end

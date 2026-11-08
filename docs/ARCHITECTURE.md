@@ -21,8 +21,8 @@ it done here and add the HISTORY row; do not delete it.
 
 1. **The run reset is a hand-maintained list.** `RunManager.startRun` calls 17 service
    resets by name and `resetPlayer` 6 more. A service missing from the list leaks state into
-   the next run with no warning. The planned campaign needs three scopes (run, sortie,
-   operation) with some state carried between sorties, which a list cannot express.
+   the next run with no warning. The planned campaign needs three scopes (run, mission,
+   operation) with some state carried between missions, which a list cannot express.
 2. **Server and client share state through unchecked strings.** The server sets 37 distinct
    player/workspace attribute names (about 215 lines in `src/` touch attributes), and remote
    payloads carry their kind as a string (`"flare"`, `"pick"`, `"show"`). A typo on either
@@ -53,7 +53,7 @@ it done here and add the HISTORY row; do not delete it.
 | # | Item | Done when |
 |---|---|---|
 | F1 | **Done 2026-11-08** (branch `foundation`). **Renames and comment cleanup** (concern 5). `ItemEffectService` → `DamageService`; fold `Config.Zombies` into `Config.Spawning` / `Config.Enemies`; fix or delete `wire.js`'s ItemDefinitions write; cut dated history from comments, keep the "why". Update every doc that names them. | static checks clean, solo playtest boots and a run completes |
-| F2 | **Done 2026-11-08** (`src/server/Lifecycle.luau`, `Main` `BOOT` list). **Lifecycle hooks** (concerns 1, 4). Services register `onRunStart`, `onSortieStart`, `onOperationStart`, `onPlayerReset`, `onPlayerRemoving` with one registry; `RunManager` calls the registry, not services by name. `Main` starts services from a list and logs which `init()` failed and stops loudly. | no service is reset by name in `RunManager`; restart after a wipe and after an extraction both leave no state behind (2-client playtest) |
+| F2 | **Done 2026-11-08** (`src/server/Lifecycle.luau`, `Main` `BOOT` list). **Lifecycle hooks** (concerns 1, 4). Services register `onRunStart`, `onMissionStart`, `onOperationStart`, `onPlayerReset`, `onPlayerRemoving` with one registry; `RunManager` calls the registry, not services by name. `Main` starts services from a list and logs which `init()` failed and stops loudly. | no service is reset by name in `RunManager`; restart after a wipe and after an extraction both leave no state behind (2-client playtest) |
 | F3 | **Done 2026-11-08** (`src/shared/Attributes.luau`, `src/shared/Messages.luau`; `luau-lsp analyze` is clean and runs in CI, so a misspelt key fails the build). **Shared state contract** (concern 2). A shared module declares every attribute name and every remote message kind as typed constants, like `Remotes.REMOTE_NAMES`; all reads and writes use it. | `grep 'Attribute("'` in `src/` returns only that module |
 | F4 | **Done 2026-11-08** (rules in MULTIPLAYER_READINESS #3/#5/#9). **Open co-op debt**: [MULTIPLAYER_READINESS.md](MULTIPLAYER_READINESS.md) #3 (hold and extraction rule for N players, "waiting for squad"), #5 (difficulty clock ignores pause), #9 (hit events to the attacker only). Co-op Sprint B. | 2-client playtest of hold, extraction and hit markers |
 | F5 | **Done 2026-11-08** (`tests/`, `src/shared/Rules/`, `.github/workflows/ci.yml`). **Safety net** (concern 7). GitHub Actions job: `stylua --check src`, `selene src`, `rojo build`. Unit tests for pure rules (magazine and reload, call-in charges, plate damage, difficulty curve) with Lune or Jest-Lua, run outside Studio and in CI. | CI green on a push; a deliberately broken rule fails a test |

@@ -563,7 +563,7 @@ local Config = {
 		HollowPoint = { StaggerSeconds = 0.6 }, -- the hit Infected stops for this long
 		CombatReload = { MomentumStacks = 5 }, -- reload is instant at this many Momentum stacks
 		LastStand = { SpreadMultiplier = 2 }, -- fire from the ground while downed, hip only
-		Tourniquet = { Seconds = 4 }, -- self-revive once per sortie, this long after going down
+		Tourniquet = { Seconds = 4 }, -- self-revive once per mission, this long after going down
 		WalkingBarrage = { Shells = 5, Step = 8 }, -- Anvil shells walk Step studs along the throw
 		Escort = {}, -- Magpie drones stay with a downed owner and their clock pauses
 		CommandDetonation = {}, -- press the Tripline key again to blow every armed mine

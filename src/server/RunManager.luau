@@ -70,7 +70,7 @@ local function beginRun()
 			return
 		end
 		setState("Explore")
-		EnemyService.startSortie()
+		EnemyService.startMission()
 		ObjectiveService.arm()
 	end)
 end

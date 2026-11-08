@@ -1053,14 +1053,14 @@ local function spawnLoop()
 end
 
 -- Bumped on every reset so a pending first wave never lands in the next run.
-local sortieGeneration = 0
+local missionGeneration = 0
 
 -- RunManager, on Explore: first contact within seconds (Sprint 8 pacing).
-function EnemyService.startSortie()
-	sortieGeneration += 1
-	local generation = sortieGeneration
+function EnemyService.startMission()
+	missionGeneration += 1
+	local generation = missionGeneration
 	task.delay(1.5, function()
-		if generation == sortieGeneration and RunStates.isLive() then
+		if generation == missionGeneration and RunStates.isLive() then
 			EnemyService.spawnWave("Walker", Config.Spawning.InitialCount)
 		end
 	end)
@@ -1086,7 +1086,7 @@ end
 function EnemyService.reset()
 	table.clear(lures)
 	table.clear(slowGeneration)
-	sortieGeneration += 1
+	missionGeneration += 1
 	EnemyService.clearAll()
 end
 

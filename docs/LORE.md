@@ -87,7 +87,7 @@ Control's voice is procedural, short, no banter: "Pike, Control. Green smoke on 
 ## Containment
 
 Control keeps the Containment Board: every district (Delta, Mile 14, Kestrel, the Yard, the
-Reservoir) carries a containment percentage, raised by every sortie any squad brings home.
+Reservoir) carries a containment percentage, raised by every mission any squad brings home.
 Contained does not mean clean; it means the district has stopped exporting hosts, the lights
 are back on and the Burn is deferred. Lost, Contested, Held, Contained are the only four
 words Control uses for a place.
@@ -109,7 +109,7 @@ carrier hiss and a squelch. He still walks the route, Gate to bus line to Inner 
 the Apron, checking buses that have been empty for a week. Shoot the plates off and he
 is just a man again. Optional name for the roster board: SGT HALE (not used in game).
 
-Radio for the Warden sortie (`Config.Index.Warden.Radio`; the insert and wipe lines are
+Radio for the Warden mission (`Config.Index.Warden.Radio`; the insert and wipe lines are
 written but not yet placed):
 
 | Cue | Line |
@@ -155,7 +155,7 @@ specialists. The world needs them because ordinary solutions have already failed
 countless soldiers and civilians continue to fight for survival, these individuals are
 uniquely capable of carrying out missions that nobody else can.
 
-Five of them make the squad Control calls Pike; four deploy on any sortie. They came in on
+Five of them make the squad Control calls Pike; four deploy on any mission. They came in on
 Lantern and dress like it: grey fatigues (the corridor garrison wore olive, and the olive is
 on the Infected now) under the Pike carrier, one black plate carrier with a PIKE tab on the
 left shoulder and one square patch on the shoulder and back in the wearer's own colour.

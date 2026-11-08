@@ -10,20 +10,21 @@ Canon lives in [LORE.md](LORE.md); tuning in `src/shared/Config.luau`; what has 
 
 Harlan Control inserts the squad ("Pike") by helo ("Lantern") into a district of the Harlan
 quarantine corridor ahead of its scheduled fire mission, **the Burn**. Each district is one
-**sortie**: Control gives a **Primary** objective drawn from the stage's pool and two
+**mission**: Control gives a **Primary** objective drawn from the stage's pool and two
 optional **Secondaries**. The squad explores, loots the position's abandoned **stores**,
 earns **Resupply** pallets and **field upgrades** while the difficulty clock runs. Completing the
 Primary calls the district's **Index** host (the boss). When the squad is ready it pops
 green smoke and Lantern takes 90 seconds to arrive; the squad holds the LZ and boards. Three
-sorties (Delta, Mile 14, Kestrel) make an **operation**. Boarding at Kestrel is **Stand
-Down**: the run ends on your terms, scored. Every sortie brought home raises that district's
+missions (Delta, Mile 14, Kestrel) make an **operation**. Boarding at Kestrel is **Stand
+Down**: the run ends on your terms, scored. Every mission brought home raises that district's
 **containment %** on Control's **Containment Board**, the meta-progression across runs.
 
 What stays from Risk of Rain 2: loot then commit, a continuous clock, a boss per stage, an
 exit on your own terms. What comes from Helldivers 2: objective pools, a mission timer, a
 called extraction, a war map the whole player base pushes. Names, places and numbers are ours.
 
-One stage is a **sortie** (Control's word; decided 2026-11-06).
+One stage is a **mission**, and a set of missions an **operation** (owner 2026-11-08: the
+Helldivers 2 convention; was "mission", decided 2026-11-06).
 
 ## The loop
 
@@ -33,11 +34,11 @@ One stage is a **sortie** (Control's word; decided 2026-11-06).
 | Explore | Loot stores, earn Resupply, find field upgrades; clock runs (`Config.Difficulty`) | Resupply and the loadout shipped 2026-11-07 (no stores yet) |
 | Primary | One of the stage's pool, placed at one of its three sites or a named landmark; the squad starts it when ready | hold zone appears at one spot after 180 s |
 | Index | Completing the Primary calls the boss from its canon entry | the Warden on Delta (shipped 2026-11-07, `IndexService`) |
-| Call the bird | Green smoke at a pad; Lantern inbound 90 s; squad holds the LZ; everyone inside boards, anyone outside is left (Dead for the sortie) | 30 s hold, run ends |
-| Next sortie | Dead players respawn at the next pad; clock, Resupply pool and drop counter carry over | n/a |
+| Call the bird | Green smoke at a pad; Lantern inbound 90 s; squad holds the LZ; everyone inside boards, anyone outside is left (Dead for the mission) | 30 s hold, run ends |
+| Next mission | Dead players respawn at the next pad; clock, Resupply pool and drop counter carry over | n/a |
 | Stand Down | After Kestrel: board = run ends, scored; or ask for a **Second Pass** (same corridor, higher clock floor, later forms from drop, containment gains doubled) | n/a |
 
-Failure: squad all dead = sortie lost, operation over; containment from sorties already
+Failure: squad all dead = mission lost, operation over; containment from missions already
 extracted still counts. The Burn running out does not end the run (see Operation).
 
 ## Loadout, pallets and field upgrades (spine v1, shipped 2026-11-07)
@@ -77,7 +78,7 @@ gone (`docs/sprints/SPRINT_18_LOADOUT.md`). Lore names on the HUD ([LORE.md](LOR
   `Config.Upgrades`). Six slots, one per tool (Dash, Breach, Rifle, Kit, call-in A, call-in
   B); a new pick in a filled slot replaces it. Sources: the Primary's site crate (lands when
   the hold zone appears; shows 3 you can still take), later Stores and Secondary crates and
-  the Index pallet (3-5 per sortie). Each changes how a tool works, never a percentage:
+  the Index pallet (3-5 per mission). Each changes how a tool works, never a percentage:
 
   | Slot | Lore name | Effect |
   |---|---|---|
@@ -88,7 +89,7 @@ gone (`docs/sprints/SPRINT_18_LOADOUT.md`). Lore names on the HUD ([LORE.md](LOR
   | Rifle | Hollow Point | the hit Infected stops for 0.6 s |
   | Kit | Combat Reload | reload is instant at 5 Momentum |
   | Kit | Last Stand | fire from the ground while downed (hip, spread x2) |
-  | Kit | Spare Tourniquet | stand up on your own 4 s after going down, once per sortie, no revive spent |
+  | Kit | Spare Tourniquet | stand up on your own 4 s after going down, once per mission, no revive spent |
   | Anvil | Walk It In | 5 shells stepping 8 studs along the throw |
   | Magpie | Last Flight | the drones stay with a downed owner, their clock paused |
   | Tripline | Daisy Chain | press 2 again to blow every armed mine (no charge) |
@@ -120,13 +121,13 @@ gone (`docs/sprints/SPRINT_18_LOADOUT.md`). Lore names on the HUD ([LORE.md](LOR
   constant the squad plans around. Alternate pads come from the "Light the Pad" Secondary.
 - **Secondaries** reward a Secondary crate on site and +3 containment; no timer extension,
   no Resupply.
-- **Score per sortie:** Win (Primary done, extracted before the Burn) 12; Partial (Primary
+- **Score per mission:** Win (Primary done, extracted before the Burn) 12; Partial (Primary
   done, extracted after the Burn or wiped after it) 6; Loss (wiped before the Primary) 0;
   each Secondary +3. Perfect operation = 18 per district.
 
 ## The Containment Board (war map)
 
-Every district carries a containment % raised by every extracted sortie. Delta starts at 25
+Every district carries a containment % raised by every extracted mission. Delta starts at 25
 (today's tuning); other districts at 0; the next district unlocks at 50 of the previous.
 Perfect play reaches 100 in 6 operations; a first-timer in 10–12 (a weekend). The board is
 **shared across all players** from the start (owner, 2026-11-06): one global DataStore key
@@ -161,10 +162,10 @@ survive, reach.
 | Recover the Record | "Recover Delta's screening record. Control needs to know who went north." | pick up at A, carry to B; carrier cannot sprint; dropped when downed | Delta Ridge → comm tower; Mile 14 toll log → Overpass; Kestrel manifest → roof | Runner, Hocker |
 | Restore Comms | "Get the mast up. Control is blind north of the gate." | hold E 10 s (interruptible) at the high prop, then survive 60 s there | Delta comm tower; Mile 14 water tower; Kestrel roof | Hocker shelling high ground |
 | Confirm Casualties | "Control is tracking six heavy hosts in the Depot. Put them down." | kill N marked (outlined) spawns at a landmark | Delta Brutes in the Depot; Mile 14 Hockers on the deck; Kestrel Bloats in the Ward | Brute / Hocker / Bloat |
-| Open the Route | "The Gate is chained from outside. Open it; the next sortie walks through here." | destroy 3 shootable props, then one player reaches the point beyond | Delta the Gate (Warden walks through); Mile 14 the lead bus (the Bloat is inside) | the boss entry |
+| Open the Route | "The Gate is chained from outside. Open it; the next mission walks through here." | destroy 3 shootable props, then one player reaches the point beyond | Delta the Gate (Warden walks through); Mile 14 the lead bus (the Bloat is inside) | the boss entry |
 | Evacuate the Holdouts | "Transponder in the Ward. Alive inside. Get them to the LZ." | 2–3 survivors follow the nearest player; must reach the pad alive | Kestrel (canon payoff), Mile 14 Rest Stop. Never Delta ("CLEARED 0") | Runner, Hocker puddles |
 
-### Secondaries (two offered per sortie)
+### Secondaries (two offered per mission)
 
 | Name | Radio brief | Player rule | Stages | Effect beyond the crate |
 |---|---|---|---|---|
@@ -264,7 +265,7 @@ their Burn.
 Harlan Yard (rail yard; Index the Lineman, an alpha Runner that drags a player and calls the
 map; Kites first appear). Harlan Reservoir Station (the dam and the program's research
 station; Index the Specimen, every form in one body; Growths everywhere). When they exist the
-operation is five sorties and Second Pass moves after the Reservoir.
+operation is five missions and Second Pass moves after the Reservoir.
 
 ## Index hosts (bosses)
 
@@ -387,7 +388,7 @@ sustained fire ~ one player) with the same magazine and an infinite reserve, and
    Armory, pallet/rotor sounds.
 3. **ADS and headshots.** Small; slots anywhere after 2.
 4. **Run state machine + Operation.** `RunManager` owns `Insert → Explore → Primary → Index
-   → Extract → (next sortie | Stand Down | Second Pass)` per run with stage index and pass
+   → Extract → (next mission | Stand Down | Second Pass)` per run with stage index and pass
    count; `OperationService` owns the Burn and overrun; extraction becomes a called 90 s
    hold with waves; downed/revive, spawn pads, reset split, client screens
    (= Co-op Sprint A). Delta is the only stage, which proves the machine.

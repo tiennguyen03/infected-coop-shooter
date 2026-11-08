@@ -306,8 +306,8 @@ Read in this order:
    2026-11-07; F10 fills the pool, F throws the flare) → ADS, hitscan rifle and headshots
    (done 2026-11-07) → run state machine + Operation
    (= Co-op Sprint A) → objective pools on Delta → the Warden → Containment Board → stage
-   definitions. A stage is a **sortie** (owner 2026-11-08; Helldivers 2 does not use the
-   word: it says mission, operation, dive).
+   definitions. A stage is a **mission** and three make an **operation** (owner
+   2026-11-08: the Helldivers 2 convention; was "mission").
    **Roblox's own Studio MCP** (`Roblox_Studio`, added 2026-11-06, local scope) is a second
    server: use it only for `generate_animation` (returns a published id; its clips play on
    our R15 rigs, extra bones ignored), `open_cloud_invoke` and camera-positioned
