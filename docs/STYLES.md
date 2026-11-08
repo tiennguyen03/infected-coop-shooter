@@ -4,7 +4,7 @@ Read this before any visual work: icons, UI, VFX, Blender assets, enemy models, 
 Gameplay rules in [PLAN.md](PLAN.md) and tone in [LORE.md](LORE.md) win over anything here.
 Performance wins over fidelity: the game must run smooth on low-end devices first.
 
-Last updated: 2026-11-07 (Infected skin v2: pallor / flesh / bruise / wound / pus rows).
+Last updated: 2026-11-08 (Infected posture v3: blocky lore-accuracy pass, §7).
 
 ---
 
@@ -364,8 +364,24 @@ this section; the bullets below describe the 2026-11-06 build still worn by the 
 - Limb geometry v2 (2026-11-07): healthy limbs are octagonal tapered segments (`Limb.oct`,
   70-80% of the R15 box) under a rounded joint cap (`Limb.cap`: bone knob on the Infected)
   so bent joints swing through their neighbour; upper legs take a `hip_inset` collar; swollen
-  limbs (Walker hands, Brute forearms) fill the box. Each limb still stays inside its R15 box
-  (details protrude ~0.1), so the stock rig and clips are untouched.
+  limbs (Walker hands, Brute forearms) fill the box. The stock rig and clips are untouched.
+- Posture v3 (2026-11-08, lore-accuracy pass, still blocky): each form stands its own way,
+  baked into the limb meshes (`shift_all` / `rotate_all` hang a limb off its fixed R15 joint;
+  MeshAssets offsets the part by the bounds centre, so limbs may leave their R15 box).
+  Walker: right shoulder sloped 0.3 lower (wedge on the torso, own `_r` upper arm), head down
+  18 deg and forward, the `foliage.d` blanket a slab on the lower torso hanging to mid-thigh
+  at the back, trousers `concrete.d` (`asphalt` read black next to the shoes), screening band
+  0.32 tall in `white.l` with one red stripe. Runner: upper torso pitched 20 deg forward at the
+  waist, traps up to the jaw (no neck), head jutting forward and sunk, arms hung 0.45 ahead of
+  the joint on forearms 0.55 longer (hands at the knees), a five-block stepped spine, dog tags
+  hanging plumb. Brute: torso 2.6 x 1.2, two stepped bone slabs per shoulder rising 0.4 above
+  the crown with the head sunk 0.45 in the trench, sided arms hung 0.42 outboard on forearms
+  1.0 longer (fists at the shin, worn flat underneath), trousers riding low over short legs,
+  the pack split in two halves. Hocker: head thrown back 22 deg about the neck, a stepped
+  notch 0.44 deep down the chest front, the surgical mask a `white.l` band, knees bent 18 deg
+  (thigh forward, shin back to the foot). 1,524 / 2,008 / 2,172 / 1,484 tris. Previews:
+  `ref_inf_<form>.png`, `_side.png`, `_back.png`. Gore stumps sit at the joint, so on an
+  offset limb (Runner, Brute arms) the stump is a little off the visible shoulder.
 - Eyes: two small milky `pus.l` facets set in a `wound` rim (`wound.d` on the Runner's red
   face). Never green: the `infected green` accent is for UI/icons/VFX, not bodies.
 - Hocker (2026-11-06): wears the Walker set with a caustic yellow-green throat sac
@@ -406,8 +422,8 @@ this section; the bullets below describe the 2026-11-06 build still worn by the 
   Rebuilt to the sheets so far: **Walker, Runner, Brute, Hocker** (`inf_<type>_*`,
   36 limbs; the first rebuild was uploaded and verified in a playtest 2026-11-07; skin v2 +
   limb geometry v2 uploaded and verified the same day (palette v4 texture, 23 changed limbs;
-  ids in `assets/3d/ASSET_IDS.md`); 1.4-2.1k tris per body against caps of 1.6k / 2.0k /
-  2.4k / 2.2k. Upload order matters when the palette changes: `palette.png` first, then the
+  ids in `assets/3d/ASSET_IDS.md`); posture v3 2026-11-08 (29 limbs re-uploaded, above);
+  1.5-2.2k tris per body against the sheet targets 1.8k / 2.2k / 3.0k / 2.2k. Upload order matters when the palette changes: `palette.png` first, then the
   `inf_*` FBX, then `MeshAssets` size/offset from the `dims`/`offset` lines the build
   prints; limbs painted with new cells on an old texture render those cells black, while the new
   texture on the old limbs only recolours cells 25-27), and **the five Chosen** (`PC_CLASSES` rebuilt with the shared Pike carrier; Weller's
@@ -549,5 +565,4 @@ when the player stands inside it, so a hollow ring is a later polish item.
 - 2026-11-08: Limbs fall off when shot (owner), with a flat stump and chunks (gore line
   above). A rounded low-poly Infected redesign was built and tried the same day; the owner
   prefers the blocky Roblox bodies ("I like the regular blocky body"), so the v2 blocky sets
-  stay. Next: a lore-accuracy pass on them (posture first: the Walker's dropped shoulder,
-  the Runner's lean, the Brute wider than tall, the Hocker's head thrown back).
+  stay. The lore-accuracy pass on them is built (posture v3, §7).
