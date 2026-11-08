@@ -20,7 +20,6 @@ local EnemyService = require(script.Parent.EnemyService)
 local DamageService = require(script.Parent.DamageService)
 local LoadoutService = require(script.Parent.LoadoutService)
 local PauseService = require(script.Parent.PauseService)
-local PlayerStatsService = require(script.Parent.PlayerStatsService)
 local Squad = require(script.Parent.Squad)
 local Lifecycle = require(script.Parent.Lifecycle)
 
@@ -37,7 +36,7 @@ local PASS_THROUGH_FOLDERS = {
 	"Drones",
 	"Mines",
 	"FirePools",
-	"AssaultEffects",
+	"KitEffects",
 	"CallInEffects",
 	"StrikeEffects",
 }
@@ -69,7 +68,7 @@ local projectileFolder: Folder
 local tracerRemote: RemoteEvent
 local activeProjectiles: { Projectile } = {}
 local lastFireTime: { [Player]: number } = {}
--- Bloom (Config.Weapon.Bloom*): extra spread in degrees per player, as of lastFireTime.
+-- Bloom (the gun's Bloom* numbers): extra spread in degrees per player, as of lastFireTime.
 local bloom: { [Player]: number } = {}
 
 local function findEnemyHumanoid(hit: Instance): Humanoid?
@@ -203,7 +202,7 @@ function ProjectileServer.hitMultiplier(
 	local definition = if typeof(typeName) == "string" then EnemyDefinitions[typeName] else nil
 	local multiplier = (definition and definition.HeadshotMultiplier)
 		or headshotMultiplier
-		or Config.Weapon.HeadshotMultiplier
+		or WeaponDefinitions.get(WeaponDefinitions.DEFAULT).HeadshotMultiplier
 	return multiplier, "headshot"
 end
 
@@ -305,13 +304,11 @@ local function onFireRequest(player: Player, origin: unknown, direction: unknown
 		end
 	end
 
-	-- Server-side cooldown scaled by the player's fire rate multiplier;
-	-- slight tolerance so honest clients at the rate limit aren't rejected
-	-- by network jitter.
+	-- Server-side cooldown of the gun in hand; slight tolerance so honest clients at the
+	-- rate limit aren't rejected by network jitter.
 	local weapon = LoadoutService.getWeapon(player)
 	local now = os.clock()
-	local cooldown = weapon.FireCooldown / PlayerStatsService.getMultiplier(player, "FireRate")
-	if now - (lastFireTime[player] or 0) < cooldown * 0.9 then
+	if now - (lastFireTime[player] or 0) < weapon.FireCooldown * 0.9 then
 		return
 	end
 
@@ -337,20 +334,20 @@ local function onFireRequest(player: Player, origin: unknown, direction: unknown
 	-- The client says whether it is aiming down sights; that only tightens the cone (the
 	-- speed penalty is client-owned movement either way), so trusting it costs nothing.
 	local spread = if aiming == true and not lastStand then weapon.AdsSpread else weapon.HipSpread
-	-- Bloom: recover what the pause since the previous shot earned, add this shot's kick.
-	local settings = Config.Weapon
-	local previous = bloom[player] or 0
-	local idle = now - (previousShot or now) - settings.BloomRecoveryDelay
+	-- Bloom (the gun's own numbers): recover what the pause since the previous shot earned,
+	-- add this shot's kick. A swap carries the bloom over, capped at the new gun's max.
+	local previous = math.min(bloom[player] or 0, weapon.BloomMax)
+	local idle = now - (previousShot or now) - Config.Weapon.BloomRecoveryDelay
 	if idle > 0 then
-		previous = math.max(previous - idle * settings.BloomRecovery, 0)
+		previous = math.max(previous - idle * weapon.BloomRecovery, 0)
 	end
 	spread += previous
-	bloom[player] = math.min(previous + settings.BloomPerShot, settings.BloomMax)
+	bloom[player] = math.min(previous + weapon.BloomPerShot, weapon.BloomMax)
 	player:SetAttribute(Attributes.Bloom, bloom[player])
 	if lastStand then
 		spread *= Config.Upgrades.LastStand.SpreadMultiplier
 	end
-	local baseDamage = weapon.Damage * PlayerStatsService.getMultiplier(player, "Damage")
+	local baseDamage = weapon.Damage
 	local pierce = weapon.Pierce or 0
 	if LoadoutService.hasUpgrade(player, "through_and_through") then
 		pierce += Config.Upgrades.ThroughAndThrough.Pierce

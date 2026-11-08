@@ -45,7 +45,7 @@ local function folderCount(name: string): number
 	return if folder then #folder:GetChildren() else 0
 end
 
--- Accepts a snake_case id ("fire_trail") or a loose alias ("FireTrail", "Fire Trail").
+-- Accepts a snake_case id ("hollow_point") or a loose alias ("HollowPoint", "Hollow Point").
 local function resolveId(rows: { [string]: any }, input: string): string?
 	if rows[input] then
 		return input
@@ -267,7 +267,7 @@ function DevTestService.verifyCleanup(): { pass: boolean, leftovers: { string } 
 	end
 
 	for _, player in Players:GetPlayers() do
-		for _, stat in { "Damage", "FireRate", "MoveSpeed" } do
+		for _, stat in { "MoveSpeed" } do
 			local mult = (player:GetAttribute(Attributes.statMult(stat)) :: number?) or 1
 			if math.abs(mult - 1) > 0.001 then
 				table.insert(leftovers, `{player.Name}: {stat} multiplier still {mult}`)
@@ -328,7 +328,7 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 		if LoadoutService.setWeapon(player, id) then
 			print(`[DevTest] SetWeapon {id} -> {player.Name}`)
 		else
-			warn(`[DevTest] SetWeapon: unknown weapon '{id}' (have: {WeaponDefinitions.DEFAULT})`)
+			warn(`[DevTest] SetWeapon: unknown weapon '{id}' (have: {table.concat(WeaponDefinitions.PRIMARIES, ", ")}, {table.concat(WeaponDefinitions.SECONDARIES, ", ")})`)
 		end
 	end,
 	DropUpgradeCrate = function(player)

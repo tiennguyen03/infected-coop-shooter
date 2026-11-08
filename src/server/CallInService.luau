@@ -1,6 +1,6 @@
 --!strict
--- Call-ins: keys 1 and 2 fire the two call-ins the player's
--- loadout carries (LoadoutService.getCallIn). Each slot holds Config.CallIns.<Key>.Charges
+-- Call-ins: keys 1-4 fire the call-ins in the player's Config.CallIns.Slots slots (the
+-- loadout, LoadoutService.getCallIn). Each slot holds Config.CallIns.<Key>.Charges
 -- charges that refill one at a time every Cooldown seconds; a Restock card fills them.
 -- Server-authoritative: the client sends the slot and where it aimed; this validates
 -- (alive, not paused, a charge), clamps the throw with ThrowUtil like the flare, and hands
@@ -36,7 +36,7 @@ local THROW_PASS_THROUGH = {
 	"Drones",
 	"Mines",
 	"FirePools",
-	"AssaultEffects",
+	"KitEffects",
 	"CallInEffects",
 	"StrikeEffects",
 	"Projectiles",
@@ -89,17 +89,19 @@ local function get(player: Player): { Slot }
 	if state then
 		return state
 	end
-	local created: { Slot } = { fresh(player, 1), fresh(player, 2) }
+	local created: { Slot } = {}
+	for slot = 1, Config.CallIns.Slots do
+		created[slot] = fresh(player, slot)
+		publish(player, slot, created[slot])
+	end
 	slots[player] = created
-	publish(player, 1, created[1])
-	publish(player, 2, created[2])
 	return created
 end
 
--- Both slots back to full (a Restock card, a run start).
+-- Every slot back to full (a Restock card, a run start).
 function CallInService.refill(player: Player)
 	local state = get(player)
-	for slot = 1, 2 do
+	for slot = 1, Config.CallIns.Slots do
 		state[slot] = fresh(player, slot)
 		publish(player, slot, state[slot])
 	end
@@ -166,7 +168,7 @@ local function fire(
 end
 
 local function onCallIn(player: Player, slot: unknown, requested: unknown)
-	if slot ~= 1 and slot ~= 2 then
+	if typeof(slot) ~= "number" or slot % 1 ~= 0 or slot < 1 or slot > Config.CallIns.Slots then
 		return
 	end
 	if PauseService.isPaused() then
@@ -246,7 +248,7 @@ local function step()
 	end
 end
 
--- Run start: full charges for both slots.
+-- Run start: full charges in every slot.
 function CallInService.resetPlayer(player: Player)
 	CallInService.refill(player)
 end
@@ -260,10 +262,15 @@ function CallInService.init()
 	})
 	usedRemote = Remotes.get("AbilityUsed")
 	Remotes.get("CallIn").OnServerEvent:Connect(onCallIn)
-	-- A swapped slot (dev panel, later the Armory) starts full.
-	LoadoutService.onCallInChanged(function(player, slot)
+	-- A changed slot (dev panel, the Arms Room) starts full, or empty with its cooldown
+	-- running when the Arms Room changed it in a run.
+	LoadoutService.onCallInChanged(function(player, slot, startEmpty)
 		local state = get(player)
 		state[slot] = fresh(player, slot)
+		if startEmpty then
+			state[slot].charges = 0
+			state[slot].nextChargeAt = os.clock() + cooldownFor(player, slot)
+		end
 		publish(player, slot, state[slot])
 	end)
 	lastStep = os.clock()

@@ -2,7 +2,7 @@
 -- The one damage entry point every player-owned source routes through
 -- (DamageService.dealDamage): the rifle, the breach charge, the bots and every call-in
 -- (drones, mines, shells, the coil, fire). It records who last hurt an Infected so the kill
--- is credited (Kills attribute, kill listeners: Combat Momentum) and reports the hit to the
+-- is credited (Kills attribute, kill listeners) and reports the hit to the
 -- clients (hit marker, sparks, 3D hit sound). The item economy it used to host left with the
 -- loadout rework: upgrades are flags on LoadoutService read by the service
 -- that owns the tool.
@@ -24,7 +24,7 @@ local damageRemote: RemoteEvent
 local lastDamager: { [Humanoid]: Player } = {}
 local lastDamageKind: { [Humanoid]: string } = {}
 
--- Credited-kill listeners (AssaultClassService uses this for Combat Momentum). Fired once
+-- Credited-kill listeners. Fired once
 -- per credited kill with the killing player.
 local killListeners: { (player: Player) -> () } = {}
 function DamageService.addKillListener(listener: (player: Player) -> ())

@@ -320,7 +320,7 @@ local function onFlare(player: Player, target: unknown)
 		end)(),
 	}
 	EnemyService.setLure(landing, cfg.Lure.Radius, cfg.DropDelay)
-	resupplyRemote:FireAllClients(Messages.Resupply.Called, player.Name)
+	resupplyRemote:FireAllClients(Messages.Resupply.Called, Squad.callsign(player))
 	publish()
 	print(`[Requisition] {player.Name} threw the flare; pallet in {cfg.DropDelay}s (drop {drops})`)
 end
@@ -341,14 +341,17 @@ local function applyCard(player: Player, cardId: string): string?
 		if humanoid and humanoid.Health > 0 then
 			humanoid.Health = humanoid.MaxHealth
 		end
+		LoadoutService.refillStims(player)
 	elseif cardId == "restock" then
 		CallInService.refill(player)
+		LoadoutService.refillGrenades(player)
+		LoadoutService.refillStims(player)
 	elseif cardId == "armour_plate" then
 		LoadoutService.addShield(player, Config.Crates.ArmourPlate)
 	else
 		return nil
 	end
-	return `{player.Name} took {definition.Name}`
+	return `{Squad.callsign(player)} took {definition.Name}`
 end
 
 local function onPick(player: Player, crateId: unknown, cardId: unknown)

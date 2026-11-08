@@ -186,6 +186,23 @@ local function remove(member: Member)
 	end
 end
 
+-- The callsigns (Config.Bots.Callsigns) no player holds, in order: the bots take these.
+function Squad.freeCallsigns(): { string }
+	local free = {}
+	for _, callsign in Config.Bots.Callsigns do
+		local taken = false
+		for _, member in members do
+			if member.kind == "player" and member.name == callsign then
+				taken = true
+			end
+		end
+		if not taken then
+			table.insert(free, callsign)
+		end
+	end
+	return free
+end
+
 function Squad.addBot(slot: number, name: string): Member
 	local member = newMember("b:" .. slot, "bot", nil, name)
 	add(member)
@@ -340,6 +357,12 @@ function Squad.fromPlayer(player: Player): Member?
 	return byPlayer[player]
 end
 
+-- The player's radio callsign ("Pike One"), for HUD and radio text.
+function Squad.callsign(player: Player): string
+	local member = byPlayer[player]
+	return if member then member.name else player.DisplayName
+end
+
 function Squad.fromHumanoid(humanoid: Humanoid): Member?
 	return byHumanoid[humanoid]
 end
@@ -405,7 +428,7 @@ local function addPrompt(member: Member)
 	prompt.RequiresLineOfSight = false
 	prompt.Style = Enum.ProximityPromptStyle.Default
 	prompt.PromptButtonHoldBegan:Connect(function(player)
-		setReviver(member, player.DisplayName)
+		setReviver(member, Squad.callsign(player))
 	end)
 	prompt.PromptButtonHoldEnded:Connect(function()
 		setReviver(member, "")
@@ -506,7 +529,10 @@ function Squad.ownerAttribute(member: Member, name: string, default: any): any
 end
 
 local function onPlayerAdded(player: Player)
-	local member = newMember("p:" .. player.UserId, "player", player, player.DisplayName)
+	-- The radio name: the lowest callsign no other player holds (solo: Pike One).
+	local callsign = Squad.freeCallsigns()[1] or player.DisplayName
+	local member = newMember("p:" .. player.UserId, "player", player, callsign)
+	player:SetAttribute(Attributes.Callsign, callsign)
 	byPlayer[player] = member
 	add(member)
 	-- Every (re)spawn lands on the member's own pad around the LZ helipad.

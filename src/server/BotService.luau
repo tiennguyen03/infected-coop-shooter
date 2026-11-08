@@ -1,5 +1,5 @@
 --!strict
--- Bot squadmates. In solo the other Chosen fill the squad as server-side AI
+-- Bot squadmates. In solo generic Pike soldiers fill the squad as server-side AI
 -- (docs/PROGRESSION.md > The spine): one fewer per real player, up to a squad of 4. Each
 -- bot is a Squad member, so the Infected chase it and enemy splash hurts it exactly like a
 -- player. It wears the class body and rifle (PlayerSetup), follows the nearest player in a
@@ -293,7 +293,7 @@ local function rayParams(): RaycastParams
 			"Drones",
 			"Mines",
 			"FirePools",
-			"AssaultEffects",
+			"KitEffects",
 			"CallInEffects",
 			"StrikeEffects",
 		}
@@ -317,7 +317,7 @@ end
 
 local function shoot(bot: Bot, origin: Vector3, aim: Vector3, params: RaycastParams)
 	local direction = applySpread((aim - origin).Unit, Config.Bots.Spread)
-	local range = Config.Weapon.Range
+	local range = WeaponDefinitions.get(WeaponDefinitions.DEFAULT).Range
 	local hit = workspace:Raycast(origin, direction * range, params)
 	local endPoint = if hit then hit.Position else origin + direction * range
 	if hit then
@@ -697,7 +697,7 @@ function BotService.startRun()
 		removeBot(bot)
 	end
 	for slot = 1, wanted() do
-		local names = Config.Bots.Names
+		local names = Squad.freeCallsigns()
 		table.insert(bots, {
 			slot = slot,
 			member = Squad.addBot(slot, names[((slot - 1) % #names) + 1]),

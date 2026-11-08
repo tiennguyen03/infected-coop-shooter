@@ -1,7 +1,7 @@
 --!strict
 -- Per-player stat multipliers. Sources (items, buffs) contribute additive
 -- bonuses keyed by a source name; the recomputed multiplier is published as
--- a player attribute (DamageMult/FireRateMult/MoveSpeedMult) so client
+-- a player attribute (MoveSpeedMult; Combat Momentum's Damage / FireRate are gone) so client
 -- systems read it via replication. Server systems use getMultiplier.
 local Lifecycle = require(script.Parent.Lifecycle)
 
@@ -9,7 +9,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
 
-local STATS = { "Damage", "FireRate", "MoveSpeed" }
+local STATS = { "MoveSpeed" }
 
 local PlayerStatsService = {}
 
