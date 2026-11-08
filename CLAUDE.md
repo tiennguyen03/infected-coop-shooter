@@ -16,6 +16,8 @@ Read on demand, not up front:
   performance budgets. Read before any visual work.
 - `docs/MULTIPLAYER_READINESS.md` — co-op rules, single-player debt register, open design
   decisions. Read before touching run flow, pause, XP, death, spawning, or objectives.
+- `docs/ARCHITECTURE.md` — code review findings and the ranked foundation backlog
+  (F1-F11), plus how lobby, private match servers and the shared war map scale.
 - `docs/sprints/` — one doc per shipped sprint; linked from HISTORY.md.
 - `.claude/agents/` — design subagents: lore-developer, systems-designer, level-designer,
   playtest-critic. Use them for design calls in their area before building. They are

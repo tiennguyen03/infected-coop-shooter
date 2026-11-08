@@ -3,7 +3,8 @@
 Start here when picking the project up in a fresh Claude Code session.
 Last updated: 2026-11-07, end of the build-round-1 session (the Warden shipped, player
 movement fixed, skinned Weller switched off). **Start the next session at "Open work"
-item 1: the Warden silhouette redesign the owner asked for.** Last verified commit on `main`: the Warden commit (solo + 2-client playtests).
+item 1: the Warden silhouette redesign the owner asked for.** Then ask the owner where the
+foundation backlog (`docs/ARCHITECTURE.md`, 2026-11-08 review) slots in. Last verified commit on `main`: the Warden commit (solo + 2-client playtests).
 
 ## What this is
 
@@ -143,6 +144,12 @@ Read in this order:
 
 ## Open work, in priority order
 
+- **Foundation backlog (2026-11-08 code review, `docs/ARCHITECTURE.md`).** Ranked concerns
+  and items F1-F11: renames, lifecycle hooks, shared attribute/message constants, the open
+  co-op debt (#3/#5/#9), CI + unit tests, then stage data split before objective pools,
+  weapon/upgrade hooks, class interface, save service, lobby place, and how private match
+  servers and the shared Containment Board scale. The owner decides where it slots against
+  the Warden redesign below; nothing in it is started.
 - **The Warden shipped 2026-11-07** (`docs/sprints/SPRINT_19_WARDEN.md` > Open work):
   handset hiss + squelch tell clip and his own vocals (audio pipeline), an upright
   walk / shield-square charge clip instead of the mutant set, Gate dressing (chain,
