@@ -27,6 +27,7 @@ local PauseService = require(script.Parent.PauseService)
 local ShockCoilService = require(script.Parent.ShockCoilService)
 local Squad = require(script.Parent.Squad)
 local Lifecycle = require(script.Parent.Lifecycle)
+local WorldSounds = require(script.Parent.WorldSounds)
 
 -- Folders a throw never lands on (effects and pickups between the thrower and the ground).
 local THROW_PASS_THROUGH = {
@@ -140,6 +141,9 @@ local function fire(
 		end
 	end
 
+	if definition.Kind == "throw" then
+		WorldSounds.at(landing, "callins", "callin_throw")
+	end
 	if definition.Id == "magpie" then
 		return DroneService.deployBeacon(
 			player,

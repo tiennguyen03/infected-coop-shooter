@@ -30,6 +30,7 @@ local LoadoutService = require(script.Parent.LoadoutService)
 local PauseService = require(script.Parent.PauseService)
 local Squad = require(script.Parent.Squad)
 local Lifecycle = require(script.Parent.Lifecycle)
+local WorldSounds = require(script.Parent.WorldSounds)
 
 local FLARE_COLOR = Color3.fromRGB(255, 60, 40)
 local CRATE_DROP_HEIGHT = 60
@@ -227,6 +228,7 @@ function RequisitionService.dropCrate(
 	if not part.Parent then
 		return
 	end
+	WorldSounds.at(ground, "callins", "pallet_land")
 
 	local living = livingPlayers()
 	if loud then
@@ -311,7 +313,11 @@ local function onFlare(player: Player, target: unknown)
 		position = landing,
 		facing = Vector3.new(facing.X, 0, facing.Z).Unit,
 		landAt = now + cfg.DropDelay,
-		flare = buildFlare(landing),
+		flare = (function()
+			local flare = buildFlare(landing)
+			WorldSounds.loopOn(flare, "callins", "flare_burn")
+			return flare
+		end)(),
 	}
 	EnemyService.setLure(landing, cfg.Lure.Radius, cfg.DropDelay)
 	resupplyRemote:FireAllClients(Messages.Resupply.Called, player.Name)
@@ -378,6 +384,7 @@ local function onPick(player: Player, crateId: unknown, cardId: unknown)
 		return
 	end
 	crate.picked[player] = true
+	WorldSounds.on(root, "ui_radio", "card_pick", "Gear")
 	resupplyRemote:FireClient(player, Messages.Resupply.Picked, crate.id)
 	for _, other in Players:GetPlayers() do
 		if other ~= player then

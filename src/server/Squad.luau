@@ -25,6 +25,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local ArenaService = require(script.Parent.ArenaService)
 local Lifecycle = require(script.Parent.Lifecycle)
+local WorldSounds = require(script.Parent.WorldSounds)
 -- LoadoutService requires Squad, so Squad reaches it lazily (knock only).
 local function loadoutService(): any
 	return require(script.Parent.LoadoutService) :: any
@@ -115,6 +116,16 @@ local function setState(member: Member, state: MemberState)
 		return
 	end
 	member.state = state
+	if member.root then
+		if state == "Downed" then
+			WorldSounds.voice(member.root, "player_gear", "downed")
+		elseif old == "Downed" and state == "Alive" then
+			WorldSounds.on(member.root, "player_gear", "revive", "Gear")
+		end
+	end
+	if state == "Dead" then
+		WorldSounds.global("ui_radio", "kia")
+	end
 	if state ~= "Downed" then
 		member.bleedOutAt = nil
 		member.selfReviveAt = nil
@@ -235,6 +246,9 @@ function Squad.knock(member: Member, seconds: number): boolean
 	end
 	local until_ = now + seconds
 	character:SetAttribute(Attributes.KnockedUntil, until_)
+	if member.root then
+		WorldSounds.on(member.root, "player_gear", "knockdown", "Move")
+	end
 	if member.owner then
 		loadoutService().cancelReload(member.owner)
 		Remotes.get("Impact"):FireClient(member.owner, Messages.Impact.Knockdown, seconds)

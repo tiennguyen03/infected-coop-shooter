@@ -15,6 +15,7 @@ local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Co
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
 local LoadoutService = require(script.Parent.LoadoutService)
 local Lifecycle = require(script.Parent.Lifecycle)
+local WorldSounds = require(script.Parent.WorldSounds)
 
 local CoverMoveService = {}
 
@@ -35,6 +36,14 @@ local function onCoverMove(player: Player, kind: unknown)
 		return
 	end
 	LoadoutService.cancelReload(player)
+	local root = character:FindFirstChild("HumanoidRootPart")
+	if root and root:IsA("BasePart") then
+		local group = if kind == Messages.CoverMove.Vault
+				or kind == Messages.CoverMove.Climb
+			then "vault"
+			else "roll"
+		WorldSounds.on(root, "player_gear", group, "Move")
+	end
 	if kind == Messages.CoverMove.Slide then
 		return
 	end

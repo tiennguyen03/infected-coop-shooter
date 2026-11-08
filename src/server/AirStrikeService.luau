@@ -13,6 +13,7 @@ local GroundUtil = require(ReplicatedStorage.Shared.GroundUtil)
 local DamageService = require(script.Parent.DamageService)
 local PauseService = require(script.Parent.PauseService)
 local Lifecycle = require(script.Parent.Lifecycle)
+local WorldSounds = require(script.Parent.WorldSounds)
 
 local ENEMY_TAG = "Enemy"
 
@@ -144,10 +145,16 @@ function AirStrikeService.fireMission(
 			if thisGeneration ~= generation then
 				return
 			end
+			WorldSounds.at(impact + Vector3.new(0, 30, 0), "callins", "anvil_incoming")
+			waitUnpaused(Config.Audio.AnvilIncomingLead)
+			if thisGeneration ~= generation then
+				return
+			end
 			local disc = markers[index]
 			if disc.Parent then
 				disc:Destroy()
 			end
+			WorldSounds.at(impact, "callins", "anvil_blast")
 			detonate(player, impact + Vector3.new(0, 2, 0))
 			if index < #impacts then
 				waitUnpaused(cfg.ShellInterval)

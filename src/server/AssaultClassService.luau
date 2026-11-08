@@ -25,6 +25,7 @@ local PauseService = require(script.Parent.PauseService)
 local PlayerStatsService = require(script.Parent.PlayerStatsService)
 local Squad = require(script.Parent.Squad)
 local Lifecycle = require(script.Parent.Lifecycle)
+local WorldSounds = require(script.Parent.WorldSounds)
 
 local ENEMY_TAG = "Enemy"
 local MOMENTUM_SOURCE = "assault_momentum"
@@ -78,6 +79,7 @@ local function doDash(player: Player)
 	if not root or not humanoid then
 		return
 	end
+	WorldSounds.on(root, "player_gear", "dash", "Move")
 
 	-- Dash along move input, else character facing.
 	local dir = humanoid.MoveDirection
@@ -282,6 +284,7 @@ local function doBreach(player: Player, requested: Vector3?)
 		if ring.Parent then
 			ring:Destroy()
 		end
+		WorldSounds.at(center, "player_gear", "breach")
 		detonate(player, center)
 	end)
 end

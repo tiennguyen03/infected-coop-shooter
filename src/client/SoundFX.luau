@@ -11,7 +11,7 @@ local SoundService = game:GetService("SoundService")
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local SoundBanks = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("SoundBanks"))
 
-export type SoundName = "shoot" | "hit" | "levelup"
+export type SoundName = "shoot" | "hit"
 
 type Definition = { id: string, fallback: string?, volume: number, speed: number?, vary: number? }
 
@@ -26,8 +26,10 @@ local DEFINITIONS: { [string]: Definition } = {
 	-- Built-in snap for hits while the player_hits bank is not uploaded (playAt falls
 	-- back to it); body shots and headshots are bank groups once it is.
 	hit = { id = "rbxasset://sounds/snap.mp3", volume = 0.3, speed = 0.85 },
-	levelup = { id = "rbxasset://sounds/electronicpingshort.wav", volume = 0.6 },
 }
+
+-- Ambience beds under the whole run (2D, quiet; assets/audio README "ambience").
+local BEDS = { "amb_city", "amb_wind" }
 
 local SoundFX = {}
 
@@ -98,8 +100,63 @@ function SoundFX.playWorld(name: SoundName, position: Vector3, volume: number?)
 	end)
 end
 
+-- A random variant of a bank group, 2D (the radio squelch, a menu click). Silent while the
+-- bank is not uploaded.
+function SoundFX.ui(bank: string, group: string)
+	if not SoundBanks.has(bank) then
+		return
+	end
+	local sound = Instance.new("Sound")
+	sound.Name = "UI_" .. group
+	sound.Parent = SoundService
+	local duration = SoundBanks.play(sound, bank, group)
+	task.delay((duration or 0) + 0.1, function()
+		sound:Destroy()
+	end)
+end
+
+-- A 2D loop of a bank group; destroy the returned Sound to stop it.
+function SoundFX.loop(bank: string, group: string): Sound?
+	if not SoundBanks.has(bank) then
+		return nil
+	end
+	local sound = Instance.new("Sound")
+	sound.Name = "Loop_" .. group
+	sound.Parent = SoundService
+	if not SoundBanks.loop(sound, bank, group) then
+		sound:Destroy()
+		return nil
+	end
+	return sound
+end
+
+-- Ragged breathing while the local body is under Config.Audio.LowHealthFraction (and up).
+local function watchLowHealth()
+	local Players = game:GetService("Players")
+	local breathing: Sound? = nil
+	while true do
+		task.wait(0.5)
+		local character = Players.LocalPlayer.Character
+		local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+		local low = humanoid ~= nil
+			and humanoid.Health > 0
+			and humanoid.Health / math.max(humanoid.MaxHealth, 1)
+				< Config.Audio.LowHealthFraction
+		if low and not breathing then
+			breathing = SoundFX.loop("player_gear", "low_health")
+		elseif not low and breathing then
+			breathing:Destroy()
+			breathing = nil
+		end
+	end
+end
+
 function SoundFX.init()
 	SoundBanks.preload(SoundService)
+	for _, bed in BEDS do
+		SoundFX.loop("ambience", bed)
+	end
+	task.spawn(watchLowHealth)
 	for name, definition in DEFINITIONS do
 		local sound = Instance.new("Sound")
 		sound.SoundId = definition.id

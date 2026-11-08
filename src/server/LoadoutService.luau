@@ -23,6 +23,7 @@ local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
 local PauseService = require(script.Parent.PauseService)
 local Squad = require(script.Parent.Squad)
 local Lifecycle = require(script.Parent.Lifecycle)
+local WorldSounds = require(script.Parent.WorldSounds)
 
 local LoadoutService = {}
 
@@ -162,6 +163,9 @@ function LoadoutService.startReload(player: Player): boolean
 	end
 	loadout.reloadUntil = os.clock() + weapon.ReloadTime
 	publishAmmo(player, loadout)
+	if member.root then
+		WorldSounds.on(member.root, "player_gear", "reload", "Gear")
+	end
 	return true
 end
 
@@ -171,6 +175,10 @@ function LoadoutService.cancelReload(player: Player)
 	if loadout and loadout.reloadUntil then
 		loadout.reloadUntil = nil
 		publishAmmo(player, loadout)
+		local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+		if root and root:IsA("BasePart") then
+			WorldSounds.stop(root, "Gear")
+		end
 	end
 end
 

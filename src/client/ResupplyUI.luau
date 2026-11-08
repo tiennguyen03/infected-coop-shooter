@@ -18,7 +18,6 @@ local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Co
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
 local UpgradeDefinitions =
 	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("UpgradeDefinitions"))
-local SoundFX = require(script.Parent.SoundFX)
 local HudTheme = require(script.Parent.HudTheme)
 local BuffNoticeUI = require(script.Parent.BuffNoticeUI)
 
@@ -301,8 +300,7 @@ local function checkPicks()
 				crate.pickSent = true
 				resupplyRemote:FireServer(Messages.Resupply.Pick, crate.id, card.cardId)
 				-- Optimistic: fade the others now; the server's "picked" clears the rest.
-				closeCards(crate.id, card.cardId)
-				SoundFX.play("levelup")
+				closeCards(crate.id, card.cardId) -- the pouch sound is the server's (card_pick)
 				break
 			end
 		end

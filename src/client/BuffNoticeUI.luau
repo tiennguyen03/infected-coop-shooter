@@ -14,6 +14,7 @@ local TweenService = game:GetService("TweenService")
 local Messages = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Messages"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
 local HudTheme = require(script.Parent.HudTheme)
+local SoundFX = require(script.Parent.SoundFX)
 
 local BuffNoticeUI = {}
 
@@ -148,6 +149,7 @@ end
 
 local function onNotice(text: string, kind: string?)
 	if kind == Messages.Notice.Radio then
+		SoundFX.ui("ui_radio", "radio_in")
 		BuffNoticeUI.subtitle("Control", text)
 	else
 		BuffNoticeUI.card(text)

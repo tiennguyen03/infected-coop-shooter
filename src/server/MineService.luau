@@ -16,6 +16,7 @@ local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
 local DamageService = require(script.Parent.DamageService)
 local PauseService = require(script.Parent.PauseService)
 local Lifecycle = require(script.Parent.Lifecycle)
+local WorldSounds = require(script.Parent.WorldSounds)
 
 local ENEMY_TAG = "Enemy"
 
@@ -40,6 +41,7 @@ end
 local function detonate(mine: Mine)
 	local cfg = Config.CallIns.Tripline
 	local center = mine.part.Position
+	WorldSounds.at(center, "callins", "tripline_blast")
 
 	local flash = Instance.new("Part")
 	flash.Shape = Enum.PartType.Ball
@@ -133,6 +135,7 @@ function MineService.layArc(owner: Player, point: Vector3, facing: Vector3): boo
 		local direction = CFrame.fromAxisAngle(Vector3.yAxis, angle):VectorToWorldSpace(forward)
 		placeMine(owner, point + direction * cfg.ArcRadius)
 	end
+	WorldSounds.at(point, "callins", "tripline_arm")
 	return true
 end
 

@@ -16,6 +16,7 @@ local PauseService = require(script.Parent.PauseService)
 local ProjectileServer = require(script.Parent.ProjectileServer)
 local Squad = require(script.Parent.Squad)
 local Lifecycle = require(script.Parent.Lifecycle)
+local WorldSounds = require(script.Parent.WorldSounds)
 
 local ENEMY_TAG = "Enemy"
 local RETARGET_INTERVAL = 0.25
@@ -115,6 +116,7 @@ local function spawnDrone(owner: Player, at: Vector3, escort: boolean)
 	part.CanQuery = false
 	part.CanTouch = false
 	part.Parent = droneFolder
+	WorldSounds.loopOn(part :: BasePart, "callins", "magpie_hover")
 	table.insert(drones, {
 		part = part :: BasePart,
 		owner = owner,

@@ -280,6 +280,12 @@ form on Kestrel (the player learns it twice). An Index kill drops a priority pal
 | the Lineman | Harlan Yard | a Runner the strain finished | drags a player; its call pulls the map |
 | the Specimen | Reservoir | the station's live host | every mechanic above, in phases |
 
+**Boss sound (decided by the owner 2026-11-08).** Every Index has its own sound bank, never a
+regular form's: a bellow, its own footfalls, an impact per attack, a tell the squad learns
+to hear, and a death. Its prompts share one sound profile (`assets/audio/build/generate.py`
+`PROFILES`) so the clips sound like one body. The Warden's tell is his riot handset keying
+open; his bank is `warden` (assets/audio/README.md).
+
 ### Index kit: the Warden (shipped 2026-11-07, `docs/sprints/SPRINT_19_WARDEN.md`)
 
 Numbers in `Config.Index.Warden`; the service is `src/server/IndexService.luau`.

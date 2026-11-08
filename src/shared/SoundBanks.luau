@@ -27,6 +27,12 @@ local IDS: { [string]: string } = {
 	runner = "rbxassetid://134864043657246",
 	brute = "rbxassetid://96804079589453",
 	hocker = "rbxassetid://82465252830201",
+	-- sound pass 2026-11-08
+	player_gear = "rbxassetid://77278441018905",
+	callins = "rbxassetid://130397302139113",
+	warden = "rbxassetid://140427300002576",
+	ui_radio = "rbxassetid://130255970374501",
+	ambience = "rbxassetid://127893501463408",
 }
 
 local SoundBanks = {}
@@ -129,6 +135,29 @@ function SoundBanks.play(sound: Sound, bank: string, group: string, volume: numb
 		end
 	end)
 	return duration
+end
+
+-- Loops a random variant of `group` on `sound` (the bank's other clips stay out: the
+-- playback and loop regions are the clip). Returns false when the bank has no id yet.
+function SoundBanks.loop(sound: Sound, bank: string, group: string, volume: number?): boolean
+	local id = SoundBanks.id(bank)
+	if not id then
+		return false
+	end
+	local clip, offsets = SoundBanks.pick(bank, group)
+	if not clip or not offsets then
+		return false
+	end
+	sound.SoundId = id
+	sound.Volume = volume or SoundBanks.volume(group)
+	local region = NumberRange.new(offsets.start, offsets.start + offsets.length)
+	sound.PlaybackRegionsEnabled = true
+	sound.PlaybackRegion = region
+	sound.LoopRegion = region
+	sound.Looped = true
+	sound.TimePosition = offsets.start
+	sound:Play()
+	return true
 end
 
 -- A 3D Sound ready for `play`: inverse-tapered rolloff between the two distances.

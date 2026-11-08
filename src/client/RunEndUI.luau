@@ -18,6 +18,7 @@ local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
 local HudTheme = require(script.Parent.HudTheme)
+local SoundFX = require(script.Parent.SoundFX)
 
 local C = HudTheme.Color
 
@@ -168,6 +169,7 @@ local function showResults()
 	button.Parent = column
 	button.Activated:Connect(function()
 		if button.Active then
+			SoundFX.ui("ui_radio", "ui_click")
 			button.Text = "READY ✓"
 			button.Active = false
 			button.BackgroundTransparency = 0.4

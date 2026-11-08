@@ -18,6 +18,7 @@ local PauseService = require(script.Parent.PauseService)
 local RequisitionService = require(script.Parent.RequisitionService)
 local Squad = require(script.Parent.Squad)
 local Lifecycle = require(script.Parent.Lifecycle)
+local WorldSounds = require(script.Parent.WorldSounds)
 
 local ObjectiveService = {}
 
@@ -71,11 +72,29 @@ local function createZone(): BasePart
 	return part
 end
 
+-- The Gate lamp post's siren head (ArenaService) carries the alarm loop.
+local siren: Sound? = nil
+
+local function startSiren()
+	local head = workspace:FindFirstChild("Siren", true)
+	if head and head:IsA("BasePart") then
+		siren = WorldSounds.loopOn(head, "ambience", "amb_siren")
+	end
+end
+
+local function stopSiren()
+	if siren then
+		siren:Destroy()
+		siren = nil
+	end
+end
+
 local function complete()
 	if completed then
 		return
 	end
 	completed = true
+	stopSiren()
 	workspace:SetAttribute(Attributes.ObjectiveActive, false)
 	workspace:SetAttribute(Attributes.ObjectiveCompleted, true)
 	if heartbeatConnection then
@@ -142,6 +161,7 @@ local function activate()
 		return
 	end
 	zonePart = createZone()
+	startSiren()
 	objectiveRemote:FireAllClients(Messages.ObjectiveUpdate.Started, 0)
 	heartbeatConnection = RunService.Heartbeat:Connect(onHeartbeat)
 	-- Pressure: faster spawns while active + a typed wave around the zone.
@@ -185,6 +205,7 @@ local function scheduleActivation()
 end
 
 function ObjectiveService.reset()
+	stopSiren()
 	completed = false
 	progress = 0
 	timeSinceSync = 0

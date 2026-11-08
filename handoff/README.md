@@ -33,6 +33,16 @@ Read in this order:
 
 ## Current state (verified 2026-11-08 in a live playtest)
 
+- 2026-11-08: **Sound pass** (`assets/audio/README.md` banks, tone rules, sound profiles).
+  40 new clips in five banks, all uploaded (`assets/audio/ASSET_IDS.md`): player gear
+  (reload, roll, vault, knockdown, downed, revive, breach, dash, dry fire, low-health
+  breathing), call-ins (throw, Tripline, Anvil, Pen Coil, Magpie hover, flare, pallet), the
+  Warden's own bank (handset tell, roar, steps, swing, impacts, Pound, plates, canister,
+  death), radio / UI (squelch on Control lines, objective complete, card pick, KIA, click)
+  and ambience (city + wind beds, the Gate siren through the hold, the Lantern rotor).
+  `WorldSounds.at / on / loopOn / global`, `SoundFX.ui / loop`. Verified in a playtest by
+  clip offset (no audio capture): every hook fires the right clip. Owner decision: every
+  boss gets its own bank, every speaker a sound profile (`generate.py PROFILES`).
 - 2026-11-08: **Delta visual + traversal pass** (`docs/LEVELS.md` A12b second pass,
   `docs/STYLES.md` §7 sky, `assets/3d/README.md` props.py). Brighter sky (ClockTime 16.9,
   thinner haze, ColorCorrection + Bloom on Neon only), skyline lit windows / crowns /
@@ -212,7 +222,7 @@ Read in this order:
   (branch `foundation`, plan in `docs/superpowers/plans/`). F1-F5 done; F6-F11 wait
   for the feature that needs each (`docs/ARCHITECTURE.md`).
 - **The Warden shipped 2026-11-07** (`docs/sprints/SPRINT_19_WARDEN.md` > Open work):
-  handset hiss + squelch tell clip and his own vocals (audio pipeline), Gate dressing
+  (his handset tell and own bank shipped 2026-11-08: listen in a real fight), Gate dressing
   (chain, spray, MP roster) and the insert / wipe radio lines, a 4-player phone pass on
   phase 2. First real fight on this build: 100-120 s is the target; retune
   `Config.Index.Warden` plate health if it drags. Art-director later pass on the v2

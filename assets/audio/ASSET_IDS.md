@@ -13,3 +13,8 @@ built-in `rbxasset://` fallback per sound until the id loads.
 | bank `runner` | 134864043657246 | 2026-11-07 | `SoundBanks.IDS` (`EnemyService` → `WorldSounds`) |
 | bank `brute` | 96804079589453 | 2026-11-07 | `SoundBanks.IDS` (`EnemyService` → `WorldSounds`) |
 | bank `hocker` | 82465252830201 | 2026-11-07 | `SoundBanks.IDS` (`EnemyService` → `WorldSounds`) |
+| bank `player_gear` | 77278441018905 | 2026-11-08 | `SoundBanks.IDS` (reload, roll, vault, knockdown, downed, revive, breach, dash, dry fire, low health) |
+| bank `callins` | 130397302139113 | 2026-11-08 | `SoundBanks.IDS` (pallet, flare, throw, Tripline, Anvil, Pen Coil, Magpie) |
+| bank `warden` | 140427300002576 | 2026-11-08 | `SoundBanks.IDS` (`IndexService`, his death through `EnemyService`) |
+| bank `ui_radio` | 130255970374501 | 2026-11-08 | `SoundBanks.IDS` (radio squelch, objective complete, card pick, KIA, click) |
+| bank `ambience` | 127893501463408 | 2026-11-08 | `SoundBanks.IDS` (Lantern rotor, city and wind beds, the Gate siren) |

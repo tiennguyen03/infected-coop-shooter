@@ -17,6 +17,7 @@ local EnemyService = require(script.Parent.EnemyService)
 local PauseService = require(script.Parent.PauseService)
 local Squad = require(script.Parent.Squad)
 local Lifecycle = require(script.Parent.Lifecycle)
+local WorldSounds = require(script.Parent.WorldSounds)
 
 local ExtractionService = {}
 
@@ -81,6 +82,11 @@ local function complete()
 		zonePart = nil
 	end
 
+	WorldSounds.at(
+		Config.Extraction.ZonePosition + Vector3.new(0, 20, 0),
+		"ambience",
+		"lantern_rotor"
+	)
 	extractionRemote:FireAllClients(
 		Messages.ExtractionUpdate.Complete,
 		Config.Extraction.HoldDuration
@@ -140,6 +146,11 @@ function ExtractionService.start()
 	timeSinceSync = 0
 	workspace:SetAttribute(Attributes.ExtractionActive, true)
 	zonePart = createZone()
+	WorldSounds.at(
+		Config.Extraction.ZonePosition + Vector3.new(0, 40, 0),
+		"ambience",
+		"lantern_rotor"
+	)
 	extractionRemote:FireAllClients(Messages.ExtractionUpdate.Available, 0)
 
 	for typeName, count in Config.Extraction.PressureWave :: { [string]: number } do

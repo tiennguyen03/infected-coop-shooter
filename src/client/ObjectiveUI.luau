@@ -11,6 +11,7 @@ local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Co
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
 local HudTheme = require(script.Parent.HudTheme)
 local MissionLine = require(script.Parent.MissionLine)
+local SoundFX = require(script.Parent.SoundFX)
 
 local ObjectiveUI = {}
 
@@ -49,6 +50,7 @@ local function onObjectiveUpdate(
 		end
 		active = false
 		doneToken += 1
+		SoundFX.ui("ui_radio", "objective_complete")
 		local token = doneToken
 		MissionLine.set(OWNER, `AREA {HudTheme.tint("SECURED", C.Yellow)}`, "", nil)
 		task.delay(DONE_SECONDS, function()

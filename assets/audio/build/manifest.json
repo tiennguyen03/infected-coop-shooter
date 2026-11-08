@@ -19,146 +19,6 @@
     "seconds": 0.9,
     "seed": 22
   },
-  "infected_groan": {
-    "prompt": "zombie groan, low guttural rasping voice, menacing, close",
-    "seconds": 2.0,
-    "seed": 31
-  },
-  "infected_groan_alt": {
-    "prompt": "zombie moan, hoarse wet growl, mid distance",
-    "seconds": 2.0,
-    "seed": 32
-  },
-  "infected_death": {
-    "prompt": "zombie death cry, choked gurgling scream cut short, close",
-    "seconds": 1.6,
-    "seed": 33
-  },
-  "runner_shriek": {
-    "prompt": "fast zombie shriek, high raspy screech, aggressive, close",
-    "seconds": 1.4,
-    "seed": 34
-  },
-  "brute_roar": {
-    "prompt": "huge monster roar, deep chest rumble, long, close, heavy",
-    "seconds": 2.5,
-    "seed": 35
-  },
-  "brute_death": {
-    "prompt": "huge monster dying groan collapsing to the ground, deep, heavy thud at the end",
-    "seconds": 2.5,
-    "seed": 36
-  },
-  "rat_squeak": {
-    "prompt": "rat squeak, small animal, quick, close",
-    "seconds": 0.6,
-    "seed": 41
-  },
-  "rat_bite": {
-    "prompt": "small animal bite and scratch, quick scrabble on skin, close",
-    "seconds": 0.7,
-    "seed": 42
-  },
-  "xp_pickup": {
-    "prompt": "soft digital pickup blip, short rising tone, clean, game ui",
-    "seconds": 0.5,
-    "seed": 51
-  },
-  "level_up": {
-    "prompt": "triumphant short military radio sting, two-note brass hit with a crisp snare, clean",
-    "seconds": 1.5,
-    "seed": 52
-  },
-  "item_pick": {
-    "prompt": "solid metallic click confirm, tactical equipment latch, short, clean",
-    "seconds": 0.6,
-    "seed": 53
-  },
-  "crate_land": {
-    "prompt": "wooden ammo crate dropped on concrete, heavy wood thud with rattle of metal inside",
-    "seconds": 1.2,
-    "seed": 61
-  },
-  "crate_open": {
-    "prompt": "wooden crate lid opening with metal latch and ammunition clinking",
-    "seconds": 1.2,
-    "seed": 62
-  },
-  "mine_arm": {
-    "prompt": "electronic device arming beep, two quick high beeps, small speaker",
-    "seconds": 0.8,
-    "seed": 63
-  },
-  "mine_blast": {
-    "prompt": "landmine explosion, sharp blast with dirt debris, outdoor, close",
-    "seconds": 2.0,
-    "seed": 64
-  },
-  "drone_hover": {
-    "prompt": "small quadcopter drone hovering, steady motor hum, seamless loop, mid distance",
-    "seconds": 4.0,
-    "seed": 65
-  },
-  "drone_shot": {
-    "prompt": "small energy pistol shot, quick electric zap, clean",
-    "seconds": 0.7,
-    "seed": 66
-  },
-  "airstrike_whistle": {
-    "prompt": "falling bomb whistle descending in pitch, outdoor, ominous",
-    "seconds": 2.2,
-    "seed": 67
-  },
-  "airstrike_blast": {
-    "prompt": "large aerial bomb explosion with long rumbling tail, outdoor, distant and heavy",
-    "seconds": 3.5,
-    "seed": 68
-  },
-  "fire_loop": {
-    "prompt": "ground fire burning, crackling flames, seamless loop, close",
-    "seconds": 4.0,
-    "seed": 69
-  },
-  "shock_zap": {
-    "prompt": "electric arc discharge, crackling zap, short, close",
-    "seconds": 0.8,
-    "seed": 70
-  },
-  "dash": {
-    "prompt": "quick whoosh of a person sprinting past, cloth and air rush, short",
-    "seconds": 0.8,
-    "seed": 81
-  },
-  "breach": {
-    "prompt": "heavy concussive shockwave thump with a bass drop, short, close",
-    "seconds": 1.2,
-    "seed": 82
-  },
-  "player_hurt": {
-    "prompt": "man grunting in pain from a hit, short, close",
-    "seconds": 0.8,
-    "seed": 91
-  },
-  "player_down": {
-    "prompt": "man collapsing to the ground with a pained groan, gear clatter",
-    "seconds": 1.6,
-    "seed": 92
-  },
-  "objective_tick": {
-    "prompt": "short radio beep confirm, military comms, clean",
-    "seconds": 0.5,
-    "seed": 93
-  },
-  "objective_complete": {
-    "prompt": "military radio confirmation sting, static burst then a clean two-tone chime",
-    "seconds": 1.5,
-    "seed": 94
-  },
-  "extraction_horn": {
-    "prompt": "distant helicopter approaching with rotor wash, outdoor, long",
-    "seconds": 5.0,
-    "seed": 95
-  },
   "step_hard_1": {
     "prompt": "single footstep of a heavy military boot on concrete, close, dry, very short",
     "seconds": 0.5,
@@ -393,5 +253,205 @@
     "prompt": "choking liquid death rattle fading, body falling",
     "seconds": 1.6,
     "seed": 239
+  },
+  "reload_1": {
+    "prompt": "rifle magazine released and dropped, fresh magazine slapped in, charging handle racked, close, outdoor",
+    "seconds": 2.0,
+    "seed": 401
+  },
+  "reload_2": {
+    "prompt": "assault rifle reload, empty magazine drops, new magazine seated with a firm click, bolt released, close, outdoor",
+    "seconds": 2.0,
+    "seed": 402
+  },
+  "dry_fire_1": {
+    "prompt": "single trigger click on an empty rifle, small dry metal click, close",
+    "seconds": 0.3,
+    "seed": 403
+  },
+  "knockdown_1": {
+    "prompt": "soldier slammed onto asphalt, plate carrier and helmet clatter, breath knocked out, close",
+    "seconds": 1.0,
+    "seed": 404
+  },
+  "downed_1": {
+    "prompt": "man collapsing to the ground with a pained groan, rifle and gear clattering",
+    "seconds": 1.4,
+    "seed": 405
+  },
+  "revive_1": {
+    "prompt": "tourniquet strap ratcheted tight, velcro rip, man exhaling hard, close",
+    "seconds": 1.5,
+    "seed": 406
+  },
+  "roll_1": {
+    "prompt": "soldier diving into a roll on concrete, body thud, webbing and magazines rattling",
+    "seconds": 0.8,
+    "seed": 407
+  },
+  "roll_2": {
+    "prompt": "soldier sliding across gravel and concrete, gear scraping, body thud, close",
+    "seconds": 0.8,
+    "seed": 408
+  },
+  "breach_1": {
+    "prompt": "breaching charge detonation, sharp close blast, door splinters and dust",
+    "seconds": 1.5,
+    "seed": 409
+  },
+  "low_health_1": {
+    "prompt": "man breathing hard and ragged through clenched teeth, muffled, close",
+    "seconds": 3.0,
+    "seed": 410
+  },
+  "vault_1": {
+    "prompt": "soldier vaulting a concrete barrier, hands slap, gear rattles, boots land",
+    "seconds": 0.8,
+    "seed": 411
+  },
+  "dash_1": {
+    "prompt": "short burst of sprinting, boots pounding, kit rattling, cloth rush",
+    "seconds": 0.7,
+    "seed": 412
+  },
+  "pallet_land_1": {
+    "prompt": "heavy supply pallet dropped from height onto concrete, wood crash, metal crates rattling, straps whipping",
+    "seconds": 2.0,
+    "seed": 421
+  },
+  "flare_burn_1": {
+    "prompt": "road flare burning, sputtering fizz and steady hiss, close",
+    "seconds": 3.0,
+    "seed": 422
+  },
+  "callin_throw_1": {
+    "prompt": "small metal canister thrown, lands with a clank and rolls on concrete",
+    "seconds": 0.8,
+    "seed": 423
+  },
+  "tripline_arm_1": {
+    "prompt": "mechanical spring latch snapping shut with one quiet electronic chirp, small device, close",
+    "seconds": 0.4,
+    "seed": 424
+  },
+  "tripline_blast_1": {
+    "prompt": "anti-personnel mine detonation, sharp blast, dirt and shrapnel, outdoor, close",
+    "seconds": 1.5,
+    "seed": 425
+  },
+  "anvil_incoming_1": {
+    "prompt": "incoming artillery shell tearing overhead, short descending rush, outdoor",
+    "seconds": 1.0,
+    "seed": 426
+  },
+  "anvil_blast_1": {
+    "prompt": "artillery shell impact, huge blast with debris and rolling rumble, outdoor, medium distance",
+    "seconds": 2.5,
+    "seed": 427
+  },
+  "pen_coil_1": {
+    "prompt": "high-voltage capacitor discharge, heavy electric crack and buzzing arc, close",
+    "seconds": 1.0,
+    "seed": 428
+  },
+  "magpie_hover_1": {
+    "prompt": "small quadcopter hovering, steady motor whine, mid distance",
+    "seconds": 3.0,
+    "seed": 429
+  },
+  "warden_handset_1": {
+    "prompt": "radio handset keyed open, squelch then crackling carrier hiss, garbled, small speaker, close, one huge man in police riot armour with a radio harness, heavy, low, close, outdoor on asphalt",
+    "seconds": 1.2,
+    "seed": 441
+  },
+  "warden_handset_2": {
+    "prompt": "police radio handset clicking on, burst of static and broken carrier noise, small speaker, close, one huge man in police riot armour with a radio harness, heavy, low, close, outdoor on asphalt",
+    "seconds": 1.2,
+    "seed": 442
+  },
+  "warden_impact_1": {
+    "prompt": "heavy armoured fists slammed into asphalt, concrete cracking, grit and debris, close, one huge man in police riot armour with a radio harness, heavy, low, close, outdoor on asphalt",
+    "seconds": 1.2,
+    "seed": 443
+  },
+  "warden_pound_1": {
+    "prompt": "massive double impact into a road, deep concrete crack and rumble, debris raining, close, one huge man in police riot armour with a radio harness, heavy, low, close, outdoor on asphalt",
+    "seconds": 2.0,
+    "seed": 444
+  },
+  "warden_swing_1": {
+    "prompt": "heavy riot shield swung hard, polycarbonate whoosh then a dull body thud, close, one huge man in police riot armour with a radio harness, heavy, low, close, outdoor on asphalt",
+    "seconds": 0.8,
+    "seed": 445
+  },
+  "warden_step_1": {
+    "prompt": "very heavy armoured footstep on asphalt, metal plates rattling, close, one huge man in police riot armour with a radio harness, heavy, low, close, outdoor on asphalt",
+    "seconds": 0.6,
+    "seed": 446
+  },
+  "warden_plate_1": {
+    "prompt": "thick armour plate torn away, plastic and bone cracking, heavy clatter on road, one huge man in police riot armour with a radio harness, heavy, low, close, outdoor on asphalt",
+    "seconds": 1.0,
+    "seed": 447
+  },
+  "warden_roar_1": {
+    "prompt": "huge hoarse man bellowing, ragged wet throat, close, one huge man in police riot armour with a radio harness, heavy, low, close, outdoor on asphalt",
+    "seconds": 2.0,
+    "seed": 448
+  },
+  "warden_canister_1": {
+    "prompt": "tear gas canister popping and jetting gas, loud hiss, outdoor, close, one huge man in police riot armour with a radio harness, heavy, low, close, outdoor on asphalt",
+    "seconds": 2.0,
+    "seed": 449
+  },
+  "warden_death_1": {
+    "prompt": "huge armoured body collapsing onto asphalt, plates clattering, last wet breath, radio hiss cutting off, one huge man in police riot armour with a radio harness, heavy, low, close, outdoor on asphalt",
+    "seconds": 2.5,
+    "seed": 450
+  },
+  "radio_in_1": {
+    "prompt": "military field radio squelch break, short burst of static, small speaker, close",
+    "seconds": 0.6,
+    "seed": 461
+  },
+  "objective_complete_1": {
+    "prompt": "two short radio squelch clicks, then clean static, small speaker",
+    "seconds": 1.0,
+    "seed": 462
+  },
+  "card_pick_1": {
+    "prompt": "magazines pushed into a pouch, velcro flap closed, metal clack, close",
+    "seconds": 0.7,
+    "seed": 463
+  },
+  "kia_1": {
+    "prompt": "radio carrier hiss dropping to dead air, small speaker",
+    "seconds": 1.5,
+    "seed": 464
+  },
+  "ui_click_1": {
+    "prompt": "rubber radio keypad button press, small dry click, close",
+    "seconds": 0.2,
+    "seed": 465
+  },
+  "lantern_rotor_1": {
+    "prompt": "military helicopter approaching overhead, heavy rotor thump and wash, outdoor",
+    "seconds": 6.0,
+    "seed": 481
+  },
+  "amb_city_1": {
+    "prompt": "distant city burning at night, low fire roar, faraway gunfire and collapsing debris",
+    "seconds": 6.0,
+    "seed": 482
+  },
+  "amb_wind_1": {
+    "prompt": "night wind through a chain-link fence, metal rattle, outdoor",
+    "seconds": 6.0,
+    "seed": 483
+  },
+  "amb_siren_1": {
+    "prompt": "civil defence siren wailing, slow rise and fall, distant, outdoor",
+    "seconds": 6.0,
+    "seed": 484
   }
 }

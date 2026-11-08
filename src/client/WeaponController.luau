@@ -147,6 +147,7 @@ local function tryFire()
 	if ((player:GetAttribute(Attributes.Mag) :: number?) or 0) <= 0 then
 		-- Dry: ask for a reload (once per half second while the trigger is held).
 		if now - lastReloadRequest >= RELOAD_REQUEST_GAP then
+			SoundFX.ui("player_gear", "dry_fire")
 			WeaponController.requestReload()
 		end
 		return

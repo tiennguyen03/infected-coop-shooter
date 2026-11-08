@@ -146,9 +146,12 @@ local function tell(kind: string)
 	bossRemote:FireAllClients(Messages.BossUpdate.Tell, kind)
 	local head = current.handle.model:FindFirstChild("Head") :: BasePart?
 	if head then
-		-- The handset's carrier hiss is open work (needs the audio pipeline); the Brute's
-		-- bank stands in so the tell is heard, not only read.
-		WorldSounds.voice(head, "brute", "brute_attack")
+		-- The tell: his riot handset keys open (his own bank, docs/PROGRESSION.md "Boss
+		-- sound"); the Pound gets the bellow on top.
+		WorldSounds.on(head, "warden", "warden_handset", "Handset")
+		if kind == "pound" then
+			WorldSounds.voice(head, "warden", "warden_roar")
+		end
 	end
 end
 
@@ -224,6 +227,8 @@ local function flat(v: Vector3): Vector3
 end
 
 -- The idle: on when the body is not moving, off the moment it is (the walk shows again).
+local nextStepAt = 0
+
 local function updateIdle(current: Fight)
 	local idle = current.tracks.idle
 	if not idle then
@@ -234,6 +239,12 @@ local function updateIdle(current: Fight)
 	local root = current.handle.root
 	local moving = current.charge ~= nil
 		or flat(root.AssemblyLinearVelocity).Magnitude > cfg().IdleSpeed
+	local now = os.clock()
+	if moving and now >= nextStepAt then
+		local interval = Config.Audio.WardenStepInterval
+		nextStepAt = now + (if current.charge then interval * 0.4 else interval)
+		WorldSounds.at(root.Position - Vector3.new(0, 3, 0), "warden", "warden_step")
+	end
 	if moving and idle.IsPlaying then
 		idle:Stop(0.2)
 	elseif not moving and not idle.IsPlaying then
@@ -373,6 +384,7 @@ local function breakPlate(current: Fight, plate: Plate)
 	end
 	plate.broken = true
 	current.platesBroken += 1
+	WorldSounds.at(plate.part.Position, "warden", "warden_plate")
 	local settings = cfg()
 	local part = plate.part
 	part:SetAttribute(Attributes.PlateHealth, nil)
@@ -627,6 +639,7 @@ end
 local function resolveArc(current: Fight, kind: "bash" | "sweep")
 	local settings: any = if kind == "bash" then cfg().Bash else cfg().Sweep
 	local root = current.handle.root
+	WorldSounds.at(root.Position, "warden", "warden_swing")
 	local forward = flat(root.CFrame.LookVector)
 	local cosHalfArc = math.cos(math.rad(settings.ArcDegrees / 2))
 	for _, member in Squad.living() do
@@ -674,6 +687,7 @@ local function resolveSlam(current: Fight)
 			EnemyProjectileService.damagePlayer(humanoid, settings.Damage, "melee")
 		end
 	end
+	WorldSounds.at(root.Position + forward * 6, "warden", "warden_impact")
 	landed(current, "slam", settings)
 end
 
@@ -684,6 +698,11 @@ local function resolveDisc(current: Fight, kind: "pound" | "stomp")
 	local reach = cfg().ScaleReach
 	local root = current.handle.root
 	local hitHeight = if kind == "pound" then settings.HitHeight else cfg().PerchHeight
+	WorldSounds.at(
+		root.Position,
+		"warden",
+		if kind == "pound" then "warden_pound" else "warden_impact"
+	)
 	for _, member in Squad.living() do
 		local humanoid, targetRoot = member.humanoid, member.root
 		if not humanoid or not targetRoot then
@@ -751,6 +770,7 @@ local function endCharge(current: Fight, wall: boolean)
 	local now = os.clock()
 	if wall then
 		local stun = cfg().Charge.WallStun
+		WorldSounds.at(root.Position, "warden", "warden_impact")
 		current.action = "stun"
 		current.busyUntil = now + stun
 		EnemyService.stagger(current.handle.humanoid, stun)
@@ -810,6 +830,7 @@ local function resolveCanister(current: Fight)
 	local root = current.handle.root
 	if target and target.root then
 		local origin = root.Position + Vector3.new(0, 2, 0) + flat(root.CFrame.LookVector) * 2
+		WorldSounds.at(origin, "warden", "warden_canister")
 		EnemyProjectileService.fire(
 			origin,
 			target.root.Position,
@@ -836,6 +857,7 @@ local function startGuard(current: Fight)
 	current.busyUntil = now + settings.Duration
 	current.cooldowns.guard = now + settings.Cooldown
 	play(current, "guard", 0.2)
+	WorldSounds.at(current.handle.root.Position, "warden", "warden_swing", 0.6)
 	tell("guard")
 end
 

@@ -13,6 +13,7 @@ local EnemyService = require(script.Parent.EnemyService)
 local DamageService = require(script.Parent.DamageService)
 local Squad = require(script.Parent.Squad)
 local Lifecycle = require(script.Parent.Lifecycle)
+local WorldSounds = require(script.Parent.WorldSounds)
 
 local ENEMY_TAG = "Enemy"
 
@@ -29,6 +30,7 @@ function ShockCoilService.pulse(player: Player, revive: boolean): boolean
 		return false
 	end
 	local cfg = Config.CallIns.PenCoil
+	WorldSounds.at(root.Position, "callins", "pen_coil")
 
 	local ring = Instance.new("Part")
 	ring.Name = "CoilPulse"
