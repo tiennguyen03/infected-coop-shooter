@@ -25,3 +25,4 @@ src/shared/AnimationClips/*.json
 # Python bytecode from the Blender build scripts
 __pycache__/
 .superpowers/
+.claude/worktrees/
