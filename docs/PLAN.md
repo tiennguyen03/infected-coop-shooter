@@ -44,6 +44,10 @@ serves none of them it is cut; if two conflict, the earlier one wins.
 
 # MVP Core Loop
 
+> Superseded 2026-11-07 by the spine in [PROGRESSION.md](PROGRESSION.md): power comes from the
+> loadout, and there is no XP or level. The sprint plan and success criteria below are the
+> original MVP and still say "XP" and "leveling".
+
 Player spawns into arena. Player kills enemies. Enemies grant XP. Player levels up.
 Player chooses 1 of 3 upgrades. Enemies continue spawning. Enemy difficulty scales over time.
 Player survives as long as possible. Game ends on death. Player can start another run.

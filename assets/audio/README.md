@@ -47,7 +47,7 @@ to `src/shared/SoundBankData.luau` (generated; never edit it). One upload per ba
 | bank | clips (group = name without `_<n>`) | played by |
 |---|---|---|
 | `player_steps` | `step_hard_1..4`, `step_soft_1..3` | `client/FootstepController` (surface from `FloorMaterial`) |
-| `player_hits` | `bodyshot_1..3`, `headshot_1..2`, `hurt_1..2` | `DamageNumberUI` at the hit point; `EnemyProjectileService.damagePlayer` on the head |
+| `player_hits` | `bodyshot_1..3`, `headshot_1..2`, `hurt_1..2` | `HitMarkerUI` at the hit point; `EnemyProjectileService.damagePlayer` on the head |
 | `walker`, `runner`, `brute`, `hocker` | `<form>_idle`, `_attack`, `_hurt`, `_death` (+ `hocker_windup`, `hocker_spit`) | `EnemyService` → `server/WorldSounds` on the head, 3D, replicated |
 
 `src/shared/SoundBanks.luau` holds the bank ids and the playback: `pick(bank, group)` draws

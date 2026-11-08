@@ -8,7 +8,7 @@ built-in `rbxasset://` fallback per sound until the id loads.
 |---|---|---|---|
 | rifle_shot | 134062568029221 | 2026-11-06 | `SoundFX` `shoot` |
 | bank `player_steps` | 108017161918767 | 2026-11-07 | `SoundBanks.IDS` (`FootstepController`) |
-| bank `player_hits` | 125307477830610 | 2026-11-07 | `SoundBanks.IDS` (`DamageNumberUI`, `EnemyProjectileService`) |
+| bank `player_hits` | 125307477830610 | 2026-11-07 | `SoundBanks.IDS` (`HitMarkerUI`, `EnemyProjectileService`) |
 | bank `walker` | 91556910469203 | 2026-11-07 | `SoundBanks.IDS` (`EnemyService` → `WorldSounds`) |
 | bank `runner` | 134864043657246 | 2026-11-07 | `SoundBanks.IDS` (`EnemyService` → `WorldSounds`) |
 | bank `brute` | 96804079589453 | 2026-11-07 | `SoundBanks.IDS` (`EnemyService` → `WorldSounds`) |

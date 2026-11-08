@@ -26,8 +26,10 @@ single-player; every system is written for four.
 
 Controls: WASD move (the body has weight: it speeds up and slows down), **Shift** sprint,
 **LeftControl** crouch, **C** prone, **Space** vault or climb cover, **Shift + LeftControl**
-roll, **Shift + C** slide, **hold left-click** to shoot (over-the-shoulder aim, mouse wheel
-zooms), **Q** dash, **E** breach, **3** Resupply flare, **hold F** revive a downed squadmate.
+roll, **Shift + C** slide, **hold left-click** to shoot, **right-click** aim down sights
+(over-the-shoulder camera, mouse wheel zooms), **R** reload, **1** / **2** call-ins, **Q** dash,
+**hold E** aim the breach charge and release to throw, **3** Resupply flare, **hold F** revive
+a downed squadmate. **F1** opens the dev panel (Studio and the creator only).
 
 The loop: you drop with a squad of four; in solo, three bot squadmates (Cole, Reyes, Cross)
 fill it. The Infected hunt you and the pressure climbs on a clock you can read. Kills earn
@@ -42,4 +44,8 @@ for the next one.
 stylua src                  # format
 selene src                  # lint
 rojo build -o build.rbxlx   # validate project
+lune run tests/run          # data and cross-file reference tests
 ```
+
+CI runs all of these plus the luau-lsp type check on every push
+(`.github/workflows/checks.yml`).

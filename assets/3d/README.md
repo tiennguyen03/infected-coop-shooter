@@ -7,7 +7,7 @@ at or hand-tweak anything. Collections inside it:
 |---|---|
 | `Props` | world objects dropped by services: ammo crate, repulsor mine, drone, drone beacon, plague rat; set-dressing props (2026-11-07): cot, generator, light tower, fuel bladder, pallet, body bag, dumpster, plank, civilian car, portable toilet, chainlink panel, concertina |
 | `Weapons` | held tools (rifle) |
-| `Pickups` | XP orb |
+| `Pickups` | XP orb (unused since Sprint 18) |
 | `Environment` | Stage 1 set dressing, all built to the 5-stud character (`CHAR_H`, `DOOR_H`, `STOREY`, `COVER_H`, `RUIN_*` constants in the script): barrier, sandbags, tower, ruin, containers, humvee wreck, T-wall, hesco (+ tall), comm tower, tent, checkpoint, dead tree, lamp post, transit bus, crib stack, deck plate |
 | `Chosen` | player limb sets `pc_<class>_<limb>` for assault (Weller), k9 (Cole), epi (Reyes), recon (Cross), engineer (Kane) (`PC_CLASSES`, `_pc_limb`, the shared `_pc_carrier`); only assault is uploaded and worn in game. Also the skinned Weller `pc_assault_skinned` (one mesh + `pc_assault_skinned_rig` armature, `RIGGED`) and his rigid gear `pc_assault_gear_helmet` / `pc_assault_gear_carrier` |
 | `Infected` | enemy limb sets: `inf_<walker|runner|brute|hocker>_<limb>`, 9 limbs per type (left/right share), one builder function per type (`walker_limb`...) from the sheets in `docs/CHARACTERS.md` |
