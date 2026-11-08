@@ -456,7 +456,8 @@ Each block's arena face carries a few lit windows (Neon strips on a 10-stud stor
 `floor(h/45)+1` per block, seeded per block: 70% sodium, 20% fluorescent, fire high up on
 the burning ones); blocks 100+ tall get a setback crown and a water tank, the three tallest
 an antenna with a static red Neon tip (~100 parts, no lights, CanQuery off). A shared
-window-grid Texture is wired (`WINDOW_TEXTURE`) but not uploaded yet;
+64 px window-grid Texture (`assets/3d/build/city_windows.py`, 20 studs per tile, image
+`75759991359237`) covers the three faces that can be seen;
 `SkyService.burn(part)` puts the same fire + smoke on a dressing piece (`burning = true`
 in `ArenaService.DRESSING`). Smoke is the stock `smoke_main` particle at rate 5,
 14-22 s life, a light westerly drift; fire is `fire_main`, with a PointLight (Range 36,

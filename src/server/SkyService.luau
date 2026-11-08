@@ -124,10 +124,10 @@ function SkyService.burn(piece: BasePart)
 end
 
 -- Skyline detail (docs/STYLES.md §7, art direction 2026-11-08): the face toward the arena
--- (local -X) carries a window-grid Texture (WINDOW_TEXTURE, "" = none yet) and a few lit
+-- (local -X) carries a window-grid Texture (WINDOW_TEXTURE, "" = none) and a few lit
 -- windows as Neon strips; tall blocks get a setback crown and a tank or an antenna (the
 -- three tallest a red tip). Seeded per block, so the city is the same every run.
-local WINDOW_TEXTURE = ""
+local WINDOW_TEXTURE = "rbxassetid://75759991359237" -- assets/3d/build/city_windows.py
 local WINDOW_CELL = 10 -- studs per window (one storey)
 local SODIUM = Color3.fromRGB(255, 170, 90)
 local FLUORESCENT = Color3.fromRGB(210, 220, 214)

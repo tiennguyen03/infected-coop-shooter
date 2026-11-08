@@ -202,8 +202,7 @@ Read in this order:
 
 - **Delta traversal: owner calls + playtest** (`docs/LEVELS.md` A12b second pass): concertina
   no-vault, generator to 4.8, light-tower collision as two boxes; walk the traversal
-  checklist (vault a sedan side-on, crawl under the cargo truck, stand in a pickup bed). The
-  skyline window Texture (`SkyService.WINDOW_TEXTURE`) is not generated/uploaded yet.
+  checklist (vault a sedan side-on, crawl under the cargo truck, stand in a pickup bed).
 - **Foundation backlog (2026-11-08 code review, `docs/ARCHITECTURE.md`).** Ranked concerns
   and items F1-F11: renames, lifecycle hooks, shared attribute/message constants, the open
   co-op debt (#3/#5/#9), CI + unit tests, then stage data split before objective pools,

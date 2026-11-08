@@ -10,6 +10,9 @@ Palette texture (v5, 2026-11-08, cells 57-60 `glass`, `glass_l`, `paint_maroon`,
 `TextureID`). v4 (skin v2) was `80401218749683` → `115366221483568`; v3 was `120331040807954` → `110782102234723`, v2
 `88256641133314`, v1 `87519201884536`.
 
+Distant city window grid (2026-11-08, `build/city_windows.py`): decal `115304423103431` →
+image **`75759991359237`** (`SkyService.WINDOW_TEXTURE`).
+
 Delta rework meshes (ruin v2, guard tower v3, tall hesco, crib stack, deck plate, 12 props)
 uploaded 2026-11-07 and wired; rows below.
 
