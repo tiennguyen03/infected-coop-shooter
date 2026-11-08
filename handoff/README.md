@@ -81,6 +81,11 @@ Read in this order:
   action change, bash timed to the windup, run while charging, roar on Riot Call, death
   clip). Verified in a playtest with the published ids: all 21 parts dressed, each clip
   seen, 60 fps.
+- 2026-11-07: **Open perimeter** (`docs/LEVELS.md` A15): the four solid walls are gone;
+  a see-through quarantine fence with wire and watchtowers stands at the edge, the ground,
+  a berm, the broken highway and the road to the city run on past it, an invisible
+  collider behind the fence stops the squad. Studio boot no longer drops the first body
+  through the world (the Baseplate stays solid 5 s).
 - 2026-11-07: **Map placement fix + Blender map view + ladder climb** (`docs/LEVELS.md`
   A12b, `assets/3d/README.md` > *The map in Blender*): `assets/3d/build/delta_map.py`
   rebuilds Delta in Blender from the `ArenaService` tables and paints any piece across a
@@ -190,10 +195,9 @@ Read in this order:
   phase 2. First real fight on this build: 100-120 s is the target; retune
   `Config.Index.Warden` plate health if it drags. Art-director later pass on the v2
   body: see the Sprint 19 doc > *v2* > open.
-- **NEXT: the open boundary (owner, 2026-11-07).** "Get rid of the sense of the map being
-  walled off and closed in." Replace the four 24-stud concrete walls with in-world edges the
-  eye sees past (level designer's plan in `docs/LEVELS.md` when it lands); the two Pens
-  hesco blocks that touch the west wall get fixed with it.
+- **Perimeter: measure on a low-end device** (`docs/LEVELS.md` A15): ~458 extra
+  instances (fence, wire, towers) measured 60 fps on the dev PC only; first cut if it costs
+  is the wire on N/E/W. A performance-reviewer pass on it is owed.
 - **Warden kit: watch for** a player knockdown in a real fight (fall + get-up clips,
   controls locked; only bots were knocked down on screen), the fight length, and the
   Sweep's shove on a laggy client.

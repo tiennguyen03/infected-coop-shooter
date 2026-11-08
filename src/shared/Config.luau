@@ -722,6 +722,11 @@ local Config = {
 		-- Invisible composite-collider Parts the dressing may place (docs/LEVELS.md A8);
 		-- ArenaService warns at boot past it.
 		ColliderBudget = 256,
+		-- The perimeter (docs/LEVELS.md A15, 2026-11-07): the solid walls are gone; an invisible
+		-- collider stands just behind the fence line, and Infected spawns are clamped inside
+		-- SpawnInset so none lands in the fence band or outside it.
+		BoundaryHeight = 80,
+		SpawnInset = 292,
 		StraddleTolerance = 0.6, -- studs of ground-height spread across a dressing footprint before boot warns (and the Blender view paints it red)
 		Kit = {
 			Storey = 9,

@@ -20,8 +20,7 @@ local SkyService = require(script.Parent.SkyService)
 local ArenaService = {}
 
 local HALF = 300 -- half-extent: arena spans -300..+300 on X/Z (600 studs)
-local WALL_HEIGHT = 24
-local WALL_THICKNESS = 3
+local BASEPLATE_GRACE = 5 -- seconds the hidden Studio baseplate stays solid at boot
 
 -- Dusty ground, asphalt roads, concrete pads: the muted "field-kit" palette (docs/STYLES.md).
 local GROUND_COLOR = Color3.fromRGB(94, 88, 76)
@@ -101,7 +100,8 @@ local HILLS: { Hill } = {
 	{ name = "NorthBluff", x = -230, z = 235, top = Vector2.new(56, 56), height = 10 }, -- Suburb
 	{ name = "DepotMound", x = 235, z = -205, top = Vector2.new(50, 50), height = 12 }, -- Depot
 	{ name = "SouthRise", x = -190, z = -235, top = Vector2.new(70, 44), height = 8 }, -- Scrapyard
-	-- The Pens' terrace runs to the west arena wall (vertical there), so the hesco ring has
+	-- The Pens' terrace runs to the west edge (vertical there, the perimeter fence and the
+	-- boundary collider close it: docs/LEVELS.md A15), so the hesco ring has
 	-- no open west side.
 	{
 		name = "ParadeTerrace",
@@ -131,6 +131,8 @@ type Dressing = {
 	shell: boolean?,
 	shadow: boolean?,
 	floor: number?, -- ground height to use instead of the raycast (a piece inside a building)
+	-- Scenery past the perimeter (A15): no collision, no queries, no shadow, no colliders.
+	decor: boolean?,
 }
 local DRESSING: { Dressing } = {
 	-- The Compound lower tier (top x 25..115, z 25..115; zone 27..73; the upper tier's
@@ -310,7 +312,7 @@ for k = 0, 73 do -- k = 74 (x 298) would stand inside the east wall
 end
 -- The Pens' hesco ring (docs/LEVELS.md A3): tall hesco (8.88: Walkers never climb it,
 -- Runners do) in north and south rows with a 20-wide mouth, an east column with a mouth,
--- the west closed by the arena wall. Infected climb the slope, meet hesco and nudge
+-- the west closed by the perimeter fence (A15). Infected climb the slope, meet hesco and nudge
 -- sideways into a mouth.
 for _, x in { -295.5, -289.6, -283, -276.4, -269.8, -263.2, -238.3, -231.7, -225.1, -218.5 } do
 	table.insert(DRESSING, { name = "env_hesco_tall", x = x, z = 146, yaw = 0 })
@@ -858,6 +860,274 @@ local function buildGantry(parent: Instance)
 	model.Parent = parent
 end
 
+-- ---------------------------------------------------------------- the perimeter
+-- docs/LEVELS.md A15 (level designer, 2026-11-07). The owner: "get rid of the sense of the
+-- map being walled off and closed in." The four 24-stud concrete walls are gone. What the
+-- squad sees at the edge is the quarantine fence (chain-link with wire on top) and its
+-- towers, and the world carries on past it: dust ground to 700 out, an earth berm on the
+-- west, the highway running on and breaking off to the east and west, the road south to the
+-- burning city with a queue of abandoned traffic, sparse ruins to the north, then fog and
+-- the DistantCity ring. What stops them is an invisible collider just behind the fence
+-- (BoundaryHeight tall; bullets, the camera and the vault/climb checks pass through it).
+-- Everything past the fence is `decor` (no collision, no queries, no shadow) and lives in
+-- the Persistent "Perimeter" model so the far fence never streams out.
+local FENCE_LINE = 299.6 -- the fence stands just inside the boundary collider (inner face 300)
+local FENCE_STEP = 12 -- one chain-link panel (12.06 wide) every 12 studs
+local HIGHWAY_GAP = { -73, -17 } -- z band on the east / west edges: the highway embankment (slopes included) runs out here
+local PERIMETER: { Dressing } = {
+	-- North: towers past the fence, the Suburb running on as shell ruins and dead trees.
+	{ name = "env_guard_tower", x = -180, z = 312, yaw = 180, decor = true },
+	{ name = "env_guard_tower", x = -60, z = 312, yaw = 180, decor = true },
+	{ name = "env_guard_tower", x = 60, z = 312, yaw = 180, decor = true },
+	{ name = "env_guard_tower", x = 180, z = 312, yaw = 180, decor = true },
+	{ name = "env_ruin_building", x = -150, z = 360, yaw = 10, shell = true, decor = true },
+	{ name = "env_ruin_building", x = 40, z = 380, yaw = 185, shell = true, decor = true },
+	{ name = "env_ruin_building", x = 200, z = 350, yaw = -15, shell = true, decor = true },
+	{ name = "env_dead_tree", x = -240, z = 340, yaw = 30, decor = true },
+	{ name = "env_dead_tree", x = -90, z = 410, yaw = 110, decor = true },
+	{ name = "env_dead_tree", x = -20, z = 345, yaw = 200, decor = true },
+	{ name = "env_dead_tree", x = 110, z = 420, yaw = 290, decor = true },
+	{ name = "env_dead_tree", x = 150, z = 335, yaw = 60, decor = true },
+	{ name = "env_dead_tree", x = 270, z = 390, yaw = 150, decor = true },
+	-- East: towers, the field, the highway running on (built below) to a broken end.
+	{ name = "env_guard_tower", x = 312, z = 180, yaw = -90, decor = true },
+	{ name = "env_guard_tower", x = 312, z = 60, yaw = -90, decor = true },
+	{ name = "env_guard_tower", x = 312, z = -150, yaw = -90, decor = true },
+	{ name = "env_container_rust", x = 360, z = 120, yaw = 35, decor = true },
+	{ name = "env_container_olive", x = 400, z = -200, yaw = -20, decor = true },
+	{ name = "env_container_rust", x = 404, z = -45, yaw = 12, floor = 0, decor = true }, -- under the broken deck
+	{ name = "env_dead_tree", x = 345, z = 250, yaw = 20, decor = true },
+	{ name = "env_dead_tree", x = 420, z = 40, yaw = 140, decor = true },
+	{ name = "env_dead_tree", x = 350, z = -110, yaw = 260, decor = true },
+	{ name = "env_dead_tree", x = 380, z = -280, yaw = 80, decor = true },
+	-- West: towers on the berm crest (top 10); the z 60 one lines up with the Lines' huts.
+	{ name = "env_guard_tower", x = -327, z = 180, yaw = 90, floor = 10, decor = true },
+	{ name = "env_guard_tower", x = -327, z = 60, yaw = 90, floor = 10, decor = true },
+	{ name = "env_guard_tower", x = -327, z = -150, yaw = 90, floor = 10, decor = true },
+	{ name = "env_container_olive", x = -404, z = -45, yaw = -12, floor = 0, decor = true },
+	-- South: the outer wire past the Gate, unlit light towers, the road to the city and the
+	-- traffic that never got through.
+	{ name = "prop_light_tower", x = -150, z = -308, yaw = 0, decor = true },
+	{ name = "prop_light_tower", x = -90, z = -308, yaw = 0, decor = true },
+	{ name = "prop_light_tower", x = 30, z = -308, yaw = 0, decor = true },
+	{ name = "prop_light_tower", x = 114, z = -308, yaw = 0, decor = true },
+	{ name = "env_bus", x = -36, z = -345, yaw = 92, decor = true },
+	{ name = "env_bus", x = -23, z = -392, yaw = 85, decor = true },
+	{ name = "env_wreck_humvee", x = -37, z = -420, yaw = 70, decor = true },
+	{ name = "env_container_olive", x = 10, z = -360, yaw = 60, decor = true },
+	{ name = "env_container_rust", x = -80, z = -410, yaw = -30, decor = true },
+	{ name = "env_dead_tree", x = -200, z = -350, yaw = 45, decor = true },
+	{ name = "env_dead_tree", x = 160, z = -380, yaw = 170, decor = true },
+	-- Corners
+	{ name = "env_guard_tower", x = 312, z = 312, yaw = 225, decor = true },
+	{ name = "env_guard_tower", x = -312, z = 312, yaw = 135, floor = 10, decor = true },
+	{ name = "env_guard_tower", x = 312, z = -312, yaw = -45, decor = true },
+	{ name = "env_guard_tower", x = -312, z = -312, yaw = 45, floor = 10, decor = true },
+	-- The Gate's T-wall line carries on outside the fence (decor).
+	{ name = "env_twall", x = -306, z = -274, yaw = 0, decor = true },
+	{ name = "env_twall", x = -314, z = -274, yaw = 0, decor = true },
+	{ name = "env_twall", x = -322, z = -274, yaw = 0, decor = true },
+	{ name = "env_twall", x = 306, z = -274, yaw = 0, decor = true },
+	{ name = "env_twall", x = 314, z = -274, yaw = 0, decor = true },
+	{ name = "env_twall", x = 322, z = -274, yaw = 0, decor = true },
+	-- Roadblocks where the highway deck meets the boundary (inside: real cover).
+	{ name = "env_barrier_jersey", x = 296, z = -51, yaw = 90 },
+	{ name = "env_barrier_jersey", x = 296, z = -45, yaw = 90 },
+	{ name = "env_barrier_jersey", x = 296, z = -39, yaw = 90 },
+	{ name = "env_barrier_jersey", x = -296, z = -51, yaw = 90 },
+	{ name = "env_barrier_jersey", x = -296, z = -45, yaw = 90 },
+	{ name = "env_barrier_jersey", x = -296, z = -39, yaw = 90 },
+	{ name = "prop_concertina", x = 297, z = -48, yaw = 90, lift = 2.75 },
+	{ name = "prop_concertina", x = -297, z = -48, yaw = 90, lift = 2.75 },
+}
+-- The fence: a chain-link panel every FENCE_STEP along each edge (yaw 0 north / south, 90
+-- east / west) with a coil of wire on top, skipping the highway deck's ends (the roadblocks
+-- close those) . Raycast-placed, so it rides the Pens terrace (6) on the west.
+-- The fence line: one entry per panel. `placeFence` stands each panel on the lowest ground
+-- under its two ends (its posts sink into a slope rather than one end floating) and puts a
+-- coil of wire on top.
+type FencePanel = { x: number, z: number, yaw: number }
+local FENCE: { FencePanel } = {}
+for k = 0, 49 do
+	local along = -294 + FENCE_STEP * k
+	for _, edge in
+		{
+			{ x = along, z = FENCE_LINE, yaw = 0 },
+			{ x = along, z = -FENCE_LINE, yaw = 0 },
+			{ x = FENCE_LINE, z = along, yaw = 90 },
+			{ x = -FENCE_LINE, z = along, yaw = 90 },
+		}
+	do
+		local onSide = edge.yaw == 90
+		if not (onSide and along > HIGHWAY_GAP[1] and along < HIGHWAY_GAP[2]) then
+			table.insert(FENCE, edge)
+		end
+	end
+end
+
+local DECOR_DUST = Color3.fromRGB(94, 88, 76)
+
+-- A plain Part with no collision, no queries and no shadow: scenery past the fence.
+local function decorPart(
+	parent: Instance,
+	name: string,
+	size: Vector3,
+	cframe: CFrame,
+	color: Color3,
+	class: string?
+)
+	local part = makePart(name, size, cframe, color, class)
+	part.CanCollide = false
+	part.CanQuery = false
+	part.CanTouch = false
+	part.CastShadow = false
+	part.Parent = parent
+	return part
+end
+
+local function buildPerimeter(arena: Instance)
+	-- The scenery is its own Persistent model beside TestArena, not inside it: it is a few
+	-- hundred meshes placed after boot, and inside TestArena it held back the floor's
+	-- replication, so the first character spawned with no ground under it and fell.
+	local model = Instance.new("Model")
+	model.Name = "Perimeter"
+	model.ModelStreamingMode = Enum.ModelStreamingMode.Persistent
+	-- What stops the squad: invisible walls just behind the fence (inner face at 300).
+	local height = Config.Arena.BoundaryHeight
+	for _, side in
+		{
+			{
+				name = "BoundaryPosX",
+				size = Vector3.new(2, height, 640),
+				at = Vector3.new(HALF + 1, height / 2, 0),
+			},
+			{
+				name = "BoundaryNegX",
+				size = Vector3.new(2, height, 640),
+				at = Vector3.new(-HALF - 1, height / 2, 0),
+			},
+			{
+				name = "BoundaryPosZ",
+				size = Vector3.new(640, height, 2),
+				at = Vector3.new(0, height / 2, HALF + 1),
+			},
+			{
+				name = "BoundaryNegZ",
+				size = Vector3.new(640, height, 2),
+				at = Vector3.new(0, height / 2, -HALF - 1),
+			},
+		}
+	do
+		local wall = makePart(side.name, side.size, CFrame.new(side.at), WALL_COLOR)
+		wall.Transparency = 1
+		wall.CanQuery = false
+		wall.CanTouch = false
+		wall.CastShadow = false
+		wall.Parent = arena -- the boundary is part of the arena itself
+	end
+	-- The ground carries on to 700 out (the play floor is 600 x 600).
+	decorPart(
+		model,
+		"OuterGroundN",
+		Vector3.new(1400, 1, 400),
+		CFrame.new(0, -0.5, 500),
+		DECOR_DUST
+	)
+	decorPart(
+		model,
+		"OuterGroundS",
+		Vector3.new(1400, 1, 400),
+		CFrame.new(0, -0.5, -500),
+		DECOR_DUST
+	)
+	decorPart(model, "OuterGroundE", Vector3.new(400, 1, 600), CFrame.new(500, -0.5, 0), DECOR_DUST)
+	decorPart(
+		model,
+		"OuterGroundW",
+		Vector3.new(400, 1, 600),
+		CFrame.new(-500, -0.5, 0),
+		DECOR_DUST
+	)
+	-- The road south out of the Gate to the city.
+	decorPart(model, "CityRoad", Vector3.new(24, 0.2, 400), CFrame.new(-30, 0.1, -500), ROAD_COLOR)
+	-- West: an earth berm behind the fence (up 0 -> 10 over x -304..-324, crest to -330,
+	-- down to -350), in two runs with a gap where the highway runs out; a fill block levels
+	-- the Pens terrace (6) out to the berm.
+	for _, run in { { z0 = -30, z1 = 300 }, { z0 = -300, z1 = -60 } } do
+		local length = run.z1 - run.z0
+		local zc = (run.z0 + run.z1) / 2
+		decorPart(
+			model,
+			"BermFace",
+			Vector3.new(length, 10, 20),
+			CFrame.new(-314, 5, zc) * CFrame.Angles(0, math.rad(90), 0),
+			HILL_COLOR,
+			"WedgePart"
+		)
+		decorPart(
+			model,
+			"BermCrest",
+			Vector3.new(6, 10, length),
+			CFrame.new(-327, 5, zc),
+			HILL_COLOR
+		)
+		decorPart(
+			model,
+			"BermBack",
+			Vector3.new(length, 10, 20),
+			CFrame.new(-340, 5, zc) * CFrame.Angles(0, math.rad(-90), 0),
+			SLOPE_COLOR,
+			"WedgePart"
+		)
+	end
+	decorPart(model, "PensFill", Vector3.new(12, 6, 74), CFrame.new(-306, 3, 120), HILL_COLOR)
+	-- The highway runs on past the fence both ways and breaks off: embankment, asphalt and
+	-- one fallen deck slab at each end.
+	for _, sx in { -1, 1 } do
+		local cx = sx * 350
+		decorPart(
+			model,
+			"HighwayRunOn",
+			Vector3.new(100, 12, 18),
+			CFrame.new(cx, 6, -45),
+			HILL_COLOR
+		)
+		-- its embankment slopes (14.4 deep, as HighwayWest / HighwayEast)
+		decorPart(
+			model,
+			"HighwayRunOnSlopeS",
+			Vector3.new(100, 12, 14.4),
+			CFrame.new(cx, 6, -61.2),
+			SLOPE_COLOR,
+			"WedgePart"
+		)
+		decorPart(
+			model,
+			"HighwayRunOnSlopeN",
+			Vector3.new(100, 12, 14.4),
+			CFrame.new(cx, 6, -28.8) * CFrame.Angles(0, math.rad(180), 0),
+			SLOPE_COLOR,
+			"WedgePart"
+		)
+		decorPart(
+			model,
+			"HighwayRunOnRoad",
+			Vector3.new(100, 0.2, 14),
+			CFrame.new(cx, 12.1, -45),
+			ROAD_COLOR
+		)
+		decorPart(
+			model,
+			"HighwayFallenSlab",
+			Vector3.new(30, 1.5, 18),
+			CFrame.new(sx * 413, 6, -45) * CFrame.Angles(0, 0, math.rad(sx * 24)),
+			CONCRETE_COLOR
+		)
+	end
+	model.Parent = workspace
+	return model
+end
+
 local colliderCount = 0 -- invisible collider Parts placed (Config.Arena.ColliderBudget)
 local skippedMeshes: { string } = {} -- registered pieces without an asset id yet
 
@@ -907,7 +1177,7 @@ local function placePiece(folder: Folder, params: RaycastParams, entry: Dressing
 			local y = if cornerHit then cornerHit.Position.Y else 0
 			low, high = math.min(low, y), math.max(high, y)
 		end
-		if high - low > Config.Arena.StraddleTolerance then
+		if high - low > Config.Arena.StraddleTolerance and not entry.decor then
 			warn(
 				`[ArenaService] {name} at ({x}, {z}) straddles a slope (ground {low} .. {high}): move it`
 			)
@@ -918,6 +1188,14 @@ local function placePiece(folder: Folder, params: RaycastParams, entry: Dressing
 		* CFrame.Angles(0, math.rad(yaw), 0)
 	if entry.shadow ~= nil then
 		part.CastShadow = entry.shadow
+	end
+	if entry.decor then
+		part.CanCollide = false
+		part.CanQuery = false
+		part.CanTouch = false
+		part.CastShadow = false
+		part.Parent = folder
+		return part
 	end
 	local added = MeshAssets.addColliders(part, name, entry.shell)
 	if added > 0 then
@@ -937,6 +1215,32 @@ local function placePiece(folder: Folder, params: RaycastParams, entry: Dressing
 	return part
 end
 
+local function placeFence(folder: Instance, params: RaycastParams, panel: FencePanel)
+	local rotation = CFrame.Angles(0, math.rad(panel.yaw), 0)
+	local half = rotation:VectorToWorldSpace(Vector3.new(FENCE_STEP / 2, 0, 0))
+	local ground = math.huge
+	for _, offset in { -half, Vector3.zero, half } do
+		local hit = workspace:Raycast(
+			Vector3.new(panel.x + offset.X, 100, panel.z + offset.Z),
+			Vector3.new(0, -200, 0),
+			params
+		)
+		ground = math.min(ground, if hit then hit.Position.Y else 0)
+	end
+	local fence = MeshAssets.waitFor("prop_chainlink_panel", 20)
+	local wire = MeshAssets.waitFor("prop_concertina", 20)
+	if fence then
+		fence.CFrame = CFrame.new(panel.x, ground + fence.Size.Y / 2, panel.z) * rotation
+		fence.Parent = folder
+	end
+	if wire then
+		local top = ground + (if fence then fence.Size.Y else 7)
+		wire.CFrame = CFrame.new(panel.x, top + wire.Size.Y / 2, panel.z) * rotation
+		wire.CastShadow = false
+		wire.Parent = folder
+	end
+end
+
 local function placeDressing()
 	local folder = Instance.new("Folder")
 	folder.Name = "Dressing"
@@ -946,6 +1250,19 @@ local function placeDressing()
 	params.FilterDescendantsInstances = { folder }
 	for _, entry in DRESSING do
 		placePiece(folder, params, entry)
+	end
+	-- The perimeter (A15): fence, roadblocks and the scenery past it, always loaded.
+	local perimeter = workspace:FindFirstChild("Perimeter")
+	if perimeter then
+		local perimeterParams = RaycastParams.new()
+		perimeterParams.FilterType = Enum.RaycastFilterType.Exclude
+		perimeterParams.FilterDescendantsInstances = { folder, perimeter }
+		for _, entry in PERIMETER do
+			placePiece(perimeter :: any, perimeterParams, entry)
+		end
+		for _, panel in FENCE do
+			placeFence(perimeter, perimeterParams, panel)
+		end
 	end
 	if #skippedMeshes > 0 then
 		print(
@@ -1949,9 +2266,24 @@ function ArenaService.init()
 	end
 	PhysicsService:CollisionGroupSetCollidable("Ladder", "Enemy", false)
 
-	-- Remove the default Baseplate so it can't z-fight (flash) with our floor.
+	-- The default Baseplate would z-fight (flash) with our floor, so it goes, but not at
+	-- once: in Studio the first player is already standing on it when scripts start, and
+	-- its removal reached the client before the much larger arena did, so that body fell
+	-- through the world and the run began wiped. Hidden now, solid for BaseplateGrace
+	-- seconds while the arena replicates, then destroyed.
 	local baseplate = workspace:FindFirstChild("Baseplate")
-	if baseplate then
+	if baseplate and baseplate:IsA("BasePart") then
+		baseplate.Transparency = 1
+		baseplate.CanQuery = false
+		baseplate.CastShadow = false
+		local textures = baseplate:FindFirstChildWhichIsA("Texture")
+		if textures then
+			textures:Destroy()
+		end
+		task.delay(BASEPLATE_GRACE, function()
+			baseplate:Destroy()
+		end)
+	elseif baseplate then
 		baseplate:Destroy()
 	end
 
@@ -2006,36 +2338,7 @@ function ArenaService.init()
 		spawnPads[index] = pad
 	end
 
-	local wy = WALL_HEIGHT / 2
-	local span = HALF * 2 + WALL_THICKNESS
-	makePart(
-		"WallPosX",
-		Vector3.new(WALL_THICKNESS, WALL_HEIGHT, span),
-		CFrame.new(HALF, wy, 0),
-		WALL_COLOR
-	).Parent =
-		arena
-	makePart(
-		"WallNegX",
-		Vector3.new(WALL_THICKNESS, WALL_HEIGHT, span),
-		CFrame.new(-HALF, wy, 0),
-		WALL_COLOR
-	).Parent =
-		arena
-	makePart(
-		"WallPosZ",
-		Vector3.new(span, WALL_HEIGHT, WALL_THICKNESS),
-		CFrame.new(0, wy, HALF),
-		WALL_COLOR
-	).Parent =
-		arena
-	makePart(
-		"WallNegZ",
-		Vector3.new(span, WALL_HEIGHT, WALL_THICKNESS),
-		CFrame.new(0, wy, -HALF),
-		WALL_COLOR
-	).Parent =
-		arena
+	buildPerimeter(arena)
 
 	arena.Parent = workspace
 	buildBuildings() -- after parenting: the kit raycasts the hills (and the church roof)

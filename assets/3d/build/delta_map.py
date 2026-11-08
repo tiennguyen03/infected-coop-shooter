@@ -151,6 +151,7 @@ def load_layout():
     ramps, *_ = read_table(text, "RAMPS")
     patches, *_ = read_table(text, "PATCHES")
     buildings, *_ = read_table(text, "BUILDINGS")
+    perimeter, *_ = read_table(text, "PERIMETER")
     # The entries ArenaService adds in code after the literal (mirror of the Luau loops).
     generated = []
     for k in range(0, 74):
@@ -180,6 +181,7 @@ def load_layout():
         "ramps": ramps,
         "patches": patches,
         "buildings": buildings,
+        "perimeter": perimeter,
         "meshes": meshes,
         "spans": {"DRESSING": dspans, "PROPS": pspans},
     }
@@ -344,13 +346,32 @@ def build_terrain(layout):
     box("Floor", col, "hill", (0, -0.5, 0), (600, 1, 600))
     for h in layout["hills"]:
         build_hill(h, col)
-    for name, center, size in (
-        ("WallNorth", (0, 12, HALF + 1.5), (606, 24, 3)),
-        ("WallSouth", (0, 12, -HALF - 1.5), (606, 24, 3)),
-        ("WallEast", (HALF + 1.5, 12, 0), (3, 24, 600)),
-        ("WallWest", (-HALF - 1.5, 12, 0), (3, 24, 600)),
-    ):
-        box(name, col, "wall", center, size)
+    # The perimeter (docs/LEVELS.md A15): no walls since 2026-11-07. The fence line, the
+    # ground past it, the west berm and the highway's run-on, as ArenaService builds them.
+    outer = collection("Perimeter")
+    box("OuterGroundN", outer, "hill", (0, -0.5, 500), (1400, 1, 400))
+    box("OuterGroundS", outer, "hill", (0, -0.5, -500), (1400, 1, 400))
+    box("OuterGroundE", outer, "hill", (500, -0.5, 0), (400, 1, 600))
+    box("OuterGroundW", outer, "hill", (-500, -0.5, 0), (400, 1, 600))
+    box("CityRoad", outer, "road", (-30, 0.1, -500), (24, 0.2, 400))
+    for z0, z1 in ((-30, 300), (-300, -60)):
+        length, zc = z1 - z0, (z0 + z1) / 2
+        wedge("BermFace", outer, "slope", (-314, 5, zc), (length, 10, 20), 90)
+        box("BermCrest", outer, "hill", (-327, 5, zc), (6, 10, length))
+        wedge("BermBack", outer, "slope", (-340, 5, zc), (length, 10, 20), -90)
+    box("PensFill", outer, "hill", (-306, 3, 120), (12, 6, 74))
+    for sx in (-1, 1):
+        box("HighwayRunOn", outer, "hill", (sx * 350, 6, -45), (100, 12, 18))
+        wedge("HighwayRunOnSlopeS", outer, "slope", (sx * 350, 6, -61.2), (100, 12, 14.4), 0)
+        wedge("HighwayRunOnSlopeN", outer, "slope", (sx * 350, 6, -28.8), (100, 12, 14.4), 180)
+    for k in range(50):
+        along = -294 + 12 * k
+        for x, z, yaw in ((along, 299.6, 0), (along, -299.6, 0), (299.6, along, 90), (-299.6, along, 90)):
+            if yaw == 90 and -73 < along < -17:
+                continue
+            gy = min(ground_height(layout["hills"], x + dx, z + dz) for dx, dz in (
+                (-6 * (yaw == 0), -6 * (yaw == 90)), (0, 0), (6 * (yaw == 0), 6 * (yaw == 90))))
+            box("Fence", outer, "steel", (x, gy + 4.95, z), (12.06, 9.9, 0.3), yaw)
     roads = collection("Roads")
     box("MainRoad", roads, "road", (-30, 0.1, 0), (16, 0.2, 600))
     box("NorthRoad", roads, "road", (0, 0.1, 200), (600, 0.2, 16))
@@ -456,6 +477,7 @@ def place_instances(layout, sources):
         [("DRESSING", i, e) for i, e in enumerate(layout["dressing"])]
         + [("PROPS", i, e) for i, e in enumerate(layout["props"])]
         + [("GENERATED", None, e) for e in layout["generated"]]
+        + [("PERIMETER", None, e) for e in layout["perimeter"]]
     )
     for table, index, e in entries:
         name = e["name"]
@@ -483,6 +505,8 @@ def place_instances(layout, sources):
         obj["arena_x"], obj["arena_z"], obj["arena_yaw"] = float(x), float(z), float(yaw)
         # --- rules
         issues = []
+        if e.get("decor"):
+            continue  # scenery past the fence: no placement rules
         corners = footprint_corners(x, z, size[0], size[2], yaw)
         if floor is None:
             hs = [ground_height(hills, cx, cz) for cx, cz in corners] + [gy]

@@ -824,8 +824,10 @@ local function groundPositionNear(
 	for _ = 1, Config.Zombies.SpawnAttempts do
 		local angle = math.random() * math.pi * 2
 		local distance = math.random(minDistance, maxDistance)
-		local x = center.X + math.cos(angle) * distance
-		local z = center.Z + math.sin(angle) * distance
+		-- Inside the perimeter (Config.Arena.SpawnInset): no spawn in the fence band or past it.
+		local inset = Config.Arena.SpawnInset
+		local x = math.clamp(center.X + math.cos(angle) * distance, -inset, inset)
+		local z = math.clamp(center.Z + math.sin(angle) * distance, -inset, inset)
 		local result =
 			workspace:Raycast(Vector3.new(x, center.Y + 50, z), Vector3.new(0, -200, 0), params)
 		local groundY = if result then result.Position.Y else 0

@@ -83,7 +83,7 @@ the checks still owed. Section B is the building kit.
 | the Pumps (B-6) | (130,-155) | canopy x116..144, z-163..-147; kiosk x144..156, z-160..-150 | 0 / 9 / 10.5 | kit: kiosk (door W, ladder E, no parapet) + walkable canopy on 4 columns over 2 pump islands | Scrapyard north edge cover; a Hocker shadow |
 | Depot | (210,40) | pad x155..285, z-5..105 | 0 | A4 table + the Shed (B-3) + the Stack (A9) | Stores #1/#3, Confirm Casualties, generator, alt pad |
 | the Shed (B-3) | (196,86) | x180..212, z74..98 | 0 / 6.5 / 12.5 | kit: 12.5 clear (Brute room), vehicle door S at x 198..210, doors N and E, mezzanine W up a flight, roof off the container (174,86) | Confirm Casualties Brutes |
-| the Gate | (-30,-274) | wall x-300..300; lane x-42..-18 | 0 | 71 T-walls at z=-274 (x=-294+8k, k 0..73, skip k=32..34; k=74 stood in the east wall), every ninth casting a shadow; the Scrapes at x -150 and x 114 (A10); booth (-54,-262); siren lamp (-14,-264) | Index entry, Open the Route, Silence the Alarm |
+| the Gate | (-30,-274) | wall x-294..290 (the perimeter fence closes the ends); lane x-42..-18 | 0 | 71 T-walls at z=-274 (x=-294+8k, k 0..73, skip k=32..34; k=74 stood in the east wall), every ninth casting a shadow; the Scrapes at x -150 and x 114 (A10); booth (-54,-262); siren lamp (-14,-264) | Index entry, Open the Route, Silence the Alarm |
 | Bus line | (-4,-196) | x-9.5..1.5, z-263..-129 | 0 | 3x env_bus yaw 90 at (-4,-150),(-4,-196),(-4,-242); 4th bus (40,-205) yaw 60 | Hocker-proof cover on the Gate approach; Bus 7 story spot |
 | Suburb: the Parade (B-5) | (124,178) | x100..148, z170..186 | 0 / 9 | kit: 4 shops facing the north road, front door + broken shopfront (sill 1) + back door each, party-wall doors, one 48-stud roof; dumpster (108,167) is the Walker step | R6 Suburb Run |
 | Suburb: the church (B-4) | (60,262) | x50..70, z246..278 | 0 / 7 / 14 / 20 | kit: 14-stud nave, choir loft over the south end up an east flight, inside ladder loft -> roof, belfry 8x8 on the roof (arches, ladder N) top 20 | The Suburb's lookout; story spot |
@@ -104,7 +104,7 @@ the checks still owed. Section B is the building kit.
 - Tall hesco ring (8.88: Walkers never climb it, Runners do) on the terrace top: N row z=146,
   S row z=94, x = -295.5,-289.6,-283,-276.4,-269.8,-263.2 | -238.3,-231.7,-225.1,-218.5 (10 each;
   mouth x-260..-241.4; pulled in off the crest 2026-11-07); E column x=-219 yaw 90, z = 100,106.5 | 133.5,140 (mouth z110..130).
-  West: the arena wall (the terrace is vertical there).
+  West: the perimeter fence on the terrace edge, the boundary collider behind it (A15).
 - Approaches: exactly three mouths N, E, S. Tents (roof walkable) on the west half are
   climbable cover inside.
 - Hocker stands (outside the ring, lobbing over hesco): N (-250,170), E (-190,120), S (-250,70).
@@ -276,6 +276,46 @@ the Pens ring pulled in, overlaps between props), the new Compound ramp, the Gat
 75th wall removed. The Blender check reads 0 problems. At boot the corner check still names
 pieces that are meant to touch other geometry (the Stack and gantry containers under their
 ramps and floors, the Apron containers' ramps, the siren on its lamp): accepted.
+
+## A15. The perimeter (level designer, built 2026-11-07)
+
+The owner: "get rid of the sense of the map being walled off and closed in." How games do
+it: a barrier the player believes in at the edge, and the world carrying on past it
+(Left 4 Dead's see-through chain-link and burning wrecks, Call of Duty's streets and hills
+running on as scenery, Half-Life 2's far city behind fog), with the invisible wall right
+behind the visible barrier so the player never touches empty air. No soft out-of-bounds
+warning: there is no way out to warn about.
+
+| Edge | What you see | Built from (`ArenaService.PERIMETER`, `FENCE`, `buildPerimeter`) |
+|---|---|---|
+| All | the quarantine fence just inside the edge | `prop_chainlink_panel` every 12 at +-299.6 with `prop_concertina` on top; each panel stands on the lowest ground under its ends (`placeFence`), so on a slope its posts sink in |
+| North | fence and towers; the Suburb running on as ruins | towers z 312 x -180/-60/60/180; shell ruins (-150,360), (40,380), (200,350); 6 dead trees |
+| East | fence and towers; the highway running on and breaking off | towers x 312 z 180/60/-150; the embankment (top, road, both slopes) to x 400, a fallen deck slab, a container under it; 2 containers, 4 trees in the field |
+| West | fence on an earth berm | berm x -304..-350 (top 10) in two runs with the highway gap; towers on the crest (-327, z 180/60/-150); `PensFill` levels the Pens terrace (6) out to the berm |
+| South | the outer wire past the Gate, the road to the city | 4 unlit light towers z -308; a 24-wide road z -300..-700; 2 buses, a humvee, 2 containers queued z -345..-420; the Gate's T-wall line carries on at x +-306/314/322 |
+| Corners | | towers at (+-312, +-312) |
+| Highway ends | a roadblock on the deck at x +-296 | 3 jerseys + wire (inside the play space: real cover); the fence skips z -73..-17 there |
+
+- **What stops the squad:** four invisible Parts in `TestArena`, 2 thick and
+  `Config.Arena.BoundaryHeight` (80) tall, inner face at 300; CanQuery / CanTouch off so
+  bullets, the camera and the vault / climb checks ignore them. Verified: a body shoved at
+  80 studs/s into the north fence, the east roadblock and the Pens' west edge never passed
+  299.
+- **Past the edge everything is `decor`** (no collision, no queries, no shadow, colliders
+  skipped) and lives in its own Persistent model `workspace.Perimeter`, so the far fence
+  never streams out. Ground slabs run 700 out; dressing thins with distance, then fog and
+  the DistantCity ring.
+- **Spawns** are clamped inside `Config.Arena.SpawnInset` (292) in
+  `EnemyService.groundPositionNear` (its last-try fallback could land outside).
+- **Budget:** ~458 instances in `Perimeter` (190 panels, 198 coils, 14 towers, 4 light
+  towers, 6 T-walls, ~30 scenery pieces, 20 Parts), +0 composite colliders, +0 shadow
+  casters, no new meshes. Measured 60 fps on the dev PC looking along each edge. Not yet
+  measured on a low-end device; if it costs, cut the wire on N/E/W first (-~148 coils),
+  then the scenery.
+- **Boot fix found on the way:** in Studio the first player stands on the default Baseplate
+  when scripts start; deleting it outright reached the client before the arena did and the
+  body fell through the world (the "playtest boots wiped" gotcha). The Baseplate is now
+  hidden at once and destroyed after 5 s.
 
 ## A12. Ground
 

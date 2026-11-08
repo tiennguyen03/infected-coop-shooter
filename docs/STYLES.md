@@ -404,7 +404,8 @@ textures. Lighting: ClockTime 17.6, latitude 30, Brightness 1.8, ColorShift top
 Density 0.36, Offset 0.2, Color `rgb(214,112,58)`, Decay `rgb(92,38,28)`, Glare 0.7,
 Haze 6 (the haze is what turns the stock blue skybox orange; drop it and the sky goes
 green-grey). Terrain Clouds: Cover 0.72, Density 0.6, Color `rgb(104,66,48)`. Outside the
-walls a ring of 23 flat `DistantCity` silhouettes (`rgb(44,40,42)`, 470-560 studs out,
+perimeter fence (`docs/LEVELS.md` A15: no solid walls since 2026-11-07; the ground and
+scenery run on past it to 700) a ring of 23 flat `DistantCity` silhouettes (`rgb(44,40,42)`, 470-560 studs out,
 60-220 tall, clustered north-east) with slow smoke columns and fire glow on six of them;
 `SkyService.burn(part)` puts the same fire + smoke on a dressing piece (`burning = true`
 in `ArenaService.DRESSING`). Smoke is the stock `smoke_main` particle at rate 5,
