@@ -1,11 +1,12 @@
 --!strict
--- Call-ins: keys 1 and 2 fire the two call-ins the player's
--- loadout carries (LoadoutService.getCallIn). Each slot holds Config.CallIns.<Key>.Charges
+-- Call-ins: the number keys fire the call-ins the player's loadout carries
+-- (LoadoutService.getCallIn), Config.CallIns.Slots of them (2 until the Arms Room). Each slot holds Config.CallIns.<Key>.Charges
 -- charges that refill one at a time every Cooldown seconds; a Restock card fills them.
 -- Server-authoritative: the client sends the slot and where it aimed; this validates
 -- (alive, not paused, a charge), clamps the throw with ThrowUtil like the flare, and hands
--- the effect to the owning service (DroneService, MineService, AirStrikeService,
--- ShockCoilService) with that call-in's upgrade flag. Published per player as
+-- the effect to the owning service (AirStrikeService: Hammer, Anvil, Shrike; SentryService:
+-- Doorman; MineService: Tripline; ConcertinaService; SupplyDropService: Speedball, Aid Bag)
+-- with that call-in's upgrade flag. Published per player as
 -- CallIn<n>Charges and CallIn<n>ReadyAt (server time of the next charge; 0 when full).
 
 local Players = game:GetService("Players")
@@ -20,11 +21,12 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local ThrowUtil = require(ReplicatedStorage.Shared.ThrowUtil)
 local AirStrikeService = require(script.Parent.AirStrikeService)
-local DroneService = require(script.Parent.DroneService)
+local ConcertinaService = require(script.Parent.ConcertinaService)
 local LoadoutService = require(script.Parent.LoadoutService)
 local MineService = require(script.Parent.MineService)
 local PauseService = require(script.Parent.PauseService)
-local ShockCoilService = require(script.Parent.ShockCoilService)
+local SentryService = require(script.Parent.SentryService)
+local SupplyDropService = require(script.Parent.SupplyDropService)
 local Squad = require(script.Parent.Squad)
 local Lifecycle = require(script.Parent.Lifecycle)
 local WorldSounds = require(script.Parent.WorldSounds)
@@ -33,7 +35,9 @@ local WorldSounds = require(script.Parent.WorldSounds)
 local THROW_PASS_THROUGH = {
 	"Resupply",
 	"ResupplyCards",
-	"Drones",
+	"Sentries",
+	"Wire",
+	"SupplyDrops",
 	"Mines",
 	"FirePools",
 	"AssaultEffects",
@@ -50,6 +54,11 @@ type Slot = {
 }
 
 local CallInService = {}
+
+-- How many call-in slots a loadout has (the soldier kit owns the number).
+local function slotCount(): number
+	return ((Config.CallIns :: { [string]: any }).Slots :: number?) or 2
+end
 
 local slots: { [Player]: { Slot } } = {}
 local usedRemote: RemoteEvent
@@ -89,17 +98,19 @@ local function get(player: Player): { Slot }
 	if state then
 		return state
 	end
-	local created: { Slot } = { fresh(player, 1), fresh(player, 2) }
+	local created: { Slot } = {}
+	for slot = 1, slotCount() do
+		created[slot] = fresh(player, slot)
+		publish(player, slot, created[slot])
+	end
 	slots[player] = created
-	publish(player, 1, created[1])
-	publish(player, 2, created[2])
 	return created
 end
 
--- Both slots back to full (a Restock card, a run start).
+-- Every slot back to full (a Restock card, a run start).
 function CallInService.refill(player: Player)
 	local state = get(player)
-	for slot = 1, 2 do
+	for slot = 1, slotCount() do
 		state[slot] = fresh(player, slot)
 		publish(player, slot, state[slot])
 	end
@@ -144,29 +155,39 @@ local function fire(
 	if definition.Kind == "throw" then
 		WorldSounds.at(landing, "callins", "callin_throw")
 	end
-	if definition.Id == "magpie" then
-		return DroneService.deployBeacon(
-			player,
-			landing,
-			LoadoutService.hasUpgrade(player, "escort")
-		)
-	elseif definition.Id == "tripline" then
+	local id = definition.Id
+	if id == "hammer" then
+		local walking = LoadoutService.hasUpgrade(player, "walking_barrage")
+		local step = if walking then Config.Upgrades.WalkingBarrage.Step else 0
+		return AirStrikeService.fireMission(player, Config.CallIns.Hammer, landing, direction, step)
+	elseif id == "anvil" then
+		return AirStrikeService.fireMission(player, Config.CallIns.Anvil, landing, direction, 0)
+	elseif id == "shrike" then
+		return AirStrikeService.gunRun(player, landing, direction)
+	elseif id == "doorman" then
+		return SentryService.deploy(player, landing, direction)
+	elseif id == "tripline" then
 		return MineService.layArc(player, landing, direction)
-	elseif definition.Id == "anvil" then
-		return AirStrikeService.fireMission(
-			player,
-			landing,
-			direction,
-			LoadoutService.hasUpgrade(player, "walking_barrage")
-		)
-	elseif definition.Id == "pen_coil" then
-		return ShockCoilService.pulse(player, LoadoutService.hasUpgrade(player, "defibrillator"))
+	elseif id == "concertina" then
+		return ConcertinaService.lay(player, landing, direction)
+	elseif id == "speedball" or id == "aid_bag" then
+		return SupplyDropService.drop(id, landing, direction)
 	end
 	return false
 end
 
+-- Dev tools (DevTestService FireCallIn): fires call-in `id` for `player` aimed at `point`
+-- without a slot or a charge. False for an unknown id or no body.
+function CallInService.fireFree(player: Player, id: string, point: Vector3?): boolean
+	local definition = CallInDefinitions.get(id)
+	if not definition then
+		return false
+	end
+	return fire(player, definition, point)
+end
+
 local function onCallIn(player: Player, slot: unknown, requested: unknown)
-	if slot ~= 1 and slot ~= 2 then
+	if typeof(slot) ~= "number" or slot % 1 ~= 0 or slot < 1 or slot > slotCount() then
 		return
 	end
 	if PauseService.isPaused() then
@@ -246,7 +267,7 @@ local function step()
 	end
 end
 
--- Run start: full charges for both slots.
+-- Run start: full charges in every slot.
 function CallInService.resetPlayer(player: Player)
 	CallInService.refill(player)
 end

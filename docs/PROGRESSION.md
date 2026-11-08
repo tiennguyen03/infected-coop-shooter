@@ -113,6 +113,24 @@ gone (`docs/sprints/SPRINT_18_LOADOUT.md`). Lore names on the HUD ([LORE.md](LOR
   code); Gun, Goose, Thumper and Kettle need the support-weapon carry and the explosive
   projectile hook (ARCHITECTURE F7) and come second.
 
+  **First pass built (stream C, 2026-11-08; not yet playtested).** All seven are thrown
+  (`Kind "throw"`, ThrowUtil clamp). `AirStrikeService`: Hammer and Anvil share
+  `fireMission(cfg, point, direction, step)` (impact times and offsets from
+  `Rules/StrikePattern`, the incoming rush `Audio.AnvilIncomingLead` before each impact);
+  Shrike's `gunRun` centres its ten bursts on the mark (Bursts 0.15 s apart) under a Part
+  gunship flying the line at 45 studs with the rotor loop and a tracer per burst.
+  `SentryService` (Doorman, replaced DroneService): a Part tripod, a ray from the muzzle
+  picks the nearest Infected it can see and every round hits the first Infected on the line
+  (plates still count); one per player. `ConcertinaService`: the `prop_concertina` mesh
+  stretched to 16 x 3 across the throw; every 0.5 s each Infected inside is slowed
+  (`EnemyService.slow`) and takes 2.5. `SupplyDropService`: Speedball and Aid Bag fall 50
+  studs and land quiet; Speedball serves 4 visits (a player again only after stepping out),
+  Aid Bag treats every soldier once (bots get the heal only; stims through
+  `LoadoutService.refillStims` once the soldier kit adds it). `ShockCoilService` is now only
+  `stunArea` (the Stun grenade's slow). Default slots: Hammer, Tripline (then Doorman, Aid
+  Bag when `Config.CallIns.Slots` is 4). Dev: `SetCallIn <slot> <id>` (dev panel "1: / 2:")
+  and `FireCallIn <id>` (panel "Fire ...": 20 studs ahead, no slot or charge).
+
 - **Pallets are tactical.** The Resupply pool (one meter on every HUD) is fed by every
   kill's `SupplyValue` at any distance (Walker 10, Runner 12, Hocker 18, Brute 35) and by the
   Primary (`Objective.SupplyReward 500`); the meter pulses on a kill. When it covers the cost

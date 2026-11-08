@@ -16,7 +16,7 @@ Design: `docs/PROGRESSION.md` > Loadout (guns, Arms Room, call-ins, field upgrad
 |---|---|---|---|
 | A. Canon | lore developer | `docs/LORE.md`, `docs/CHARACTERS.md` section C, `docs/lore/retired_chosen.md` | Pike canon in, Chosen archived |
 | B. Soldier kit + Arms Room | engineer 1 | `WeaponDefinitions`, `Config.Weapon(s)`, `Config.Loadout`, `Config.Grenade`, `ProjectileServer`, `WeaponController`, `LoadoutService`, `Rules/Loadout` + spec, `LoadoutMenu` (new), `AbilityController`, `AssaultClassService` (retired), `UpgradeDefinitions`, `Attributes`/`Messages`/`Remotes` additions, bots' names | five primaries + pistol selectable, Q swap, G frag, V shove, E stim, keys 1-4 call-ins and 5 flare, dash / breach / Momentum gone, Lune tests pass |
-| C. Call-ins | engineer 2 | `CallInDefinitions` entries, `Config.CallIns`, `CallInService` dispatch, `AirStrikeService` (Hammer, Anvil, Shrike), `DroneService` (Doorman), Concertina, Speedball, Aid Bag; Magpie and Pen Coil retired | the seven first-pass call-ins work from the dev panel |
+| C. Call-ins | engineer 2 | `CallInDefinitions` entries, `Config.CallIns`, `CallInService` dispatch, `AirStrikeService` (Hammer, Anvil, Shrike), `DroneService` (Doorman), Concertina, Speedball, Aid Bag; Magpie and Pen Coil retired | the seven first-pass call-ins work from the dev panel (built 2026-11-08, awaiting the lead's playtest) |
 | D. Infected accuracy (blocky) | engineer 3 | `build_assets.py` Infected limb functions, their FBX / previews, `MeshAssets` inf rows, `ASSET_IDS.md` | posture fixes per the lore developer's check, uploaded |
 
 Shared-file rule: B owns the slot plumbing (4 slots, keys, attributes); C owns the call-in
