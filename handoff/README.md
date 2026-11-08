@@ -4,8 +4,9 @@ Start here when picking the project up in a fresh Claude Code session.
 Last updated: 2026-11-08, start of the foundation work on branch `foundation`: the owner
 asked for the "do now" items of the code review (`docs/ARCHITECTURE.md` F1-F5) before more
 features. Plan: `docs/superpowers/plans/2026-11-08-foundation-f1-f5.md`; F1 (renames)
-F2 (`Lifecycle` hooks, boot list), F3 (`Attributes` / `Messages`
-contract) and F4 (co-op debt #3/#5/#9) done. Last verified
+all five done: F1 renames, F2 `Lifecycle` hooks + boot list, F3
+`Attributes` / `Messages` contract, F4 co-op debt #3/#5/#9, F5 Lune tests + CI. The branch
+waits for the owner to review, push and merge; the first CI run happens on that push. Last verified
 commit on `main`: the open perimeter (solo playtest).
 
 ## What this is
@@ -196,7 +197,8 @@ Read in this order:
   weapon/upgrade hooks, class interface, save service, lobby place, and how private match
   servers and the shared Containment Board scale. **The owner, 2026-11-08: do F1-F5 now**,
   "I want our foundation to be strong before we drift off into more niche features"
-  (branch `foundation`, plan in `docs/superpowers/plans/`).
+  (branch `foundation`, plan in `docs/superpowers/plans/`). F1-F5 done; F6-F11 wait
+  for the feature that needs each (`docs/ARCHITECTURE.md`).
 - **The Warden shipped 2026-11-07** (`docs/sprints/SPRINT_19_WARDEN.md` > Open work):
   handset hiss + squelch tell clip and his own vocals (audio pipeline), Gate dressing
   (chain, spray, MP roster) and the insert / wipe radio lines, a 4-player phone pass on

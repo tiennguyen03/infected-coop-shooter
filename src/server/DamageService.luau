@@ -11,6 +11,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
+local Plates = require(ReplicatedStorage.Shared.Rules.Plates)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local Lifecycle = require(script.Parent.Lifecycle)
 
@@ -58,10 +59,14 @@ function DamageService.dealDamage(
 	if part and typeof(plateHealth) == "number" then
 		local model = part:FindFirstAncestorOfClass("Model")
 		local guard = model and model:GetAttribute(Attributes.GuardFactor)
-		if typeof(guard) == "number" and part:GetAttribute(Attributes.Flank) ~= true then
-			amount *= guard
-		end
-		part:SetAttribute(Attributes.PlateHealth, math.max(0, plateHealth - amount))
+		local left
+		left, amount = Plates.hit(
+			plateHealth,
+			amount,
+			if typeof(guard) == "number" then guard else nil,
+			part:GetAttribute(Attributes.Flank) == true
+		)
+		part:SetAttribute(Attributes.PlateHealth, left)
 		if attacker then
 			lastDamager[humanoid] = attacker
 		end

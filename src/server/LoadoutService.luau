@@ -15,6 +15,7 @@ local RunService = game:GetService("RunService")
 
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local CallInDefinitions = require(ReplicatedStorage.Shared.CallInDefinitions)
+local Magazine = require(ReplicatedStorage.Shared.Rules.Magazine)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local UpgradeDefinitions = require(ReplicatedStorage.Shared.UpgradeDefinitions)
@@ -116,7 +117,7 @@ end
 -- A shot: false when the magazine is empty or a reload is in progress.
 function LoadoutService.consumeRound(player: Player): boolean
 	local loadout = get(player)
-	if loadout.reloadUntil or loadout.mag <= 0 then
+	if not Magazine.canFire(loadout.mag, loadout.reloadUntil ~= nil) then
 		return false
 	end
 	loadout.mag -= 1
@@ -126,10 +127,8 @@ end
 
 local function finishReload(player: Player, loadout: Loadout)
 	local weapon = WeaponDefinitions.get(loadout.weapon)
-	local needed = weapon.MagazineSize - loadout.mag
-	local taken = math.min(needed, loadout.reserve)
-	loadout.mag += taken
-	loadout.reserve -= taken
+	loadout.mag, loadout.reserve =
+		Magazine.reload(loadout.mag, loadout.reserve, weapon.MagazineSize)
 	loadout.reloadUntil = nil
 	publishAmmo(player, loadout)
 end
@@ -139,7 +138,14 @@ end
 function LoadoutService.startReload(player: Player): boolean
 	local loadout = get(player)
 	local weapon = WeaponDefinitions.get(loadout.weapon)
-	if loadout.reloadUntil or loadout.mag >= weapon.MagazineSize or loadout.reserve <= 0 then
+	if
+		not Magazine.canReload(
+			loadout.mag,
+			loadout.reserve,
+			weapon.MagazineSize,
+			loadout.reloadUntil ~= nil
+		)
+	then
 		return false
 	end
 	local member = Squad.fromPlayer(player)

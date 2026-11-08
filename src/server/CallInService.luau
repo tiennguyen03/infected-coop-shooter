@@ -15,6 +15,7 @@ local RunService = game:GetService("RunService")
 local Messages = require(ReplicatedStorage.Shared.Messages)
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local CallInDefinitions = require(ReplicatedStorage.Shared.CallInDefinitions)
+local CallInCharges = require(ReplicatedStorage.Shared.Rules.CallInCharges)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local ThrowUtil = require(ReplicatedStorage.Shared.ThrowUtil)
@@ -195,10 +196,13 @@ local function onCallIn(player: Player, slot: unknown, requested: unknown)
 	if not fire(player, definition, point) then
 		return
 	end
-	state.charges -= 1
-	if not state.nextChargeAt then
-		state.nextChargeAt = os.clock() + cooldownFor(player, slotIndex)
-	end
+	local _
+	_, state.charges, state.nextChargeAt = CallInCharges.use(
+		state.charges,
+		state.nextChargeAt,
+		os.clock(),
+		cooldownFor(player, slotIndex)
+	)
 	publish(player, slotIndex, state)
 	usedRemote:FireClient(player, Messages.Ability.CallIn, slotIndex, definition.Id)
 	print(`[CallIn] {player.Name} used {definition.Name} ({state.charges} left)`)
@@ -221,13 +225,15 @@ local function step()
 	lastStep = now
 	for player, state in slots do
 		for slot, slotState in state do
-			local nextChargeAt = slotState.nextChargeAt
-			if nextChargeAt and now >= nextChargeAt then
-				local max = chargesFor(player, slot)
-				slotState.charges = math.min(slotState.charges + 1, max)
-				slotState.nextChargeAt = if slotState.charges < max
-					then nextChargeAt + cooldownFor(player, slot)
-					else nil
+			local before = slotState.nextChargeAt
+			slotState.charges, slotState.nextChargeAt = CallInCharges.tick(
+				slotState.charges,
+				chargesFor(player, slot),
+				before,
+				now,
+				cooldownFor(player, slot)
+			)
+			if slotState.nextChargeAt ~= before then
 				publish(player, slot, slotState)
 			end
 		end

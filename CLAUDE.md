@@ -67,7 +67,10 @@ concern, not polish.
 ## Commands (Rokit toolchain; `export PATH="$HOME/.rokit/bin:$PATH"` if a tool is missing)
 
 - `rojo serve default.project.json` — sync (restart + reconnect after any project.json change)
-- `stylua src && selene src && rojo build -o build.rbxlx` — static checks, run after every change
+- `stylua src tests && selene src && rojo build -o build.rbxlx && lune run tests/run` — static
+  checks + unit tests, run after every change (CI runs the same on every push:
+  `.github/workflows/ci.yml`). Pure game rules live in `src/shared/Rules/` with a
+  `tests/<Rule>.spec.luau` each; a new rule gets its spec first.
 - Live verification: Studio MCP `solo_playtest` → `execute_luau` (fire `DevCommand` from
   `client-1`) → `capture_screenshot` → `get_runtime_logs`. Details in handoff/README.md.
 

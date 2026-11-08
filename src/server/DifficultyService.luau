@@ -12,6 +12,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
+local DifficultyCurve = require(ReplicatedStorage.Shared.Rules.DifficultyCurve)
 local Squad = require(script.Parent.Squad)
 local PauseService = require(script.Parent.PauseService)
 local RunService = game:GetService("RunService")
@@ -75,27 +76,25 @@ function DifficultyService.getDamageMultiplier(): number
 end
 
 function DifficultyService.getSpawnInterval(): number
-	local interval = Config.Spawning.SpawnInterval
-		* Config.Difficulty.SpawnIntervalDecayPerMinute ^ elapsedMinutes()
-	interval = math.max(interval, Config.Difficulty.MinSpawnInterval)
-	return interval
-		* Config.PlayerCountScaling.SpawnIntervalPerExtraPlayer
-			^ DifficultyService.getExtraPlayers()
+	return DifficultyCurve.spawnInterval(
+		Config.Spawning.SpawnInterval,
+		Config.Difficulty.SpawnIntervalDecayPerMinute,
+		Config.Difficulty.MinSpawnInterval,
+		DifficultyService.getElapsed(),
+		Config.PlayerCountScaling.SpawnIntervalPerExtraPlayer,
+		DifficultyService.getExtraPlayers()
+	)
 end
 
 function DifficultyService.getMaxAlive(): number
-	local clock = DifficultyService.getElapsed()
-	local base = Config.Difficulty.MaxAliveLate
-	for _, entry in Config.Difficulty.MaxAliveSchedule do
-		if clock <= entry[1] then
-			base = entry[2]
-			break
-		end
-	end
 	local scaling = Config.PlayerCountScaling
-	return math.min(
-		base + scaling.MaxAlivePerExtraPlayer * DifficultyService.getExtraPlayers(),
-		scaling.MaxAliveHardCap
+	return DifficultyCurve.maxAlive(
+		Config.Difficulty.MaxAliveSchedule,
+		Config.Difficulty.MaxAliveLate,
+		DifficultyService.getElapsed(),
+		scaling.MaxAlivePerExtraPlayer,
+		scaling.MaxAliveHardCap,
+		DifficultyService.getExtraPlayers()
 	)
 end
 
