@@ -1,7 +1,7 @@
 --!strict
 -- Resupply (docs/PROGRESSION.md > Loadout, pallets and field upgrades). Every kill credits
 -- its form's SupplyValue to one run-wide pool (EnemyService kill listener; no orbs since
--- the loadout rework 2026-11-07), the hold objective adds its reward. When the pool covers
+-- the loadout rework), the hold objective adds its reward. When the pool covers
 -- the current cost any living player throws the red flare (key 3); for DropDelay seconds
 -- the Infected nearby walk to the flare instead of the squad, then a pallet drops out of
 -- the sky and lands loud (a wave spawns around it). The pallet is the ammo box: every

@@ -1,5 +1,5 @@
 --!strict
--- Loadout HUD (loadout rework 2026-11-07, replaced ItemBarUI). Two pieces, both read from
+-- Loadout HUD (replaced ItemBarUI). Two pieces, both read from
 -- LocalPlayer attributes LoadoutService publishes:
 --   * the ammo counter beside the crosshair: MAG / RESERVE, amber when the magazine is low,
 --     "RELOADING" with a draining bar while ReloadUntil is ahead of server time, red "DRY"

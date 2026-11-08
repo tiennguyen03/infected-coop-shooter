@@ -52,7 +52,7 @@ concern, not polish.
 - `--!strict` in every file. `os.clock()` for timing, `task.*` over `wait`/`spawn`.
 - Server is authoritative: clients send intent, server validates and simulates.
 - Enemies: Models tagged `"Enemy"` with a Humanoid. Damage goes through
-  `ItemEffectService.dealDamage` (the one damage entry point).
+  `DamageService.dealDamage` (the one damage entry point).
 - UI is code-generated; disk is the single source of truth. No hand edits in Studio.
 - Design for up to 4 players: state keyed by `Player` (cleaned on `PlayerRemoving`) or
   explicitly per run; never `GetPlayers()[1]`; `resetPlayer` touches only that player,

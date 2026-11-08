@@ -1,5 +1,5 @@
 --!strict
--- Sound banks (sound day 2026-11-07). Every generated variant clip lives inside one packed
+-- Sound banks. Every generated variant clip lives inside one packed
 -- bank wav per speaker (assets/audio/build/generate.py BANKS): one Roblox audio asset per
 -- bank, and a clip is played by seeking the Sound to the clip's offset and stopping it after
 -- the clip's length. Offsets come from the generated SoundBankData; ids and the per-group

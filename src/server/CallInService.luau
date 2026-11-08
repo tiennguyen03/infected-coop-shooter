@@ -1,5 +1,5 @@
 --!strict
--- Call-ins (loadout rework 2026-11-07): keys 1 and 2 fire the two call-ins the player's
+-- Call-ins: keys 1 and 2 fire the two call-ins the player's
 -- loadout carries (LoadoutService.getCallIn). Each slot holds Config.CallIns.<Key>.Charges
 -- charges that refill one at a time every Cooldown seconds; a Restock card fills them.
 -- Server-authoritative: the client sends the slot and where it aimed; this validates

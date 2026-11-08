@@ -1,10 +1,10 @@
 --!strict
 -- The one damage entry point every player-owned source routes through
--- (ItemEffectService.dealDamage): the rifle, the breach charge, the bots and every call-in
+-- (DamageService.dealDamage): the rifle, the breach charge, the bots and every call-in
 -- (drones, mines, shells, the coil, fire). It records who last hurt an Infected so the kill
 -- is credited (Kills attribute, kill listeners: Combat Momentum) and reports the hit to the
 -- clients (hit marker, sparks, 3D hit sound). The item economy it used to host left with the
--- loadout rework (2026-11-07): upgrades are flags on LoadoutService read by the service
+-- loadout rework: upgrades are flags on LoadoutService read by the service
 -- that owns the tool.
 
 local Players = game:GetService("Players")
@@ -12,7 +12,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 
-local ItemEffectService = {}
+local DamageService = {}
 
 local damageRemote: RemoteEvent
 
@@ -24,7 +24,7 @@ local lastDamageKind: { [Humanoid]: string } = {}
 -- Credited-kill listeners (AssaultClassService uses this for Combat Momentum). Fired once
 -- per credited kill with the killing player.
 local killListeners: { (player: Player) -> () } = {}
-function ItemEffectService.addKillListener(listener: (player: Player) -> ())
+function DamageService.addKillListener(listener: (player: Player) -> ())
 	table.insert(killListeners, listener)
 end
 
@@ -32,7 +32,7 @@ end
 -- hit marker. `kind` names the source ("hit", "headshot", "breach", "fire", ...). `part` is
 -- the part the round hit when known: an Index plate (PlateHealth attribute, IndexService)
 -- takes the hit instead of the body, at GuardFactor while he guards (the Flank plate never).
-function ItemEffectService.dealDamage(
+function DamageService.dealDamage(
 	attacker: Player?,
 	humanoid: Humanoid,
 	amount: number,
@@ -71,12 +71,12 @@ function ItemEffectService.dealDamage(
 end
 
 -- Credit a kill without dealing damage (kept for sources that bypass TakeDamage).
-function ItemEffectService.recordDamager(player: Player, humanoid: Humanoid)
+function DamageService.recordDamager(player: Player, humanoid: Humanoid)
 	lastDamager[humanoid] = player
 end
 
 -- EnemyService, on every death: the kill stat and the kill listeners for the credited player.
-function ItemEffectService.onEnemyKilled(humanoid: Humanoid)
+function DamageService.onEnemyKilled(humanoid: Humanoid)
 	local killer = lastDamager[humanoid]
 	lastDamager[humanoid] = nil
 	lastDamageKind[humanoid] = nil
@@ -96,21 +96,21 @@ function ItemEffectService.onEnemyKilled(humanoid: Humanoid)
 end
 
 -- Run state keyed by Infected (kill credit): once per run start.
-function ItemEffectService.reset()
+function DamageService.reset()
 	table.clear(lastDamager)
 	table.clear(lastDamageKind)
 end
 
 -- One player's stats; RunManager calls it for every player on a run start.
-function ItemEffectService.resetPlayer(player: Player)
+function DamageService.resetPlayer(player: Player)
 	player:SetAttribute("Kills", 0)
 end
 
-function ItemEffectService.init()
+function DamageService.init()
 	damageRemote = Remotes.get("DamageDealt")
 	Players.PlayerAdded:Connect(function(player)
 		player:SetAttribute("Kills", 0)
 	end)
 end
 
-return ItemEffectService
+return DamageService

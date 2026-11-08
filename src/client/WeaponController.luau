@@ -4,7 +4,7 @@
 -- Hold right mouse button to aim down sights (ADS): tighter spread (server), slower
 -- walk and no sprint (SprintController), closer camera and narrower FOV
 -- (CameraController), rifle shouldered (AnimationController), crosshair closes.
--- The magazine (loadout rework 2026-11-07) is the server's (LoadoutService: Mag, Reserve,
+-- The magazine is the server's (LoadoutService: Mag, Reserve,
 -- ReloadUntil attributes): R asks for a reload, an empty magazine asks for one on the next
 -- trigger pull, and no shot is sent while reloading. Last Stand lets a downed body fire.
 

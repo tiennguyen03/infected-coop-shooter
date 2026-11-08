@@ -1,5 +1,5 @@
 --!strict
--- Cards (loadout rework 2026-11-07, replaces ItemDefinitions). Two kinds:
+-- Cards (replaces ItemDefinitions). Two kinds:
 --   "supply": the three cards on every Resupply pallet (Medkit, Restock, Armour Plate);
 --   "upgrade": the twelve field upgrades, one slot each (Dash, Breach, Rifle, Kit and the
 --   two call-in slots); a new pick in a filled slot replaces it. Each upgrade is a flag the

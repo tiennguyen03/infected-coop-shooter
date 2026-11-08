@@ -1,5 +1,5 @@
 --!strict
--- Dev tools v2 (2026-11-07): Studio / creator only. F1 opens a clickable panel (the cursor
+-- Dev tools v2: Studio / creator only. F1 opens a clickable panel (the cursor
 -- is freed while it is open) grouped by what you are testing; a live info line shows FPS,
 -- run state, Infected alive and the squad. Hotkeys for the actions used mid-fight work with
 -- the panel closed. Every button fires DevCommand (DevTestService), so the engineer can

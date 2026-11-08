@@ -7,7 +7,7 @@ local Config = {
 		MaxHealth = 100,
 		WalkSpeed = 16,
 		SprintSpeed = 24,
-		-- Stances (2026-11-07): LeftControl toggles crouch, C toggles prone; sprint, a vault
+		-- Stances: LeftControl toggles crouch, C toggles prone; sprint, a vault
 		-- or a climb stands the body up. Speeds are factors of WalkSpeed (no sprint while low).
 		Stances = {
 			CrouchSpeedFactor = 0.5,
@@ -15,19 +15,19 @@ local Config = {
 			-- Seconds the enter/exit clips take (their rate is scaled to this); no stance
 			-- change while one plays.
 			TransitionTime = { crouch = 0.45, prone = 0.8 },
-			-- Crawl spaces (StanceService, 2026-11-07): prone drops the HipHeight so the root
+			-- Crawl spaces (StanceService): prone drops the HipHeight so the root
 			-- (2 tall, the body's only collider) fits under a 2.8 gap; standing needs this
 			-- much clear above the prone root, else the body stays down.
 			ProneHipHeight = 0.3,
 			ProneHeadroom = 4,
 		},
-		-- Skinned body (2026-11-07): with SkinnedBody true PlayerSetup installs
+		-- Skinned body: with SkinnedBody true PlayerSetup installs
 		-- MeshAssets.buildSkinnedBody(SkinnedTemplate) (the one-mesh Weller from
 		-- assets/3d/export/pc_assault_skinned.fbx over its hidden 15-part rig; notes in
 		-- assets/3d/README.md "Skinned Weller") as StarterPlayer.StarterCharacter, so every
 		-- character spawns as that rig and the limb swap (dressModel) is skipped. Bots keep
 		-- the limb-swap body either way. False = tapered rigid limbs for players too.
-		-- Off since 2026-11-07: the hidden rig (Motor6D clips) and the skin's bones diverge
+		-- Off: the hidden rig (Motor6D clips) and the skin's bones diverge
 		-- 30-120 degrees while animating, so welded gear and the rifle float away from the
 		-- body. Back on only after the bind poses are matched (handoff/README.md open work).
 		SkinnedBody = false,
@@ -41,7 +41,7 @@ local Config = {
 		},
 	},
 
-	-- Vault / climb (2026-11-07) replaces the stock jump: Space, or sprinting into cover,
+	-- Vault / climb replaces the stock jump: Space, or sprinting into cover,
 	-- sends the body over or onto whatever is in front of it. Heights are the ledge top
 	-- above the feet. Jersey 2.75, hesco 4.6, bunker 6.3, humvee 7.1, container 9.6 pass;
 	-- T-walls and buses (12.5) do not.
@@ -52,13 +52,13 @@ local Config = {
 		ClimbMaxHeight = 10.5, -- up to here it mantles onto the top (climb clip)
 		VaultDepth = 6.5, -- cover thinner than this, with ground behind, is vaulted over
 		Headroom = 5, -- clear studs needed above a landing to stand there
-		VaultDuration = 0.55, -- seconds; the clip rate is scaled to match (0.9 before 2026-11-07)
-		ClimbDuration = 1.1, -- (1.8 before 2026-11-07)
+		VaultDuration = 0.55, -- seconds; the clip rate is scaled to match
+		ClimbDuration = 1.1,
 		-- Infected melee skips a body going over cover (CoverMoveService): the window is the
 		-- move's duration plus Grace; a new window opens no sooner than Cooldown after the
 		-- last one closed, so spamming the remote never gives standing immunity.
 		CoverImmunity = { Grace = 0.15, Cooldown = 0.4 },
-		-- Weight (client MomentumController, 2026-11-07): the body's velocity eases toward
+		-- Weight (client MomentumController): the body's velocity eases toward
 		-- the input instead of snapping, so turning and stopping cost time and kiting
 		-- takes footwork. Studs/s per second; Deceleration also applies when reversing.
 		Momentum = {
@@ -81,7 +81,7 @@ local Config = {
 	},
 
 	-- Hit marker (client HitMarkerUI): four ticks round the crosshair on your own hits,
-	-- replacing floating damage numbers (2026-11-07). Seconds and pixels.
+	-- replacing floating damage numbers. Seconds and pixels.
 	HitMarker = {
 		Duration = 0.16,
 		KillDuration = 0.4,
@@ -97,7 +97,7 @@ local Config = {
 		},
 	},
 
-	-- Bot squadmates (BotService, 2026-11-07): the other Chosen fill the squad in solo, one
+	-- Bot squadmates (BotService): the other Chosen fill the squad in solo, one
 	-- fewer per real player. Server-side bodies on the Squad roster: the Infected target
 	-- them, they follow the nearest player in formation and shoot the nearest Infected they
 	-- can see. Downed/revive and call-ins come with Sprint A step 6 and the loadout rework.
@@ -117,14 +117,14 @@ local Config = {
 		FollowSlack = 4, -- closer than this to the slot: stand
 		RunBeyond = 16, -- further than this: run
 		TeleportBeyond = 80, -- further than this (stuck, fell behind): reappear in the slot
-		-- Stuck on a doorway or a stair (2026-11-07): moved less than StuckDistance toward a
+		-- Stuck on a doorway or a stair: moved less than StuckDistance toward a
 		-- far slot for StuckSeconds -> reappear in the slot at floor level.
 		StuckSeconds = 3,
 		StuckDistance = 1,
-		-- Loadout rework 2026-11-07: a bot fires the service rifle (same Damage, magazine and
-		-- reload as the player: WeaponDefinitions) slower than the player, so three bots on
-		-- sustained fire (3 x ~67 DPS burst) roughly equal one player; its reserve is infinite.
-		-- M16 pass 2026-11-07: 0.45 -> 0.30 with the player's 750 rpm (fallback 0.35).
+		-- A bot fires the service rifle (same Damage, magazine and reload as the player:
+		-- WeaponDefinitions) slower than the player, so three bots on sustained fire (3 x ~67
+		-- DPS burst) roughly equal one player; its reserve is infinite. Fallback 0.35 if they
+		-- carry too hard.
 		Range = 90, -- studs; the Infected beyond this are ignored
 		FireCooldown = 0.30, -- seconds between shots (the player: 0.08)
 		Damage = 20, -- per round (the player: 20)
@@ -186,8 +186,8 @@ local Config = {
 	},
 
 	-- The service rifle (WeaponDefinitions.service_rifle reads these). Realistic time-to-kill
-	-- (loadout rework 2026-11-07): Walker 3 body / 1 head, Runner 2 / 1, Hocker 4 / 2,
-	-- Brute 13 / 11 at the flat curve. M16 pass (owner, 2026-11-07): full auto at the
+	-- per form: Walker 3 body / 1 head, Runner 2 / 1, Hocker 4 / 2,
+	-- Brute 13 / 11 at the flat curve. M16 pass (owner): full auto at the
 	-- M16A1's ~750 rpm cyclic, same rounds-to-kill, so TTK roughly halves (Walker 0.16 s,
 	-- Brute 0.96 s body); the bloom below makes a held trigger spray at range, so trigger
 	-- discipline (3-5 round bursts) is the skill. Burst DPS 250, sustained over mag + reload 133.
@@ -198,8 +198,8 @@ local Config = {
 		-- empty, R reloads (cancelled by a roll, a slide or going down). Pallets re-arm.
 		MagazineSize = 30,
 		ReloadTime = 2.2, -- seconds
-		-- Balance pass 2026-11-07 (owner: "not enough ammo"): 180 -> 240, so 30 + 240 = 9 mags
-		-- (a combat load); with cheaper pallets the Warden fight no longer runs dry.
+		-- 30 + 240 = 9 mags (a combat load): with the pallet costs below the Warden fight never
+		-- runs the M16 dry.
 		ReserveStart = 240, -- rounds in reserve at insert (+ the 30 loaded: 9 mags)
 		ReserveMax = 240,
 		-- Bloom (M16 pass): each round widens the cone by BloomPerShot degrees up to BloomMax
@@ -211,7 +211,7 @@ local Config = {
 		BloomMax = 3.5,
 		BloomRecovery = 12,
 		BloomRecoveryDelay = 0.1,
-		-- The rifle is hitscan (2026-11-07): one raycast per shot, damage lands the same
+		-- The rifle is hitscan: one raycast per shot, damage lands the same
 		-- frame. Range caps the ray; the tracer is client-drawn feedback only.
 		Range = 400,
 		TracerDuration = 0.06,
@@ -221,7 +221,7 @@ local Config = {
 		ProjectileLifetime = 3, -- seconds before despawn
 		ProjectileSize = Vector3.new(0.4, 0.4, 1.4),
 		MaxAimDistance = 1000, -- how far the aim raycast reaches
-		-- Spread (2026-11-07): half-angle of the cone a shot can land in, degrees. Hip fire
+		-- Spread: half-angle of the cone a shot can land in, degrees. Hip fire
 		-- puts a round about a stud off at 40 studs; aiming down sights (hold RMB) tightens it.
 		HipSpread = 1.5,
 		ADS = {
@@ -266,7 +266,7 @@ local Config = {
 			loco_run_b = "rbxassetid://124184233710991",
 			loco_run_l = "rbxassetid://107986387272761",
 			loco_run_r = "rbxassetid://120945922251815",
-			-- Movement set (2026-11-07): vault/climb, crouch, prone; Infected climbs and
+			-- Movement set: vault/climb, crouch, prone; Infected climbs and
 			-- extras (Crawler move, flinch, Hocker scream) for later.
 			vault_low = "rbxassetid://122259453837052",
 			sprint_roll = "rbxassetid://80433355485535",
@@ -292,7 +292,7 @@ local Config = {
 			zombie_crawl = "rbxassetid://101414875993165",
 			zombie_stumble = "rbxassetid://78987755637091",
 			zombie_scream = "rbxassetid://91289969066728",
-			-- The Warden (2026-11-07): Mixamo Sword And Shield pack (shield on the left arm).
+			-- The Warden: Mixamo Sword And Shield pack (shield on the left arm).
 			-- Empty id = Studio preview from the retargeted table until published.
 			warden_walk = "rbxassetid://111642668033721",
 			warden_run = "rbxassetid://95287504134232",
@@ -456,8 +456,8 @@ local Config = {
 	-- DropDelay seconds later. The pallet is the ammo box: anyone who walks up to it is re-armed
 	-- once (full magazine + reserve), and its three cards are the supply cards in Crates.
 	Requisition = {
-		-- Balance pass 2026-11-07: 500 / 1.35 / 3000 / 0.8 starved the M16 (empty ~85 s in the
-		-- Warden fight); a first pallet ~1:15, pallets keep coming through the boss.
+		-- Sized for the M16's ammo burn: a first pallet around 1:15 and pallets keep coming
+		-- through the Warden fight (steeper costs left the squad empty for ~85 s there).
 		BaseCost = 300,
 		CostGrowth = 1.15, -- per drop, run-wide
 		CostCap = 1000, -- late run: a pallet about every 2 min
@@ -479,7 +479,7 @@ local Config = {
 		},
 	},
 
-	-- Pallet cards (loadout rework 2026-11-07): every pallet shows each player the same three
+	-- Pallet cards: every pallet shows each player the same three
 	-- supply cards (UpgradeDefinitions, Kind "supply"); walk into one to take it. Upgrade
 	-- crates (the Primary's site crate today; Stores and Secondary crates later) show
 	-- CardsPerPlayer field upgrades instead. No rarity.
@@ -594,15 +594,15 @@ local Config = {
 		SpawnFactor = 0.8, -- spawn interval multiplier while extracting (+20%)
 	},
 
-	-- Flat threat curve (the spine, 2026-11-07): no per-minute health or damage growth. The
+	-- Flat threat curve (the spine): no per-minute health or damage growth. The
 	-- Infected get scarier by composition (Spawning phases) and count, not by numbers.
 	Difficulty = {
 		HealthPerMinute = 0,
 		HealthCap = 1,
 		DamagePerMinute = 0,
 		DamageCap = 1,
-		-- Balance pass 2026-11-07 (owner: "spawn rate too high"): 0.93 / 1.0 -> 0.95 / 1.5,
-		-- a third fewer bodies a minute late in the run.
+		-- A slow ramp and a 1.5 s floor: about 40 bodies a minute late in the run before the
+		-- hold and extraction multipliers.
 		SpawnIntervalDecayPerMinute = 0.95, -- spawn interval multiplier per minute
 		MinSpawnInterval = 1.5, -- seconds
 		-- Population cap ramps with run time: { upToSeconds, maxAlive }.
@@ -632,6 +632,14 @@ local Config = {
 	-- Spawn director phases (Sprint 9): type weights per run-time window,
 	-- plus fairness caps. Enemy stats live in shared/EnemyDefinitions.luau.
 	Spawning = {
+		SpawnInterval = 3, -- base seconds between spawns (decays per minute, Difficulty)
+		InitialCount = 5, -- Walkers spawned right at run start
+		MinSpawnDistance = 35, -- studs from the player
+		MaxSpawnDistance = 50,
+		-- A spawn point must be open ground: not on dressing, a perch, a roof or inside a
+		-- building footprint (+ margin). Tries this many candidates, then takes the last.
+		SpawnAttempts = 6,
+		SpawnBuildingMargin = 2,
 		Phases = {
 			{ Until = 75, Weights = { Walker = 100 } },
 			{ Until = 180, Weights = { Walker = 75, Runner = 25 } },
@@ -650,7 +658,7 @@ local Config = {
 	},
 
 	-- The Infected. Base values at difficulty step 0; see Difficulty above.
-	-- Sound (sound day 2026-11-07). Clips are packed per speaker in SoundBanks; a group is a
+	-- Sound. Clips are packed per speaker in SoundBanks; a group is a
 	-- clip name without its variant number. Volumes are per group (0-1, DefaultVolume when
 	-- unlisted); 3D sounds roll off between the two distances (studs).
 	Audio = {
@@ -693,10 +701,10 @@ local Config = {
 			RollOffMin = 6,
 			RollOffMax = 40,
 			MinInterval = 0.1, -- seconds; blocks a double step when the dominant clip switches
-			WalkVolume = 0.35, -- multiplier on the surface group volume (halved 2026-11-07)
+			WalkVolume = 0.35, -- multiplier on the surface group volume
 			RunVolume = 0.5,
 			-- Footfall phases (fraction of the loop) per locomotion clip: when the phase
-			-- crosses one, a foot has landed. Measured in Studio 2026-11-07 from the lowest
+			-- crosses one, a foot has landed. Measured in Studio from the lowest
 			-- points of the LeftFoot/RightFoot parts over one loop (left, then right); {0, 0.5}
 			-- when a clip is unlisted.
 			Phases = {
@@ -712,7 +720,7 @@ local Config = {
 		},
 	},
 
-	-- Stage 1 building kit (ArenaService.buildBuilding; docs/LEVELS.md section B, 2026-11-07).
+	-- Stage 1 building kit (ArenaService.buildBuilding; docs/LEVELS.md section B).
 	-- Studs. A storey is 9 with a 0.6 slab (8.4 clear: a 2x Brute needs a room built taller,
 	-- like the Shed's 12.5); doors 4 x 8; windows 5 wide at sill 3.2 / head 8.6 (a vault over
 	-- the sill, under the head); stairs are WedgeParts at ~33 degrees; every roof has a 1.2
@@ -722,7 +730,7 @@ local Config = {
 		-- Invisible composite-collider Parts the dressing may place (docs/LEVELS.md A8);
 		-- ArenaService warns at boot past it.
 		ColliderBudget = 256,
-		-- The perimeter (docs/LEVELS.md A15, 2026-11-07): the solid walls are gone; an invisible
+		-- The perimeter (docs/LEVELS.md A15): the solid walls are gone; an invisible
 		-- collider stands just behind the fence line, and Infected spawns are clamped inside
 		-- SpawnInset so none lands in the fence band or outside it.
 		BoundaryHeight = 80,
@@ -759,12 +767,16 @@ local Config = {
 		},
 	},
 
-	-- Vertical chase (EQ-B1, 2026-11-07): the Infected have no pathfinding except here. A
+	-- Vertical chase (EQ-B1): the Infected have no pathfinding except here. A
 	-- melee form whose target stands more than PathfindVerticalGap above it, within
 	-- PathfindBuildingRadius of a kit building, follows a PathfindingService path (stairs,
 	-- doors, ramps) recomputed no more than every PathfindInterval; at most PathfindingMax
 	-- bodies path at once, the rest (and any failed path) chase straight as before.
 	Enemies = {
+		CorpseLifetime = 1.5, -- seconds before a dead Infected is removed
+		BossCorpseLifetime = 8, -- an Index host's body stays long enough to read
+		MaxPuddles = 8, -- caustic puddles alive at once (perf); the oldest goes first
+		ThroatSacSwell = 1.8, -- Hocker sac size multiplier at the end of the windup
 		PathfindingMax = 10,
 		PathfindInterval = 0.5,
 		PathfindVerticalGap = 4,
@@ -780,7 +792,7 @@ local Config = {
 	-- the screening lane to the Apron, then hunts. Body and plate health scale per extra
 	-- living player (HealthPerExtraPlayer: the one exception to MULTIPLAYER_READINESS
 	-- decision 6). Distances in studs, times in seconds; damage per hit before
-	-- Difficulty.DamageMultiplier. Numbers: systems designer 2026-11-07, scale 1.9 (art).
+	-- Difficulty.DamageMultiplier. Numbers: systems designer, scale 1.9 (art).
 	Index = {
 		Warden = {
 			SpawnPosition = Vector3.new(-30, 0, -290), -- beyond the Gate (LEVELS A6)
@@ -888,7 +900,7 @@ local Config = {
 				SpeedFactor = 0.5,
 				PlateDamageFactor = 0.25,
 			},
-			-- Kit expansion (systems-designer pass 2026-11-07): where you stand picks his move.
+			-- Kit expansion (systems-designer pass): where you stand picks his move.
 			-- Beat (IndexService.chooseAttack): seconds he walks between one recovery ending
 			-- and the next decision, by phase. The pause is what makes a rhythm, not a spam.
 			AttackGap = { 1.0, 0.7, 0.4 },
@@ -969,7 +981,7 @@ local Config = {
 			-- The priority pallet on death: an upgrade crate (Crates.CardsPerPlayer cards each),
 			-- a full heal and a re-arm; his SupplyValue goes to the Resupply pool like any kill.
 			Drop = { Offset = 6 },
-			-- Radio lines (lore developer 2026-11-07), shown as notices. Insert and wipe lines
+			-- Radio lines (lore developer), shown as notices. Insert and wipe lines
 			-- belong to RunManager flows later.
 			Radio = {
 				PrimaryComplete = "Control copies. That's the Primary. Index is moving at the Gate.",
@@ -983,21 +995,6 @@ local Config = {
 				Kill = "Index down. Control copies. Gate's yours, Pike. Pallet inbound.",
 			},
 		},
-	},
-
-	Zombies = {
-		SpawnInterval = 3, -- base seconds between spawns (decays per minute); 2 before the 2026-11-07 balance pass
-		InitialCount = 5, -- Walkers spawned right at run start
-		MinSpawnDistance = 35, -- studs from the player
-		MaxSpawnDistance = 50,
-		-- A spawn point must be open ground (2026-11-07): not on dressing, a perch, a roof or
-		-- inside a building footprint (+ margin). Tries this many candidates, then takes the last.
-		SpawnAttempts = 6,
-		SpawnBuildingMargin = 2,
-		CorpseLifetime = 1.5, -- seconds before a dead zombie is removed
-		BossCorpseLifetime = 8, -- an Index host's body stays long enough to read
-		MaxPuddles = 8, -- caustic puddles alive at once (perf); the oldest goes first
-		ThroatSacSwell = 1.8, -- Hocker sac size multiplier at the end of the windup
 	},
 }
 

@@ -1,5 +1,5 @@
 --!strict
--- The loadout (loadout rework 2026-11-07, replaced ItemService): per player, the weapon it
+-- The loadout (replaced ItemService): per player, the weapon it
 -- carries with its magazine and reserve, the two call-in slots (keys 1 and 2), the six
 -- field-upgrade slots and the Armour Plate shield. Power comes from here, not from in-run
 -- growth (docs/PROGRESSION.md > Loadout, pallets and field upgrades). Server-authoritative:

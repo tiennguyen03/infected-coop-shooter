@@ -10,7 +10,7 @@ local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local GroundUtil = require(ReplicatedStorage.Shared.GroundUtil)
-local ItemEffectService = require(script.Parent.ItemEffectService)
+local DamageService = require(script.Parent.DamageService)
 local PauseService = require(script.Parent.PauseService)
 
 local ENEMY_TAG = "Enemy"
@@ -116,7 +116,7 @@ local function onHeartbeat()
 					local root = model:FindFirstChild("HumanoidRootPart") :: BasePart?
 					if humanoid and humanoid.Health > 0 and root then
 						if (root.Position - center).Magnitude <= cfg.Radius then
-							ItemEffectService.dealDamage(
+							DamageService.dealDamage(
 								pool.owner,
 								humanoid,
 								cfg.DamagePerSecond,

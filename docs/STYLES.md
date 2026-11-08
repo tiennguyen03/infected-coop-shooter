@@ -136,7 +136,7 @@ SVG primitives; the script writes `assets/icons/<id>.svg` + `.png` (PNGs are git
 node assets/icons/build/icons.js sheet          # render all + build/contact_sheet.png
 node assets/icons/build/icons.js <id> [<id>...] # render a subset
 node assets/icons/build/upload.js <id> [...]    # Open Cloud upload -> prints decal/image ids
-node assets/icons/build/wire.js                 # writes IconId into ItemDefinitions + ASSET_IDS.md (stale: ItemDefinitions is gone, retarget to CallInDefinitions / UpgradeDefinitions before the next icon batch)
+node assets/icons/build/wire.js                 # rewrites ASSET_IDS.md from uploaded_ids.json (nothing in src/ reads icon ids yet; add IconId to CallInDefinitions / UpgradeDefinitions when cards get icons)
 ```
 
 `upload.js` reads `ROBLOX_OPEN_CLOUD_API_KEY` from the environment or from the robloxstudio

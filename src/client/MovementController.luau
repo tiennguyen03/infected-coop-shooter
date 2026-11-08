@@ -1,5 +1,5 @@
 --!strict
--- Vault and climb (2026-11-07) in place of the stock jump. Space, with cover in front
+-- Vault and climb in place of the stock jump. Space, with cover in front
 -- (Shared.Ledge), carries the body over thin low cover (jersey, hesco: the vault clip) or
 -- onto taller cover (bunker, humvee, container: the climb clip); sprinting into low cover
 -- vaults by itself. T-walls and buses are too tall and stay walls. During a move the root
@@ -8,7 +8,7 @@
 -- (StanceController). Space with nothing in front stands a crouched or prone body up; it
 -- never jumps (PlayerSetup zeroes JumpPower as well).
 --
--- Roll and slide (2026-11-07): while sprinting, LeftControl rolls and C slides along the
+-- Roll and slide: while sprinting, LeftControl rolls and C slides along the
 -- direction of travel (StanceController leaves those keys alone while sprinting). Both
 -- lock the heading, drive the humanoid along that direction at a speed this module owns
 -- (SprintController.setOverrideSpeed) and hand the exit speed back to MomentumController.

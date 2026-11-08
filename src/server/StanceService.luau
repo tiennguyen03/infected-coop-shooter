@@ -1,5 +1,5 @@
 --!strict
--- Crawl spaces (2026-11-07): the client owns its stance (StanceController) and tells the
+-- Crawl spaces: the client owns its stance (StanceController) and tells the
 -- server through the Stance remote. Prone drops the Humanoid's HipHeight to
 -- Config.Player.Stances.ProneHipHeight so the root part (the only collider) fits under a
 -- 2.8 gap (the Scrapes), and lifts the rig by the same amount on the Root Motor6D so the
@@ -24,7 +24,7 @@ local ROOT_DROP_ATTRIBUTE = "RootDrop"
 -- While prone every body part but the root is in this group, which touches nothing: the
 -- prone and crawl clips press the torso and head into the floor, and a solid torso there
 -- props the root above its floor ray (Freefall, no friction: the body slides). The root
--- stays the one collider, as the prone rules assume (owner bug report, 2026-11-07).
+-- stays the one collider, as the prone rules assume (owner bug report).
 local PRONE_GROUP = "ProneBody"
 local SETTLE_ATTRIBUTE = "StanceSettle" -- bumps on every stand-up: a stale settle wait gives up
 local SETTLE_TIMEOUT = 1 -- seconds: the longest a standing body stays non-colliding
@@ -40,7 +40,7 @@ end
 -- and joins the root with an AnimationConstraint instead, which takes it on the root's
 -- RootRigAttachment (the constraint's Attachment0). Before this the constraint rig never
 -- got the lift, so a prone body hung on its own torso above its floor ray, the Humanoid sat
--- in Freefall (no friction) and the body slid (owner bug report, 2026-11-07).
+-- in Freefall (no friction) and the body slid (owner bug report).
 local function liftRig(character: Model, lift: number)
 	local motor = rootMotor(character)
 	if motor then
@@ -169,7 +169,7 @@ function StanceService.init()
 			-- height: the crawl clip is authored for a standing root, so dropping the hip
 			-- leaves the torso and head (solid) holding the root up off its floor ray, the
 			-- Humanoid falls into Freefall (no friction) and contact jitter throws the body
-			-- across the map (owner bug report, 2026-11-07).
+			-- across the map (owner bug report).
 			if character:GetAttribute("SquadState") == "Downed" then
 				return
 			end

@@ -1,10 +1,10 @@
 --!strict
--- Bot squadmates (2026-11-07). In solo the other Chosen fill the squad as server-side AI
+-- Bot squadmates. In solo the other Chosen fill the squad as server-side AI
 -- (docs/PROGRESSION.md > The spine): one fewer per real player, up to a squad of 4. Each
 -- bot is a Squad member, so the Infected chase it and enemy splash hurts it exactly like a
 -- player. It wears the class body and rifle (PlayerSetup), follows the nearest player in a
 -- formation slot, faces and shoots the nearest Infected it can see through the one damage
--- entry point (ItemEffectService.dealDamage with no attacker: no kill credit, no hit
+-- entry point (DamageService.dealDamage with no attacker: no kill credit, no hit
 -- marker), and rejoins at its slot RespawnSeconds after dying. Numbers in Config.Bots.
 -- Downed (Squad): a downed bot lies prone and waits; a standing bot breaks formation to
 -- revive the nearest downed squadmate when no Infected is close (Config.Bots.Revive*).
@@ -22,7 +22,7 @@ local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local RunStates = require(ReplicatedStorage.Shared.RunStates)
 local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
-local ItemEffectService = require(script.Parent.ItemEffectService)
+local DamageService = require(script.Parent.DamageService)
 local PlayerSetup = require(script.Parent.PlayerSetup)
 local ProjectileServer = require(script.Parent.ProjectileServer)
 local Squad = require(script.Parent.Squad)
@@ -325,7 +325,7 @@ local function shoot(bot: Bot, origin: Vector3, aim: Vector3, params: RaycastPar
 			local weapon = WeaponDefinitions.get(WeaponDefinitions.DEFAULT)
 			local multiplier, kind =
 				ProjectileServer.hitMultiplier(hit.Instance, humanoid, weapon.HeadshotMultiplier)
-			ItemEffectService.dealDamage(
+			DamageService.dealDamage(
 				nil,
 				humanoid,
 				Config.Bots.Damage * multiplier,

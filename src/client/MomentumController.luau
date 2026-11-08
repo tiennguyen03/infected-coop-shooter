@@ -1,5 +1,5 @@
 --!strict
--- Weight (2026-11-07). Stock Roblox walking snaps to full speed and stops dead, which makes
+-- Weight. Stock Roblox walking snaps to full speed and stops dead, which makes
 -- kiting free. Each frame, after the default control script has read the input (it calls
 -- Humanoid:Move at RenderPriority.Input), this eases a tracked velocity toward the input
 -- direction times WalkSpeed and hands the humanoid that instead: speeding up, stopping and

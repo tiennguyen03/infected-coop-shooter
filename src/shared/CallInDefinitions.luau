@@ -1,5 +1,5 @@
 --!strict
--- Call-ins (loadout rework 2026-11-07): the two slots on keys 1 and 2, chosen before the
+-- Call-ins: the two slots on keys 1 and 2, chosen before the
 -- drop (the Armory later; the dev panel today). Metadata only: names are the lore names
 -- (docs/LORE.md), numbers live in Config.CallIns, the effect lives in the owning service
 -- (DroneService, MineService, AirStrikeService, ShockCoilService) fired by CallInService.

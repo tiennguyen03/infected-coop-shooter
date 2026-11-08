@@ -1,5 +1,5 @@
 --!strict
--- Downed crawl (2026-11-07). While the local character is Downed (Squad: SquadState
+-- Downed crawl. While the local character is Downed (Squad: SquadState
 -- attribute) it crawls on hands and knees at Config.Downed.CrawlSpeed (SprintController
 -- sets the speed). This plays the Mixamo crawl clip over everything else, its rate following
 -- ground speed against Config.Animations.MoveClipSpeed, and frozen on all fours when still.

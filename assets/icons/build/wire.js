@@ -1,16 +1,17 @@
-// Wire uploaded icon ids into the game.
+// Record uploaded icon ids.
 //   node assets/icons/build/wire.js
 // Reads build/uploaded_ids.json (written by upload.js) and rewrites
-//   - src/shared/ItemDefinitions.luau   IconId = "rbxassetid://<imageId>" per item
-//   - assets/icons/ASSET_IDS.md         the id table
-// Items missing from uploaded_ids.json keep their current IconId.
+//   - assets/icons/ASSET_IDS.md   the id table
+// The item economy that used these icons (ItemDefinitions) is gone since the loadout
+// rework; nothing in src/ reads an icon id today. When the supply / upgrade cards and the
+// call-ins get icons, add an IconId field to UpgradeDefinitions / CallInDefinitions and
+// paste the image id from the table (or teach this script to write that field).
 
 const fs = require("fs");
 const path = require("path");
 
 const ROOT = path.join(__dirname, "..", "..", "..");
 const IDS_FILE = path.join(__dirname, "uploaded_ids.json");
-const DEFS = path.join(ROOT, "src", "shared", "ItemDefinitions.luau");
 const TABLE = path.join(ROOT, "assets", "icons", "ASSET_IDS.md");
 
 if (!fs.existsSync(IDS_FILE)) {
@@ -19,38 +20,20 @@ if (!fs.existsSync(IDS_FILE)) {
 }
 const ids = JSON.parse(fs.readFileSync(IDS_FILE, "utf8"));
 
-let src = fs.readFileSync(DEFS, "utf8");
-let changed = 0;
-for (const [id, r] of Object.entries(ids)) {
-	if (!r.imageId) continue;
-	const re = new RegExp(`(Id = "${id}",[\\s\\S]*?IconId = ")rbxassetid://\\d+(")`);
-	const next = src.replace(re, `$1rbxassetid://${r.imageId}$2`);
-	if (next !== src) {
-		changed++;
-		src = next;
-	} else if (!new RegExp(`Id = "${id}",[\\s\\S]*?IconId = "rbxassetid://${r.imageId}"`).test(src)) {
-		console.warn("could not find an IconId line for " + id);
-	}
-}
-fs.writeFileSync(DEFS, src);
-
-// Rebuild the id table from what ItemDefinitions now contains.
-const rows = [];
-const re = /Id = "([a-z_]+)"[\s\S]*?IconId = "rbxassetid:\/\/(\d+)"/g;
-let m;
-while ((m = re.exec(src))) {
-	const decal = ids[m[1]] && ids[m[1]].decalId ? ids[m[1]].decalId : "";
-	rows.push(`| ${m[1]} | ${decal} | ${m[2]} |`);
-}
+const rows = Object.entries(ids)
+	.filter(([, r]) => r.imageId)
+	.sort(([a], [b]) => a.localeCompare(b))
+	.map(([id, r]) => `| ${id} | ${r.decalId || ""} | ${r.imageId} |`);
 const table = [
 	"# Uploaded icon asset IDs",
 	"",
 	"Uploaded via Open Cloud (creator: PEPPERROCKET / 67169996) with",
-	"`assets/icons/build/upload.js`; wired with `wire.js`. Use the **image** id",
-	"(`rbxassetid://<imageId>`) in `ItemDefinitions.IconId`; the decal id is the container asset",
-	"shown on the Creator dashboard. Style spec: docs/STYLES.md.",
+	"`assets/icons/build/upload.js`; this table is written by `wire.js` from",
+	"`build/uploaded_ids.json`. Use the **image** id (`rbxassetid://<imageId>`) in game code;",
+	"the decal id is the container asset shown on the Creator dashboard. Nothing in `src/`",
+	"reads these today (the item economy that used them is gone). Style spec: docs/STYLES.md.",
 	"",
-	"| Item | Decal ID | Image ID (use this) |",
+	"| Icon | Decal ID | Image ID (use this) |",
 	"|---|---|---|",
 	...rows,
 	"",
@@ -58,4 +41,4 @@ const table = [
 	"",
 ].join("\n");
 fs.writeFileSync(TABLE, table);
-console.log(`wired ${changed} IconId values; table has ${rows.length} rows`);
+console.log(`table has ${rows.length} rows`);

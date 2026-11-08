@@ -1,6 +1,6 @@
 --!strict
--- Sends Q (dash) / E (breach) ability requests, the 1 / 2 call-ins (loadout rework
--- 2026-11-07) and the 3 (Resupply flare) throw to the server. The server validates and
+-- Sends Q (dash) / E (breach) ability requests, the 1 / 2 call-ins and
+-- the 3 (Resupply flare) throw to the server. The server validates and
 -- performs them; this controller forwards input and draws the breach ghost: hold E and a
 -- ring shows where the charge will land (the aim point, clamped to throw range, dropped to
 -- the ground), release to throw it there. A tap throws at the crosshair. The call-ins and

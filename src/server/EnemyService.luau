@@ -1,15 +1,15 @@
 --!strict
--- Enemy system (Sprint 9; behaviour hooks 2026-11-06): every Infected form is a row in
+-- Enemy system (behaviour hooks): every Infected form is a row in
 -- EnemyDefinitions. Melee forms chase and hit on contact; projectile forms (Hocker) close to
 -- throw range, plant, wind up and lob through EnemyProjectileService. A phase-based spawn
 -- director picks types by run time with fairness caps from Config.Spawning (count
 -- schedules and share caps keyed by type). Enemies pass through each other (Enemy collision
 -- group) but still hit players and the world. Player damage: EnemyProjectileService.damagePlayer.
--- Climbing (2026-11-07): a melee form pressed against cover no taller than its
+-- Climbing: a melee form pressed against cover no taller than its
 -- EnemyDefinitions.ClimbHeight goes over it (Shared.Ledge; the root is anchored and driven
 -- along the ledge path for Config.Movement.Infected.Duration seconds while its climb clip
 -- plays); taller cover falls through to the nudge rule.
--- Vertical chase (EQ-B1, 2026-11-07): a target more than Config.Enemies.PathfindVerticalGap
+-- Vertical chase (EQ-B1): a target more than Config.Enemies.PathfindVerticalGap
 -- above a melee form near a kit building (ArenaService footprints) is followed on a
 -- PathfindingService path (doors, stairs, ramps) by up to PathfindingMax bodies at once;
 -- a failed path, or no slot, falls back to the straight chase.
@@ -30,7 +30,7 @@ local RunStates = require(ReplicatedStorage.Shared.RunStates)
 local ArenaService = require(script.Parent.ArenaService)
 local DifficultyService = require(script.Parent.DifficultyService)
 local EnemyProjectileService = require(script.Parent.EnemyProjectileService)
-local ItemEffectService = require(script.Parent.ItemEffectService)
+local DamageService = require(script.Parent.DamageService)
 local PauseService = require(script.Parent.PauseService)
 local WorldSounds = require(script.Parent.WorldSounds)
 local Squad = require(script.Parent.Squad)
@@ -48,7 +48,7 @@ local NUDGE_STUCK_DISTANCE = 1
 local NUDGE_DISTANCE = 8
 local SAC_OFFSET = CFrame.new(0, 0.95, -0.5) -- throat sac relative to UpperTorso (the rig faces -Z)
 local SAC_SIZE = 0.9
--- Vocals (sound day 2026-11-07): each form has a bank named after it (SoundBanks) with
+-- Vocals: each form has a bank named after it (SoundBanks) with
 -- <form>_idle / _attack / _hurt / _death groups (the Hocker adds _windup and _spit); lines
 -- play 3D from the head through WorldSounds. Ambient lines are spaced per body and across
 -- the horde (Config.Audio.Voice).
@@ -226,11 +226,11 @@ local function onZombieDied(zombie: Zombie)
 	for _, listener in killListeners do
 		listener(zombie.supplyValue, zombie.root.Position)
 	end
-	ItemEffectService.onEnemyKilled(zombie.humanoid)
+	DamageService.onEnemyKilled(zombie.humanoid)
 	local definition = EnemyDefinitions[zombie.typeName]
 	local lifetime = if definition and definition.Boss
-		then Config.Zombies.BossCorpseLifetime
-		else Config.Zombies.CorpseLifetime
+		then Config.Enemies.BossCorpseLifetime
+		else Config.Enemies.CorpseLifetime
 	task.delay(lifetime, function()
 		zombie.model:Destroy()
 	end)
@@ -555,7 +555,7 @@ local function stepProjectileZombie(zombie: Zombie, now: number)
 		local progress = if windup > 0
 			then math.clamp(1 - (windupUntil - now) / windup, 0, 1)
 			else 1
-		setSacScale(zombie, 1 + (Config.Zombies.ThroatSacSwell - 1) * progress)
+		setSacScale(zombie, 1 + (Config.Enemies.ThroatSacSwell - 1) * progress)
 		if now >= windupUntil then
 			zombie.windupUntil = nil
 			zombie.lastAttackTime = now
@@ -798,7 +798,7 @@ local function isOpenGround(hit: RaycastResult?): boolean
 	return true
 end
 
--- A ring around `center`; retries (Config.Zombies.SpawnAttempts) until the candidate is open
+-- A ring around `center`; retries (Config.Spawning.SpawnAttempts) until the candidate is open
 -- ground outside every building footprint, then settles for the last one.
 local function groundPositionNear(
 	center: Vector3,
@@ -821,7 +821,7 @@ local function groundPositionNear(
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Exclude
 	params.FilterDescendantsInstances = exclude
-	for _ = 1, Config.Zombies.SpawnAttempts do
+	for _ = 1, Config.Spawning.SpawnAttempts do
 		local angle = math.random() * math.pi * 2
 		local distance = math.random(minDistance, maxDistance)
 		-- Inside the perimeter (Config.Arena.SpawnInset): no spawn in the fence band or past it.
@@ -834,7 +834,7 @@ local function groundPositionNear(
 		candidate = Vector3.new(x, groundY, z)
 		if
 			isOpenGround(result)
-			and not ArenaService.insideBuilding(candidate, Config.Zombies.SpawnBuildingMargin)
+			and not ArenaService.insideBuilding(candidate, Config.Spawning.SpawnBuildingMargin)
 		then
 			return candidate
 		end
@@ -854,8 +854,8 @@ local function randomSpawnPosition(): Vector3?
 	end
 	return groundPositionNear(
 		root.Position,
-		Config.Zombies.MinSpawnDistance,
-		Config.Zombies.MaxSpawnDistance
+		Config.Spawning.MinSpawnDistance,
+		Config.Spawning.MaxSpawnDistance
 	)
 end
 
@@ -1059,7 +1059,7 @@ function EnemyService.startSortie()
 	local generation = sortieGeneration
 	task.delay(1.5, function()
 		if generation == sortieGeneration and RunStates.isLive() then
-			EnemyService.spawnWave("Walker", Config.Zombies.InitialCount)
+			EnemyService.spawnWave("Walker", Config.Spawning.InitialCount)
 		end
 	end)
 end

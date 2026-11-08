@@ -1,5 +1,5 @@
 --!strict
--- Hit feedback (replaced the floating damage numbers 2026-11-07). The server reports every
+-- Hit feedback. The server reports every
 -- hit with DamageDealt(position, amount, kind, attacker). Everyone sees the spark burst and
 -- hears the 3D hit sound at the hit point; only the attacker gets the crosshair hit marker:
 -- four diagonal ticks, white on a hit, larger and gold on a headshot, larger and red on a

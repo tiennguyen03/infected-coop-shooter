@@ -1,6 +1,6 @@
 --!strict
 -- Bottom-right ability panel: Q Dash + E Breach with cooldown countdowns, then the two
--- call-in tiles [1] / [2] (loadout rework 2026-11-07) with the lore name, charge pips and
+-- call-in tiles [1] / [2] with the lore name, charge pips and
 -- the time to the next charge (CallIn<n>Charges / CallIn<n>ReadyAt attributes, server
 -- time), plus a Combat Momentum stack readout. Ability cooldowns are driven by the
 -- AbilityUsed remote (server authority); the UI counts down locally for display only.

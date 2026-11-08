@@ -6,7 +6,7 @@
 -- Invoke from the client DevTestPanel (creator), or directly via the Studio
 -- MCP runtime eval, e.g.:
 --   require(game.ServerScriptService.Server.DevTestService).spawnEnemy("Brute", 1)
--- Loadout rework (2026-11-07): SetCallIn / GiveUpgrade / ClearUpgrades / RefillAmmo /
+-- Loadout rework: SetCallIn / GiveUpgrade / ClearUpgrades / RefillAmmo /
 -- RestockCallIns / SetWeapon / DropUpgradeCrate / DropSupplyCrate drive LoadoutService,
 -- CallInService and RequisitionService directly.
 
@@ -392,7 +392,7 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 		RequisitionService.addRequisition(math.max(cost - RequisitionService.getPool(), 0))
 		print("[DevTest] FillResupply -> pool covers the next flare")
 	end,
-	-- Dev tools v2 (2026-11-07). Toggles answer with the new state in the output.
+	-- Dev tools v2. Toggles answer with the new state in the output.
 	God = function(player)
 		local on = player:GetAttribute("DevGod") ~= true
 		player:SetAttribute("DevGod", on)

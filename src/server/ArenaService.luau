@@ -3,7 +3,7 @@
 -- Rain 2 stage: open ground with raised hills (walkable embankments on every side, so the
 -- Infected, who have no pathfinding, can always climb to the player), a landmark comm
 -- tower on the high ground, roads for orientation, and the objective on the hill. Layout
--- per docs/LEVELS.md section A (2026-11-07): insert and extract at the LZ helipad, the
+-- per docs/LEVELS.md section A: insert and extract at the LZ helipad, the
 -- main road south to the Gate (a T-wall line across the map with one lane, buses queued
 -- inside it), the Pens as a hesco-ringed funnel site, the Overlook summit kept open.
 -- Terrain is plain Parts (exact collision, no mesh cost); dressing is MeshAssets templates
@@ -701,7 +701,7 @@ local function buildLandmarks(parent: Instance)
 	model.Parent = parent
 end
 
--- Ground patches (docs/LEVELS.md A12, 2026-11-07): thin Mud / Rock / darker-Ground sheets on
+-- Ground patches (docs/LEVELS.md A12): thin Mud / Rock / darker-Ground sheets on
 -- the floor at hill feet, along the roads and in the yards, so the ground reads as used.
 -- Decoration only: no collision, no query (dressing raycasts land on the floor under them).
 type Patch = { x: number, z: number, w: number, d: number, kind: string, yaw: number? }
@@ -861,7 +861,7 @@ local function buildGantry(parent: Instance)
 end
 
 -- ---------------------------------------------------------------- the perimeter
--- docs/LEVELS.md A15 (level designer, 2026-11-07). The owner: "get rid of the sense of the
+-- docs/LEVELS.md A15 (level designer). The owner: "get rid of the sense of the
 -- map being walled off and closed in." The four 24-stud concrete walls are gone. What the
 -- squad sees at the edge is the quarantine fence (chain-link with wire on top) and its
 -- towers, and the world carries on past it: dust ground to 700 out, an earth berm on the
@@ -1285,7 +1285,7 @@ end
 local spawnPads: { [number]: SpawnLocation } = {}
 
 -- ---------------------------------------------------------------- building kit
--- buildBuilding(spec) (docs/LEVELS.md section B, 2026-11-07): enterable buildings from plain
+-- buildBuilding(spec) (docs/LEVELS.md section B): enterable buildings from plain
 -- anchored Parts on the Config.Arena.Kit grid (storey 9, slab 0.6: 8.4 clear, so a 2x Brute
 -- fits only in rooms built taller). Walls are solid spans between openings (door 4 x 8,
 -- window 5 wide at sill 3.2 / head 8.6, breach, gap); every upper floor gets a slab; a
@@ -1354,7 +1354,7 @@ type Rect = { x0: number, x1: number, z0: number, z1: number }
 type Footprint = { name: string, frame: CFrame, halfWidth: number, halfDepth: number, top: number }
 type Look = { Material: Enum.Material, Color: Color3 }
 
--- The seven enterable buildings (docs/LEVELS.md section B, 2026-11-07). Coordinates are
+-- The seven enterable buildings (docs/LEVELS.md section B). Coordinates are
 -- the footprint centre; `at` values are local to the building (x along south/north walls,
 -- z along east/west). Nothing here sits in the Warden lane (x -42..-18) or on a hold zone.
 local BUILDINGS: { BuildingSpec } = {

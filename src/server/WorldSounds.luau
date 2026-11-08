@@ -1,5 +1,5 @@
 --!strict
--- Server-side 3D voices (sound day 2026-11-07): a Sound on a body part, played from a
+-- Server-side 3D voices: a Sound on a body part, played from a
 -- SoundBanks group, replicated to every player with distance rolloff. One "Voice" Sound per
 -- part is reused, so a new line interrupts the previous one (an attack snarl cuts an idle
 -- groan). Used for Infected vocals (EnemyService) and the player's pain grunts

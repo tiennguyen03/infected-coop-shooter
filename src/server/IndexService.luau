@@ -6,13 +6,13 @@
 -- but never steers it (Behaviour.Attack "boss"); this service does.
 --
 -- Armour: six plates welded to the limbs, each a part with a PlateHealth attribute. A rifle
--- round into a plate is taken by the plate (ItemEffectService.dealDamage routes it; the
+-- round into a plate is taken by the plate (DamageService.dealDamage routes it; the
 -- armoured rate comes from ProjectileServer.hitMultiplier), a limb whose plate is gone is
 -- Exposed (x1.5) and the helmet coming off opens the head (EnemyDefinitions.Warden
 -- HeadshotMultiplier). A plate at half health is cracked (boss bar pip), at zero it is
 -- unwelded and falls (Debris) and the Warden staggers.
 --
--- Kit (expanded 2026-11-07, systems-designer pass): where you stand picks his move. Shield
+-- Kit (systems-designer pass): where you stand picks his move. Shield
 -- Bash (close, 70° arc; roll through it), Shield Sweep (180° arc and a shove; get behind
 -- him), Overhead Slam (a narrow line at a body that stopped moving in reach; step aside),
 -- Ground Pound (fists into the road: a disc on the ground knocks everyone down, the roll
@@ -226,7 +226,7 @@ local function updateIdle(current: Fight)
 	if not idle then
 		return
 	end
-	-- MoveDirection stays zero on a MoveTo-driven server humanoid (measured 2026-11-07), so
+	-- MoveDirection stays zero on a MoveTo-driven server humanoid, so
 	-- the root's ground speed is the test; a charge (anchored root) counts as moving.
 	local root = current.handle.root
 	local moving = current.charge ~= nil
@@ -448,7 +448,7 @@ end
 -- Welds the six plates onto the unscaled rig; EnemyService scales the model afterwards.
 -- The rig's Humanoid scales every part of the character from its OriginalSize value
 -- (BodyWidthScale and friends, set by ScaleTo), so each plate carries one at its build
--- size: without it the plate was scaled twice (seen 2026-11-07). Health goes on in
+-- size: without it the plate was scaled twice. Health goes on in
 -- armPlates once the body is up.
 local function buildPlates(model: Model)
 	local settings = cfg()

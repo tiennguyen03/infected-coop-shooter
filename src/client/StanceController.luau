@@ -1,5 +1,5 @@
 --!strict
--- Stances (2026-11-07): LeftControl toggles crouch, C toggles prone, either key from the
+-- Stances: LeftControl toggles crouch, C toggles prone, either key from the
 -- other stance switches straight across; Shift (sprint), Space (vault/climb, which also
 -- stands a crouched body with nothing in front) and a respawn stand the body up. Speed
 -- factors and transition times are Config.Player.Stances; the camera pivot drops with the

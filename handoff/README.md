@@ -225,8 +225,8 @@ Read in this order:
   game, Hocker heron pose as an idle clip (not buildable inside the R15 boxes).
 - **Backlog (2026-11-07): reload clip and sound.** The magazine shipped in Sprint 18; the
   reload still has no animation and no sound (generate `reload_1..2` into a `player_weapon`
-  bank with the rifle shot). Also open from Sprint 18: icons for the supply and upgrade cards,
-  `assets/icons/build/wire.js` still writes into the deleted ItemDefinitions, Hollow Point
+  bank with the rifle shot). Also open from Sprint 18: icons for the supply and upgrade cards (`wire.js` now only
+  writes the id table; add an IconId field when they land), Hollow Point
   stagger cadence, the Armory (call-in choice before the drop).
 - **Backlog (owner, 2026-11-07, after the movement set playtest).** Hit marker, faster
   vault/climb, climb immunity and quieter footsteps shipped (feel pass, HISTORY). Left, in

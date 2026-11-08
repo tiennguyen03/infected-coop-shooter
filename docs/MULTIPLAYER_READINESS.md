@@ -29,7 +29,7 @@ Per-player attributes (stat Mults, Kills, MomentumStacks, Mag/Reserve/ReloadUnti
 CallIn1/2 + charges, Upgrade<Slot>, Shield), per-player loadouts and card offers
 (`LoadoutService`, `CallInService`, `RequisitionService`), per-player fire-rate and ability
 validation, per-player drone/mine/pool caps, every `PlayerRemoving` handler, kill credit via
-the one damage entry point `ItemEffectService.dealDamage`, enemy targeting = nearest living
+the one damage entry point `DamageService.dealDamage`, enemy targeting = nearest living
 member, HUDs reading `LocalPlayer` only.
 
 ## Debt register
@@ -47,8 +47,8 @@ may add to this list.
 | 5 | M | `DifficultyService`, `EnemyService`, `Config` MaxAlive schedule | ~~Nothing scales with player count;~~ run clock ignores pause. | Decided (#6): `Config.PlayerCountScaling` scales spawn rate, max-alive and heavy caps per living player, not HP/damage (done 2026-11-07, Sprint 18). Clock = accumulated unpaused time (open). | Co-op Sprint B (clock only) |
 | 6 | M | `EnemyService` spawn placement | Spawns around a random player without checking they are alive. | Pick from living players only. | Done 2026-11-07 (Sprint A step 3) |
 | 7 | M | ~~`AmmoCacheService`~~ | ~~Any player can take another player's crate.~~ Superseded 2026-11-07: `AmmoCacheService` deleted; the pallet re-arms every living player within `Requisition.RearmRadius` once each (loadout rework). | n/a | Superseded (Sprint 18) |
-| 8 | M | `ItemEffectService.resetPlayer`, `AssaultClassService.resetPlayer`, `ProjectileServer.reset` | Per-player reset wipes humanoid-keyed/global tables; run reset clears per-player `shotCount` but not `lastFireTime`. | Split strictly per the rule above. | Done 2026-11-07 (Sprint A step 2) |
-| 9 | M | `ItemEffectService` damage/death events | Every hit and kill is `FireAllClients`; each client plays every player's hit sounds. | Hit numbers to the damager only; death VFX to all but sound distance-attenuated or owner-only. | Co-op Sprint B |
+| 8 | M | `DamageService.resetPlayer`, `AssaultClassService.resetPlayer`, `ProjectileServer.reset` | Per-player reset wipes humanoid-keyed/global tables; run reset clears per-player `shotCount` but not `lastFireTime`. | Split strictly per the rule above. | Done 2026-11-07 (Sprint A step 2) |
+| 9 | M | `DamageService` damage/death events | Every hit and kill is `FireAllClients`; each client plays every player's hit sounds. | Hit numbers to the damager only; death VFX to all but sound distance-attenuated or owner-only. | Co-op Sprint B |
 | 10 | M | `ArenaService` | One `SpawnLocation` at the origin. | 4 spawn pads in a cluster; revive happens in place, stage-start respawn at the pads. | Done 2026-11-07 (Sprint A step 4) |
 | 11 | M | `DevTestService` | Falls back to `GetPlayers()[1]`; run-state printouts inspect one player. | Dev commands target the invoking player; printouts loop players. | Done 2026-11-07 (Sprint A step 7) |
 | 12 | C | `DeathScreenUI` | Hardcodes "Extracted: No"; Restart button resets the server's run for everyone. | Downed overlay (timer, "teammate reviving"), spectate on Dead, final screen only on run end. | Done 2026-11-07 (Sprint A step 6) |

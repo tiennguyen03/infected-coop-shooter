@@ -1,5 +1,5 @@
 --!strict
--- Weapons as data (loadout rework 2026-11-07). One row per weapon; the service rifle reads
+-- Weapons as data. One row per weapon; the service rifle reads
 -- its numbers from Config.Weapon so every tuning value stays in Config. The server
 -- (LoadoutService) owns each player's magazine and reserve for the weapon they carry;
 -- ProjectileServer and BotService fire by the row. Later guns (sidearm, SMG, shotgun,

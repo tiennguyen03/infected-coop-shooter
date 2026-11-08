@@ -142,8 +142,8 @@ local function spawnPuddle(position: Vector3, spec: Projectile)
 	part.Color = spec.Color
 	part.Transparency = 0.45
 	part.Parent = folder
-	-- Perf cap: the oldest puddle goes when a new one would exceed Config.Zombies.MaxPuddles.
-	if #puddles >= Config.Zombies.MaxPuddles then
+	-- Perf cap: the oldest puddle goes when a new one would exceed Config.Enemies.MaxPuddles.
+	if #puddles >= Config.Enemies.MaxPuddles then
 		puddles[1].part:Destroy()
 		table.remove(puddles, 1)
 	end

@@ -7,7 +7,7 @@
 -- placeholder Part when it returns nil (template missing or still loading), so a slow asset
 -- fetch never breaks gameplay. Asset ids are recorded in assets/3d/ASSET_IDS.md.
 --
--- Composite colliders (Delta rework, 2026-11-07): a mesh with `colliders` renders only; its
+-- Composite colliders (Delta rework): a mesh with `colliders` renders only; its
 -- collision and raycast shape is the listed invisible Parts (walls, steps, decks, a
 -- TrussPart ladder), so bunkers, humvees, towers and the ruin have real openings and steps
 -- that the vault/climb code (Shared.Ledge: anchored, CanCollide parts) and the Infected
@@ -107,7 +107,7 @@ local MESHES: { [string]: MeshDef } = {
 	},
 	-- Legs, deck at 14, rails with a gate on the ladder (+Z) side, roof slab, and a TrussPart
 	-- ladder on the +Z face (Ladder collision group: the Infected never climb it).
-	-- v3 (rail gate) uploaded 2026-11-07.
+	-- v3 (rail gate) uploaded.
 	env_guard_tower = {
 		meshId = "rbxassetid://115469907629978",
 		size = Vector3.new(11, 27.25, 11),
@@ -128,10 +128,10 @@ local MESHES: { [string]: MeshDef } = {
 			{ size = Vector3.new(2, 14, 2), offset = Vector3.new(0, 7.5, 5), class = "TrussPart" },
 		},
 	},
-	-- Ruin v2 (2026-11-07): enterable ground floor (4 x 8 door in the -Z face, 6-wide breach
+	-- Ruin v2: enterable ground floor (4 x 8 door in the -Z face, 6-wide breach
 	-- in the +Z face at x +7, vaultable front windows sill 4 / head 9.4), first floor slab at
 	-- 10.0 reached by mantling the one-storey back wall; no roof. `shell` seals it (5 parts)
-	-- for the outer ruins. v2 uploaded 2026-11-07.
+	-- for the outer ruins. v2 uploaded.
 	env_ruin_building = {
 		meshId = "rbxassetid://97636619216682",
 		size = Vector3.new(32.09, 23.6, 25.15),
@@ -188,7 +188,7 @@ local MESHES: { [string]: MeshDef } = {
 		meshId = "rbxassetid://108583453603951",
 		size = Vector3.new(22.1, 9.55, 9.2),
 		solid = true,
-		surface = { material = Enum.Material.CorrodedMetal, color = Color3.fromRGB(92, 50, 30) }, -- rust, darker (art pass 2026-11-07)
+		surface = { material = Enum.Material.CorrodedMetal, color = Color3.fromRGB(92, 50, 30) }, -- rust, darker
 	},
 	-- Three steps (nose toward -X): hood 4 (vault), cab 6.5 (climb), rear bed 4.8.
 	env_wreck_humvee = {
@@ -304,7 +304,7 @@ local MESHES: { [string]: MeshDef } = {
 		fidelity = Enum.CollisionFidelity.Hull,
 		surface = { material = Enum.Material.Metal, color = Color3.fromRGB(99, 109, 119) }, -- gun
 	},
-	-- Delta props (assets/3d prop_*, built 2026-11-07, not uploaded: meshId "" until the ids
+	-- Delta props (assets/3d prop_*, not uploaded: meshId "" until the ids
 	-- from assets/3d/ASSET_IDS.md land). Sizes are the build's Roblox dims. S = solid cover,
 	-- D = decoration (no collision), T = see-through (solid, bullets pass).
 	prop_cot = {
@@ -380,7 +380,7 @@ local MESHES: { [string]: MeshDef } = {
 	-- The Chosen (assets/3d pc_<class>_<limb>): player bodies, swapped onto the player's R15
 	-- rig by PlayerSetup via dressModel. Only Assault is uploaded; the other four classes are
 	-- built in Blender (previews) and wait for a class system.
-	-- The Warden v2 (assets/3d/build/warden.py, uploaded 2026-11-07): side-specific arms	-- and hands (`_l` / `_r`; dressModel looks the side up first) and six plates welded on	-- by IndexService (shoulder_l / shoulder_r are different meshes).
+	-- The Warden v2 (assets/3d/build/warden.py): side-specific arms	-- and hands (`_l` / `_r`; dressModel looks the side up first) and six plates welded on	-- by IndexService (shoulder_l / shoulder_r are different meshes).
 	inf_warden_head = {
 		meshId = "rbxassetid://114272288507850",
 		size = Vector3.new(1.030, 1.200, 1.100),
@@ -486,7 +486,7 @@ local MESHES: { [string]: MeshDef } = {
 		size = Vector3.new(2.010, 0.400, 1.120),
 		offset = Vector3.new(0.000, 0.000, -0.050),
 	},
-	-- Tapered forearms/shins with elbow and knee pads, fist-sized hands (2026-11-07): the
+	-- Tapered forearms/shins with elbow and knee pads, fist-sized hands: the
 	-- rigid fallback for the skinned body, and the bots' body.
 	pc_assault_upper_arm = {
 		meshId = "rbxassetid://137615567202319",
@@ -533,7 +533,7 @@ local MESHES: { [string]: MeshDef } = {
 		castShadow = true,
 	},
 	-- Infected limb sets (assets/3d inf_<type>_<limb>): swapped onto the R15 rig by dressInfected.
-	-- Rebuilt 2026-11-07 to docs/CHARACTERS.md (walker, runner, brute, hocker); skin v2 repaint
+	-- Built to docs/CHARACTERS.md (walker, runner, brute, hocker); skin v2 repaint
 	-- (pallor / flesh / bruise / wound / pus rows, tapered limbs) uploaded the same day.
 	inf_walker_head = {
 		meshId = "rbxassetid://100636262646383",
@@ -958,7 +958,7 @@ function MeshAssets.dressModel(model: Model, prefix: string): boolean
 end
 
 -- The mesh's bounds-centre offset from its design origin (nil when the mesh is not defined).
--- Skinned bodies (2026-11-07): a Chosen as one skinned mesh. Two Model assets per body,
+-- Skinned bodies: a Chosen as one skinned mesh. Two Model assets per body,
 -- both uploaded from assets/3d/export: `body` (<name>.fbx) is the single skinned MeshPart
 -- with the R15 bone tree; `parts` (<name>_parts.fbx) is the same geometry split into the 15
 -- R15 limbs, with the Motor6Ds Studio's importer builds from the rig attachments. The

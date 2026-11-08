@@ -1,5 +1,5 @@
 --!strict
--- Knocked down (2026-11-07): the Warden's Pound and Stomp put the body on the ground
+-- Knocked down: the Warden's Pound and Stomp put the body on the ground
 -- (server Squad.knock sets KnockedUntil on the character and sends Impact "knockdown").
 -- While it lasts SprintController holds WalkSpeed at 0, MovementController refuses vaults
 -- and rolls, WeaponController refuses the trigger and the server refuses every action

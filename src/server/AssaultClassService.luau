@@ -3,7 +3,7 @@
 -- Combat Momentum passive (kill-stacking damage/speed via PlayerStatsService),
 -- a Q Combat Dash, and an E Breach Charge. All abilities are server-validated
 -- (alive, run not paused, cooldown); client cooldowns are display only.
--- Field upgrades (loadout rework 2026-11-07, LoadoutService flags): Flare Straps leaves
+-- Field upgrades (LoadoutService flags): Flare Straps leaves
 -- fire pools along the dash (IncendiaryService), Smoke Dash hides the body from melee for
 -- a moment after it (the CoverMoveUntil window), Bait Charge makes the breach charge a lure
 -- with a longer fuse (EnemyService.setLure).
@@ -18,7 +18,7 @@ local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local ThrowUtil = require(ReplicatedStorage.Shared.ThrowUtil)
 local EnemyService = require(script.Parent.EnemyService)
 local IncendiaryService = require(script.Parent.IncendiaryService)
-local ItemEffectService = require(script.Parent.ItemEffectService)
+local DamageService = require(script.Parent.DamageService)
 local LoadoutService = require(script.Parent.LoadoutService)
 local PauseService = require(script.Parent.PauseService)
 local PlayerStatsService = require(script.Parent.PlayerStatsService)
@@ -203,7 +203,7 @@ local function detonate(player: Player, center: Vector3)
 				and root
 				and (root.Position - center).Magnitude <= cfg.BreachRadius
 			then
-				ItemEffectService.dealDamage(
+				DamageService.dealDamage(
 					player,
 					humanoid,
 					cfg.BreachDamage,
@@ -375,7 +375,7 @@ function AssaultClassService.init()
 
 	abilityUsedRemote = Remotes.get("AbilityUsed")
 	Remotes.get("UseAbility").OnServerEvent:Connect(onUseAbility)
-	ItemEffectService.addKillListener(onCreditedKill)
+	DamageService.addKillListener(onCreditedKill)
 	RunService.Heartbeat:Connect(onHeartbeat)
 
 	Players.PlayerRemoving:Connect(function(player)

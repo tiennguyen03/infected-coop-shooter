@@ -55,7 +55,7 @@ function DifficultyService.getDamageMultiplier(): number
 end
 
 function DifficultyService.getSpawnInterval(): number
-	local interval = Config.Zombies.SpawnInterval
+	local interval = Config.Spawning.SpawnInterval
 		* Config.Difficulty.SpawnIntervalDecayPerMinute ^ elapsedMinutes()
 	interval = math.max(interval, Config.Difficulty.MinSpawnInterval)
 	return interval

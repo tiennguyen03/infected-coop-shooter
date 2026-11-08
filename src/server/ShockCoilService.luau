@@ -10,7 +10,7 @@ local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local EnemyService = require(script.Parent.EnemyService)
-local ItemEffectService = require(script.Parent.ItemEffectService)
+local DamageService = require(script.Parent.DamageService)
 local Squad = require(script.Parent.Squad)
 
 local ENEMY_TAG = "Enemy"
@@ -57,7 +57,7 @@ function ShockCoilService.pulse(player: Player, revive: boolean): boolean
 			local enemyRoot = model:FindFirstChild("HumanoidRootPart") :: BasePart?
 			if humanoid and humanoid.Health > 0 and enemyRoot then
 				if (enemyRoot.Position - root.Position).Magnitude <= cfg.Radius then
-					ItemEffectService.dealDamage(
+					DamageService.dealDamage(
 						player,
 						humanoid,
 						cfg.Damage,
