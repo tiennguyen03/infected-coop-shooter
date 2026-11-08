@@ -89,6 +89,7 @@ type Zombie = {
 	pathPending: boolean,
 	pathObject: PathInstance?, -- one engine Path per body, reused across ComputeAsync calls
 	pathRequestedAt: number,
+	crippled: boolean?, -- a leg is gone (GoreService): crawl speed, never climbs
 }
 
 type Path = { waypoints: { PathWaypoint }, index: number }
@@ -442,7 +443,7 @@ local function tryClimb(zombie: Zombie, toward: Vector3, now: number): boolean
 	local definition = EnemyDefinitions[zombie.typeName]
 	local maxHeight = definition.ClimbHeight
 	local duration = Config.Movement.Infected.Duration[zombie.typeName]
-	if not maxHeight or not duration then
+	if not maxHeight or not duration or zombie.crippled then
 		return false
 	end
 	local params = RaycastParams.new()
@@ -1003,6 +1004,38 @@ function EnemyService.slow(humanoid: Humanoid, factor: number, duration: number)
 			slowGeneration[humanoid] = nil
 		end
 	end)
+end
+
+local function zombieOf(model: Model): Zombie?
+	for _, zombie in zombies do
+		if zombie.model == model then
+			return zombie
+		end
+	end
+	return nil
+end
+
+-- GoreService: an arm came off. Melee damage scales by `factor` (per arm lost).
+function EnemyService.disarm(model: Model, factor: number)
+	local zombie = zombieOf(model)
+	if zombie then
+		zombie.damage *= factor
+	end
+end
+
+-- GoreService: a leg came off. The body crawls at `factor` of its speed for good (slows and
+-- staggers restore to the crawl, not the walk) and never climbs again.
+function EnemyService.cripple(model: Model, factor: number)
+	local zombie = zombieOf(model)
+	if not zombie or zombie.crippled then
+		return
+	end
+	zombie.crippled = true
+	zombie.walkSpeed *= factor
+	zombie.humanoid:SetAttribute(Attributes.BaseWalkSpeed, zombie.walkSpeed)
+	if not PauseService.isPaused() then
+		zombie.humanoid.WalkSpeed = zombie.walkSpeed
+	end
 end
 
 -- Hollow Point: the body stops for `seconds`.

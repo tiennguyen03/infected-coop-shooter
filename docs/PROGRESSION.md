@@ -447,12 +447,17 @@ open for a later Armory page.
   (`assets/audio/README.md > Banks`); still to generate: Control's radio lines, Lantern's
   rotor, the Burn, the pickup and item one-shots.
 - **Infected visual redesign.** Own limb sets per form, Hocker first; hollow breach ring.
-- **Dismemberment (owner, 2026-11-07).** Shooting an Infected knocks parts off it: a limb
-  that takes enough rounds detaches and falls (the R15 limb MeshParts already are separate
-  pieces, `MeshAssets.dressInfected`). Needs a design pass first (systems designer: per-limb
-  health or a share of damage per hit zone, what losing a leg / an arm does to speed and
-  attacks; performance reviewer: debris count, despawn within 10 s per `docs/STYLES.md` §6;
-  art director: the wound cap where the limb was).
+- **Dismemberment (built 2026-11-08, `Config.Enemies.Dismember`, `GoreService`).** The
+  joint above the part a round hits keeps a running damage total; at the form's MaxHealth x
+  the joint's fraction (elbow 0.35, shoulder 0.5, knee 0.5, hip 0.6) it breaks on that hit,
+  the killing hit included, and the parts below fall like a Warden plate with a raw stump
+  left at the joint. Rounds still do full body damage: time-to-kill is unchanged. Arm lost:
+  melee x0.6 per arm. Leg lost: 0.35 speed, never climbs again (a crawl clip is still to
+  come: the body limps on the stump for now). Brute legs never break. A killing headshot
+  throws the head; the neck never breaks on a living body. Blast kills (Anvil, Tripline)
+  throw 2 extra groups. At most 20 loose groups, 4 s each, anchored after 1.5 s. Flesh
+  chunks at every body hit are client-side (`GoreFX`, 2 a hit, 4 a headshot, 24 alive).
+  The Index hosts never sever: their plates are the mechanic. (Systems designer.)
 - **Hollow Point tuning.** The stagger lands on every hit; watch for chain-stunning a Brute
   at 12.5 rounds/s since the M16 pass (shorten `Upgrades.HollowPoint.StaggerSeconds` or add a per-body gap).
 

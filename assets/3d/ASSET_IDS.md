@@ -77,6 +77,10 @@ uploaded 2026-11-07 and wired; rows below.
 | env_checkpoint | 71573561117915 | 129215637928455 | 22.05 x 9.5 x 7.4 | Box + composite colliders (2026-11-07); booth at -X, boom along +X |
 | env_dead_tree | 103119294791056 | 130464254006022 | 4.97 x 13.98 x 7.09 | Hull |
 | env_lamp_post | 132474171948585 | 84369687950095 | 4.9 x 13 x 1.2 | Hull; arm along +X |
+| inf_gore_stump | 85306816428466 | 84507882691071 | 0.42, 0.24, 0.44 | GoreService stump (gore.py 2026-11-08), offset 0.014, 0.070, 0 |
+| inf_gore_chunk_a | 114738807263836 | 112453961195196 | 0.29, 0.32, 0.30 | GoreFX chunk |
+| inf_gore_chunk_b | 101420964172693 | 102105594077537 | 0.36, 0.26, 0.27 | GoreFX chunk |
+| inf_gore_chunk_c | 120197171903263 | 119620354840068 | 0.34, 0.18, 0.17 | GoreFX chunk (bone shard) |
 | inf_walker_head | 100636262646383 | 110247687735003 | 1.22, 1.29, 1.31 | R15 limb (skin v2 2026-11-07), offset -0.000, -0.016, -0.035 |
 | inf_walker_upper_torso | 119661347321934 | 87191220395464 | 2.00, 1.75, 1.20 | R15 limb (skin v2 2026-11-07), offset 0.000, 0.025, 0.000 |
 | inf_walker_lower_torso | 115889571442634 | 122831631690254 | 2.05, 0.43, 1.37 | R15 limb (v2 2026-11-07), offset 0.000, 0.005, -0.045 |

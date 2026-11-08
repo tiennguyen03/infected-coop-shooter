@@ -674,6 +674,25 @@ local MESHES: { [string]: MeshDef } = {
 		offset = Vector3.new(-0.025, 0.120, -0.025),
 		castShadow = true,
 	},
+	-- Gore pieces (assets/3d/build/gore.py; GoreService): the stump welded where a limb came
+	-- off, and the three chunks GoreFX throws at body hits (copied to ReplicatedStorage).
+	inf_gore_stump = {
+		meshId = "rbxassetid://85306816428466",
+		size = Vector3.new(0.42, 0.24, 0.44),
+		offset = Vector3.new(0.014, 0.070, 0.000),
+	},
+	inf_gore_chunk_a = {
+		meshId = "rbxassetid://114738807263836",
+		size = Vector3.new(0.29, 0.32, 0.30),
+	},
+	inf_gore_chunk_b = {
+		meshId = "rbxassetid://101420964172693",
+		size = Vector3.new(0.36, 0.26, 0.27),
+	},
+	inf_gore_chunk_c = {
+		meshId = "rbxassetid://120197171903263",
+		size = Vector3.new(0.34, 0.18, 0.17),
+	},
 	-- Infected limb sets (assets/3d inf_<type>_<limb>): swapped onto the R15 rig by dressInfected.
 	-- Built to docs/CHARACTERS.md (walker, runner, brute, hocker); skin v2 repaint
 	-- (pallor / flesh / bruise / wound / pus rows, tapered limbs) uploaded the same day.
@@ -1095,7 +1114,21 @@ function MeshAssets.dressModel(model: Model, prefix: string): boolean
 		replacement.CanTouch = part.CanTouch
 		replacement.CastShadow = true
 		for _, child in part:GetChildren() do
-			if child:IsA("Attachment") then
+			local originalSize = if child.Name == "OriginalSize" and child:IsA("Vector3Value")
+				then child
+				else nil
+			if originalSize then
+				-- The Humanoid resizes each part to OriginalSize x its body scales. Keep the
+				-- ratio it applied to the old part so the mesh comes out at its own size.
+				local old = originalSize.Value
+				local ratio = Vector3.new(
+					if old.X > 0 then part.Size.X / old.X else 1,
+					if old.Y > 0 then part.Size.Y / old.Y else 1,
+					if old.Z > 0 then part.Size.Z / old.Z else 1
+				)
+				originalSize.Value = replacement.Size / ratio
+				originalSize.Parent = replacement
+			elseif child:IsA("Attachment") then
 				-- Keep the attachment at the same place in the limb: the new part centre moved.
 				child.CFrame = child.CFrame - offset
 				child.Parent = replacement

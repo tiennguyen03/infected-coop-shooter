@@ -835,6 +835,58 @@ local Config = {
 	-- doors, ramps) recomputed no more than every PathfindInterval; at most PathfindingMax
 	-- bodies path at once, the rest (and any failed path) chase straight as before.
 	Enemies = {
+		-- Dismemberment (systems designer 2026-11-08; docs/PROGRESSION.md > Dismemberment;
+		-- GoreService). The joint above the part a round hits keeps a running damage total;
+		-- at MaxHealth x Fraction the joint breaks on that hit (the kill included) and the
+		-- parts below it fall like a Warden plate. Rounds still do full body damage.
+		Dismember = {
+			Enabled = true,
+			-- Part names without the Left/Right prefix. Counts: parts whose hits fill the total.
+			Joints = {
+				Elbow = {
+					Counts = { "LowerArm", "Hand" },
+					Falls = { "LowerArm", "Hand" },
+					Fraction = 0.35,
+					Limb = "Arm",
+				},
+				Shoulder = {
+					Counts = { "UpperArm" },
+					Falls = { "UpperArm", "LowerArm", "Hand" },
+					Fraction = 0.5,
+					Limb = "Arm",
+				},
+				Knee = {
+					Counts = { "LowerLeg", "Foot" },
+					Falls = { "LowerLeg", "Foot" },
+					Fraction = 0.5,
+					Limb = "Leg",
+				},
+				Hip = {
+					Counts = { "UpperLeg" },
+					Falls = { "UpperLeg", "LowerLeg", "Foot" },
+					Fraction = 0.6,
+					Limb = "Leg",
+				},
+			},
+			Forms = { -- a form not listed never severs (the Index hosts: their plates are it)
+				Walker = { Arms = true, Legs = true },
+				Runner = { Arms = true, Legs = true },
+				Hocker = { Arms = true, Legs = true },
+				Brute = { Arms = true, Legs = false, SeverStagger = 0.6 },
+			},
+			ArmLostDamage = 0.6, -- melee damage multiplier per arm lost
+			CrawlSpeed = 0.35, -- of WalkSpeed once a leg is gone; never climbs again
+			HeadPopOnKill = true, -- a killing Head hit throws the head
+			SeverStagger = 0.3, -- seconds the body stops when a joint breaks
+			Impulse = 25, -- studs/s along the round, plus half that upward
+			BlastKillSevers = 2, -- extra random groups thrown on a blast kill (Anvil, Tripline)
+			BlastImpulse = 45,
+			MaxLoosePieces = 20, -- loose groups in the world; the oldest goes first
+			PieceLifetime = 4, -- seconds
+			SettleAnchor = 1.5, -- a piece is anchored after this long (no more physics)
+			-- Client flesh chunks per hit (GoreFX; the attacker's screen only).
+			Chunks = { Body = 2, Headshot = 4, MaxAlive = 24, Lifetime = 1.2, Speed = 14 },
+		},
 		CorpseLifetime = 1.5, -- seconds before a dead Infected is removed
 		BossCorpseLifetime = 8, -- an Index host's body stays long enough to read
 		MaxPuddles = 8, -- caustic puddles alive at once (perf); the oldest goes first

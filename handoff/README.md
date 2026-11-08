@@ -33,6 +33,14 @@ Read in this order:
 
 ## Current state (verified 2026-11-08 in a live playtest)
 
+- 2026-11-08: **Dismemberment** (`docs/PROGRESSION.md` > Dismemberment, `GoreService`,
+  client `GoreFX`, `Config.Enemies.Dismember`). The joint above the part a round hits keeps a
+  damage total; at MaxHealth x the joint's fraction the limb group falls like a Warden plate
+  and a stump is welded at the joint (rigs use AnimationConstraint joints, not Motor6D).
+  Arm lost: melee x0.6; leg lost: crawl speed 0.35, no climbing; killing headshot throws the
+  head; Anvil / Tripline kills throw 2 groups; flesh chunks per hit on the shooter's screen.
+  Verified in a playtest on Walker, Hocker, Runner and Brute. A rounded Infected redesign was
+  built and dropped the same day (owner prefers the blocky bodies).
 - 2026-11-08: **Skyline towers + clipping pass** (`docs/STYLES.md` §7 and modeling rules,
   `assets/3d/README.md` city.py and z-fight pass, `docs/LEVELS.md` overlap pass). 23
   modelled towers (six types, `assets/3d/build/city.py`) with lit-window twins replace the

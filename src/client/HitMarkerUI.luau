@@ -13,6 +13,7 @@ local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
+local GoreFX = require(script.Parent.GoreFX)
 local SoundFX = require(script.Parent.SoundFX)
 
 local HitMarkerUI = {}
@@ -134,9 +135,13 @@ local function onDamageDealt(position: Vector3, _amount: number, kind: string?, 
 	elseif kind == "headshot" then
 		burst(position, HEADSHOT_COLOR, 10)
 		SoundFX.playAt("player_hits", "headshot", position, "hit")
+		GoreFX.spray(position, Config.Enemies.Dismember.Chunks.Headshot)
 	else
 		burst(position, HIT_COLOR, 7)
 		SoundFX.playAt("player_hits", "bodyshot", position, "hit")
+		if kind == "hit" or kind == "breach" then
+			GoreFX.spray(position, Config.Enemies.Dismember.Chunks.Body)
+		end
 	end
 
 	if attacker ~= Players.LocalPlayer then

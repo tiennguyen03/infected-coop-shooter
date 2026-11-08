@@ -36,6 +36,7 @@ local BOOT: { ModuleScript } = {
 	Server.MineService,
 	Server.EnemyProjectileService,
 	Server.EnemyService,
+	Server.GoreService,
 	Server.ShockCoilService,
 	Server.AssaultClassService,
 	Server.CallInService,

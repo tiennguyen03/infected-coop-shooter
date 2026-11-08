@@ -357,7 +357,10 @@ this section; the bullets below describe the 2026-11-06 build still worn by the 
   `wound` flayed under `rebuilt.l` tendons and 0.9× scale, Brute `bruise` and 2× scale).
   Damage is geometry, not paint: `Limb.boil` / `cluster` (pus domes with a `pus.l` head),
   `lesion` (a `flesh.d` rim round a `wound` core), `blotch` (a flat `bruise` patch). Blood as
-  flat `red.m` facets only where a tear is fresh; never gore detail.
+  flat `red.m` facets only where a tear is fresh. Gore line (owner 2026-11-08 asked for
+  limbs that come off): a severed limb leaves a flat raw stump (`inf_gore_stump`: `flesh.d`
+  rim, `wound` face, a `rebuilt.l` bone end) and hits throw small low-poly chunks; no blood
+  spray, no pools, no interior detail.
 - Limb geometry v2 (2026-11-07): healthy limbs are octagonal tapered segments (`Limb.oct`,
   70-80% of the R15 box) under a rounded joint cap (`Limb.cap`: bone knob on the Infected)
   so bent joints swing through their neighbour; upper legs take a `hip_inset` collar; swollen
@@ -543,3 +546,8 @@ when the player stands inside it, so a hollow ring is a later polish item.
   re-uploaded; roof and floor edges in the Part buildings) and pieces placed inside each
   other (light tower in the checkpoint, wire through a generator, a container on a ramp,
   body bags, the Screening Block desk in the stairs), all moved.
+- 2026-11-08: Limbs fall off when shot (owner), with a flat stump and chunks (gore line
+  above). A rounded low-poly Infected redesign was built and tried the same day; the owner
+  prefers the blocky Roblox bodies ("I like the regular blocky body"), so the v2 blocky sets
+  stay. Next: a lore-accuracy pass on them (posture first: the Walker's dropped shoulder,
+  the Runner's lean, the Brute wider than tall, the Hocker's head thrown back).

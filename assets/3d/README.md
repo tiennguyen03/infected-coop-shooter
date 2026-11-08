@@ -265,6 +265,11 @@ silhouette (the cars); `props.panel()` lays glass on a sloped edge. Cars are bui
 5-stud figure (roof 4.4-7.2) with composite colliders. Note: `--only <names>` saves
 `arena_survivor.blend` and the lineups with only those assets; run a full build afterwards.
 
+## Gore pieces live in `build/gore.py` (2026-11-08)
+
+`inf_gore_stump` (welded at a joint when a limb comes off, GoreService) and
+`inf_gore_chunk_a/b/c` (thrown at body hits, client GoreFX), built with a small `loft` kit.
+
 ## The distant city lives in `build/city.py` (owner, 2026-11-08)
 
 Six skyline towers (`env_city_office`, `_residential`, `_deco`, `_glass`, `_ruined`,

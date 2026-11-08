@@ -31,6 +31,22 @@ function DamageService.addKillListener(listener: (player: Player) -> ())
 	table.insert(killListeners, listener)
 end
 
+-- Body-hit listeners (GoreService: dismemberment). Fired after every hit that reached the
+-- body (plates excluded) with the part struck when known and whether it killed.
+export type HitInfo = {
+	attacker: Player?,
+	humanoid: Humanoid,
+	amount: number,
+	position: Vector3?,
+	kind: string,
+	part: Instance?,
+	killed: boolean,
+}
+local hitListeners: { (info: HitInfo) -> () } = {}
+function DamageService.addHitListener(listener: (info: HitInfo) -> ())
+	table.insert(hitListeners, listener)
+end
+
 -- THE damage entry point. `attacker` is nil for a squad bot (BotService): no kill credit, no
 -- hit marker. `kind` names the source ("hit", "headshot", "breach", "fire", ...). `part` is
 -- the part the round hit when known: an Index plate (PlateHealth attribute, IndexService)
@@ -80,6 +96,20 @@ function DamageService.dealDamage(
 	lastDamageKind[humanoid] = kind or "hit"
 	humanoid:TakeDamage(amount)
 	reportHit(attacker, position, amount, kind or "hit")
+	if #hitListeners > 0 then
+		local info: HitInfo = {
+			attacker = attacker,
+			humanoid = humanoid,
+			amount = amount,
+			position = position,
+			kind = kind or "hit",
+			part = part,
+			killed = humanoid.Health <= 0,
+		}
+		for _, listener in hitListeners do
+			task.spawn(listener, info)
+		end
+	end
 end
 
 -- Credit a kill without dealing damage (kept for sources that bypass TakeDamage).

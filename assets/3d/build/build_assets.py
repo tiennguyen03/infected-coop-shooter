@@ -1257,6 +1257,11 @@ import city  # noqa: E402
 
 city.register(sys.modules[__name__])
 
+# Gore pieces for the dismemberment (GoreService, GoreFX).
+import gore  # noqa: E402
+
+gore.register(sys.modules[__name__])
+
 
 # ------------------------------------------------------------------ The Chosen (player bodies)
 # Same limb-swap build as the Infected: one mesh per R15 limb inside the stock limb box.

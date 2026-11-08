@@ -11,6 +11,7 @@ local TweenService = game:GetService("TweenService")
 local Config = require(ReplicatedStorage.Shared.Config)
 local GroundUtil = require(ReplicatedStorage.Shared.GroundUtil)
 local DamageService = require(script.Parent.DamageService)
+local GoreService = require(script.Parent.GoreService)
 local PauseService = require(script.Parent.PauseService)
 local Lifecycle = require(script.Parent.Lifecycle)
 local WorldSounds = require(script.Parent.WorldSounds)
@@ -77,6 +78,9 @@ local function detonate(player: Player, center: Vector3)
 		local humanoid = model:FindFirstChildOfClass("Humanoid")
 		if humanoid and humanoid.Health > 0 then
 			DamageService.dealDamage(player, humanoid, cfg.BlastDamage, root.Position, "hit")
+			if humanoid.Health <= 0 then
+				GoreService.blast(humanoid, center)
+			end
 		end
 	end
 end
