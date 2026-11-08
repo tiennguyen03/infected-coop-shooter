@@ -9,6 +9,7 @@
 -- bots never go prone. No per-player state: everything lives on the character.
 
 local CollectionService = game:GetService("CollectionService")
+local PhysicsService = game:GetService("PhysicsService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -19,11 +20,36 @@ local StanceService = {}
 
 local STAND_HIP_ATTRIBUTE = "StandHipHeight"
 local ROOT_DROP_ATTRIBUTE = "RootDrop"
+-- While prone every body part but the root is in this group, which touches nothing: the
+-- prone and crawl clips press the torso and head into the floor, and a solid torso there
+-- props the root above its floor ray (Freefall, no friction: the body slides). The root
+-- stays the one collider, as the prone rules assume (owner bug report, 2026-11-07).
+local PRONE_GROUP = "ProneBody"
 
 local function rootMotor(character: Model): Motor6D?
 	local lowerTorso = character:FindFirstChild("LowerTorso")
 	local motor = lowerTorso and lowerTorso:FindFirstChild("Root")
 	return if motor and motor:IsA("Motor6D") then motor else nil
+end
+
+-- Raises (or lowers) the whole rig relative to the root by `lift` studs. A Motor6D rig takes
+-- it on the Root joint's C0; the dressed player rig is rebuilt with BuildRigFromAttachments
+-- and joins the root with an AnimationConstraint instead, which takes it on the root's
+-- RootRigAttachment (the constraint's Attachment0). Before this the constraint rig never
+-- got the lift, so a prone body hung on its own torso above its floor ray, the Humanoid sat
+-- in Freefall (no friction) and the body slid (owner bug report, 2026-11-07).
+local function liftRig(character: Model, lift: number)
+	local motor = rootMotor(character)
+	if motor then
+		motor.C0 = motor.C0 * CFrame.new(0, lift, 0)
+		return
+	end
+	local lowerTorso = character:FindFirstChild("LowerTorso")
+	local constraint = lowerTorso and lowerTorso:FindFirstChild("Root")
+	if constraint and constraint:IsA("AnimationConstraint") and constraint.Attachment0 then
+		local attachment = constraint.Attachment0 :: Attachment
+		attachment.Position += Vector3.new(0, lift, 0)
+	end
 end
 
 -- Clear studs above the prone root needed to stand (the standing body's height above the
@@ -49,13 +75,20 @@ function StanceService.headroomClear(character: Model, root: BasePart): boolean
 	return hit == nil
 end
 
+local function setBodyGroup(character: Model, prone: boolean)
+	for _, part in character:GetDescendants() do
+		if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+			part.CollisionGroup = if prone then PRONE_GROUP else "Default"
+		end
+	end
+end
+
 local function setProne(character: Model, humanoid: Humanoid, prone: boolean)
 	local drop = character:GetAttribute(ROOT_DROP_ATTRIBUTE)
 	local isProne = typeof(drop) == "number" and drop > 0
 	if prone == isProne then
 		return
 	end
-	local motor = rootMotor(character)
 	if prone then
 		local standHip = humanoid.HipHeight
 		local proneHip = Config.Player.Stances.ProneHipHeight
@@ -63,23 +96,27 @@ local function setProne(character: Model, humanoid: Humanoid, prone: boolean)
 		character:SetAttribute(STAND_HIP_ATTRIBUTE, standHip)
 		character:SetAttribute(ROOT_DROP_ATTRIBUTE, lift)
 		humanoid.HipHeight = proneHip
-		if motor then
-			motor.C0 = motor.C0 * CFrame.new(0, lift, 0)
-		end
+		liftRig(character, lift)
+		setBodyGroup(character, true)
 	else
 		local standHip = character:GetAttribute(STAND_HIP_ATTRIBUTE)
 		local lift = if typeof(drop) == "number" then drop else 0
 		if typeof(standHip) == "number" then
 			humanoid.HipHeight = standHip
 		end
-		if motor then
-			motor.C0 = motor.C0 * CFrame.new(0, -lift, 0)
-		end
+		liftRig(character, -lift)
+		setBodyGroup(character, character:GetAttribute("SquadState") == "Downed")
 		character:SetAttribute(ROOT_DROP_ATTRIBUTE, 0)
 	end
 end
 
 function StanceService.init()
+	if not PhysicsService:IsCollisionGroupRegistered(PRONE_GROUP) then
+		PhysicsService:RegisterCollisionGroup(PRONE_GROUP)
+	end
+	for _, group in PhysicsService:GetRegisteredCollisionGroups() do
+		PhysicsService:CollisionGroupSetCollidable(PRONE_GROUP, group.name, false)
+	end
 	local remote = Remotes.get("Stance")
 	remote.OnServerEvent:Connect(function(player: Player, stance: unknown)
 		if stance ~= "stand" and stance ~= "crouch" and stance ~= "prone" then
@@ -122,8 +159,15 @@ function StanceService.init()
 			-- unless a ceiling is in the way (the Scrapes), where the prone hip stays.
 			character:GetAttributeChangedSignal("SquadState"):Connect(function()
 				if character:GetAttribute("SquadState") ~= "Downed" then
+					-- Revived: the body collides again unless it is still prone.
+					local drop = character:GetAttribute(ROOT_DROP_ATTRIBUTE)
+					if not (typeof(drop) == "number" and drop > 0) then
+						setBodyGroup(character, false)
+					end
 					return
 				end
+				-- The crawl clip grinds the torso on the floor too: only the root collides.
+				setBodyGroup(character, true)
 				local humanoid = character:FindFirstChildOfClass("Humanoid")
 				local root = character:FindFirstChild("HumanoidRootPart")
 				if

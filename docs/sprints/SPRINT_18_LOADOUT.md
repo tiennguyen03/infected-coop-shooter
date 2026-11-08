@@ -182,3 +182,13 @@ Freefall (no ground friction) and contact jitter threw the body at up to 140 stu
 `StanceService`: a Downed body keeps the standing hip (prone requests are ignored while
 Downed, and a body that goes down while prone is stood back up unless a ceiling is above).
 Verified: 0 of 24 samples in Freefall, drift under 1 stud/s with no input (was 140).
+
+**Prone slide (bug, the real root cause).** The owner: "when I prone I am still sliding."
+The dressed player rig is rebuilt with `BuildRigFromAttachments`, which joins the root with
+an `AnimationConstraint`, not a `Motor6D`; `StanceService` only lifted a Motor6D, so prone
+dropped the hip to 0.3 without ever lifting the rig and the body hung on its torso in
+Freefall. Fixes: `liftRig` lifts the constraint's root attachment; while prone or Downed
+every body part but the root is in the `ProneBody` collision group (touches nothing), so
+the prone / crawl clips cannot prop the root off the floor. Verified: prone crawls at 4
+studs/s and stops dead, 0.7 studs of drift over 8 s idle, 0 Freefall; Downed crawls at 3
+and drifts 0.0 over 7 s; standing up restores the hip, the attachment and the group.
