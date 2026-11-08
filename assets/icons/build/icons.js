@@ -1,4 +1,4 @@
-// Item icon generator — the single source of truth for assets/icons/*.svg + *.png.
+// Icon generator — the single source of truth for assets/icons/*.svg + *.png.
 // Style: flat-shaded faceted "low-poly" vector art, light from top-left, 3 tones per
 // material (l / m / d), no outlines, no gradients, no filters. Full spec: docs/STYLES.md.
 //
@@ -62,7 +62,7 @@ function mix(h, target, t) {
 	const b = hexToRgb(target);
 	return rgbToHex(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t);
 }
-// Accent material derived from the item's ItemDefinitions.Color
+// Accent material derived from the icon's accent color (readAccents below)
 function tone(hex) {
 	return { l: mix(hex, "#ffffff", 0.3), m: hex, d: mix(hex, "#000000", 0.38) };
 }
@@ -745,13 +745,61 @@ ICONS.cheap_drone_parts = (acc) => {
 	].join("\n");
 };
 
-// ---------------------------------------------------------------- item accent colors (from ItemDefinitions.luau)
+// ---------------------------------------------------------------- accent colors
+// The 24 shipped icons are named after the old items, whose Color lived in ItemDefinitions.luau
+// (deleted in the Sprint 18 loadout rework, commit c4ba1d7). Their accents are frozen here so a
+// rebuild reproduces the uploaded art; call-ins and cards reuse those uploads by image id.
+const LEGACY_ACCENTS = {
+	hollow_point_rounds: [196, 58, 44],
+	adrenaline_injector: [70, 214, 140],
+	tactical_drone_beacon: [63, 167, 214],
+	emergency_ammo_cache: [125, 140, 88],
+	air_support_authorization: [214, 69, 51],
+	kevlar_plate_carrier: [78, 132, 196],
+	vampire_serum: [176, 38, 52],
+	ricochet_rounds: [120, 200, 210],
+	shrapnel_magazine: [190, 150, 70],
+	incendiary_gel: [232, 120, 40],
+	repulsor_mine_kit: [96, 150, 220],
+	shock_coil: [120, 180, 255],
+	hunters_mark_optics: [220, 60, 60],
+	plague_rat_charm: [120, 170, 70],
+	high_grain_powder: [200, 120, 60],
+	combat_stimulants: [120, 200, 180],
+	lightweight_boots: [150, 170, 110],
+	military_rations: [180, 150, 90],
+	field_manual: [110, 160, 210],
+	scavenger_pouch: [150, 200, 120],
+	ballistic_weave: [120, 130, 150],
+	field_dressing: [210, 130, 130],
+	signal_antenna: [130, 180, 220],
+	cheap_drone_parts: [90, 160, 200],
+};
+
+// A new icon is named after its call-in or card id and takes that row's Color.
+const DEFINITION_FILES = ["CallInDefinitions.luau", "UpgradeDefinitions.luau"];
+
 function readAccents() {
-	const src = fs.readFileSync(path.join(__dirname, "..", "..", "..", "src", "shared", "ItemDefinitions.luau"), "utf8");
 	const out = {};
-	const re = /Id = "([a-z_]+)"[\s\S]*?Color = Color3\.fromRGB\((\d+),\s*(\d+),\s*(\d+)\)/g;
-	let m;
-	while ((m = re.exec(src))) out[m[1]] = rgbToHex(+m[2], +m[3], +m[4]);
+	for (const [id, [r, g, b]] of Object.entries(LEGACY_ACCENTS)) out[id] = rgbToHex(r, g, b);
+	for (const file of DEFINITION_FILES) {
+		const src = fs.readFileSync(path.join(__dirname, "..", "..", "..", "src", "shared", file), "utf8");
+		// Named colors such as `local SUPPLY = Color3.fromRGB(...)`, used as `Color = SUPPLY`.
+		const named = {};
+		const constRe = /local ([A-Z_]+) = Color3\.fromRGB\((\d+),\s*(\d+),\s*(\d+)\)/g;
+		let m;
+		while ((m = constRe.exec(src))) named[m[1]] = rgbToHex(+m[2], +m[3], +m[4]);
+		// Each row from its Id up to the next Id, so a row never takes its neighbour's Color.
+		const rows = src.split(/(?<![A-Za-z])(?=Id = ")/);
+		for (const row of rows) {
+			const id = /^Id = "([a-z_]+)"/.exec(row);
+			if (!id) continue;
+			const rgb = /Color = Color3\.fromRGB\((\d+),\s*(\d+),\s*(\d+)\)/.exec(row);
+			const ref = /Color = ([A-Z_]+)\b/.exec(row);
+			if (rgb) out[id[1]] = rgbToHex(+rgb[1], +rgb[2], +rgb[3]);
+			else if (ref && named[ref[1]]) out[id[1]] = named[ref[1]];
+		}
+	}
 	return out;
 }
 
@@ -765,7 +813,7 @@ function main() {
 	const rendered = [];
 	for (const id of todo) {
 		if (!ICONS[id]) throw new Error("unknown icon " + id);
-		if (!accents[id]) throw new Error("no Color in ItemDefinitions for " + id);
+		if (!accents[id]) throw new Error("no accent color for " + id + " (LEGACY_ACCENTS or a definition row)");
 		const svg = wrap(ICONS[id](tone(accents[id])));
 		fs.writeFileSync(path.join(OUT, id + ".svg"), svg);
 		if (Resvg) {

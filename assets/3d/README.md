@@ -42,13 +42,13 @@ Add `-- --only wpn_rifle prop_drone` to build a subset.
 
 | Name | Tris | Pivot | Replaces |
 |---|---|---|---|
-| prop_ammo_crate | 108 | bottom center | AmmoCacheService crate part (2.6 x 1.6 x 1.8) |
+| prop_ammo_crate | 108 | bottom center | RequisitionService Resupply pallet (was the AmmoCacheService crate, 2.6 x 1.6 x 1.8) |
 | prop_repulsor_mine | 168 | bottom center | MineService disc part (2 studs across) |
 | prop_drone | 280 | center | DroneService body part (1.1 x 0.35 x 1.1) |
 | prop_drone_beacon | 172 | bottom center | (new) beacon pickup / objective dressing |
 | wpn_rifle | 188 | grip | PlayerSetup `attachRifle` part rifle |
-| pick_xp_orb | 80 | center | XPOrbService sphere part |
-| prop_plague_rat | 204 | bottom | PlagueRatService body+head+tail parts |
+| pick_xp_orb | 80 | center | unused since Sprint 18 (XP orbs cut); MeshAssets still loads it at boot |
+| prop_plague_rat | 204 | bottom | unused since Sprint 18 (Plague Rat cut); MeshAssets still loads it at boot |
 | env_barrier_jersey | 72 | bottom | 6 x 2.75 x 2 concrete traffic barrier |
 | env_sandbag_bunker | 552 | bottom | 12 x 10 U-emplacement, COVER_H (4) walls; colliders: 3 walls, open top and +Z |
 | env_guard_tower | 564 | bottom | 10 x 10 timber tower, deck at 14, 27 overall; v3 2026-11-07 rail gate on the ladder (+Y) side; colliders: legs, deck, rails + TrussPart ladder |

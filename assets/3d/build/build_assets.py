@@ -287,7 +287,7 @@ def asset(name, collection, pivot="bottom"):
 
 @asset("prop_ammo_crate", "Props")
 def ammo_crate(b):
-    # matches AmmoCacheService placeholder 2.6 x 1.6 x 1.8 (x, height, depth)
+    # the Resupply pallet (RequisitionService); sized to the old 2.6 x 1.6 x 1.8 crate part
     b.box((2.6, 1.8, 1.3), (0, 0, 0.65), swatch="olive")
     b.box((2.7, 1.9, 0.3), (0, 0, 1.45), swatch="olive_d")  # lid
     b.box((2.5, 1.7, 0.08), (0, 0, 1.64), swatch="olive_l")  # lid top panel
@@ -359,8 +359,7 @@ def rifle(b):
 
 @asset("pick_xp_orb", "Pickups", pivot="center")
 def xp_orb(b):
-    # XPOrbService scales the part per XP value; 80 tris. Color can also be overridden by
-    # MeshPart.Color if the texture is dropped for this one.
+    # Unused since Sprint 18 (XP orbs cut); kept for a future pickup. 80 tris.
     b.ico(0.5, subdiv=2, swatch="friendly_blue")
 
 
@@ -373,7 +372,7 @@ def ref_human(b):
 
 @asset("prop_plague_rat", "Props")
 def plague_rat(b):
-    # PlagueRatService rat (old Parts: body 0.6 x 0.5 x 1.2 + head + tail). Faces -Y.
+    # Unused since Sprint 18 (Plague Rat cut). Faces -Y.
     b.box((0.6, 0.85, 0.44), (0, 0.05, 0.36), swatch="dark_l")  # body
     b.box((0.66, 0.5, 0.5), (0, 0.42, 0.37), swatch="dark")  # rump
     b.box((0.44, 0.42, 0.36), (0, -0.52, 0.4), swatch="dark")  # head
