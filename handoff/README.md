@@ -15,11 +15,12 @@ commit on `main`: the open perimeter (solo playtest).
 
 Roblox 4-player co-op shooter (Helldivers-style loadout power, grounded military bio-horror
 setting). **Final
-product is 4-player co-op**; the current build is single-player. Full loop works: spawn → fight → kills fill Resupply → flare (3) → pallet (re-arm + 1 of 3
+product is 4-player co-op**; the current build is single-player. Full loop works: spawn → fight → kills fill Resupply → flare (5) → pallet (re-arm + 1 of 3
 supply cards) → Hold Position objective (site crate: 1 of 3 field upgrades) → extraction →
-OPERATION COMPLETE → restart. Service rifle with a magazine, 4 call-ins on keys 1/2, 12 field
-upgrades, 4 Infected forms (Walker, Runner, Brute, Hocker), Weller with Q dash / E breach /
-Combat Momentum, server-authoritative everything.
+OPERATION COMPLETE → restart. Pike soldiers (player Pike One, bots Pike Two-Four): a primary
+of five guns + the M17 picked in the Arms Room (B), Q swap, G frag, V shove, E stim, 4
+call-ins on keys 1-4, 7 field upgrades, 4 Infected forms (Walker, Runner, Brute, Hocker),
+server-authoritative everything.
 
 Repo: https://github.com/tiennguyen03/infected-coop-shooter — folder `~/infected-coop-shooter`.
 
@@ -231,6 +232,10 @@ Read in this order:
   primaries + pistol, Q swap / G grenade / V shove / E stim / 1-4 call-ins / 5 flare, twelve
   grounded call-ins (Magpie and Pen Coil retire), blocky Infected lore-accuracy pass. Design
   in `docs/PROGRESSION.md` > Loadout. Built in four parallel streams, then one playtest.
+  Stream B (soldier kit + Arms Room) is built, not yet playtested: six guns
+  (`Config.Weapons`), Q swap, G frag / V shove / E stim (`KitService`, AssaultClassService
+  deleted), four call-in slots, the Arms Room on B (`LoadoutMenu`, `Rules/Loadout`),
+  Pike Two-Four bots. Still the rifle mesh on every gun.
 - **Delta traversal: owner calls + playtest** (`docs/LEVELS.md` A12b second pass): generator
   to 4.8 (explained to the owner 2026-11-08, waiting on a yes), light-tower collision as two
   boxes; walk the traversal checklist (vault a sedan side-on, crawl under the cargo truck,
