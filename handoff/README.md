@@ -226,6 +226,11 @@ Read in this order:
 
 ## Open work, in priority order
 
+- **Pike rework in progress (2026-11-08, `docs/superpowers/plans/2026-11-08-pike-loadout.md`).**
+  Owner approved: Pike soldiers instead of the Chosen, the Arms Room loadout menu, five
+  primaries + pistol, Q swap / G grenade / V shove / E stim / 1-4 call-ins / 5 flare, twelve
+  grounded call-ins (Magpie and Pen Coil retire), blocky Infected lore-accuracy pass. Design
+  in `docs/PROGRESSION.md` > Loadout. Built in four parallel streams, then one playtest.
 - **Delta traversal: owner calls + playtest** (`docs/LEVELS.md` A12b second pass): generator
   to 4.8 (explained to the owner 2026-11-08, waiting on a yes), light-tower collision as two
   boxes; walk the traversal checklist (vault a sedan side-on, crawl under the cargo truck,

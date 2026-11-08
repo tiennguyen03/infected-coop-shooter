@@ -47,54 +47,101 @@ Power comes from the loadout, not from in-run growth: the Helldivers 2 model wit
 Hades-style twist (field upgrades). The Risk of Rain item economy, XP orbs and levels are
 gone (`docs/sprints/SPRINT_18_LOADOUT.md`). Lore names on the HUD ([LORE.md](LORE.md)).
 
-- **Loadout.** A Chosen is a weapon, Q dash, E breach, the Momentum passive and two
-  **call-in** slots on keys 1 and 2, chosen before the drop (the dev panel today, the Armory
-  later). The rifle (`WeaponDefinitions.service_rifle`, from `Config.Weapon`) has a
-  30-round magazine and a 240-round reserve (9 magazines): R reloads (2.2 s; a roll, a slide or going
-  down cancels it), an empty magazine refuses the shot and asks for a reload. The server
-  owns the magazine (`LoadoutService`).
-- **Call-ins** (`CallInDefinitions`, numbers in `Config.CallIns`; no friendly fire). Each
-  slot holds charges that refill one at a time:
+- **Loadout (Pike rework, owner 2026-11-08: "just soldiers", like Helldivers; plan in
+  `docs/superpowers/plans/2026-11-08-pike-loadout.md`).** Every player is a Pike soldier
+  (Pike One to Four, [LORE.md](LORE.md)); there are no classes and no hero kit. A soldier
+  carries a primary, a sidearm, a grenade type and four call-ins on keys 1-4, picked in the
+  **Arms Room** menu (B). Q swaps long gun and sidearm, G throws a grenade (3 carried; a
+  pallet refills them), V shoves (15 dmg, 0.8 s stagger, 6-stud push, 1 s cooldown), E uses a
+  stim (2 carried, heals 60 over 1 s; the Medkit card refills them), 5 throws the Resupply
+  flare (always carried). Q dash, E breach and Combat Momentum are gone. Every gun is
+  hitscan at its real-world rate; the server owns every magazine (`LoadoutService`).
 
-  | Key | Lore name | Tool | Charges / cooldown | What it does |
+  | Gun (real) | Role | Mode, rpm (`FireCooldown`) | Dmg | Mag + reserve | Reload | Hip / ADS | Bloom per shot / max | Range | Pierce | HS |
+  |---|---|---|---|---|---|---|---|---|---|---|
+  | **M16A4 Service Rifle** (baseline) | all-rounder, 3-5 round bursts | auto, 750 (0.08) | 20 | 30 + 240 | 2.2 | 1.5 / 0.3 | 0.3 / 3.5 | 400 | 0 | 3.0 |
+  | **MP5 SMG** | best hip-fire; chews Runners, weak on Brutes | auto, 800 (0.075) | 14 | 30 + 210 | 1.8 | 0.9 / 0.6 | 0.15 / 2.0 | 150 | 0 | 3.0 |
+  | **M249 LMG** | 100-round belt, no reload in a hold; slow to aim moving | auto, 800 (0.075) | 20 | 100 + 300 | 5.5 | 3.0 / 0.5 | 0.15 / 2.5 | 400 | 0 | 3.0 |
+  | **Mossberg 590 Shotgun** | point-blank, one decision per pull | pump, 80 (0.75) | 8 x 11 | 8 + 40 | 3.5 | 5.0 / 3.5 | 0 | 45 | 0 | 1.5 |
+  | **M110 DMR** | one-taps Walkers, hits two in a line; poor up close | semi, 300 (0.2) | 60 | 20 + 80 | 2.6 | 4.0 / 0.1 | 1.2 / 3.0 (recovery 8) | 600 | 1 | 3.0 |
+  | **M17 Pistol** (sidearm) | backup when the primary runs dry | semi, 400 (0.15) | 25 | 17 + 68 | 1.5 | 1.2 / 0.5 | 0.6 / 2.5 | 120 | 0 | 3.0 |
+
+  ADS move factor: rifle 0.6, SMG 0.85, LMG 0.35, shotgun 0.7, DMR 0.5, pistol 0.9. The
+  .357 revolver (55 dmg, 6 + 30, 150 rpm) comes later. Rounds to kill body / head: rifle
+  Walker 3 / 1, Brute 13 / 11; SMG 4 / 2, 19 / 15; DMR 1 / 1, 5 / 4; shotgun one pull for
+  every form but the Brute (3). Ammo reins in the DMR (100 x 60 is the M16's 270 x 20).
+  Grenades: **Frag** (110 in 10 studs, 0.8 s fuse; one-shots a Hocker, not a Brute) first;
+  **Incendiary** (3 fire pools) and **Stun** (0.4x slow 3 s in 14 studs, Pen Coil's slow)
+  later.
+- **The Arms Room** (loadout menu). Pick one primary, one sidearm, one grenade and four
+  different call-ins, at most one support weapon. Open during Insert / ready-up, or in a run
+  within `Config.Loadout.LzRadius` 30 of the LZ pad after `Config.Loadout.CalmSeconds` 5
+  without dealing or taking damage. A newly picked gun starts full (re-picking the carried one
+  keeps its ammo); a call-in that changes slot starts empty with its cooldown running.
+  Module boundary, so a lobby can host it later: `src/shared/Rules/Loadout.luau` (pure:
+  `default()`, `validate(loadout) -> (ok, reason)`, spec first), `src/client/LoadoutMenu.luau`
+  (UI only: `mount(parent, onConfirm)`), `LoadoutService.apply(player, loadout)` (server:
+  validation plus the timing gate). Remote `Loadout` carries `Messages.Loadout.Request`
+  `{primary, secondary, grenade, callIns}` and `Messages.Loadout.Result` `(ok, reason)`; the
+  server publishes `Primary`, `Secondary`, `Grenade`, `CallIn1`-`CallIn4` attributes. The
+  lobby (F10) later validates with the same Rules module, saves through F9 and passes the
+  table in teleport data.
+- **Call-ins** (`CallInDefinitions`, numbers in `Config.CallIns`; no friendly fire). Four
+  slots, keys 1-4; each holds charges that refill one at a time. Lantern's crew kicks support
+  weapons and supply out of the door; fire missions are someone on the net ("Hammer, Pike.
+  Fire mission, my smoke, over."). Names: the lore developer's kit (HUD name, designation
+  under it).
+
+  | # | Kind | Name (designation) | What it does | Charges / cooldown |
   |---|---|---|---|---|
-  | 1 (default) | **Magpie** | Drone Beacon | 1 / 90 s | thrown 35 studs; two of Lantern's quadcopters follow the thrower 30 s, Damage 6 every 0.6 s, range 60 |
-  | 2 (default) | **Tripline** | Mines | 2 / 60 s | thrown; 6 charges on an 8-stud arc bulging away from you; trigger 5, blast 10, Damage 80, 90 s |
-  | swap-in | **Anvil** | Fire Mission | 1 / 150 s | thrown marker; after 3 s the battery lands 3 shells 1 s apart, Damage 80 in 12 studs |
-  | swap-in | **Pen Coil** | Shock Coil | 2 / 25 s | pulse around you: Damage 25 and a 0.4x slow for 3 s inside 14 studs |
+  | 1 | Support | **Gun** (M240B) | 40 dmg, 650 rpm, pierce 1, 100 + 100 belt, 7 s reload, ADS move 0.3; takes the long-gun slot until empty, downed (drops at the body) or replaced | 1 / 240 |
+  | 2 | Support | **Goose** (M3 recoilless) | 2 single shots; 400 direct, 120 in 6 studs | 1 / 120 |
+  | 3 | Support | **Thumper** (M32) | 6-round drum, 0.5 s apart, 70 in 7 studs, 24 rounds | 1 / 180 |
+  | 4 | Support | **Kettle** (M9 projector, the Burn crews' flamer) | 15-stud cone, 10 per 0.1 s, fire pools, 20 s of fuel | 1 / 180 |
+  | 5 | Fire mission | **Hammer** (81 mm mortar section) | 6 shells 1 s apart, 80 in 12 studs, scatter 4 | 1 / 120 |
+  | 6 | Fire mission | **Anvil** (105 mm battery) | one shell after 5 s, 500 in 20 studs | 1 / 180 |
+  | 7 | Fire mission | **Shrike** (helicopter gun run) | 10 bursts stepping 4 studs along the throw, 120 in 5 studs each, 4 s delay | 1 / 150 |
+  | 8 | Emplacement | **Doorman** (tripod sentry MG) | 45 s, 20 dmg every 0.15 s, range 70 | 1 / 150 |
+  | 9 | Emplacement | **Tripline** (AP mines, kept) | unchanged | 2 / 60 |
+  | 10 | Emplacement | **Concertina** (wire) | 16 x 3 strip for 60 s: 0.4x slow, 5 dps | 2 / 90 |
+  | 11 | Supply | **Speedball** (ammo bundle) | 4 re-arms, no lure wave | 1 / 180 |
+  | 12 | Supply | **Aid Bag** (medical drop) | every soldier within 6 studs: full heal, stims refilled, +25 plate; once each | 1 / 180 |
+
+  Retired: **Magpie** (drones) and **Pen Coil** (shock pulse), too sci-fi for the setting;
+  Pen Coil's slow becomes the Stun grenade. Build order: Hammer, Anvil, Shrike, Doorman,
+  Concertina, Speedball and Aid Bag first (they reuse AirStrike, Drone, FireTrail and pallet
+  code); Gun, Goose, Thumper and Kettle need the support-weapon carry and the explosive
+  projectile hook (ARCHITECTURE F7) and come second.
 
 - **Pallets are tactical.** The Resupply pool (one meter on every HUD) is fed by every
   kill's `SupplyValue` at any distance (Walker 10, Runner 12, Hocker 18, Brute 35) and by the
   Primary (`Objective.SupplyReward 500`); the meter pulses on a kill. When it covers the cost
   (`Requisition.BaseCost 300`, x1.15 per drop, cap 1000, +40% per extra player) any living
-  player throws the red flare (key 3, 35 studs); for 20 s the Infected inside 120 studs walk
+  player throws the red flare (key 5, 35 studs); for 20 s the Infected inside 120 studs walk
   to the flare, then the pallet lands loud (`Lure.Wave 10` +3 per extra player, spawn
   interval x0.7 for 30 s). **The pallet is the ammo box**: every living player who walks
   within `RearmRadius 6` is re-armed once (full magazine and reserve). Its three cards are
   the same for everyone (`Crates.SupplyCards`): **Medkit** (full heal), **Restock** (both
-  call-in slots full), **Armour Plate** (+50 shield soaked before health, cap 100). One pick
+  call-in slots full, grenades and stims too), **Armour Plate** (+50 shield soaked before health, cap 100). One pick
   per player per pallet, cards vanish at 60 s. No rarity, no upgrades from pallets.
 - **Field upgrades** (`UpgradeDefinitions`, flags on `LoadoutService`, numbers in
-  `Config.Upgrades`). Six slots, one per tool (Dash, Breach, Rifle, Kit, call-in A, call-in
-  B); a new pick in a filled slot replaces it. Sources: the Primary's site crate (lands when
-  the hold zone appears; shows 3 you can still take), later Stores and Secondary crates and
-  the Index pallet (3-5 per mission). Each changes how a tool works, never a percentage:
+  `Config.Upgrades`). Slots: Grenade, Weapon, Kit and one per call-in id; a new pick in a
+  filled slot replaces it. Sources: the Primary's site crate (lands when the hold zone
+  appears; shows 3 you can still take), later Stores and Secondary crates and the Index pallet
+  (3-5 per mission). Each changes how a tool works, never a percentage:
 
   | Slot | Lore name | Effect |
   |---|---|---|
-  | Dash | Flare Straps | the dash leaves 3 fire pools (radius 6, 8/s for 5 s) |
-  | Dash | Smoke Dash | Infected melee cannot find you for 1.5 s after the dash |
-  | Breach | Bait Charge | the breach charge lures the Infected inside 18 studs for a 3 s fuse |
-  | Rifle | Through-and-Through | a round carries into the next Infected |
-  | Rifle | Hollow Point | the hit Infected stops for 0.6 s |
-  | Kit | Combat Reload | reload is instant at 5 Momentum |
+  | Grenade | Bait Charge | a frag lures the Infected inside 18 studs for 3 s before it goes |
+  | Weapon | Through-and-Through | a round carries into the next Infected (any gun) |
+  | Weapon | Hollow Point | the hit Infected stops for 0.6 s (any gun) |
   | Kit | Last Stand | fire from the ground while downed (hip, spread x2) |
   | Kit | Spare Tourniquet | stand up on your own 4 s after going down, once per mission, no revive spent |
-  | Anvil | Walk It In | 5 shells stepping 8 studs along the throw |
-  | Magpie | Last Flight | the drones stay with a downed owner, their clock paused |
-  | Tripline | Daisy Chain | press 2 again to blow every armed mine (no charge) |
-  | Pen Coil | Ground Strap | the pulse stands up every downed squadmate in reach |
+  | Hammer | Walk It In | the shells step 8 studs along the throw |
+  | Tripline | Daisy Chain | press the key again to blow every armed mine (no charge) |
 
+  Retired with the class kit: Flare Straps (becomes the Incendiary grenade), Smoke Dash,
+  Combat Reload (a Momentum hook), Last Flight (Magpie), Ground Strap (Pen Coil).
 - **Flat threat curve.** `Config.Difficulty` health and damage at 1x; pressure is the spawn
   interval decay (3 s, x0.95/min to 1.5 s; balance pass 2026-11-07), the max-alive schedule (10 / 14 / 20 / 26, late 30),
   the phase mix (Walker-only to W38 R30 B16 H16) and the player count
