@@ -18,6 +18,7 @@ local LoadoutService = require(script.Parent.LoadoutService)
 local PauseService = require(script.Parent.PauseService)
 local Squad = require(script.Parent.Squad)
 local WorldSounds = require(script.Parent.WorldSounds)
+local Lifecycle = require(script.Parent.Lifecycle)
 
 -- Last pain grunt per player humanoid (weak keys: a dead character drops out).
 local lastHurtVoiceAt: { [Humanoid]: number } = setmetatable({}, { __mode = "k" }) :: any
@@ -302,6 +303,9 @@ function EnemyProjectileService.reset()
 end
 
 function EnemyProjectileService.init()
+	Lifecycle.register("EnemyProjectileService", {
+		onRunStart = EnemyProjectileService.reset,
+	})
 	folder = Instance.new("Folder")
 	folder.Name = "InfectedProjectiles"
 	folder.Parent = workspace

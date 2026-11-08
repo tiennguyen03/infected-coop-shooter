@@ -3,6 +3,7 @@
 -- bonuses keyed by a source name; the recomputed multiplier is published as
 -- a player attribute (DamageMult/FireRateMult/MoveSpeedMult) so client
 -- systems read it via replication. Server systems use getMultiplier.
+local Lifecycle = require(script.Parent.Lifecycle)
 
 local Players = game:GetService("Players")
 
@@ -51,13 +52,16 @@ function PlayerStatsService.resetPlayer(player: Player)
 end
 
 function PlayerStatsService.init()
+	Lifecycle.register("PlayerStatsService", {
+		onPlayerReset = PlayerStatsService.resetPlayer,
+		onPlayerRemoving = function(player: Player)
+			bonuses[player] = nil
+		end,
+	})
 	Players.PlayerAdded:Connect(recompute)
 	for _, player in Players:GetPlayers() do
 		recompute(player)
 	end
-	Players.PlayerRemoving:Connect(function(player)
-		bonuses[player] = nil
-	end)
 end
 
 return PlayerStatsService

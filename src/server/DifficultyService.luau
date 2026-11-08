@@ -11,6 +11,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local Squad = require(script.Parent.Squad)
+local Lifecycle = require(script.Parent.Lifecycle)
 
 local DifficultyService = {}
 
@@ -24,6 +25,9 @@ function DifficultyService.restart()
 end
 
 function DifficultyService.init()
+	Lifecycle.register("DifficultyService", {
+		onRunStart = DifficultyService.restart,
+	})
 	DifficultyService.restart()
 end
 

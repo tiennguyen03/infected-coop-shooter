@@ -6,7 +6,6 @@
 -- detonateAll when the owner presses the Tripline key with mines still armed.
 
 local CollectionService = game:GetService("CollectionService")
-local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
@@ -16,6 +15,7 @@ local GroundUtil = require(ReplicatedStorage.Shared.GroundUtil)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
 local DamageService = require(script.Parent.DamageService)
 local PauseService = require(script.Parent.PauseService)
+local Lifecycle = require(script.Parent.Lifecycle)
 
 local ENEMY_TAG = "Enemy"
 
@@ -211,19 +211,21 @@ function MineService.reset()
 end
 
 function MineService.init()
+	Lifecycle.register("MineService", {
+		onRunStart = MineService.reset,
+		onPlayerRemoving = function(player: Player)
+			for index = #mines, 1, -1 do
+				if mines[index].owner == player then
+					removeMine(index)
+				end
+			end
+		end,
+	})
 	mineFolder = Instance.new("Folder")
 	mineFolder.Name = "Mines"
 	mineFolder.Parent = workspace
 	lastStep = os.clock()
 	RunService.Heartbeat:Connect(onHeartbeat)
-
-	Players.PlayerRemoving:Connect(function(player: Player)
-		for index = #mines, 1, -1 do
-			if mines[index].owner == player then
-				removeMine(index)
-			end
-		end
-	end)
 end
 
 return MineService

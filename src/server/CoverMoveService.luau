@@ -7,12 +7,12 @@
 -- standing immunity. State is per player and dropped on PlayerRemoving. Every move (and a
 -- slide, which buys no window) drops a reload in progress (LoadoutService.cancelReload).
 
-local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
 local LoadoutService = require(script.Parent.LoadoutService)
+local Lifecycle = require(script.Parent.Lifecycle)
 
 local CoverMoveService = {}
 
@@ -47,10 +47,12 @@ local function onCoverMove(player: Player, kind: unknown)
 end
 
 function CoverMoveService.init()
+	Lifecycle.register("CoverMoveService", {
+		onPlayerRemoving = function(player: Player)
+			windowEnds[player] = nil
+		end,
+	})
 	Remotes.get("CoverMove").OnServerEvent:Connect(onCoverMove)
-	Players.PlayerRemoving:Connect(function(player)
-		windowEnds[player] = nil
-	end)
 end
 
 return CoverMoveService

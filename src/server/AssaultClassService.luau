@@ -8,7 +8,6 @@
 -- a moment after it (the CoverMoveUntil window), Bait Charge makes the breach charge a lure
 -- with a longer fuse (EnemyService.setLure).
 
-local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
@@ -23,6 +22,7 @@ local LoadoutService = require(script.Parent.LoadoutService)
 local PauseService = require(script.Parent.PauseService)
 local PlayerStatsService = require(script.Parent.PlayerStatsService)
 local Squad = require(script.Parent.Squad)
+local Lifecycle = require(script.Parent.Lifecycle)
 
 local ENEMY_TAG = "Enemy"
 local MOMENTUM_SOURCE = "assault_momentum"
@@ -369,6 +369,16 @@ function AssaultClassService.reset()
 end
 
 function AssaultClassService.init()
+	Lifecycle.register("AssaultClassService", {
+		onRunStart = AssaultClassService.reset,
+		onPlayerReset = AssaultClassService.resetPlayer,
+		onPlayerRemoving = function(player: Player)
+			momentumStacks[player] = nil
+			momentumExpires[player] = nil
+			dashReadyAt[player] = nil
+			breachReadyAt[player] = nil
+		end,
+	})
 	chargeFolder = Instance.new("Folder")
 	chargeFolder.Name = "AssaultEffects"
 	chargeFolder.Parent = workspace
@@ -377,13 +387,6 @@ function AssaultClassService.init()
 	Remotes.get("UseAbility").OnServerEvent:Connect(onUseAbility)
 	DamageService.addKillListener(onCreditedKill)
 	RunService.Heartbeat:Connect(onHeartbeat)
-
-	Players.PlayerRemoving:Connect(function(player)
-		momentumStacks[player] = nil
-		momentumExpires[player] = nil
-		dashReadyAt[player] = nil
-		breachReadyAt[player] = nil
-	end)
 end
 
 return AssaultClassService

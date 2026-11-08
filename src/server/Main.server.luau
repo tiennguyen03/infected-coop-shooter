@@ -1,42 +1,63 @@
 --!strict
--- Server bootstrap. Requires each system module and starts it.
+-- Server bootstrap: starts every system in BOOT order (docs/ARCHITECTURE.md F2). Each
+-- init() runs in pcall; the first one that fails is named in the log with the list of
+-- systems that did start, and boot stops with an error instead of silently skipping
+-- everything after it.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
--- Creating remotes first guarantees clients never wait on a system that
--- hasn't initialized yet.
+-- Creating remotes first guarantees clients never wait on a system that hasn't initialized.
 require(ReplicatedStorage.Shared.Remotes)
-require(ReplicatedStorage.Shared.MeshAssets).init()
 
-require(ReplicatedStorage.Shared.Animations).init()
-require(script.Parent.SkyService).init()
-require(script.Parent.ArenaService).init()
-require(script.Parent.Squad).init()
-require(script.Parent.PauseService).init()
-require(script.Parent.WorldSounds).init()
-require(script.Parent.DifficultyService).init()
-require(script.Parent.PlayerStatsService).init()
-require(script.Parent.LoadoutService).init()
-require(script.Parent.DamageService).init()
-require(script.Parent.PlayerSetup).init()
-require(script.Parent.CoverMoveService).init()
-require(script.Parent.StanceService).init()
-require(script.Parent.ProjectileServer).init()
-require(script.Parent.DroneService).init()
-require(script.Parent.AirStrikeService).init()
-require(script.Parent.IncendiaryService).init()
-require(script.Parent.MineService).init()
-require(script.Parent.EnemyProjectileService).init()
-require(script.Parent.EnemyService).init()
-require(script.Parent.ShockCoilService).init()
-require(script.Parent.AssaultClassService).init()
-require(script.Parent.CallInService).init()
-require(script.Parent.RequisitionService).init()
-require(script.Parent.ObjectiveService).init()
-require(script.Parent.ExtractionService).init()
-require(script.Parent.IndexService).init()
-require(script.Parent.BotService).init()
-require(script.Parent.RunManager).init()
-require(script.Parent.DevTestService).init()
+local Shared = ReplicatedStorage.Shared
+local Server = script.Parent
 
-print("[Server] All systems initialized")
+-- Order matters: a system starts after the systems it reads at init time.
+local BOOT: { ModuleScript } = {
+	Shared.MeshAssets,
+	Shared.Animations,
+	Server.Lifecycle,
+	Server.SkyService,
+	Server.ArenaService,
+	Server.Squad,
+	Server.PauseService,
+	Server.WorldSounds,
+	Server.DifficultyService,
+	Server.PlayerStatsService,
+	Server.LoadoutService,
+	Server.DamageService,
+	Server.PlayerSetup,
+	Server.CoverMoveService,
+	Server.StanceService,
+	Server.ProjectileServer,
+	Server.DroneService,
+	Server.AirStrikeService,
+	Server.IncendiaryService,
+	Server.MineService,
+	Server.EnemyProjectileService,
+	Server.EnemyService,
+	Server.ShockCoilService,
+	Server.AssaultClassService,
+	Server.CallInService,
+	Server.RequisitionService,
+	Server.ObjectiveService,
+	Server.ExtractionService,
+	Server.IndexService,
+	Server.BotService,
+	Server.RunManager,
+	Server.DevTestService,
+}
+
+local started: { string } = {}
+for _, module in BOOT do
+	local ok, err = pcall(function()
+		(require(module) :: any).init()
+	end)
+	if not ok then
+		warn(`[Server] started before the failure: {table.concat(started, ", ")}`)
+		error(`[Server] {module.Name}.init() failed, boot stopped: {err}`, 0)
+	end
+	table.insert(started, module.Name)
+end
+
+print(`[Server] All systems initialized ({#started})`)

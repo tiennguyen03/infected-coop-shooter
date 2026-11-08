@@ -41,7 +41,8 @@ concern, not polish.
 | `src/shared/` | `ReplicatedStorage.Shared` |
 
 - `Main.server.luau` / `Main.client.luau` are the only entry points; every other file is a
-  ModuleScript exposing `init()`, started from Main in dependency order.
+  ModuleScript exposing `init()`, started from Main's `BOOT` list in dependency order (a
+  failing `init()` stops boot and is named in the log).
 - All tuning values live in `src/shared/Config.luau`. Never hardcode balance numbers.
 - RemoteEvents are declared in `src/shared/Remotes.luau` (`REMOTE_NAMES`).
 - Art sources: `assets/icons/build/icons.js` (icons), `assets/3d/build/build_assets.py`
@@ -54,9 +55,11 @@ concern, not polish.
 - Enemies: Models tagged `"Enemy"` with a Humanoid. Damage goes through
   `DamageService.dealDamage` (the one damage entry point).
 - UI is code-generated; disk is the single source of truth. No hand edits in Studio.
-- Design for up to 4 players: state keyed by `Player` (cleaned on `PlayerRemoving`) or
-  explicitly per run; never `GetPlayers()[1]`; `resetPlayer` touches only that player,
-  `reset` only run state. New single-player shortcuts are not allowed; existing ones are
+- Design for up to 4 players: state keyed by `Player` or explicitly per run; never
+  `GetPlayers()[1]`. A server service with run or player state registers its own hooks in
+  `init()` with `Lifecycle.register` (`onRunStart`, `onPlayerReset`, `onPlayerRemoving`,
+  ...); RunManager never names a service. `onPlayerReset` touches only that player,
+  `onRunStart` only run state. New single-player shortcuts are not allowed; existing ones are
   listed in `docs/MULTIPLAYER_READINESS.md`.
 
 ## Commands (Rokit toolchain; `export PATH="$HOME/.rokit/bin:$PATH"` if a tool is missing)

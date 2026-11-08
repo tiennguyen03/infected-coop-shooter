@@ -12,6 +12,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local EnemyService = require(script.Parent.EnemyService)
 local DamageService = require(script.Parent.DamageService)
 local Squad = require(script.Parent.Squad)
+local Lifecycle = require(script.Parent.Lifecycle)
 
 local ENEMY_TAG = "Enemy"
 
@@ -94,6 +95,9 @@ function ShockCoilService.reset()
 end
 
 function ShockCoilService.init()
+	Lifecycle.register("ShockCoilService", {
+		onRunStart = ShockCoilService.reset,
+	})
 	effectFolder = Instance.new("Folder")
 	effectFolder.Name = "CallInEffects"
 	effectFolder.Parent = workspace

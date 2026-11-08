@@ -23,6 +23,7 @@ local MineService = require(script.Parent.MineService)
 local PauseService = require(script.Parent.PauseService)
 local ShockCoilService = require(script.Parent.ShockCoilService)
 local Squad = require(script.Parent.Squad)
+local Lifecycle = require(script.Parent.Lifecycle)
 
 -- Folders a throw never lands on (effects and pickups between the thrower and the ground).
 local THROW_PASS_THROUGH = {
@@ -237,6 +238,12 @@ function CallInService.resetPlayer(player: Player)
 end
 
 function CallInService.init()
+	Lifecycle.register("CallInService", {
+		onPlayerReset = CallInService.resetPlayer,
+		onPlayerRemoving = function(player: Player)
+			slots[player] = nil
+		end,
+	})
 	usedRemote = Remotes.get("AbilityUsed")
 	Remotes.get("CallIn").OnServerEvent:Connect(onCallIn)
 	-- A swapped slot (dev panel, later the Armory) starts full.
@@ -253,9 +260,6 @@ function CallInService.init()
 	for _, player in Players:GetPlayers() do
 		get(player)
 	end
-	Players.PlayerRemoving:Connect(function(player)
-		slots[player] = nil
-	end)
 end
 
 return CallInService

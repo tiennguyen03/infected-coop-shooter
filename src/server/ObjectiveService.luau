@@ -15,6 +15,7 @@ local EnemyService = require(script.Parent.EnemyService)
 local PauseService = require(script.Parent.PauseService)
 local RequisitionService = require(script.Parent.RequisitionService)
 local Squad = require(script.Parent.Squad)
+local Lifecycle = require(script.Parent.Lifecycle)
 
 local ObjectiveService = {}
 
@@ -221,6 +222,9 @@ function ObjectiveService.arm()
 end
 
 function ObjectiveService.init()
+	Lifecycle.register("ObjectiveService", {
+		onRunStart = ObjectiveService.reset,
+	})
 	objectiveRemote = Remotes.get("ObjectiveUpdate")
 end
 

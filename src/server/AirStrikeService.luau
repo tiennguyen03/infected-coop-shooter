@@ -12,6 +12,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local GroundUtil = require(ReplicatedStorage.Shared.GroundUtil)
 local DamageService = require(script.Parent.DamageService)
 local PauseService = require(script.Parent.PauseService)
+local Lifecycle = require(script.Parent.Lifecycle)
 
 local ENEMY_TAG = "Enemy"
 
@@ -164,6 +165,9 @@ function AirStrikeService.reset()
 end
 
 function AirStrikeService.init()
+	Lifecycle.register("AirStrikeService", {
+		onRunStart = AirStrikeService.reset,
+	})
 	effectFolder = Instance.new("Folder")
 	effectFolder.Name = "StrikeEffects"
 	effectFolder.Parent = workspace

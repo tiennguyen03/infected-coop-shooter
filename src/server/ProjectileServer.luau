@@ -21,6 +21,7 @@ local LoadoutService = require(script.Parent.LoadoutService)
 local PauseService = require(script.Parent.PauseService)
 local PlayerStatsService = require(script.Parent.PlayerStatsService)
 local Squad = require(script.Parent.Squad)
+local Lifecycle = require(script.Parent.Lifecycle)
 
 local ENEMY_TAG = "Enemy"
 -- How far a reported fire origin may be from the character before the
@@ -379,6 +380,14 @@ function ProjectileServer.resetPlayer(player: Player)
 end
 
 function ProjectileServer.init()
+	Lifecycle.register("ProjectileServer", {
+		onRunStart = ProjectileServer.reset,
+		onPlayerReset = ProjectileServer.resetPlayer,
+		onPlayerRemoving = function(player: Player)
+			lastFireTime[player] = nil
+			bloom[player] = nil
+		end,
+	})
 	projectileFolder = Instance.new("Folder")
 	projectileFolder.Name = "Projectiles"
 	projectileFolder.Parent = workspace
@@ -386,11 +395,6 @@ function ProjectileServer.init()
 	tracerRemote = Remotes.get("ShotTracer")
 	Remotes.get("FireWeapon").OnServerEvent:Connect(onFireRequest)
 	RunService.Heartbeat:Connect(stepProjectiles)
-
-	Players.PlayerRemoving:Connect(function(player)
-		lastFireTime[player] = nil
-		bloom[player] = nil
-	end)
 end
 
 return ProjectileServer

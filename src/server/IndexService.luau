@@ -49,6 +49,7 @@ local PauseService = require(script.Parent.PauseService)
 local RequisitionService = require(script.Parent.RequisitionService)
 local Squad = require(script.Parent.Squad)
 local WorldSounds = require(script.Parent.WorldSounds)
+local Lifecycle = require(script.Parent.Lifecycle)
 
 local IndexService = {}
 
@@ -1379,6 +1380,9 @@ end
 
 -- Fresh clients (a late join mid-fight) get the current state on request.
 function IndexService.init()
+	Lifecycle.register("IndexService", {
+		onRunStart = IndexService.reset,
+	})
 	bossRemote = Remotes.get("BossUpdate")
 	noticeRemote = Remotes.get("BuffNotice")
 	damageRemote = Remotes.get("DamageDealt")

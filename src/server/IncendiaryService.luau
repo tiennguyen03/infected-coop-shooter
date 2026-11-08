@@ -12,6 +12,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local GroundUtil = require(ReplicatedStorage.Shared.GroundUtil)
 local DamageService = require(script.Parent.DamageService)
 local PauseService = require(script.Parent.PauseService)
+local Lifecycle = require(script.Parent.Lifecycle)
 
 local ENEMY_TAG = "Enemy"
 
@@ -142,6 +143,9 @@ function IncendiaryService.reset()
 end
 
 function IncendiaryService.init()
+	Lifecycle.register("IncendiaryService", {
+		onRunStart = IncendiaryService.reset,
+	})
 	poolFolder = Instance.new("Folder")
 	poolFolder.Name = "FirePools"
 	poolFolder.Parent = workspace

@@ -7,7 +7,6 @@
 -- hold position over where the owner fell. Server-simulated anchored parts.
 
 local CollectionService = game:GetService("CollectionService")
-local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
@@ -16,6 +15,7 @@ local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
 local PauseService = require(script.Parent.PauseService)
 local ProjectileServer = require(script.Parent.ProjectileServer)
 local Squad = require(script.Parent.Squad)
+local Lifecycle = require(script.Parent.Lifecycle)
 
 local ENEMY_TAG = "Enemy"
 local RETARGET_INTERVAL = 0.25
@@ -264,19 +264,21 @@ function DroneService.reset()
 end
 
 function DroneService.init()
+	Lifecycle.register("DroneService", {
+		onRunStart = DroneService.reset,
+		onPlayerRemoving = function(player: Player)
+			for index = #drones, 1, -1 do
+				if drones[index].owner == player then
+					removeDrone(index)
+				end
+			end
+		end,
+	})
 	droneFolder = Instance.new("Folder")
 	droneFolder.Name = "Drones"
 	droneFolder.Parent = workspace
 	lastStep = os.clock()
 	RunService.Heartbeat:Connect(stepDrones)
-
-	Players.PlayerRemoving:Connect(function(player: Player)
-		for index = #drones, 1, -1 do
-			if drones[index].owner == player then
-				removeDrone(index)
-			end
-		end
-	end)
 end
 
 return DroneService

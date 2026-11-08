@@ -34,6 +34,7 @@ local DamageService = require(script.Parent.DamageService)
 local PauseService = require(script.Parent.PauseService)
 local WorldSounds = require(script.Parent.WorldSounds)
 local Squad = require(script.Parent.Squad)
+local Lifecycle = require(script.Parent.Lifecycle)
 
 local ENEMY_TAG = "Enemy"
 local ENEMY_COLLISION_GROUP = "Enemy"
@@ -1089,6 +1090,9 @@ function EnemyService.reset()
 end
 
 function EnemyService.init()
+	Lifecycle.register("EnemyService", {
+		onRunStart = EnemyService.reset,
+	})
 	-- Idempotent: registering an existing group throws, which is fine.
 	pcall(function()
 		PhysicsService:RegisterCollisionGroup(ENEMY_COLLISION_GROUP)

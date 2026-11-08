@@ -27,6 +27,7 @@ local EnemyService = require(script.Parent.EnemyService)
 local LoadoutService = require(script.Parent.LoadoutService)
 local PauseService = require(script.Parent.PauseService)
 local Squad = require(script.Parent.Squad)
+local Lifecycle = require(script.Parent.Lifecycle)
 
 local FLARE_COLOR = Color3.fromRGB(255, 60, 40)
 local CRATE_DROP_HEIGHT = 60
@@ -458,6 +459,16 @@ function RequisitionService.reset()
 end
 
 function RequisitionService.init()
+	Lifecycle.register("RequisitionService", {
+		onRunStart = RequisitionService.reset,
+		onPlayerRemoving = function(player: Player)
+			for _, crate in crates do
+				crate.offers[player] = nil
+				crate.picked[player] = nil
+				crate.rearmed[player] = nil
+			end
+		end,
+	})
 	folder = Instance.new("Folder")
 	folder.Name = "Resupply"
 	folder.Parent = workspace
@@ -471,14 +482,6 @@ function RequisitionService.init()
 	publish()
 	lastStep = os.clock()
 	RunService.Heartbeat:Connect(step)
-
-	Players.PlayerRemoving:Connect(function(player)
-		for _, crate in crates do
-			crate.offers[player] = nil
-			crate.picked[player] = nil
-			crate.rearmed[player] = nil
-		end
-	end)
 end
 
 return RequisitionService

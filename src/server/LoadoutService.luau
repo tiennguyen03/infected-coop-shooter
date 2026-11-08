@@ -20,6 +20,7 @@ local UpgradeDefinitions = require(ReplicatedStorage.Shared.UpgradeDefinitions)
 local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
 local PauseService = require(script.Parent.PauseService)
 local Squad = require(script.Parent.Squad)
+local Lifecycle = require(script.Parent.Lifecycle)
 
 local LoadoutService = {}
 
@@ -373,6 +374,12 @@ function LoadoutService.resetPlayer(player: Player)
 end
 
 function LoadoutService.init()
+	Lifecycle.register("LoadoutService", {
+		onPlayerReset = LoadoutService.resetPlayer,
+		onPlayerRemoving = function(player: Player)
+			loadouts[player] = nil
+		end,
+	})
 	Remotes.get("Reload").OnServerEvent:Connect(function(player: Player)
 		LoadoutService.startReload(player)
 	end)
@@ -390,9 +397,6 @@ function LoadoutService.init()
 	for _, player in Players:GetPlayers() do
 		publish(player, get(player))
 	end
-	Players.PlayerRemoving:Connect(function(player)
-		loadouts[player] = nil
-	end)
 end
 
 return LoadoutService

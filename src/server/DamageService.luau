@@ -11,6 +11,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
+local Lifecycle = require(script.Parent.Lifecycle)
 
 local DamageService = {}
 
@@ -107,6 +108,10 @@ function DamageService.resetPlayer(player: Player)
 end
 
 function DamageService.init()
+	Lifecycle.register("DamageService", {
+		onRunStart = DamageService.reset,
+		onPlayerReset = DamageService.resetPlayer,
+	})
 	damageRemote = Remotes.get("DamageDealt")
 	Players.PlayerAdded:Connect(function(player)
 		player:SetAttribute("Kills", 0)

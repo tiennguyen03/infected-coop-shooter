@@ -22,6 +22,7 @@ local RunService = game:GetService("RunService")
 local Config = require(ReplicatedStorage.Shared.Config)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local ArenaService = require(script.Parent.ArenaService)
+local Lifecycle = require(script.Parent.Lifecycle)
 -- LoadoutService requires Squad, so Squad reaches it lazily (knock only).
 local function loadoutService(): any
 	return require(script.Parent.LoadoutService) :: any
@@ -501,16 +502,20 @@ local function step()
 end
 
 function Squad.init()
+	Lifecycle.register("Squad", {
+		onRunStart = Squad.resetRun,
+		onPlayerRemoving = function(player: Player)
+			local member = byPlayer[player]
+			if member then
+				remove(member)
+			end
+		end,
+		last = true,
+	})
 	Players.PlayerAdded:Connect(onPlayerAdded)
 	for _, player in Players:GetPlayers() do
 		onPlayerAdded(player)
 	end
-	Players.PlayerRemoving:Connect(function(player)
-		local member = byPlayer[player]
-		if member then
-			remove(member)
-		end
-	end)
 	RunService.Heartbeat:Connect(step)
 end
 

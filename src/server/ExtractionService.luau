@@ -13,6 +13,7 @@ local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local EnemyService = require(script.Parent.EnemyService)
 local PauseService = require(script.Parent.PauseService)
 local Squad = require(script.Parent.Squad)
+local Lifecycle = require(script.Parent.Lifecycle)
 
 local ExtractionService = {}
 
@@ -174,6 +175,9 @@ function ExtractionService.reset()
 end
 
 function ExtractionService.init()
+	Lifecycle.register("ExtractionService", {
+		onRunStart = ExtractionService.reset,
+	})
 	extractionRemote = Remotes.get("ExtractionUpdate")
 	workspace:SetAttribute("ExtractionActive", false)
 end
