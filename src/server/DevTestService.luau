@@ -6,7 +6,7 @@
 -- Invoke from the client DevTestPanel (creator), or directly via the Studio
 -- MCP runtime eval, e.g.:
 --   require(game.ServerScriptService.Server.DevTestService).spawnEnemy("Brute", 1)
--- Loadout rework: SetCallIn / GiveUpgrade / ClearUpgrades / RefillAmmo /
+-- Loadout rework: SetCallIn / FireCallIn / GiveUpgrade / ClearUpgrades / RefillAmmo /
 -- RestockCallIns / SetWeapon / DropUpgradeCrate / DropSupplyCrate drive LoadoutService,
 -- CallInService and RequisitionService directly.
 
@@ -89,9 +89,28 @@ function DevTestService.clearUpgrades(player: Player)
 	print(`[DevTest] ClearUpgrades -> {player.Name}`)
 end
 
--- Destroys call-in world objects (drones, fire pools, mines, strike markers).
+-- Fires call-in `callInId` (id or loose alias) 20 studs in front of the player: no slot,
+-- no charge spent. The quick way to see one work.
+function DevTestService.fireCallIn(player: Player, callInId: string)
+	local resolved = resolveId(CallInDefinitions.Rows, callInId)
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if not resolved or not root then
+		warn(`[DevTest] FireCallIn: unknown call-in '{callInId}' or no body`)
+		return
+	end
+	local look = root.CFrame.LookVector
+	local flat = Vector3.new(look.X, 0, look.Z)
+	flat = if flat.Magnitude > 0.01 then flat.Unit else Vector3.zAxis
+	local ok = CallInService.fireFree(player, resolved, root.Position + flat * 20)
+	print(`[DevTest] FireCallIn {resolved} -> {player.Name} ({if ok then "fired" else "refused"})`)
+end
+
+-- Destroys call-in world objects (sentries, wire, supply drops, fire pools, mines, strikes).
 function DevTestService.clearCallInObjects()
-	require(script.Parent.DroneService).reset()
+	require(script.Parent.SentryService).reset()
+	require(script.Parent.ConcertinaService).reset()
+	require(script.Parent.SupplyDropService).reset()
 	require(script.Parent.IncendiaryService).reset()
 	require(script.Parent.MineService).reset()
 	require(script.Parent.ShockCoilService).reset()
@@ -175,7 +194,9 @@ function DevTestService.printRunState(): { [string]: any }
 		runnerCount = EnemyService.count("Runner"),
 		bruteCount = EnemyService.count("Brute"),
 		hockerCount = EnemyService.count("Hocker"),
-		droneCount = folderCount("Drones"),
+		sentryCount = folderCount("Sentries"),
+		wireCount = folderCount("Wire"),
+		supplyDropCount = folderCount("SupplyDrops"),
 		projectileCount = folderCount("Projectiles"),
 		firePoolCount = folderCount("FirePools"),
 		mineCount = folderCount("Mines"),
@@ -243,7 +264,9 @@ function DevTestService.verifyCleanup(): { pass: boolean, leftovers: { string } 
 	end
 
 	check("enemies", #CollectionService:GetTagged(ENEMY_TAG))
-	check("drones", folderCount("Drones"))
+	check("sentries", folderCount("Sentries"))
+	check("wire strips", folderCount("Wire"))
+	check("supply drops", folderCount("SupplyDrops"))
 	check("projectiles", folderCount("Projectiles"))
 	check("fire pools", folderCount("FirePools"))
 	check("mines", folderCount("Mines"))
@@ -308,6 +331,11 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 	-- Loadout rework.
 	SetCallIn = function(player, slot, callInId)
 		DevTestService.setCallIn(player, tonumber(slot) or 1, tostring(callInId))
+	end,
+	-- Call-ins: SetCallIn puts any call-in in a slot (full charges); FireCallIn fires one
+	-- 20 studs ahead with no slot or charge.
+	FireCallIn = function(player, callInId)
+		DevTestService.fireCallIn(player, tostring(callInId))
 	end,
 	GiveUpgrade = function(player, upgradeId)
 		DevTestService.giveUpgrade(player, tostring(upgradeId))

@@ -231,6 +231,10 @@ Read in this order:
   primaries + pistol, Q swap / G grenade / V shove / E stim / 1-4 call-ins / 5 flare, twelve
   grounded call-ins (Magpie and Pen Coil retire), blocky Infected lore-accuracy pass. Design
   in `docs/PROGRESSION.md` > Loadout. Built in four parallel streams, then one playtest.
+  Stream C (call-ins) built, unplaytested: Hammer, Anvil, Shrike, Doorman, Concertina,
+  Speedball, Aid Bag; Magpie / Pen Coil gone (PROGRESSION > Call-ins "First pass built").
+  Verify with dev `FireCallIn <id>`; left for B: drop the Last Flight / Ground Strap rows,
+  add `LoadoutService.refillStims`.
 - **Delta traversal: owner calls + playtest** (`docs/LEVELS.md` A12b second pass): generator
   to 4.8 (explained to the owner 2026-11-08, waiting on a yes), light-tower collision as two
   boxes; walk the traversal checklist (vault a sedan side-on, crawl under the cargo truck,

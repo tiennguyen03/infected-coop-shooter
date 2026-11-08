@@ -493,21 +493,57 @@ local Config = {
 	-- Call-ins (CallInDefinitions; keys 1 and 2). Charges refill one at a time every Cooldown
 	-- seconds; a Restock card fills them. No friendly fire: only the Infected are hurt.
 	CallIns = {
-		-- Magpie (Drone Beacon): thrown; Drones follow the thrower for Duration seconds and shoot
-		-- the nearest Infected in TargetRange.
-		Magpie = {
+		-- Hammer (81 mm mortar section, AirStrikeService): marks a point; the first shell lands
+		-- Delay seconds after the throw, then one every ShellInterval, each Scatter studs off
+		-- the mark at most. Walk It In steps them Config.Upgrades.WalkingBarrage.Step apart.
+		Hammer = {
 			Charges = 1,
-			Cooldown = 90,
+			Cooldown = 120,
 			ThrowDistance = 35,
-			Drones = 2,
-			Duration = 30,
-			Damage = 6,
-			FireInterval = 0.6,
-			TargetRange = 60,
-			FollowHeight = 5,
-			FollowRadius = 4,
-			ProjectileSpeed = 120,
-			MaxDronesPerPlayer = 4,
+			Delay = 3,
+			Shells = 6,
+			ShellInterval = 1,
+			BlastRadius = 12,
+			BlastDamage = 80,
+			Scatter = 4,
+		},
+		-- Anvil (105 mm battery, AirStrikeService): one heavy shell Delay seconds after the throw.
+		Anvil = {
+			Charges = 1,
+			Cooldown = 180,
+			ThrowDistance = 35,
+			Delay = 5,
+			Shells = 1,
+			ShellInterval = 1,
+			BlastRadius = 20,
+			BlastDamage = 500,
+			Scatter = 0,
+		},
+		-- Shrike (helicopter gun run, AirStrikeService): Delay seconds after the throw, Bursts
+		-- impacts centred on the mark, Step studs apart along the throw, BurstInterval apart.
+		Shrike = {
+			Charges = 1,
+			Cooldown = 150,
+			ThrowDistance = 35,
+			Delay = 4,
+			Bursts = 10,
+			Step = 4,
+			BurstInterval = 0.15,
+			BlastRadius = 5,
+			BlastDamage = 120,
+			PassHeight = 45, -- the helicopter's flight height over the mark (look only)
+		},
+		-- Doorman (tripod sentry MG, SentryService): stands where it lands for Duration; every
+		-- FireInterval it shoots the nearest Infected in Range it can see.
+		Doorman = {
+			Charges = 1,
+			Cooldown = 150,
+			ThrowDistance = 25,
+			Duration = 45,
+			Damage = 20,
+			FireInterval = 0.15,
+			Range = 70,
+			MaxPerPlayer = 1, -- a second Doorman replaces the first
 		},
 		-- Tripline (Mines): thrown; Mines land on an arc bulging away from the thrower and blow
 		-- when an Infected steps within TriggerRadius.
@@ -524,27 +560,44 @@ local Config = {
 			Lifetime = 90,
 			MaxMines = 12, -- per player; the oldest goes first
 		},
-		-- Anvil (Fire Mission): marks a point; after WarningDelay, Shells land ShellInterval apart.
-		Anvil = {
-			Charges = 1,
-			Cooldown = 150,
-			ThrowDistance = 35,
-			WarningDelay = 3,
-			Shells = 3,
-			ShellInterval = 1,
-			BlastRadius = 12,
-			BlastDamage = 80,
-			Scatter = 3, -- studs each shell lands off the mark
-		},
-		-- Pen Coil (Shock Coil): a pulse around the user that damages and slows.
-		PenCoil = {
+		-- Concertina (wire, ConcertinaService): a Length x Width strip laid across the throw,
+		-- centred where it lands, for Duration. Infected inside walk at SlowFactor and take
+		-- DamagePerSecond (dealt every TickInterval).
+		Concertina = {
 			Charges = 2,
-			Cooldown = 25,
-			Radius = 14,
-			Damage = 25,
-			SlowFactor = 0.4, -- Infected WalkSpeed multiplier while slowed
-			SlowDuration = 3,
+			Cooldown = 90,
+			ThrowDistance = 30,
+			Duration = 60,
+			Length = 16,
+			Width = 3,
+			SlowFactor = 0.4,
+			DamagePerSecond = 5,
+			TickInterval = 0.5,
+			MaxPerPlayer = 4, -- the oldest strip goes first
 		},
+		-- Speedball (ammo bundle, SupplyDropService): drops where it lands, no lure wave; each
+		-- living player walking within Radius is re-armed (full magazine and reserve), Visits
+		-- times in all. A player re-arms again only after stepping out of the radius.
+		Speedball = {
+			Charges = 1,
+			Cooldown = 180,
+			ThrowDistance = 25,
+			Visits = 4,
+			Radius = 6,
+			Lifetime = 90,
+		},
+		-- Aid Bag (medical drop, SupplyDropService): every soldier within Radius, once each:
+		-- full heal, stims refilled, +Plate shield (Config.Crates.ShieldCap still caps it).
+		AidBag = {
+			Charges = 1,
+			Cooldown = 180,
+			ThrowDistance = 25,
+			Radius = 6,
+			Plate = 25,
+			Lifetime = 60,
+		},
+		-- Shared by the supply drops: the bundle falls this far, this fast.
+		Drop = { Height = 50, FallTime = 0.9 },
 	},
 
 	-- Field upgrades (UpgradeDefinitions): one per slot, a new pick replaces. Each is a flag
@@ -564,7 +617,7 @@ local Config = {
 		CombatReload = { MomentumStacks = 5 }, -- reload is instant at this many Momentum stacks
 		LastStand = { SpreadMultiplier = 2 }, -- fire from the ground while downed, hip only
 		Tourniquet = { Seconds = 4 }, -- self-revive once per mission, this long after going down
-		WalkingBarrage = { Shells = 5, Step = 8 }, -- Anvil shells walk Step studs along the throw
+		WalkingBarrage = { Step = 8 }, -- Hammer shells walk Step studs along the throw
 		Escort = {}, -- Magpie drones stay with a downed owner and their clock pauses
 		CommandDetonation = {}, -- press the Tripline key again to blow every armed mine
 		Defibrillator = {}, -- a Pen Coil pulse revives downed squadmates in its radius

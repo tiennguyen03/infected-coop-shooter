@@ -91,6 +91,7 @@ local function sections(): { Section }
 		local definition = CallInDefinitions.get(id) :: CallInDefinitions.CallInDefinition
 		table.insert(loadout, { label = `1: {definition.Name}`, send = cmd("SetCallIn", 1, id) })
 		table.insert(loadout, { label = `2: {definition.Name}`, send = cmd("SetCallIn", 2, id) })
+		table.insert(loadout, { label = `Fire {definition.Name}`, send = cmd("FireCallIn", id) })
 	end
 	local upgrades: { Action } = {}
 	for _, id in UpgradeDefinitions.upgradeIds() do
