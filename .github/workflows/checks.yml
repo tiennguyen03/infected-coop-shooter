@@ -1,0 +1,40 @@
+# Static checks and tests on every push (docs/ARCHITECTURE.md F5). Same commands as the
+# CLAUDE.md static checks, plus the Lune tests. Tool versions come from rokit.toml.
+name: Checks
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tools (versions from rokit.toml)
+        run: |
+          bash scripts/install-tools.sh "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Format (StyLua)
+        run: stylua --check src tests
+
+      - name: Lint (Selene)
+        run: selene src
+
+      - name: Build (Rojo)
+        run: rojo build default.project.json -o build.rbxlx
+
+      - name: Tests (Lune)
+        run: lune run tests/run
+
+      # Report only until the pre-existing type warnings are cleared (handoff/README.md).
+      - name: Type check (luau-lsp, report only)
+        continue-on-error: true
+        run: |
+          v=$(sed -n 's/^luau-lsp = "[^@]*@\(.*\)"$/\1/p' rokit.toml)
+          base=https://raw.githubusercontent.com/JohnnyMorganz/luau-lsp/$v/scripts
+          curl -fsSL -o globalTypes.d.luau "$base/globalTypes.d.luau"
+          rojo sourcemap default.project.json -o sourcemap.json
+          luau-lsp analyze --sourcemap=sourcemap.json --definitions=globalTypes.d.luau src

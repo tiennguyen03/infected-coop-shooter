@@ -63,6 +63,8 @@ concern, not polish.
 
 - `rojo serve default.project.json` — sync (restart + reconnect after any project.json change)
 - `stylua src && selene src && rojo build -o build.rbxlx` — static checks, run after every change
+- `lune run tests/run` — data and cross-file reference tests (`tests/`); CI runs all of these on
+  every push (`.github/workflows/checks.yml`)
 - Live verification: Studio MCP `solo_playtest` → `execute_luau` (fire `DevCommand` from
   `client-1`) → `capture_screenshot` → `get_runtime_logs`. Details in handoff/README.md.
 

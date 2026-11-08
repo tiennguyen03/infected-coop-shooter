@@ -96,8 +96,9 @@ Read in this order:
   carrier on, rifle in hand, prone drops and stands back up on the renamed `Root` motor,
   death and restart respawn skinned. Not yet looked at closely: sprint / roll / vault
   clips on the skin, the hit boxes under fire from a Hocker.
-- Static checks clean (stylua / selene / rojo build) at the skinned Weller commit; luau-lsp
-  reports pre-existing nits only (Animations.luau, MeshAssets.dressModel narrowing).
+- Static checks run in CI on every push since 2026-11-08 (`.github/workflows/checks.yml`:
+  StyLua, Selene, Rojo build, the Lune tests in `tests/`; luau-lsp is report-only because of
+  pre-existing nits in Animations.luau and MeshAssets.dressModel narrowing).
 - 2026-11-05: decided the final product is **4-player co-op**. `src/` audited; 13 single-
   player shortcuts logged in `docs/MULTIPLAYER_READINESS.md` with a planned fix each, and
   all 6 co-op design decisions are answered there. No code changed yet.
