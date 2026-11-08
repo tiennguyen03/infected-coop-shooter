@@ -8,7 +8,7 @@
 -- stance while the trigger is held, a recoil clip per shot, a flinch on damage, the death
 -- clip and ability clips sit on top; a vault or climb clip (MovementController) replaces
 -- the locomotion while the body is carried over cover. Upper-body clips (aim, fire, hit,
--- breach) carry no leg poses so the legs keep moving underneath them. Other controllers
+-- throw) carry no leg poses so the legs keep moving underneath them. Other controllers
 -- call in: WeaponController (setAiming, onShot), AbilityController (playAbility),
 -- StanceController (setStance), MovementController (playMove).
 
@@ -47,7 +47,7 @@ type Tracks = {
 	fire: AnimationTrack?,
 	hit: AnimationTrack?,
 	death: AnimationTrack?,
-	breach: AnimationTrack?,
+	throw: AnimationTrack?,
 	vault: AnimationTrack?,
 	climb: AnimationTrack?,
 	roll: AnimationTrack?,
@@ -295,7 +295,7 @@ local function setup(character: Model)
 		fire = Animations.load(animator, clips.fire, Enum.AnimationPriority.Action2),
 		hit = Animations.load(animator, clips.hit, Enum.AnimationPriority.Action3),
 		death = Animations.load(animator, clips.death, Enum.AnimationPriority.Action4),
-		breach = Animations.load(animator, clips.breach, Enum.AnimationPriority.Action3),
+		throw = Animations.load(animator, clips.throw, Enum.AnimationPriority.Action3),
 		vault = Animations.load(animator, clips.vault, Enum.AnimationPriority.Action3),
 		climb = Animations.load(animator, clips.climb, Enum.AnimationPriority.Action3),
 		roll = Animations.load(animator, clips.roll, Enum.AnimationPriority.Action3),

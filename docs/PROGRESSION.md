@@ -62,7 +62,7 @@ gone (`docs/sprints/SPRINT_18_LOADOUT.md`). Lore names on the HUD ([LORE.md](LOR
   | **M16A4 Service Rifle** (baseline) | all-rounder, 3-5 round bursts | auto, 750 (0.08) | 20 | 30 + 240 | 2.2 | 1.5 / 0.3 | 0.3 / 3.5 | 400 | 0 | 3.0 |
   | **MP5 SMG** | best hip-fire; chews Runners, weak on Brutes | auto, 800 (0.075) | 14 | 30 + 210 | 1.8 | 0.9 / 0.6 | 0.15 / 2.0 | 150 | 0 | 3.0 |
   | **M249 LMG** | 100-round belt, no reload in a hold; slow to aim moving | auto, 800 (0.075) | 20 | 100 + 300 | 5.5 | 3.0 / 0.5 | 0.15 / 2.5 | 400 | 0 | 3.0 |
-  | **Mossberg 590 Shotgun** | point-blank, one decision per pull | pump, 80 (0.75) | 8 x 11 | 8 + 40 | 3.5 | 5.0 / 3.5 | 0 | 45 | 0 | 1.5 |
+  | **Mossberg 590 Shotgun** | point-blank, one decision per pull | pump, 80 (0.75) | 11 x 8 pellets | 8 + 40 | 3.5 | 5.0 / 3.5 | 0 | 45 | 0 | 1.5 |
   | **M110 DMR** | one-taps Walkers, hits two in a line; poor up close | semi, 300 (0.2) | 60 | 20 + 80 | 2.6 | 4.0 / 0.1 | 1.2 / 3.0 (recovery 8) | 600 | 1 | 3.0 |
   | **M17 Pistol** (sidearm) | backup when the primary runs dry | semi, 400 (0.15) | 25 | 17 + 68 | 1.5 | 1.2 / 0.5 | 0.6 / 2.5 | 120 | 0 | 3.0 |
 
@@ -70,6 +70,11 @@ gone (`docs/sprints/SPRINT_18_LOADOUT.md`). Lore names on the HUD ([LORE.md](LOR
   .357 revolver (55 dmg, 6 + 30, 150 rpm) comes later. Rounds to kill body / head: rifle
   Walker 3 / 1, Brute 13 / 11; SMG 4 / 2, 19 / 15; DMR 1 / 1, 5 / 4; shotgun one pull for
   every form but the Brute (3). Ammo reins in the DMR (100 x 60 is the M16's 270 x 20).
+  Built 2026-11-08 (stream B): numbers in `Config.Weapons.<Gun>`, rows in `WeaponDefinitions`
+  (Slot, FireMode, Bloom*, AdsMoveFactor, Description); the semi guns fire once per click.
+  The Q swap takes `Config.Weapon.SwapTime` 0.5 s (no shot, no reload; a reload in progress
+  is dropped); each gun keeps its own magazine and reserve. Every gun still wears the rifle
+  mesh until the gun meshes exist. Bots carry the service rifle.
   Grenades: **Frag** (110 in 10 studs, 0.8 s fuse; one-shots a Hocker, not a Brute) first;
   **Incendiary** (3 fire pools) and **Stun** (0.4x slow 3 s in 14 studs, Pen Coil's slow)
   later.
@@ -77,15 +82,21 @@ gone (`docs/sprints/SPRINT_18_LOADOUT.md`). Lore names on the HUD ([LORE.md](LOR
   different call-ins, at most one support weapon. Open during Insert / ready-up, or in a run
   within `Config.Loadout.LzRadius` 30 of the LZ pad after `Config.Loadout.CalmSeconds` 5
   without dealing or taking damage. A newly picked gun starts full (re-picking the carried one
-  keeps its ammo); a call-in that changes slot starts empty with its cooldown running.
-  Module boundary, so a lobby can host it later: `src/shared/Rules/Loadout.luau` (pure:
-  `default()`, `validate(loadout) -> (ok, reason)`, spec first), `src/client/LoadoutMenu.luau`
-  (UI only: `mount(parent, onConfirm)`), `LoadoutService.apply(player, loadout)` (server:
-  validation plus the timing gate). Remote `Loadout` carries `Messages.Loadout.Request`
-  `{primary, secondary, grenade, callIns}` and `Messages.Loadout.Result` `(ok, reason)`; the
-  server publishes `Primary`, `Secondary`, `Grenade`, `CallIn1`-`CallIn4` attributes. The
-  lobby (F10) later validates with the same Rules module, saves through F9 and passes the
-  table in teleport data.
+  keeps its ammo); a call-in that changes slot in a run starts empty with its cooldown
+  running (before the drop it starts full), and a field upgrade follows its call-in to its
+  new slot. The pick survives a run restart.
+  Module boundary, so a lobby can host it later: `src/shared/Rules/Loadout.luau` (pure, spec
+  first: `default(catalog)`, `validate(loadout, catalog) -> (ok, reason)`,
+  `canChange(state, settings)` for the timing gate, `changedSlots(old, new)`; the catalog of
+  what is on offer comes from `src/shared/ArmsRoom.luau`, Tripline first by default),
+  `src/client/LoadoutMenu.luau` (UI only: `mount(parent, onConfirm)` returns a handle with
+  `set` / `status`; LoadoutUI hosts it on B), `LoadoutService.apply(player, loadout)`
+  (server: validation plus the timing gate). Remote `Loadout` carries
+  `Messages.Loadout.Request` `{primary, secondary, grenade, callIns}` and
+  `Messages.Loadout.Result` `(ok, reason)`; the server publishes `Primary`, `Secondary`,
+  `Weapon` (in hand), `Grenade`, `Grenades`, `Stims`, `SwapUntil`, `CallIn1`-`CallIn4`
+  attributes. The lobby (F10) later validates with the same Rules module, saves through F9
+  and passes the table in teleport data.
 - **Call-ins** (`CallInDefinitions`, numbers in `Config.CallIns`; no friendly fire). Four
   slots, keys 1-4; each holds charges that refill one at a time. Lantern's crew kicks support
   weapons and supply out of the door; fire missions are someone on the net ("Hammer, Pike.
@@ -138,13 +149,14 @@ gone (`docs/sprints/SPRINT_18_LOADOUT.md`). Lore names on the HUD ([LORE.md](LOR
   player throws the red flare (key 5, 35 studs); for 20 s the Infected inside 120 studs walk
   to the flare, then the pallet lands loud (`Lure.Wave 10` +3 per extra player, spawn
   interval x0.7 for 30 s). **The pallet is the ammo box**: every living player who walks
-  within `RearmRadius 6` is re-armed once (full magazine and reserve). Its three cards are
-  the same for everyone (`Crates.SupplyCards`): **Medkit** (full heal), **Restock** (both
-  call-in slots full, grenades and stims too), **Armour Plate** (+50 shield soaked before health, cap 100). One pick
+  within `RearmRadius 6` is re-armed once (both guns full, grenades back). Its three cards are
+  the same for everyone (`Crates.SupplyCards`): **Medkit** (full heal, stims back), **Restock**
+  (every call-in slot full, grenades and stims too), **Armour Plate** (+50 shield soaked before health, cap 100). One pick
   per player per pallet, cards vanish at 60 s. No rarity, no upgrades from pallets.
 - **Field upgrades** (`UpgradeDefinitions`, flags on `LoadoutService`, numbers in
-  `Config.Upgrades`). Slots: Grenade, Weapon, Kit and one per call-in id; a new pick in a
-  filled slot replaces it. Sources: the Primary's site crate (lands when the hold zone
+  `Config.Upgrades`). Slots: Grenade, Weapon, Kit and one per carried call-in (slot keys
+  `CallIn1`-`CallIn4`, the upgrade moves with its call-in); a new pick in a filled slot
+  replaces it. Walk It In rides on Anvil until stream C's Hammer lands. Sources: the Primary's site crate (lands when the hold zone
   appears; shows 3 you can still take), later Stores and Secondary crates and the Index pallet
   (3-5 per mission). Each changes how a tool works, never a percentage:
 

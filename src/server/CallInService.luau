@@ -1,6 +1,6 @@
 --!strict
--- Call-ins: the number keys fire the call-ins the player's loadout carries
--- (LoadoutService.getCallIn), Config.CallIns.Slots of them (2 until the Arms Room). Each slot holds Config.CallIns.<Key>.Charges
+-- Call-ins: keys 1-4 fire the call-ins in the player's Config.CallIns.Slots slots (the
+-- loadout, LoadoutService.getCallIn). Each slot holds Config.CallIns.<Key>.Charges
 -- charges that refill one at a time every Cooldown seconds; a Restock card fills them.
 -- Server-authoritative: the client sends the slot and where it aimed; this validates
 -- (alive, not paused, a charge), clamps the throw with ThrowUtil like the flare, and hands
@@ -40,7 +40,7 @@ local THROW_PASS_THROUGH = {
 	"SupplyDrops",
 	"Mines",
 	"FirePools",
-	"AssaultEffects",
+	"KitEffects",
 	"CallInEffects",
 	"StrikeEffects",
 	"Projectiles",
@@ -281,10 +281,15 @@ function CallInService.init()
 	})
 	usedRemote = Remotes.get("AbilityUsed")
 	Remotes.get("CallIn").OnServerEvent:Connect(onCallIn)
-	-- A swapped slot (dev panel, later the Armory) starts full.
-	LoadoutService.onCallInChanged(function(player, slot)
+	-- A changed slot (dev panel, the Arms Room) starts full, or empty with its cooldown
+	-- running when the Arms Room changed it in a run.
+	LoadoutService.onCallInChanged(function(player, slot, startEmpty)
 		local state = get(player)
 		state[slot] = fresh(player, slot)
+		if startEmpty then
+			state[slot].charges = 0
+			state[slot].nextChargeAt = os.clock() + cooldownFor(player, slot)
+		end
 		publish(player, slot, state[slot])
 	end)
 	lastStep = os.clock()

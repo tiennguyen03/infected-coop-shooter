@@ -1,32 +1,51 @@
 --!strict
--- Sends Q (dash) / E (breach) ability requests, the 1 / 2 call-ins and
--- the 3 (Resupply flare) throw to the server. The server validates and
--- performs them; this controller forwards input and draws the breach ghost: hold E and a
--- ring shows where the charge will land (the aim point, clamped to throw range, dropped to
--- the ground), release to throw it there. A tap throws at the crosshair. The call-ins and
--- the flare throw at the crosshair the same way (ThrowUtil, the server's maths).
+-- The soldier's keys (docs/PROGRESSION.md > Loadout): Q swaps long gun and sidearm, G throws
+-- a grenade, V shoves, E uses a stim (KitService over UseAbility), 1-4 fire the call-ins
+-- (CallIn remote) and 5 throws the Resupply flare. The server validates and performs them;
+-- this controller forwards input and draws the grenade ghost: hold G and a ring shows where
+-- the frag will land (the aim point, clamped to throw range, dropped to the ground) and how
+-- far it reaches; release to throw it there. The call-ins and the flare throw at the
+-- crosshair the same way (ThrowUtil, the server's maths).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
-local CallInDefinitions =
-	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("CallInDefinitions"))
-local Messages = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Messages"))
-local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attributes"))
-local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
-local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
-local ThrowUtil = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("ThrowUtil"))
+local Shared = ReplicatedStorage:WaitForChild("Shared")
+local CallInDefinitions = require(Shared:WaitForChild("CallInDefinitions"))
+local Messages = require(Shared:WaitForChild("Messages"))
+local Attributes = require(Shared:WaitForChild("Attributes"))
+local Config = require(Shared:WaitForChild("Config"))
+local Remotes = require(Shared:WaitForChild("Remotes"))
+local ThrowUtil = require(Shared:WaitForChild("ThrowUtil"))
+local UpgradeDefinitions = require(Shared:WaitForChild("UpgradeDefinitions"))
+local WeaponDefinitions = require(Shared:WaitForChild("WeaponDefinitions"))
 local AnimationController = require(script.Parent.AnimationController)
 
 local GHOST_COLOR = Color3.fromRGB(255, 150, 60)
+
+-- Keys 1-4 for the call-in slots (Config.CallIns.Slots).
+local CALL_IN_KEYS: { [Enum.KeyCode]: number } = {
+	[Enum.KeyCode.One] = 1,
+	[Enum.KeyCode.Two] = 2,
+	[Enum.KeyCode.Three] = 3,
+	[Enum.KeyCode.Four] = 4,
+}
 
 local AbilityController = {}
 
 local targeting = false
 local ghost: Model? = nil
 local ghostTarget: Vector3? = nil
+
+type FragSettings = { ThrowDistance: number, Radius: number }
+
+local function fragSettings(): FragSettings
+	local definition =
+		WeaponDefinitions.grenade(Players.LocalPlayer:GetAttribute(Attributes.Grenade) :: string?)
+	return (Config.Grenade :: any)[definition.ConfigKey] :: FragSettings
+end
 
 local function raycastParams(): RaycastParams
 	local params = RaycastParams.new()
@@ -39,8 +58,8 @@ local function raycastParams(): RaycastParams
 	for _, name in
 		{
 			"Projectiles",
-			"AssaultEffects",
-			"BreachGhost",
+			"KitEffects",
+			"GrenadeGhost",
 			"Resupply",
 			"Drones",
 			"Mines",
@@ -75,13 +94,13 @@ local function landingPoint(maxDistance: number): Vector3?
 	return ThrowUtil.landingPoint(root, aim, maxDistance, params.FilterDescendantsInstances)
 end
 
-local function buildGhost(): Model
+local function buildGhost(radius: number): Model
 	local model = Instance.new("Model")
-	model.Name = "BreachGhost"
+	model.Name = "GrenadeGhost"
 	local ring = Instance.new("Part")
 	ring.Name = "Ring"
 	ring.Shape = Enum.PartType.Cylinder
-	ring.Size = Vector3.new(0.3, Config.Assault.BreachRadius * 2, Config.Assault.BreachRadius * 2)
+	ring.Size = Vector3.new(0.3, radius * 2, radius * 2)
 	ring.Anchored = true
 	ring.CanCollide = false
 	ring.CanQuery = false
@@ -94,7 +113,7 @@ local function buildGhost(): Model
 	local core = Instance.new("Part")
 	core.Name = "Core"
 	core.Shape = Enum.PartType.Ball
-	core.Size = Vector3.new(1.2, 1.2, 1.2)
+	core.Size = Vector3.new(0.8, 0.8, 0.8)
 	core.Anchored = true
 	core.CanCollide = false
 	core.CanQuery = false
@@ -109,7 +128,7 @@ local function buildGhost(): Model
 end
 
 local function updateGhost()
-	local point = landingPoint(Config.Assault.BreachThrowDistance)
+	local point = landingPoint(fragSettings().ThrowDistance)
 	ghostTarget = point
 	if not ghost or not point then
 		return
@@ -121,11 +140,14 @@ local function updateGhost()
 end
 
 local function startTargeting()
-	if targeting then
+	if
+		targeting
+		or ((Players.LocalPlayer:GetAttribute(Attributes.Grenades) :: number?) or 0) <= 0
+	then
 		return
 	end
 	targeting = true
-	local model = buildGhost()
+	local model = buildGhost(fragSettings().Radius)
 	ghost = model
 	updateGhost()
 	model.Parent = workspace
@@ -145,7 +167,7 @@ local function stopTargeting(): Vector3?
 	return target
 end
 
--- Key 1 or 2: the call-in in that slot, thrown at the crosshair when it is a throw kind.
+-- Keys 1-4: the call-in in that slot, thrown at the crosshair when it is a throw kind.
 local function useCallIn(slot: number)
 	local player = Players.LocalPlayer
 	local definition =
@@ -157,10 +179,8 @@ local function useCallIn(slot: number)
 	-- Daisy Chain: the Tripline key still goes out on an empty slot (the server blows the
 	-- armed mines without a charge).
 	local daisyChain = definition.Id == "tripline"
-		and (
-			player:GetAttribute(Attributes.UpgradeCallInA) == "command_detonation"
-			or player:GetAttribute(Attributes.UpgradeCallInB) == "command_detonation"
-		)
+		and player:GetAttribute(Attributes.upgrade(UpgradeDefinitions.callInSlot(slot)))
+			== "command_detonation"
 	if charges <= 0 and not daisyChain then
 		return
 	end
@@ -168,7 +188,7 @@ local function useCallIn(slot: number)
 	if definition.Kind == "throw" then
 		local cfg = (Config.CallIns :: { [string]: any })[definition.ConfigKey]
 		point = landingPoint(cfg.ThrowDistance)
-		AnimationController.playAbility("breach")
+		AnimationController.playAbility("throw")
 	end
 	Remotes.get("CallIn"):FireServer(slot, point)
 end
@@ -185,15 +205,19 @@ function AbilityController.init()
 		if workspace:GetAttribute(Attributes.GamePaused) == true then
 			return
 		end
-		if input.KeyCode == Enum.KeyCode.Q then
-			useAbility:FireServer(Messages.Ability.Dash)
-		elseif input.KeyCode == Enum.KeyCode.E then
+		local key = input.KeyCode
+		local slot = CALL_IN_KEYS[key]
+		if slot and slot <= Config.CallIns.Slots then
+			useCallIn(slot)
+		elseif key == Enum.KeyCode.Q then
+			useAbility:FireServer(Messages.Ability.Swap)
+		elseif key == Enum.KeyCode.G then
 			startTargeting()
-		elseif input.KeyCode == Enum.KeyCode.One then
-			useCallIn(1)
-		elseif input.KeyCode == Enum.KeyCode.Two then
-			useCallIn(2)
-		elseif input.KeyCode == Enum.KeyCode.Three then
+		elseif key == Enum.KeyCode.V then
+			useAbility:FireServer(Messages.Ability.Shove)
+		elseif key == Enum.KeyCode.E then
+			useAbility:FireServer(Messages.Ability.Stim)
+		elseif key == Enum.KeyCode.Five then
 			resupply:FireServer(
 				Messages.Resupply.Flare,
 				landingPoint(Config.Requisition.FlareThrowDistance)
@@ -202,11 +226,11 @@ function AbilityController.init()
 	end)
 
 	UserInputService.InputEnded:Connect(function(input, _gameProcessed)
-		if input.KeyCode == Enum.KeyCode.E then
+		if input.KeyCode == Enum.KeyCode.G then
 			local target = stopTargeting()
 			if target and workspace:GetAttribute(Attributes.GamePaused) ~= true then
-				useAbility:FireServer(Messages.Ability.Breach, target)
-				AnimationController.playAbility("breach")
+				useAbility:FireServer(Messages.Ability.Grenade, target)
+				AnimationController.playAbility("throw")
 			end
 		end
 	end)

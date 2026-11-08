@@ -97,13 +97,15 @@ local Config = {
 		},
 	},
 
-	-- Bot squadmates (BotService): the other Chosen fill the squad in solo, one
+	-- Bot squadmates (BotService): generic Pike soldiers fill the squad in solo, one
 	-- fewer per real player. Server-side bodies on the Squad roster: the Infected target
 	-- them, they follow the nearest player in formation and shoot the nearest Infected they
 	-- can see. Downed/revive and call-ins come with Sprint A step 6 and the loadout rework.
 	Bots = {
 		Count = 3, -- bots when one player is on; squad size caps at 4
-		Names = { "Cole", "Reyes", "Cross" },
+		-- The squad's radio callsigns (Squad): players take the lowest free one as they join
+		-- (solo: Pike One), bots the rest in order (solo: Pike Two to Four).
+		Callsigns = { "Pike One", "Pike Two", "Pike Three", "Pike Four" },
 		MaxHealth = 100,
 		WalkSpeed = 16,
 		RunSpeed = 24, -- used when the formation slot is far
@@ -185,53 +187,189 @@ local Config = {
 		PivotEaseTime = 0.25,
 	},
 
-	-- The service rifle (WeaponDefinitions.service_rifle reads these). Realistic time-to-kill
-	-- per form: Walker 3 body / 1 head, Runner 2 / 1, Hocker 4 / 2,
-	-- Brute 13 / 11 at the flat curve. M16 pass (owner): full auto at the
-	-- M16A1's ~750 rpm cyclic, same rounds-to-kill, so TTK roughly halves (Walker 0.16 s,
-	-- Brute 0.96 s body); the bloom below makes a held trigger spray at range, so trigger
-	-- discipline (3-5 round bursts) is the skill. Burst DPS 250, sustained over mag + reload 133.
+	-- Shooting shared by every gun (the per-gun numbers are in Weapons below). Hitscan: one
+	-- raycast per round, damage lands the same frame; the tracer is client-drawn feedback.
 	Weapon = {
-		Damage = 20,
-		FireCooldown = 0.08, -- 750 rpm (M16A1 cyclic): 12.5 rounds/s
-		-- Magazine (loadout rework): the server owns Mag / Reserve per player, refuses a shot on
-		-- empty, R reloads (cancelled by a roll, a slide or going down). Pallets re-arm.
-		MagazineSize = 30,
-		ReloadTime = 2.2, -- seconds
-		-- 30 + 240 = 9 mags (a combat load): with the pallet costs below the Warden fight never
-		-- runs the M16 dry.
-		ReserveStart = 240, -- rounds in reserve at insert (+ the 30 loaded: 9 mags)
-		ReserveMax = 240,
-		-- Bloom (M16 pass): each round widens the cone by BloomPerShot degrees up to BloomMax
-		-- on top of the hip / ADS spread; it recovers at BloomRecovery degrees per second
-		-- once BloomRecoveryDelay has passed without a shot. ADS: 3 rounds stay on a head at
-		-- 40 studs, by round 6 the cone is ~1.3 studs off at 40. Server-owned (ProjectileServer),
-		-- mirrored to the crosshair ring through the player's `Bloom` attribute.
-		BloomPerShot = 0.3,
-		BloomMax = 3.5,
-		BloomRecovery = 12,
+		-- Bloom recovers at the gun's BloomRecovery once this long has passed without a shot.
+		-- Server-owned (ProjectileServer), mirrored to the crosshair ring (`Bloom` attribute).
 		BloomRecoveryDelay = 0.1,
-		-- The rifle is hitscan: one raycast per shot, damage lands the same
-		-- frame. Range caps the ray; the tracer is client-drawn feedback only.
-		Range = 400,
 		TracerDuration = 0.06,
-		HeadshotMultiplier = 3.0, -- on a Head hit (EnemyDefinitions may override per form)
+		-- Q swaps long gun and sidearm (LoadoutService): no shot and no reload for this long.
+		SwapTime = 0.5,
 		-- Drones still fly projectiles (ProjectileServer.fire): their speed and lifetime.
 		ProjectileSpeed = 180, -- studs per second
 		ProjectileLifetime = 3, -- seconds before despawn
 		ProjectileSize = Vector3.new(0.4, 0.4, 1.4),
 		MaxAimDistance = 1000, -- how far the aim raycast reaches
-		-- Spread: half-angle of the cone a shot can land in, degrees. Hip fire
-		-- puts a round about a stud off at 40 studs; aiming down sights (hold RMB) tightens it.
-		HipSpread = 1.5,
+		-- Aiming down sights (hold RMB): the camera; spread and walk factor are per gun.
 		ADS = {
-			Spread = 0.3,
-			MoveSpeedFactor = 0.6, -- walk speed while aiming; sprint is off
 			CameraDistance = 5, -- closer over the shoulder (Camera.Distance is the hip value)
 			ShoulderOffset = Vector2.new(1.8, 0.4),
 			FOV = 55, -- degrees (hip is the engine default, 70)
 			EnterTime = 0.15, -- seconds to settle into or out of the sights
 		},
+	},
+
+	-- The guns (WeaponDefinitions rows read these; docs/PROGRESSION.md > Loadout has the
+	-- table and the reasoning). Real-world fire rates: FireCooldown = 60 / rpm. Spreads are
+	-- half-angles in degrees: hip, ADS, then BloomPerShot per round up to BloomMax on top,
+	-- recovering at BloomRecovery degrees per second. AdsMoveFactor scales the walk while
+	-- aiming (sprint is off). Reserve is rounds beyond the loaded magazine; a pallet fills it
+	-- to ReserveMax. Pellets: rounds per trigger pull (Damage is per pellet). Pierce: Infected
+	-- a round passes through after the first. FireMode "semi": one round per click.
+	Weapons = {
+		-- M16A4, the baseline: Walker 3 body / 1 head, Brute 13 / 11; burst DPS 250. Bloom
+		-- makes a held trigger spray at range, so 3-5 round bursts are the skill. 30 + 240 =
+		-- 9 mags: the Warden fight never runs it dry at the pallet costs below.
+		ServiceRifle = {
+			FireMode = "auto",
+			Damage = 20,
+			FireCooldown = 0.08, -- 750 rpm
+			MagazineSize = 30,
+			ReloadTime = 2.2,
+			ReserveStart = 240,
+			ReserveMax = 240,
+			HipSpread = 1.5, -- about a stud off at 40 studs
+			AdsSpread = 0.3,
+			BloomPerShot = 0.3, -- ADS: 3 rounds stay on a head at 40 studs
+			BloomMax = 3.5,
+			BloomRecovery = 12,
+			AdsMoveFactor = 0.6,
+			Range = 400,
+			HeadshotMultiplier = 3.0, -- EnemyDefinitions may override per form
+		},
+		-- MP5: the best hip-fire; chews Runners, weak on Brutes (Walker 4 / 2, Brute 19 / 15).
+		Smg = {
+			FireMode = "auto",
+			Damage = 14,
+			FireCooldown = 0.075, -- 800 rpm
+			MagazineSize = 30,
+			ReloadTime = 1.8,
+			ReserveStart = 210,
+			ReserveMax = 210,
+			HipSpread = 0.9,
+			AdsSpread = 0.6,
+			BloomPerShot = 0.15,
+			BloomMax = 2.0,
+			BloomRecovery = 12,
+			AdsMoveFactor = 0.85,
+			Range = 150,
+			HeadshotMultiplier = 3.0,
+		},
+		-- M249: a 100-round belt, no reload inside a hold; slow to aim on the move.
+		Lmg = {
+			FireMode = "auto",
+			Damage = 20,
+			FireCooldown = 0.075, -- 800 rpm
+			MagazineSize = 100,
+			ReloadTime = 5.5,
+			ReserveStart = 300,
+			ReserveMax = 300,
+			HipSpread = 3.0,
+			AdsSpread = 0.5,
+			BloomPerShot = 0.15,
+			BloomMax = 2.5,
+			BloomRecovery = 12,
+			AdsMoveFactor = 0.35,
+			Range = 400,
+			HeadshotMultiplier = 3.0,
+		},
+		-- Mossberg 590: point-blank, one decision per pull; one pull drops every form but the
+		-- Brute (3).
+		Shotgun = {
+			FireMode = "semi", -- pump
+			Damage = 11, -- per pellet
+			Pellets = 8,
+			FireCooldown = 0.75, -- 80 rpm
+			MagazineSize = 8,
+			ReloadTime = 3.5,
+			ReserveStart = 40,
+			ReserveMax = 40,
+			HipSpread = 5.0,
+			AdsSpread = 3.5,
+			BloomPerShot = 0,
+			BloomMax = 0,
+			BloomRecovery = 12,
+			AdsMoveFactor = 0.7,
+			Range = 45,
+			HeadshotMultiplier = 1.5,
+		},
+		-- M110: one-taps Walkers, hits two in a line, poor up close. Ammo reins it in
+		-- (100 x 60 is the M16's 270 x 20).
+		Dmr = {
+			FireMode = "semi",
+			Damage = 60,
+			Pierce = 1,
+			FireCooldown = 0.2, -- 300 rpm
+			MagazineSize = 20,
+			ReloadTime = 2.6,
+			ReserveStart = 80,
+			ReserveMax = 80,
+			HipSpread = 4.0,
+			AdsSpread = 0.1,
+			BloomPerShot = 1.2,
+			BloomMax = 3.0,
+			BloomRecovery = 8,
+			AdsMoveFactor = 0.5,
+			Range = 600,
+			HeadshotMultiplier = 3.0,
+		},
+		-- M17: the sidearm, backup when the primary runs dry.
+		Pistol = {
+			FireMode = "semi",
+			Damage = 25,
+			FireCooldown = 0.15, -- 400 rpm
+			MagazineSize = 17,
+			ReloadTime = 1.5,
+			ReserveStart = 68,
+			ReserveMax = 68,
+			HipSpread = 1.2,
+			AdsSpread = 0.5,
+			BloomPerShot = 0.6,
+			BloomMax = 2.5,
+			BloomRecovery = 12,
+			AdsMoveFactor = 0.9,
+			Range = 120,
+			HeadshotMultiplier = 3.0,
+		},
+	},
+
+	-- The soldier's kit beside the guns (KitService; docs/PROGRESSION.md > Loadout). G throws a
+	-- grenade (Carried; a pallet re-arm refills them), V shoves, E uses a stim (a Medkit card
+	-- refills them). A Restock card refills grenades and stims with the call-ins.
+	Grenade = {
+		Carried = 3,
+		ThrowGap = 0.8, -- seconds between two throws
+		-- M67 frag: one-shots a Hocker, not a Brute. Thrown like the flare (ThrowUtil).
+		Frag = {
+			ThrowDistance = 35, -- studs
+			FuseTime = 0.8, -- seconds after it lands
+			Radius = 10, -- studs
+			Damage = 110,
+		},
+	},
+	Shove = {
+		Damage = 15,
+		StaggerSeconds = 0.8, -- the shoved Infected stops this long (EnemyService.stagger)
+		Push = 6, -- studs the body is driven back
+		PushTime = 0.15, -- seconds the push takes
+		Reach = 6, -- studs in front of the shover
+		ConeDot = 0.5, -- hits inside ~60 degrees either side of facing
+		Cooldown = 1,
+	},
+	Stim = {
+		Carried = 2,
+		Heal = 60, -- health over Duration
+		Duration = 1,
+		Ticks = 10,
+	},
+
+	-- The Arms Room (LoadoutMenu, LoadoutService.apply; key B): open any time during Insert or
+	-- the ready-up, or in a run within LzRadius of the LZ pad (Extraction.ZonePosition) after
+	-- CalmSeconds without dealing or taking damage.
+	Loadout = {
+		LzRadius = 30,
+		CalmSeconds = 5,
 	},
 
 	-- Body animations: clip names from assets/animations (Mixamo, retargeted by
@@ -312,7 +450,7 @@ local Config = {
 			-- (TrussPart) while the Humanoid is in its Climbing state; not a Mixamo clip
 			ladder_climb = "rbxassetid://507765644",
 		},
-		-- The Chosen (one class for now): which clip plays for each state.
+		-- The Pike soldier (every player and bot): which clip plays for each state.
 		Assault = {
 			idle = "rifle_idle",
 			-- Locomotion blends four directional clips by the direction of travel in the
@@ -333,7 +471,7 @@ local Config = {
 			fire = "firing_rifle", -- recoil per shot (upper body)
 			hit = "hit_reaction", -- flinch on damage (upper body)
 			death = "death_from_the_front",
-			breach = "grenade_throw", -- E: throwing the breach charge (upper body)
+			throw = "grenade_throw", -- G (frag) and the throw call-ins: the throw (upper body)
 			knockdown = "knockdown_back", -- the Warden's Pound / Stomp: the fall (Config.Knockdown)
 			getup = "getup_back", -- and the get-up, the last Knockdown.GetUp seconds
 			ladder = "ladder_climb", -- on a TrussPart ladder (Humanoid Climbing state)
@@ -434,22 +572,6 @@ local Config = {
 		LadderClipSpeed = 10, -- studs/s of climb at which the ladder clip plays at rate 1
 	},
 
-	-- Assault class (Sprint 15 / class V1). Default and only class for now.
-	Assault = {
-		MomentumDuration = 4, -- seconds; refreshed by kills
-		MaxMomentumStacks = 5,
-		DamagePerStack = 0.04, -- +4% damage per stack
-		MoveSpeedPerStack = 0.04, -- +4% move speed per stack
-		DashCooldown = 5,
-		DashDistance = 18, -- studs
-		DashDuration = 0.18, -- seconds
-		BreachCooldown = 12,
-		BreachThrowDistance = 35, -- studs
-		BreachFuseTime = 0.8, -- seconds
-		BreachRadius = 14, -- studs
-		BreachDamage = 80, -- 45 before the loadout rework (realistic TTK)
-	},
-
 	-- Resupply (docs/PROGRESSION.md > Loadout, pallets and field upgrades): every kill credits
 	-- its form's SupplyValue to one run-wide pool, any distance (no orbs since the loadout
 	-- rework); a player throws the red flare when the pool covers the cost and a pallet lands
@@ -490,9 +612,10 @@ local Config = {
 		ShieldCap = 100, -- two plates at most
 	},
 
-	-- Call-ins (CallInDefinitions; keys 1 and 2). Charges refill one at a time every Cooldown
-	-- seconds; a Restock card fills them. No friendly fire: only the Infected are hurt.
+	-- Call-ins (CallInDefinitions; Slots slots on keys 1-4). Charges refill one at a time every
+	-- Cooldown seconds; a Restock card fills them. No friendly fire: only the Infected are hurt.
 	CallIns = {
+		Slots = 4, -- call-in slots per soldier (keys 1-4; the flare is key 5)
 		-- Hammer (81 mm mortar section, AirStrikeService): marks a point; the first shell lands
 		-- Delay seconds after the throw, then one every ShellInterval, each Scatter studs off
 		-- the mark at most. Walk It In steps them Config.Upgrades.WalkingBarrage.Step apart.
@@ -610,17 +733,13 @@ local Config = {
 			DamagePerSecond = 8,
 			MaxPools = 9,
 		},
-		SmokeDash = { ImmunitySeconds = 1.5 }, -- Infected melee cannot find the body after the dash
-		LureCharge = { Radius = 18, FuseTime = 3 }, -- the charge baits the Infected until it blows
+		LureCharge = { Radius = 18, FuseTime = 3 }, -- Bait Charge: the frag baits the Infected until it blows
 		ThroughAndThrough = { Pierce = 1 }, -- Infected a round passes through after the first
 		HollowPoint = { StaggerSeconds = 0.6 }, -- the hit Infected stops for this long
-		CombatReload = { MomentumStacks = 5 }, -- reload is instant at this many Momentum stacks
 		LastStand = { SpreadMultiplier = 2 }, -- fire from the ground while downed, hip only
 		Tourniquet = { Seconds = 4 }, -- self-revive once per mission, this long after going down
 		WalkingBarrage = { Step = 8 }, -- Hammer shells walk Step studs along the throw
-		Escort = {}, -- Magpie drones stay with a downed owner and their clock pauses
 		CommandDetonation = {}, -- press the Tripline key again to blow every armed mine
-		Defibrillator = {}, -- a Pen Coil pulse revives downed squadmates in its radius
 	},
 
 	-- Hold Position objective V1. Pays SupplyReward into the Resupply pool on completion and

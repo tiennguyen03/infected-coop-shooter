@@ -1,6 +1,7 @@
 --!strict
--- Hold left mouse button to fire. Aims from the character toward whatever
--- the cursor is pointing at, then asks the server to fire the round.
+-- Hold left mouse button to fire the gun in hand (a "semi" gun fires once per click). Aims
+-- from the character toward whatever the cursor is pointing at, then asks the server to
+-- fire the round. No shot goes out while the Q swap (SwapUntil) brings the other gun up.
 -- Hold right mouse button to aim down sights (ADS): tighter spread (server), slower
 -- walk and no sprint (SprintController), closer camera and narrower FOV
 -- (CameraController), rifle shouldered (AnimationController), crosshair closes.
@@ -27,6 +28,7 @@ local WeaponController = {}
 
 local isFiring = false
 local isAiming = false
+local triggerSpent = false -- a semi-auto round went out on this press
 local lastFireTime = 0
 local lastReloadRequest = 0
 local tracerFolder: Folder? = nil
@@ -136,13 +138,20 @@ local function tryFire()
 	local player = Players.LocalPlayer
 	local now = os.clock()
 	local weapon = WeaponDefinitions.get(player:GetAttribute(Attributes.Weapon) :: string?)
-	local fireRateMult = (player:GetAttribute(Attributes.FireRateMult) :: number?) or 1
-	local cooldown = weapon.FireCooldown / fireRateMult
+	local cooldown = weapon.FireCooldown
 	if now - lastFireTime < cooldown then
+		return
+	end
+	-- Semi-auto: one round per click (a held trigger waits for the next press).
+	if weapon.FireMode == "semi" and triggerSpent then
 		return
 	end
 	if WeaponController.isReloading() then
 		return
+	end
+	local swapUntil = (player:GetAttribute(Attributes.SwapUntil) :: number?) or 0
+	if swapUntil > workspace:GetServerTimeNow() then
+		return -- the Q swap is still bringing the other gun up
 	end
 	if ((player:GetAttribute(Attributes.Mag) :: number?) or 0) <= 0 then
 		-- Dry: ask for a reload (once per half second while the trigger is held).
@@ -188,6 +197,7 @@ local function tryFire()
 	-- one was, not after this frame (but never bank more than one shot after a pause).
 	lastFireTime = if now - lastFireTime < cooldown * 2 then lastFireTime + cooldown else now
 	player:SetAttribute(Attributes.LastShotAt, now)
+	triggerSpent = true
 	Remotes.get("FireWeapon"):FireServer(origin, direction.Unit, isAiming)
 	AnimationController.onShot()
 	drawTracer(origin, aimPoint)
@@ -238,6 +248,7 @@ function WeaponController.init()
 		end
 		if input.UserInputType == Enum.UserInputType.MouseButton1 then
 			isFiring = true
+			triggerSpent = false
 			AnimationController.setAiming(true)
 		elseif input.UserInputType == Enum.UserInputType.MouseButton2 then
 			setAiming(true)

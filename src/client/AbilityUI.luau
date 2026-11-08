@@ -1,12 +1,13 @@
 --!strict
 -- Abilities, top left under the health stack (HUD language: HudTheme; after Prototype 2's
--- power circles): four circles, Q Dash, E Breach, 1 and 2 the call-ins. Ready: a white
+-- power circles): seven circles, G grenade, V shove, E stim, then 1-4 the call-ins (Q swap
+-- reads beside the ammo counter, LoadoutUI; 5 flare on the resupply meter). Ready: a white
 -- outline and the key letter. Cooling: a white fill rises from the bottom and the seconds
--- show under the circle. Call-ins carry their charges as small squares under the circle
--- (yellow on, dim off) and dim out when empty. A small white diamond on a circle marks a
--- field upgrade in that slot. Momentum stacks read below the resupply meter.
--- Ability cooldowns come from the AbilityUsed remote (server authority), call-in charges from
--- the CallIn<n>Charges / CallIn<n>ReadyAt attributes; display only, refreshed at 15 Hz and
+-- show under the circle. Grenades, stims and call-in charges show as small squares under
+-- the circle (yellow on, dim off) and the circle dims out when empty. A small white diamond
+-- on a circle marks a field upgrade in that slot. The shove's cooldown comes from the
+-- AbilityUsed remote (server authority); counts and charges from the Grenades / Stims /
+-- CallIn<n>Charges / CallIn<n>ReadyAt attributes; display only, refreshed at 15 Hz and
 -- written only when a value changes.
 
 local Players = game:GetService("Players")
@@ -18,6 +19,8 @@ local CallInDefinitions = require(Shared:WaitForChild("CallInDefinitions"))
 local Attributes = require(Shared:WaitForChild("Attributes"))
 local Config = require(Shared:WaitForChild("Config"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
+local UpgradeDefinitions = require(Shared:WaitForChild("UpgradeDefinitions"))
+local WeaponDefinitions = require(Shared:WaitForChild("WeaponDefinitions"))
 local HudTheme = require(script.Parent.HudTheme)
 
 local AbilityUI = {}
@@ -43,7 +46,6 @@ type Circle = {
 }
 
 local circles: { [string]: Circle } = {}
-local momentumLabel: TextLabel
 
 local function setIf(circle: Circle, key: string, value: any, apply: () -> ())
 	if circle.shown[key] ~= value then
@@ -217,11 +219,28 @@ local function updateCallIn(circle: Circle, slot: number)
 	end
 end
 
-local UPGRADE_SLOTS: { [string]: string } =
-	{ Dash = "dash", Breach = "breach", CallInA = "callin1", CallInB = "callin2" }
+-- A carried tool (the grenades, the stims): one pip per item carried, dim when gone.
+local function updateCount(circle: Circle, count: number, carried: number)
+	for index, pip in circle.pips do
+		local visible = index <= carried
+		local color = if index <= count then C.Yellow else C.TextDim
+		setIf(circle, "pip" .. index, `{visible}{index <= count}`, function()
+			pip.Visible = visible
+			pip.BackgroundColor3 = color
+		end)
+	end
+	setReady(circle, count > 0, count <= 0)
+	setFill(circle, 0)
+	setCaption(circle, circle.name)
+end
+
+-- Field-upgrade slot -> the circle that carries its mark.
+local UPGRADE_SLOTS: { [string]: string } = { Grenade = "grenade" }
+for slot = 1, Config.CallIns.Slots do
+	UPGRADE_SLOTS[UpgradeDefinitions.callInSlot(slot)] = `callin{slot}`
+end
 local ABILITY_COOLDOWNS: { [string]: number } = {
-	dash = Config.Assault.DashCooldown,
-	breach = Config.Assault.BreachCooldown,
+	shove = Config.Shove.Cooldown,
 }
 
 local function updateUpgradeMarks()
@@ -237,19 +256,20 @@ end
 
 function AbilityUI.init()
 	local gui = HudTheme.gui("AbilityUI")
+	local count = 3 + Config.CallIns.Slots
 	local row = Instance.new("Frame")
 	row.BackgroundTransparency = 1
 	row.Position = UDim2.fromOffset(HudTheme.Margin, TOP)
-	row.Size = UDim2.fromOffset(4 * CIRCLE + 3 * GAP, CIRCLE + 20)
+	row.Size = UDim2.fromOffset(count * CIRCLE + (count - 1) * GAP, CIRCLE + 20)
 	row.Parent = gui
 
-	circles.dash = makeCircle(row, "Q", "Dash", 0)
-	circles.breach = makeCircle(row, "E", "Breach", 1)
-	circles.callin1 = makeCircle(row, "1", "", 2)
-	circles.callin2 = makeCircle(row, "2", "", 3)
-
-	momentumLabel = HudTheme.label(gui, { size = 14, color = C.Yellow })
-	momentumLabel.Position = UDim2.fromOffset(HudTheme.Margin, 132)
+	local grenade = WeaponDefinitions.grenade(nil)
+	circles.grenade = makeCircle(row, "G", grenade.Name, 0)
+	circles.shove = makeCircle(row, "V", "Shove", 1)
+	circles.stim = makeCircle(row, "E", "Stim", 2)
+	for slot = 1, Config.CallIns.Slots do
+		circles[`callin{slot}`] = makeCircle(row, tostring(slot), "", 2 + slot)
+	end
 
 	HudTheme.parent(gui)
 
@@ -261,7 +281,7 @@ function AbilityUI.init()
 		end
 	end)
 	local player = Players.LocalPlayer
-	for _, slotName in { "Dash", "Breach", "CallInA", "CallInB" } do
+	for slotName in UPGRADE_SLOTS do
 		player:GetAttributeChangedSignal(Attributes.upgrade(slotName)):Connect(updateUpgradeMarks)
 	end
 	updateUpgradeMarks()
@@ -286,12 +306,21 @@ function AbilityUI.init()
 			end
 			updateAbility(circle, now, (circle.shown.cooldown :: number?) or cooldown)
 		end
-		updateCallIn(circles.callin1, 1)
-		updateCallIn(circles.callin2, 2)
-		local stacks = (player:GetAttribute(Attributes.MomentumStacks) :: number?) or 0
-		local text = if stacks > 0 then `MOMENTUM x{stacks}` else ""
-		if momentumLabel.Text ~= text then
-			momentumLabel.Text = text
+		local grenadeCircle = circles.grenade
+		grenadeCircle.name =
+			WeaponDefinitions.grenade(player:GetAttribute(Attributes.Grenade) :: string?).Name
+		updateCount(
+			grenadeCircle,
+			(player:GetAttribute(Attributes.Grenades) :: number?) or 0,
+			Config.Grenade.Carried
+		)
+		updateCount(
+			circles.stim,
+			(player:GetAttribute(Attributes.Stims) :: number?) or 0,
+			Config.Stim.Carried
+		)
+		for slot = 1, Config.CallIns.Slots do
+			updateCallIn(circles[`callin{slot}`], slot)
 		end
 	end)
 end

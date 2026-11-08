@@ -1,5 +1,5 @@
 --!strict
--- Resupply on the client: the HUD meter top left under the abilities (pool / cost, "[3] FLARE" when it
+-- Resupply on the client: the HUD meter top left under the abilities (pool / cost, "[5] FLARE" when it
 -- covers the cost, the drop countdown while a pallet is inbound; a short pulse when a kill
 -- feeds the pool) and the world cards. When a crate lands the server sends this player
 -- their own card ids (supply cards on a pallet, field upgrades on an upgrade crate:
@@ -84,7 +84,7 @@ local function updateMeter()
 		-- Ready: the bar pulses so the eye finds it without a pop-up.
 		local pulse = 0.5 + 0.5 * math.sin(now * 4)
 		fill.BackgroundColor3 = C.Yellow:Lerp(C.White, pulse)
-		setText(`RESUPPLY READY  {HudTheme.tint("[3] FLARE", C.Yellow)}`, C.Text)
+		setText(`RESUPPLY READY  {HudTheme.tint("[5] FLARE", C.Yellow)}`, C.Text)
 	else
 		-- A kill just fed the pool: a brief brighten.
 		local gain = math.clamp((gainPulseUntil - now) / GAIN_PULSE_SECONDS, 0, 1)
@@ -328,7 +328,7 @@ function ResupplyUI.init()
 			closeCards(crateId)
 		elseif kind == Messages.Resupply.Called then
 			local thrower = ...
-			noticeText = if thrower == Players.LocalPlayer.Name
+			noticeText = if thrower == Players.LocalPlayer:GetAttribute(Attributes.Callsign)
 				then "FLARE OUT · PALLET INBOUND"
 				else `{string.upper(thrower)} CALLED SUPPLY`
 			noticeUntil = os.clock() + CALL_NOTICE_SECONDS

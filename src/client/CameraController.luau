@@ -18,6 +18,8 @@ local UserInputService = game:GetService("UserInputService")
 
 local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attributes"))
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
+local WeaponDefinitions =
+	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("WeaponDefinitions"))
 
 local HIP_FOV = 70
 local CROSSHAIR_HIP = 22 -- ring diameter in pixels at the hip
@@ -175,7 +177,9 @@ local function onRenderStep(deltaTime: number)
 			local shotAt = bloomShotAt or os.clock()
 			local idle = os.clock() - shotAt - Config.Weapon.BloomRecoveryDelay
 			if idle > 0 then
-				bloomValue = math.max(bloomValue - idle * Config.Weapon.BloomRecovery, 0)
+				local weapon =
+					WeaponDefinitions.get(player:GetAttribute(Attributes.Weapon) :: string?)
+				bloomValue = math.max(bloomValue - idle * weapon.BloomRecovery, 0)
 			end
 		end
 		size += bloomValue * CROSSHAIR_PER_BLOOM

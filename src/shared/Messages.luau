@@ -15,11 +15,20 @@ local Messages = table.freeze({
 		Picked = "picked",
 		Closed = "closed",
 	}),
-	-- UseAbility (client -> server) and AbilityUsed (server -> client)
+	-- UseAbility (client -> server) and AbilityUsed (server -> client): the soldier's kit
+	-- (KitService) and the call-in report (CallInService)
 	Ability = table.freeze({
-		Dash = "dash",
-		Breach = "breach",
+		Swap = "swap",
+		Grenade = "grenade",
+		Shove = "shove",
+		Stim = "stim",
 		CallIn = "callin",
+	}),
+	-- Loadout (the Arms Room): client -> server ("request", {primary, secondary, grenade,
+	-- callIns}); server -> client ("result", ok, reason)
+	Loadout = table.freeze({
+		Request = "request",
+		Result = "result",
 	}),
 	ObjectiveUpdate = table.freeze({
 		Started = "started",

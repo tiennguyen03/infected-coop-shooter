@@ -31,24 +31,26 @@ local Attributes = table.freeze({
 	BossDangerRadius = "BossDangerRadius",
 	BossDangerUntil = "BossDangerUntil",
 
-	-- Player: loadout, combat and dev state (LoadoutService, AssaultClassService, ...)
-	Weapon = "Weapon",
+	-- Player: loadout, combat and dev state (LoadoutService, KitService, Squad, ...)
+	Weapon = "Weapon", -- the gun in hand (Primary or Secondary); Mag / Reserve are its rounds
+	Primary = "Primary",
+	Secondary = "Secondary",
+	Grenade = "Grenade", -- the grenade type carried
+	Grenades = "Grenades", -- grenades left
+	Stims = "Stims", -- stims left
+	SwapUntil = "SwapUntil", -- server time the Q swap finishes (0 when not swapping)
 	Mag = "Mag",
 	Reserve = "Reserve",
 	ReloadUntil = "ReloadUntil",
 	Shield = "Shield",
 	Kills = "Kills",
-	MomentumStacks = "MomentumStacks",
+	Callsign = "Callsign", -- "Pike One" ... (Squad): the name the HUD and the radio use
 	MoveSpeedMult = "MoveSpeedMult",
-	FireRateMult = "FireRateMult",
-	DamageMult = "DamageMult",
 	Ready = "Ready",
 	DevGod = "DevGod",
 	Bloom = "Bloom",
 	LastShotAt = "LastShotAt", -- local only: the client stamps each of its own shots
 	UpgradeKit = "UpgradeKit",
-	UpgradeCallInA = "UpgradeCallInA",
-	UpgradeCallInB = "UpgradeCallInB",
 
 	-- Character: squad state, knockdown, stance (Squad, StanceService, CoverMoveService)
 	SquadState = "SquadState",
@@ -77,7 +79,8 @@ local Attributes = table.freeze({
 	upgrade = function(slot: string): string
 		return "Upgrade" .. slot
 	end,
-	-- Player: the call-in in slot 1 or 2, its charges and when the next charge lands.
+	-- Player: the call-in in slot 1-4 (Config.CallIns.Slots), its charges and when the next
+	-- charge lands.
 	callIn = function(slot: number): string
 		return `CallIn{slot}`
 	end,
@@ -87,8 +90,8 @@ local Attributes = table.freeze({
 	callInReadyAt = function(slot: number): string
 		return `CallIn{slot}ReadyAt`
 	end,
-	-- Player: a PlayerStatsService multiplier ("MoveSpeed" -> MoveSpeedMult, "FireRate",
-	-- "Damage"); the fixed names above are what the readers use.
+	-- Player: a PlayerStatsService multiplier ("MoveSpeed" -> MoveSpeedMult); the fixed
+	-- name above is what the readers use.
 	statMult = function(stat: string): string
 		return stat .. "Mult"
 	end,

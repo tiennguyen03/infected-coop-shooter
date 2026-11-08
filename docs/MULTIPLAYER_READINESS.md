@@ -25,10 +25,13 @@ drift; the file and symbol names are the stable pointers).
 
 ## Already fine (keep it this way)
 
-Per-player attributes (stat Mults, Kills, MomentumStacks, Mag/Reserve/ReloadUntil,
-CallIn1/2 + charges, Upgrade<Slot>, Shield), per-player loadouts and card offers
-(`LoadoutService`, `CallInService`, `RequisitionService`), per-player fire-rate and ability
-validation, per-player drone/mine/pool caps, every `PlayerRemoving` handler, kill credit via
+Per-player attributes (MoveSpeedMult, Kills, Weapon/Primary/Secondary, Mag/Reserve/
+ReloadUntil/SwapUntil, Grenade/Grenades/Stims, CallIn1-4 + charges, Upgrade<Slot>, Shield,
+Callsign), per-player loadouts, Arms Room picks (kept across runs), calm timers and card
+offers (`LoadoutService`, `CallInService`, `RequisitionService`), per-player fire-rate,
+kit (`KitService`: grenade gap, shove cooldown, stim) and Arms Room gate validation,
+callsigns handed out per player in join order (Pike One to Four; bots take the free ones at
+run start, `Squad.freeCallsigns`), per-player drone/mine/pool caps, every `PlayerRemoving` handler, kill credit via
 the one damage entry point `DamageService.dealDamage`, enemy targeting = nearest living
 member, HUDs reading `LocalPlayer` only.
 

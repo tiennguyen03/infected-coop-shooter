@@ -81,6 +81,7 @@ function EnemyProjectileService.damagePlayer(humanoid: Humanoid, amount: number,
 	end
 	local dealt = amount * DifficultyService.getDamageMultiplier()
 	if member and member.owner then
+		LoadoutService.noteCombat(member.owner) -- in contact: the Arms Room stays shut
 		dealt = LoadoutService.absorb(member.owner, dealt)
 		if dealt <= 0 then
 			return

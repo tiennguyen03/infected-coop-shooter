@@ -1,7 +1,7 @@
 --!strict
 -- Hold LeftShift to sprint. WalkSpeed is set locally; the character is
 -- client-owned so this takes effect immediately without replication. Aiming down sights
--- (WeaponController) overrides sprint and slows the walk by Config.Weapon.ADS.MoveSpeedFactor;
+-- (WeaponController) overrides sprint and slows the walk by the gun's AdsMoveFactor;
 -- a stance (StanceController) scales the walk and may forbid sprinting.
 
 local Players = game:GetService("Players")
@@ -10,6 +10,8 @@ local UserInputService = game:GetService("UserInputService")
 
 local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attributes"))
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
+local WeaponDefinitions =
+	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("WeaponDefinitions"))
 
 local SprintController = {}
 
@@ -41,7 +43,9 @@ local function applySpeed()
 			else Config.Player.WalkSpeed
 		local mult = (Players.LocalPlayer:GetAttribute(Attributes.MoveSpeedMult) :: number?) or 1
 		if isAiming then
-			mult *= Config.Weapon.ADS.MoveSpeedFactor
+			mult *= WeaponDefinitions.get(
+				Players.LocalPlayer:GetAttribute(Attributes.Weapon) :: string?
+			).AdsMoveFactor
 		end
 		mult *= stanceFactor
 		humanoid.WalkSpeed = base * mult
@@ -112,6 +116,7 @@ function SprintController.init()
 
 	-- Items/buffs can change the multiplier mid-run; reapply immediately.
 	Players.LocalPlayer:GetAttributeChangedSignal(Attributes.MoveSpeedMult):Connect(applySpeed)
+	Players.LocalPlayer:GetAttributeChangedSignal(Attributes.Weapon):Connect(applySpeed)
 end
 
 return SprintController
