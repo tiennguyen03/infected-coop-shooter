@@ -73,6 +73,7 @@ animations, played by `src/client/AnimationController.luau` (players) and
 | warden_hit (Sword And Shield Impact, head) | Warden flinch on a plate break | `in_place` |
 | knockdown_back (Knocked Out, falling to back) | Assault + bots knocked down: the fall | `in_place`, `trim` (0, 0.45): the fall without the lying still; rate fits the knockdown minus `Config.Knockdown.GetUp` |
 | getup_back (Getting Up, from back) | Assault + bots knocked down: the get-up | `in_place`, `trim` (0.55, 1): the rise; rate fits `Config.Knockdown.GetUp` |
+| ladder_climb (Roblox stock R15 ClimbAnim, `rbxassetid://507765644`) | Assault on a TrussPart ladder | not retargeted (owner: the default is fine); `AnimationController` plays it in the Humanoid's Climbing state, rate from the vertical speed against `Animations.LadderClipSpeed` |
 
 ## Pipeline
 

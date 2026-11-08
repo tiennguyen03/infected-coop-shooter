@@ -308,6 +308,9 @@ local Config = {
 			warden_hit = "rbxassetid://101098537894560",
 			knockdown_back = "rbxassetid://74898159216267",
 			getup_back = "rbxassetid://84697770068141",
+			-- Roblox's stock R15 climb (the Animate script's ClimbAnim): played on a ladder
+			-- (TrussPart) while the Humanoid is in its Climbing state; not a Mixamo clip
+			ladder_climb = "rbxassetid://507765644",
 		},
 		-- The Chosen (one class for now): which clip plays for each state.
 		Assault = {
@@ -333,6 +336,7 @@ local Config = {
 			breach = "grenade_throw", -- E: throwing the breach charge (upper body)
 			knockdown = "knockdown_back", -- the Warden's Pound / Stomp: the fall (Config.Knockdown)
 			getup = "getup_back", -- and the get-up, the last Knockdown.GetUp seconds
+			ladder = "ladder_climb", -- on a TrussPart ladder (Humanoid Climbing state)
 			-- Stances: each has an idle, a directional move blend and an aim overlay; enter
 			-- and exit clips play over the switch.
 			crouch = {
@@ -427,6 +431,7 @@ local Config = {
 			warden_run = 16,
 		},
 		WalkRunThreshold = 20, -- studs/s: faster than this plays the run clip (walk 16, sprint 24)
+		LadderClipSpeed = 10, -- studs/s of climb at which the ladder clip plays at rate 1
 	},
 
 	-- Assault class (Sprint 15 / class V1). Default and only class for now.
@@ -717,6 +722,7 @@ local Config = {
 		-- Invisible composite-collider Parts the dressing may place (docs/LEVELS.md A8);
 		-- ArenaService warns at boot past it.
 		ColliderBudget = 256,
+		StraddleTolerance = 0.6, -- studs of ground-height spread across a dressing footprint before boot warns (and the Blender view paints it red)
 		Kit = {
 			Storey = 9,
 			WallThickness = 0.6,

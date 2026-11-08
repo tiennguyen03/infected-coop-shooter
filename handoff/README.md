@@ -81,6 +81,12 @@ Read in this order:
   action change, bash timed to the windup, run while charging, roar on Riot Call, death
   clip). Verified in a playtest with the published ids: all 21 parts dressed, each clip
   seen, 60 fps.
+- 2026-11-07: **Map placement fix + Blender map view + ladder climb** (`docs/LEVELS.md`
+  A12b, `assets/3d/README.md` > *The map in Blender*): `assets/3d/build/delta_map.py`
+  rebuilds Delta in Blender from the `ArenaService` tables and paints any piece across a
+  slope, in the Warden lane, on the LZ pad or inside a building red; 48 pieces moved (0
+  left), a ramp up the Compound's east container, boot warns on any new straddle. Ladders
+  play Roblox's stock climb clip (`ladder_climb`).
 - 2026-11-07: **Balance pass + downed slide fix** (Sprint 18 doc > *Balance pass*): a
   third fewer spawns, 9 magazines, cheaper and steadier pallets; a downed body no longer
   or prone body no longer slides (the prone lift never reached the AnimationConstraint
@@ -184,17 +190,10 @@ Read in this order:
   phase 2. First real fight on this build: 100-120 s is the target; retune
   `Config.Index.Warden` plate health if it drags. Art-director later pass on the v2
   body: see the Sprint 19 doc > *v2* > open.
-- **NEXT: map redesign in Blender (owner, 2026-11-07).** The owner: "the map has a lot
-  of problems... since you're working with it headless you can't see where you're placing
-  stuff; there's random pallets inside of the slants and the hills. Talk with the agents,
-  come up with a design for the level, build it inside of Blender and then just import it
-  into Roblox." Plan: a new build file for the map (one file per asset rule:
-  `assets/3d/build/delta_map.py` or similar), the level designer's layout (`docs/LEVELS.md`
-  A) checked against the live Blender scene through the Blender MCP (render, look, fix,
-  render), props placed on the ground in Blender rather than by headless formulas, then
-  export and import into the place. Ladders: the stock Roblox ladder climb (TrussPart or
-  climbable parts; the Humanoid climbs them without a clip), the owner said the default is
-  fine. Review the current `ArenaService` layout code and `docs/LEVELS.md` first.
+- **NEXT: the open boundary (owner, 2026-11-07).** "Get rid of the sense of the map being
+  walled off and closed in." Replace the four 24-stud concrete walls with in-world edges the
+  eye sees past (level designer's plan in `docs/LEVELS.md` when it lands); the two Pens
+  hesco blocks that touch the west wall get fixed with it.
 - **Warden kit: watch for** a player knockdown in a real fight (fall + get-up clips,
   controls locked; only bots were knocked down on screen), the fight length, and the
   Sweep's shove on a laggy client.

@@ -78,12 +78,12 @@ the checks still owed. Section B is the building kit.
 | the Lines (B-2) | (-240,60) | x-285..-195, z52..68 | 0 / 9 | kit: 3 huts 30x16 shoulder to shoulder, end doors in line (a 90-stud tube), middle hut ladder to the roofs | The Barracks' walk-through; rooftop route R7 |
 | the Armoury | (-210,0) | x-218..-202, z-6..6 | 0 / 9 | kit: 16x12, one door S, slit windows, roof ladder N | Barracks stores / cover |
 | the Pens | (-257,120) | x-300..-215, z90..150 | 6 | ParadePad (-250,6.15,120) 56x46; 24 tall hesco (A3); tents (-266,102/120/138); lamps (-218,160),(-200,120) | Site 2, Sanitize |
-| Overlook | (105,-105) | x85..125, z-125..-85 | 14 | bunker (104,-108) yaw 180; tower (142,-100) with ladder; jerseys (60,-80),(60,-110) | Site 3 |
+| Overlook | (105,-105) | x85..125, z-125..-85 | 14 | bunker (104,-108) yaw 180; tower (150,-100) with ladder; jerseys (60,-80),(60,-110) | Site 3 |
 | Highway | z=-45 | x-300..300, z-54..-36 | 12 | deck container perch (-130,-45) + ramp; deck gantry at x 40 floor 23.5 off container (56,-45) + ramp (A9) | Hocker gallery; the ridge route W-E; R2 |
 | the Pumps (B-6) | (130,-155) | canopy x116..144, z-163..-147; kiosk x144..156, z-160..-150 | 0 / 9 / 10.5 | kit: kiosk (door W, ladder E, no parapet) + walkable canopy on 4 columns over 2 pump islands | Scrapyard north edge cover; a Hocker shadow |
 | Depot | (210,40) | pad x155..285, z-5..105 | 0 | A4 table + the Shed (B-3) + the Stack (A9) | Stores #1/#3, Confirm Casualties, generator, alt pad |
 | the Shed (B-3) | (196,86) | x180..212, z74..98 | 0 / 6.5 / 12.5 | kit: 12.5 clear (Brute room), vehicle door S at x 198..210, doors N and E, mezzanine W up a flight, roof off the container (174,86) | Confirm Casualties Brutes |
-| the Gate | (-30,-274) | wall x-300..300; lane x-42..-18 | 0 | 72 T-walls at z=-274 (x=-294+8k, skip k=32..34), every ninth casting a shadow; the Scrapes at x -150 and x 114 (A10); booth (-54,-262); siren lamp (-10,-264) | Index entry, Open the Route, Silence the Alarm |
+| the Gate | (-30,-274) | wall x-300..300; lane x-42..-18 | 0 | 71 T-walls at z=-274 (x=-294+8k, k 0..73, skip k=32..34; k=74 stood in the east wall), every ninth casting a shadow; the Scrapes at x -150 and x 114 (A10); booth (-54,-262); siren lamp (-14,-264) | Index entry, Open the Route, Silence the Alarm |
 | Bus line | (-4,-196) | x-9.5..1.5, z-263..-129 | 0 | 3x env_bus yaw 90 at (-4,-150),(-4,-196),(-4,-242); 4th bus (40,-205) yaw 60 | Hocker-proof cover on the Gate approach; Bus 7 story spot |
 | Suburb: the Parade (B-5) | (124,178) | x100..148, z170..186 | 0 / 9 | kit: 4 shops facing the north road, front door + broken shopfront (sill 1) + back door each, party-wall doors, one 48-stud roof; dumpster (108,167) is the Walker step | R6 Suburb Run |
 | Suburb: the church (B-4) | (60,262) | x50..70, z246..278 | 0 / 7 / 14 / 20 | kit: 14-stud nave, choir loft over the south end up an east flight, inside ladder loft -> roof, belfry 8x8 on the roof (arches, ladder N) top 20 | The Suburb's lookout; story spot |
@@ -101,9 +101,9 @@ the checks still owed. Section B is the building kit.
 - Squad holds: zone centre to the T-wall line; one player on the W hesco or the Shelf.
 
 **Site 2: the Pens** (zone (-240,6.5,120) 46x46)
-- Tall hesco ring (8.88: Walkers never climb it, Runners do) on the terrace top: N row z=147,
-  S row z=93, x = -295.5,-289.6,-283,-276.4,-269.8,-263.2 | -236.8,-230.2,-223.6,-217 (10 each;
-  mouth x-260..-240); E column x=-218 yaw 90, z = 100,106.5 | 133.5,140 (mouth z110..130).
+- Tall hesco ring (8.88: Walkers never climb it, Runners do) on the terrace top: N row z=146,
+  S row z=94, x = -295.5,-289.6,-283,-276.4,-269.8,-263.2 | -238.3,-231.7,-225.1,-218.5 (10 each;
+  mouth x-260..-241.4; pulled in off the crest 2026-11-07); E column x=-219 yaw 90, z = 100,106.5 | 133.5,140 (mouth z110..130).
   West: the arena wall (the terrace is vertical there).
 - Approaches: exactly three mouths N, E, S. Tents (roof walkable) on the west half are
   climbable cover inside.
@@ -166,7 +166,7 @@ the checks still owed. Section B is the building kit.
 | Main pad (insert + extract) | (-90,0.6,-90), hold zone 28x28 |
 | Alternate pad | (255,0.6,85) on the Depot pad; overwatched from the Stack |
 | Stores crates | #1 Depot A1 (185,0.3,32); #2 Ridge (-90,8.3,40); #3 Depot A3 (237,0.3,32) [Held+]; #4 Inner Gate bunker (-52,0.3,-98) [Contained] |
-| Silence the Alarm | siren at the Gate (-10,-264) |
+| Silence the Alarm | siren at the Gate (-14,-264) |
 | Lights On | generator (178,-2) |
 | Light the Pad | (255,0.6,85) |
 | Sealed Bus | Bus 7 (-4,-242); Runner burst spawns at (-20,-242),(12,-242) |
@@ -222,6 +222,7 @@ WedgeParts at the kit's 33 degrees) so a Walker can follow and no perch is a fre
 | LZ north-west container (-124,-82) | 9.55 | from the south, (-124,-101) -> (-124,-86.6) |
 | Deck container (-130,-45) | 21.55 | along the deck from the west, x -155.7 -> -141 |
 | the Shelf (78,52) | 14 | from the east on the hill, x 91.2 -> 82 |
+| Compound E container (100,44) | 17.55 | from the west on the hill, x 74.5 -> 89 (added 2026-11-07: it was a Walker-proof camp 6 studs from the hold) |
 | Apron containers (30,-10) yaw -15 and (-10,-10) yaw 90 | 9.55 | the north face of (30,-10); the east face of (-10,-10) |
 | the Stack (250,32) | 19.4 | two flights up column D's south end: (250,-5.7) -> (250,9) -> (250,21) |
 | Deck gantry (40,-45) | 23.5 | container (56,-45) on the deck (top 21.55, a Walker step) ramped from the east x 81.8 -> 67; a truss on the west face for the squad |
@@ -249,6 +250,32 @@ chainlink; the Pumps' fuel bladders and a car; the Scrapyard's cars, dumpsters, 
 concertina inside the Gate; the Lines' nine cots (`floor = 0`), toilets and generator; the
 Pens' body bags; the Armoury's pallets. Until a prop's mesh id lands in `MeshAssets` the
 placement is skipped and listed at boot (`dressing meshes await upload`).
+
+## A12b. Slope setbacks (2026-11-07, the map fix)
+
+The owner: "there's random pallets inside of the slants and the hills." Every dressing
+piece is placed by one raycast at its centre, so a footprint across an embankment sinks or
+floats. Rules (level designer), checked twice: `assets/3d/build/delta_map.py` rebuilds the
+layout in Blender and paints a breaking piece red, and `ArenaService.placePiece` raycasts a
+piece's four corners at boot and warns past `Config.Arena.StraddleTolerance` (0.6).
+
+| Rule | Value |
+|---|---|
+| Footprint | the rotated box from the mesh size (`MeshAssets`) |
+| From a slope foot | edge 2+ studs outside the slope band (lamps, trees 1+) |
+| From a crest | edge 1+ inside for pieces up to 5 tall, 2+ for taller ones |
+| On a slope | nothing with a base; only the kit's own ramps |
+| At a hill foot | Mud / Rock sheets only |
+| Hold zones, pads | A3 cover only; the LZ pad and the alt helipad stay bare |
+
+Applied 2026-11-07: 48 table moves (the level designer's list: the Barracks ruin out of the
+highway (-250,-60) -> (-250,-100), the LZ pallets and bags off the embankment and the pad,
+the Overlook tower and zone props, the car on the highway slope, the Compound's upper-tier
+T-walls and hesco off the crest, the Depot alt pad cleared, the Armoury's door unblocked,
+the Pens ring pulled in, overlaps between props), the new Compound ramp, the Gate line's
+75th wall removed. The Blender check reads 0 problems. At boot the corner check still names
+pieces that are meant to touch other geometry (the Stack and gantry containers under their
+ramps and floors, the Apron containers' ramps, the siren on its lamp): accepted.
 
 ## A12. Ground
 

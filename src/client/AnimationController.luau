@@ -54,6 +54,7 @@ type Tracks = {
 	slide: AnimationTrack?,
 	knockdown: AnimationTrack?,
 	getup: AnimationTrack?,
+	ladder: AnimationTrack?,
 }
 
 local tracks: Tracks = {}
@@ -230,6 +231,24 @@ local function step(humanoid: Humanoid, root: BasePart)
 	local velocity = root.AssemblyLinearVelocity
 	local flat = Vector3.new(velocity.X, 0, velocity.Z)
 	local speed = flat.Magnitude
+	-- On a ladder (TrussPart): the stock climb clip, rate from the vertical speed, nothing
+	-- else playing. Off it, the clip stops and the locomotion below takes over.
+	local ladder = tracks.ladder
+	if humanoid:GetState() == Enum.HumanoidStateType.Climbing then
+		switchSet(nil)
+		setIdle(false)
+		if ladder then
+			if not ladder.IsPlaying then
+				ladder:Play(0.1)
+			end
+			ladder:AdjustSpeed(
+				math.clamp(math.abs(velocity.Y) / Config.Animations.LadderClipSpeed, 0, 2)
+			)
+		end
+		return
+	elseif ladder and ladder.IsPlaying then
+		ladder:Stop(0.15)
+	end
 	-- Off the ground: hold whatever is playing (no jump clip; cover is vaulted instead).
 	if humanoid.FloorMaterial == Enum.Material.Air then
 		return
@@ -283,7 +302,11 @@ local function setup(character: Model)
 		slide = Animations.load(animator, clips.slide, Enum.AnimationPriority.Action3),
 		knockdown = Animations.load(animator, clips.knockdown, Enum.AnimationPriority.Action3),
 		getup = Animations.load(animator, clips.getup, Enum.AnimationPriority.Action3),
+		ladder = Animations.load(animator, clips.ladder, Enum.AnimationPriority.Action),
 	}
+	if tracks.ladder then
+		tracks.ladder.Looped = true
+	end
 	stances = {
 		stand = loadStance(animator, {
 			idle = clips.idle,
