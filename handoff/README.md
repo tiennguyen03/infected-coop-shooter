@@ -235,6 +235,9 @@ Read in this order:
   Speedball, Aid Bag; Magpie / Pen Coil gone (PROGRESSION > Call-ins "First pass built").
   Verify with dev `FireCallIn <id>`; left for B: drop the Last Flight / Ground Strap rows,
   add `LoadoutService.refillStims`.
+  Blocky Infected lore-accuracy pass built and uploaded (posture v3, STYLES §7: Walker
+  shoulder/head/blanket, Runner lean + long arms, Brute wide + trench, Hocker head back +
+  bent knees), unplaytested: check the clips, Gore stumps on the offset arms, Brute hitboxes.
 - **Delta traversal: owner calls + playtest** (`docs/LEVELS.md` A12b second pass): generator
   to 4.8 (explained to the owner 2026-11-08, waiting on a yes), light-tower collision as two
   boxes; walk the traversal checklist (vault a sedan side-on, crawl under the cargo truck,
