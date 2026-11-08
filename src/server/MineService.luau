@@ -1,7 +1,7 @@
 --!strict
 -- Tripline (Mines call-in, CallInService): the thrown line lands and Config.CallIns.Tripline
 -- .Mines charges settle on an arc bulging away from the thrower. A mine blows when an
--- Infected steps within TriggerRadius (area damage through ItemEffectService.dealDamage;
+-- Infected steps within TriggerRadius (area damage through DamageService.dealDamage;
 -- never the squad). Daisy Chain (command_detonation upgrade): CallInService asks
 -- detonateAll when the owner presses the Tripline key with mines still armed.
 
@@ -14,7 +14,7 @@ local TweenService = game:GetService("TweenService")
 local Config = require(ReplicatedStorage.Shared.Config)
 local GroundUtil = require(ReplicatedStorage.Shared.GroundUtil)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
-local ItemEffectService = require(script.Parent.ItemEffectService)
+local DamageService = require(script.Parent.DamageService)
 local PauseService = require(script.Parent.PauseService)
 
 local ENEMY_TAG = "Enemy"
@@ -68,7 +68,7 @@ local function detonate(mine: Mine)
 			local root = model:FindFirstChild("HumanoidRootPart") :: BasePart?
 			if humanoid and humanoid.Health > 0 and root then
 				if (root.Position - center).Magnitude <= cfg.BlastRadius then
-					ItemEffectService.dealDamage(
+					DamageService.dealDamage(
 						mine.owner,
 						humanoid,
 						cfg.Damage,

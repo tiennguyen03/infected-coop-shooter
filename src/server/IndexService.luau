@@ -6,7 +6,7 @@
 -- but never steers it (Behaviour.Attack "boss"); this service does.
 --
 -- Armour: six plates welded to the limbs, each a part with a PlateHealth attribute. A rifle
--- round into a plate is taken by the plate (ItemEffectService.dealDamage routes it; the
+-- round into a plate is taken by the plate (DamageService.dealDamage routes it; the
 -- armoured rate comes from ProjectileServer.hitMultiplier), a limb whose plate is gone is
 -- Exposed (x1.5) and the helmet coming off opens the head (EnemyDefinitions.Warden
 -- HeadshotMultiplier). A plate at half health is cracked (boss bar pip), at zero it is

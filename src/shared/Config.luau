@@ -563,6 +563,14 @@ local Config = {
 	-- Spawn director phases (Sprint 9): type weights per run-time window,
 	-- plus fairness caps. Enemy stats live in shared/EnemyDefinitions.luau.
 	Spawning = {
+		SpawnInterval = 2, -- base seconds between spawns (decays per minute)
+		InitialCount = 5, -- Walkers spawned right at run start
+		MinSpawnDistance = 35, -- studs from the player
+		MaxSpawnDistance = 50,
+		-- A spawn point must be open ground: not on dressing, a perch, a roof or inside a
+		-- building footprint (+ margin). Tries this many candidates, then takes the last.
+		SpawnAttempts = 6,
+		SpawnBuildingMargin = 2,
 		Phases = {
 			{ Until = 75, Weights = { Walker = 100 } },
 			{ Until = 180, Weights = { Walker = 75, Runner = 25 } },
@@ -580,7 +588,6 @@ local Config = {
 		CapLate = { Brute = 3, Hocker = 3 },
 	},
 
-	-- The Infected. Base values at difficulty step 0; see Difficulty above.
 	-- Sound (sound day 2026-11-07). Clips are packed per speaker in SoundBanks; a group is a
 	-- clip name without its variant number. Volumes are per group (0-1, DefaultVolume when
 	-- unlisted); 3D sounds roll off between the two distances (studs).
@@ -690,6 +697,10 @@ local Config = {
 	-- doors, ramps) recomputed no more than every PathfindInterval; at most PathfindingMax
 	-- bodies path at once, the rest (and any failed path) chase straight as before.
 	Enemies = {
+		CorpseLifetime = 1.5, -- seconds before a dead Infected is removed
+		BossCorpseLifetime = 8, -- an Index host's body stays long enough to read
+		MaxPuddles = 8, -- caustic puddles alive at once (perf); the oldest goes first
+		ThroatSacSwell = 1.8, -- Hocker sac size multiplier at the end of the windup
 		PathfindingMax = 10,
 		PathfindInterval = 0.5,
 		PathfindVerticalGap = 4,
@@ -842,20 +853,6 @@ local Config = {
 		},
 	},
 
-	Zombies = {
-		SpawnInterval = 2, -- base seconds between spawns (decays per minute)
-		InitialCount = 5, -- Walkers spawned right at run start
-		MinSpawnDistance = 35, -- studs from the player
-		MaxSpawnDistance = 50,
-		-- A spawn point must be open ground (2026-11-07): not on dressing, a perch, a roof or
-		-- inside a building footprint (+ margin). Tries this many candidates, then takes the last.
-		SpawnAttempts = 6,
-		SpawnBuildingMargin = 2,
-		CorpseLifetime = 1.5, -- seconds before a dead zombie is removed
-		BossCorpseLifetime = 8, -- an Index host's body stays long enough to read
-		MaxPuddles = 8, -- caustic puddles alive at once (perf); the oldest goes first
-		ThroatSacSwell = 1.8, -- Hocker sac size multiplier at the end of the windup
-	},
 }
 
 return Config

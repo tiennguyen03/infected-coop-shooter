@@ -30,7 +30,7 @@ local RunStates = require(ReplicatedStorage.Shared.RunStates)
 local ArenaService = require(script.Parent.ArenaService)
 local DifficultyService = require(script.Parent.DifficultyService)
 local EnemyProjectileService = require(script.Parent.EnemyProjectileService)
-local ItemEffectService = require(script.Parent.ItemEffectService)
+local DamageService = require(script.Parent.DamageService)
 local PauseService = require(script.Parent.PauseService)
 local WorldSounds = require(script.Parent.WorldSounds)
 local Squad = require(script.Parent.Squad)
@@ -226,11 +226,11 @@ local function onZombieDied(zombie: Zombie)
 	for _, listener in killListeners do
 		listener(zombie.supplyValue, zombie.root.Position)
 	end
-	ItemEffectService.onEnemyKilled(zombie.humanoid)
+	DamageService.onEnemyKilled(zombie.humanoid)
 	local definition = EnemyDefinitions[zombie.typeName]
 	local lifetime = if definition and definition.Boss
-		then Config.Zombies.BossCorpseLifetime
-		else Config.Zombies.CorpseLifetime
+		then Config.Enemies.BossCorpseLifetime
+		else Config.Enemies.CorpseLifetime
 	task.delay(lifetime, function()
 		zombie.model:Destroy()
 	end)
@@ -558,7 +558,7 @@ local function stepProjectileZombie(zombie: Zombie, now: number)
 		local progress = if windup > 0
 			then math.clamp(1 - (windupUntil - now) / windup, 0, 1)
 			else 1
-		setSacScale(zombie, 1 + (Config.Zombies.ThroatSacSwell - 1) * progress)
+		setSacScale(zombie, 1 + (Config.Enemies.ThroatSacSwell - 1) * progress)
 		if now >= windupUntil then
 			zombie.windupUntil = nil
 			zombie.lastAttackTime = now
@@ -668,7 +668,7 @@ local function followPath(zombie: Zombie, here: Vector3): boolean
 	return true
 end
 
-local function stepZombies()
+local function stepInfected()
 	-- Soft pause: stop everything in place and skip AI/attacks.
 	local paused = PauseService.isPaused()
 	if paused ~= wasPaused then
@@ -801,7 +801,7 @@ local function isOpenGround(hit: RaycastResult?): boolean
 	return true
 end
 
--- A ring around `center`; retries (Config.Zombies.SpawnAttempts) until the candidate is open
+-- A ring around `center`; retries (Config.Spawning.SpawnAttempts) until the candidate is open
 -- ground outside every building footprint, then settles for the last one.
 local function groundPositionNear(
 	center: Vector3,
@@ -824,7 +824,7 @@ local function groundPositionNear(
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Exclude
 	params.FilterDescendantsInstances = exclude
-	for _ = 1, Config.Zombies.SpawnAttempts do
+	for _ = 1, Config.Spawning.SpawnAttempts do
 		local angle = math.random() * math.pi * 2
 		local distance = math.random(minDistance, maxDistance)
 		local x = center.X + math.cos(angle) * distance
@@ -835,7 +835,7 @@ local function groundPositionNear(
 		candidate = Vector3.new(x, groundY, z)
 		if
 			isOpenGround(result)
-			and not ArenaService.insideBuilding(candidate, Config.Zombies.SpawnBuildingMargin)
+			and not ArenaService.insideBuilding(candidate, Config.Spawning.SpawnBuildingMargin)
 		then
 			return candidate
 		end
@@ -855,8 +855,8 @@ local function randomSpawnPosition(): Vector3?
 	end
 	return groundPositionNear(
 		root.Position,
-		Config.Zombies.MinSpawnDistance,
-		Config.Zombies.MaxSpawnDistance
+		Config.Spawning.MinSpawnDistance,
+		Config.Spawning.MaxSpawnDistance
 	)
 end
 
@@ -1060,7 +1060,7 @@ function EnemyService.startSortie()
 	local generation = sortieGeneration
 	task.delay(1.5, function()
 		if generation == sortieGeneration and RunStates.isLive() then
-			EnemyService.spawnWave("Walker", Config.Zombies.InitialCount)
+			EnemyService.spawnWave("Walker", Config.Spawning.InitialCount)
 		end
 	end)
 end
@@ -1126,7 +1126,7 @@ function EnemyService.init()
 			end
 		end)
 	end
-	RunService.Heartbeat:Connect(stepZombies)
+	RunService.Heartbeat:Connect(stepInfected)
 	task.spawn(spawnLoop)
 end
 

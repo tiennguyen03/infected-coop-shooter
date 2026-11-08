@@ -1,7 +1,7 @@
 --!strict
 -- Anvil (Fire Mission call-in, CallInService): the thrown marker lands; after
 -- Config.CallIns.Anvil.WarningDelay the battery drops Shells on it, ShellInterval apart,
--- each a BlastRadius area hit (ItemEffectService.dealDamage, the Infected only). Walk It In
+-- each a BlastRadius area hit (DamageService.dealDamage, the Infected only). Walk It In
 -- (walking_barrage upgrade): more shells, stepping Step studs along the throw direction.
 
 local CollectionService = game:GetService("CollectionService")
@@ -10,7 +10,7 @@ local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local GroundUtil = require(ReplicatedStorage.Shared.GroundUtil)
-local ItemEffectService = require(script.Parent.ItemEffectService)
+local DamageService = require(script.Parent.DamageService)
 local PauseService = require(script.Parent.PauseService)
 
 local ENEMY_TAG = "Enemy"
@@ -74,7 +74,7 @@ local function detonate(player: Player, center: Vector3)
 		local model = root.Parent :: Model
 		local humanoid = model:FindFirstChildOfClass("Humanoid")
 		if humanoid and humanoid.Health > 0 then
-			ItemEffectService.dealDamage(player, humanoid, cfg.BlastDamage, root.Position, "hit")
+			DamageService.dealDamage(player, humanoid, cfg.BlastDamage, root.Position, "hit")
 		end
 	end
 end

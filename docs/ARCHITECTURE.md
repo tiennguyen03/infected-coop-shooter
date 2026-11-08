@@ -31,7 +31,8 @@ it done here and add the HISTORY row; do not delete it.
    stages are planned, and objective pools need per-stage site and landmark data.
 4. **Boot is all-or-nothing and order-dependent.** `Main.server.luau` starts 29 services in
    a hand-ordered list; one `init()` error silently stops every service after it.
-5. **Naming drift after the loadout rework.** `ItemEffectService` is the damage entry point
+5. **Naming drift after the loadout rework** (renames and the icon scripts fixed 2026-11-08;
+   the dated comments remain). `ItemEffectService` was the damage entry point
    though items are gone; `Config.Zombies` holds spawn tuning beside `Config.Spawning` and
    `Config.Enemies`; `assets/icons/build/wire.js` still writes into the deleted
    `ItemDefinitions`; 76 dated comments in `src/` narrate history that belongs in git and the
@@ -52,7 +53,7 @@ it done here and add the HISTORY row; do not delete it.
 
 | # | Item | Done when |
 |---|---|---|
-| F1 | **Renames and comment cleanup** (concern 5). `ItemEffectService` → `DamageService`; fold `Config.Zombies` into `Config.Spawning` / `Config.Enemies`; ~~fix `wire.js`'s ItemDefinitions write~~ (done 2026-11-08, with `icons.js`); cut dated history from comments, keep the "why". Update every doc that names them. | static checks clean, solo playtest boots and a run completes |
+| F1 | **Renames and comment cleanup** (concern 5). ~~`ItemEffectService` → `DamageService`; fold `Config.Zombies` into `Config.Spawning` / `Config.Enemies`~~ (done 2026-11-08, CI green, **not yet playtested**); ~~fix `wire.js`'s ItemDefinitions write~~ (done 2026-11-08, with `icons.js`); cut dated history from comments, keep the "why". Update every doc that names them. | static checks clean, solo playtest boots and a run completes |
 | F2 | **Lifecycle hooks** (concerns 1, 4). Services register `onRunStart`, `onSortieStart`, `onOperationStart`, `onPlayerReset`, `onPlayerRemoving` with one registry; `RunManager` calls the registry, not services by name. `Main` starts services from a list and logs which `init()` failed and stops loudly. | no service is reset by name in `RunManager`; restart after a wipe and after an extraction both leave no state behind (2-client playtest) |
 | F3 | **Shared state contract** (concern 2). A shared module declares every attribute name and every remote message kind as typed constants, like `Remotes.REMOTE_NAMES`; all reads and writes use it. | `grep 'Attribute("'` in `src/` returns only that module |
 | F4 | **Open co-op debt**: [MULTIPLAYER_READINESS.md](MULTIPLAYER_READINESS.md) #3 (hold and extraction rule for N players, "waiting for squad"), #5 (difficulty clock ignores pause), #9 (hit events to the attacker only). Co-op Sprint B. | 2-client playtest of hold, extraction and hit markers |

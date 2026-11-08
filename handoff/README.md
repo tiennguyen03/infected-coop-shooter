@@ -149,8 +149,11 @@ Read in this order:
   and items F1-F11: renames, lifecycle hooks, shared attribute/message constants, the open
   co-op debt (#3/#5/#9), CI + unit tests, then stage data split before objective pools,
   weapon/upgrade hooks, class interface, save service, lobby place, and how private match
-  servers and the shared Containment Board scale. The owner decides where it slots against
-  the Warden redesign below; nothing in it is started.
+  servers and the shared Containment Board scale. The owner decides where the rest slots
+  against the Warden redesign below. **Done 2026-11-08 in a cloud session, CI green but not
+  playtested:** F5 (CI + tests), the F1 renames (`DamageService`, `Config.Zombies` folded),
+  the icon scripts, three type fixes. First thing on the PC: pull, sync, Play, run one full
+  run to extraction and check the output for errors.
 - **The Warden shipped 2026-11-07** (`docs/sprints/SPRINT_19_WARDEN.md` > Open work):
   handset hiss + squelch tell clip and his own vocals (audio pipeline), an upright
   walk / shield-square charge clip instead of the mutant set, Gate dressing (chain,

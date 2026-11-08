@@ -16,7 +16,7 @@ local EnemyDefinitions = require(ReplicatedStorage.Shared.EnemyDefinitions)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
 local EnemyService = require(script.Parent.EnemyService)
-local ItemEffectService = require(script.Parent.ItemEffectService)
+local DamageService = require(script.Parent.DamageService)
 local LoadoutService = require(script.Parent.LoadoutService)
 local PauseService = require(script.Parent.PauseService)
 local PlayerStatsService = require(script.Parent.PlayerStatsService)
@@ -141,7 +141,7 @@ local function stepProjectiles(deltaTime: number)
 		if result then
 			local humanoid = findEnemyHumanoid(result.Instance)
 			if humanoid and humanoid.Health > 0 then
-				ItemEffectService.dealDamage(
+				DamageService.dealDamage(
 					projectile.owner,
 					humanoid,
 					projectile.damage,
@@ -184,7 +184,7 @@ function ProjectileServer.hitMultiplier(
 	headshotMultiplier: number?
 ): (number, string)
 	-- The Index's armour (IndexService): a plated part takes the round at the armoured rate
-	-- (ItemEffectService routes it to the plate); a limb whose plate is gone is exposed.
+	-- (DamageService routes it to the plate); a limb whose plate is gone is exposed.
 	if typeof(part:GetAttribute("PlateHealth")) == "number" then
 		return Config.Index.Warden.ArmouredMultiplier, "plate"
 	end
@@ -249,7 +249,7 @@ local function fireHitscan(
 		end
 		local multiplier, kind =
 			ProjectileServer.hitMultiplier(result.Instance, humanoid, weapon.HeadshotMultiplier)
-		ItemEffectService.dealDamage(
+		DamageService.dealDamage(
 			player,
 			humanoid,
 			damage * multiplier,

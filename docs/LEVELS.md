@@ -282,7 +282,7 @@ no longer blocks it). Still owed: items 1-6 and 9 below.
    belfry over the Suburb; the gantry over the Apron.
 6. Hocker shadow raycasts under the canopy, inside the Parade and behind the buses.
 7. Spawn filter: no Infected appears on a roof, a container or inside a building
-   (`Config.Zombies.SpawnAttempts` retries).
+   (`Config.Spawning.SpawnAttempts` retries).
 8. MicroProfiler at 45 Infected in the Suburb and the Depot, before/after; reject > 1 ms.
 9. Streaming: join, run LZ -> Depot -> Suburb, check nothing pops in late within 128 studs
    and the skyline never disappears.
