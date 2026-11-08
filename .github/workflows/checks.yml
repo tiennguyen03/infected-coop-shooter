@@ -1,5 +1,5 @@
-# Static checks and tests on every push (docs/ARCHITECTURE.md F5). Same commands as the
-# CLAUDE.md static checks, plus the Lune tests. Tool versions come from rokit.toml.
+# Static checks and tests on every push (docs/ARCHITECTURE.md F5): the CLAUDE.md static
+# checks, the Lune tests and the luau-lsp type check. Tool versions come from rokit.toml.
 name: Checks
 
 on:
@@ -10,7 +10,7 @@ jobs:
   checks:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install tools (versions from rokit.toml)
         run: |
@@ -29,9 +29,7 @@ jobs:
       - name: Tests (Lune)
         run: lune run tests/run
 
-      # Report only until the pre-existing type warnings are cleared (handoff/README.md).
-      - name: Type check (luau-lsp, report only)
-        continue-on-error: true
+      - name: Type check (luau-lsp)
         run: |
           v=$(sed -n 's/^luau-lsp = "[^@]*@\(.*\)"$/\1/p' rokit.toml)
           base=https://raw.githubusercontent.com/JohnnyMorganz/luau-lsp/$v/scripts
