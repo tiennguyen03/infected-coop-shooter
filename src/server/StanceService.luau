@@ -95,6 +95,14 @@ function StanceService.init()
 			return
 		end
 		if stance == "prone" then
+			-- Downed bodies crawl on hands and knees (DownedController) at the standing hip
+			-- height: the crawl clip is authored for a standing root, so dropping the hip
+			-- leaves the torso and head (solid) holding the root up off its floor ray, the
+			-- Humanoid falls into Freefall (no friction) and contact jitter throws the body
+			-- across the map (owner bug report, 2026-11-07).
+			if character:GetAttribute("SquadState") == "Downed" then
+				return
+			end
 			setProne(character, humanoid, true)
 			return
 		end
@@ -110,6 +118,23 @@ function StanceService.init()
 	Players.PlayerAdded:Connect(function(player)
 		player.CharacterAdded:Connect(function(character)
 			character:SetAttribute(ROOT_DROP_ATTRIBUTE, 0)
+			-- Going down while already prone: stand the hip back up for the crawl (above),
+			-- unless a ceiling is in the way (the Scrapes), where the prone hip stays.
+			character:GetAttributeChangedSignal("SquadState"):Connect(function()
+				if character:GetAttribute("SquadState") ~= "Downed" then
+					return
+				end
+				local humanoid = character:FindFirstChildOfClass("Humanoid")
+				local root = character:FindFirstChild("HumanoidRootPart")
+				if
+					humanoid
+					and root
+					and root:IsA("BasePart")
+					and StanceService.headroomClear(character, root)
+				then
+					setProne(character, humanoid, false)
+				end
+			end)
 		end)
 	end)
 end

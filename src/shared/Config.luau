@@ -123,7 +123,7 @@ local Config = {
 		StuckDistance = 1,
 		-- Loadout rework 2026-11-07: a bot fires the service rifle (same Damage, magazine and
 		-- reload as the player: WeaponDefinitions) slower than the player, so three bots on
-		-- sustained fire (3 x ~57 DPS) roughly equal one player (133); its reserve is infinite.
+		-- sustained fire (3 x ~67 DPS burst) roughly equal one player; its reserve is infinite.
 		-- M16 pass 2026-11-07: 0.45 -> 0.30 with the player's 750 rpm (fallback 0.35).
 		Range = 90, -- studs; the Infected beyond this are ignored
 		FireCooldown = 0.30, -- seconds between shots (the player: 0.08)
@@ -198,8 +198,10 @@ local Config = {
 		-- empty, R reloads (cancelled by a roll, a slide or going down). Pallets re-arm.
 		MagazineSize = 30,
 		ReloadTime = 2.2, -- seconds
-		ReserveStart = 180, -- rounds in reserve at insert (+ the 30 loaded: 7 mags, a basic load)
-		ReserveMax = 180,
+		-- Balance pass 2026-11-07 (owner: "not enough ammo"): 180 -> 240, so 30 + 240 = 9 mags
+		-- (a combat load); with cheaper pallets the Warden fight no longer runs dry.
+		ReserveStart = 240, -- rounds in reserve at insert (+ the 30 loaded: 9 mags)
+		ReserveMax = 240,
 		-- Bloom (M16 pass): each round widens the cone by BloomPerShot degrees up to BloomMax
 		-- on top of the hip / ADS spread; it recovers at BloomRecovery degrees per second
 		-- once BloomRecoveryDelay has passed without a shot. ADS: 3 rounds stay on a head at
@@ -449,10 +451,12 @@ local Config = {
 	-- DropDelay seconds later. The pallet is the ammo box: anyone who walks up to it is re-armed
 	-- once (full magazine + reserve), and its three cards are the supply cards in Crates.
 	Requisition = {
-		BaseCost = 500,
-		CostGrowth = 1.35, -- per drop, run-wide
-		CostCap = 3000,
-		CostPerExtraPlayer = 0.8, -- 4 players: cost x3.4
+		-- Balance pass 2026-11-07: 500 / 1.35 / 3000 / 0.8 starved the M16 (empty ~85 s in the
+		-- Warden fight); a first pallet ~1:15, pallets keep coming through the boss.
+		BaseCost = 300,
+		CostGrowth = 1.15, -- per drop, run-wide
+		CostCap = 1000, -- late run: a pallet about every 2 min
+		CostPerExtraPlayer = 0.4, -- 4 players: cost x2.2 (matches their ~x2 kill income)
 		FlareCooldown = 20, -- seconds after a pallet lands before the next flare
 		FlareThrowDistance = 35, -- studs, same arc as the breach charge
 		DropDelay = 20, -- seconds from flare to pallet (the lure window)
@@ -592,8 +596,10 @@ local Config = {
 		HealthCap = 1,
 		DamagePerMinute = 0,
 		DamageCap = 1,
-		SpawnIntervalDecayPerMinute = 0.93, -- spawn interval multiplier per minute
-		MinSpawnInterval = 1.0, -- seconds
+		-- Balance pass 2026-11-07 (owner: "spawn rate too high"): 0.93 / 1.0 -> 0.95 / 1.5,
+		-- a third fewer bodies a minute late in the run.
+		SpawnIntervalDecayPerMinute = 0.95, -- spawn interval multiplier per minute
+		MinSpawnInterval = 1.5, -- seconds
 		-- Population cap ramps with run time: { upToSeconds, maxAlive }.
 		MaxAliveSchedule = { { 75, 10 }, { 180, 14 }, { 300, 20 }, { 480, 26 } },
 		MaxAliveLate = 30, -- after the schedule (lower this first if perf drops)
@@ -969,7 +975,7 @@ local Config = {
 	},
 
 	Zombies = {
-		SpawnInterval = 2, -- base seconds between spawns (decays per minute)
+		SpawnInterval = 3, -- base seconds between spawns (decays per minute); 2 before the 2026-11-07 balance pass
 		InitialCount = 5, -- Walkers spawned right at run start
 		MinSpawnDistance = 35, -- studs from the player
 		MaxSpawnDistance = 50,

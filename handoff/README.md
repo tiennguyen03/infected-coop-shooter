@@ -81,6 +81,9 @@ Read in this order:
   action change, bash timed to the windup, run while charging, roar on Riot Call, death
   clip). Verified in a playtest with the published ids: all 21 parts dressed, each clip
   seen, 60 fps.
+- 2026-11-07: **Balance pass + downed slide fix** (Sprint 18 doc > *Balance pass*): a
+  third fewer spawns, 9 magazines, cheaper and steadier pallets; a downed body no longer
+  slides (it kept the prone hip under a standing-root crawl clip and sat in Freefall).
 - 2026-11-07: **M16 pass shipped** (Sprint 18 doc > *M16 pass*): the service rifle is
   full auto at 750 rpm with a bloom on a held trigger, same damage, 7 magazines; bots
   0.30 s. TTK roughly halved. Watch the Brute (260 -> 360 if it melts). Backlog:

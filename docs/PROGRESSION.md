@@ -49,7 +49,7 @@ gone (`docs/sprints/SPRINT_18_LOADOUT.md`). Lore names on the HUD ([LORE.md](LOR
 - **Loadout.** A Chosen is a weapon, Q dash, E breach, the Momentum passive and two
   **call-in** slots on keys 1 and 2, chosen before the drop (the dev panel today, the Armory
   later). The rifle (`WeaponDefinitions.service_rifle`, from `Config.Weapon`) has a
-  30-round magazine and a 120-round reserve: R reloads (2.2 s; a roll, a slide or going
+  30-round magazine and a 240-round reserve (9 magazines): R reloads (2.2 s; a roll, a slide or going
   down cancels it), an empty magazine refuses the shot and asks for a reload. The server
   owns the magazine (`LoadoutService`).
 - **Call-ins** (`CallInDefinitions`, numbers in `Config.CallIns`; no friendly fire). Each
@@ -65,7 +65,7 @@ gone (`docs/sprints/SPRINT_18_LOADOUT.md`). Lore names on the HUD ([LORE.md](LOR
 - **Pallets are tactical.** The Resupply pool (one meter on every HUD) is fed by every
   kill's `SupplyValue` at any distance (Walker 10, Runner 12, Hocker 18, Brute 35) and by the
   Primary (`Objective.SupplyReward 500`); the meter pulses on a kill. When it covers the cost
-  (`Requisition.BaseCost 500`, x1.35 per drop, cap 3000, +80% per extra player) any living
+  (`Requisition.BaseCost 300`, x1.15 per drop, cap 1000, +40% per extra player) any living
   player throws the red flare (key 3, 35 studs); for 20 s the Infected inside 120 studs walk
   to the flare, then the pallet lands loud (`Lure.Wave 10` +3 per extra player, spawn
   interval x0.7 for 30 s). **The pallet is the ammo box**: every living player who walks
@@ -95,7 +95,7 @@ gone (`docs/sprints/SPRINT_18_LOADOUT.md`). Lore names on the HUD ([LORE.md](LOR
   | Pen Coil | Ground Strap | the pulse stands up every downed squadmate in reach |
 
 - **Flat threat curve.** `Config.Difficulty` health and damage at 1x; pressure is the spawn
-  interval decay (0.93/min to 1.0 s), the max-alive schedule (10 / 14 / 20 / 26, late 30),
+  interval decay (3 s, x0.95/min to 1.5 s; balance pass 2026-11-07), the max-alive schedule (10 / 14 / 20 / 26, late 30),
   the phase mix (Walker-only to W38 R30 B16 H16) and the player count
   (`Config.PlayerCountScaling`: spawn interval x0.8, +3 alive and +1 heavy per extra
   living player, hard cap 44). `Config.Overrun` is reserved for the Burn.

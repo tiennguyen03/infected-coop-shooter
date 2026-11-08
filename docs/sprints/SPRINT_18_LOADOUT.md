@@ -155,3 +155,30 @@ Verified (solo playtest): held trigger, rounds every 0.083 s (~720 rpm at the fr
 cadence), bloom 0.3 per round, magazine dry then reload to 30. Watch in play: if the Brute
 melts, raise its `MaxHealth` 260 -> 360 (18 body rounds); if holds feel easy, `Spawning.
 MaxAliveLate` 30 -> 34. Measure first.
+
+## Balance pass and the downed slide (owner, 2026-11-07)
+
+The owner played the M16 pass: "the rate of spawn of zombies might be too high, and there's
+not enough ammo." The systems designer's arithmetic (60% hits with the bloom, the spawn mix,
+bots taking ~45% of kills in solo): the hold asked 178 rounds a minute and the Warden fight
+~215 against a 210-round load with the third pallet at 911 supply, so ~85 s empty in the boss.
+Fire rate, damage and rounds-to-kill unchanged; data only:
+
+| Key | Old | New |
+|---|---|---|
+| `Zombies.SpawnInterval` | 2 | 3 (20 a minute at insert) |
+| `Difficulty.SpawnIntervalDecayPerMinute` / `MinSpawnInterval` | 0.93 / 1.0 | 0.95 / 1.5 |
+| `Weapon.ReserveStart` / `ReserveMax` | 180 | 240 (9 mags) |
+| `Requisition.BaseCost` / `CostGrowth` / `CostCap` / `CostPerExtraPlayer` | 500 / 1.35 / 3000 / 0.8 | 300 / 1.15 / 1000 / 0.4 |
+
+Expected (solo + 3 bots): first pallet ~1:15, never below ~100 rounds in the Warden fight, the
+hold the one spike. Next if it still runs dry: `Index.Warden.Pressure.SpawnFactor` 1.5 -> 2.0
+before his health. Verified: insert with 30 + 240, spawns every ~3 s.
+
+**Downed slide (bug).** Going down set the prone stance, which drops the Humanoid's
+HipHeight to 0.3 for crawl spaces; the downed crawl clip is authored for a standing root, so
+the solid torso and head held the root ~2.3 studs above its floor ray, the Humanoid sat in
+Freefall (no ground friction) and contact jitter threw the body at up to 140 studs/s. Fix in
+`StanceService`: a Downed body keeps the standing hip (prone requests are ignored while
+Downed, and a body that goes down while prone is stood back up unless a ceiling is above).
+Verified: 0 of 24 samples in Freefall, drift under 1 stud/s with no input (was 140).
