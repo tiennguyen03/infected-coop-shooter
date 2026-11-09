@@ -39,6 +39,7 @@ export type WeaponDefinition = {
 	Pierce: number?, -- Infected a round passes through after the first; nil = 0
 	Kick: WeaponKick, -- per-shot camera kick (CameraController)
 	Heavy: boolean, -- staggers a Brute (Config.Enemies.Flinch)
+	ReloadClip: string?, -- its own reload clip; nil = Config.Animations.Assault.reload
 }
 
 export type GrenadeDefinition = {
@@ -69,6 +70,7 @@ type Tuning = {
 	Pierce: number?,
 	Kick: WeaponKick,
 	Heavy: boolean?,
+	ReloadClip: string?,
 }
 
 local function row(
@@ -104,6 +106,7 @@ local function row(
 		Pierce = tuning.Pierce,
 		Kick = tuning.Kick,
 		Heavy = tuning.Heavy == true,
+		ReloadClip = tuning.ReloadClip,
 	}
 end
 

@@ -27,3 +27,4 @@ __pycache__/
 .superpowers/
 .claude/worktrees/
 assets/animations/build/out/
+.playwright-mcp/

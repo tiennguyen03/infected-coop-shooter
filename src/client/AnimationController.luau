@@ -17,6 +17,9 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Animations = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Animations"))
+local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attributes"))
+local WeaponDefinitions =
+	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("WeaponDefinitions"))
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 
 local FADE = 0.2
@@ -58,6 +61,11 @@ type Tracks = {
 }
 
 local tracks: Tracks = {}
+-- Reload clips by name (a gun may name its own, WeaponDefinitions.ReloadClip); loaded once per
+-- character, the one playing now.
+local reloadTracks: { [string]: AnimationTrack } = {}
+local reloadPlaying: AnimationTrack? = nil
+local currentAnimator: Animator? = nil
 local stances: { [string]: StanceSet } = {}
 local stance: Stance = "stand"
 local currentSet: MoveSet? = nil
@@ -291,6 +299,9 @@ local function setup(character: Model)
 	end
 
 	local clips = Config.Animations.Assault
+	currentAnimator = animator
+	reloadTracks = {}
+	reloadPlaying = nil
 	tracks = {
 		fire = Animations.load(animator, clips.fire, Enum.AnimationPriority.Action2),
 		hit = Animations.load(animator, clips.hit, Enum.AnimationPriority.Action3),
@@ -480,12 +491,47 @@ function AnimationController.playKnockdown(seconds: number)
 	end)
 end
 
+local function stopReload()
+	if reloadPlaying then
+		reloadPlaying:Stop(0.15)
+		reloadPlaying = nil
+	end
+end
+
+-- ReloadUntil (server time) rose: play the gun's reload clip so it ends with the reload;
+-- cleared or moved back (a swap, a death): stop it.
+local function onReloadChanged()
+	local player = Players.LocalPlayer
+	local untilAt = (player:GetAttribute(Attributes.ReloadUntil) :: number?) or 0
+	local remaining = untilAt - workspace:GetServerTimeNow()
+	stopReload()
+	local animator = currentAnimator
+	if dead or remaining <= 0.05 or not animator then
+		return
+	end
+	local weapon = WeaponDefinitions.get(player:GetAttribute(Attributes.Weapon) :: string?)
+	local clip = weapon.ReloadClip or Config.Animations.Assault.reload
+	local track = reloadTracks[clip]
+		or Animations.load(animator, clip, Enum.AnimationPriority.Action2)
+	if not track then
+		return
+	end
+	reloadTracks[clip] = track
+	track:Play(0.1)
+	if track.Length > 0 then
+		track:AdjustSpeed(track.Length / remaining)
+	end
+	reloadPlaying = track
+end
+
 function AnimationController.init()
 	local player = Players.LocalPlayer
 	player.CharacterAdded:Connect(setup)
 	if player.Character then
 		task.spawn(setup, player.Character)
 	end
+	player:GetAttributeChangedSignal(Attributes.ReloadUntil):Connect(onReloadChanged)
+	player:GetAttributeChangedSignal(Attributes.Weapon):Connect(stopReload)
 end
 
 return AnimationController

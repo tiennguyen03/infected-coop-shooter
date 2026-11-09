@@ -231,11 +231,14 @@ Read in this order:
   `LoadoutUI`, `ArmsRoom`, `Rules/Loadout`, `LoadoutService.apply`, a lobby place and its
   project file; `docs/MULTIPLAYER_READINESS.md` decision 7, `docs/ARCHITECTURE.md` lobby).
   Owner + Claude: everything else below. Bugs found in Nova's files go to Nova, not fixed here.
-- **Satisfying pass in progress (2026-11-09, `docs/superpowers/plans/2026-11-09-satisfying-pass.md`).**
-  Camera kick + blast shake, limp bodies (4 s, max 8, thrown by the killing hit), hit flinch
-  (Mixamo Zombie Reaction Hit), low-health grey/heartbeat/muffle, reload clip (Mixamo
-  Reloading), legless crawl (`zombie_crawl`). Done: `Rules/Feel` + spec; limp bodies (playtested),
-  crawl and flinch wiring (flinch waits on the Mixamo clip; owner must log in to Mixamo).
+- **Satisfying pass built 2026-11-09 (`docs/superpowers/plans/2026-11-09-satisfying-pass.md`).**
+  Camera kick per gun, blast shake per grenade/call-in (`ShakePower`), limp bodies thrown by
+  the killing hit (max 8, 4 s), hit flinch (Brute only from `Heavy` guns), legless crawl,
+  low-health grey/vignette/heartbeat/muffle (`LowHealthFX`, World SoundGroup), reload clip.
+  Every feel value lives on the gun or call-in row, so Nova's loadouts need no feel edits.
+  Verified in a playtest: limp bodies, flinch, reload. Owner to judge by feel: kick and shake
+  strength, the low-health look (overlaps HealthBarUI's red pulse), the crawl. The heartbeat
+  asset was still in moderation at upload.
 - **Group migration done 2026-11-09.** The Roblox group Boomin Dev Studios (id 270506601) owns
   CZS (place id now 89609223317309) and every sound (12 uploads) and animation (62 clips;
   `ladder_climb` is Roblox's stock one). New uploads pass `groupId` 270506601; the group Open

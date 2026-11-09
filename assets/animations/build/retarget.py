@@ -74,6 +74,8 @@ CLIPS = {
     "rifle_aiming_idle": {"loop": True, "step": 2, "upper": True},
     "firing_rifle": {"loop": False, "step": 1, "upper": True},
     "hit_reaction": {"loop": False, "step": 1, "upper": True},
+    "zombie_hit": {"loop": False, "step": 1, "upper": True},  # Zombie Reaction Hit: the Infected flinch (satisfying pass)
+    "rifle_reload": {"loop": False, "step": 1, "upper": True},  # Reloading (rifle, standing): R, rate fitted to the gun's ReloadTime
     "death_from_the_front": {"loop": False, "step": 2},
     "grenade_throw": {"loop": False, "step": 1, "upper": True},
     "zombie_idle": {"loop": True, "step": 2},

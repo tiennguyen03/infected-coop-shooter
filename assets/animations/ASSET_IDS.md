@@ -70,3 +70,5 @@ Mirror every id into `Config.Animations.Ids`. Every id is owned by the Roblox gr
 | warden_hit (Mixamo Sword And Shield Impact, Warden plate break) | 92513440124088 | 2026-11-07 |
 | knockdown_back (Mixamo Knocked Out, trimmed to the fall; Assault + bots) | 98193119951691 | 2026-11-07 |
 | getup_back (Mixamo Getting Up from back, trimmed to the rise; Assault + bots) | 136455455125454 | 2026-11-07 |
+| zombie_hit (Mixamo Zombie Reaction Hit) | 73020069431259 | 2026-11-09 |
+| rifle_reload (Mixamo Reloading, rifle standing) | 74976087886072 | 2026-11-09 |

@@ -454,6 +454,9 @@ local Config = {
 			prone_walk_f = "rbxassetid://125434385709902",
 			prone_walk_b = "rbxassetid://87672925084525",
 			zombie_crawl = "rbxassetid://122812221621763",
+			-- Satisfying pass (2026-11-09, Mixamo, uploaded under the group)
+			zombie_hit = "rbxassetid://73020069431259",
+			rifle_reload = "rbxassetid://74976087886072",
 			zombie_stumble = "rbxassetid://127020146924186",
 			zombie_scream = "rbxassetid://102836607626705",
 			-- The Warden: Mixamo Sword And Shield pack (shield on the left arm).
@@ -496,6 +499,9 @@ local Config = {
 			aim = "rifle_aiming_idle", -- held while the trigger is down (upper body)
 			fire = "firing_rifle", -- recoil per shot (upper body)
 			hit = "hit_reaction", -- flinch on damage (upper body)
+			-- R (upper body), played at the rate that fits the gun's ReloadTime. A gun can name
+			-- its own clip with ReloadClip in its Config.Weapons row; this is the default.
+			reload = "rifle_reload",
 			death = "death_from_the_front",
 			throw = "grenade_throw", -- G (frag) and the throw call-ins: the throw (upper body)
 			knockdown = "knockdown_back", -- the Warden's Pound / Stomp: the fall (Config.Knockdown)
