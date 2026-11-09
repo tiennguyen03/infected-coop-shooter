@@ -227,6 +227,12 @@ Read in this order:
 
 ## Open work, in priority order
 
+- **Group migration (owner, 2026-11-08).** The owner is creating a Roblox group (Community) so
+  co-developers (intern Nova) can use the audio and animations, which are owned by the owner's
+  account and blocked in other people's places. When it exists: publish CZS under the group
+  (new place id), make a group Open Cloud key, re-upload every sound bank and animation
+  under the group, swap the ids (`src/` and `assets/*/ASSET_IDS.md`), playtest. Meshes stay.
+  Until then Nova tests inside CZS as a collaborator (`onboarding/README.md`).
 - **Pike rework in progress (2026-11-08, `docs/superpowers/plans/2026-11-08-pike-loadout.md`).**
   Owner approved: Pike soldiers instead of the Chosen, the Arms Room loadout menu, five
   primaries + pistol, Q swap / G grenade / V shove / E stim / 1-4 call-ins / 5 flare, twelve
