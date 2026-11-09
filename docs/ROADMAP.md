@@ -26,9 +26,9 @@ names; modular per-item rows).
 ## The shape we're building toward
 
 ```
- LOBBY (the Fallow)           MATCH (one server, one operation, ~40 min)          LOBBY
+ LOBBY (the Carrier)           MATCH (one server, one operation, ~40 min)          LOBBY
  kit sheet (B / any desk) ─►  Delta ─ ride ─► Mile 14 ─ ride ─► Kestrel ─► STAND DOWN ─► debrief
- board a Lantern, READY       each ride: tally + CONTINUE / STAND DOWN vote,        Chits paid,
+ board a Lantern, READY       each ride: tally + CONTINUE / STAND DOWN vote,        Credits paid,
  fade to black + rotor        change loadout, the dead come back                    Service Record,
                               Stand Down after any mission = the 20-30 min session  the board moves
 ```
@@ -36,7 +36,7 @@ names; modular per-item rows).
 - **An operation** is three missions on one match server; players teleport only lobby -> match
   and back ([LOBBY_MATCH_HANDOFF.md](LOBBY_MATCH_HANDOFF.md)). A squad can **Stand Down after
   any mission** (the short session) and keeps what it banked.
-- **Between missions (the ride, 30-40 s):** a tally (outcome, secondaries, Chits earned,
+- **Between missions (the ride, 30-40 s):** a tally (outcome, secondaries, Credits earned,
   containment), then CONTINUE or STAND DOWN (majority; solo decides). Ammo, grenades, stims,
   call-ins refill; **field upgrades carry** (the reason to continue); the Resupply pool carries
   up to one pallet's cost; revives and the pallet price reset per mission; the clock starts at
@@ -51,11 +51,11 @@ names; modular per-item rows).
 
 ## Progression (systems designer + lore developer)
 
-- **Chits**, kept on your **Service Record**: earned **only by extracting**, never per kill.
+- **Credits**, kept on your **Service Record**: earned **only by extracting**, never per kill.
   Win 120, Partial 60, Loss 0, each Secondary +30, Stand Down +100 (x0.25 in a Secured
   district). Credited at each extraction to every squad member, dead or alive (bots earn
   nothing; solo pays the same). A perfect operation ~640, a typical first one ~250.
-- **What Chits buy:** guns, sidearms, grenades and call-ins, drawn at the lobby desks. Each
+- **What Credits buy:** guns, sidearms, grenades and call-ins, bought at the Carrier's desks. Each
   item's row carries `RecordCost` (default 0 = on issue): no list of names anywhere. **Field
   upgrades are never sold** (finds inside a run). Cosmetics later, never power.
 - **On issue from the start:** M16A4, Mossberg 590, M17, Frag; Hammer, Tripline, Doorman,
@@ -67,8 +67,10 @@ names; modular per-item rows).
 - **Grade:** real US Army enlisted grades (PV1 ... SGM) earned by windows brought home, shown on
   the name tape in the lobby and on the scoreboard only. **Cosmetic: it gates nothing and adds
   nothing.** On the radio you are still "Pike Three".
-- **Locked items read "NOT ON ISSUE"** plus what opens them ("Chits 120 / 300"), never
-  lock/unlock words.
+- **The Carrier's desks are shops** (owner and Nova, 2026-11-09: there is no ship to upgrade like
+  Helldivers, so the Carrier sells kit instead). A locked item shows its price ("300 CREDITS")
+  and a BUY button; bought once, it's yours for good. Only guns, grenades and call-ins are sold:
+  no cosmetics and no one-run consumables for now (owner, 2026-11-09).
 
 ## Reasons to come back (systems designer + lore developer)
 
@@ -76,7 +78,7 @@ names; modular per-item rows).
   Held / Contained, which changes the map you play. Needs `PointsPerPercent` tuned to the
   player count and a slow decay ("the Infected push back") so a big player base doesn't
   Secure Delta in an hour.
-- **FRAGO** (daily, per soldier, same for everyone that day, seeded by date; +100 Chits) and
+- **FRAGO** (daily, per soldier, same for everyone that day, seeded by date; +100 Credits) and
   **Corridor Order** (weekly, every team, tied to the board; +300). Examples: "Two Secondaries
   on Delta today"; "Mile 14 to Held by Sunday".
 - **Variety:** objective pools (designed in PROGRESSION), then grounded mission modifiers in
@@ -84,7 +86,7 @@ names; modular per-item rows).
 - **Never:** login streaks that punish a missed day, limited-time guns, paid power, loot
   boxes, per-kill grind, stat upgrades, a battle pass now, ship upgrades.
 - **Names (lore developer):** HRD on the ship = **Harlan Recovery Detachment** (already canon in
-  LORE "Pike"). Other window teams on the Fallow are polearms (Halberd, Glaive, Lance, Bill,
+  LORE "Pike"). Other window teams on the Carrier are polearms (Halberd, Glaive, Lance, Bill,
   Partisan, Spontoon, Voulge); on your own net your team is always Pike. Desks get their own
   clerk voice ("Signed for. One Goose. Bring the tube back.").
 
@@ -105,7 +107,7 @@ names; modular per-item rows).
   aim"), and Control's radio lines.
 - **Results that tell the run:** STAND DOWN / SQUAD WIPED, mission rows, a squad table (kills,
   revives given, times downed, call-ins, one award each: "Kept the squad up"), containment
-  25% -> 37%, Chits counting up to the next item. Lobby arrival card: what's newly on issue,
+  25% -> 37%, Credits counting up to the next item. Lobby arrival card: what's newly on issue,
   OPEN KIT / CARRY ON.
 - **In-match readability:** objective, LZ and pallet world markers; a squad roster with downed
   arrows; "HAMMER · inbound 4s" then "HAMMER · 7 down"; extraction "ON THE PAD 2/3".
@@ -140,7 +142,7 @@ feel it this week.**
 11. Publish both places, `Config.Places.Lobby`, the live round trip.
 
 **Phase 4: progression** (Tien + Claude save + match; Nova desks)
-12. Save service (ARCHITECTURE F9, versioned profile), Chits credited at extraction,
+12. Save service (ARCHITECTURE F9, versioned profile), Credits paid at extraction,
     `RecordCost` on item rows.
 13. Lobby: desks open items, NOT ON ISSUE rows, the saved loadout, grade on the name tape.
 
@@ -154,7 +156,7 @@ feel it this week.**
 1. **Stand Down after any mission** (the short session)? **Yes.**
 2. **The dead come back on the next pallet** (4 per mission)? **Yes.**
 3. **Field upgrades carry across the operation?** **Yes.**
-4. **Chits only from extracting, never per kill?** **Yes.**
+4. **Credits only from extracting, never per kill?** **Yes.** (Name **Credits** and what they buy: decided by the owner.)
 5. **Starting kit and prices** as above? **Yes, tune by playtest.**
 6. **Grades cosmetic only** (no levels that add anything)? **Yes.**
 7. **One kit sheet behind every desk and on B** (not four desk menus)? **Yes.**
@@ -163,7 +165,7 @@ feel it this week.**
 9. **No tutorial level, first-time hints instead?** **Yes.**
 10. **The Goose moves from the primary slot to a support call-in before pricing**? **Yes**
     (a rocket as a primary breaks "sidegrade").
-11. **Names:** Chits, Service Record, FRAGO, Corridor Order, polearm team callsigns, HRD =
+11. **Names:** the Carrier and Credits (decided by the owner); Service Record, FRAGO, Corridor Order, polearm team callsigns, HRD =
     Harlan Recovery Detachment. **Yes** (lore developer writes the canon once approved).
 
 ## Loose ends found while planning
