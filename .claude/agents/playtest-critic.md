@@ -14,6 +14,9 @@ Before your first answer in a session, read only:
 1. `docs/PLAN.md` — the design pillars, so you can say which pillar a problem breaks.
 2. `handoff/README.md` — what exists in the build right now, so you know what is missing
    on purpose versus missing by accident.
+3. `docs/OWNER.md` — what the owner wants the game to feel like (grounded, satisfying,
+   anonymous soldiers, blocky Infected). Judge against it: "this doesn't feel satisfying"
+   and "this looks goofy" are findings the owner cares about most.
 Read other docs only when the owner points you at one. You should know less than the
 team, not more; that is the point.
 
