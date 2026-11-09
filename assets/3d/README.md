@@ -48,6 +48,7 @@ and the lineups with only those assets; run a full build afterwards.
 | prop_ammo_crate | 108 | bottom center | resupply pallet / requisition crate |
 | prop_repulsor_mine | 168 | bottom center | MineService |
 | wpn_rifle | 188 | grip | PlayerSetup welds it to the hand; now only the fallback for a gun whose mesh is not uploaded |
+| veh_shrike_hull / veh_shrike_rotor | 920 / 124 | fuselage centre / hub | the Shrike gunship (`build/aircraft.py`, in-game size, nose toward -Z): AirStrikeService flies the hull along the gun run and spins the rotor at `Config.CallIns.Shrike.RotorHub` (`RotorSpin`), tracers from `GunMuzzle`; falls back to a plain hull Part while the meshes are missing |
 | wpn_m16 / wpn_mp5 / wpn_m249 / wpn_mossberg / wpn_m110 / wpn_m17 | 260 / 216 / 248 / 328 / 376 / 156 | grip | the six original guns (`build/guns.py`), same convention as the sample guns below |
 | wpn_revolver / wpn_sniper / wpn_goose | 248 / 540 / 396 | grip | the sample guns (`build/guns.py`, built at in-game size, not 0.65x); MeshAssets carries each `offset` (bounds centre from the grip) and `muzzle`; a gun row names its mesh in `Config.Weapons.<id>.Model` |
 | env_barrier_jersey | 72 | bottom | 6 x 2.75 x 2 concrete traffic barrier |

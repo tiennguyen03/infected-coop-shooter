@@ -29,6 +29,8 @@ them.
 | wpn_mossberg | 101866256014088 | 103329258934721 | 0.26 x 0.77 x 2.82 | Mossberg 590 (guns.py, in-game size) |
 | wpn_m110 | 124848490890431 | 88359560754649 | 0.23 x 1.03 x 3.25 | M110 SASS (guns.py, in-game size) |
 | wpn_m17 | 104797900074658 | 80875013937947 | 0.14 x 0.76 x 0.67 | M17 (guns.py, in-game size) |
+| veh_shrike_hull | 137109529997310 | 107275791771348 | 8.4 x 8.62 x 29.75 | the Shrike gunship (aircraft.py); offset from the fuselage centre in MeshAssets |
+| veh_shrike_rotor | 137738331555839 | 103052309432570 | 18.96 x 0.35 x 18.89 | its main rotor, origin at the hub; spun by AirStrikeService |
 | prop_plague_rat | 102065990394982 | 135041557109073 | 0.47 x 0.52 x 1.88 | unused in game (plague rat retired) |
 | prop_car_sedan | 133589928038621 | 139871373094934 | 14.88 x 4.57 x 6.61 | offset (0, 2.286, -0.098); `props.py` |
 | prop_car_hatch | 97663934153782 | 136632195416849 | 12.88 x 5.6 x 8.24 | offset (0, 2.8, -0.919) |

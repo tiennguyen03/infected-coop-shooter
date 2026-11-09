@@ -18,9 +18,10 @@ upgrades) → the Warden (boss) → extraction on Lantern → OPERATION COMPLETE
   revive (hold F).
 - **Kit:** six real guns (M16A4, MP5, M249, Mossberg 590, M110, M17) plus three samples in the
   dev panel (S&W 686 revolver, M2010 sniper, the Goose rocket), each with its own Blender model
-  and own shot and reload sounds; Q swap, G frag, V shove,
+  and own shot and reload sounds; Q swap, G frag (hold to aim, release to throw), V shove,
   E stim, four call-ins on 1-4 (Hammer, Anvil, Shrike, Doorman, Concertina, Speedball, Aid
-  Bag, Tripline), flare on 5, the Arms Room on B (stand-in until Nova's lobby screen).
+  Bag, Tripline; thrown ones are held to aim with an arc and a landing marker, the Shrike is a
+  modelled attack helicopter), flare on 5, the Arms Room on B (stand-in until Nova's lobby screen).
 - **Infected:** Walker, Runner, Brute, Hocker (blocky, lore poses), dismemberment, the
   Warden with plates.
 - **Feel:** camera kick, blast shake, limp bodies thrown by the killing hit, hit flinch,

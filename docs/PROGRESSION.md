@@ -59,6 +59,13 @@ gun row may name its held mesh (`Model`; every gun has one, `assets/3d/build/gun
 clips in the `guns` sound bank (`Sound`) and, for a launcher, `Explosive` +
 `ProjectileSpeed`. Bots carry the service rifle.
 
+**Aiming throws** (owner 2026-11-09: "hold and release ... so I actually know where it
+lands"): G and every thrown call-in (CallInDefinitions Kind "throw") are held to aim and
+thrown on release. A dotted arc from the hand and the item's own marker on the ground
+(`Config.CallIns.<Name>.Aim`: a ring of Radius, or a strip of Length x Width along the throw,
+`Across` for the wire) follow the crosshair. The flare (5) and the "self" call-ins still
+fire on the press. `AbilityController`.
+
 ### Guns
 
 Numbers in `Config.Weapons.<Gun>`, rows in `WeaponDefinitions`. Semi guns fire once per click.

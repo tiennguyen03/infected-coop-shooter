@@ -756,6 +756,11 @@ local Config = {
 	-- Call-ins (CallInDefinitions; Slots slots on keys 1-4). Charges refill one at a time every
 	-- Cooldown seconds; a Restock card fills them. No friendly fire: only the Infected are hurt.
 	CallIns = {
+		-- A thrown call-in (CallInDefinitions Kind "throw") is held to aim and thrown on release
+		-- (AbilityController): an arc from the hand and its row's `Aim` marker on the ground show
+		-- where it lands and what it covers. Aim.Shape "ring" (Radius) or "strip" (Length along
+		-- the throw, Width; Across = true lays it across). A row without Aim shows a small ring.
+		AimArc = { Beads = 18, Rise = 0.3, MinRise = 3 }, -- the arc: beads, apex height per stud of reach
 		Slots = 4, -- call-in slots per soldier (keys 1-4; the flare is key 5)
 		-- Hammer (81 mm mortar section, AirStrikeService): marks a point; the first shell lands
 		-- Delay seconds after the throw, then one every ShellInterval, each Scatter studs off
@@ -771,6 +776,7 @@ local Config = {
 			ShakePower = 3.5,
 			BlastDamage = 80,
 			Scatter = 4,
+			Aim = { Shape = "ring", Radius = 16 }, -- Scatter + BlastRadius: where shells can land
 		},
 		-- Anvil (105 mm battery, AirStrikeService): one heavy shell Delay seconds after the throw.
 		Anvil = {
@@ -785,6 +791,7 @@ local Config = {
 			ShakeGlobal = 1.0, -- felt anywhere on the map
 			BlastDamage = 500,
 			Scatter = 0,
+			Aim = { Shape = "ring", Radius = 20 }, -- the blast
 		},
 		-- Shrike (helicopter gun run, AirStrikeService): Delay seconds after the throw, Bursts
 		-- impacts centred on the mark, Step studs apart along the throw, BurstInterval apart.
@@ -800,6 +807,14 @@ local Config = {
 			ShakePower = 2,
 			BlastDamage = 120,
 			PassHeight = 45, -- the helicopter's flight height over the mark (look only)
+			-- The gunship (aircraft.py, MeshAssets veh_shrike_*): offsets from the hull's origin
+			-- (Roblox axes, nose toward -Z) to the rotor hub and the chin gun's muzzle; the rotor
+			-- turns RotorSpin degrees per second. The pass falls back to a plain hull Part
+			-- while the meshes are missing.
+			RotorHub = Vector3.new(0, 3.35, -1.5),
+			GunMuzzle = Vector3.new(0, -1.75, -11.4),
+			RotorSpin = 1440,
+			Aim = { Shape = "strip", Length = 46, Width = 10 }, -- the run: Step x (Bursts - 1) + 2 x BlastRadius
 		},
 		-- Doorman (tripod sentry MG, SentryService): stands where it lands for Duration; every
 		-- FireInterval it shoots the nearest Infected in Range it can see.
@@ -812,6 +827,7 @@ local Config = {
 			FireInterval = 0.15,
 			Range = 70,
 			MaxPerPlayer = 1, -- a second Doorman replaces the first
+			Aim = { Shape = "ring", Radius = 2 }, -- where the tripod stands
 		},
 		-- Tripline (Mines): thrown; Mines land on an arc bulging away from the thrower and blow
 		-- when an Infected steps within TriggerRadius.
@@ -828,6 +844,7 @@ local Config = {
 			Damage = 80,
 			Lifetime = 90,
 			MaxMines = 12, -- per player; the oldest goes first
+			Aim = { Shape = "ring", Radius = 8 }, -- ArcRadius: the mines' arc
 		},
 		-- Concertina (wire, ConcertinaService): a Length x Width strip laid across the throw,
 		-- centred where it lands, for Duration. Infected inside walk at SlowFactor and take
@@ -843,6 +860,7 @@ local Config = {
 			DamagePerSecond = 5,
 			TickInterval = 0.5,
 			MaxPerPlayer = 4, -- the oldest strip goes first
+			Aim = { Shape = "strip", Length = 16, Width = 3, Across = true }, -- the wire, laid across the throw
 		},
 		-- Speedball (ammo bundle, SupplyDropService): drops where it lands, no lure wave; each
 		-- living player walking within Radius is re-armed (full magazine and reserve), Visits
@@ -854,6 +872,7 @@ local Config = {
 			Visits = 4,
 			Radius = 6,
 			Lifetime = 90,
+			Aim = { Shape = "ring", Radius = 6 }, -- the re-arm radius
 		},
 		-- Aid Bag (medical drop, SupplyDropService): every soldier within Radius, once each:
 		-- full heal, stims refilled, +Plate shield (Config.Crates.ShieldCap still caps it).
@@ -864,6 +883,7 @@ local Config = {
 			Radius = 6,
 			Plate = 25,
 			Lifetime = 60,
+			Aim = { Shape = "ring", Radius = 6 }, -- the heal radius
 		},
 		-- Shared by the supply drops: the bundle falls this far, this fast.
 		Drop = { Height = 50, FallTime = 0.9 },

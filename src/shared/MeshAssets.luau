@@ -91,6 +91,18 @@ local MESHES: { [string]: MeshDef } = {
 		offset = Vector3.new(0, 0.185, -0.54),
 		muzzle = Vector3.new(0, 0.42, -1.95),
 	},
+	-- The Shrike gunship (assets/3d/build/aircraft.py, in-game size): the hull, origin at the
+	-- fuselage centre (`offset` = bounds centre from it), and the main rotor, origin at the hub.
+	veh_shrike_hull = {
+		meshId = "rbxassetid://137109529997310",
+		size = Vector3.new(8.4, 8.62, 29.75),
+		offset = Vector3.new(0, 0.712, 3.425),
+	},
+	veh_shrike_rotor = {
+		meshId = "rbxassetid://137738331555839",
+		size = Vector3.new(18.96, 0.35, 18.89),
+		offset = Vector3.new(0, 0, -0.035),
+	},
 	-- Sample guns (assets/3d/build/guns.py, built at in-game size, 2026-11-09).
 	wpn_revolver = {
 		meshId = "rbxassetid://133525801275343",
