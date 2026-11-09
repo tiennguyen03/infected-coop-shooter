@@ -47,6 +47,7 @@ Claim work in the table below before starting it; delete the row when it ships.
 | 1 | Lobby + loadout screen | Nova | `docs/MULTIPLAYER_READINESS.md` decision 7; items read their own definition rows |
 | 2 | Tune the feel by playing it | Tien | kick and shake strength, the low-health look (overlaps HealthBarUI's red pulse), the crawl; heartbeat asset was in moderation |
 | 3 | Checklist pass of every call-in and gun | Tien + Claude | dev `FireCallIn <id>`, `SetWeapon <id>`; Gore stumps sit off the Runner/Brute arms; Brute/Walker hitboxes |
+| 4 | Mission flow: lobby -> match -> three missions -> lobby | Tien + Claude; Nova (lobby side) | `docs/LOBBY_MATCH_HANDOFF.md`: the lobby sends the `Rules/Handoff` shape (Nova's branch sends `{spot, party}` today). Match side: data split step 1 done (`src/server/Missions/Delta.luau`, ARCHITECTURE F6); next the rest of Delta's facts, then the mission-to-mission transition, then Mile 14 in game |
 | 5 | Sample guns into the Arms Room; support weapons (Gun, Thumper, Kettle), incendiary + stun grenades | Nova / open | the revolver, sniper and Goose rows exist (`docs/sprints/SPRINT_21_SAMPLE_GUNS.md`), not in `PRIMARIES` / `SECONDARIES` yet; guns are modelled in Blender (`guns.py`) when no free model is in hand |
 | 6 | Performance measurements | open | 2-client network + MicroProfiler during an Anvil into 20, low-end device at low health (`docs/STUDIO_MCP.md`) |
 | 7 | Owner calls waiting | Tien | generator to 4.8, light-tower collision as two boxes, movement keys (roll/slide chords) |

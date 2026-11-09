@@ -159,6 +159,13 @@ local Config = {
 	},
 
 	-- Run flow (RunManager, Shared.RunStates). Co-op Sprint A.
+	-- The operation: its missions in play order, each one data file in src/server/Missions
+	-- (docs/LOBBY_MATCH_HANDOFF.md, docs/ARCHITECTURE.md F6). One mission until Mile 14 is
+	-- built in game; the mission-to-mission transition walks this list.
+	Operation = {
+		Missions = { "delta" },
+	},
+
 	Run = {
 		InsertSeconds = 3, -- Insert -> Explore: the squad lands before the first wave
 		-- After a run ends, the first READY opens this countdown; the next run starts when it

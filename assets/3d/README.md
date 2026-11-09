@@ -212,7 +212,8 @@ Blender is reinstalled.
 Checkpoint Delta is built from plain Parts by `src/server/ArenaService.luau` (exact
 collision, built-in materials, streaming, the building kit); nothing of the map is imported
 as a mesh. `delta_map.py` is the way to **see** the layout while placing things: it reads
-the layout tables straight out of `ArenaService.luau` (`HILLS`, `DRESSING`, `PROPS`,
+the layout tables straight out of `src/server/Missions/Delta.luau` (Delta's mission data
+file since the mission data split; `HILLS`, `DRESSING`, `PROPS`,
 `RAMPS`, `PATCHES`, `BUILDINGS`, plus the loops that add the Gate line, the Pens ring and the
 perch containers), rebuilds the same ground in a fresh Blender scene and stands the real
 environment meshes (`export/*.fbx`) on it at the height the game's raycast would find. Every
@@ -228,12 +229,12 @@ depot,barracks,scrapyard,oblique}.png` (top-down Workbench renders). Open the `.
 live Blender (`bpy.ops.wm.open_mainfile`) and the MCP `look` tool frames any object
 (`target=["HelipadLZ"]`, `["Overlook"]`, a building name).
 
-The loop: edit the numbers in `ArenaService.luau` -> rebuild the view -> look -> playtest.
+The loop: edit the numbers in `Missions/Delta.luau` -> rebuild the view -> look -> playtest.
 Or move a piece in the Blender viewport, then in the live Blender run
 `exec(open("assets/3d/build/delta_map.py").read()); write_back()`: every static entry's
 object carries `arena_table` / `arena_index`, and the moved ones have their `x` / `z` /
 `yaw` rewritten in place in the Luau. Entries the Luau generates in loops are `arena_locked`
-(edit the loop). `ArenaService.luau` stays the single source of truth.
+(edit the loop). `Missions/Delta.luau` stays the single source of truth.
 
 ## Style rules
 
