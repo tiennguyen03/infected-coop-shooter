@@ -91,7 +91,7 @@ repacks), re-upload that bank, update its id.
 Footsteps are synced to the locomotion clips, not to a timer: `FootstepController` reads the
 phase of the dominant walk/run track and steps when it crosses a footfall phase in
 `Config.Audio.Footsteps.Phases`, measured in Studio from the feet's lowest points (the
-measuring script is in handoff/README.md > Studio MCP gotchas). Re-measure if a locomotion
+measuring script is in docs/STUDIO_MCP.md > Measuring footfall phases). Re-measure if a locomotion
 clip changes.
 
 ## Upload and wire

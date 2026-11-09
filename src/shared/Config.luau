@@ -213,7 +213,8 @@ local Config = {
 		TracerDuration = 0.06,
 		-- Q swaps long gun and sidearm (LoadoutService): no shot and no reload for this long.
 		SwapTime = 0.5,
-		-- Drones still fly projectiles (ProjectileServer.fire): their speed and lifetime.
+		-- Simulated projectiles (ProjectileServer.fire): unused since the drones were retired,
+		-- kept for slow-round weapons (the planned Thumper). Speed and lifetime.
 		ProjectileSpeed = 180, -- studs per second
 		ProjectileLifetime = 3, -- seconds before despawn
 		ProjectileSize = Vector3.new(0.4, 0.4, 1.4),
