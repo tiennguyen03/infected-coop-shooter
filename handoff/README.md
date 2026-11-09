@@ -226,12 +226,13 @@ Read in this order:
   `LoadoutUI`, `ArmsRoom`, `Rules/Loadout`, `LoadoutService.apply`, a lobby place and its
   project file; `docs/MULTIPLAYER_READINESS.md` decision 7, `docs/ARCHITECTURE.md` lobby).
   Owner + Claude: everything else below. Bugs found in Nova's files go to Nova, not fixed here.
-  **Lobby v1 built and playtested in Studio 2026-11-09** (sunny-sky and flicker fix not yet
-  re-checked; a real launch from a published place untested; branch `nova/lobby`,
-  `docs/sprints/LOBBY_V1_FALLOW.md`): the Fallow (`lobby.project.json`, `src/lobby/`), screening
-  lane spawn, four Lantern spots that teleport a squad into a reserved match server, four
+  **Lobby v1 built and playtested in Studio 2026-11-09** (hangar spawn, the turned ramp and
+  the Pike body built after it, not yet re-checked; a real launch from a published place
+  untested; branch `nova/lobby`,
+  `docs/sprints/LOBBY_V1_FALLOW.md`): the Fallow (`lobby.project.json`, `src/lobby/`), a
+  hangar spawn by the desks with the ramp up to the spots, the match's Pike body, four Lantern spots that teleport a squad into a reserved match server, four
   hangar desks (lines only, no trades), the Plot's Containment Board on placeholder numbers.
-  Next: re-check the lighting in the `Lobby (dev)` place, then a published launch test.
+  Next: re-check the loop and body in the `Lobby (dev)` place, then a published launch test.
 - **Satisfying pass built 2026-11-09 (`docs/superpowers/plans/2026-11-09-satisfying-pass.md`).**
   Camera kick per gun, blast shake per grenade/call-in (`ShakePower`), limp bodies thrown by
   the killing hit (max 8, 4 s), hit flinch (Brute only from `Heavy` guns), legless crawl,

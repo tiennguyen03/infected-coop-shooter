@@ -1,10 +1,10 @@
 # Lobby v1: the Fallow
 
 Owner: Nova. Branch `nova/lobby`. Status: **playtested in Studio by Nova 2026-11-09**:
-spawn, deck, ramp, desks, the Plot and the boarding countdown all work. That playtest found
-the night lighting wrong and the hangar floor flickering; both fixed the same day (sunny sky,
-shadows, no shared planes), the fix not yet re-checked. A real launch (published place) is
-still untested.
+spawn, deck, ramp, desks, the Plot and the boarding countdown all work; the sunny sky and the
+flicker fix confirmed by Nova. Then the loop was reworked (hangar spawn, ramp turned to rise
+toward the spots) and soldiers given the Pike body: built, not yet re-checked. A real launch
+(published place) is still untested.
 
 The lobby place (docs/MULTIPLAYER_READINESS.md decision 7, docs/ARCHITECTURE.md F10) as a
 walkable ship you can launch from: the Fallow, a helicopter carrier off the Harlan coast on a
@@ -17,7 +17,7 @@ match place.
 - **The ship** (`FallowBuilder`, plain anchored Parts, no meshes yet): hull and raked bow,
   70 x 390 flight deck, the island (bridge windows, hull number painted out, HRD sprayed over
   it, mast), the hangar deck under it with an open side lift to port, a ramp from the hangar
-  up to the deck through an open well, invisible walls at every edge, the sea, the coast to
+  rising aft to the deck through an open well, invisible walls at every edge, the sea, the coast to
   the north with the Burn's smoke columns standing over it. A clear afternoon
   (`Config.Lobby.Sky`: ClockTime 14, engine clouds, light atmosphere). ShadowMap with
   GlobalShadows (`lobby.project.json` sets `Lighting.Technology`), so the hangar under the
@@ -28,8 +28,17 @@ match place.
   sits on the hull block (`FLOOR` 0.2), the centre line breaks at each spot circle, and the
   spot ring, its inner disc, the number and the boarding box each have their own height.
   Keep to this when adding pieces.
-- **Arrival**: everyone spawns at the aft end of the screening lane (starboard quarter) and
-  walks through the SCREENING arch.
+- **The loop** (Nova: walking past the birds to the desks and back every run made no
+  sense): everyone spawns at the fore end of the hangar facing aft, passes the desks (Arms
+  Room and Engineers face each other across the walk, the Loadmaster at the ramp's foot),
+  climbs the ramp, which rises aft, and comes up on the deck facing the spots, spot 4 nearest.
+  Fires and the Plot are a short detour aft past the ramp's foot. The screening lane stays as
+  scenery where recovered teams will walk off (nobody spawns there).
+- **The Pike body** (`PikeBody`): soldiers wear the match's body, the same limb swap as the
+  match (`MeshAssets.dressModel` with `PlayerSetup.BODY`; the match's `PlayerSetup` and the
+  client `PaletteController` are mapped into the lobby, not copied), no avatar clothing or
+  accessories, no rifle. The match's animation set is not in the lobby yet: the body moves
+  with Roblox's default R15 animations.
 - **Four Lantern spots** (`LaunchService`, rule `Rules/Manifest`): a block-built helo on
   each numbered spot and a yellow boarding box beside its starboard door. Stand in the box
   to board. The first aboard starts a 20 s countdown, a full bird (4) cuts it to 5 s, the
@@ -38,8 +47,8 @@ match place.
   retries, then "Lantern couldn't lift". In Studio teleports can't run: the panel says so and
   the spot resets after 6 s. Screen: `LaunchUI` (spot, who is aboard, countdown).
 - **Four hangar desks** (`DeskService`, data `LobbyDesks`): Arms Room (cage, port side),
-  Loadmaster (slung cases at the foot of the ramp), Fires (at the Plot door), Engineers (wire
-  spools). Block crew figures in working dress, a counter, a sign, an F "Talk" prompt. The
+  Engineers (wire spools, starboard), Loadmaster (slung cases at the foot of the ramp), Fires
+  (at the Plot door). Block crew figures in working dress, a counter, a sign, an F "Talk" prompt. The
   line shows in `DeskDialogUI` with what the desk will issue; **nothing is issued yet**.
 - **The Plot** (`PlotService`, `ContainmentBoard`, rule `Rules/Containment`): the red-lit
   map room under the island with the chart table and the Containment Board on a lit perspex
@@ -52,15 +61,19 @@ match place.
 ```
  Z  210  bow ───────────────────────────────
     140  ── hangar bulkhead (fore) ──
-    130  ┌ramp top┐
-     70  └well────┘ (X -30..-10)      Loadmaster (-2, 58)
-     50                                 ┌island┐ X 22..34, Z -10..50
-     30                  Engineers      │      │
-      0  spot 4 (-12)    (-27, 20)      Plot under island (X 14..33, Z -10..30)
-    -50  spot 3          Arms Room (-27,-50)   Fires (10, 18) at the Plot door
-   -100  spot 2  ── hangar bulkhead (aft) ──
-   -150  spot 1                         screening lane X 19..29, Z -172..-136
-   -180  stern ─────────────────────────── spawn (24, -168)
+    125  HANGAR: spawn (0, 125), facing aft
+    105  Arms Room (-27) ←walk→ Engineers (27)
+     88  Loadmaster (-2), facing the spawn
+     80  ┌ramp foot (hangar)┐ well X -30..-10
+     20  └ramp top (deck)───┘ comes up facing aft
+     50..-10                        ┌island┐ X 22..34 (deck); Plot under it (hangar,
+                                    └──────┘  X 14..33, Z -10..30), Fires (10, 18) at its door
+    -15  spot 4 (helo X -12, box X 1)
+    -60  spot 3
+   -100  ── hangar bulkhead (aft) ──
+   -105  spot 2
+   -150  spot 1                     screening lane X 19..29, Z -172..-136 (scenery)
+   -180  stern ───────────────────────────────
 ```
 
 Deck surface y 40, hangar floor y 20, sea y 0. Every position is in `FallowLayout`.
@@ -69,8 +82,8 @@ Deck surface y 40, hangar floor y 20, sea y 0. Every position is in `FallowLayou
 
 | Place | File |
 |---|---|
-| Project | `lobby.project.json` (shares `src/shared`; `src/lobby/shared` as `ReplicatedStorage.Lobby`; maps `src/client/HudTheme.luau` into the lobby client) |
-| Server | `src/lobby/server/`: `Main.server`, `FallowLayout`, `Build`, `FallowBuilder`, `NpcBody`, `DeskService`, `ContainmentBoard`, `PlotService`, `LaunchService` |
+| Project | `lobby.project.json` (shares `src/shared`; `src/lobby/shared` as `ReplicatedStorage.Lobby`; maps the match's `src/server/PlayerSetup.luau` into the lobby server and `src/client/HudTheme.luau`, `PaletteController.luau` into the lobby client; sets `Lighting.Technology`) |
+| Server | `src/lobby/server/`: `Main.server`, `FallowLayout`, `Build`, `FallowBuilder`, `PikeBody`, `NpcBody`, `DeskService`, `ContainmentBoard`, `PlotService`, `LaunchService` |
 | Client | `src/lobby/client/`: `Main.client`, `LaunchUI`, `DeskDialogUI` |
 | Shared | `src/lobby/shared/LobbyDesks`; rules `src/shared/Rules/Manifest`, `Rules/Containment` (+ specs); `Config.Lobby`, `Config.Containment`; remote `Launch` + `Messages.Launch`; attribute `DeskId` |
 
@@ -80,15 +93,15 @@ Deck surface y 40, hangar floor y 20, sea y 0. Every position is in `FallowLayou
    right-click > **Add New Place**, name it `Lobby (dev)`, open it.
 2. `rojo serve lobby.project.json --port 34873` (a different port from the match's 34872),
    Rojo plugin > set the port > Connect, Play.
-3. Check: spawn in the lane, walk the deck, go down the ramp, talk to each desk (F), read the
-   board in the Plot, stand in a boarding box (panel + countdown; in Studio it ends with the
+3. Check: spawn in the hangar in the Pike body, talk to each desk (F), read the board in the
+   Plot, climb the ramp to the spots, stand in a boarding box (panel + countdown; in Studio it ends with the
    "Teleports don't run in Studio" line).
 4. Launch for real: publish the place, join it from the Roblox app (with a friend for a
    two-person bird), board a spot. You should land in a match server together.
 
 ## Open (next steps, in order)
 
-- **Playtest v1** (the steps above) and fix what it finds. The one unverified API:
+- **Re-check the new loop and the Pike body** (the steps above). The one unverified API:
   `TeleportOptions.ShouldReserveServer` (documented, missing from the luau-lsp definitions,
   set through a cast in `LaunchService`). If the live launch errors there, switch to
   `TeleportService:ReserveServer` and pass the access code.
@@ -104,5 +117,6 @@ Deck surface y 40, hangar floor y 20, sea y 0. Every position is in `FallowLayou
   light the deck floodlight housings and the Burn's orange at night.
 - **The Plot's launch and recovery radio lines** (LORE.md > The Fallow) are not played yet.
 - **Other teams' callsigns** (not all Pike) are open with the lore developer.
-- Lobby players wear their own Roblox avatars; the Pike body is match-only.
+- **The match's animations in the lobby** (unarmed idle and walk): the Pike body uses Roblox's
+  default R15 set on the ship today.
 - `Config` split by domain (F10) is not done: the lobby loads the match's tuning too.

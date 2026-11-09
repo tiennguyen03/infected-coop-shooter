@@ -23,7 +23,10 @@
     },
     "ServerScriptService": {
       "Server": {
-        "$path": "src/lobby/server"
+        "$path": "src/lobby/server",
+        "PlayerSetup": {
+          "$path": "src/server/PlayerSetup.luau"
+        }
       }
     },
     "StarterPlayer": {
@@ -36,6 +39,9 @@
           "$path": "src/lobby/client",
           "HudTheme": {
             "$path": "src/client/HudTheme.luau"
+          },
+          "PaletteController": {
+            "$path": "src/client/PaletteController.luau"
           }
         }
       }

@@ -157,14 +157,16 @@ local function buildDeck(ship: Folder)
 	slab("DeckWellStarboard", well.x1, W, well.z0, well.z1)
 	slab("DeckFore", -W, W, well.z1, L + BOW)
 
-	-- The ramp from the hangar floor (well.z0) up to the deck (well.z1), with rails.
+	-- The ramp from the hangar floor (foot at well.z1) up aft to the deck (well.z0), with
+	-- rails. A WedgePart rises toward +Z, so it is turned half round.
 	local rise = DECK_Y - HANGAR_Y
 	local run = well.z1 - well.z0
 	Build.part(
 		ship,
 		"Ramp",
 		Vector3.new(well.x1 - well.x0, rise, run),
-		CFrame.new((well.x0 + well.x1) / 2, HANGAR_Y + rise / 2, (well.z0 + well.z1) / 2),
+		CFrame.new((well.x0 + well.x1) / 2, HANGAR_Y + rise / 2, (well.z0 + well.z1) / 2)
+			* CFrame.Angles(0, math.pi, 0),
 		HANGAR_FLOOR,
 		{ wedge = true, material = Enum.Material.DiamondPlate }
 	)
@@ -176,17 +178,17 @@ local function buildDeck(ship: Folder)
 			"RampRail",
 			Vector3.new(0.4, 3, railLength),
 			CFrame.new(x, HANGAR_Y + rise / 2 + 1.5, (well.z0 + well.z1) / 2)
-				* CFrame.Angles(-slope, 0, 0),
+				* CFrame.Angles(slope, 0, 0),
 			YELLOW,
 			{ material = Enum.Material.SmoothPlastic }
 		)
 	end
-	-- The well's open edges on the deck.
+	-- The well's open edges on the deck: the fore edge drops to the ramp's foot.
 	Build.box(
 		ship,
 		"WellRail",
-		Vector3.new(well.x0, DECK_Y, well.z0 - 0.4),
-		Vector3.new(well.x1, DECK_Y + 3, well.z0),
+		Vector3.new(well.x0, DECK_Y, well.z1),
+		Vector3.new(well.x1, DECK_Y + 3, well.z1 + 0.4),
 		YELLOW,
 		{ material = Enum.Material.SmoothPlastic }
 	)
@@ -333,12 +335,13 @@ local function buildIsland(ship: Folder)
 end
 
 local function buildHangar(ship: Folder)
-	-- Three working lights under the deck.
+	-- Three working lights under the deck: over the desks by the spawn, at the ramp's foot,
+	-- and at the Plot door.
 	for _, position in
 		{
-			Vector3.new(0, DECK_BOTTOM - 1, -60),
-			Vector3.new(-8, DECK_BOTTOM - 1, 0),
-			Vector3.new(0, DECK_BOTTOM - 1, 55),
+			Vector3.new(0, DECK_BOTTOM - 1, 106),
+			Vector3.new(-8, DECK_BOTTOM - 1, 62),
+			Vector3.new(0, DECK_BOTTOM - 1, 10),
 		}
 	do
 		local fixture = Build.part(
@@ -487,9 +490,12 @@ local function buildLane(ship: Folder)
 		Color3.fromRGB(150, 40, 36),
 		{ shape = Enum.PartType.Cylinder }
 	)
+end
 
+-- Where soldiers spawn: the fore end of the hangar, facing the desks and the ramp.
+local function buildSpawn(ship: Folder)
 	local spawn = Instance.new("SpawnLocation")
-	spawn.Name = "ScreeningLane"
+	spawn.Name = "HangarSpawn"
 	spawn.Anchored = true
 	spawn.Size = Vector3.new(6, 0.4, 6)
 	spawn.CFrame = Layout.Spawn
@@ -592,6 +598,7 @@ function FallowBuilder.init()
 	buildHangar(ship)
 	buildPlot(ship)
 	buildLane(ship)
+	buildSpawn(ship)
 	buildWorld(ship)
 end
 

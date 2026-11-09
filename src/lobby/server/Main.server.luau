@@ -8,10 +8,13 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 -- Creating remotes first guarantees clients never wait on a system that hasn't initialized.
 require(ReplicatedStorage.Shared.Remotes)
 
+local Shared = ReplicatedStorage.Shared
 local Server = script.Parent
 
 local BOOT: { ModuleScript } = {
+	Shared.MeshAssets, -- the Pike body's limb meshes (PikeBody)
 	Server.FallowBuilder,
+	Server.PikeBody,
 	Server.DeskService,
 	Server.PlotService,
 	Server.LaunchService,
