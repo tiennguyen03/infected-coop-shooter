@@ -18,7 +18,7 @@ type Definition = { id: string, fallback: string?, volume: number, speed: number
 local DEFINITIONS: { [string]: Definition } = {
 	-- `vary` randomizes pitch a little so rapid fire doesn't sound robotic.
 	shoot = {
-		id = "rbxassetid://134062568029221",
+		id = "rbxassetid://95252334560110",
 		fallback = "rbxasset://sounds/snap.mp3",
 		volume = 0.5,
 		vary = 0.08,

@@ -21,18 +21,18 @@ export type Clip = { start: number, length: number }
 -- Uploaded bank audio ids (assets/audio/ASSET_IDS.md). "" = not uploaded yet: the bank is
 -- silent and `play` returns nil.
 local IDS: { [string]: string } = {
-	player_steps = "rbxassetid://108017161918767",
-	player_hits = "rbxassetid://125307477830610",
-	walker = "rbxassetid://91556910469203",
-	runner = "rbxassetid://134864043657246",
-	brute = "rbxassetid://96804079589453",
-	hocker = "rbxassetid://82465252830201",
+	player_steps = "rbxassetid://100789185448666",
+	player_hits = "rbxassetid://91277491081004",
+	walker = "rbxassetid://78379861633223",
+	runner = "rbxassetid://77436367980865",
+	brute = "rbxassetid://109978857666947",
+	hocker = "rbxassetid://123541518944531",
 	-- sound pass 2026-11-08
-	player_gear = "rbxassetid://77278441018905",
-	callins = "rbxassetid://130397302139113",
-	warden = "rbxassetid://140427300002576",
-	ui_radio = "rbxassetid://130255970374501",
-	ambience = "rbxassetid://127893501463408",
+	player_gear = "rbxassetid://71009256896523",
+	callins = "rbxassetid://110309276934239",
+	warden = "rbxassetid://77678057873649",
+	ui_radio = "rbxassetid://71130678294211",
+	ambience = "rbxassetid://98770253514208",
 }
 
 local SoundBanks = {}

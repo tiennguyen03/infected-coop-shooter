@@ -32,11 +32,12 @@ single-player with bots, but every system is written for four.
 - [ ] Add the friend as a collaborator on GitHub:
       `gh api -X PUT repos/tiennguyen03/infected-coop-shooter/collaborators/<their-username>`
       (or Settings → Collaborators on https://github.com/tiennguyen03/infected-coop-shooter).
-- [ ] Give the friend Studio access to the test place **CZS** (place id 139153822363669):
+- [ ] Give the friend Studio access to the test place **CZS** (place id 89609223317309, owned by the group Boomin Dev Studios):
       Game Settings → Permissions, or Collaborate → add them. See "Asset permissions" below
       for why this matters.
-- [ ] Decide asset ownership (see below). Long term, a Roblox **group** should own the
-      experience and the uploaded assets.
+- [x] Asset ownership: done 2026-11-09. The group **Boomin Dev Studios** (id 270506601) owns
+      CZS and every sound and animation. Add the friend to the group with a role that can
+      edit its experiences.
 - [ ] Never share your own Open Cloud API key or Hugging Face token. The friend makes their own.
 
 ## Step 2: install (one time)
@@ -117,16 +118,14 @@ hold **F** revive. F1 dev panel; F2 god, F3 clear Infected, F4 ten Walkers, F5 r
 - **Never** create scripts in Studio by hand for Rojo-managed files, and never commit API
   keys or tokens.
 
-## Asset permissions (read before testing in your own place)
+## Asset permissions
 
-Meshes, sounds and animations are uploaded to Roblox and referenced by id
-(`assets/*/ASSET_IDS.md`). Roblox only lets an experience use audio and animations its
-owner has permission to, so ids uploaded by Tien's account may come out silent or
-un-animated in a place you own. Meshes and images usually load anywhere. Options, best first:
-1. Tien moves the experience and assets to a Roblox group you both belong to (re-upload the
-   audio and animations under the group).
-2. You test in the CZS place with collaborator access.
-3. Code-only work in a Baseplate, accepting missing sounds and animations.
+Roblox only lets an experience play audio and animations its owner may use. Everything is
+owned by the group **Boomin Dev Studios** (id 270506601): CZS and every sound and animation
+id (`assets/*/ASSET_IDS.md`). Join the group and test in CZS or any place the group owns.
+In a place you own yourself, sounds and animations stay silent and still. New uploads go
+to the group too (`upload_asset` with `groupId` 270506601, using a group Open Cloud key
+the owner gives you access to, never a personal one). Meshes load anywhere.
 
 Raw sources that are not in git: the Mixamo animation clips (licence forbids redistribution)
 and the generated `.wav` files (regenerate with `assets/audio/build/generate.py`). You don't

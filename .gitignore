@@ -26,3 +26,4 @@ src/shared/AnimationClips/*.json
 __pycache__/
 .superpowers/
 .claude/worktrees/
+assets/animations/build/out/

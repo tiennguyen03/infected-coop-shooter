@@ -229,7 +229,7 @@ importer):
    sits as before.
 4. **Animate.** Drop the Model in Workspace, press Play with it selected in the Animation
    Editor, or run in the command bar:
-   `local a = Instance.new("Animation") a.AnimationId = "rbxassetid://122515718718000"`
+   `local a = Instance.new("Animation") a.AnimationId = "rbxassetid://76024363213369"`
    (`Config.Animations.Ids.rifle_idle`) and `Humanoid.Animator:LoadAnimation(a):Play()`.
    Then `loco_run_f`, `rifle_aiming_idle`, `crouch_idle`, `prone_idle`, `sprint_roll`,
    `death_from_the_front`: all must move the body (they are R15 clips, so the bones and

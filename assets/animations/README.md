@@ -97,7 +97,9 @@ animations, played by `src/client/AnimationController.luau` (players) and
 3. **Preview** in Studio: with `Config.Animations.Ids[clip] == ""`, `Animations.init()` on the
    server registers the retargeted clip through `KeyframeSequenceProvider` and the game plays
    it in a playtest (temporary id, Studio only). Verify every clip this way before publishing.
-4. **Publish** (scripted, no clicks; Open Cloud accepts Animation uploads): in Studio edit
+4. **Publish** (scripted, no clicks; Open Cloud accepts Animation uploads). Without Studio:
+   `lune run assets/animations/build/build_rbxm.luau` writes one `.rbxm` per clip, then
+   `upload_asset` each with `groupId` 270506601 (the group owns every asset). Or in Studio edit
    mode build every unpublished clip into `ServerStorage.AnimationPublish` with
    `AnimationBuilder.build(AnimationBuilder.loadClip(name))`, export each with the Studio
    MCP `export_rbxm` tool, upload each with `upload_asset` (`assetType = "Animation"`),

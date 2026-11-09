@@ -227,13 +227,12 @@ Read in this order:
 
 ## Open work, in priority order
 
-- **Group migration (owner, 2026-11-08).** Group "Boomin Dev Studios", id **270506601**
-  (`upload_asset` takes `groupId`); CZS transferred to it. The owner made it so
-  co-developers (intern Nova) can use the audio and animations, which are owned by the owner's
-  account and blocked in other people's places. Steps: the group Open Cloud key goes into
-  `ROBLOX_OPEN_CLOUD_API_KEY` (owner does it; restart Claude Code), re-upload every sound bank and animation
-  under the group, swap the ids (`src/` and `assets/*/ASSET_IDS.md`), playtest. Meshes stay.
-  Until then Nova tests inside CZS as a collaborator (`onboarding/README.md`).
+- **Group migration done 2026-11-09.** The Roblox group Boomin Dev Studios (id 270506601) owns
+  CZS (place id now 89609223317309) and every sound (12 uploads) and animation (62 clips;
+  `ladder_climb` is Roblox's stock one). New uploads pass `groupId` 270506601; the group Open
+  Cloud key is in `~/.claude.json`. Verified: every bank and five clips load in the group's
+  place with the right lengths. Owner: rotate that key (it was pasted in chat) and give Nova a
+  group role that can edit experiences.
 - **Pike rework in progress (2026-11-08, `docs/superpowers/plans/2026-11-08-pike-loadout.md`).**
   Owner approved: Pike soldiers instead of the Chosen, the Arms Room loadout menu, five
   primaries + pistol, Q swap / G grenade / V shove / E stim / 1-4 call-ins / 5 flare, twelve
@@ -409,7 +408,7 @@ rojo serve default.project.json
 ```
 
 Then in Roblox Studio open the test place ("CZS", place id
-139153822363669), Rojo plugin → Connect (localhost:34872). After any `default.project.json`
+89609223317309, owned by the group Boomin Dev Studios), Rojo plugin → Connect (localhost:34872). After any `default.project.json`
 change, restart `rojo serve` and reconnect.
 
 Static checks after every change:

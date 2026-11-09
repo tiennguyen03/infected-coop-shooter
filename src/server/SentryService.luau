@@ -19,7 +19,7 @@ local Lifecycle = require(script.Parent.Lifecycle)
 local ENEMY_TAG = "Enemy"
 local RETARGET_INTERVAL = 0.25
 local MUZZLE_HEIGHT = 3.2
-local SHOT_SOUND = "rbxassetid://134062568029221" -- the rifle report (SoundFX "shoot")
+local SHOT_SOUND = "rbxassetid://95252334560110" -- the rifle report (SoundFX "shoot")
 local GUN_COLOR = Color3.fromRGB(52, 56, 48)
 local TRACER_COLOR = Color3.fromRGB(255, 214, 140)
 -- Folders the sentry's round passes through (squad, effects, pickups).
