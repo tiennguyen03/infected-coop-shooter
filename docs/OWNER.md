@@ -45,6 +45,9 @@ something; never delete one without the owner.
   call-ins will be added, swapped and cut. Anything per item (kick, shake, heavy, reload
   clip, icon, sound) lives on that item's own Config/definition row with a default. Never a
   hard-coded list of item names in a system. (2026-11-09)
+- **Transitions are a fade, not a loading card.** Fade to black with the helicopter sound, Roblox's
+  own loading screen on a teleport, fade in on the pad with the drop-off sound; the same between
+  missions. No custom ride card or teleport screen for now. (2026-11-09)
 - **Loadout is chosen in the lobby** once the lobby exists; the in-mission Arms Room (B) is
   a stand-in. (2026-11-08)
 

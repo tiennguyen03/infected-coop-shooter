@@ -29,7 +29,7 @@ names; modular per-item rows).
  LOBBY (the Fallow)           MATCH (one server, one operation, ~40 min)          LOBBY
  kit sheet (B / any desk) ─►  Delta ─ ride ─► Mile 14 ─ ride ─► Kestrel ─► STAND DOWN ─► debrief
  board a Lantern, READY       each ride: tally + CONTINUE / STAND DOWN vote,        Chits paid,
- ride card (no loader)        change loadout, the dead come back                    Service Record,
+ fade to black + rotor        change loadout, the dead come back                    Service Record,
                               Stand Down after any mission = the 20-30 min session  the board moves
 ```
 
@@ -95,9 +95,12 @@ names; modular per-item rows).
   auto-applied); presets later. The rack stays for browsing and inspecting.
 - **Boarding panel:** seat rows ("PIKE ONE · name · gun · four call-in icons · READY ✓"), READY,
   everyone ready = 5 s lift, 30 s otherwise.
-- **One continuous flight:** fade on lift, a **ride card** as the teleport screen (no Roblox
-  loader), the same card in the match while the squad stages ("WAITING FOR SQUAD 2/3"), fade
-  onto the pad. The same card is the ride between missions.
+- **Transitions (owner 2026-11-09: "fine with the Roblox loading screen for now"):** fade to
+  black with the helicopter sound, Roblox's own loading screen while the place teleports, then
+  fade in on the pad with the drop-off sound. Between missions on the same server: the same
+  fade and rotor, the next map is built, fade in with the drop-off. No custom ride card or
+  teleport screen. The tally and the CONTINUE / STAND DOWN vote are a simple panel before the
+  fade; staging keeps its one line ("WAITING FOR SQUAD 2/3").
 - **No tutorial level:** a one-line hint the first time each action is possible ("HOLD [G] to
   aim"), and Control's radio lines.
 - **Results that tell the run:** STAND DOWN / SQUAD WIPED, mission rows, a squad table (kills,
@@ -126,13 +129,14 @@ feel it this week.**
    soft clips.
 
 **Phase 2: the operation** (Tien + Claude)
-8. Chain three missions on one server (Delta three times as a stand-in): the ride card + tally,
-   CONTINUE / STAND DOWN, carry and reset rules, the loadout on the ride.
+8. Chain three missions on one server (Delta three times as a stand-in): the tally panel,
+   CONTINUE / STAND DOWN, fade to black with the rotor, fade in with the drop-off, carry and
+   reset rules, the loadout on the ride.
 9. The dead return on the next pallet.
 
 **Phase 3: lobby <-> match live** (Nova lobby side; Tien publishes)
 10. Nova: send the `Rules/Handoff` shape, reserve once per lift, boarding panel with seat rows
-    and READY, the kit sheet in the lobby, ride card + teleport screen, arrival debrief.
+    and READY, the kit sheet in the lobby, the fade-to-black + rotor on lift, arrival debrief.
 11. Publish both places, `Config.Places.Lobby`, the live round trip.
 
 **Phase 4: progression** (Tien + Claude save + match; Nova desks)
