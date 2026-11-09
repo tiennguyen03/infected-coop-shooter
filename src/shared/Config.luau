@@ -1449,6 +1449,16 @@ local Config = {
 				Depth = 8, -- studs of water below y 0 (keep a multiple of 4: the voxel size)
 			},
 			Seabed = Color3.fromRGB(18, 40, 52),
+			-- The coast is Terrain (a sand beach into the water, grass land, rock and grass
+			-- hills); these tint the engine materials toward the game's muted palette.
+			Coast = {
+				Seed = 1985, -- the hills are placed from this seed, the same every server
+				Hills = 16,
+				Sand = Color3.fromRGB(176, 162, 128),
+				Grass = Color3.fromRGB(88, 98, 68),
+				Rock = Color3.fromRGB(102, 100, 94),
+				Ground = Color3.fromRGB(94, 88, 76),
+			},
 			-- The Burn on the coast (docs/STYLES.md: the match's skyline fire and smoke, scaled
 			-- for distance). Four sites, one fire and one smoke emitter each: 8 emitters.
 			Burn = {

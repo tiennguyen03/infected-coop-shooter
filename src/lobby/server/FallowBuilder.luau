@@ -29,7 +29,6 @@ local PLOT_WALL = Color3.fromRGB(40, 40, 42)
 local PAINT = Color3.fromRGB(214, 214, 208)
 local YELLOW = Color3.fromRGB(230, 189, 96)
 local CONCRETE = Color3.fromRGB(122, 120, 114)
-local LAND = Color3.fromRGB(78, 84, 70)
 local SMOKE = Color3.fromRGB(64, 62, 60)
 local BURN = Color3.fromRGB(255, 110, 30)
 local FLOOD = Color3.fromRGB(255, 226, 190)
@@ -528,6 +527,13 @@ local function buildSea(ship: Folder)
 			)
 		end
 	end
+	-- No water inside the hull: it showed through at the waterline. The carve is inset a stud
+	-- so the water's edge stays hidden inside the hull's sides.
+	terrain:FillBlock(
+		CFrame.new(0, -water.Depth / 2, 0),
+		Vector3.new(W * 2 - 2, water.Depth, L * 2 - 2),
+		Enum.Material.Air
+	)
 	terrain.WaterWaveSize = water.WaveSize
 	terrain.WaterWaveSpeed = water.WaveSpeed
 	terrain.WaterColor = water.Color
@@ -600,42 +606,69 @@ local function burnSite(emitterPart: BasePart)
 	smoke.Parent = emitterPart
 end
 
--- The coast to the north: a shore strip with low ridges behind it, and the Burn along the
--- waterline (fire with its smoke standing over it).
+-- The coast to the north, in Terrain so it meets the water at a real shoreline: a sand
+-- beach sloping down under the water, a grass shelf behind it, a row of grass and rock hills
+-- (placed from Config.Lobby.Sky.Coast.Seed, so every server builds the same coast), rock
+-- outcrops at the waterline, and the Burn on the shore (fire with its smoke over it).
+-- Terrain fills after the sea, so land replaces water where they overlap.
+local BEACH = 60 -- studs of beach slope out from the shoreline into the water
+local LAND_TOP = 8 -- the grass shelf's surface (the water is at 0)
+local LAND_DEPTH = 400 -- how far inland the shelf runs
+
 local function buildCoast(ship: Folder)
-	local shoreTop = 22
-	Build.part(
-		ship,
-		"Coast",
-		Vector3.new(2048, 26, 120),
-		CFrame.new(0, shoreTop - 13, Layout.CoastZ),
-		LAND,
-		{ material = Enum.Material.Ground, collide = false, shadow = false }
+	local coast = Config.Lobby.Sky.Coast
+	local terrain = Workspace.Terrain
+	terrain:SetMaterialColor(Enum.Material.Sand, coast.Sand)
+	terrain:SetMaterialColor(Enum.Material.Grass, coast.Grass)
+	terrain:SetMaterialColor(Enum.Material.Rock, coast.Rock)
+	terrain:SetMaterialColor(Enum.Material.Ground, coast.Ground)
+
+	local shore = Layout.CoastZ
+	local bottom = -Config.Lobby.Sky.Water.Depth
+	local width = SEA_X * 2
+	-- The beach: a wedge rising from the seabed toward the land (a wedge climbs toward +Z).
+	terrain:FillWedge(
+		CFrame.new(0, (bottom + LAND_TOP) / 2, shore - BEACH / 2),
+		Vector3.new(width, LAND_TOP - bottom, BEACH),
+		Enum.Material.Sand
 	)
-	-- Ridges rising inland (a wedge climbs toward +Z, away from the ship).
-	for _, ridge in
-		{
-			{ x = -640, width = 420, height = 60 },
-			{ x = -240, width = 360, height = 90 },
-			{ x = 160, width = 440, height = 70 },
-			{ x = 560, width = 380, height = 100 },
-		}
-	do
-		Build.part(
-			ship,
-			"Ridge",
-			Vector3.new(ridge.width, ridge.height, 160),
-			CFrame.new(ridge.x, shoreTop + ridge.height / 2, Layout.CoastZ + 140),
-			LAND,
-			{ wedge = true, material = Enum.Material.Ground, collide = false, shadow = false }
+	-- The shelf behind it.
+	terrain:FillBlock(
+		CFrame.new(0, (bottom + LAND_TOP) / 2, shore + LAND_DEPTH / 2),
+		Vector3.new(width, LAND_TOP - bottom, LAND_DEPTH),
+		Enum.Material.Grass
+	)
+
+	local random = Random.new(coast.Seed)
+	-- Hills along the coast, evenly spread with some jitter; mostly grass, some bare rock.
+	local spacing = width / coast.Hills
+	for index = 1, coast.Hills do
+		local radius = random:NextNumber(45, 110)
+		local x = -SEA_X + (index - 0.5) * spacing + random:NextNumber(-spacing, spacing) * 0.3
+		-- The front of every hill stays behind the fires on the shore.
+		local z = shore + 60 + radius + random:NextNumber(0, 120)
+		local y = random:NextNumber(-radius * 0.55, -radius * 0.2) + LAND_TOP
+		local material = if random:NextNumber() < 0.3
+			then Enum.Material.Rock
+			else Enum.Material.Grass
+		terrain:FillBall(Vector3.new(x, y, z), radius, material)
+	end
+	-- Rock outcrops breaking the beach at the waterline.
+	for _ = 1, 9 do
+		local x = random:NextNumber(-SEA_X + 60, SEA_X - 60)
+		terrain:FillBall(
+			Vector3.new(x, random:NextNumber(-4, 2), shore - random:NextNumber(10, 30)),
+			random:NextNumber(8, 18),
+			Enum.Material.Rock
 		)
 	end
+
 	for _, x in Layout.BurnSites do
 		local site = Build.part(
 			ship,
 			"BurnSite",
 			Vector3.new(90, 1, 18),
-			CFrame.new(x, shoreTop + 0.5, Layout.CoastZ - 40),
+			CFrame.new(x, LAND_TOP + 0.5, shore + 20),
 			BURN,
 			{ transparency = 1, collide = false, shadow = false }
 		)

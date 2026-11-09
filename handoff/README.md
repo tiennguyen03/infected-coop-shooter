@@ -231,8 +231,8 @@ Read in this order:
   untested; branch `nova/lobby`,
   `docs/sprints/LOBBY_V1_FALLOW.md`): the Fallow (`lobby.project.json`, `src/lobby/`), a
   hangar spawn by the desks with the ramp up to the spots, the match's Pike body (Roblox's
-  default walking sound muted), a Terrain-water sea and a burning coast (fire and smoke
-  particles), four Lantern spots that teleport a squad into a reserved match server, four
+  default walking sound muted), a Terrain-water sea and a Terrain coast (beach, hills)
+  burning on the shore (fire and smoke particles), four Lantern spots that teleport a squad into a reserved match server, four
   hangar desks (lines only, no trades), the Plot's Containment Board on placeholder numbers.
   Next: re-check the loop and body in the `Lobby (dev)` place, then a published launch test.
 - **Satisfying pass built 2026-11-09 (`docs/superpowers/plans/2026-11-09-satisfying-pass.md`).**

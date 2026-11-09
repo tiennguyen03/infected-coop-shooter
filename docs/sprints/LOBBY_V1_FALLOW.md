@@ -20,8 +20,12 @@ match place.
   rising aft to the deck through an open well, invisible walls at every edge. **The sea** is a
   shallow sheet of Terrain water, 8 studs deep, from 1100 astern to the coast, with small
   slow engine waves ("low tide", Nova) over a dark seabed part (`Config.Lobby.Sky.Water`,
-  `Seabed`). **The coast** is 900 studs past the bow: a shore strip, four low ridges inland,
-  and the Burn on four sites along the waterline. Each site has the match's skyline fire and
+  `Seabed`); the water is carved out of the hull's footprint (inset a stud) so it never
+  shows through the hull. **The coast** is Terrain too, 900 studs past the bow, so land meets
+  water at a real shoreline: a sand beach sloping under the water, a grass shelf, a row of
+  16 grass and rock hills placed from a fixed seed (`Config.Lobby.Sky.Coast`, the same on
+  every server; material colours tinted to the palette), rock outcrops at the waterline,
+  and the Burn on four sites on the shore in front of the hills. Each site has the match's skyline fire and
   smoke particles (stock `fire_main` / `smoke_main`, westerly drift), scaled up for distance:
   8 emitters in all (`Config.Lobby.Sky.Burn`). A clear afternoon
   (`Config.Lobby.Sky`: ClockTime 14, engine clouds, light atmosphere). ShadowMap with
