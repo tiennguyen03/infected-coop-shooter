@@ -2,10 +2,10 @@
 -- The soldier's keys (docs/PROGRESSION.md > Loadout): Q swaps long gun and sidearm, G throws
 -- a grenade, V shoves, E uses a stim (KitService over UseAbility), 1-4 fire the call-ins
 -- (CallIn remote) and 5 throws the Resupply flare. The server validates and performs them;
--- this controller forwards input and draws the grenade ghost: hold G and a ring shows where
--- the frag will land (the aim point, clamped to throw range, dropped to the ground) and how
--- far it reaches; release to throw it there. The call-ins and the flare throw at the
--- crosshair the same way (ThrowUtil, the server's maths).
+-- this controller forwards input and draws the aim: hold G or a thrown call-in's key and an
+-- arc from the hand plus that item's marker show where it will land (the aim point, clamped
+-- to throw range, dropped to the ground) and what it covers; release to throw it there. The
+-- flare throws at the crosshair at once (ThrowUtil, the server's maths).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -34,10 +34,6 @@ local CALL_IN_KEYS: { [Enum.KeyCode]: number } = {
 }
 
 local AbilityController = {}
-
-local targeting = false
-local ghost: Model? = nil
-local ghostTarget: Vector3? = nil
 
 type FragSettings = { ThrowDistance: number, Radius: number }
 
@@ -94,81 +90,147 @@ local function landingPoint(maxDistance: number): Vector3?
 	return ThrowUtil.landingPoint(root, aim, maxDistance, params.FilterDescendantsInstances)
 end
 
-local function buildGhost(radius: number): Model
+-- Aiming a throw (owner 2026-11-09: "hold and release with trajectory indicators so I
+-- actually know where it lands"): hold G or a thrown call-in's key, and a dotted arc from the
+-- hand plus the item's own marker (its Aim row: a ring, or a strip along or across the throw)
+-- follow the crosshair; release to throw there. Pressing another throw key switches to it.
+type AimShape =
+	{ Shape: string, Radius: number?, Length: number?, Width: number?, Across: boolean? }
+type Aiming = {
+	key: Enum.KeyCode, -- the key held
+	slot: number?, -- the call-in slot; nil for the grenade
+	reach: number, -- ThrowDistance
+	aim: AimShape,
+	model: Model,
+	beads: { Part },
+	marker: Part,
+	target: Vector3?,
+}
+
+local aiming: Aiming? = nil
+
+local function ghostPart(name: string, parent: Instance, transparency: number): Part
+	local part = Instance.new("Part")
+	part.Name = name
+	part.Anchored = true
+	part.CanCollide = false
+	part.CanQuery = false
+	part.CanTouch = false
+	part.CastShadow = false
+	part.Material = Enum.Material.Neon
+	part.Color = GHOST_COLOR
+	part.Transparency = transparency
+	part.Parent = parent
+	return part
+end
+
+local function startAiming(key: Enum.KeyCode, slot: number?, reach: number, aim: AimShape)
+	if aiming then
+		aiming.model:Destroy()
+	end
 	local model = Instance.new("Model")
-	model.Name = "GrenadeGhost"
-	local ring = Instance.new("Part")
-	ring.Name = "Ring"
-	ring.Shape = Enum.PartType.Cylinder
-	ring.Size = Vector3.new(0.3, radius * 2, radius * 2)
-	ring.Anchored = true
-	ring.CanCollide = false
-	ring.CanQuery = false
-	ring.CanTouch = false
-	ring.CastShadow = false
-	ring.Material = Enum.Material.Neon
-	ring.Color = GHOST_COLOR
-	ring.Transparency = 0.75
-	ring.Parent = model
-	local core = Instance.new("Part")
-	core.Name = "Core"
+	model.Name = "GrenadeGhost" -- excluded from the aim raycasts (raycastParams)
+	local beads: { Part } = {}
+	for _ = 1, Config.CallIns.AimArc.Beads do
+		local bead = ghostPart("Bead", model, 0.35)
+		bead.Shape = Enum.PartType.Ball
+		bead.Size = Vector3.new(0.35, 0.35, 0.35)
+		table.insert(beads, bead)
+	end
+	local marker = ghostPart("Marker", model, 0.7)
+	if aim.Shape == "strip" then
+		marker.Size = Vector3.new(aim.Width or 3, 0.3, aim.Length or 10)
+	else
+		marker.Shape = Enum.PartType.Cylinder
+		local radius = aim.Radius or 3
+		marker.Size = Vector3.new(0.3, radius * 2, radius * 2)
+	end
+	local core = ghostPart("Core", model, 0.3)
 	core.Shape = Enum.PartType.Ball
 	core.Size = Vector3.new(0.8, 0.8, 0.8)
-	core.Anchored = true
-	core.CanCollide = false
-	core.CanQuery = false
-	core.CanTouch = false
-	core.CastShadow = false
-	core.Material = Enum.Material.Neon
-	core.Color = GHOST_COLOR
-	core.Transparency = 0.3
-	core.Parent = model
 	model.PrimaryPart = core
-	return model
-end
-
-local function updateGhost()
-	local point = landingPoint(fragSettings().ThrowDistance)
-	ghostTarget = point
-	if not ghost or not point then
-		return
-	end
-	local ring = ghost:FindFirstChild("Ring") :: BasePart
-	local core = ghost:FindFirstChild("Core") :: BasePart
-	ring.CFrame = CFrame.new(point + Vector3.new(0, 0.15, 0)) * CFrame.Angles(0, 0, math.rad(90))
-	core.CFrame = CFrame.new(point + Vector3.new(0, 1, 0))
-end
-
-local function startTargeting()
-	if
-		targeting
-		or ((Players.LocalPlayer:GetAttribute(Attributes.Grenades) :: number?) or 0) <= 0
-	then
-		return
-	end
-	targeting = true
-	local model = buildGhost(fragSettings().Radius)
-	ghost = model
-	updateGhost()
 	model.Parent = workspace
+	aiming = {
+		key = key,
+		slot = slot,
+		reach = reach,
+		aim = aim,
+		model = model,
+		beads = beads,
+		marker = marker,
+		target = nil,
+	}
 end
 
-local function stopTargeting(): Vector3?
-	if not targeting then
-		return nil
+-- Moves the arc and the marker to where the throw would land now.
+local function updateAiming()
+	local state = aiming
+	if not state then
+		return
 	end
-	targeting = false
-	local target = ghostTarget
-	if ghost then
-		ghost:Destroy()
-		ghost = nil
+	local point = landingPoint(state.reach)
+	state.target = point
+	local character = Players.LocalPlayer.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	state.model.Parent = if point and root then workspace else nil
+	if not point or not root then
+		return
 	end
-	ghostTarget = nil
-	return target
+	-- The arc: a parabola from the hand to the landing point.
+	local from = root.Position + Vector3.new(0, 1.5, 0)
+	local flat = Vector3.new(point.X - from.X, 0, point.Z - from.Z)
+	local arc = Config.CallIns.AimArc
+	local rise = math.max(flat.Magnitude * arc.Rise, arc.MinRise)
+	local count = #state.beads
+	for index, bead in state.beads do
+		local t = index / (count + 1)
+		local at = from:Lerp(point, t) + Vector3.new(0, 4 * rise * t * (1 - t), 0)
+		bead.CFrame = CFrame.new(at)
+	end
+	-- The marker on the ground: a ring, or a strip along (or across) the throw.
+	local direction = if flat.Magnitude > 0.1 then flat.Unit else Vector3.zAxis
+	local ground = point + Vector3.new(0, 0.15, 0)
+	if state.aim.Shape == "strip" then
+		local frame = CFrame.lookAt(ground, ground + direction)
+		state.marker.CFrame = if state.aim.Across
+			then frame * CFrame.Angles(0, math.rad(90), 0)
+			else frame
+	else
+		state.marker.CFrame = CFrame.new(ground) * CFrame.Angles(0, 0, math.rad(90))
+	end
+	local core = state.model.PrimaryPart
+	if core then
+		core.CFrame = CFrame.new(point + Vector3.new(0, 1, 0))
+	end
 end
 
--- Keys 1-4: the call-in in that slot, thrown at the crosshair when it is a throw kind.
-local function useCallIn(slot: number)
+-- Ends aiming; returns what was aimed (nil when nothing was).
+local function stopAiming(): Aiming?
+	local state = aiming
+	aiming = nil
+	if state then
+		state.model:Destroy()
+	end
+	return state
+end
+
+-- G held: the frag (if one is left).
+local function aimGrenade()
+	if ((Players.LocalPlayer:GetAttribute(Attributes.Grenades) :: number?) or 0) <= 0 then
+		return
+	end
+	local settings = fragSettings()
+	startAiming(
+		Enum.KeyCode.G,
+		nil,
+		settings.ThrowDistance,
+		{ Shape = "ring", Radius = settings.Radius }
+	)
+end
+
+-- Keys 1-4: a thrown call-in is aimed while the key is held and thrown on release; a "self"
+-- call-in fires at once.
+local function pressCallIn(key: Enum.KeyCode, slot: number)
 	local player = Players.LocalPlayer
 	local definition =
 		CallInDefinitions.get(player:GetAttribute(Attributes.callIn(slot)) :: string?)
@@ -184,13 +246,35 @@ local function useCallIn(slot: number)
 	if charges <= 0 and not daisyChain then
 		return
 	end
-	local point: Vector3? = nil
-	if definition.Kind == "throw" then
-		local cfg = (Config.CallIns :: { [string]: any })[definition.ConfigKey]
-		point = landingPoint(cfg.ThrowDistance)
-		AnimationController.playAbility("throw")
+	if definition.Kind ~= "throw" or charges <= 0 then
+		Remotes.get("CallIn"):FireServer(slot, nil)
+		return
 	end
-	Remotes.get("CallIn"):FireServer(slot, point)
+	local cfg = (Config.CallIns :: { [string]: any })[definition.ConfigKey]
+	startAiming(
+		key,
+		slot,
+		cfg.ThrowDistance,
+		(cfg.Aim :: AimShape?) or { Shape = "ring", Radius = 3 }
+	)
+end
+
+-- The held key came up: throw what was being aimed.
+local function release(key: Enum.KeyCode)
+	if not aiming or aiming.key ~= key then
+		return
+	end
+	local state = stopAiming() :: Aiming
+	local target = state.target
+	if not target or workspace:GetAttribute(Attributes.GamePaused) == true then
+		return
+	end
+	if state.slot then
+		Remotes.get("CallIn"):FireServer(state.slot, target)
+	else
+		Remotes.get("UseAbility"):FireServer(Messages.Ability.Grenade, target)
+	end
+	AnimationController.playAbility("throw")
 end
 
 function AbilityController.init()
@@ -208,11 +292,11 @@ function AbilityController.init()
 		local key = input.KeyCode
 		local slot = CALL_IN_KEYS[key]
 		if slot and slot <= Config.CallIns.Slots then
-			useCallIn(slot)
+			pressCallIn(key, slot)
 		elseif key == Enum.KeyCode.Q then
 			useAbility:FireServer(Messages.Ability.Swap)
 		elseif key == Enum.KeyCode.G then
-			startTargeting()
+			aimGrenade()
 		elseif key == Enum.KeyCode.V then
 			useAbility:FireServer(Messages.Ability.Shove)
 		elseif key == Enum.KeyCode.E then
@@ -226,28 +310,18 @@ function AbilityController.init()
 	end)
 
 	UserInputService.InputEnded:Connect(function(input, _gameProcessed)
-		if input.KeyCode == Enum.KeyCode.G then
-			local target = stopTargeting()
-			if target and workspace:GetAttribute(Attributes.GamePaused) ~= true then
-				useAbility:FireServer(Messages.Ability.Grenade, target)
-				AnimationController.playAbility("throw")
-			end
-		end
+		release(input.KeyCode)
 	end)
 
-	RunService.RenderStepped:Connect(function()
-		if targeting then
-			updateGhost()
-		end
-	end)
+	RunService.RenderStepped:Connect(updateAiming)
 
-	-- A respawn or the freeze cancels any held targeting.
+	-- A respawn or the freeze cancels any held aim.
 	Players.LocalPlayer.CharacterAdded:Connect(function()
-		stopTargeting()
+		stopAiming()
 	end)
 	workspace:GetAttributeChangedSignal(Attributes.GamePaused):Connect(function()
 		if workspace:GetAttribute(Attributes.GamePaused) == true then
-			stopTargeting()
+			stopAiming()
 		end
 	end)
 end
