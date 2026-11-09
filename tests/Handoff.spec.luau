@@ -101,4 +101,54 @@ return {
 		expect.equal(result.missions[2].outcome, "loss", "unknown outcome")
 		expect.equal(result.standDown, true, "standDown")
 	end,
+	["what the lobby builds is what the match reads"] = function()
+		local sent = Handoff.departure("harlan_corridor", { 111, 222 }, { [111] = good })
+		local first = Handoff.readJoin(sent, 111, check)
+		expect.equal(first.fromLobby, true, "fromLobby")
+		expect.equal(first.slot, 1, "boarding order is the slot")
+		expect.equal(first.loadout.primary, "smg", "loadout carried")
+		expect.equal(first.partySize, 2, "party size")
+		local second = Handoff.readJoin(sent, 222, check)
+		expect.equal(second.slot, 2, "second aboard")
+		expect.equal(second.loadout.primary, "service_rifle", "no loadout sent: the default")
+	end,
+	["a lift never carries more than four"] = function()
+		local sent = Handoff.departure("harlan_corridor", { 1, 2, 3, 4, 5 }, nil)
+		local join = Handoff.readJoin(sent, 5, check)
+		expect.equal(join.partySize, 4, "party size")
+		expect.equal(join.slot, nil, "the fifth is not aboard")
+	end,
+	["a mission's outcome: extracted wins, a wipe after the Primary is partial, else a loss"] = function()
+		expect.equal(Handoff.outcome("Extracted", true), "win", "extracted")
+		expect.equal(Handoff.outcome("Extracted", false), "win", "extracted early")
+		expect.equal(Handoff.outcome("Wiped", true), "partial", "wiped after the Primary")
+		expect.equal(Handoff.outcome("Wiped", false), "loss", "wiped before it")
+	end,
+	["the lobby reads back what the match sent home"] = function()
+		local sent = Handoff.result(
+			"harlan_corridor",
+			{ { id = "delta", outcome = "partial", secondaries = 1 } },
+			false
+		)
+		local read = Handoff.readResult(sent)
+		expect.equal(read ~= nil, true, "read")
+		local result = read :: Handoff.Result
+		expect.equal(result.missions[1].id, "delta", "mission")
+		expect.equal(result.missions[1].outcome, "partial", "outcome")
+		expect.equal(result.standDown, false, "standDown")
+	end,
+	["a result in any other shape is ignored"] = function()
+		expect.equal(Handoff.readResult(nil), nil, "nothing")
+		expect.equal(Handoff.readResult("hello"), nil, "garbage")
+		local wrongVersion = Handoff.result("harlan_corridor", {}, true) :: any
+		wrongVersion.version = 99
+		expect.equal(Handoff.readResult(wrongVersion), nil, "version")
+		local badOutcome = Handoff.result(
+			"harlan_corridor",
+			{ { id = "delta", outcome = "win", secondaries = 0 } },
+			true
+		) :: any
+		badOutcome.missions[1].outcome = "flawless"
+		expect.equal(Handoff.readResult(badOutcome), nil, "outcome")
+	end,
 }

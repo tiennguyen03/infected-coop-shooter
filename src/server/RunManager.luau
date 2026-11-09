@@ -6,6 +6,10 @@
 --   Warden) -> Extract -> Ended ("Extracted" on extraction, "Wiped" when nobody is alive).
 -- Auto-respawn is off: death ends a player's run; RestartRun (death or results screen)
 -- starts a fresh one. Every system with run state registers its reset with Lifecycle.
+-- A squad sent by the lobby (HandoffService, docs/LOBBY_MATCH_HANDOFF.md): each player gets
+-- the loadout the lobby sent, Lobby stays a staging state until everyone the lobby sent has
+-- a body (or Config.Run.StagingSeconds after the first), and at run end READY flies the
+-- squad home to the lobby (on its own after Config.Handoff.ReturnAfterSeconds).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -20,8 +24,13 @@ local ExtractionService = require(script.Parent.ExtractionService)
 local IndexService = require(script.Parent.IndexService)
 local ObjectiveService = require(script.Parent.ObjectiveService)
 local PauseService = require(script.Parent.PauseService)
+local HandoffService = require(script.Parent.HandoffService)
+local LoadoutService = require(script.Parent.LoadoutService)
+local Missions = require(script.Parent.Missions)
 local Squad = require(script.Parent.Squad)
 local Lifecycle = require(script.Parent.Lifecycle)
+local Handoff = require(ReplicatedStorage.Shared.Rules.Handoff)
+local Messages = require(ReplicatedStorage.Shared.Messages)
 
 local RunManager = {}
 
@@ -32,6 +41,14 @@ local runGeneration = 0
 -- a countdown from an earlier result screen never starts a later run.
 local ready: { [Player]: boolean } = {}
 local readyGeneration = 0
+
+-- Staging: how many players the lobby sent (1 on a direct join) and whether the staging
+-- deadline is running. The Primary flag feeds the result sent home (Handoff.outcome).
+local expected = 1
+local stagingStarted = false
+local primaryDone = false
+-- Bumped whenever a trip home is planned or called off, so a stale timer never fires.
+local homeGeneration = 0
 
 local function publishReady()
 	local count = 0
@@ -63,6 +80,8 @@ end
 local function beginRun()
 	runGeneration += 1
 	local generation = runGeneration
+	primaryDone = false
+	workspace:SetAttribute(Attributes.StagingEndsAt, 0)
 	setState("Insert", "")
 	BotService.startRun()
 	task.delay(Config.Run.InsertSeconds, function()
@@ -86,6 +105,49 @@ function RunManager.endRun(result: RunStates.RunResult)
 	EnemyService.clearAll()
 	clearReady()
 	setState("Ended", result)
+	-- A squad from the lobby goes home: READY now means "back to the Fallow", and the bird
+	-- lifts on its own after Config.Handoff.ReturnAfterSeconds.
+	if HandoffService.canReturn() then
+		homeGeneration += 1
+		local generation = homeGeneration
+		workspace:SetAttribute(Attributes.ReturnsHome, true)
+		task.delay(Config.Handoff.ReturnAfterSeconds, function()
+			if generation == homeGeneration and RunStates.current() == "Ended" then
+				RunManager.goHome()
+			end
+		end)
+	end
+end
+
+-- Flies everyone here back to the lobby with the run's result (Handoff.result). If the trip
+-- cannot go (every retry failed), the squad stays and READY restarts in the match.
+function RunManager.goHome()
+	if workspace:GetAttribute(Attributes.Homebound) == true then
+		return
+	end
+	homeGeneration += 1
+	workspace:SetAttribute(Attributes.Homebound, true)
+	local runResult = RunStates.result()
+	local result = Handoff.result(HandoffService.operation(), {
+		{
+			id = Missions.current().Id,
+			outcome = Handoff.outcome(runResult, primaryDone),
+			secondaries = 0,
+		},
+	}, runResult == "Extracted")
+	print("[RunManager] going home:", result.missions[1].outcome, "standDown", result.standDown)
+	task.spawn(function()
+		if HandoffService.sendHome(result) then
+			return
+		end
+		workspace:SetAttribute(Attributes.Homebound, false)
+		workspace:SetAttribute(Attributes.ReturnsHome, false)
+		clearReady()
+		Remotes.get("BuffNotice"):FireAllClients(
+			"Control: Lantern can't lift. Stay on the pad, Pike.",
+			Messages.Notice.Radio
+		)
+	end)
 end
 
 -- Bots never hold a run open on their own: it is over when no player is Alive or Downed
@@ -104,6 +166,9 @@ end
 -- player's onPlayerReset hooks, then everyone respawns (register #8). Public so DevTestService can force one.
 function RunManager.startRun()
 	clearReady()
+	homeGeneration += 1
+	workspace:SetAttribute(Attributes.ReturnsHome, false)
+	workspace:SetAttribute(Attributes.Homebound, false)
 	-- Every service resets its own run and player state through its registered hooks
 	-- (Lifecycle, docs/ARCHITECTURE.md F2); nothing here names a service.
 	Lifecycle.runStart()
@@ -118,6 +183,15 @@ function RunManager.startRun()
 		end)
 	end
 	print("[RunManager] Run restarted for", #players, "player(s)")
+end
+
+-- What the squad's READY leads to: the trip home when it came from the lobby, else a new run.
+local function proceed()
+	if workspace:GetAttribute(Attributes.ReturnsHome) == true then
+		RunManager.goHome()
+	else
+		RunManager.startRun()
+	end
 end
 
 local function allReady(): boolean
@@ -143,7 +217,7 @@ local function onRestartRequest(player: Player)
 	ready[player] = true
 	publishReady()
 	if allReady() then
-		RunManager.startRun()
+		proceed()
 		return
 	end
 	if ((workspace:GetAttribute(Attributes.ReadyUpEndsAt) :: number?) or 0) > 0 then
@@ -156,9 +230,29 @@ local function onRestartRequest(player: Player)
 	)
 	task.delay(Config.Run.ReadyUpSeconds, function()
 		if generation == readyGeneration and RunStates.current() == "Ended" then
-			RunManager.startRun()
+			proceed()
 		end
 	end)
+end
+
+-- Staging (Lobby state): the first run starts once everyone the lobby sent has a body, or
+-- when the staging deadline passes. A direct join (expected 1) starts on the first body.
+local function tryLaunch()
+	if RunStates.current() ~= "Lobby" then
+		return
+	end
+	local arrived = 0
+	for _, player in Players:GetPlayers() do
+		if player.Character then
+			arrived += 1
+		end
+	end
+	workspace:SetAttribute(Attributes.SquadArrived, arrived)
+	local endsAt = (workspace:GetAttribute(Attributes.StagingEndsAt) :: number?) or 0
+	local late = endsAt > 0 and workspace:GetServerTimeNow() >= endsAt
+	if arrived >= expected or (late and arrived > 0) then
+		beginRun()
+	end
 end
 
 local function watchCharacter(character: Model)
@@ -166,13 +260,34 @@ local function watchCharacter(character: Model)
 	if humanoid then
 		humanoid.Died:Connect(onDied)
 	end
-	-- The first body on the field starts the first run.
-	if RunStates.current() == "Lobby" then
-		beginRun()
+	tryLaunch()
+end
+
+-- What the lobby sent this player: their loadout (issued before the drop, the Arms Room's own
+-- rules), and how many are coming; the first arrival starts the staging deadline.
+local function receive(player: Player)
+	local join = HandoffService.joinFor(player)
+	if not join.fromLobby then
+		return
+	end
+	local ok, reason = LoadoutService.apply(player, join.loadout)
+	if not ok then
+		warn(`[RunManager] {player.Name}'s lobby loadout was refused: {reason}`)
+	end
+	expected = math.max(expected, join.partySize)
+	workspace:SetAttribute(Attributes.SquadExpected, expected)
+	if RunStates.current() == "Lobby" and not stagingStarted then
+		stagingStarted = true
+		workspace:SetAttribute(
+			Attributes.StagingEndsAt,
+			workspace:GetServerTimeNow() + Config.Run.StagingSeconds
+		)
+		task.delay(Config.Run.StagingSeconds + 0.1, tryLaunch)
 	end
 end
 
 local function onPlayerAdded(player: Player)
+	receive(player)
 	player.CharacterAdded:Connect(watchCharacter)
 	if player.Character then
 		task.spawn(watchCharacter, player.Character)
@@ -191,7 +306,7 @@ function RunManager.init()
 				if RunStates.current() == "Ended" then
 					publishReady()
 					if allReady() then
-						RunManager.startRun()
+						proceed()
 					end
 				end
 			end)
@@ -199,6 +314,11 @@ function RunManager.init()
 	})
 	-- Death ends the run; respawning only happens through resetRun.
 	Players.CharacterAutoLoads = false
+	workspace:SetAttribute(Attributes.SquadExpected, 1)
+	workspace:SetAttribute(Attributes.SquadArrived, 0)
+	workspace:SetAttribute(Attributes.StagingEndsAt, 0)
+	workspace:SetAttribute(Attributes.ReturnsHome, false)
+	workspace:SetAttribute(Attributes.Homebound, false)
 	setState("Lobby", "")
 
 	-- Explore -> Primary when the hold zone appears; Primary -> Index when the hold is done
@@ -213,6 +333,7 @@ function RunManager.init()
 		if RunStates.current() == "Ended" then
 			return
 		end
+		primaryDone = true
 		setState("Index")
 		if not IndexService.start() then
 			setState("Extract")

@@ -66,9 +66,28 @@ local function refreshStatus()
 			0
 		)}s`
 	end
+	-- A squad from the lobby flies home instead of redeploying (RunManager.goHome).
+	local returnsHome = workspace:GetAttribute(Attributes.ReturnsHome) == true
+	local homebound = workspace:GetAttribute(Attributes.Homebound) == true
+	if homebound then
+		text = "Lantern inbound · back to the Fallow"
+	elseif returnsHome then
+		text = string.gsub(text, "next deployment", "Lantern lifts")
+	end
 	status.Text = text
 	local button = readyButton
-	if button and Players.LocalPlayer:GetAttribute(Attributes.Ready) == true then
+	if button and homebound then
+		button.Text = "LIFTING…"
+		button.Active = false
+		button.AutoButtonColor = false
+	elseif
+		button
+		and returnsHome
+		and Players.LocalPlayer:GetAttribute(Attributes.Ready) ~= true
+	then
+		button.Text = "BACK TO THE FALLOW"
+	end
+	if button and not homebound and Players.LocalPlayer:GetAttribute(Attributes.Ready) == true then
 		button.Text = "READY ✓"
 		button.Active = false
 		button.AutoButtonColor = false
@@ -311,7 +330,15 @@ function RunEndUI.init()
 	for _, name in { Attributes.RunState, Attributes.RunResult } do
 		workspace:GetAttributeChangedSignal(name):Connect(refresh)
 	end
-	for _, name in { Attributes.ReadyCount, Attributes.ReadyNeeded, Attributes.ReadyUpEndsAt } do
+	for _, name in
+		{
+			Attributes.ReadyCount,
+			Attributes.ReadyNeeded,
+			Attributes.ReadyUpEndsAt,
+			Attributes.ReturnsHome,
+			Attributes.Homebound,
+		}
+	do
 		workspace:GetAttributeChangedSignal(name):Connect(refreshStatus)
 	end
 	player:GetAttributeChangedSignal(Attributes.Ready):Connect(refreshStatus)
