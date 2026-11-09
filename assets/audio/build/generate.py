@@ -152,6 +152,23 @@ SOUNDS = {
     "sniper_reload_1": ("bolt action rifle reload, bolt pulled back, magazine dropped out, fresh magazine clicked in, bolt pushed forward and locked, close, dry", 3.0, 513),
     "goose_shot_1": ("shoulder fired recoilless rifle launching a rocket, deep boom and loud backblast whoosh, rocket motor hiss flying away, outdoor", 2.5, 521, TAIL),
     "goose_reload_1": ("heavy steel breech swung open, large rocket round slid into a tube, breech latched shut with a heavy clunk, close, dry", 3.5, 522),
+    # --- the original guns get their own shots and reloads (owner 2026-11-09: "some sounds
+    # still use the default rifle sound")
+    "smg_shot_1": ("9mm submachine gun single shot, light snappy pop, close, outdoor, not piercing", 0.8, 531),
+    "smg_shot_2": ("compact 9mm smg gunshot, short tight pop, close, outdoor, warm", 0.8, 532),
+    "smg_reload_1": ("submachine gun reload, curved magazine pulled out, new magazine clicked in, cocking handle slapped forward, close, dry", 2.0, 533),
+    "lmg_shot_1": ("belt fed light machine gun single gunshot, heavy thump with metallic clank of the link, close, outdoor, not piercing", 0.9, 541),
+    "lmg_shot_2": ("light machine gun gunshot, deep punchy report, close, outdoor, warm low end", 0.9, 542),
+    "lmg_reload_1": ("machine gun reload, feed tray cover opened, ammunition belt laid in with rattling links, cover slammed shut, charging handle pulled, close", 4.0, 543),
+    "shotgun_shot_1": ("12 gauge pump shotgun blast, big deep boom, then the pump action racked back and forward, close, outdoor, not piercing", 1.6, 551),
+    "shotgun_shot_2": ("pump action shotgun firing, heavy wide boom, shell ejected with a pump rack, close, outdoor, warm", 1.6, 552),
+    "shotgun_reload_1": ("shotgun shells pushed one by one into a tube magazine, several clicks, then the pump racked, close, dry", 3.2, 553),
+    "dmr_shot_1": ("7.62 semi automatic marksman rifle gunshot, heavy crack and boom, close, outdoor, not piercing", 1.4, 561),
+    "dmr_shot_2": ("battle rifle single shot, deep powerful report with short echo, close, outdoor, warm", 1.4, 562),
+    "dmr_reload_1": ("rifle reload, heavy steel magazine dropped, new magazine seated with a click, bolt release slapped, close, dry", 2.4, 563),
+    "pistol_shot_1": ("9mm handgun single gunshot, sharp pop, close, outdoor, not piercing", 0.8, 571),
+    "pistol_shot_2": ("pistol gunshot, compact snap with a little body, close, outdoor, warm", 0.8, 572),
+    "pistol_reload_1": ("pistol reload, magazine dropped, fresh magazine slapped into the grip, slide released forward, close, dry", 1.4, 573),
 }
 
 # bank: its clips, in file order. A clip may only sit in one bank. The group of a clip is its
@@ -171,7 +188,8 @@ BANKS = {
     "ui_radio": ["radio_in_1", "objective_complete_1", "card_pick_1", "kia_1", "ui_click_1"],
     "ambience": ["lantern_rotor_1", "amb_city_1", "amb_wind_1", "amb_siren_1"],
     "guns": ["revolver_shot_1", "revolver_shot_2", "revolver_reload_1", "sniper_shot_1", "sniper_shot_2",
-             "sniper_reload_1", "goose_shot_1", "goose_reload_1"],
+             "sniper_reload_1", "goose_shot_1", "goose_reload_1"]
+    + [f"{g}_{k}" for g in ("smg", "lmg", "shotgun", "dmr", "pistol") for k in ("shot_1", "shot_2", "reload_1")],
 }
 BANK_GAP = 0.15  # seconds of silence between clips so a seek never bleeds into the next one
 REPO_ROOT = os.environ.get("RAS_REPO") or os.path.normpath(os.path.join(HERE, "..", "..", ".."))

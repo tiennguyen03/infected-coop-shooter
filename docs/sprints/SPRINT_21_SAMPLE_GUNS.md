@@ -40,7 +40,9 @@ the loadout screen. Numbers from the systems designer; gun table in
   spec in `tests/Spread.spec.luau`) and rolls its own for any other, so the tracers you see are
   the hits.
 - **Rifle sound on the original guns:** only the sample guns had a `Sound`. The MP5, M249,
-  Mossberg, M110 and M17 get their own shot + reload clips in the `guns` bank.
+  Mossberg (the pump rack is part of its shot), M110 and M17 now have their own shot +
+  reload clips in the `guns` bank (re-uploaded with all 23 clips); the M16 keeps the
+  shared rifle shot, which is its own.
 - **Silent rocket:** the Goose's impact now plays the frag's blast sound.
 - **Every gun gets its own model** (owner: "just make them"): M16A4, MP5A3, M249, Mossberg
   590, M110 and M17 modelled in `guns.py` (lineup: `assets/3d/build/previews/guns_lineup.png`),

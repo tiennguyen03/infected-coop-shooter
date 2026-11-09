@@ -34,7 +34,7 @@ local IDS: { [string]: string } = {
 	ui_radio = "rbxassetid://71130678294211",
 	ambience = "rbxassetid://98770253514208",
 	-- each gun's own shot and reload (Config.Weapons.<id>.Sound), 2026-11-09
-	guns = "rbxassetid://97998220606581",
+	guns = "rbxassetid://138267385221045",
 }
 
 local SoundBanks = {}
