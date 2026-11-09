@@ -25,19 +25,15 @@ single-player with bots, but every system is written for four.
 
 ## Step 1: what Tien has to do first (owner checklist)
 
-- [ ] Push the current work. Everything recent lives on the local branch `hud-p2` (over 30
-      commits ahead of `origin/main`); a fresh clone of `main` is weeks out of date.
-      `git push -u origin foundation hud-p2`, then merge to `main` or tell the friend which
-      branch to base on.
+- [x] Current work is on `main` (merged 2026-11-09). Clone and branch from `main`.
 - [ ] Add the friend as a collaborator on GitHub:
       `gh api -X PUT repos/tiennguyen03/infected-coop-shooter/collaborators/<their-username>`
       (or Settings → Collaborators on https://github.com/tiennguyen03/infected-coop-shooter).
 - [ ] Give the friend Studio access to the test place **Co-op Zombie Shooter** (place id 87556879379942, owned by the group Boomin Dev Studios):
-      Game Settings → Permissions, or Collaborate → add them. See "Asset permissions" below
-      for why this matters.
+      Being in the group with an edit role is enough. See "Asset permissions" below.
 - [x] Asset ownership: done 2026-11-09. The group **Boomin Dev Studios** (id 270506601) owns
-      CZS and every sound and animation. Add the friend to the group with a role that can
-      edit its experiences.
+      the game and every sound and animation. Add the friend to the group with a role that
+      can edit its experiences.
 - [ ] Never share your own Open Cloud API key or Hugging Face token. The friend makes their own.
 
 ## Step 2: install (one time)
@@ -77,7 +73,7 @@ stylua src tests && selene src && rojo build -o build.rbxlx && lune run tests/ru
 rojo serve default.project.json            # leave running
 ```
 
-In Studio: open the CZS place (or a new Baseplate for code-only work), Plugins → Rojo →
+In Studio: open your own saved copy of **Co-op Zombie Shooter** (or a new Baseplate for code-only work), Plugins → Rojo →
 **Connect**, press **Play**. F1 opens the dev panel (god mode, spawn Infected, skip ahead).
 
 A running playtest never picks up synced code: **Stop → Play** after every change.
@@ -113,7 +109,7 @@ hold **F** revive. F1 dev panel; F2 god, F3 clear Infected, F4 ten Walkers, F5 r
   are edited by nearly every feature. Rebase on `main` often and keep your edits to the lines
   about your feature.
 - **Studio.** Two people syncing Rojo into the same Team Create place overwrite each other's
-  scripts. Each of you syncs into your own copy (File → Save to File from CZS, or a Baseplate);
+  scripts. Each of you syncs into your own copy (File → Save to File from Co-op Zombie Shooter, or a Baseplate);
   use the shared place only for playtesting merged builds together.
 - **Never** create scripts in Studio by hand for Rojo-managed files, and never commit API
   keys or tokens.
@@ -121,8 +117,9 @@ hold **F** revive. F1 dev panel; F2 god, F3 clear Infected, F4 ten Walkers, F5 r
 ## Asset permissions
 
 Roblox only lets an experience play audio and animations its owner may use. Everything is
-owned by the group **Boomin Dev Studios** (id 270506601): CZS and every sound and animation
-id (`assets/*/ASSET_IDS.md`). Join the group and test in CZS or any place the group owns.
+owned by the group **Boomin Dev Studios** (id 270506601): the game "Co-op Zombie Shooter" and
+every sound and animation id (`assets/*/ASSET_IDS.md`). Join the group and test in a place
+the group owns (or your saved copy of it, opened while signed in as a group member).
 In a place you own yourself, sounds and animations stay silent and still. New uploads go
 to the group too (`upload_asset` with `groupId` 270506601, using a group Open Cloud key
 the owner gives you access to, never a personal one). Meshes load anywhere.
@@ -131,10 +128,12 @@ Raw sources that are not in git: the Mixamo animation clips (licence forbids red
 and the generated `.wav` files (regenerate with `assets/audio/build/generate.py`). You don't
 need either unless you're changing animations or sounds.
 
-## Where things stand (2026-11-08)
+## Where things stand (2026-11-09)
 
-The Pike rework (six guns, the Arms Room on B, twelve grounded call-ins, the posed blocky
-Infected) and dismemberment are built and merged on `hud-p2` but **not yet playtested
-together**. That integrated playtest is the next job. After it: the "make it satisfying"
-pass (camera kick, blast shake, corpses that stay, hit flinch), support weapons, gun meshes
-(every gun still uses the rifle mesh). The full list is in `handoff/README.md` > Open work.
+On `main`: the Pike rework (six guns, the Arms Room on B, grounded call-ins, the posed
+blocky Infected), dismemberment, and the satisfying pass (camera kick, blast shake, limp
+bodies, hit flinch, low-health effect, reload clip). Played by the owner, no errors; a
+formal checklist pass of every call-in is still open. Nova owns the lobby and the loadout
+screen. Every feel value (kick, shake, heavy, reload clip) lives on the gun's or call-in's own
+Config row, so new loadout items need no feel code. Next ideas and the full list:
+`handoff/README.md` > Open work.

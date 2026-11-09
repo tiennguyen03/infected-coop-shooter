@@ -1,15 +1,10 @@
 # Handoff — Infected Co-op Shooter (VS Code + Claude Code terminal)
 
 Start here when picking the project up in a fresh Claude Code session.
-Last updated: 2026-11-08, start of the foundation work on branch `foundation`: the owner
-asked for the "do now" items of the code review (`docs/ARCHITECTURE.md` F1-F5) before more
-features. Plan: `docs/superpowers/plans/2026-11-08-foundation-f1-f5.md`; F1 (renames)
-all five done: F1 renames, F2 `Lifecycle` hooks + boot list, F3
-`Attributes` / `Messages` contract, F4 co-op debt #3/#5/#9, F5 Lune tests + CI. The branch
-waits for the owner to review, push and merge; the first CI run happens on that push. Also on
-the branch: the black-bodies fix (`PaletteController`). The HUD restyle after Prototype 2 is on branch `hud-p2` (off
-`foundation`, docs/STYLES.md section 5); world markers and a squad roster are next. Last verified
-commit on `main`: the open perimeter (solo playtest).
+Last updated: 2026-11-09. Everything is on `main` (merged from `hud-p2` 2026-11-09: the
+foundation F1-F5, the HUD restyle, the Pike rework, dismemberment, the group migration and
+the satisfying pass). Work on a `<name>/<feature>` branch and open a PR to `main`; the
+owner merges. Nova (second developer) owns the lobby and the loadout screen.
 
 ## What this is
 
