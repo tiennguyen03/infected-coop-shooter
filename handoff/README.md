@@ -226,6 +226,11 @@ Read in this order:
   `LoadoutUI`, `ArmsRoom`, `Rules/Loadout`, `LoadoutService.apply`, a lobby place and its
   project file; `docs/MULTIPLAYER_READINESS.md` decision 7, `docs/ARCHITECTURE.md` lobby).
   Owner + Claude: everything else below. Bugs found in Nova's files go to Nova, not fixed here.
+  **Lobby v1 built 2026-11-09, not playtested** (branch `nova/lobby`,
+  `docs/sprints/LOBBY_V1_FALLOW.md`): the Fallow (`lobby.project.json`, `src/lobby/`), screening
+  lane spawn, four Lantern spots that teleport a squad into a reserved match server, four
+  hangar desks (lines only, no trades), the Plot's Containment Board on placeholder numbers.
+  Next: playtest it in a `Lobby (dev)` place in the group experience.
 - **Satisfying pass built 2026-11-09 (`docs/superpowers/plans/2026-11-09-satisfying-pass.md`).**
   Camera kick per gun, blast shake per grenade/call-in (`ShakePower`), limp bodies thrown by
   the killing hit (max 8, 4 s), hit flinch (Brute only from `Heavy` guns), legless crawl,

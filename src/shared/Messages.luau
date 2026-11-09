@@ -75,6 +75,13 @@ local Messages = table.freeze({
 		Roll = "roll",
 		Slide = "slide",
 	}),
+	-- Launch (lobby place, server -> client): your seat on a Lantern spot
+	Launch = table.freeze({
+		Manifest = "manifest", -- (spot, names, secondsLeft) you are aboard
+		Lifting = "lifting", -- (spot) the bird is lifting; the teleport is under way
+		Failed = "failed", -- (reason) the teleport did not happen
+		Cleared = "cleared", -- () you stepped off the spot
+	}),
 })
 
 return Messages

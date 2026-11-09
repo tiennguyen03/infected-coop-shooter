@@ -107,7 +107,9 @@ may add to this list.
    - **Persistent progress (unlocks, Containment Board) is saved by the server that earns
      it** (DataStore, keyed by UserId), never trusted from teleport data.
    - **Disk layout:** a second Rojo project (`lobby.project.json`) sharing `src/shared`; its
-     own `src/lobby/` client and server. Not built yet; not before Co-op Sprint A ships.
+     own `src/lobby/` client and server. v1 built 2026-11-09, not playtested: the Fallow,
+     launch by boarding a Lantern spot (docs/sprints/LOBBY_V1_FALLOW.md). The match does not
+     read the teleport data yet.
 8. **Keys (owner, 2026-11-07).** F = interact (revive, pickups, prompts). The number row
    1-4 is free: call-in slots and the Resupply flare move there with the loadout rework
    (proposal: 1-2 call-ins, 3 flare, 4 spare). Movement chords are under review (handoff

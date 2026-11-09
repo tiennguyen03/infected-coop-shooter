@@ -144,6 +144,48 @@ you can get the lid off quietly, which you cannot.
 
 ---
 
+# The Fallow
+
+Canon as of 2026-11-09 (lobby place, Nova; owner and Nova approved the name).
+
+The corridor runs north from the coast to the dam; Checkpoint Delta is the gate nearest the
+sea. Command runs the corridor from offshore. The Fallow is a helicopter carrier pulled out
+of the reserve fleet for Harlan: a flat deck, one island, a hangar under the deck, her old
+hull number painted out and HRD sprayed over it. She holds station off the coast, past the
+reach of anything that walks. Harlan Control works out of her Plot, every Lantern flies off
+her deck, and every window team waits in her hangar until its window opens. The seat home at
+Stand Down is a seat back to the Fallow.
+
+The Infected cannot reach the ship. The one way aboard is Lantern, so everyone who steps off
+a helo walks the screening lane at the deck edge (hose, hands, eyes, band), Pike included,
+every time. Delta screened and failed. The Fallow screens and has not, yet.
+
+Many window teams share the ship. They are **not** all Pike (owner and Nova, 2026-11-09):
+how the other teams are called is open, for the lore developer.
+
+- **Flight deck.** Numbered Lantern spots; a team launches by boarding its bird. At night the
+  coast shows orange where the Burn has been.
+- **Hangar deck.** Where the teams wait, and where they draw kit. Nobody sells anything; a
+  team draws against its record (what the record is, the unlock currency, is open; not
+  "Requisition", which is the pallet cost). The desks: the **Arms Room** (the armorer behind
+  a wire cage: guns, sidearms, grenades), the **Loadmaster** (Lantern's crew chief:
+  everything kicked out of the door), **Fires** (a fire support officer: your callsign on the
+  Hammer, Anvil and Shrike nets), the **Engineers** (a sapper sergeant: Doorman, Tripline,
+  Concertina). Desk crew wear ship or Army working dress, never Pike grey.
+- **The Plot.** Control's map room under the island, lit red. The corridor chart on the
+  table under tape and grease pencil; the Containment Board on a lit perspex wall, five
+  columns, written backwards by a plotter standing behind it. Contained is still not clean.
+
+Keep it ours: the ship is shared and never upgraded by players (no ship modules), the board
+is paper and perspex (no hologram), a team launches by boarding a helo (no drop pods), the
+desks are people at counters (no rotating store), and the PA is procedural (no propaganda).
+
+| Cue | Line |
+|---|---|
+| Launch | "Pike, Control. Lantern on spot three, turning. Window opens on lift." |
+| Recovery | "Lantern recovering, spot two. Screening party to the deck edge." |
+| Board change | (no line; the plotter's grease pencil) |
+
 # Pike
 
 Canon as of 2026-11-08 (owner: "just soldiers, like Helldivers"; the five Chosen are

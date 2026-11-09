@@ -67,12 +67,13 @@ concern, not polish.
 
 ## Commands (Rokit toolchain; `export PATH="$HOME/.rokit/bin:$PATH"` if a tool is missing)
 
-- `rojo serve default.project.json` — sync (restart + reconnect after any project.json change)
+- `rojo serve default.project.json` — sync (restart + reconnect after any project.json change).
+  The lobby place (the Fallow) is its own project: `rojo serve lobby.project.json --port 34873`.
 - `stylua src tests && selene src && rojo build -o build.rbxlx && lune run tests/run` — static
   checks + unit tests, run after every change; types: `rojo sourcemap default.project.json
   -o sourcemap.json && luau-lsp analyze --sourcemap sourcemap.json --defs=globalTypes.d.luau
-  src` must report nothing (CI runs all of it on every push:
-  `.github/workflows/ci.yml`). Pure game rules live in `src/shared/Rules/` with a
+  --ignore "src/lobby/**" src` must report nothing, and the lobby's build and types (the
+  commands at the top of `.github/workflows/ci.yml`; CI runs all of it on every push). Pure game rules live in `src/shared/Rules/` with a
   `tests/<Rule>.spec.luau` each; a new rule gets its spec first.
 - Live verification: Studio MCP `solo_playtest` → `execute_luau` (fire `DevCommand` from
   `client-1`) → `capture_screenshot` → `get_runtime_logs`. Details in handoff/README.md.

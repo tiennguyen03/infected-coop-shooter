@@ -83,6 +83,10 @@ local Attributes = table.freeze({
 	BlastPower = "BlastPower",
 	BlastGlobal = "BlastGlobal",
 
+	-- Lobby place: a desk's ProximityPrompt carries its desk id (LobbyDesks), read by the
+	-- client's DeskDialogUI.
+	DeskId = "DeskId",
+
 	-- Names built from a slot or a clip, so they stay in one place too.
 	-- Player: the upgrade in a field-upgrade slot (UpgradeDefinitions.SLOTS).
 	upgrade = function(slot: string): string

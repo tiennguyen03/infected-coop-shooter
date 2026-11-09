@@ -2,7 +2,11 @@
 # The same commands run locally:
 #   stylua --check src tests && selene src && rojo build -o build.rbxlx && lune run tests/run
 #   rojo sourcemap default.project.json -o sourcemap.json
-#   luau-lsp analyze --sourcemap sourcemap.json --defs=globalTypes.d.luau src
+#   luau-lsp analyze --sourcemap sourcemap.json --defs=globalTypes.d.luau --ignore "src/lobby/**" src
+# and for the lobby place (lobby.project.json, its own sourcemap):
+#   rojo build lobby.project.json -o lobby.rbxlx
+#   rojo sourcemap lobby.project.json -o lobby.sourcemap.json
+#   luau-lsp analyze --sourcemap lobby.sourcemap.json --defs=globalTypes.d.luau src/lobby src/shared
 name: CI
 
 on:
@@ -32,13 +36,17 @@ jobs:
         run: selene src
 
       - name: Build (Rojo)
-        run: rojo build -o build.rbxlx
+        run: |
+          rojo build -o build.rbxlx
+          rojo build lobby.project.json -o lobby.rbxlx
 
       - name: Types (luau-lsp; a misspelt Attributes / Messages key fails here)
         run: |
           curl -sSfL -o globalTypes.d.luau https://raw.githubusercontent.com/JohnnyMorganz/luau-lsp/main/scripts/globalTypes.d.luau
           rojo sourcemap default.project.json -o sourcemap.json
-          luau-lsp analyze --sourcemap sourcemap.json --defs=globalTypes.d.luau src
+          luau-lsp analyze --sourcemap sourcemap.json --defs=globalTypes.d.luau --ignore "src/lobby/**" src
+          rojo sourcemap lobby.project.json -o lobby.sourcemap.json
+          luau-lsp analyze --sourcemap lobby.sourcemap.json --defs=globalTypes.d.luau src/lobby src/shared
 
       - name: Unit tests (Lune)
         run: lune run tests/run

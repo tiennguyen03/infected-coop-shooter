@@ -1374,6 +1374,49 @@ local Config = {
 			},
 		},
 	},
+
+	-- The Containment Board (docs/PROGRESSION.md > The Containment Board). Read by the
+	-- lobby's Plot today; the shared DataStore behind it waits for the save service (F9).
+	Containment = {
+		-- Band minimums in percent (Rules/Containment).
+		Bands = {
+			{ name = "Lost", min = 0 },
+			{ name = "Contested", min = 25 },
+			{ name = "Held", min = 50 },
+			{ name = "Contained", min = 75 },
+			{ name = "Secured", min = 100 },
+		},
+		-- Board order and the placeholder percent each district shows until F9 lands
+		-- (Delta starts at 25, everything else at 0).
+		Districts = {
+			{ name = "DELTA", percent = 25 },
+			{ name = "MILE 14", percent = 0 },
+			{ name = "KESTREL", percent = 0 },
+			{ name = "THE YARD", percent = 0 },
+			{ name = "RESERVOIR", percent = 0 },
+		},
+		RefreshSeconds = 60, -- the Plot rereads the board this often
+	},
+
+	-- The lobby place: the Fallow (docs/sprints/LOBBY_V1_FALLOW.md, LORE.md > The Fallow).
+	Lobby = {
+		-- The match place a squad launches into (the group experience's start place today).
+		MatchPlaceId = 87556879379942,
+		Launch = {
+			Spots = 4, -- numbered Lantern spots on the flight deck
+			Capacity = 4, -- soldiers per bird (one squad)
+			Countdown = 20, -- seconds from the first soldier aboard to lift
+			FullCountdown = 5, -- seconds to lift once the bird is full
+			BoardHalfSize = 6, -- the boarding box beside each bird's door, half-extent in studs
+			BoardHeight = 8, -- studs above the deck a soldier still counts as on the box
+			ScanInterval = 0.25, -- seconds between manifest checks
+			Retries = 2, -- extra teleport attempts after a failure
+			RetryDelay = 2,
+			Cooldown = 6, -- seconds a spot rests after a lift or a failed one
+		},
+		DeskPromptDistance = 10, -- studs a soldier can talk to a desk from
+		DialogSeconds = 8, -- a desk's line stays up this long
+	},
 }
 
 return Config

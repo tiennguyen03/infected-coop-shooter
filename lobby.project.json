@@ -1,0 +1,39 @@
+{
+  "name": "infected-coop-shooter-lobby",
+  "tree": {
+    "$className": "DataModel",
+    "Workspace": {
+      "$properties": {
+        "StreamingEnabled": false,
+        "FallenPartsDestroyHeight": -40
+      }
+    },
+    "ReplicatedStorage": {
+      "Shared": {
+        "$path": "src/shared"
+      },
+      "Lobby": {
+        "$path": "src/lobby/shared"
+      }
+    },
+    "ServerScriptService": {
+      "Server": {
+        "$path": "src/lobby/server"
+      }
+    },
+    "StarterPlayer": {
+      "$properties": {
+        "EnableMouseLockOption": false,
+        "CameraMaxZoomDistance": 24
+      },
+      "StarterPlayerScripts": {
+        "Client": {
+          "$path": "src/lobby/client",
+          "HudTheme": {
+            "$path": "src/client/HudTheme.luau"
+          }
+        }
+      }
+    }
+  }
+}

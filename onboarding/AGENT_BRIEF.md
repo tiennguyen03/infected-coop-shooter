@@ -24,7 +24,8 @@ read it first, it applies to you too).
   feature doc. `.claude/hooks/doc-sync-check.js` (needs Node) blocks violations.
 - **Checks after every change**, all must be clean:
   `stylua src tests && selene src && rojo build -o build.rbxlx && lune run tests/run`, then
-  `rojo sourcemap default.project.json -o sourcemap.json && luau-lsp analyze --sourcemap sourcemap.json --defs=globalTypes.d.luau src`.
+  `rojo sourcemap default.project.json -o sourcemap.json && luau-lsp analyze --sourcemap sourcemap.json --defs=globalTypes.d.luau --ignore "src/lobby/**" src`,
+  plus the lobby place's build and types (commands at the top of `.github/workflows/ci.yml`).
   (Fetch `globalTypes.d.luau` the way `.github/workflows/ci.yml` does if it's missing; it is
   gitignored.)
 - **Code rules in short:** `--!strict` everywhere; tuning numbers only in
