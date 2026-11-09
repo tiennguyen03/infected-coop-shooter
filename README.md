@@ -11,6 +11,7 @@ single-player; every system is written for four.
 - Run structure, stages, bosses, the Infected roster: [docs/PROGRESSION.md](docs/PROGRESSION.md)
 - Setting and naming: [docs/LORE.md](docs/LORE.md)
 - What shipped, sprint by sprint: [docs/HISTORY.md](docs/HISTORY.md)
+- New co-developer (and their coding agent): [onboarding/](onboarding/README.md)
 
 ## Setup (one time)
 
@@ -27,9 +28,10 @@ single-player; every system is written for four.
 Controls: WASD move (the body has weight: it speeds up and slows down), **Shift** sprint,
 **LeftControl** crouch, **C** prone, **Space** vault or climb cover, **Shift + LeftControl**
 roll, **Shift + C** slide, **hold left-click** to shoot (over-the-shoulder aim, mouse wheel
-zooms), **Q** dash, **E** breach, **3** Resupply flare, **hold F** revive a downed squadmate.
+zooms), **R** reload, **Q** swap primary/pistol, **G** frag, **V** shove, **E** stim, **1-4**
+call-ins, **5** Resupply flare, **B** Arms Room (loadout), **hold F** revive a downed squadmate.
 
-The loop: you drop with a squad of four; in solo, three bot squadmates (Cole, Reyes, Cross)
+The loop: you drop with a squad of four; in solo, three bot squadmates (Pike Two to Four)
 fill it. The Infected hunt you and the pressure climbs on a clock you can read. Kills earn
 Resupply; a flare brings a pallet and you walk into 1 of 3 cards. A lethal hit downs you
 instead of killing: a squadmate (or a bot) revives you before you bleed out. Hold Position

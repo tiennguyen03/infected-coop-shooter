@@ -22,7 +22,7 @@ of five guns + the M17 picked in the Arms Room (B), Q swap, G frag, V shove, E s
 call-ins on keys 1-4, 7 field upgrades, 4 Infected forms (Walker, Runner, Brute, Hocker),
 server-authoritative everything.
 
-Repo: https://github.com/tiennguyen03/infected-coop-shooter — folder `~/infected-coop-shooter`.
+Repo: https://github.com/tiennguyen03/infected-coop-shooter — local folder `roguelike-arena-survivor`. New co-developers: `onboarding/`.
 
 Read in this order:
 1. `CLAUDE.md` — conventions, commands, workflow + doc-sync rules (short; always loaded).
@@ -388,8 +388,8 @@ a nudge.
 
 ## Dev environment
 
-Toolchain is Rokit-managed (`rokit.toml`): rojo 7.6.1, StyLua 2.5.2, selene 0.31.0,
-luau-lsp 1.68.0. Binaries in `~/.rokit/bin` — add to PATH if a tool is "missing":
+Toolchain is Rokit-managed (`rokit.toml`): rojo 7.7.1, StyLua 2.5.2, selene 0.31.0,
+luau-lsp 1.68.0, lune 0.11.1. Binaries in `~/.rokit/bin` — add to PATH if a tool is "missing":
 
 ```bash
 export PATH="$HOME/.rokit/bin:$PATH"
@@ -401,8 +401,8 @@ Sync to Studio (keep this running in a terminal tab):
 rojo serve default.project.json
 ```
 
-Then in Roblox Studio open the test place ("Chance of Drops Testing", place id
-15581035561), Rojo plugin → Connect (localhost:34872). After any `default.project.json`
+Then in Roblox Studio open the test place ("CZS", place id
+139153822363669), Rojo plugin → Connect (localhost:34872). After any `default.project.json`
 change, restart `rojo serve` and reconnect.
 
 Static checks after every change:
@@ -500,7 +500,7 @@ Hard-won gotchas:
 - `assets/icons/*.png` is gitignored; only SVG sources are committed.
 - Commit attribution: end commit messages with
   `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>` (or whatever model is running).
-- `gh` CLI is not installed; push with plain `git push` (credentials are cached).
+- `gh` is installed and logged in; push with plain `git push` (credentials are cached).
 - If Claude Code's auto permission mode starts refusing Bash/MCP with "claude-opus-4-8 is
   temporarily unavailable, so auto mode cannot determine the safety of…", that is an
   Anthropic-side classifier outage — switch to **bypass permissions** (Shift+Tab) to unblock.
