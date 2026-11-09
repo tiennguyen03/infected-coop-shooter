@@ -24,9 +24,9 @@ serves none of them it is cut; if two conflict, the earlier one wins.
    of waiting.
 3. **Every Infected form is one rule.** A new enemy teaches one thing at a glance (it
    throws, it bursts, it splits). Silhouette and behaviour match; no palette swaps.
-4. **Loadouts create stories.** Guns, call-ins and field upgrades combine into missions the
-   player can describe afterwards. A percentage is filler; a tool that changes how you play
-   is content.
+4. **The run is the story.** What the squad lived through together is what they retell:
+   the revive under fire, the Anvil that cleared the LZ, the Brute that nearly wiped them.
+   Systems exist to make those moments happen; a percentage bonus is filler.
 5. **Four players, one run.** Everything is per player or per run, scales by headcount, and
    reads the same on a low-end phone and a desktop.
 

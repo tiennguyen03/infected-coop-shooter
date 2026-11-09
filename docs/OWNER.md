@@ -33,6 +33,12 @@ something; never delete one without the owner.
   upgrades. (2026-11-07)
 - **Real guns.** Each gun fires at its real-world rate (M16A4 750 rpm, M249 ~800, ...);
   balance damage and ammo around that, not the other way. (2026-11-08)
+- **The run is the story.** The story is what the squad lived through on that run, not
+  lore text or builds. Design toward moments players retell. (2026-11-09)
+- **Guns are ones we can get a free 3D model for.** The weapon roster is limited to real
+  guns with a free model online (licence must allow use in a commercial Roblox game; keep
+  the source and licence in `assets/3d/ASSET_IDS.md`). No gun gets designed or tuned that
+  has no model. (2026-11-09)
 - **It must feel satisfying.** Kick, shake, limp bodies, flinch, limbs that come off when
   shot (dismemberment stays). Feedback is part of the design, not polish. (2026-11-08)
 - **Modular loadouts.** Nova is building the loadout and weapon selection screens; guns and
