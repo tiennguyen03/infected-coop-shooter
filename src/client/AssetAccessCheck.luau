@@ -1,7 +1,7 @@
 --!strict
 -- Studio only: checks that every uploaded sound and animation the game uses can load in this
 -- place, then prints one summary line. Roblox loads audio and animations only in games owned
--- by the account that uploaded them, or in games that were granted access, so a collaborator
+-- by whoever owns them, or in games that were granted access, so a collaborator
 -- working in a place of their own hears no sounds and sees no clips, with nothing in the game
 -- saying why. This check says why. The setup that fixes it: docs/COLLABORATING.md.
 
@@ -95,8 +95,8 @@ local function run()
 	local clips = `{misses.animation} of {totals.animation} animations`
 	local missing = table.concat(names, ", ")
 	warn(`[AssetAccess] {sounds} and {clips} cannot load in this place ({missing}).`)
-	warn("[AssetAccess] Roblox loads audio and animations only in the uploader's games or in")
-	warn("[AssetAccess] games granted access. Setup without a group: docs/COLLABORATING.md")
+	warn("[AssetAccess] Roblox loads audio and animations only in their owner's games or in")
+	warn("[AssetAccess] games granted access. The setup that fixes it: docs/COLLABORATING.md")
 end
 
 function AssetAccessCheck.init()

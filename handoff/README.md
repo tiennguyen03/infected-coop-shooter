@@ -146,11 +146,12 @@ Read in this order:
 ## Open work, in priority order
 
 - **Second developer (Nova) has no sounds or animations (2026-11-09).** Roblox loads audio
-  and animations only in the uploader's games or games granted access; code cannot get
-  around it. Setup without a group, step by step: `docs/COLLABORATING.md` (friends, Edit
-  collaborator, one place per developer inside the owner's experience). In Studio the
-  `[AssetAccess]` line in Output says whether this place can load them. Owner to do the
-  setup; the check itself has not run in Studio yet.
+  and animations only in the owner's games or games granted access; code cannot get around
+  it. The owner has a Roblox group, so the setup is: the group owns the game, the existing
+  sounds and animations are shared with the group once (ids unchanged), new ones are
+  uploaded as the group; steps in `docs/COLLABORATING.md`. In Studio the `[AssetAccess]`
+  line in Output says whether this place can load them. Owner to do the setup; the check
+  itself has not run in Studio yet.
 - **Foundation backlog (`docs/ARCHITECTURE.md`, items F1-F11).** Done 2026-11-08/09 in
   cloud sessions on pull request #1, CI green but **not playtested**: F5 (CI + tests), the
   F1 renames (`DamageService`, `Config.Zombies` folded), the icon scripts, three type fixes,
