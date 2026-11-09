@@ -65,7 +65,8 @@ match place.
 - **Four hangar desks** (`DeskService`, data `LobbyDesks`): Arms Room (cage, port side),
   Engineers (wire spools, starboard), Loadmaster (slung cases at the foot of the ramp), Fires
   (at the Plot door). Block crew figures in working dress, a counter, a sign, an F "Talk" prompt. The
-  line shows in `DeskDialogUI` with what the desk will issue; **nothing is issued yet**.
+  line shows in `DeskDialogUI` with what the desk will issue; **nothing is issued yet**. The
+  Arms Room talks through its own counter (see Arms Room counter below).
 - **The Plot** (`PlotService`, `ContainmentBoard`, rule `Rules/Containment`): the red-lit
   map room under the island with the chart table and the Containment Board on a lit perspex
   panel (five districts: percent and band word) and a plotter behind it. It rereads the board
@@ -152,6 +153,34 @@ open door facing the boarding box; no layout change.
 - **Previews**: `lantern_before.png`, `lantern_built_door.png`, `lantern_built_profile.png`,
   `lantern_built_board.png` (from the boarding box), one `veh_lantern_*.png` per mesh.
 
+## Arms Room counter (2026-11-09: built, not playtested)
+
+The owner's ask (after a GTA gun counter): give the armorer a use as the place the guns live.
+Loadout selection is not part of it; nothing is drawn yet.
+
+- **Talk** (F on the armorer, `ArmsRackUI` instead of `DeskDialogUI` for a desk with a `rack`
+  in `LobbyDesks`): his line and three choices, "Any work going?" (his answer: work comes from
+  the Plot; no taskings yet), "Show me the rack." and "Carry on." Wording by the lore developer:
+  nothing on the Fallow is bought or sold, so no price, buy, sell, lock, unlock, shop, store
+  or wares anywhere.
+- **The rack** (`ArmsRack`, `FallowLayout.ArmsRack`): a board on the hangar's port wall behind
+  the cage (the cage lost its back row of bars and the old RifleRack block). Every catalog item
+  hangs on two pegs in catalog order: the five long guns in a column, the pistol and the frag
+  beside them. Stand-in block silhouettes per id; the Service Rifle swaps to `wpn_rifle` once
+  loaded. A new gun model goes in by adding its mesh to `ArmsRack.MESH` (and `MeshAssets`).
+- **Looking** (all local to the player, so four can look at once): the camera glides inside
+  the cage to frame the whole board (movement off, the prompt off, the armorer hidden for this
+  player only). The gun under the cursor slides 0.6 off its pegs with a soft yellow rim (a
+  Highlight; the owner asked for the glow, the lore pass wanted none, so it stays faint). Click
+  or tap frames that gun left of centre with its card on the right: name, the real gun, ON ISSUE
+  (the default kit, `ArmsRoom.default()`) or NOT ON ISSUE with "Record not open", its line, and
+  six bars from `Rules/ArmsStats` (damage per pull, fire rate, magazine, reload, range,
+  aimed accuracy, each against the best on the rack); the frag shows its numbers without bars.
+  ◀ ▶ (or arrow keys, A/D, the d-pad) step along the rack; Back (or Backspace, B) steps back to
+  the board, and again to walk away. Tuning in `Config.Lobby.Rack`.
+- **Previews**: `assets/3d/build/previews/rack_view.png` (what the camera frames, a hovered gun
+  forward) and `rack_cage.png` (the cage from the walk).
+
 ## Plan view (studs; +Z bow, +X starboard)
 
 ```
@@ -179,9 +208,9 @@ Deck surface y 40, hangar floor y 20, sea y 0. Every position is in `FallowLayou
 | Place | File |
 |---|---|
 | Project | `lobby.project.json` (shares `src/shared`; `src/lobby/shared` as `ReplicatedStorage.Lobby`; maps the match's `src/server/PlayerSetup.luau` into the lobby server and `src/client/HudTheme.luau`, `PaletteController.luau` into the lobby client; sets `Lighting.Technology`) |
-| Server | `src/lobby/server/`: `Main.server`, `FallowLayout`, `Build`, `FallowBuilder`, `FallowArt`, `PikeBody`, `NpcBody`, `DeskService`, `ContainmentBoard`, `PlotService`, `LaunchService`, `LanternBird` |
-| Client | `src/lobby/client/`: `Main.client`, `LaunchUI`, `DeskDialogUI`, `RadarSpin`, `LanternSpool` |
-| Art | `assets/3d/build/fallow.py` (12 `env_fallow_*` meshes), `lantern.py` (4 `veh_lantern_*`); `MeshAssets` entries; `Config.Lobby.Ship`, `Config.Lobby.Lantern`; attribute `LiftAt` |
+| Server | `src/lobby/server/`: `Main.server`, `FallowLayout`, `Build`, `FallowBuilder`, `FallowArt`, `PikeBody`, `NpcBody`, `DeskService`, `ContainmentBoard`, `PlotService`, `LaunchService`, `LanternBird`, `ArmsRack` |
+| Client | `src/lobby/client/`: `Main.client`, `LaunchUI`, `DeskDialogUI`, `ArmsRackUI`, `RadarSpin`, `LanternSpool` |
+| Art | `assets/3d/build/fallow.py` (12 `env_fallow_*` meshes), `lantern.py` (4 `veh_lantern_*`); `MeshAssets` entries; `Config.Lobby.Ship`, `Config.Lobby.Lantern`; attribute `LiftAt`; rule `Rules/ArmsStats` (+ spec), `Config.Lobby.Rack` |
 | Shared | `src/lobby/shared/LobbyDesks`; rules `src/shared/Rules/Manifest`, `Rules/Containment` (+ specs); `Config.Lobby`, `Config.Containment`; remote `Launch` + `Messages.Launch`; attribute `DeskId` |
 
 ## How to test it
@@ -216,6 +245,15 @@ Deck surface y 40, hangar floor y 20, sea y 0. Every position is in `FallowLayou
   no water shows inside the bow; each bird shows its number, the crew chief stands in the door,
   and boarding a spot lights the lamp, spools, blurs and lifts it (and it settles back when the
   Studio lift fails). Count the lamp lights against the deck's (performance reviewer).
+- **Arms Room counter: playtest** in `Lobby (dev)`: the choices, the glide, hover on each gun,
+  inspect and stepping, Back twice, a second player looking at the same time, touch and gamepad;
+  check the rifle mesh's orientation on the rack (turned by reasoning, not seen).
+- **Arms Room, later**: Tien's gun meshes (`ArmsRack.MESH`); drawing a gun once the record
+  opens (the card's button goes where the status line is); the armorer's taskings.
+- **Lore, to approve** (lore developer, Arms Room pass): "the rack" as the armorer's word for
+  the wall; "on issue" / "not on issue" as the standard words on every desk; "taskings" as the
+  in-world word for desk side work. Canon names the default gun the M4A1 Carbine; the game's
+  catalog issues the Service Rifle (M16A4) and has no carbine: one of them changes.
 - **Lantern in the match** (insert, extraction, supply kicks out of the starboard door): the
   same four meshes; `LanternBird` and `LanternSpool` are lobby modules today.
 - **Art, next**: the desk crew; sounds (rotor spool on lift, ship PA tone, the plotter's grease

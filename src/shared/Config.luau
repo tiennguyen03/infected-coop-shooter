@@ -1434,6 +1434,21 @@ local Config = {
 			TemplateWait = 30, -- seconds FallowArt waits for an uploaded mesh before keeping the blocks
 			RadarRpm = 6, -- the air-search radar on the mast turns (client only)
 		},
+		-- The Arms Room counter (ArmsRack, ArmsRackUI): the camera on the rack and the gun card.
+		Rack = {
+			CameraSeconds = 0.6, -- the camera's glide between views
+			SlideSeconds = 0.15, -- a gun sliding off its pegs
+			SlideOut = 0.6, -- studs a hovered or framed gun comes forward
+			GlowFill = 0.85, -- hover highlight transparency (a soft rim, not a lit display)
+			GlowOutline = 0.3,
+			RackFov = 50, -- field of view on the whole rack
+			MaxRackDistance = 7.6, -- the camera stays inside the cage (front bars 8.35 from the board)
+			InspectFov = 40,
+			MinInspectDistance = 2.2,
+			InspectShift = 0.35, -- the framed gun sits left of centre by this share of its length
+			Margin = 0.6, -- studs of air round what the camera frames
+			PlayFov = 70, -- restored when you step away
+		},
 		DeskPromptDistance = 10, -- studs a soldier can talk to a desk from
 		DialogSeconds = 8, -- a desk's line stays up this long
 		-- The Fallow's sky: a clear afternoon at sea (owner and Nova, 2026-11-09). One table

@@ -158,20 +158,13 @@ local function dressMeshes(
 
 	-- Blur discs, hidden until the last seconds of the spool (a VFX exception, STYLES §6).
 	local function disc(name: string, diameter: number, cframe: CFrame)
-		local part = Build.part(
-			model,
-			name,
-			Vector3.new(0.05, diameter, diameter),
-			cframe,
-			DISC,
-			{
-				shape = Enum.PartType.Cylinder,
-				material = Enum.Material.SmoothPlastic,
-				transparency = 1,
-				collide = false,
-				shadow = false,
-			}
-		)
+		local part = Build.part(model, name, Vector3.new(0.05, diameter, diameter), cframe, DISC, {
+			shape = Enum.PartType.Cylinder,
+			material = Enum.Material.SmoothPlastic,
+			transparency = 1,
+			collide = false,
+			shadow = false,
+		})
 		part.CanQuery = false
 	end
 	disc("RotorDisc", 38, base * CFrame.new(HUB) * CFrame.Angles(0, 0, math.pi / 2))

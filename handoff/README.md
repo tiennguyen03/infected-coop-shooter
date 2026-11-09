@@ -238,7 +238,8 @@ Read in this order:
   `env_fallow_*` and 4 `veh_lantern_*` meshes (`assets/3d/build/fallow.py`, `lantern.py`; FBX in
   `assets/3d/export/`) that `FallowArt` / `LanternBird` lay over the blocks once their ids are
   in `MeshAssets`; the walkable lift balcony, deck-edge lines, deck-end HRD and the bird's
-  lift on countdown are live now. Next: upload the 16 FBX in Studio and paste the ids, then
+  lift on countdown are live now. **Arms Room counter built 2026-11-09, not playtested** (sprint
+  doc > Arms Room counter): talk choices, the rack behind the cage, hover, inspect card, arrows. Next: upload the 16 FBX in Studio and paste the ids, then
   re-check the loop, body, ship and birds in the `Lobby (dev)` place, then a published launch
   test.
 - **Satisfying pass built 2026-11-09 (`docs/superpowers/plans/2026-11-09-satisfying-pass.md`).**

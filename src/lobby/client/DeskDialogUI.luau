@@ -67,8 +67,8 @@ function DeskDialogUI.init()
 		end
 		local id = prompt:GetAttribute(Attributes.DeskId)
 		local desk = if type(id) == "string" then byId[id] else nil
-		if not desk then
-			return
+		if not desk or desk.rack then
+			return -- a desk with a rack talks through ArmsRackUI
 		end
 		title.Text = `{desk.title}  {HudTheme.tint(desk.who, HudTheme.Color.TextDim)}`
 		line.Text = `"{desk.line}"`

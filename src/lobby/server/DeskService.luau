@@ -10,6 +10,7 @@ local Workspace = game:GetService("Workspace")
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local LobbyDesks = require(ReplicatedStorage.Lobby.LobbyDesks)
+local ArmsRack = require(script.Parent.ArmsRack)
 local Build = require(script.Parent.Build)
 local Layout = require(script.Parent.FallowLayout)
 local NpcBody = require(script.Parent.NpcBody)
@@ -39,24 +40,23 @@ local function props(folder: Folder, id: string, frame: CFrame)
 		Build.part(folder, name, size, frame * CFrame.new(offset), color, options)
 	end
 	if id == "arms_room" then
-		-- The wire cage around the armorer.
+		-- The wire cage around the armorer, open at the back: the rack on the hangar wall
+		-- behind him is the cage's back (ArmsRack).
 		for x = -5, 5, 1.25 do
 			prop("CageBar", Vector3.new(0.15, 9, 0.15), Vector3.new(x, 4.5, -2.6), WIRE)
-			prop("CageBar", Vector3.new(0.15, 9, 0.15), Vector3.new(x, 4.5, 4.5), WIRE)
+		end
+		for z = -1.35, 5.15, 1.3 do
+			prop("CageBar", Vector3.new(0.15, 9, 0.15), Vector3.new(-5, 4.5, z), WIRE)
+			prop("CageBar", Vector3.new(0.15, 9, 0.15), Vector3.new(5, 4.5, z), WIRE)
 		end
 		prop(
 			"CageTop",
-			Vector3.new(10.4, 0.2, 7.3),
-			Vector3.new(0, 9, 0.95),
+			Vector3.new(10.4, 0.2, 8.4),
+			Vector3.new(0, 9, 1.6),
 			WIRE,
 			{ transparency = 0.4 }
 		)
-		prop(
-			"RifleRack",
-			Vector3.new(6, 4, 0.6),
-			Vector3.new(0, 2.5, 4),
-			Color3.fromRGB(40, 42, 44)
-		)
+		ArmsRack.build(folder)
 	elseif id == "loadmaster" then
 		-- Slung cases waiting for the door.
 		prop("Case", Vector3.new(4, 3, 3), Vector3.new(-5, 1.5, 5), CRATE)
