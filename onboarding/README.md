@@ -87,21 +87,22 @@ hold **F** revive. F1 dev panel; F2 god, F3 clear Infected, F4 ten Walkers, F5 r
 
 ## Read next (in this order)
 
-1. [`CLAUDE.md`](../CLAUDE.md): conventions, commands, rules. Short.
-2. [`handoff/README.md`](../handoff/README.md): current state, open work, Studio MCP gotchas.
-3. [`docs/HISTORY.md`](../docs/HISTORY.md): what shipped, sprint by sprint.
-4. Then the doc for whatever you touch: `docs/PROGRESSION.md` (run structure, enemies,
-   loadout), `docs/STYLES.md` (all visuals), `docs/LORE.md` (naming, tone),
-   `docs/MULTIPLAYER_READINESS.md` (co-op rules), `docs/ARCHITECTURE.md` (code structure,
-   backlog F6-F11).
+1. [`AGENTS.md`](../AGENTS.md): the rules for everyone (layout, conventions, checks, git).
+2. [`handoff/README.md`](../handoff/README.md) and the notes in [`handoff/log/`](../handoff/log/):
+   where things are now, who owns what, what changed lately.
+3. [`docs/OWNER.md`](../docs/OWNER.md): what Tien wants and has rejected.
+4. Then the doc for whatever you touch (listed in `AGENTS.md`).
 
 ## Working together
 
 - **Branches.** Never commit to `main`. One branch per feature, named `<you>/<feature>`
   (e.g. `alex/support-weapons`). Open a PR to `main`; Tien reviews and merges. CI runs the
   same checks as above on every push.
-- **Claim work before starting.** Tell Tien what you're picking up from "Open work" in
+- **Claim work before starting:** put your name on the row in the open-work table of
   `handoff/README.md`, so you two don't build the same thing.
+- **End of a session:** edit `handoff/README.md` in place and add one short note to
+  `handoff/log/` (format in `handoff/log/README.md`). That's how Tien sees what you did,
+  and how you see what Tien did.
 - **Doc-sync.** A commit that touches `src/` or `assets/` also carries: the handoff's
   current-state line for that feature (edited in place), one `docs/HISTORY.md` row, and the
   feature's own doc. `[no-docs]` in the message is only for pure fixups.

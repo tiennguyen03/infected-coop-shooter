@@ -3,8 +3,8 @@
 -- sends a fire request, the server validates it (alive or Last Stand, rate, a round in the
 -- magazine: LoadoutService), applies the weapon's spread cone, raycasts once and lands the
 -- damage the same frame (a Head hit is a headshot). Through-and-Through carries the round
--- into the next Infected; Hollow Point staggers the one it hit. Drones still fly simulated
--- projectiles through ProjectileServer.fire.
+-- into the next Infected; Hollow Point staggers the one it hit. ProjectileServer.fire flies a
+-- simulated round; nothing calls it since the drones were retired (kept for the Thumper).
 
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
