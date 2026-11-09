@@ -240,7 +240,7 @@ Read in this order:
   strength, the low-health look (overlaps HealthBarUI's red pulse), the crawl. The heartbeat
   asset was still in moderation at upload.
 - **Group migration done 2026-11-09.** The Roblox group Boomin Dev Studios (id 270506601) owns
-  CZS (place id now 89609223317309) and every sound (12 uploads) and animation (62 clips;
+  the group experience "Co-op Zombie Shooter" (place id 87556879379942; the transfer of CZS failed, so the place was published into a new group experience) and every sound (12 uploads) and animation (62 clips;
   `ladder_climb` is Roblox's stock one). New uploads pass `groupId` 270506601; the group Open
   Cloud key is in `~/.claude.json`. Verified: every bank and five clips load in the group's
   place with the right lengths. Owner: rotate that key (it was pasted in chat) and give Nova a
@@ -419,8 +419,8 @@ Sync to Studio (keep this running in a terminal tab):
 rojo serve default.project.json
 ```
 
-Then in Roblox Studio open the test place ("CZS", place id
-89609223317309, owned by the group Boomin Dev Studios), Rojo plugin → Connect (localhost:34872). After any `default.project.json`
+Then in Roblox Studio open the test place ("Co-op Zombie Shooter", place id
+87556879379942, owned by the group Boomin Dev Studios), Rojo plugin → Connect (localhost:34872). After any `default.project.json`
 change, restart `rojo serve` and reconnect.
 
 Static checks after every change:

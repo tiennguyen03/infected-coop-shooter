@@ -32,7 +32,7 @@ single-player with bots, but every system is written for four.
 - [ ] Add the friend as a collaborator on GitHub:
       `gh api -X PUT repos/tiennguyen03/infected-coop-shooter/collaborators/<their-username>`
       (or Settings → Collaborators on https://github.com/tiennguyen03/infected-coop-shooter).
-- [ ] Give the friend Studio access to the test place **CZS** (place id 89609223317309, owned by the group Boomin Dev Studios):
+- [ ] Give the friend Studio access to the test place **Co-op Zombie Shooter** (place id 87556879379942, owned by the group Boomin Dev Studios):
       Game Settings → Permissions, or Collaborate → add them. See "Asset permissions" below
       for why this matters.
 - [x] Asset ownership: done 2026-11-09. The group **Boomin Dev Studios** (id 270506601) owns
