@@ -1416,6 +1416,30 @@ local Config = {
 		},
 		DeskPromptDistance = 10, -- studs a soldier can talk to a desk from
 		DialogSeconds = 8, -- a desk's line stays up this long
+		-- The Fallow's sky: a clear afternoon at sea (owner and Nova, 2026-11-09). One table
+		-- so a day/night cycle can later drive these values instead of FallowBuilder.
+		Sky = {
+			ClockTime = 14,
+			GeographicLatitude = 30,
+			Brightness = 2.6,
+			Ambient = Color3.fromRGB(104, 108, 116),
+			OutdoorAmbient = Color3.fromRGB(142, 148, 158),
+			ColorShiftTop = Color3.fromRGB(255, 244, 228),
+			ExposureCompensation = 0,
+			ShadowSoftness = 0.3,
+			EnvironmentDiffuseScale = 0.8,
+			EnvironmentSpecularScale = 0.25,
+			Atmosphere = {
+				Density = 0.22,
+				Offset = 0.1,
+				Color = Color3.fromRGB(199, 214, 230),
+				Decay = Color3.fromRGB(106, 130, 160),
+				Glare = 0.2,
+				Haze = 0.8,
+			},
+			Clouds = { Cover = 0.5, Density = 0.7 },
+			Sea = Color3.fromRGB(40, 78, 102),
+		},
 	},
 }
 

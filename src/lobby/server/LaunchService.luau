@@ -103,16 +103,16 @@ local function buildSpot(parent: Instance, spot: Layout.Spot)
 	Build.part(
 		parent,
 		"SpotRing",
-		Vector3.new(0.05, 28, 28),
-		CFrame.new(spot.helo + Vector3.new(0, 0.03, 0)) * CFrame.Angles(0, 0, math.pi / 2),
+		Vector3.new(0.1, 28, 28),
+		CFrame.new(spot.helo + Vector3.new(0, 0.06, 0)) * CFrame.Angles(0, 0, math.pi / 2),
 		YELLOW,
 		{ shape = Enum.PartType.Cylinder, material = Enum.Material.SmoothPlastic, collide = false }
 	)
 	Build.part(
 		parent,
 		"SpotInner",
-		Vector3.new(0.05, 26.4, 26.4),
-		CFrame.new(spot.helo + Vector3.new(0, 0.05, 0)) * CFrame.Angles(0, 0, math.pi / 2),
+		Vector3.new(0.1, 26.4, 26.4),
+		CFrame.new(spot.helo + Vector3.new(0, 0.14, 0)) * CFrame.Angles(0, 0, math.pi / 2),
 		Color3.fromRGB(50, 52, 55),
 		{ shape = Enum.PartType.Cylinder, material = Enum.Material.Asphalt, collide = false }
 	)
@@ -120,7 +120,7 @@ local function buildSpot(parent: Instance, spot: Layout.Spot)
 		parent,
 		"SpotNumber",
 		Vector3.new(8, 0.05, 8),
-		CFrame.new(spot.helo.X, deck + 0.06, spot.helo.Z + 18) * CFrame.Angles(0, math.pi, 0),
+		CFrame.new(spot.helo.X, deck + 0.3, spot.helo.Z + 18) * CFrame.Angles(0, math.pi, 0),
 		PAINT,
 		{ transparency = 1, collide = false }
 	)
@@ -134,7 +134,8 @@ local function buildSpot(parent: Instance, spot: Layout.Spot)
 		parent,
 		"BoardingBox",
 		Vector3.new(half * 2, 0.1, half * 2),
-		CFrame.new(spot.board + Vector3.new(0, 0.06, 0)),
+		-- Above the spot ring it overlaps at the door side (ring top 0.11, inner 0.19).
+		CFrame.new(spot.board + Vector3.new(0, 0.3, 0)),
 		YELLOW,
 		{ material = Enum.Material.SmoothPlastic, transparency = 0.6, collide = false }
 	)

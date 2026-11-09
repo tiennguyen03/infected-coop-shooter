@@ -2,6 +2,11 @@
   "name": "infected-coop-shooter-lobby",
   "tree": {
     "$className": "DataModel",
+    "Lighting": {
+      "$properties": {
+        "Technology": "ShadowMap"
+      }
+    },
     "Workspace": {
       "$properties": {
         "StreamingEnabled": false,

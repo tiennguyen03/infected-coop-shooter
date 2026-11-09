@@ -1,11 +1,14 @@
 # Lobby v1: the Fallow
 
-Owner: Nova. Branch `nova/lobby`. Status: **built, not playtested** (2026-11-09; static
-checks, both builds, types and unit tests clean).
+Owner: Nova. Branch `nova/lobby`. Status: **playtested in Studio by Nova 2026-11-09**:
+spawn, deck, ramp, desks, the Plot and the boarding countdown all work. That playtest found
+the night lighting wrong and the hangar floor flickering; both fixed the same day (sunny sky,
+shadows, no shared planes), the fix not yet re-checked. A real launch (published place) is
+still untested.
 
 The lobby place (docs/MULTIPLAYER_READINESS.md decision 7, docs/ARCHITECTURE.md F10) as a
-walkable ship you can launch from: the Fallow, a helicopter carrier off the Harlan coast at
-night (setting in docs/LORE.md > The Fallow). Many parties share one lobby server; each
+walkable ship you can launch from: the Fallow, a helicopter carrier off the Harlan coast on a
+clear afternoon (setting in docs/LORE.md > The Fallow). Many parties share one lobby server; each
 squad boards a Lantern on the deck and is teleported together into a private server of the
 match place.
 
@@ -15,8 +18,16 @@ match place.
   70 x 390 flight deck, the island (bridge windows, hull number painted out, HRD sprayed over
   it, mast), the hangar deck under it with an open side lift to port, a ramp from the hangar
   up to the deck through an open well, invisible walls at every edge, the sea, the coast to
-  the north with the Burn glowing along it. Night lighting; 9 lights, Shadows off, Range <= 56
-  (docs/STYLES.md).
+  the north with the Burn's smoke columns standing over it. A clear afternoon
+  (`Config.Lobby.Sky`: ClockTime 14, engine clouds, light atmosphere). ShadowMap with
+  GlobalShadows (`lobby.project.json` sets `Lighting.Technology`), so the hangar under the
+  deck is in shade; only solid opaque parts bigger than clutter cast shadows
+  (`Build.part`). Four lights, Shadows off, Range <= 56 (docs/STYLES.md): three in the hangar,
+  one red in the Plot; the deck floodlights are unlit housings by day.
+- **No shared planes.** Two faces in one plane flicker (z-fighting): the hangar floor plate
+  sits on the hull block (`FLOOR` 0.2), the centre line breaks at each spot circle, and the
+  spot ring, its inner disc, the number and the boarding box each have their own height.
+  Keep to this when adding pieces.
 - **Arrival**: everyone spawns at the aft end of the screening lane (starboard quarter) and
   walks through the SCREENING arch.
 - **Four Lantern spots** (`LaunchService`, rule `Rules/Manifest`): a block-built helo on
@@ -89,6 +100,8 @@ Deck surface y 40, hangar floor y 20, sea y 0. Every position is in `FallowLayou
   the record currency (lore + systems designer).
 - **Art**: the art director's build sheet for the Fallow and the desk crew; Lantern mesh;
   sounds (rotor spool on lift, ship PA tone, the plotter's grease pencil, a low radio net).
+- **Day/night cycle** (owner and Nova, an idea for later): drive `Config.Lobby.Sky` over time,
+  light the deck floodlight housings and the Burn's orange at night.
 - **The Plot's launch and recovery radio lines** (LORE.md > The Fallow) are not played yet.
 - **Other teams' callsigns** (not all Pike) are open with the lore developer.
 - Lobby players wear their own Roblox avatars; the Pike body is match-only.

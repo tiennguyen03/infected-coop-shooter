@@ -11,7 +11,11 @@ export type PartOptions = {
 	collide: boolean?,
 	shape: Enum.PartType?,
 	wedge: boolean?,
+	shadow: boolean?, -- default: solid, opaque parts bigger than clutter cast one
 }
+
+-- Only large solid pieces cast shadows (docs/STYLES.md: ShadowMap, clutter casts none).
+local SHADOW_MIN_SIZE = 6
 
 function Build.part(
 	parent: Instance,
@@ -39,7 +43,13 @@ function Build.part(
 	part.Transparency = opts.transparency or 0
 	part.CanCollide = if opts.collide == nil then true else opts.collide
 	part.CanTouch = false
-	part.CastShadow = false
+	if opts.shadow ~= nil then
+		part.CastShadow = opts.shadow
+	else
+		part.CastShadow = part.CanCollide
+			and part.Transparency == 0
+			and size.Magnitude >= SHADOW_MIN_SIZE
+	end
 	part.TopSurface = Enum.SurfaceType.Smooth
 	part.BottomSurface = Enum.SurfaceType.Smooth
 	part.Parent = parent

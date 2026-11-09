@@ -163,8 +163,8 @@ every time. Delta screened and failed. The Fallow screens and has not, yet.
 Many window teams share the ship. They are **not** all Pike (owner and Nova, 2026-11-09):
 how the other teams are called is open, for the lore developer.
 
-- **Flight deck.** Numbered Lantern spots; a team launches by boarding its bird. At night the
-  coast shows orange where the Burn has been.
+- **Flight deck.** Numbered Lantern spots; a team launches by boarding its bird. By day smoke
+  stands over the coast where the Burn has been; at night it shows orange.
 - **Hangar deck.** Where the teams wait, and where they draw kit. Nobody sells anything; a
   team draws against its record (what the record is, the unlock currency, is open; not
   "Requisition", which is the pallet cost). The desks: the **Arms Room** (the armorer behind
