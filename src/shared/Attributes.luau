@@ -74,6 +74,15 @@ local Attributes = table.freeze({
 	Exposed = "Exposed",
 	Flank = "Flank",
 
+	-- Blast visuals (AirStrikeService, KitService, MineService): the server tags each blast
+	-- flash part with the CollectionService tag BlastTag (a tag, not an attribute, kept here
+	-- so writer and reader share one spelling) and sets BlastPower (Config.Camera.Shake.Power)
+	-- and, for the Anvil, BlastGlobal (shake added at any distance). CameraController reads
+	-- them for the screen shake.
+	BlastTag = "Blast",
+	BlastPower = "BlastPower",
+	BlastGlobal = "BlastGlobal",
+
 	-- Names built from a slot or a clip, so they stay in one place too.
 	-- Player: the upgrade in a field-upgrade slot (UpgradeDefinitions.SLOTS).
 	upgrade = function(slot: string): string
