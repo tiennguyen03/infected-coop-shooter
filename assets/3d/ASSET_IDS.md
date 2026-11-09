@@ -20,6 +20,15 @@ them.
 | prop_drone | 132929388031760 | 93513427419630 | 1.94 x 0.43 x 1.94 | unused in game (drones retired) |
 | prop_drone_beacon | 117405323536844 | 71937735064271 | 1.56 x 3.21 x 1.36 | unused in game |
 | wpn_rifle | 86613539481097 | 77112302177721 | 0.195 x 0.84 x 2.9 | 0.65x of the Blender size; grip offset handled in PlayerSetup |
+| wpn_revolver | 133525801275343 | 110455613061010 | 0.25 x 0.76 x 1.0 | S&W 686 sample gun (guns.py, in-game size); offset/muzzle in MeshAssets |
+| wpn_sniper | 86507403821540 | 138249511970708 | 0.46 x 1.07 x 3.65 | M2010 ESR sample gun |
+| wpn_goose | 82637563176152 | 80902890703049 | 0.6 x 0.94 x 3.03 | M3 recoilless ("Goose") sample launcher |
+| wpn_m16 | 74091027600803 | 104945563283109 | 0.27 x 1.02 x 3.09 | M16A4 (guns.py, in-game size) |
+| wpn_mp5 | 84221584333359 | 112693756802429 | 0.23 x 0.87 x 2.19 | MP5A3 (guns.py, in-game size) |
+| wpn_m249 | 106050421873423 | 129764792627355 | 0.32 x 0.95 x 2.89 | M249 SAW (guns.py, in-game size) |
+| wpn_mossberg | 101866256014088 | 103329258934721 | 0.26 x 0.77 x 2.82 | Mossberg 590 (guns.py, in-game size) |
+| wpn_m110 | 124848490890431 | 88359560754649 | 0.23 x 1.03 x 3.25 | M110 SASS (guns.py, in-game size) |
+| wpn_m17 | 104797900074658 | 80875013937947 | 0.14 x 0.76 x 0.67 | M17 (guns.py, in-game size) |
 | prop_plague_rat | 102065990394982 | 135041557109073 | 0.47 x 0.52 x 1.88 | unused in game (plague rat retired) |
 | prop_car_sedan | 133589928038621 | 139871373094934 | 14.88 x 4.57 x 6.61 | offset (0, 2.286, -0.098); `props.py` |
 | prop_car_hatch | 97663934153782 | 136632195416849 | 12.88 x 5.6 x 8.24 | offset (0, 2.8, -0.919) |

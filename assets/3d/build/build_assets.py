@@ -1345,6 +1345,11 @@ import props  # noqa: E402
 
 props.register(sys.modules[__name__])
 
+# Held guns beyond the rifle (the sample guns, 2026-11-09) live in guns.py.
+import guns  # noqa: E402
+
+guns.register(sys.modules[__name__])
+
 # The distant skyline towers (and their lit-window twins) live in city.py (owner, 2026-11-08).
 import city  # noqa: E402
 

@@ -40,6 +40,19 @@ export type WeaponDefinition = {
 	Kick: WeaponKick, -- per-shot camera kick (CameraController)
 	Heavy: boolean, -- staggers a Brute (Config.Enemies.Flinch)
 	ReloadClip: string?, -- its own reload clip; nil = Config.Animations.Assault.reload
+	Model: string, -- the held mesh (MeshAssets wpn_*); default wpn_rifle
+	Sound: string?, -- its clips in the `guns` bank: <Sound>_shot, <Sound>_reload; nil = the shared rifle shot and gear reload
+	Explosive: Explosive?, -- a launcher: the round is a visible rocket that blows at impact
+	ProjectileSpeed: number?, -- studs/s of that rocket (Explosive only)
+}
+
+-- A launcher's blast at the impact point (the frag's blast, KitService.blast). SelfDamage is
+-- the share of Damage a soldier inside Radius takes (0 = none).
+export type Explosive = {
+	Radius: number,
+	Damage: number,
+	ShakePower: number?,
+	SelfDamage: number?,
 }
 
 export type GrenadeDefinition = {
@@ -71,7 +84,13 @@ type Tuning = {
 	Kick: WeaponKick,
 	Heavy: boolean?,
 	ReloadClip: string?,
+	Model: string?,
+	Sound: string?,
+	Explosive: Explosive?,
+	ProjectileSpeed: number?,
 }
+
+local DEFAULT_MODEL = "wpn_rifle"
 
 local function row(
 	id: string,
@@ -107,6 +126,10 @@ local function row(
 		Kick = tuning.Kick,
 		Heavy = tuning.Heavy == true,
 		ReloadClip = tuning.ReloadClip,
+		Model = tuning.Model or DEFAULT_MODEL,
+		Sound = tuning.Sound,
+		Explosive = tuning.Explosive,
+		ProjectileSpeed = tuning.ProjectileSpeed,
 	}
 end
 
@@ -162,6 +185,30 @@ local ROWS: { [string]: WeaponDefinition } = {
 		"M17",
 		"The sidearm. Q to draw it when the long gun runs dry.",
 		W.Pistol
+	), -- Sample guns (dev menu; not in the Arms Room lists below until the loadout work adds them).
+	revolver = row(
+		"revolver",
+		"secondary",
+		"Revolver",
+		"S&W 686",
+		"Six rounds of .357. One per Walker, and it rocks a Brute. Slow to reload.",
+		W.Revolver
+	),
+	sniper = row(
+		"sniper",
+		"primary",
+		"Sniper Rifle",
+		"M2010 ESR",
+		"One round, one kill, through four in a line. Two for a Brute. Work the bolt.",
+		W.Sniper
+	),
+	goose = row(
+		"goose",
+		"primary",
+		"Goose",
+		"M3 recoilless rifle",
+		"Two rockets. A direct hit kills a Brute; the blast clears a pack.",
+		W.Goose
 	),
 }
 
@@ -184,6 +231,16 @@ WeaponDefinitions.Grenades = GRENADES
 WeaponDefinitions.PRIMARIES = { "service_rifle", "smg", "lmg", "shotgun", "dmr" }
 WeaponDefinitions.SECONDARIES = { "pistol" }
 WeaponDefinitions.GRENADES = { "frag" }
+
+-- Every gun id, sorted (the dev panel lists them all, Arms Room or not).
+function WeaponDefinitions.allIds(): { string }
+	local ids = {}
+	for id in ROWS do
+		table.insert(ids, id)
+	end
+	table.sort(ids)
+	return ids
+end
 
 -- The row for `id`, or the default rifle when the id is unknown (never nil).
 function WeaponDefinitions.get(id: string?): WeaponDefinition
