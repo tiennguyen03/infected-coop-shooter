@@ -10,6 +10,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
+local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local GroundUtil = require(ReplicatedStorage.Shared.GroundUtil)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
@@ -54,6 +55,9 @@ local function detonate(mine: Mine)
 	flash.CanTouch = false
 	flash.Material = Enum.Material.Neon
 	flash.Color = Color3.fromRGB(120, 180, 255)
+	-- Tagged for the client screen shake (CameraController).
+	flash:SetAttribute(Attributes.BlastPower, Config.Camera.Shake.Power.Tripline)
+	CollectionService:AddTag(flash, Attributes.BlastTag)
 	flash.Parent = mineFolder
 	TweenService
 		:Create(flash, TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {

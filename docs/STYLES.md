@@ -519,6 +519,17 @@ when the player stands inside it, so a hollow ring is a later polish item.
 - Fire ground: faceted orange/yellow triangles on the floor, flicker by scale not by light.
 - Shock: 2–3 segment jagged lines in `shield blue`, 0.1 s lifetime.
 - Hunter's Mark: red chevron billboard above the target (matches the icon).
+- Camera kick (2026-11-09, `CameraController`): every own shot pushes the view up
+  `Config.Weapons.<id>.Kick.Pitch` degrees plus a random +/- `Yaw`, eased back over `Recover`
+  (0.12 s, ~95% gone) on top of the aim, so the aim never drifts. M16A4 0.9 / 0.3, MP5
+  0.5 / 0.2, M249 1.1 / 0.5, Mossberg 4.0 / 0.8, M110 2.6 / 0.4, M17 1.6 / 0.3; aiming down
+  sights scales it by `Config.Camera.Kick.AdsScale` (0.6).
+- Blast shake (2026-11-09): every server blast flash (frag, Hammer, Anvil, Shrike burst,
+  Tripline) carries the CollectionService tag `Attributes.BlastTag` ("Blast") and a
+  `BlastPower` (`Config.Camera.Shake.Power`: Frag 3, Hammer 3.5, Anvil 6, Shrike 2, Tripline
+  3 degrees). The client adds `Rules/Feel.shake` (linear falloff to 0 at 60 studs from the
+  camera focus), sums blasts up to a 6-degree cap, decays over 0.45 s and jitters pitch and
+  roll by it. The Anvil also sets `BlastGlobal` (1.0) felt anywhere on the map.
 
 ---
 

@@ -11,6 +11,8 @@ local Config = require(ReplicatedStorage.Shared.Config)
 
 export type WeaponSlot = "primary" | "secondary"
 export type FireMode = "auto" | "semi"
+-- Per-shot camera kick: Pitch degrees up, a random +/- Yaw degrees, eased back over Recover s.
+export type WeaponKick = { Pitch: number, Yaw: number, Recover: number }
 
 export type WeaponDefinition = {
 	Id: string,
@@ -35,6 +37,7 @@ export type WeaponDefinition = {
 	HeadshotMultiplier: number, -- on a Head hit (EnemyDefinitions may override per form)
 	Pellets: number?, -- rounds per trigger pull (shotguns); nil = 1
 	Pierce: number?, -- Infected a round passes through after the first; nil = 0
+	Kick: WeaponKick, -- per-shot camera kick (CameraController)
 }
 
 export type GrenadeDefinition = {
@@ -63,6 +66,7 @@ type Tuning = {
 	HeadshotMultiplier: number,
 	Pellets: number?,
 	Pierce: number?,
+	Kick: WeaponKick,
 }
 
 local function row(
@@ -96,6 +100,7 @@ local function row(
 		HeadshotMultiplier = tuning.HeadshotMultiplier,
 		Pellets = tuning.Pellets,
 		Pierce = tuning.Pierce,
+		Kick = tuning.Kick,
 	}
 end
 

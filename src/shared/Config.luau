@@ -185,6 +185,21 @@ local Config = {
 		-- Pivot height above the root part per stance (stand is roughly head height).
 		PivotHeight = { stand = 2, crouch = 0.6, prone = -1.2 },
 		PivotEaseTime = 0.25,
+		-- Per-shot kick (CameraController): each gun's Weapons.<id>.Kick pushes the view up by
+		-- Pitch degrees plus a random +/- Yaw, eased back over Recover seconds (never a
+		-- permanent aim change). Aiming down sights scales it by AdsScale.
+		Kick = { AdsScale = 0.6 },
+		-- Blast shake (CameraController): every server blast part tagged Attributes.BlastTag
+		-- carries BlastPower (degrees at the centre, falling to 0 at Radius studs from the
+		-- camera focus). Blasts add up to Cap degrees and decay exponentially over Decay
+		-- seconds; the Anvil adds AnvilGlobal on top wherever the soldier stands.
+		Shake = {
+			Radius = 60,
+			Cap = 6,
+			Decay = 0.45,
+			Power = { Frag = 3, Hammer = 3.5, Anvil = 6, Shrike = 2, Tripline = 3 },
+			AnvilGlobal = 1.0,
+		},
 	},
 
 	-- Shooting shared by every gun (the per-gun numbers are in Weapons below). Hitscan: one
@@ -237,6 +252,7 @@ local Config = {
 			AdsMoveFactor = 0.6,
 			Range = 400,
 			HeadshotMultiplier = 3.0, -- EnemyDefinitions may override per form
+			Kick = { Pitch = 0.9, Yaw = 0.3, Recover = 0.12 }, -- degrees up, +/- degrees, seconds
 		},
 		-- MP5: the best hip-fire; chews Runners, weak on Brutes (Walker 4 / 2, Brute 19 / 15).
 		Smg = {
@@ -255,6 +271,7 @@ local Config = {
 			AdsMoveFactor = 0.85,
 			Range = 150,
 			HeadshotMultiplier = 3.0,
+			Kick = { Pitch = 0.5, Yaw = 0.2, Recover = 0.12 },
 		},
 		-- M249: a 100-round belt, no reload inside a hold; slow to aim on the move.
 		Lmg = {
@@ -273,6 +290,7 @@ local Config = {
 			AdsMoveFactor = 0.35,
 			Range = 400,
 			HeadshotMultiplier = 3.0,
+			Kick = { Pitch = 1.1, Yaw = 0.5, Recover = 0.12 },
 		},
 		-- Mossberg 590: point-blank, one decision per pull; one pull drops every form but the
 		-- Brute (3).
@@ -293,6 +311,7 @@ local Config = {
 			AdsMoveFactor = 0.7,
 			Range = 45,
 			HeadshotMultiplier = 1.5,
+			Kick = { Pitch = 4.0, Yaw = 0.8, Recover = 0.12 },
 		},
 		-- M110: one-taps Walkers, hits two in a line, poor up close. Ammo reins it in
 		-- (100 x 60 is the M16's 270 x 20).
@@ -313,6 +332,7 @@ local Config = {
 			AdsMoveFactor = 0.5,
 			Range = 600,
 			HeadshotMultiplier = 3.0,
+			Kick = { Pitch = 2.6, Yaw = 0.4, Recover = 0.12 },
 		},
 		-- M17: the sidearm, backup when the primary runs dry.
 		Pistol = {
@@ -331,6 +351,7 @@ local Config = {
 			AdsMoveFactor = 0.9,
 			Range = 120,
 			HeadshotMultiplier = 3.0,
+			Kick = { Pitch = 1.6, Yaw = 0.3, Recover = 0.12 },
 		},
 	},
 
