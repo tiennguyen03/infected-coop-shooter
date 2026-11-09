@@ -110,6 +110,43 @@ local MESHES: { [string]: MeshDef } = {
 		offset = Vector3.new(-0.061, 0.202, -0.078),
 		muzzle = Vector3.new(0, 0.42, -1.58),
 	},
+	-- The six original guns (guns.py, 2026-11-09); until then they all wore wpn_rifle.
+	wpn_m16 = {
+		meshId = "rbxassetid://74091027600803",
+		size = Vector3.new(0.27, 1.02, 3.09),
+		offset = Vector3.new(0.025, 0.144, -0.475),
+		muzzle = Vector3.new(0, 0.36, -2.02),
+	},
+	wpn_mp5 = {
+		meshId = "rbxassetid://84221584333359",
+		size = Vector3.new(0.23, 0.87, 2.19),
+		offset = Vector3.new(-0.025, 0.167, -0.393),
+		muzzle = Vector3.new(0, 0.32, -1.49),
+	},
+	wpn_m249 = {
+		meshId = "rbxassetid://106050421873423",
+		size = Vector3.new(0.32, 0.95, 2.89),
+		offset = Vector3.new(-0.043, 0.207, -0.445),
+		muzzle = Vector3.new(0, 0.38, -1.89),
+	},
+	wpn_mossberg = {
+		meshId = "rbxassetid://101866256014088",
+		size = Vector3.new(0.26, 0.77, 2.82),
+		offset = Vector3.new(-0.025, 0.119, -0.401),
+		muzzle = Vector3.new(0, 0.42, -1.8),
+	},
+	wpn_m110 = {
+		meshId = "rbxassetid://124848490890431",
+		size = Vector3.new(0.23, 1.03, 3.25),
+		offset = Vector3.new(0, 0.24, -0.825),
+		muzzle = Vector3.new(0, 0.4, -2.45),
+	},
+	wpn_m17 = {
+		meshId = "rbxassetid://104797900074658",
+		size = Vector3.new(0.14, 0.76, 0.67),
+		offset = Vector3.new(0, 0.067, -0.148),
+		muzzle = Vector3.new(0, 0.32, -0.485),
+	},
 	-- 0.7x of the Blender size (tail included in the length).
 	prop_plague_rat = {
 		meshId = "rbxassetid://102065990394982",

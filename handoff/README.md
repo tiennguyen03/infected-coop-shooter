@@ -255,7 +255,7 @@ Read in this order:
   Stream B (soldier kit + Arms Room) is built, not yet playtested: six guns
   (`Config.Weapons`), Q swap, G frag / V shove / E stim (`KitService`, AssaultClassService
   deleted), four call-in slots, the Arms Room on B (`LoadoutMenu`, `Rules/Loadout`),
-  Pike Two-Four bots. Still the rifle mesh on the six original guns.
+  Pike Two-Four bots. Every gun wears its own Blender mesh (guns.py, 2026-11-09).
 - **Sample guns (2026-11-09, `docs/sprints/SPRINT_21_SAMPLE_GUNS.md`):** S&W 686 revolver,
   M2010 sniper and the Goose (M3 recoilless, the "RPG": a rocket with the frag's blast), each
   with its own Blender mesh (`assets/3d/build/guns.py`, uploaded) and own shot/reload clips

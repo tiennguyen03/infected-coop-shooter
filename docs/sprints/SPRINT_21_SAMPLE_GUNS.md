@@ -42,6 +42,9 @@ the loadout screen. Numbers from the systems designer; gun table in
 - **Rifle sound on the original guns:** only the sample guns had a `Sound`. The MP5, M249,
   Mossberg, M110 and M17 get their own shot + reload clips in the `guns` bank.
 - **Silent rocket:** the Goose's impact now plays the frag's blast sound.
+- **Every gun gets its own model** (owner: "just make them"): M16A4, MP5A3, M249, Mossberg
+  590, M110 and M17 modelled in `guns.py` (lineup: `assets/3d/build/previews/guns_lineup.png`),
+  uploaded to the group, each row's `Model` set. `wpn_rifle` is only the fallback now.
 
 ## For Nova (loadout screen)
 
@@ -60,5 +63,4 @@ pointing forward, muzzle ahead); a Goose rocket fired at a Walker killed it, no 
 ## Not done
 
 - Reload animations: all three use the rifle reload clip.
-- The six original guns still wear the rifle mesh (now just a `Model` field each once modelled).
 - The revolver is chunky for a placeholder; free models may replace any of the three.

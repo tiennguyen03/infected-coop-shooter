@@ -84,8 +84,8 @@ gone (`docs/sprints/SPRINT_18_LOADOUT.md`). Lore names on the HUD ([LORE.md](LOR
   mesh (`Model`, default the rifle; PlayerSetup swaps it when the gun in hand changes), its
   clips in the `guns` sound bank (`Sound`: `<Sound>_shot`, `<Sound>_reload`; default the
   shared shot and the gear reload) and, for a launcher, `Explosive` + `ProjectileSpeed` (a
-  rocket that blows with `KitService.blast` at impact). The six original guns still wear
-  the rifle mesh. Bots carry the service rifle.
+  rocket that blows with `KitService.blast` at impact). Every gun has its own Blender mesh
+  (`assets/3d/build/guns.py`). Bots carry the service rifle.
   Grenades: **Frag** (110 in 10 studs, 0.8 s fuse; one-shots a Hocker, not a Brute) first;
   **Incendiary** (3 fire pools) and **Stun** (0.4x slow 3 s in 14 studs, Pen Coil's slow)
   later.

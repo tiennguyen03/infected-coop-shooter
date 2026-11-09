@@ -261,6 +261,7 @@ local Config = {
 			Range = 400,
 			HeadshotMultiplier = 3.0, -- EnemyDefinitions may override per form
 			Kick = { Pitch = 0.9, Yaw = 0.3, Recover = 0.12 }, -- degrees up, +/- degrees, seconds
+			Model = "wpn_m16",
 		},
 		-- MP5: the best hip-fire; chews Runners, weak on Brutes (Walker 4 / 2, Brute 19 / 15).
 		Smg = {
@@ -280,6 +281,7 @@ local Config = {
 			Range = 150,
 			HeadshotMultiplier = 3.0,
 			Kick = { Pitch = 0.5, Yaw = 0.2, Recover = 0.12 },
+			Model = "wpn_mp5",
 		},
 		-- M249: a 100-round belt, no reload inside a hold; slow to aim on the move.
 		Lmg = {
@@ -299,6 +301,7 @@ local Config = {
 			Range = 400,
 			HeadshotMultiplier = 3.0,
 			Kick = { Pitch = 1.1, Yaw = 0.5, Recover = 0.12 },
+			Model = "wpn_m249",
 		},
 		-- Mossberg 590: point-blank, one decision per pull; one pull drops every form but the
 		-- Brute (3).
@@ -321,6 +324,7 @@ local Config = {
 			Range = 45,
 			HeadshotMultiplier = 1.5,
 			Kick = { Pitch = 4.0, Yaw = 0.8, Recover = 0.12 },
+			Model = "wpn_mossberg",
 		},
 		-- M110: one-taps Walkers, hits two in a line, poor up close. Ammo reins it in
 		-- (100 x 60 is the M16's 270 x 20).
@@ -343,6 +347,7 @@ local Config = {
 			Range = 600,
 			HeadshotMultiplier = 3.0,
 			Kick = { Pitch = 2.6, Yaw = 0.4, Recover = 0.12 },
+			Model = "wpn_m110",
 		},
 		-- M17: the sidearm, backup when the primary runs dry.
 		Pistol = {
@@ -362,6 +367,7 @@ local Config = {
 			Range = 120,
 			HeadshotMultiplier = 3.0,
 			Kick = { Pitch = 1.6, Yaw = 0.3, Recover = 0.12 },
+			Model = "wpn_m17",
 		},
 		-- Sample guns (2026-11-09, dev menu; the Arms Room lists them once Nova's loadout work
 		-- does). Each wears its own Blender mesh (`Model`, MeshAssets wpn_*) and plays its own

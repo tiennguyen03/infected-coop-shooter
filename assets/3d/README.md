@@ -53,6 +53,7 @@ Add `-- --only wpn_rifle prop_drone` to build a subset.
 | prop_drone | 280 | center | DroneService body part (1.1 x 0.35 x 1.1) |
 | prop_drone_beacon | 172 | bottom center | (new) beacon pickup / objective dressing |
 | wpn_rifle | 188 | grip | PlayerSetup `attachRifle` part rifle |
+| wpn_m16 / wpn_mp5 / wpn_m249 / wpn_mossberg / wpn_m110 / wpn_m17 | 260 / 216 / 248 / 328 / 376 / 156 | grip | the six original guns (`build/guns.py`), same convention as the sample guns below; `wpn_rifle` stays as the fallback for a gun whose mesh is not uploaded |
 | wpn_revolver / wpn_sniper / wpn_goose | 248 / 540 / 396 | grip | the sample guns (`build/guns.py`, built at in-game size, not 0.65x); MeshAssets carries each `offset` (bounds centre from the grip) and `muzzle`; a gun row names its mesh in `Config.Weapons.<id>.Model` |
 | pick_xp_orb | 80 | center | XPOrbService sphere part |
 | prop_plague_rat | 204 | bottom | PlagueRatService body+head+tail parts |
