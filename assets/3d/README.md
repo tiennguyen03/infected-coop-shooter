@@ -95,7 +95,7 @@ and the lineups with only those assets; run a full build afterwards.
 | pc_assault_* | ~650 per body | center | the Pike soldier's 15 R15 limb MeshParts (`PlayerSetup` -> `MeshAssets.dressModel`); tapered forearms and shins with joint caps (`PC_TAPER`) |
 | pc_assault_skinned, pc_assault_gear_helmet / _carrier | 944 (+ gear 228) | HRP centre | switched off (below); still registered in `MeshAssets` |
 | ref_inf_* / ref_pc_* | — | bottom | assembled preview figures, never exported |
-| Unused in game | | | `prop_drone`, `prop_drone_beacon`, `pick_xp_orb`, `prop_plague_rat` (retired features; still built and registered in `MeshAssets`, no service clones them); `pc_k9/epi/recon/engineer_*` (built, never uploaded) |
+| Unused in game | | | `prop_drone`, `prop_drone_beacon`, `pick_xp_orb`, `prop_plague_rat` (retired features; still built, no longer registered in `MeshAssets` since 2026-11-09, so no server loads them); `pc_k9/epi/recon/engineer_*` (built, never uploaded) |
 
 All far under the budgets in `docs/STYLES.md` §6. Dressing positions live in
 `ArenaService.DRESSING` / `PROPS` (x/z of the bounds centre + yaw; ground height is found by
