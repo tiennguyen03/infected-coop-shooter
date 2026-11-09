@@ -788,7 +788,7 @@ R15_POSE = {
 }
 
 # Whole-body triangle caps (15 limbs, both sides), art director v2. The build prints each body.
-BODY_TRI_CAP = {"walker": 1800, "runner": 2200, "brute": 3000, "hocker": 2200, "warden": 5000}  # CHARACTERS A targets (STYLES caps 3,000 / 5,000)
+BODY_TRI_CAP = {"walker": 1800, "runner": 2200, "brute": 3000, "hocker": 2200, "possum": 2000, "warden": 5000, "driver": 5000}  # CHARACTERS A targets (STYLES caps 3,000 / 5,000)
 
 OCT = (0, 0, 22.5)  # octagon flats face the limb box sides
 FACE_NORMAL = {
@@ -1285,17 +1285,116 @@ def hocker_limb(L, limb):
         walker_limb(L, limb)
 
 
+# --- Possum (Mile 14 on; art director 2026-11-09): a bitten convoy passenger laid on the hard
+# shoulder under a gold foil blanket and tagged black (expectant). Lies on its back among the real
+# dead (the `knockdown_back` last frame) and hunts on all fours (`downed_crawl`): the pose is the
+# clip's, so the limbs stay stock length and near neutral, and nothing on the back of the torso
+# stands prouder than the Pike carrier's back panel. The left side is the side it lay on: pressure
+# sore, lividity, the ear gone to rebuilt, the foil wrapped round the left shoulder front and back.
+# Sided: the triage tag on the right forearm, the left foot shod and the right one bare.
+POSSUM_HEAD_UP = 15  # degrees the chin is lifted about the neck, so the face looks ahead on all fours
+
+
+def possum_limb(L, limb, side=None):
+    W, D, H = R15_LIMB[limb]
+    skin = "pallor"
+    tr = WALKER_TROUSERS
+    if limb == "head":
+        L.box((W, D, 0.8), (0, 0, 0.19), swatch=skin)  # cranium
+        L.box((0.9, 0.7, 0.3), (0, -0.28, -0.4), rot=(-25, 0, 0), swatch=skin)  # jaw hanging open
+        L.box((0.7, 0.5, 0.22), (0, -0.22, -0.28), swatch="dark_d")  # the open mouth
+        L.eyes(z=0.08)
+        L.box((0.16, 0.14, 0.24), (0, -0.62, -0.06), swatch=skin)  # nose
+        L.box((1.2, 1.2, 0.24), (0, 0.02, 0.5), swatch="dark")  # hair cap
+        L.box((0.5, 1.1, 0.14), (-0.36, 0.04, 0.4), swatch="dark_d")  # matted flat on the side it lay on
+        L.blotch(0.7, 0.6, (-0.6, -0.1, -0.05), face="left", swatch="bruise_d")  # lividity
+        L.lesion(0.42, 0.36, (-0.66, -0.1, -0.05), face="left")  # pressure sore on the cheek
+        L.box((0.12, 0.26, 0.32), (-0.64, 0.32, 0.06), swatch="rebuilt_l")  # ear gone to rebuilt
+        L.box((0.06, 0.12, 0.12), (-0.7, 0.32, 0.06), swatch="rebuilt_d")
+        L.box((0.1, 0.24, 0.32), (0.62, 0.32, 0.06), swatch=skin)  # the other ear
+        L.b.rotate_all((-POSSUM_HEAD_UP, 0, 0), cent=(0, 0, R15_NECK_DOWN))  # chin up
+    elif limb == "upper_torso":
+        L.box((W, D, H), swatch="tan_d")  # cardigan
+        L.box((0.7, 0.12, 1.5), (0, -0.5, -0.05), swatch="white_d")  # shirt in the open front
+        for x in (-0.42, 0.42):
+            L.box((0.2, 0.1, 1.6), (x, -0.53, -0.05), swatch="tan")  # knit button bands
+        L.box((1.6, 0.1, 1.3), (0, 0.53, -0.05), swatch="pus_d")  # back soaked where it lay
+        for x, z in ((-0.4, -0.75), (0.35, -0.7)):
+            L.box((0.4, 0.1, 0.3), (x, 0.53, z), swatch="pus_d")  # drips
+        L.box((0.46, 0.12, 1.6), (0, 0.6, 0), swatch="rebuilt")  # spine strip
+        for i, z in enumerate((0.62, 0.3, -0.02, -0.34, -0.66)):  # the ridge: the top line on all fours
+            d = 0.2 - 0.02 * i
+            L.box((0.34 - 0.03 * i, d, 0.24), (0, 0.66 + d / 2, z), swatch="rebuilt_l")
+        # the foil, wrapped round the left shoulder: gold side up, readable face-up and on all fours
+        L.box((0.8, 0.08, 0.9), (-0.62, 0.62, 0.42), rot=(6, 0, 0), swatch="brass_l")  # back panel
+        L.box((0.68, 1.16, 0.08), (-0.56, 0.0, 0.89), swatch="brass_l")  # over the shoulder
+        L.box((0.7, 0.08, 0.8), (-0.62, -0.62, 0.4), rot=(-6, 0, 0), swatch="brass_l")  # front panel
+        L.box((0.08, 0.9, 1.1), (-1.02, 0.1, -0.1), swatch="brass")  # torn flap down the flank
+        L.box((0.08, 0.5, 0.4), (-1.02, 0.35, -0.75), rot=(0, 0, 8), swatch="brass_d")  # torn corner
+        for s, y in ((1, 0.68), (-1, -0.68)):  # crinkle and fold lines on both panels
+            L.box((0.6, 0.04, 0.06), (-0.62, y, 0.6), rot=(0, 20, 0), swatch="gun_l")
+            L.box((0.6, 0.04, 0.06), (-0.62, y, 0.25), rot=(0, -20, 0), swatch="gun_l")
+            L.box((0.6, 0.04, 0.06), (-0.62, y, 0.42), rot=(0, s * 8, 0), swatch="brass_d")
+    elif limb == "lower_torso":
+        L.box((W, D, H), swatch=tr)
+        L.box((2.04, 1.06, 0.22), (0, 0, 0.1), swatch="tan_d")  # cardigan hem
+        L.box((1.5, 0.06, 0.2), (0, 0.56, 0.1), swatch="pus_d")  # the soak runs on down
+    elif limb == "upper_arm":
+        L.cap(0.42, (0, 0, 0.12), swatch="tan_d")
+        L.oct(0.34, 0.7, (0, 0, -0.22), swatch="tan_d", r_top=0.42)  # thin arms
+        L.oct(0.4, 0.18, (0, 0, -0.52), swatch="tan")  # sleeve pushed up in a knit roll
+    elif limb == "lower_arm":
+        L.cap(0.38, (0, 0, 0.14), swatch="rebuilt_l")  # elbow callus: it drags itself on these
+        L.box((0.5, 0.24, 0.36), (0, 0.3, 0.12), swatch="rebuilt_l")
+        L.oct(0.3, 0.84, (0, 0, -0.18), swatch=skin, r_top=0.36)
+        if side == "r":  # the black triage tag, strapped flat: only the expectant strip is left
+            L.oct(0.34, 0.06, (0, 0, -0.12), swatch="white")
+            L.box((0.06, 0.44, 0.56), (0.34, 0, -0.32), swatch="white_l")
+            L.box((0.06, 0.44, 0.14), (0.385, 0, -0.52), swatch="dark_d")
+        else:
+            L.blotch(0.4, 0.6, (-0.3, 0, -0.2), face="left", swatch="bruise_d")  # lividity
+    elif limb == "hand":
+        L.box((0.86, 0.6, 0.32), (0, 0.04, 0.02), swatch=skin)
+        for x in (-0.33, -0.11, 0.11, 0.33):
+            L.box((0.14, 0.18, 0.36), (x, -0.12, -0.28), swatch=skin)  # long thin fingers
+        L.box((0.7, 0.14, 0.2), (0, 0.38, 0.0), swatch="rebuilt_l")  # callus on the heel of the hand
+    elif limb == "upper_leg":
+        L.hip_inset(0.46, tr)
+        L.oct(0.42, 1.0, (0, 0, -0.18), swatch=tr, r_top=0.46)
+    elif limb == "lower_leg":
+        L.cap(0.4, (0, 0, 0.23), swatch=tr)
+        L.box((0.7, 0.18, 0.54), (0, -0.4, 0.22), swatch="flesh_d")  # torn trouser rim at the knee
+        L.box((0.62, 0.22, 0.46), (0, -0.44, 0.22), swatch="rebuilt_l")  # knee callus: it bears on these
+        L.oct(0.36, 0.88, (0, 0, -0.21), swatch=tr, r_top=0.4)
+        if side == "l":
+            L.box((W, D, 0.3), (0, 0, -0.5), swatch="dark")  # shoe top
+        else:
+            L.oct(0.4, 0.1, (0, 0, -0.4), swatch="concrete")  # frayed hem
+            L.oct(0.3, 0.3, (0, 0, -0.52), swatch=skin)  # bare ankle
+    elif limb == "foot":
+        if side == "l":
+            L.shoe("dark")
+        else:  # the bare foot: the tell inside 20 studs, every real body wears two shoes
+            L.box((0.8, 0.96, 0.22), (0, 0, 0.02), swatch=skin)
+            L.box((0.8, 0.96, 0.06), (0, 0, -0.12), swatch="rebuilt_d")  # callused sole
+            for x in (-0.27, -0.09, 0.09, 0.27):
+                L.box((0.16, 0.18, 0.14), (x, -0.52, -0.02), swatch="rebuilt_l")  # toes
+            L.blotch(0.4, 0.4, (0.1, 0.1, 0.13), face="top", swatch="bruise")
+
+
 INFECTED_TYPES = {
     "walker": walker_limb,
     "runner": runner_limb,
     "brute": brute_limb,
     "hocker": hocker_limb,
+    "possum": possum_limb,
 }
 # Forms whose arms differ by side: these limbs export as `_l` / `_r` meshes (MeshAssets.dressModel
 # looks the side up before the shared name).
 INFECTED_SIDED = {
     "walker": ("upper_arm",),
     "brute": ("upper_arm", "lower_arm", "hand"),
+    "possum": ("lower_arm", "lower_leg", "foot"),
 }
 
 
@@ -1340,10 +1439,21 @@ import warden  # noqa: E402
 
 warden.register(sys.modules[__name__])
 
+# Mile 14's Index host, the Driver (driver.py): limbs, seat / belly / buckle parts, ref_inf_driver.
+import driver  # noqa: E402
+
+driver.register(sys.modules[__name__])
+
 # Small set pieces (cars, gates, barriers, prop_* dressing) live in props.py (owner, 2026-11-08).
 import props  # noqa: E402
 
 props.register(sys.modules[__name__])
+
+# The Mile 14 kit (overpass, guardrails, gantries, toll and fuel canopies, convoy traffic) lives in
+# highway.py (level designer, 2026-11-09).
+import highway  # noqa: E402
+
+highway.register(sys.modules[__name__])
 
 # The distant skyline towers (and their lit-window twins) live in city.py (owner, 2026-11-08).
 import city  # noqa: E402
