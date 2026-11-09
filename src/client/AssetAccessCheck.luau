@@ -104,10 +104,9 @@ function AssetAccessCheck.init()
 		return
 	end
 	task.delay(DELAY, function()
-		local ok, err = pcall(run)
-		if not ok then
+		xpcall(run, function(err)
 			warn(`[AssetAccess] check failed to run: {err}`)
-		end
+		end)
 	end)
 end
 

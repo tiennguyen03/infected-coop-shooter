@@ -14,9 +14,9 @@ jobs:
 
       # The tools are downloaded once per rokit.toml change, so a GitHub release outage
       # does not fail the checks.
-      - name: Cache tools
+      - name: Restore tools
         id: tools
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: ~/.local/bin
           key: tools-${{ runner.os }}-${{ hashFiles('rokit.toml', 'scripts/install-tools.sh') }}
@@ -24,6 +24,14 @@ jobs:
       - name: Install tools (versions from rokit.toml)
         if: steps.tools.outputs.cache-hit != 'true'
         run: bash scripts/install-tools.sh "$HOME/.local/bin"
+
+      # Saved right after the install, so a later failing check still keeps the tools.
+      - name: Save tools
+        if: steps.tools.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.local/bin
+          key: ${{ steps.tools.outputs.cache-primary-key }}
 
       - name: Put tools on PATH
         run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
