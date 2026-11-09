@@ -1414,6 +1414,21 @@ local Config = {
 			RetryDelay = 2,
 			Cooldown = 6, -- seconds a spot rests after a lift or a failed one
 		},
+		-- Lantern, the lift bird on each spot (LanternBird, LanternSpool; docs/LORE.md > Lantern).
+		Lantern = {
+			BirdNumbers = { 22, 24, 21, 23 }, -- stencilled number per spot: a bird and a spot are not tied
+			RotorRpm = 40, -- main rotor speed at the end of the spool
+			SpoolShare = 2 / 3, -- the rotor reaches RotorRpm this far into the countdown
+			TailRatio = 4.6, -- tail rotor turns this many times per main rotor turn
+			BlurSeconds = 3, -- the last seconds before lift show the blur discs instead of blades
+			BlurTransparency = 0.85,
+			LiftSeconds = 1.5, -- the bird rises and dips its nose over the last seconds
+			Rise = 4, -- studs
+			Dip = 5, -- degrees nose down
+			LampColor = Color3.fromRGB(255, 176, 64),
+			LampRange = 12, -- STYLES light budget: Shadows off, Range <= 56
+			LampBrightness = 1,
+		},
 		-- The Fallow's meshes (FallowArt; docs/sprints/LOBBY_V1_FALLOW.md > Ship art).
 		Ship = {
 			TemplateWait = 30, -- seconds FallowArt waits for an uploaded mesh before keeping the blocks

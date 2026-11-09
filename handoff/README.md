@@ -234,11 +234,13 @@ Read in this order:
   default walking sound muted), a Terrain-water sea out to the haze and a Terrain coast (beach, hills)
   burning on the shore (fire and smoke particles), four Lantern spots that teleport a squad into a reserved match server, four
   hangar desks (lines only, no trades), the Plot's Containment Board on placeholder numbers.
-  **Ship art built 2026-11-09, not uploaded** (sprint doc > Ship art): 12 `env_fallow_*`
-  meshes (`assets/3d/build/fallow.py`, FBX in `assets/3d/export/`) that `FallowArt` lays over
-  the blocks once their ids are in `MeshAssets`; the walkable lift balcony, deck-edge lines and
-  deck-end HRD are live now. Next: upload the 12 FBX in Studio and paste the ids, then
-  re-check the loop, body and ship in the `Lobby (dev)` place, then a published launch test.
+  **Ship art and Lantern built 2026-11-09, not uploaded** (sprint doc > Ship art, Lantern): 12
+  `env_fallow_*` and 4 `veh_lantern_*` meshes (`assets/3d/build/fallow.py`, `lantern.py`; FBX in
+  `assets/3d/export/`) that `FallowArt` / `LanternBird` lay over the blocks once their ids are
+  in `MeshAssets`; the walkable lift balcony, deck-edge lines, deck-end HRD and the bird's
+  lift on countdown are live now. Next: upload the 16 FBX in Studio and paste the ids, then
+  re-check the loop, body, ship and birds in the `Lobby (dev)` place, then a published launch
+  test.
 - **Satisfying pass built 2026-11-09 (`docs/superpowers/plans/2026-11-09-satisfying-pass.md`).**
   Camera kick per gun, blast shake per grenade/call-in (`ShakePower`), limp bodies thrown by
   the killing hit (max 8, 4 s), hit flinch (Brute only from `Heavy` guns), legless crawl,

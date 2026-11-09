@@ -71,8 +71,8 @@ goes from evening to night to dawn.
 5. **Harlan Reservoir Station** — the dam and the research station. Boss: the Specimen.
 
 **Control, Lantern, the Burn.** Harlan Control runs the corridor net; the squad is Pike; the
-helo that carries Pike is Lantern, the only thing that stays the same and the only way
-out. Command sanitizes what it cannot hold: each district has a scheduled incendiary fire
+helo that carries Pike is Lantern (airframe in [The Fallow > Lantern](#lantern)), the only
+thing that stays the same and the only way out. Command sanitizes what it cannot hold: each district has a scheduled incendiary fire
 mission, the Burn, and the skyline burning beyond the walls is the districts that already
 got theirs. A squad is inserted in the window before the Burn. Prove the district can be
 held and Control pushes the Burn back; stay past it and the fire does not wait. **Stand
@@ -175,6 +175,11 @@ how the other teams are called is open, for the lore developer.
 - **The Plot.** Control's map room under the island, lit red. The corridor chart on the
   table under tape and grease pencil; the Containment Board on a lit perspex wall, five
   columns, written backwards by a plotter standing behind it. Contained is still not clean.
+- **The ship's dress.** The sponson guns are under canvas: they are aboard, and nothing that
+  walks reaches her. The name on the transom is painted out like the hull number; the raised
+  weld letters show faintly through the paint and cannot be read. She flies one flag from the
+  flagstaff: plain yellow, the quarantine flag, because everything that comes aboard comes
+  from the corridor.
 
 Keep it ours: the ship is shared and never upgraded by players (no ship modules), the board
 is paper and perspex (no hologram), a team launches by boarding a helo (no drop pods), the
@@ -185,6 +190,41 @@ desks are people at counters (no rotating store), and the PA is procedural (no p
 | Launch | "Pike, Control. Lantern on spot three, turning. Window opens on lift." |
 | Recovery | "Lantern recovering, spot two. Screening party to the deck edge." |
 | Board change | (no line; the plotter's grease pencil) |
+
+## Lantern
+
+Canon as of 2026-11-09 (owner approved).
+
+Every lift bird off the Fallow flies as Lantern. Each is a medium utility helo drawn from the
+same reserve fleet as the ship: one main rotor, a tail rotor, skids, a boxy cabin and a long
+thin tail boom ending in a tall fin. It is built to carry one window team and nothing else:
+two pilots, a crew chief, four Pike on canvas seats facing the door, and the bundles at their
+feet.
+
+- **The door.** The starboard cargo door slides all the way back and stays open in flight.
+  The crew chief rides in it on a monkey strap, clipped to a kick rail along the sill.
+  Everything the Loadmaster issues goes out of that door: slung cases, speedballs, pallets.
+  The crew chiefs are the Loadmaster's people; the desk on the hangar deck is where they sign
+  for the load.
+- **No door gun.** The pintle mount is still on the door frame, empty, its arm swung inboard
+  and tied off. Lantern does not fight for its LZ. Pike holds it. When the squad needs a gun
+  from the air, it calls Shrike.
+- **The lamp.** A single amber lamp sits on the housing behind the rotor mast. It is lit
+  whenever the rotor turns, day or night. Soldiers say it is what you look for when you have
+  thrown green smoke and cannot see the smoke. Officially the name comes from the net; nobody
+  believes that.
+- **Reserve paint.** The paint is faded, with darker patches where the old unit markings were
+  painted out and HRD sprayed over each one, as on the ship. The bird's number is stencilled
+  in white on both nose doors and on the fin. The boom is sooted behind the exhausts. There is
+  a tide line on the skids and lower cabin where the bird is hosed down at every recovery: the
+  screening lane screens the helo too.
+- **The tally.** On the inside of the door frame, at the crew chief's shoulder, there is a
+  column of grease-pencil marks: a stroke for every seat taken out, a cross for every seat
+  brought home. The crosses are behind.
+- **Numbers.** "Lantern" is the callsign; the number is flight and aircraft. "Lantern 2-1" is
+  the second flight's first bird, stencilled 21. The four birds on the Fallow's deck spots are
+  21 to 24. A bird and a spot are not tied: Control gives the spot ("Lantern on spot three")
+  and the bird answers with its number.
 
 # Pike
 
@@ -216,8 +256,9 @@ The loadout menu is the **Arms Room** (the Army's name for a unit armoury). Nami
   on the net.
 - **Support weapons, emplacements and supply** take a soldier's word for the thing, with
   the designation in small type under it.
-- **Delivery:** Lantern's crew kicks support weapons and supply out of the door as a slung
-  case or a speedball. Nothing falls from orbit.
+- **Delivery:** Lantern's crew chief kicks support weapons and supply out of the starboard
+  door as a slung case or a speedball ([The Fallow > Lantern](#lantern)). Nothing falls from
+  orbit.
 
 | HUD name | Under it | Family |
 |---|---|---|

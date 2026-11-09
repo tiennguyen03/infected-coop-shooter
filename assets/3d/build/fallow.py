@@ -179,6 +179,14 @@ def stern_trim(b):
         x0, x1 = sorted((s * 34.5, s * 34.6))
         rb(b, (x0, -1, -180.2), (x1, 3, -100), "dark_d")
     cyl_up(b, 0, 35, 45, -182.5, 0.15, "gun_l", segs=6)  # flagstaff
+    # The quarantine flag: plain yellow, everything aboard came from the corridor (LORE.md).
+    rb(b, (0.15, 42.2, -182.55), (4.15, 44.8, -182.45), "objective_yellow")
+    # Her old name painted out on the transom; the raised weld letters show through the paint
+    # as shapes nobody can read (LORE.md > The Fallow).
+    rb(b, (-15, 25.5, -180.75), (15, 32.5, -180.6), "gun")
+    for i, (w, h) in enumerate(((2.2, 4.0), (2.6, 4.0), (1.0, 4.0), (2.4, 3.0), (2.6, 4.0), (2.2, 4.0), (2.4, 3.6))):
+        x = -12 + i * 4
+        rb(b, (x - w / 2, 27 + (4 - h) / 2, -180.85), (x + w / 2, 27 + (4 + h) / 2, -180.75), "gun")
     for x, z in TUBS["stern"]:
         cyl_up(b, x, 38, 40.5, z, 3.5, "tan_d")
         cyl_up(b, x, 40.5, 40.9, z, 2.6, "tan")

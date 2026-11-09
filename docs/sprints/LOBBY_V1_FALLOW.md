@@ -55,8 +55,8 @@ match place.
 - **Known warning**: `rbxassetid://203785492 … Asset type does not match requested type`
   shows in the lobby's output as it does in the match's (handoff "Minor loose ends"). No file
   in the repo names that id; it is not from lobby code and does not affect play.
-- **Four Lantern spots** (`LaunchService`, rule `Rules/Manifest`): a block-built helo on
-  each numbered spot and a yellow boarding box beside its starboard door. Stand in the box
+- **Four Lantern spots** (`LaunchService`, rule `Rules/Manifest`): a Lantern (`LanternBird`,
+  see Lantern below) on each numbered spot and a yellow boarding box beside its starboard door. Stand in the box
   to board. The first aboard starts a 20 s countdown, a full bird (4) cuts it to 5 s, the
   box empty clears it, a fifth soldier is left off. At zero the server teleports everyone
   aboard together (`TeleportAsync`, a reserved server, teleport data `{spot, party}`), two
@@ -118,6 +118,40 @@ unchanged.
   `fallow_built_quarter.png`, `fallow_built_portquarter.png`, `fallow_built_deck.png` (the
   built meshes assembled with the bays and radar), and one `env_fallow_*.png` per mesh.
 
+## Lantern (2026-11-09: built, not uploaded, not playtested)
+
+The lift bird on each spot, from the lore developer's canon (docs/LORE.md > Lantern, owner
+approved) and the art director's sheet, in `assets/3d/build/lantern.py` (collection
+`Vehicles`, new prefix `veh_`). Placed by `LanternBird` on `spot.helo`, nose to the bow, the
+open door facing the boarding box; no layout change.
+
+- **Meshes** (1,912 tris a bird with both rotors; vehicle cap 5,000): `veh_lantern_body`
+  (shell, Metal (104,110,80), Precise: boxy cabin with a 7.5-stud door opening, cockpit and
+  windscreen slope, engine housing, tail cone, a boom thin against the 7.5-wide cabin, a tall
+  fin raked aft above the rotor disc), `veh_lantern_trim` (dark interior so the door reads at
+  40 studs: canvas bench and straps, bundles and a speedball; the door slid fully aft on its
+  rails, the kick rail, the empty pintle swung inboard and lashed, the monkey strap; the tally,
+  12 strokes and 9 crosses inside the door at the crew chief's shoulder; opaque cockpit glass;
+  the bleached tide line on the lower cabin, skids and struts; exhausts; a soot streak on the
+  boom; olive_d patches for the HRD; mast and lamp pedestal), `veh_lantern_rotor` (four
+  blades drooped 2.5 degrees, 38 across, white tips) and `veh_lantern_tail_rotor` (two blades,
+  spins about X). No pilots: the glass is opaque, so they would never be seen.
+- **Parts** (`LanternBird`): three invisible colliders (cabin with skids, boom, fin); the amber
+  lamp behind the mast with a PointLight (Range 12, off at rest); the bird's number stencilled
+  on both nose doors and the fin, HRD on the boom and the port cabin side (SurfaceGui); two
+  blur discs, hidden at rest; the crew chief (`NpcBody.Aircrew`: sage flight suit, helmet, visor
+  down) at the aft edge of the door facing the box. Numbers per spot are fixed and out of order
+  (`Config.Lobby.Lantern.BirdNumbers` 22, 24, 21, 23: a bird and a spot are not tied).
+- **Turning** (owner: still on deck, spool on countdown): `LaunchService` publishes
+  `Attributes.LiftAt` (server time) on the counting bird; `LanternSpool` on every client lights
+  the lamp, spools the rotor to 40 rpm over the first two thirds of the countdown, swaps the
+  blades for the blur discs for the last 3 s and lifts the bird 4 studs, nose 5 degrees down,
+  over the last 1.5 s; cleared, everything returns. Tuning in `Config.Lobby.Lantern`.
+- **Until the upload** the v1 block bird stands on each spot (it lifts on the countdown too,
+  without a spinning rotor or lamp). The four meshes swap in together or not at all.
+- **Previews**: `lantern_before.png`, `lantern_built_door.png`, `lantern_built_profile.png`,
+  `lantern_built_board.png` (from the boarding box), one `veh_lantern_*.png` per mesh.
+
 ## Plan view (studs; +Z bow, +X starboard)
 
 ```
@@ -145,9 +179,9 @@ Deck surface y 40, hangar floor y 20, sea y 0. Every position is in `FallowLayou
 | Place | File |
 |---|---|
 | Project | `lobby.project.json` (shares `src/shared`; `src/lobby/shared` as `ReplicatedStorage.Lobby`; maps the match's `src/server/PlayerSetup.luau` into the lobby server and `src/client/HudTheme.luau`, `PaletteController.luau` into the lobby client; sets `Lighting.Technology`) |
-| Server | `src/lobby/server/`: `Main.server`, `FallowLayout`, `Build`, `FallowBuilder`, `FallowArt`, `PikeBody`, `NpcBody`, `DeskService`, `ContainmentBoard`, `PlotService`, `LaunchService` |
-| Client | `src/lobby/client/`: `Main.client`, `LaunchUI`, `DeskDialogUI`, `RadarSpin` |
-| Art | `assets/3d/build/fallow.py` (12 `env_fallow_*` meshes); `MeshAssets` entries; `Config.Lobby.Ship` |
+| Server | `src/lobby/server/`: `Main.server`, `FallowLayout`, `Build`, `FallowBuilder`, `FallowArt`, `PikeBody`, `NpcBody`, `DeskService`, `ContainmentBoard`, `PlotService`, `LaunchService`, `LanternBird` |
+| Client | `src/lobby/client/`: `Main.client`, `LaunchUI`, `DeskDialogUI`, `RadarSpin`, `LanternSpool` |
+| Art | `assets/3d/build/fallow.py` (12 `env_fallow_*` meshes), `lantern.py` (4 `veh_lantern_*`); `MeshAssets` entries; `Config.Lobby.Ship`, `Config.Lobby.Lantern`; attribute `LiftAt` |
 | Shared | `src/lobby/shared/LobbyDesks`; rules `src/shared/Rules/Manifest`, `Rules/Containment` (+ specs); `Config.Lobby`, `Config.Containment`; remote `Launch` + `Messages.Launch`; attribute `DeskId` |
 
 ## How to test it
@@ -174,18 +208,24 @@ Deck surface y 40, hangar floor y 20, sea y 0. Every position is in `FallowLayou
 - **Back to the Fallow at run end** (decision 7: once meta progression exists).
 - **Real board numbers** and **desk trades** wait for the save service (F9) and a name for
   the record currency (lore + systems designer).
-- **Ship art: upload and playtest** (needs Roblox Studio with its MCP): upload the 12
-  `assets/3d/export/env_fallow_*.fbx` as Models, read each MeshId, paste them into the
-  `env_fallow_*` entries in `MeshAssets` and record them in `assets/3d/ASSET_IDS.md`, then check
-  in the `Lobby (dev)` place: the hull hides its blocks with no gaps, the bow patches lie flat,
-  the radar turns, the balcony is walkable and walled, no water shows inside the bow.
-- **Art, next**: the Lantern helo sheet (art director: shared by the lobby and the match, after
-  the lore developer names the airframe; the cube helos are what the deck view lands on now);
-  the desk crew; sounds (rotor spool on lift, ship PA tone, the plotter's grease pencil, a low
-  radio net); a vertical rib over each hull seam (the sheet's 0.4-proud frame).
-- **Lore flags from the art pass** (lore developer): the sponson mounts (built as
-  canvas-covered); a name on the transom or painted out; what flies from the flagstaff; the
-  Lantern's airframe.
+- **Ship and Lantern art: upload and playtest** (needs Roblox Studio with its MCP): upload the
+  12 `assets/3d/export/env_fallow_*.fbx` and the 4 `veh_lantern_*.fbx` as Models, read each
+  MeshId, paste them into their `MeshAssets` entries and record them in
+  `assets/3d/ASSET_IDS.md`, then check in the `Lobby (dev)` place: the hull hides its blocks
+  with no gaps, the bow patches lie flat, the radar turns, the balcony is walkable and walled,
+  no water shows inside the bow; each bird shows its number, the crew chief stands in the door,
+  and boarding a spot lights the lamp, spools, blurs and lifts it (and it settles back when the
+  Studio lift fails). Count the lamp lights against the deck's (performance reviewer).
+- **Lantern in the match** (insert, extraction, supply kicks out of the starboard door): the
+  same four meshes; `LanternBird` and `LanternSpool` are lobby modules today.
+- **Art, next**: the desk crew; sounds (rotor spool on lift, ship PA tone, the plotter's grease
+  pencil, a low radio net, a door-rail rattle on a kick); a vertical rib over each hull seam
+  (the sheet's 0.4-proud frame).
+- **Lore flags from the Lantern sheet** (lore developer): canon says boom and fin "roughly
+  double the fuselage length"; at the deck's 45-stud spot pitch it is built about as long again
+  (fuselage 20, boom and fin 21): soften the line. Also to confirm: the lamp reads from below by
+  its spill on the belly; the crew chief's dress; white grease pencil; the tally's counts; four
+  blades.
 - **Day/night cycle** (owner and Nova, an idea for later): drive `Config.Lobby.Sky` over time,
   light the deck floodlight housings at night.
 - **Sea extras** (optional): spray at the bow, a foam line along the waterline, a stern wake

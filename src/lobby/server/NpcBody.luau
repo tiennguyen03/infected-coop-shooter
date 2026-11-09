@@ -11,6 +11,7 @@ export type Dress = {
 	shirt: Color3,
 	trousers: Color3,
 	cover: Color3?, -- a cap, if any
+	helmet: Color3?, -- a flight helmet with its visor down, if any (instead of a cap)
 }
 
 NpcBody.Ship = {
@@ -20,6 +21,12 @@ NpcBody.Ship = {
 } :: Dress
 NpcBody.Army =
 	{ shirt = Color3.fromRGB(92, 96, 70), trousers = Color3.fromRGB(78, 80, 60) } :: Dress
+-- Lantern's crew chief (docs/LORE.md > Lantern): a sage flight suit, helmet, visor down.
+NpcBody.Aircrew = {
+	shirt = Color3.fromRGB(110, 112, 90),
+	trousers = Color3.fromRGB(110, 112, 90),
+	helmet = Color3.fromRGB(48, 53, 59),
+} :: Dress
 
 local SKIN = Color3.fromRGB(176, 140, 112)
 
@@ -53,6 +60,15 @@ function NpcBody.build(
 	limb("Head", Vector3.new(1.1, 1.2, 1.1), Vector3.new(0, 4.85, 0), SKIN)
 	if dress.cover then
 		limb("Cover", Vector3.new(1.2, 0.35, 1.3), Vector3.new(0, 5.5, -0.1), dress.cover)
+	end
+	if dress.helmet then
+		limb("Helmet", Vector3.new(1.3, 0.9, 1.35), Vector3.new(0, 5.15, 0.05), dress.helmet)
+		limb(
+			"Visor",
+			Vector3.new(1.0, 0.4, 0.1),
+			Vector3.new(0, 4.95, -0.65),
+			Color3.fromRGB(154, 164, 174)
+		)
 	end
 	model.PrimaryPart = torso
 	model.Parent = parent

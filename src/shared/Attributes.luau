@@ -23,6 +23,9 @@ local Attributes = table.freeze({
 	ResupplyPool = "ResupplyPool",
 	ResupplyDropIn = "ResupplyDropIn",
 	DevSpawnsOff = "DevSpawnsOff",
+	-- lobby: a Lantern bird model's lift time (server time, workspace:GetServerTimeNow()) while
+	-- its spot counts down; nil otherwise (LaunchService writes, LanternSpool reads)
+	LiftAt = "LiftAt",
 	-- workspace: the Warden's telegraphed danger shape, read by the bots
 	BossDanger = "BossDanger",
 	BossDangerKind = "BossDangerKind",

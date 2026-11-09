@@ -983,6 +983,35 @@ local MESHES: { [string]: MeshDef } = {
 		offset = Vector3.new(3.625, -1.725, 0.000),
 		castShadow = false,
 	},
+	-- Lantern, the lift bird (assets/3d/build/lantern.py; LanternBird places them). Body and
+	-- trim offsets are in the helo frame (origin at the mast foot on the deck); the rotors'
+	-- from their hubs. Look only: the colliders are Parts.
+	veh_lantern_body = {
+		meshId = "",
+		size = Vector3.new(7.50, 11.50, 41.11),
+		offset = Vector3.new(0.000, 7.551, -7.553),
+		surface = { material = Enum.Material.Metal, color = Color3.fromRGB(104, 110, 80) },
+		render = Enum.RenderFidelity.Precise,
+		castShadow = true,
+	},
+	veh_lantern_trim = {
+		meshId = "",
+		size = Vector3.new(7.94, 11.65, 30.05),
+		offset = Vector3.new(0.080, 5.825, -1.975),
+		castShadow = false,
+	},
+	veh_lantern_rotor = {
+		meshId = "",
+		size = Vector3.new(38.01, 1.14, 38.01),
+		offset = Vector3.new(0.000, -0.320, 0.000),
+		castShadow = true,
+	},
+	veh_lantern_tail_rotor = {
+		meshId = "",
+		size = Vector3.new(0.40, 5.20, 0.60),
+		offset = Vector3.new(0.000, 0.000, 0.000),
+		castShadow = false,
+	},
 }
 
 -- Swap in each pending entry's `fallback` (header): the earlier mesh at its own size, plain

@@ -13,11 +13,13 @@ local RunService = game:GetService("RunService")
 local TeleportService = game:GetService("TeleportService")
 local Workspace = game:GetService("Workspace")
 
+local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Manifest = require(ReplicatedStorage.Shared.Rules.Manifest)
 local Messages = require(ReplicatedStorage.Shared.Messages)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local Build = require(script.Parent.Build)
+local LanternBird = require(script.Parent.LanternBird)
 local Layout = require(script.Parent.FallowLayout)
 
 local LaunchService = {}
@@ -29,13 +31,12 @@ local SETTINGS: Manifest.Settings = {
 	fullCountdown = LAUNCH.FullCountdown,
 }
 
-local OLIVE = Color3.fromRGB(62, 66, 56)
-local OLIVE_DARK = Color3.fromRGB(44, 48, 40)
 local YELLOW = Color3.fromRGB(230, 189, 96)
 local PAINT = Color3.fromRGB(214, 214, 208)
 
 type SpotState = {
 	spot: Layout.Spot,
+	bird: Model, -- carries Attributes.LiftAt for the clients (LanternSpool)
 	manifest: Manifest.Manifest,
 	lifting: boolean,
 	restUntil: number, -- os.clock; the spot takes no one until then
@@ -45,59 +46,7 @@ type SpotState = {
 local states: { SpotState } = {}
 local launchRemote: RemoteEvent
 
--- Lantern: a utility helo in blocks, nose to the bow, door on the starboard side.
-local function buildBird(parent: Instance, at: Vector3)
-	local model = Instance.new("Model")
-	model.Name = "Lantern"
-	local base = CFrame.new(at)
-	local function piece(
-		name: string,
-		size: Vector3,
-		offset: Vector3,
-		color: Color3,
-		options: Build.PartOptions?
-	): BasePart
-		return Build.part(model, name, size, base * CFrame.new(offset), color, options)
-	end
-	piece("Cabin", Vector3.new(7, 6, 14), Vector3.new(0, 4.5, 0), OLIVE)
-	piece("Nose", Vector3.new(6, 4.5, 4), Vector3.new(0, 4, 9), OLIVE)
-	piece(
-		"Windscreen",
-		Vector3.new(5.6, 2, 0.3),
-		Vector3.new(0, 5.6, 11),
-		Color3.fromRGB(24, 30, 34),
-		{
-			material = Enum.Material.Glass,
-		}
-	)
-	piece("Door", Vector3.new(0.2, 4.5, 5), Vector3.new(3.55, 4, 1), Color3.fromRGB(20, 22, 20))
-	piece("Boom", Vector3.new(2, 2, 16), Vector3.new(0, 6, -15), OLIVE)
-	piece("Fin", Vector3.new(0.6, 5, 3), Vector3.new(0, 8.5, -22), OLIVE)
-	piece("TailRotor", Vector3.new(0.2, 4.5, 0.6), Vector3.new(0.6, 9, -22), OLIVE_DARK)
-	piece("Mast", Vector3.new(1, 1.5, 1), Vector3.new(0, 8.2, 0), OLIVE_DARK)
-	for index = 0, 3 do
-		local blade = Build.part(
-			model,
-			"Blade",
-			Vector3.new(0.9, 0.2, 13),
-			base
-				* CFrame.new(0, 9, 0)
-				* CFrame.Angles(0, index * math.pi / 2 + math.rad(20), 0)
-				* CFrame.new(0, 0, 6.5),
-			OLIVE_DARK,
-			{ collide = false }
-		)
-		blade.Name = "Blade"
-	end
-	for _, x in { -3, 3 } do
-		piece("Skid", Vector3.new(0.5, 0.4, 14), Vector3.new(x, 0.2, 1), OLIVE_DARK)
-		piece("Strut", Vector3.new(0.3, 1.5, 0.3), Vector3.new(x, 1, 4), OLIVE_DARK)
-		piece("Strut", Vector3.new(0.3, 1.5, 0.3), Vector3.new(x, 1, -2), OLIVE_DARK)
-	end
-	model.Parent = parent
-end
-
-local function buildSpot(parent: Instance, spot: Layout.Spot)
+local function buildSpot(parent: Instance, spot: Layout.Spot): Model
 	local deck = Layout.DeckY
 	-- The painted spot circle and its number.
 	Build.part(
@@ -126,7 +75,7 @@ local function buildSpot(parent: Instance, spot: Layout.Spot)
 	)
 	Build.text(number, Enum.NormalId.Top, tostring(spot.index), { size = 140, color = PAINT })
 
-	buildBird(parent, spot.helo)
+	local bird = LanternBird.build(parent, spot.helo, Config.Lobby.Lantern.BirdNumbers[spot.index])
 
 	-- The boarding box beside the door.
 	local half = LAUNCH.BoardHalfSize
@@ -140,6 +89,7 @@ local function buildSpot(parent: Instance, spot: Layout.Spot)
 		{ material = Enum.Material.SmoothPlastic, transparency = 0.6, collide = false }
 	)
 	Build.sign(box, `LANTERN · SPOT {spot.index}`, "Stand here to board", 5)
+	return bird
 end
 
 -- Soldiers standing in a spot's boarding box right now, as UserIds.
@@ -273,6 +223,20 @@ local function lift(state: SpotState)
 	state.lifting = false
 end
 
+-- The bird's lift time for the clients, in server time (the manifest counts on os.clock).
+-- Rewritten only when it moves (a full bird shortens the countdown), cleared at rest.
+local function publishLift(state: SpotState, now: number)
+	local liftAt = state.manifest.liftAt
+	local value = if liftAt then Workspace:GetServerTimeNow() + (liftAt - now) else nil
+	local current = state.bird:GetAttribute(Attributes.LiftAt)
+	local moved = if value and typeof(current) == "number"
+		then math.abs(value - current) > 0.25
+		else value ~= current
+	if moved then
+		state.bird:SetAttribute(Attributes.LiftAt, value)
+	end
+end
+
 local function scan()
 	local now = os.clock()
 	for _, state in states do
@@ -282,6 +246,7 @@ local function scan()
 		local ids = if now < state.restUntil then {} else present(state.spot)
 		state.manifest = Manifest.update(state.manifest, ids, now, SETTINGS)
 		tell(state, now)
+		publishLift(state, now)
 		if Manifest.due(state.manifest, now) then
 			task.spawn(lift, state)
 		end
@@ -292,9 +257,10 @@ function LaunchService.init()
 	launchRemote = Remotes.get("Launch")
 	local folder = Build.folder(Workspace, "Spots")
 	for _, spot in Layout.Spots do
-		buildSpot(folder, spot)
+		local bird = buildSpot(folder, spot)
 		table.insert(states, {
 			spot = spot,
+			bird = bird,
 			manifest = Manifest.new(),
 			lifting = false,
 			restUntil = 0,

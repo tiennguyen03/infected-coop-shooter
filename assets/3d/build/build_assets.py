@@ -129,7 +129,7 @@ def build_palette_material(img):
 
 # ------------------------------------------------------------------ bmesh helpers
 # Static set pieces get the z-fight pass in Builder.finish; bodies and limbs do not.
-ZFIGHT_COLLECTIONS = {"Environment", "Props", "Pickups", "Weapons", "City", "Fallow"}
+ZFIGHT_COLLECTIONS = {"Environment", "Props", "Pickups", "Weapons", "City", "Fallow", "Vehicles"}
 ZFIGHT_SKIP = {"prop_plague_rat"}  # a creature: its overlaps are sub-stud and its size is tuned
 
 
@@ -1359,6 +1359,11 @@ gore.register(sys.modules[__name__])
 import fallow  # noqa: E402
 
 fallow.register(sys.modules[__name__])
+
+# Lantern, the lift bird (body, trim, main and tail rotor) lives in lantern.py (2026-11-09).
+import lantern  # noqa: E402
+
+lantern.register(sys.modules[__name__])
 
 
 # ------------------------------------------------------------------ The Chosen (player bodies)
