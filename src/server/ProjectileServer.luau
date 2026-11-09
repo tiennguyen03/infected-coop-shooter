@@ -15,6 +15,8 @@ local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local EnemyDefinitions = require(ReplicatedStorage.Shared.EnemyDefinitions)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
+local Spread = require(ReplicatedStorage.Shared.Rules.Spread)
+local ShotCone = require(ReplicatedStorage.Shared.ShotCone)
 local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
 local EnemyService = require(script.Parent.EnemyService)
 local KitService = require(script.Parent.KitService)
@@ -23,6 +25,7 @@ local LoadoutService = require(script.Parent.LoadoutService)
 local PauseService = require(script.Parent.PauseService)
 local Squad = require(script.Parent.Squad)
 local Lifecycle = require(script.Parent.Lifecycle)
+local WorldSounds = require(script.Parent.WorldSounds)
 
 local ENEMY_TAG = "Enemy"
 -- How far a reported fire origin may be from the character before the
@@ -183,20 +186,7 @@ end
 -- A random direction inside the cone of `halfAngleDegrees` around `direction` (uniform
 -- over the cone's disc, so shots do not bunch at the centre).
 local function applySpread(direction: Vector3, halfAngleDegrees: number): Vector3
-	if halfAngleDegrees <= 0 then
-		return direction
-	end
-	local angle = math.rad(halfAngleDegrees) * math.sqrt(math.random())
-	local roll = math.random() * math.pi * 2
-	local frame = CFrame.lookAt(Vector3.zero, direction)
-	local offset = frame:VectorToWorldSpace(
-		Vector3.new(
-			math.cos(roll) * math.sin(angle),
-			math.sin(roll) * math.sin(angle),
-			-math.cos(angle)
-		)
-	)
-	return offset.Unit
+	return ShotCone.random(direction, halfAngleDegrees)
 end
 
 -- The damage multiplier for a hit on `part` of an Infected: a Head hit is a headshot,
@@ -330,6 +320,7 @@ local function fireRocket(
 			if humanoid then
 				DamageService.dealDamage(player, humanoid, weapon.Damage, position, "breach")
 			end
+			WorldSounds.at(position, "player_gear", "breach")
 			KitService.blast(player, position, explosive)
 		end,
 	})
@@ -340,7 +331,13 @@ local function fireRocket(
 	end
 end
 
-local function onFireRequest(player: Player, origin: unknown, direction: unknown, aiming: unknown)
+local function onFireRequest(
+	player: Player,
+	origin: unknown,
+	direction: unknown,
+	aiming: unknown,
+	pellets: unknown
+)
 	if typeof(origin) ~= "Vector3" or typeof(direction) ~= "Vector3" then
 		return
 	end
@@ -415,8 +412,20 @@ local function onFireRequest(player: Player, origin: unknown, direction: unknown
 		fireRocket(player, origin, applySpread(direction.Unit, spread), weapon, explosive, exclude)
 		return
 	end
-	for _ = 1, weapon.Pellets or 1 do
+	-- A shotgun's pellets: the ones the client drew (so the tracers it shows are the hits),
+	-- each checked against this cone; any missing or outside it is rolled here instead.
+	local count = weapon.Pellets or 1
+	local sent = if count > 1 and typeof(pellets) == "table" then pellets :: { unknown } else nil
+	for index = 1, count do
 		local aim = applySpread(direction.Unit, spread)
+		local claimed = sent and sent[index]
+		if typeof(claimed) == "Vector3" and claimed.Magnitude > 0.5 then
+			local unit = claimed.Unit
+			local off = ShotCone.angleDegrees(direction.Unit, unit)
+			if Spread.allowed(off, spread, Config.Weapon.PelletTolerance) then
+				aim = unit
+			end
+		end
 		fireHitscan(player, origin, aim, baseDamage, weapon, pierce, stagger, exclude)
 	end
 end

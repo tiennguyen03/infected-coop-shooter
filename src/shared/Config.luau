@@ -217,6 +217,9 @@ local Config = {
 		ProjectileSpeed = 180, -- studs per second
 		ProjectileLifetime = 3, -- seconds before despawn
 		ProjectileSize = Vector3.new(0.4, 0.4, 1.4),
+		-- Degrees a shotgun pellet the client drew may sit outside the server's cone (aim and
+		-- bloom drift between the two) before the server rolls its own.
+		PelletTolerance = 0.75,
 		-- A launcher's rocket (a gun row with Explosive): bigger and smoky orange.
 		RocketSize = Vector3.new(0.7, 0.7, 2.4),
 		RocketColor = Color3.fromRGB(255, 140, 50),

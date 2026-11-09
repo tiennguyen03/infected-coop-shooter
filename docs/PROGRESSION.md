@@ -55,7 +55,9 @@ gone (`docs/sprints/SPRINT_18_LOADOUT.md`). Lore names on the HUD ([LORE.md](LOR
   pallet refills them), V shoves (15 dmg, 0.8 s stagger, 6-stud push, 1 s cooldown), E uses a
   stim (2 carried, heals 60 over 1 s; the Medkit card refills them), 5 throws the Resupply
   flare (always carried). Q dash, E breach and Combat Momentum are gone. Every gun is
-  hitscan at its real-world rate; the server owns every magazine (`LoadoutService`).
+  hitscan at its real-world rate; the server owns every magazine (`LoadoutService`). A
+  shotgun's pellets are drawn by the client and checked by the server against its cone
+  (`Rules/Spread`), so the pellets you see are the ones that hit.
 
   | Gun (real) | Role | Mode, rpm (`FireCooldown`) | Dmg | Mag + reserve | Reload | Hip / ADS | Bloom per shot / max | Range | Pierce | HS |
   |---|---|---|---|---|---|---|---|---|---|---|

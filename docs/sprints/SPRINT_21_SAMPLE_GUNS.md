@@ -31,6 +31,18 @@ the loadout screen. Numbers from the systems designer; gun table in
   where it runs out of range.
 - **Dev panel:** F1 > WEAPONS lists every row (`WeaponDefinitions.allIds`), Arms Room or not.
 
+## Owner playtest fixes (2026-11-09)
+
+- **Shotgun read as one bullet:** the server always fired 8 pellets in the cone, but the
+  shooter's screen drew one tracer. The client now draws every pellet (`ShotCone.random`
+  inside HipSpread/AdsSpread + bloom) and sends those directions with `FireWeapon`; the server
+  takes each one within `Config.Weapon.PelletTolerance` of its own cone (`Rules/Spread`,
+  spec in `tests/Spread.spec.luau`) and rolls its own for any other, so the tracers you see are
+  the hits.
+- **Rifle sound on the original guns:** only the sample guns had a `Sound`. The MP5, M249,
+  Mossberg, M110 and M17 get their own shot + reload clips in the `guns` bank.
+- **Silent rocket:** the Goose's impact now plays the frag's blast sound.
+
 ## For Nova (loadout screen)
 
 The three rows exist but are not in `WeaponDefinitions.PRIMARIES` / `SECONDARIES`, so the Arms
