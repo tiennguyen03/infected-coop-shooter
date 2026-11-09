@@ -12,10 +12,21 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # The tools are downloaded once per rokit.toml change, so a GitHub release outage
+      # does not fail the checks.
+      - name: Cache tools
+        id: tools
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/bin
+          key: tools-${{ runner.os }}-${{ hashFiles('rokit.toml', 'scripts/install-tools.sh') }}
+
       - name: Install tools (versions from rokit.toml)
-        run: |
-          bash scripts/install-tools.sh "$HOME/.local/bin"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+        if: steps.tools.outputs.cache-hit != 'true'
+        run: bash scripts/install-tools.sh "$HOME/.local/bin"
+
+      - name: Put tools on PATH
+        run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Format (StyLua)
         run: stylua --check src tests
