@@ -222,6 +222,12 @@ Read in this order:
 
 ## Open work, in priority order
 
+- **Mission flow (2026-11-09, `docs/LOBBY_MATCH_HANDOFF.md`).** One operation = three missions
+  on one match server; players teleport only lobby -> match and back. The lobby -> match
+  teleport data and the result sent home are fixed in `Rules/Handoff` (unit-tested, not wired
+  yet): Nova builds the lobby to it. Match side: mission data split step 1 done (Delta's
+  layout in `src/server/Missions/Delta.luau`, `docs/ARCHITECTURE.md` F6); next the rest of
+  Delta's mission facts, then the mission-to-mission transition, then Mile 14 in game.
 - **Who owns what (2026-11-09).** Nova: the lobby place and the loadout screen (`LoadoutMenu`,
   `LoadoutUI`, `ArmsRoom`, `Rules/Loadout`, `LoadoutService.apply`, a lobby place and its
   project file; `docs/MULTIPLAYER_READINESS.md` decision 7, `docs/ARCHITECTURE.md` lobby).

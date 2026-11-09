@@ -34,7 +34,7 @@ import bpy
 from mathutils import Vector
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", ".."))
-ARENA_LUAU = os.path.join(ROOT, "src", "server", "ArenaService.luau")
+ARENA_LUAU = os.path.join(ROOT, "src", "server", "Missions", "Delta.luau")  # Delta's layout tables (mission data split, F6)
 MESH_LUAU = os.path.join(ROOT, "src", "shared", "MeshAssets.luau")
 EXPORT = os.path.join(ROOT, "assets", "3d", "export")
 BLEND = os.path.join(ROOT, "assets", "3d", "delta_map.blend")

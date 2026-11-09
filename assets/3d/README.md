@@ -329,7 +329,8 @@ collision, built-in materials, streaming, the building kit), and that stays: not
 map is imported as a mesh. What was missing was a way to **see** the layout while placing
 things, so pieces ended up inside the hill embankments (one raycast at a piece's centre
 puts it at that one height; a footprint across a slope sinks uphill or floats downhill).
-`delta_map.py` reads the layout tables straight out of `ArenaService.luau` (`HILLS`,
+`delta_map.py` reads the layout tables straight out of `src/server/Missions/Delta.luau`
+(Delta's mission data file since the mission data split; `HILLS`,
 `DRESSING`, `PROPS`, `RAMPS`, `PATCHES`, `BUILDINGS`, plus the loops that add the Gate
 line, the Pens ring and the perch containers), rebuilds the same ground in a fresh Blender
 scene (plateaus, wedge slopes, corner blocks, roads, pads, the bridge, ramps, the gantry,
@@ -348,12 +349,12 @@ depot,barracks,scrapyard,oblique}.png` (top-down Workbench renders, the A13 item
 screenshots). Open the `.blend` in the live Blender (`bpy.ops.wm.open_mainfile`) and the MCP
 `look` tool frames any object (`target=["HelipadLZ"]`, `["Overlook"]`, a building name).
 
-The loop: edit the numbers in `ArenaService.luau` -> rebuild the view -> look -> playtest.
+The loop: edit the numbers in `Missions/Delta.luau` -> rebuild the view -> look -> playtest.
 Or the other way round: move a piece in the Blender viewport, then in the live Blender run
 `exec(open("assets/3d/build/delta_map.py").read()); write_back()`: every static entry's
 object carries `arena_table` / `arena_index`, and the moved ones have their `x` / `z` /
 `yaw` rewritten in place in the Luau. Entries the Luau generates in loops are `arena_locked`
-(edit the loop). `ArenaService.luau` stays the single source of truth; the `.blend` is a
+(edit the loop). `Missions/Delta.luau` stays the single source of truth; the `.blend` is a
 build output like the previews.
 
 ## Style rules
