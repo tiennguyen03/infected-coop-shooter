@@ -38,7 +38,11 @@ Outputs:
 - `build/previews/<asset>.png` + `lineup_chars.png` + `lineup_env.png` (the environment next
   to the 5-stud figure) — Workbench renders to check the look
 
-Add `-- --only <name> [<name>...]` to build a subset. `--only` saves `arena_survivor.blend`
+Only what changed is written: every mesh's fingerprint (vertices, faces, UVs) is kept in
+`export/fingerprints.json`, and an asset whose fingerprint and files are unchanged is not
+exported or re-rendered; the lineups and the `.blend` are rewritten only when something
+changed (an FBX carries its export time, so a blind re-export dirtied ~180 files per build).
+Add `-- --force` to rebuild everything. Add `-- --only <name> [<name>...]` to build a subset. `--only` saves `arena_survivor.blend`
 and the lineups with only those assets; run a full build afterwards.
 
 ## Current assets
