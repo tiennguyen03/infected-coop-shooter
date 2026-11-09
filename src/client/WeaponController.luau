@@ -1,10 +1,11 @@
 --!strict
--- Hold left mouse button to fire. Aims from the character toward whatever
--- the cursor is pointing at, then asks the server to fire the round.
+-- Hold left mouse button to fire the gun in hand (a "semi" gun fires once per click). Aims
+-- from the character toward whatever the cursor is pointing at, then asks the server to
+-- fire the round. No shot goes out while the Q swap (SwapUntil) brings the other gun up.
 -- Hold right mouse button to aim down sights (ADS): tighter spread (server), slower
 -- walk and no sprint (SprintController), closer camera and narrower FOV
 -- (CameraController), rifle shouldered (AnimationController), crosshair closes.
--- The magazine (loadout rework 2026-11-07) is the server's (LoadoutService: Mag, Reserve,
+-- The magazine is the server's (LoadoutService: Mag, Reserve,
 -- ReloadUntil attributes): R asks for a reload, an empty magazine asks for one on the next
 -- trigger pull, and no shot is sent while reloading. Last Stand lets a downed body fire.
 
@@ -13,6 +14,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
+local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attributes"))
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
 local WeaponDefinitions =
@@ -26,6 +28,7 @@ local WeaponController = {}
 
 local isFiring = false
 local isAiming = false
+local triggerSpent = false -- a semi-auto round went out on this press
 local lastFireTime = 0
 local lastReloadRequest = 0
 local tracerFolder: Folder? = nil
@@ -108,19 +111,19 @@ end
 
 -- The magazine as the server published it.
 function WeaponController.isReloading(): boolean
-	local until_ = (Players.LocalPlayer:GetAttribute("ReloadUntil") :: number?) or 0
+	local until_ = (Players.LocalPlayer:GetAttribute(Attributes.ReloadUntil) :: number?) or 0
 	return until_ > workspace:GetServerTimeNow()
 end
 
 function WeaponController.requestReload()
 	local player = Players.LocalPlayer
-	local weapon = WeaponDefinitions.get(player:GetAttribute("Weapon") :: string?)
-	local mag = (player:GetAttribute("Mag") :: number?) or 0
-	local reserve = (player:GetAttribute("Reserve") :: number?) or 0
+	local weapon = WeaponDefinitions.get(player:GetAttribute(Attributes.Weapon) :: string?)
+	local mag = (player:GetAttribute(Attributes.Mag) :: number?) or 0
+	local reserve = (player:GetAttribute(Attributes.Reserve) :: number?) or 0
 	if WeaponController.isReloading() or mag >= weapon.MagazineSize or reserve <= 0 then
 		return
 	end
-	if workspace:GetAttribute("GamePaused") == true then
+	if workspace:GetAttribute(Attributes.GamePaused) == true then
 		return
 	end
 	lastReloadRequest = os.clock()
@@ -128,23 +131,32 @@ function WeaponController.requestReload()
 end
 
 local function tryFire()
-	if workspace:GetAttribute("GamePaused") == true then
+	if workspace:GetAttribute(Attributes.GamePaused) == true then
 		return
 	end
 
 	local player = Players.LocalPlayer
 	local now = os.clock()
-	local weapon = WeaponDefinitions.get(player:GetAttribute("Weapon") :: string?)
-	local fireRateMult = (player:GetAttribute("FireRateMult") :: number?) or 1
-	if now - lastFireTime < weapon.FireCooldown / fireRateMult then
+	local weapon = WeaponDefinitions.get(player:GetAttribute(Attributes.Weapon) :: string?)
+	local cooldown = weapon.FireCooldown
+	if now - lastFireTime < cooldown then
+		return
+	end
+	-- Semi-auto: one round per click (a held trigger waits for the next press).
+	if weapon.FireMode == "semi" and triggerSpent then
 		return
 	end
 	if WeaponController.isReloading() then
 		return
 	end
-	if ((player:GetAttribute("Mag") :: number?) or 0) <= 0 then
+	local swapUntil = (player:GetAttribute(Attributes.SwapUntil) :: number?) or 0
+	if swapUntil > workspace:GetServerTimeNow() then
+		return -- the Q swap is still bringing the other gun up
+	end
+	if ((player:GetAttribute(Attributes.Mag) :: number?) or 0) <= 0 then
 		-- Dry: ask for a reload (once per half second while the trigger is held).
 		if now - lastReloadRequest >= RELOAD_REQUEST_GAP then
+			SoundFX.ui("player_gear", "dry_fire")
 			WeaponController.requestReload()
 		end
 		return
@@ -158,10 +170,13 @@ local function tryFire()
 	end
 	if
 		character
-		and character:GetAttribute("SquadState") == "Downed"
-		and player:GetAttribute("UpgradeKit") ~= "last_stand"
+		and character:GetAttribute(Attributes.SquadState) == "Downed"
+		and player:GetAttribute(Attributes.UpgradeKit) ~= "last_stand"
 	then
 		return
+	end
+	if character and character:GetAttribute(Attributes.KnockedUntil) ~= nil then
+		return -- knocked down (Squad.knock): the server refuses the shot too
 	end
 
 	local aimPoint = getAimPoint()
@@ -178,7 +193,11 @@ local function tryFire()
 		return
 	end
 
-	lastFireTime = now
+	-- Keep the cadence on low frame rates: the next shot is due one cooldown after this
+	-- one was, not after this frame (but never bank more than one shot after a pause).
+	lastFireTime = if now - lastFireTime < cooldown * 2 then lastFireTime + cooldown else now
+	player:SetAttribute(Attributes.LastShotAt, now)
+	triggerSpent = true
 	Remotes.get("FireWeapon"):FireServer(origin, direction.Unit, isAiming)
 	AnimationController.onShot()
 	drawTracer(origin, aimPoint)
@@ -229,6 +248,7 @@ function WeaponController.init()
 		end
 		if input.UserInputType == Enum.UserInputType.MouseButton1 then
 			isFiring = true
+			triggerSpent = false
 			AnimationController.setAiming(true)
 		elseif input.UserInputType == Enum.UserInputType.MouseButton2 then
 			setAiming(true)
@@ -251,8 +271,8 @@ function WeaponController.init()
 		isFiring = false
 		setAiming(false)
 	end)
-	workspace:GetAttributeChangedSignal("GamePaused"):Connect(function()
-		if workspace:GetAttribute("GamePaused") == true then
+	workspace:GetAttributeChangedSignal(Attributes.GamePaused):Connect(function()
+		if workspace:GetAttribute(Attributes.GamePaused) == true then
 			setAiming(false)
 		end
 	end)

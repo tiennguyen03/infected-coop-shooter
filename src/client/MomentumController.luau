@@ -1,5 +1,5 @@
 --!strict
--- Weight (2026-11-07). Stock Roblox walking snaps to full speed and stops dead, which makes
+-- Weight. Stock Roblox walking snaps to full speed and stops dead, which makes
 -- kiting free. Each frame, after the default control script has read the input (it calls
 -- Humanoid:Move at RenderPriority.Input), this eases a tracked velocity toward the input
 -- direction times WalkSpeed and hands the humanoid that instead: speeding up, stopping and
@@ -116,6 +116,19 @@ end
 
 function MomentumController.getVelocity(): Vector3
 	return velocity
+end
+
+-- A shove from outside (the Warden's Sweep, Impact "push"): the root takes the velocity at
+-- once (the client owns its physics) and the carried momentum follows it, so the body
+-- eases out of the shove instead of snapping back to the input.
+function MomentumController.push(shove: Vector3)
+	local character = Players.LocalPlayer.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if not root then
+		return
+	end
+	root.AssemblyLinearVelocity = shove
+	velocity = Vector3.new(shove.X, 0, shove.Z)
 end
 
 function MomentumController.init()

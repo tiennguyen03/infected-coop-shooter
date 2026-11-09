@@ -1,6 +1,7 @@
 --!strict
 -- Client bootstrap. Requires each controller module and starts it.
 
+require(script.Parent.PaletteController).init()
 require(script.Parent.SoundFX).init()
 require(script.Parent.CameraController).init()
 require(script.Parent.AnimationController).init()
@@ -10,6 +11,7 @@ require(script.Parent.StanceController).init()
 require(script.Parent.MomentumController).init()
 require(script.Parent.MovementController).init()
 require(script.Parent.DownedController).init()
+require(script.Parent.KnockdownController).init()
 require(script.Parent.WeaponController).init()
 require(script.Parent.ObjectiveUI).init()
 require(script.Parent.HitMarkerUI).init()
@@ -19,6 +21,7 @@ require(script.Parent.LoadoutUI).init()
 require(script.Parent.BuffNoticeUI).init()
 require(script.Parent.RunEndUI).init()
 require(script.Parent.HealthBarUI).init()
+require(script.Parent.LowHealthFX).init()
 require(script.Parent.ExtractionUI).init()
 require(script.Parent.BossBarUI).init()
 require(script.Parent.AbilityController).init()

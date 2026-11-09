@@ -1,5 +1,5 @@
 --!strict
--- Dev tools v2 (2026-11-07): Studio / creator only. F1 opens a clickable panel (the cursor
+-- Dev tools v2: Studio / creator only. F1 opens a clickable panel (the cursor
 -- is freed while it is open) grouped by what you are testing; a live info line shows FPS,
 -- run state, Infected alive and the squad. Hotkeys for the actions used mid-fight work with
 -- the panel closed. Every button fires DevCommand (DevTestService), so the engineer can
@@ -14,6 +14,7 @@ local UserInputService = game:GetService("UserInputService")
 
 local CallInDefinitions =
 	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("CallInDefinitions"))
+local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attributes"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
 local UpgradeDefinitions =
 	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("UpgradeDefinitions"))
@@ -90,6 +91,7 @@ local function sections(): { Section }
 		local definition = CallInDefinitions.get(id) :: CallInDefinitions.CallInDefinition
 		table.insert(loadout, { label = `1: {definition.Name}`, send = cmd("SetCallIn", 1, id) })
 		table.insert(loadout, { label = `2: {definition.Name}`, send = cmd("SetCallIn", 2, id) })
+		table.insert(loadout, { label = `Fire {definition.Name}`, send = cmd("FireCallIn", id) })
 	end
 	local upgrades: { Action } = {}
 	for _, id in UpgradeDefinitions.upgradeIds() do
@@ -312,15 +314,15 @@ local function updateInfo(dt: number)
 	frames, elapsed = 0, 0
 	local player = Players.LocalPlayer
 	local character = player.Character
-	local squadState = (character and character:GetAttribute("SquadState")) or "-"
+	local squadState = (character and character:GetAttribute(Attributes.SquadState)) or "-"
 	local text = string.format(
 		"%.0f fps  ·  %s  ·  %d Infected  ·  me %s%s%s",
 		fps,
-		tostring(workspace:GetAttribute("RunState") or "?"),
+		tostring(workspace:GetAttribute(Attributes.RunState) or "?"),
 		#CollectionService:GetTagged("Enemy"),
 		tostring(squadState),
-		if player:GetAttribute("DevGod") == true then "  ·  GOD" else "",
-		if workspace:GetAttribute("DevSpawnsOff") == true then "  ·  SPAWNS OFF" else ""
+		if player:GetAttribute(Attributes.DevGod) == true then "  ·  GOD" else "",
+		if workspace:GetAttribute(Attributes.DevSpawnsOff) == true then "  ·  SPAWNS OFF" else ""
 	)
 	if infoLabel then
 		infoLabel.Text = text .. `   [{keyName(TOGGLE_KEY)} dev tools]`

@@ -1,21 +1,24 @@
 --!strict
 -- Tripline (Mines call-in, CallInService): the thrown line lands and Config.CallIns.Tripline
 -- .Mines charges settle on an arc bulging away from the thrower. A mine blows when an
--- Infected steps within TriggerRadius (area damage through ItemEffectService.dealDamage;
+-- Infected steps within TriggerRadius (area damage through DamageService.dealDamage;
 -- never the squad). Daisy Chain (command_detonation upgrade): CallInService asks
 -- detonateAll when the owner presses the Tripline key with mines still armed.
 
 local CollectionService = game:GetService("CollectionService")
-local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
+local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local GroundUtil = require(ReplicatedStorage.Shared.GroundUtil)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
-local ItemEffectService = require(script.Parent.ItemEffectService)
+local DamageService = require(script.Parent.DamageService)
+local GoreService = require(script.Parent.GoreService)
 local PauseService = require(script.Parent.PauseService)
+local Lifecycle = require(script.Parent.Lifecycle)
+local WorldSounds = require(script.Parent.WorldSounds)
 
 local ENEMY_TAG = "Enemy"
 
@@ -40,6 +43,7 @@ end
 local function detonate(mine: Mine)
 	local cfg = Config.CallIns.Tripline
 	local center = mine.part.Position
+	WorldSounds.at(center, "callins", "tripline_blast")
 
 	local flash = Instance.new("Part")
 	flash.Shape = Enum.PartType.Ball
@@ -51,6 +55,12 @@ local function detonate(mine: Mine)
 	flash.CanTouch = false
 	flash.Material = Enum.Material.Neon
 	flash.Color = Color3.fromRGB(120, 180, 255)
+	-- Tagged for the client screen shake (CameraController).
+	flash:SetAttribute(
+		Attributes.BlastPower,
+		(Config.CallIns.Tripline :: any).ShakePower or Config.Camera.Shake.DefaultPower
+	)
+	CollectionService:AddTag(flash, Attributes.BlastTag)
 	flash.Parent = mineFolder
 	TweenService
 		:Create(flash, TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
@@ -68,13 +78,10 @@ local function detonate(mine: Mine)
 			local root = model:FindFirstChild("HumanoidRootPart") :: BasePart?
 			if humanoid and humanoid.Health > 0 and root then
 				if (root.Position - center).Magnitude <= cfg.BlastRadius then
-					ItemEffectService.dealDamage(
-						mine.owner,
-						humanoid,
-						cfg.Damage,
-						root.Position,
-						"hit"
-					)
+					DamageService.dealDamage(mine.owner, humanoid, cfg.Damage, root.Position, "hit")
+					if humanoid.Health <= 0 then
+						GoreService.blast(humanoid, center)
+					end
 				end
 			end
 		end
@@ -139,6 +146,7 @@ function MineService.layArc(owner: Player, point: Vector3, facing: Vector3): boo
 		local direction = CFrame.fromAxisAngle(Vector3.yAxis, angle):VectorToWorldSpace(forward)
 		placeMine(owner, point + direction * cfg.ArcRadius)
 	end
+	WorldSounds.at(point, "callins", "tripline_arm")
 	return true
 end
 
@@ -217,19 +225,21 @@ function MineService.reset()
 end
 
 function MineService.init()
+	Lifecycle.register("MineService", {
+		onRunStart = MineService.reset,
+		onPlayerRemoving = function(player: Player)
+			for index = #mines, 1, -1 do
+				if mines[index].owner == player then
+					removeMine(index)
+				end
+			end
+		end,
+	})
 	mineFolder = Instance.new("Folder")
 	mineFolder.Name = "Mines"
 	mineFolder.Parent = workspace
 	lastStep = os.clock()
 	RunService.Heartbeat:Connect(onHeartbeat)
-
-	Players.PlayerRemoving:Connect(function(player: Player)
-		for index = #mines, 1, -1 do
-			if mines[index].owner == player then
-				removeMine(index)
-			end
-		end
-	end)
 end
 
 return MineService

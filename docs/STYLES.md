@@ -4,7 +4,7 @@ Read this before any visual work: icons, UI, VFX, Blender assets, enemy models, 
 Gameplay rules in [PLAN.md](PLAN.md) and tone in [LORE.md](LORE.md) win over anything here.
 Performance wins over fidelity: the game must run smooth on low-end devices first.
 
-Last updated: 2026-11-07 (Infected skin v2: pallor / flesh / bruise / wound / pus rows).
+Last updated: 2026-11-08 (Infected posture v3: blocky lore-accuracy pass, §7).
 
 ---
 
@@ -53,12 +53,14 @@ generator, in UI code, and should be the swatches of the shared 3D palette textu
 | pus | `#efe2a8` | `#d2bd6c` | `#977f3c` | boils and pustules, milky eyes (`pus.l`), weep strips and soaked cloth (`pus.d`) |
 | rebuilt (strain tissue) | `#dccbbb` | `#b09686` | `#73584e` | closed wounds, bone overgrowth, membranes, seams |
 | strain (fluid) | `#d2e276` | `#bed73c` | `#768525` | sacs, bellies, open seams, anything about to burst; never skin |
+| glass | `#5d6c78` (`glass_l`) | `#36424c` | — | vehicle and window glass; `glass_l` is the sky-reflection strip; never `dark_d` (the tyre colour) |
+| paint | | maroon `#6a3a38`, navy `#4f5f73` | | faded civilian car paint (`paint_maroon`, `paint_navy`) |
 
 Skin v2 (art director, 2026-11-07): the old green-grey / yellow / dark-green infected tints
 are retired (their palette cells now hold `pallor` / `flesh` / `bruise`). Strain green lives
 only where the agent is working: open seams, the Hocker's throat and sac, Bloat veins, Warden
-seams. `assets/3d/palette.md` is the generated cell map (57 of 64 cells; `concrete` now has
-its `l`/`d` swatches for the building kit).
+seams. `assets/3d/palette.md` is the generated cell map (61 of 64 cells; `concrete` has its
+`l`/`d` swatches for the building kit; the vehicle glass and paints were appended 2026-11-08).
 
 ### Signal / accent colors (saturated, used sparingly)
 
@@ -136,7 +138,7 @@ SVG primitives; the script writes `assets/icons/<id>.svg` + `.png` (PNGs are git
 node assets/icons/build/icons.js sheet          # render all + build/contact_sheet.png
 node assets/icons/build/icons.js <id> [<id>...] # render a subset
 node assets/icons/build/upload.js <id> [...]    # Open Cloud upload -> prints decal/image ids
-node assets/icons/build/wire.js                 # writes IconId into ItemDefinitions + ASSET_IDS.md (stale: ItemDefinitions is gone, retarget to CallInDefinitions / UpgradeDefinitions before the next icon batch)
+node assets/icons/build/wire.js                 # rewrites ASSET_IDS.md from uploaded_ids.json (nothing in src/ reads icon ids yet; add IconId to CallInDefinitions / UpgradeDefinitions when cards get icons)
 ```
 
 `upload.js` reads `ROBLOX_OPEN_CLOUD_API_KEY` from the environment or from the robloxstudio
@@ -164,31 +166,62 @@ ASSET_IDS.md. The old AI image-prompt doc was deleted 2026-11-06; subjects live 
 
 ## 5. UI
 
-- Backgrounds: `rgb(28,30,34)` panels; cards tint toward the kind color
-  (`kind:Lerp(rgb(28,30,34), 0.82)`, supply olive or upgrade blue). Icon slots `rgb(32,34,38)`.
-- Text: `rgb(240,240,240)` primary, Gotham family (`GothamBold` for names, `GothamBlack`
-  for big numbers, `Gotham` for body). Kind label ("SUPPLY", "<SLOT> UPGRADE") in the kind
-  color, 12 px uppercase.
-- Corners: 10 px cards/panels, 8 px icons on cards, 6 px bar slots. Strokes: kind color, 2 px.
-- Bars: health green→red at the bottom centre (`-24`), the Armour Plate shield as a shield
-  blue overlay from the left with a "+N" tag, Resupply amber above it (`-50`, pulses on a
-  kill, "[3] FLARE" when it covers the cost). No XP bar.
-- Ammo counter (loadout rework 2026-11-07): `MAG / RESERVE` in `GothamBlack` just right of
-  and below the crosshair (`+70, +34` from centre), white; amber under a quarter magazine;
-  "RELOADING" with a draining amber bar during a reload; red "DRY [R]" on empty.
-- Call-in tiles: bottom right next to Q / E, `[1] Magpie` / `[2] Tripline` (lore names),
-  amber charge pips under the name (one per charge, dim when spent), "READY" or the
-  seconds to the next charge; a tile with no charge goes the cooling grey.
-- Loadout strip: top left under the run timer, two call-in names in their accent colour then
-  the six upgrade slots (Dash, Breach, Rifle, Kit, the two call-ins) showing the upgrade's
-  lore name or a dim "<slot>: -".
-- Hit marker (2026-11-07, replaced damage numbers): four diagonal ticks round the
-  crosshair, white on a hit, gold and larger on a headshot, red, larger and thicker on a
-  kill; only the attacker sees it, damage over time never marks. Sizes and timings in
-  `Config.HitMarker`. Sparks and 3D hit sounds stay at the hit point for everyone.
+**HUD language (2026-11-08, after Prototype 2's HUD; owner direction "the UI should resemble
+Prototype 2").** Research and per-element spec by the `ui-ux-designer` agent; the 18
+reference screenshots it looked at are in `.superpowers/ui-refs/prototype2/` (git-ignored,
+local). Code: `src/client/HudTheme.luau` holds every rule below; every HUD script builds its
+ScreenGui through `HudTheme.gui` (one UIScale) and its text through `HudTheme.label`.
+
+- **No panels behind HUD text.** Text is white (240,240,240) with a black stroke at 0.55.
+  Panels only on the notification cards, the results screen and the world cards.
+- **Shapes:** hard-edged rectangles, no corner radius on bars or cards. Circles only for the
+  ability icons and the boss emblem. A 45-degree square is the "upgraded" mark.
+- **Strokes:** 1 px. Bar outline white at 0.75; a "hot" outline (low health) is red.l at 0.
+- **Palette roles:** text (240,240,240), dim text (150,154,160); health red.m (185,52,52)
+  with a red.l (232,90,90) top facet (a hard-step UIGradient, the one gradient allowed on the
+  HUD: §3 exception); damage trail white at 0.2; shield the white secondary bar; track
+  (18,19,22) at 0.3; enemies, alerts and "returning" red.l; places, bonus targets, charges
+  and "ready" objective yellow (230,189,96); squadmates friendly blue (63,167,214); menus
+  (22,8,8) at 0.1 with red.m 1 px boxes and a cream (232,222,196) selected / button fill with
+  dark text. No green on the HUD (green is the strain).
+- **Type:** `Enum.Font` only. GothamBlack for headlines and numbers, GothamBold for HUD
+  lines, Gotham for second lines. Fixed TextSize, never TextScaled: 36-40 banners and
+  headers, 26 ammo, 22 mission line, 18 second lines, 16 names, 14 labels, 11-12 minimum.
+  Caps for verbs, targets and labels, lowercase for linking words, the key word coloured
+  with RichText (`HudTheme.tint`). Menu headers take the `//` prefix.
+- **Scale and safe areas:** one UIScale per HUD ScreenGui, `clamp(viewport.Y / 1080, 0.62,
+  1)`, set on ViewportSize change. 16 px edge margin. Touch-only devices (no keyboard) move
+  the mission line and subtitles to top centre, clear of the thumbstick and buttons.
+- **Motion:** appear 0.18 s Quad Out (fade + 8 px rise or a 40 px slide for cards),
+  disappear 0.3 s fade; the health trail holds 0.35 s then shrinks 0.25 s; pulses are
+  computed at 15 Hz, not tweened. Nothing on the HUD runs per frame except the crosshair
+  (and the ammo bar while a reload runs).
+
+**Layout (1080p offsets):**
+
+| Element | Where | What |
+|---|---|---|
+| Health stack (`HealthBarUI`) | top left (16,12) | 400x16 red bar, white damage trail; shield 400x6 white bar under it with a "+N" tag; low health: red outline + red edge vignette pulsing; downed: dim fill, vignette held |
+| Abilities (`AbilityUI`) | top left (16,44) | seven 38 px circles G / V / E / 1-4 (frag, shove, stim, the call-ins): key letter, name under (PC); cooling: white fill rising, seconds; grenades, stims and call-in charges as yellow squares under the circle, the circle dims when empty; a diamond marks an upgrade in the slot |
+| Resupply (`ResupplyUI`) | top left (16,108) | 14 pt line + 240x4 bar with quarter ticks; ready: "RESUPPLY READY [5] FLARE" with the bar pulsing; inbound: "PALLET 0:14", bar drains |
+| Run timer (`RunTimerUI`) | top centre (0,8) | 16 pt, no panel |
+| Ammo (`LoadoutUI`) | crosshair (+40,+40) | the gun in hand 12 pt above it with "[Q] PISTOL" dim (the other gun); magazine GothamBlack 26 + " / reserve" 16 dim; yellow low, "RELOADING" + bar, red "DRY [R]"; attribute-driven |
+| Arms Room (`LoadoutMenu`, hosted by `LoadoutUI` on B) | centre, 760 wide, DisplayOrder 110 (above the results) | menu style: (22,8,8) at 0.08 with a red.m 1 px box, "//ARMS ROOM" 30, a dim 12 pt rule line; columns PRIMARY / SIDEARM + GRENADE / CALL-INS of 26 px rows (name 14 bold left, designation 11 right), the pick in the cream fill with dark text, call-ins badged "[n]" by slot; the hovered item's line under the columns; cream DEPLOY LOADOUT bottom right, the server's refusal in red.l above it; height grows with the longest list |
+| Mission line (`MissionLine`, driven by `ObjectiveUI` / `ExtractionUI`) | lower centre (0.5, 0.8) | "SECURE the AREA" / "HOLD the LZ" / "WAITING FOR SQUAD n/m" / red "RETURN to the LZ", a second line, a 300x3 bar; extraction outranks the objective |
+| Subtitles (`BuffNoticeUI.subtitle`) | under the mission line | "CONTROL: radio line" (BuffNotice kind radio), the Warden's "HANDSET: ..." tells |
+| Notification cards (`BuffNoticeUI.card`) | top right (-16,12), y 120 during a boss | dark strip, red-outlined square, bold title; pickups, picks, the flare call, an upgrade landing; max 3 |
+| Boss bar (`BossBarUI`) | top right (-16,12) | name in red right-aligned, 380x16 faceted body bar ending in a round emblem (blue while stunned), six 56x6 plate bars with labels |
+| Downed / K.I.A. (`RunEndUI`) | centre (0.5, 0.22) | "DOWNED" 40 red + 360x4 bleed-out bar + line; "K.I.A." + line; no panel |
+| Results (`RunEndUI`) | full screen | menu style: dark red field, corner L-brackets, "//OPERATION COMPLETE" yellow or "//SQUAD WIPED" red, stats in a red-outlined box, cream READY |
+| Crosshair / hit marker | centre | unchanged |
+
+- The always-on loadout strip is gone: an upgrade shows as a card when it lands and as a
+  diamond on its ability circle.
+- Not built yet (designer's D4 / D5): world markers (objective, LZ, pallet diamonds with
+  distance) and a squad roster; both need the server to publish positions and squad state.
+- Cards in the world (pallet billboards) keep their layout.
 - UI stays **code-generated** (disk is the single source of truth). No hand edits in Studio.
-- Never block the center of the screen except for the run-end screens, which freeze the
-  field. Cards live in the world (billboards at the pallet), never as a pop-up.
+- Never block the centre of the screen except for the run-end screens.
 
 ---
 
@@ -214,6 +247,12 @@ Lower is always acceptable. Add triangles only where the silhouette needs them.
 
 - **Flat shading everywhere** (Blender: Shade Flat, no Auto Smooth, no subdivision). Low
   facet counts on cylinders (8–12 sides). Hard edges are the look.
+- **No two surfaces in one plane** (owner 2026-11-08: they "clip through each other"). A
+  window, panel or patch laid flush on a face flickers in Roblox. Set details 0.03+ proud;
+  `Builder.finish` also pushes the smaller of any coplanar, overlapping, different-swatch
+  pair 0.05 forward (`resolve_zfight`: static pieces and the city). Part-built geometry
+  follows the same rule: roofs overhang their walls as eaves, floors stop inside them,
+  overlapping ground patches step up 0.003 each.
 - Model in **studs**: Blender scene unit scale `0.28` so 1 Blender unit = 1 stud
   (Roblox 1 stud ≈ 0.28 m). **Scale table** (constants in the build script, 2026-11-06):
   character 5, door 7.2 x 3.6, storey 10.5, window sill 3.2 / head 7.6, chest-high cover
@@ -278,6 +317,10 @@ Lower is always acceptable. Add triangles only where the silhouette needs them.
   (or a TrussPart ladder) to it, the whole thing an atomic Model. ~256 such boxes is the
   ceiling for the stage.
 - Reuse by cloning one source MeshPart: identical `MeshId` shares geometry on the GPU.
+- The palette texture can fail on a client's first request ("Asset content representation
+  is being generated"); a MeshPart never retries, so `src/client/PaletteController.luau`
+  re-applies it once it loads. Palette meshes carry a grey base colour (rgb 118,122,128) so
+  a failed texture reads grey, never black; `dressModel` removes any BodyColors.
 
 ### Performance budget (whole scene, the real priority)
 
@@ -285,6 +328,9 @@ Lower is always acceptable. Add triangles only where the silhouette needs them.
   objects cast shadows: jerseys, bunkers, hesco and all but every ninth Gate T-wall cast
   none (`MeshDef.castShadow`, `Dressing.shadow`). At most 4–6 dynamic lights alive at once
   (muzzle flashes die in <0.1 s).
+- Static practical lights: at most 20 in a stage and 12 inside any 150-stud circle, all
+  `Shadows = false`, Range ≤ 56 (floodlight SpotLights, sodium and fire PointLights).
+  Distant scenery carries no lights, only Neon (2026-11-08).
 - `StreamingEnabled = true` (2026-11-07, `default.project.json`: target radius 384, min
   128). The arena terrain and the skyline (`workspace.TestArena`) are `Persistent`;
   buildings and dressing live beside it in `workspace.Buildings` / `workspace.Dressing`
@@ -311,12 +357,31 @@ this section; the bullets below describe the 2026-11-06 build still worn by the 
   `wound` flayed under `rebuilt.l` tendons and 0.9× scale, Brute `bruise` and 2× scale).
   Damage is geometry, not paint: `Limb.boil` / `cluster` (pus domes with a `pus.l` head),
   `lesion` (a `flesh.d` rim round a `wound` core), `blotch` (a flat `bruise` patch). Blood as
-  flat `red.m` facets only where a tear is fresh; never gore detail.
+  flat `red.m` facets only where a tear is fresh. Gore line (owner 2026-11-08 asked for
+  limbs that come off): a severed limb leaves a flat raw stump (`inf_gore_stump`: `flesh.d`
+  rim, `wound` face, a `rebuilt.l` bone end) and hits throw small low-poly chunks; no blood
+  spray, no pools, no interior detail.
 - Limb geometry v2 (2026-11-07): healthy limbs are octagonal tapered segments (`Limb.oct`,
   70-80% of the R15 box) under a rounded joint cap (`Limb.cap`: bone knob on the Infected)
   so bent joints swing through their neighbour; upper legs take a `hip_inset` collar; swollen
-  limbs (Walker hands, Brute forearms) fill the box. Each limb still stays inside its R15 box
-  (details protrude ~0.1), so the stock rig and clips are untouched.
+  limbs (Walker hands, Brute forearms) fill the box. The stock rig and clips are untouched.
+- Posture v3 (2026-11-08, lore-accuracy pass, still blocky): each form stands its own way,
+  baked into the limb meshes (`shift_all` / `rotate_all` hang a limb off its fixed R15 joint;
+  MeshAssets offsets the part by the bounds centre, so limbs may leave their R15 box).
+  Walker: right shoulder sloped 0.3 lower (wedge on the torso, own `_r` upper arm), head down
+  18 deg and forward, the `foliage.d` blanket a slab on the lower torso hanging to mid-thigh
+  at the back, trousers `concrete.d` (`asphalt` read black next to the shoes), screening band
+  0.32 tall in `white.l` with one red stripe. Runner: upper torso pitched 20 deg forward at the
+  waist, traps up to the jaw (no neck), head jutting forward and sunk, arms hung 0.45 ahead of
+  the joint on forearms 0.55 longer (hands at the knees), a five-block stepped spine, dog tags
+  hanging plumb. Brute: torso 2.6 x 1.2, two stepped bone slabs per shoulder rising 0.4 above
+  the crown with the head sunk 0.45 in the trench, sided arms hung 0.42 outboard on forearms
+  1.0 longer (fists at the shin, worn flat underneath), trousers riding low over short legs,
+  the pack split in two halves. Hocker: head thrown back 22 deg about the neck, a stepped
+  notch 0.44 deep down the chest front, the surgical mask a `white.l` band, knees bent 18 deg
+  (thigh forward, shin back to the foot). 1,524 / 2,008 / 2,172 / 1,484 tris. Previews:
+  `ref_inf_<form>.png`, `_side.png`, `_back.png`. Gore stumps sit at the joint, so on an
+  offset limb (Runner, Brute arms) the stump is a little off the visible shoulder.
 - Eyes: two small milky `pus.l` facets set in a `wound` rim (`wound.d` on the Runner's red
   face). Never green: the `infected green` accent is for UI/icons/VFX, not bodies.
 - Hocker (2026-11-06): wears the Walker set with a caustic yellow-green throat sac
@@ -357,8 +422,8 @@ this section; the bullets below describe the 2026-11-06 build still worn by the 
   Rebuilt to the sheets so far: **Walker, Runner, Brute, Hocker** (`inf_<type>_*`,
   36 limbs; the first rebuild was uploaded and verified in a playtest 2026-11-07; skin v2 +
   limb geometry v2 uploaded and verified the same day (palette v4 texture, 23 changed limbs;
-  ids in `assets/3d/ASSET_IDS.md`); 1.4-2.1k tris per body against caps of 1.6k / 2.0k /
-  2.4k / 2.2k. Upload order matters when the palette changes: `palette.png` first, then the
+  ids in `assets/3d/ASSET_IDS.md`); posture v3 2026-11-08 (29 limbs re-uploaded, above);
+  1.5-2.2k tris per body against the sheet targets 1.8k / 2.2k / 3.0k / 2.2k. Upload order matters when the palette changes: `palette.png` first, then the
   `inf_*` FBX, then `MeshAssets` size/offset from the `dims`/`offset` lines the build
   prints; limbs painted with new cells on an old texture render those cells black, while the new
   texture on the old limbs only recolours cells 25-27), and **the five Chosen** (`PC_CLASSES` rebuilt with the shared Pike carrier; Weller's
@@ -398,18 +463,33 @@ concrete `rgb(122,120,114)`, road paint `rgb(214,214,208)`. Layout in
 #### Stage 1 sky (`src/server/SkyService.luau`)
 
 The first evening of the outbreak: a low sun through a smoke-stained sky, the city beyond
-the perimeter burning. Everything is engine settings plus ~30 static parts, no skybox
-textures. Lighting: ClockTime 17.6, latitude 30, Brightness 1.8, ColorShift top
-`rgb(230,140,70)` / bottom `rgb(110,60,40)`, fog `rgb(176,104,66)` 260-1500. Atmosphere:
-Density 0.36, Offset 0.2, Color `rgb(214,112,58)`, Decay `rgb(92,38,28)`, Glare 0.7,
-Haze 6 (the haze is what turns the stock blue skybox orange; drop it and the sky goes
-green-grey). Terrain Clouds: Cover 0.72, Density 0.6, Color `rgb(104,66,48)`. Outside the
-walls a ring of 23 flat `DistantCity` silhouettes (`rgb(44,40,42)`, 470-560 studs out,
-60-220 tall, clustered north-east) with slow smoke columns and fire glow on six of them;
+the perimeter burning. Gloomy but readable: an Infected reads as a shape at 90 studs (owner
+2026-11-08: "a little too gloomy"; tuned live in Studio). Everything is engine settings plus
+static parts, no skybox textures. Lighting: ClockTime 16.9, latitude 30, Brightness 2.3,
+Ambient `rgb(96,84,80)`, OutdoorAmbient `rgb(150,126,112)`, ColorShift top
+`rgb(255,176,110)` / bottom `rgb(96,72,62)`, Exposure 0.15, EnvironmentDiffuse 0.8 /
+Specular 0.25, ShadowSoftness 0.4; no Fog settings (an Atmosphere overrides them).
+Atmosphere: Density 0.3, Offset 0.15, Color `rgb(205,104,58)`, Decay `rgb(110,44,32)`,
+Glare 0.5, Haze 5.2 (the haze turns the stock blue skybox orange; below ~4 the sky goes
+yellow-brown). ColorCorrection Brightness 0.03, Contrast 0.14, Tint `rgb(255,240,228)`;
+Bloom 0.35 / 20 / threshold 1.7 (Neon, fire and the sun bloom; geometry does not). Terrain
+Clouds: Cover 0.65, Density 0.5, Color `rgb(128,86,64)`. Outside the
+perimeter fence (`docs/LEVELS.md` A15: no solid walls since 2026-11-07; the ground and
+scenery run on past it to 700) the `DistantCity`: 23 modelled towers 470-560 studs out,
+clustered north-east (owner 2026-11-08: the flat slabs looked "goofy"; `SkyService.SKYLINE`).
+Six types from `assets/3d/build/city.py` (office slab, apartment block, stepped deco tower,
+glass curtain wall, a burned-out shell, a wide mid-rise), each built floor by floor on the
+character's grid (storey 10, bay 4-9): glass core, a spandrel ring per storey, piers,
+setbacks, parapet, rooftop plant / tanks / masts, 960-1,870 tris. Placed at a uniform
+0.75-1.05 scale (a storey still reads 8-12) with the long face toward the arena and a yaw
+jitter. Each tower's `_lit` twin mesh holds its lit windows, one slab per window, painted
+Neon: sodium in most, fluorescent in a quarter, fire orange in the six burning ones (smoke
+and fire at 60% height). 46 MeshParts, ~42k tris in all, no lights, no collision or queries;
 `SkyService.burn(part)` puts the same fire + smoke on a dressing piece (`burning = true`
 in `ArenaService.DRESSING`). Smoke is the stock `smoke_main` particle at rate 5,
-14-22 s life, a light westerly drift; fire is `fire_main` with one PointLight. Budget: nine
-emitters in the whole scene.
+14-22 s life, a light westerly drift; fire is `fire_main`, with a PointLight (Range 36,
+Brightness 1.6, no shadows) only on the burning dressing in the arena: the skyline fires'
+glow is the particles' LightEmission. Budget: nine emitters in the whole scene.
 
 ### Body animation (shipped 2026-11-06)
 
@@ -439,6 +519,25 @@ when the player stands inside it, so a hollow ring is a later polish item.
 - Fire ground: faceted orange/yellow triangles on the floor, flicker by scale not by light.
 - Shock: 2–3 segment jagged lines in `shield blue`, 0.1 s lifetime.
 - Hunter's Mark: red chevron billboard above the target (matches the icon).
+- Camera kick (2026-11-09, `CameraController`): every own shot pushes the view up
+  `Config.Weapons.<id>.Kick.Pitch` degrees plus a random +/- `Yaw`, eased back over `Recover`
+  (0.12 s, ~95% gone) on top of the aim, so the aim never drifts. M16A4 0.9 / 0.3, MP5
+  0.5 / 0.2, M249 1.1 / 0.5, Mossberg 4.0 / 0.8, M110 2.6 / 0.4, M17 1.6 / 0.3; aiming down
+  sights scales it by `Config.Camera.Kick.AdsScale` (0.6).
+- Blast shake (2026-11-09): every server blast flash (frag, Hammer, Anvil, Shrike burst,
+  Tripline) carries the CollectionService tag `Attributes.BlastTag` ("Blast") and a
+  `BlastPower` from that grenade's or call-in's own Config block (`ShakePower`: Frag 3, Hammer
+  3.5, Anvil 6, Shrike 2, Tripline 3 degrees; `Config.Camera.Shake.DefaultPower` 2.5 for a
+  call-in that names none, so loadout changes need no camera edits). The client adds `Rules/Feel.shake` (linear falloff to 0 at 60 studs from the
+  camera focus), sums blasts up to a 6-degree cap, decays over 0.45 s and jitters pitch and
+  roll by it. A block with `ShakeGlobal` (the Anvil, 1.0) is also felt anywhere on the map.
+- Low-health feedback (2026-11-09, `src/client/LowHealthFX.luau`, numbers in
+  `Config.Audio.LowHealth`): under 35% health one eased intensity (0 at the threshold, 1 at
+  zero health or downed, 0 dead) greys the screen (its own `LowHealthCC` ColorCorrection,
+  saturation to -0.8, SkyService's grade untouched), darkens the edges (four black gradient
+  strips 40% deep, 0.55 opaque at full, under the HUD), fades in a quickening heartbeat
+  (1.0x to 1.6x) and muffles the World SoundGroup (equalizer, high -30 dB, mid -12 dB). UI
+  stings, breathing and the heartbeat stay clear. Sits under HealthBarUI's red pulse.
 
 ---
 
@@ -469,3 +568,20 @@ when the player stands inside it, so a hollow ring is a later polish item.
   as geometry, milky eyes in a wound rim; `rebuilt`/`strain` stay the strain's two colours,
   strain only on seams and the Hocker's throat. Limbs went octagonal and tapered with joint
   caps at the same time (§7).
+- 2026-11-08: Owner: too gloomy, and "redo all the cars". Sun raised, haze thinned,
+  ColorCorrection and a threshold-1.7 Bloom added (Neon and fire only, not a glow filter on
+  geometry); the skyline got lit windows and crowns, its PointLights went. Cars rebuilt to
+  the character's scale from extruded side profiles (`assets/3d/build/props.py`: sedan,
+  hatch, pickup, van, plus an army cargo truck you crawl under), with real glass
+  (`glass` rows); every small set piece moved into `props.py`.
+- 2026-11-08: Owner: background buildings "goofy", and pieces "clipping through each
+  other". The skyline is now modelled towers (`city.py`) with lit-window twins instead of
+  slabs, Neon bars and a window texture (`city_windows.py` retired). Clipping was two
+  things: coplanar faces flickering (172 spots in 13 meshes, fixed in the generator and
+  re-uploaded; roof and floor edges in the Part buildings) and pieces placed inside each
+  other (light tower in the checkpoint, wire through a generator, a container on a ramp,
+  body bags, the Screening Block desk in the stairs), all moved.
+- 2026-11-08: Limbs fall off when shot (owner), with a flat stump and chunks (gore line
+  above). A rounded low-poly Infected redesign was built and tried the same day; the owner
+  prefers the blocky Roblox bodies ("I like the regular blocky body"), so the v2 blocky sets
+  stay. The lore-accuracy pass on them is built (posture v3, §7).

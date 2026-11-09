@@ -1,5 +1,5 @@
 --!strict
--- Stances (2026-11-07): LeftControl toggles crouch, C toggles prone, either key from the
+-- Stances: LeftControl toggles crouch, C toggles prone, either key from the
 -- other stance switches straight across; Shift (sprint), Space (vault/climb, which also
 -- stands a crouched body with nothing in front) and a respawn stand the body up. Speed
 -- factors and transition times are Config.Player.Stances; the camera pivot drops with the
@@ -13,6 +13,8 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 
+local Messages = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Messages"))
+local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attributes"))
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
 local AnimationController = require(script.Parent.AnimationController)
@@ -77,7 +79,7 @@ function StanceController.setStance(newStance: Stance): boolean
 	if not alive() or os.clock() < lockedUntil then
 		return false
 	end
-	if stance == "prone" and not headroomClear() then
+	if stance == Messages.Stance.Prone and not headroomClear() then
 		return false -- crawl space: no room to get up here
 	end
 	local time = transitionTime(stance, newStance)
@@ -108,13 +110,13 @@ function StanceController.init()
 	local remote = Remotes.get("Stance")
 	stanceRemote = remote
 	remote.OnClientEvent:Connect(function(forced: unknown)
-		if forced == "prone" and stance ~= "prone" then
+		if forced == Messages.Stance.Prone and stance ~= Messages.Stance.Prone then
 			lockedUntil = 0
 			StanceController.setStance("prone")
 		end
 	end)
 	UserInputService.InputBegan:Connect(function(input, gameProcessed)
-		if gameProcessed or workspace:GetAttribute("GamePaused") == true then
+		if gameProcessed or workspace:GetAttribute(Attributes.GamePaused) == true then
 			return
 		end
 		-- While sprinting these keys roll and slide instead (MovementController).
@@ -123,7 +125,7 @@ function StanceController.init()
 			return
 		end
 		local character = Players.LocalPlayer.Character
-		if character and character:GetAttribute("SquadState") == "Downed" then
+		if character and character:GetAttribute(Attributes.SquadState) == "Downed" then
 			return -- stays prone until revived
 		end
 		if input.KeyCode == Enum.KeyCode.LeftControl then
@@ -138,12 +140,12 @@ function StanceController.init()
 	-- Downed (Squad) drops the body prone; a revive stands it up. The body that already
 	-- exists at boot gets the hook too.
 	local function watchSquadState(character: Model)
-		character:GetAttributeChangedSignal("SquadState"):Connect(function()
-			local state = character:GetAttribute("SquadState")
+		character:GetAttributeChangedSignal(Attributes.SquadState):Connect(function()
+			local state = character:GetAttribute(Attributes.SquadState)
 			lockedUntil = 0
 			if state == "Downed" then
 				StanceController.setStance("prone")
-			elseif state == "Alive" and stance == "prone" then
+			elseif state == "Alive" and stance == Messages.Stance.Prone then
 				StanceController.setStance("stand")
 			end
 		end)

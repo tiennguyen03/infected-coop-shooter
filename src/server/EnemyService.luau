@@ -1,15 +1,15 @@
 --!strict
--- Enemy system (Sprint 9; behaviour hooks 2026-11-06): every Infected form is a row in
+-- Enemy system (behaviour hooks): every Infected form is a row in
 -- EnemyDefinitions. Melee forms chase and hit on contact; projectile forms (Hocker) close to
 -- throw range, plant, wind up and lob through EnemyProjectileService. A phase-based spawn
 -- director picks types by run time with fairness caps from Config.Spawning (count
 -- schedules and share caps keyed by type). Enemies pass through each other (Enemy collision
 -- group) but still hit players and the world. Player damage: EnemyProjectileService.damagePlayer.
--- Climbing (2026-11-07): a melee form pressed against cover no taller than its
+-- Climbing: a melee form pressed against cover no taller than its
 -- EnemyDefinitions.ClimbHeight goes over it (Shared.Ledge; the root is anchored and driven
 -- along the ledge path for Config.Movement.Infected.Duration seconds while its climb clip
 -- plays); taller cover falls through to the nudge rule.
--- Vertical chase (EQ-B1, 2026-11-07): a target more than Config.Enemies.PathfindVerticalGap
+-- Vertical chase (EQ-B1): a target more than Config.Enemies.PathfindVerticalGap
 -- above a melee form near a kit building (ArenaService footprints) is followed on a
 -- PathfindingService path (doors, stairs, ramps) by up to PathfindingMax bodies at once;
 -- a failed path, or no slot, falls back to the straight chase.
@@ -21,19 +21,23 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local EnemyDefinitions = require(ReplicatedStorage.Shared.EnemyDefinitions)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
 local Animations = require(ReplicatedStorage.Shared.Animations)
 local Ledge = require(ReplicatedStorage.Shared.Ledge)
+local Feel = require(ReplicatedStorage.Shared.Rules.Feel)
+local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
 local RunStates = require(ReplicatedStorage.Shared.RunStates)
 local ArenaService = require(script.Parent.ArenaService)
 local DifficultyService = require(script.Parent.DifficultyService)
 local EnemyProjectileService = require(script.Parent.EnemyProjectileService)
-local ItemEffectService = require(script.Parent.ItemEffectService)
+local DamageService = require(script.Parent.DamageService)
 local PauseService = require(script.Parent.PauseService)
 local WorldSounds = require(script.Parent.WorldSounds)
 local Squad = require(script.Parent.Squad)
+local Lifecycle = require(script.Parent.Lifecycle)
 
 local ENEMY_TAG = "Enemy"
 local ENEMY_COLLISION_GROUP = "Enemy"
@@ -48,7 +52,7 @@ local NUDGE_STUCK_DISTANCE = 1
 local NUDGE_DISTANCE = 8
 local SAC_OFFSET = CFrame.new(0, 0.95, -0.5) -- throat sac relative to UpperTorso (the rig faces -Z)
 local SAC_SIZE = 0.9
--- Vocals (sound day 2026-11-07): each form has a bank named after it (SoundBanks) with
+-- Vocals: each form has a bank named after it (SoundBanks) with
 -- <form>_idle / _attack / _hurt / _death groups (the Hocker adds _windup and _spit); lines
 -- play 3D from the head through WorldSounds. Ambient lines are spaced per body and across
 -- the horde (Config.Audio.Voice).
@@ -67,6 +71,11 @@ type Zombie = {
 	lastAttackTime: number,
 	attackTrack: AnimationTrack?,
 	deathTrack: AnimationTrack?,
+	moveTrack: AnimationTrack?,
+	-- The killing push (satisfying pass): set by the killing hit or a blast, read on death.
+	push: { direction: Vector3, speed: number, blast: boolean }?,
+	hitTrack: AnimationTrack?, -- the flinch (Config.Enemies.Flinch); loaded on the first one
+	lastFlinchAt: number?,
 	nextRepathTime: number,
 	lastRepathPosition: Vector3,
 	nudgeSign: number,
@@ -87,6 +96,7 @@ type Zombie = {
 	pathPending: boolean,
 	pathObject: PathInstance?, -- one engine Path per body, reused across ComputeAsync calls
 	pathRequestedAt: number,
+	crippled: boolean?, -- a leg is gone (GoreService): crawl speed, never climbs
 }
 
 type Path = { waypoints: { PathWaypoint }, index: number }
@@ -126,6 +136,8 @@ local lures: { Lure } = {}
 -- Slows (Pen Coil, Hollow Point stagger): per-humanoid generation so overlapping slows never
 -- strand a body at reduced speed.
 local slowGeneration: { [Humanoid]: number } = {}
+-- Limp bodies alive now (Config.Enemies.Ragdoll.MaxBodies).
+local limpBodies = 0
 -- Kill listeners (RequisitionService): every death credits its SupplyValue to the squad.
 local killListeners: { (supplyValue: number, position: Vector3) -> () } = {}
 
@@ -206,6 +218,152 @@ local function randomIdleDelay(): number
 	return range[1] + math.random() * (range[2] - range[1])
 end
 
+local function zombieOfHumanoid(humanoid: Humanoid): Zombie?
+	for _, zombie in zombies do
+		if zombie.humanoid == humanoid then
+			return zombie
+		end
+	end
+	return nil
+end
+
+local function flatDirection(away: Vector3, fallback: Vector3): Vector3
+	local flat = Vector3.new(away.X, 0, away.Z)
+	return if flat.Magnitude > 0.01 then flat.Unit else fallback
+end
+
+-- Loosens a dead body and throws it along its push. False when the rig has no ball sockets
+-- to hold it together (then the death clip plays instead).
+local function goLimp(zombie: Zombie): boolean
+	local model = zombie.model
+	if not model:FindFirstChildWhichIsA("BallSocketConstraint", true) then
+		return false
+	end
+	local cfg = Config.Enemies.Ragdoll
+	local push = zombie.push
+	local direction = if push then push.direction else -zombie.root.CFrame.LookVector
+	local speed = if push then push.speed else cfg.Push.PerDamage * 20
+	local up = math.min(speed * cfg.UpShare, cfg.MaxUp)
+	local velocity = direction * speed + Vector3.new(0, up, 0)
+	local parts: { BasePart } = {}
+	for _, item in model:GetDescendants() do
+		if item:IsA("AnimationConstraint") or item:IsA("Motor6D") then
+			(item :: any).Enabled = false
+		elseif item:IsA("BallSocketConstraint") then
+			item.Enabled = true
+		elseif item:IsA("BasePart") then
+			table.insert(parts, item)
+		end
+	end
+	-- The invisible root leaves the body (its joint is off): pinned where it stood, so it
+	-- does not fall through the world.
+	zombie.root.Anchored = true
+	zombie.root.CanCollide = false
+	for _, part in parts do
+		if part == zombie.root then
+			continue
+		end
+		part.Anchored = false
+		part.CanCollide = true
+		part.CollisionGroup = "Gore" -- GoreService: never collides with the living Infected
+		part.AssemblyLinearVelocity = velocity
+		pcall(function()
+			part:SetNetworkOwner(nil)
+		end)
+	end
+	-- Tumble: a small random spin so the body rolls over instead of sliding as one piece.
+	local chest = model:FindFirstChild("UpperTorso") :: BasePart?
+	if chest then
+		chest.AssemblyAngularVelocity =
+			Vector3.new(math.random() * 6 - 3, math.random() * 6 - 3, math.random() * 6 - 3)
+	end
+	-- Settle: parts that have stopped are anchored and stop colliding (no more physics, no
+	-- bumping the squad); one still falling keeps falling until the body is removed.
+	task.delay(cfg.Settle, function()
+		for _, part in parts do
+			if part.Parent and part.AssemblyLinearVelocity.Magnitude < cfg.SettleSpeed then
+				part.Anchored = true
+				part.CanCollide = false
+			end
+		end
+	end)
+	return true
+end
+
+-- GoreService.blast: a blast killed this body; it is thrown away from `center`.
+function EnemyService.noteBlast(humanoid: Humanoid, center: Vector3)
+	local zombie = zombieOfHumanoid(humanoid)
+	if not zombie then
+		return
+	end
+	local fallback = -zombie.root.CFrame.LookVector
+	zombie.push = {
+		direction = flatDirection(zombie.root.Position - center, fallback),
+		speed = Feel.knockback("Blast", 0, Config.Enemies.Ragdoll.Push),
+		blast = true,
+	}
+end
+
+-- A hit that did not kill: a flinch, unless one played inside the cooldown.
+local function flinch(zombie: Zombie, info: DamageService.HitInfo)
+	local cfg = Config.Enemies.Flinch
+	local now = os.clock()
+	if not Feel.canFlinch(now, zombie.lastFlinchAt, cfg.Cooldown) then
+		return
+	end
+	if (cfg.HeavyOnly :: { [string]: boolean })[zombie.typeName] then
+		local weapon = info.attacker and info.attacker:GetAttribute(Attributes.Weapon)
+		local heavy = typeof(weapon) == "string" and WeaponDefinitions.get(weapon).Heavy == true
+		if not heavy then
+			return
+		end
+	end
+	if not zombie.hitTrack then
+		local clips = (Config.Animations.Infected :: any)[zombie.typeName]
+		local clip: string? = clips and clips.hit
+		local animator = zombie.humanoid:FindFirstChildOfClass("Animator")
+		zombie.hitTrack = clip
+				and animator
+				and Animations.load(animator, clip, Enum.AnimationPriority.Action2)
+			or nil
+	end
+	local track = zombie.hitTrack
+	if not track then
+		return
+	end
+	zombie.lastFlinchAt = now
+	local headshot = info.kind == "headshot"
+	track:Play(0.05, 1, if headshot then cfg.HeadshotSpeed else 1)
+	if headshot then
+		EnemyService.slow(zombie.humanoid, cfg.HeadshotSlow, cfg.HeadshotSlowTime)
+	end
+end
+
+-- A killing round: the body goes over away from whoever fired it. Any other hit: a flinch.
+local function onHit(info: DamageService.HitInfo)
+	if not info.killed then
+		local zombie = zombieOfHumanoid(info.humanoid)
+		if zombie and not zombie.climb then
+			flinch(zombie, info)
+		end
+		return
+	end
+	local zombie = zombieOfHumanoid(info.humanoid)
+	if not zombie or (zombie.push and zombie.push.blast) then
+		return
+	end
+	local fallback = -zombie.root.CFrame.LookVector
+	local character = info.attacker and info.attacker.Character
+	local from = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	zombie.push = {
+		direction = if from
+			then flatDirection(zombie.root.Position - from.Position, fallback)
+			else fallback,
+		speed = Feel.knockback(info.kind, info.amount, Config.Enemies.Ragdoll.Push),
+		blast = false,
+	}
+end
+
 local function onZombieDied(zombie: Zombie)
 	CollectionService:RemoveTag(zombie.model, ENEMY_TAG)
 	voice(zombie, "death")
@@ -220,18 +378,34 @@ local function onZombieDied(zombie: Zombie)
 			track:Stop(0.1)
 		end
 	end
-	if zombie.deathTrack then
+	local definition = EnemyDefinitions[zombie.typeName]
+	local boss = definition and definition.Boss
+	local limp = false
+	if not boss and limpBodies < Config.Enemies.Ragdoll.MaxBodies then
+		limp = goLimp(zombie)
+	end
+	if limp then
+		limpBodies += 1
+	elseif zombie.deathTrack then
 		zombie.deathTrack:Play(0.1)
 	end
 	for _, listener in killListeners do
 		listener(zombie.supplyValue, zombie.root.Position)
 	end
-	ItemEffectService.onEnemyKilled(zombie.humanoid)
-	local definition = EnemyDefinitions[zombie.typeName]
-	local lifetime = if definition and definition.Boss
-		then Config.Zombies.BossCorpseLifetime
-		else Config.Zombies.CorpseLifetime
+	DamageService.onEnemyKilled(zombie.humanoid)
+	-- Rounds pass through the dead (a hitscan stops at the first body it meets).
+	for _, item in zombie.model:GetDescendants() do
+		if item:IsA("BasePart") then
+			item.CanQuery = false
+		end
+	end
+	local lifetime = if boss
+		then Config.Enemies.BossCorpseLifetime
+		else Config.Enemies.CorpseLifetime
 	task.delay(lifetime, function()
+		if limp then
+			limpBodies -= 1
+		end
 		zombie.model:Destroy()
 	end)
 end
@@ -255,7 +429,7 @@ local function spawnZombie(
 	local model = template:Clone()
 	model.Name = definition.DisplayName
 	model.ModelStreamingMode = Enum.ModelStreamingMode.Atomic -- a rig never half-streams
-	model:SetAttribute("EnemyType", typeName)
+	model:SetAttribute(Attributes.EnemyType, typeName)
 	if prepare then
 		prepare(model)
 	end
@@ -270,7 +444,7 @@ local function spawnZombie(
 	humanoid.Health = health
 	humanoid.WalkSpeed = definition.WalkSpeed
 	-- EnemyService.slow restores this after a slow without corrupting it.
-	humanoid:SetAttribute("BaseWalkSpeed", definition.WalkSpeed)
+	humanoid:SetAttribute(Attributes.BaseWalkSpeed, definition.WalkSpeed)
 	humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
 	if not definition.Boss then
 		attachHealthBar(humanoid, root, definition.Scale) -- a boss has the boss bar (BossBarUI)
@@ -327,6 +501,7 @@ local function spawnZombie(
 	humanoid.BreakJointsOnDeath = false
 	local attackTrack: AnimationTrack? = nil
 	local deathTrack: AnimationTrack? = nil
+	local movingTrack: AnimationTrack? = nil
 	pcall(function()
 		local animator = humanoid:FindFirstChildOfClass("Animator") :: Animator
 		local clips = Config.Animations.Infected[typeName]
@@ -337,6 +512,7 @@ local function spawnZombie(
 			moveTrack.Looped = true
 			moveTrack:Play()
 			moveTrack:AdjustSpeed(definition.WalkSpeed / reference)
+			movingTrack = moveTrack
 			attackTrack = Animations.load(animator, clips.attack, Enum.AnimationPriority.Action)
 			deathTrack = Animations.load(animator, clips.death, Enum.AnimationPriority.Action4)
 		else
@@ -361,6 +537,7 @@ local function spawnZombie(
 		lastAttackTime = 0,
 		attackTrack = attackTrack,
 		deathTrack = deathTrack,
+		moveTrack = movingTrack,
 		nextRepathTime = 0,
 		lastRepathPosition = Vector3.new(1e9, 0, 0),
 		nudgeSign = 1,
@@ -440,7 +617,7 @@ local function tryClimb(zombie: Zombie, toward: Vector3, now: number): boolean
 	local definition = EnemyDefinitions[zombie.typeName]
 	local maxHeight = definition.ClimbHeight
 	local duration = Config.Movement.Infected.Duration[zombie.typeName]
-	if not maxHeight or not duration then
+	if not maxHeight or not duration or zombie.crippled then
 		return false
 	end
 	local params = RaycastParams.new()
@@ -501,14 +678,11 @@ local function attackIfTouching(zombie: Zombie, now: number)
 	end
 	if (targetRoot.Position - zombie.root.Position).Magnitude <= zombie.attackRange then
 		local character = targetRoot.Parent :: Model
-		-- A body going over cover can't be clawed (CoverMoveService): the climb is an escape.
-		local coverUntil = character:GetAttribute("CoverMoveUntil") :: number?
-		if coverUntil and os.clock() < coverUntil then
-			return
-		end
+		-- A body going over cover can't be clawed (CoverMoveService): the claw is "melee",
+		-- which damagePlayer skips inside the window. The swing still plays.
 		local targetHumanoid = character:FindFirstChildOfClass("Humanoid")
 		if targetHumanoid and targetHumanoid.Health > 0 then
-			EnemyProjectileService.damagePlayer(targetHumanoid, zombie.damage)
+			EnemyProjectileService.damagePlayer(targetHumanoid, zombie.damage, "melee")
 			zombie.lastAttackTime = now
 			zombie.nextIdleVoiceAt = math.max(zombie.nextIdleVoiceAt, now + 2)
 			voice(zombie, "attack")
@@ -558,7 +732,7 @@ local function stepProjectileZombie(zombie: Zombie, now: number)
 		local progress = if windup > 0
 			then math.clamp(1 - (windupUntil - now) / windup, 0, 1)
 			else 1
-		setSacScale(zombie, 1 + (Config.Zombies.ThroatSacSwell - 1) * progress)
+		setSacScale(zombie, 1 + (Config.Enemies.ThroatSacSwell - 1) * progress)
 		if now >= windupUntil then
 			zombie.windupUntil = nil
 			zombie.lastAttackTime = now
@@ -801,7 +975,7 @@ local function isOpenGround(hit: RaycastResult?): boolean
 	return true
 end
 
--- A ring around `center`; retries (Config.Zombies.SpawnAttempts) until the candidate is open
+-- A ring around `center`; retries (Config.Spawning.SpawnAttempts) until the candidate is open
 -- ground outside every building footprint, then settles for the last one.
 local function groundPositionNear(
 	center: Vector3,
@@ -824,18 +998,20 @@ local function groundPositionNear(
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Exclude
 	params.FilterDescendantsInstances = exclude
-	for _ = 1, Config.Zombies.SpawnAttempts do
+	for _ = 1, Config.Spawning.SpawnAttempts do
 		local angle = math.random() * math.pi * 2
 		local distance = math.random(minDistance, maxDistance)
-		local x = center.X + math.cos(angle) * distance
-		local z = center.Z + math.sin(angle) * distance
+		-- Inside the perimeter (Config.Arena.SpawnInset): no spawn in the fence band or past it.
+		local inset = Config.Arena.SpawnInset
+		local x = math.clamp(center.X + math.cos(angle) * distance, -inset, inset)
+		local z = math.clamp(center.Z + math.sin(angle) * distance, -inset, inset)
 		local result =
 			workspace:Raycast(Vector3.new(x, center.Y + 50, z), Vector3.new(0, -200, 0), params)
 		local groundY = if result then result.Position.Y else 0
 		candidate = Vector3.new(x, groundY, z)
 		if
 			isOpenGround(result)
-			and not ArenaService.insideBuilding(candidate, Config.Zombies.SpawnBuildingMargin)
+			and not ArenaService.insideBuilding(candidate, Config.Spawning.SpawnBuildingMargin)
 		then
 			return candidate
 		end
@@ -855,8 +1031,8 @@ local function randomSpawnPosition(): Vector3?
 	end
 	return groundPositionNear(
 		root.Position,
-		Config.Zombies.MinSpawnDistance,
-		Config.Zombies.MaxSpawnDistance
+		Config.Spawning.MinSpawnDistance,
+		Config.Spawning.MaxSpawnDistance
 	)
 end
 
@@ -898,7 +1074,7 @@ local function pickSpawnType(): string
 			end
 		end
 		-- While the Index is up: his pressure caps (no Brutes).
-		local indexCap = if workspace:GetAttribute("IndexActive") == true
+		local indexCap = if workspace:GetAttribute(Attributes.IndexActive) == true
 			then Config.Index.Warden.Pressure.Caps[typeName]
 			else nil
 		if indexCap and countOfType(typeName) >= indexCap then
@@ -990,18 +1166,68 @@ function EnemyService.slow(humanoid: Humanoid, factor: number, duration: number)
 	if humanoid.Health <= 0 then
 		return
 	end
-	local base = (humanoid:GetAttribute("BaseWalkSpeed") :: number?) or humanoid.WalkSpeed
+	local base = (humanoid:GetAttribute(Attributes.BaseWalkSpeed) :: number?) or humanoid.WalkSpeed
 	local generation = (slowGeneration[humanoid] or 0) + 1
 	slowGeneration[humanoid] = generation
 	humanoid.WalkSpeed = base * factor
 	task.delay(duration, function()
 		if humanoid.Parent and slowGeneration[humanoid] == generation then
 			if not PauseService.isPaused() then
-				humanoid.WalkSpeed = base
+				local now = (humanoid:GetAttribute(Attributes.BaseWalkSpeed) :: number?) or base
+				humanoid.WalkSpeed = now
 			end
 			slowGeneration[humanoid] = nil
 		end
 	end)
+end
+
+local function zombieOf(model: Model): Zombie?
+	for _, zombie in zombies do
+		if zombie.model == model then
+			return zombie
+		end
+	end
+	return nil
+end
+
+-- GoreService: an arm came off. Melee damage scales by `factor` (per arm lost).
+function EnemyService.disarm(model: Model, factor: number)
+	local zombie = zombieOf(model)
+	if zombie then
+		zombie.damage *= factor
+	end
+end
+
+-- GoreService: a leg came off. The body crawls at `factor` of its speed for good (slows and
+-- staggers restore to the crawl, not the walk) and never climbs again.
+function EnemyService.cripple(model: Model, factor: number)
+	local zombie = zombieOf(model)
+	if not zombie or zombie.crippled then
+		return
+	end
+	zombie.crippled = true
+	zombie.walkSpeed *= factor
+	zombie.humanoid:SetAttribute(Attributes.BaseWalkSpeed, zombie.walkSpeed)
+	if not PauseService.isPaused() then
+		zombie.humanoid.WalkSpeed = zombie.walkSpeed
+	end
+	-- On its hands now: the crawl clip replaces the walk (Config.Animations.Infected.crawl).
+	local clips = (Config.Animations.Infected :: any)[zombie.typeName]
+	local crawl: string? = clips and clips.crawl
+	local animator = zombie.humanoid:FindFirstChildOfClass("Animator")
+	if crawl and animator then
+		local track = Animations.load(animator, crawl, Enum.AnimationPriority.Core)
+		if track then
+			if zombie.moveTrack then
+				zombie.moveTrack:Stop(0.3)
+			end
+			local reference = (Config.Animations.MoveClipSpeed :: any)[crawl] or zombie.walkSpeed
+			track.Looped = true
+			track:Play(0.3)
+			track:AdjustSpeed(zombie.walkSpeed / reference)
+			zombie.moveTrack = track
+		end
+	end
 end
 
 -- Hollow Point: the body stops for `seconds`.
@@ -1018,20 +1244,20 @@ local function spawnLoop()
 	while true do
 		local interval = DifficultyService.getSpawnInterval()
 		-- Extra pressure while the objective is being held.
-		if workspace:GetAttribute("ObjectiveActive") == true then
+		if workspace:GetAttribute(Attributes.ObjectiveActive) == true then
 			interval *= Config.Difficulty.ObjectiveSpawnFactor
 		end
 		-- And during extraction.
-		if workspace:GetAttribute("ExtractionActive") == true then
+		if workspace:GetAttribute(Attributes.ExtractionActive) == true then
 			interval *= Config.Extraction.SpawnFactor
 		end
 		-- And for a while after a Resupply pallet lands.
-		if workspace:GetAttribute("ResupplyActive") == true then
+		if workspace:GetAttribute(Attributes.ResupplyActive) == true then
 			interval *= Config.Requisition.Lure.SpawnFactor
 		end
 		-- Less while the Index is up: the fight is the pressure (Config.Index.Warden.Pressure).
 		local maxAlive = DifficultyService.getMaxAlive()
-		if workspace:GetAttribute("IndexActive") == true then
+		if workspace:GetAttribute(Attributes.IndexActive) == true then
 			local pressure = Config.Index.Warden.Pressure
 			interval *= pressure.SpawnFactor
 			maxAlive = math.max(4, maxAlive - pressure.MaxAliveReduction)
@@ -1039,7 +1265,7 @@ local function spawnLoop()
 		task.wait(interval)
 		if
 			RunStates.isLive()
-			and workspace:GetAttribute("DevSpawnsOff") ~= true
+			and workspace:GetAttribute(Attributes.DevSpawnsOff) ~= true
 			and not PauseService.isPaused()
 			and #zombies < maxAlive
 		then
@@ -1052,15 +1278,15 @@ local function spawnLoop()
 end
 
 -- Bumped on every reset so a pending first wave never lands in the next run.
-local sortieGeneration = 0
+local missionGeneration = 0
 
 -- RunManager, on Explore: first contact within seconds (Sprint 8 pacing).
-function EnemyService.startSortie()
-	sortieGeneration += 1
-	local generation = sortieGeneration
+function EnemyService.startMission()
+	missionGeneration += 1
+	local generation = missionGeneration
 	task.delay(1.5, function()
-		if generation == sortieGeneration and RunStates.isLive() then
-			EnemyService.spawnWave("Walker", Config.Zombies.InitialCount)
+		if generation == missionGeneration and RunStates.isLive() then
+			EnemyService.spawnWave("Walker", Config.Spawning.InitialCount)
 		end
 	end)
 end
@@ -1085,11 +1311,14 @@ end
 function EnemyService.reset()
 	table.clear(lures)
 	table.clear(slowGeneration)
-	sortieGeneration += 1
+	missionGeneration += 1
 	EnemyService.clearAll()
 end
 
 function EnemyService.init()
+	Lifecycle.register("EnemyService", {
+		onRunStart = EnemyService.reset,
+	})
 	-- Idempotent: registering an existing group throws, which is fine.
 	pcall(function()
 		PhysicsService:RegisterCollisionGroup(ENEMY_COLLISION_GROUP)
@@ -1126,6 +1355,7 @@ function EnemyService.init()
 			end
 		end)
 	end
+	DamageService.addHitListener(onHit)
 	RunService.Heartbeat:Connect(stepZombies)
 	task.spawn(spawnLoop)
 end

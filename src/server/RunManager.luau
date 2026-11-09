@@ -5,35 +5,23 @@
 --   objective timer arms) -> Primary (hold zone up) -> Index (boss; passthrough until the
 --   Warden) -> Extract -> Ended ("Extracted" on extraction, "Wiped" when nobody is alive).
 -- Auto-respawn is off: death ends a player's run; RestartRun (death or results screen)
--- starts a fresh one. Every system with run state exposes a reset for this module.
+-- starts a fresh one. Every system with run state registers its reset with Lifecycle.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local RunStates = require(ReplicatedStorage.Shared.RunStates)
-local AirStrikeService = require(script.Parent.AirStrikeService)
-local AssaultClassService = require(script.Parent.AssaultClassService)
 local BotService = require(script.Parent.BotService)
-local CallInService = require(script.Parent.CallInService)
-local DifficultyService = require(script.Parent.DifficultyService)
-local DroneService = require(script.Parent.DroneService)
-local EnemyProjectileService = require(script.Parent.EnemyProjectileService)
 local EnemyService = require(script.Parent.EnemyService)
 local ExtractionService = require(script.Parent.ExtractionService)
-local IncendiaryService = require(script.Parent.IncendiaryService)
 local IndexService = require(script.Parent.IndexService)
-local ItemEffectService = require(script.Parent.ItemEffectService)
-local LoadoutService = require(script.Parent.LoadoutService)
-local MineService = require(script.Parent.MineService)
 local ObjectiveService = require(script.Parent.ObjectiveService)
 local PauseService = require(script.Parent.PauseService)
-local PlayerStatsService = require(script.Parent.PlayerStatsService)
-local ProjectileServer = require(script.Parent.ProjectileServer)
-local RequisitionService = require(script.Parent.RequisitionService)
-local ShockCoilService = require(script.Parent.ShockCoilService)
 local Squad = require(script.Parent.Squad)
+local Lifecycle = require(script.Parent.Lifecycle)
 
 local RunManager = {}
 
@@ -51,23 +39,23 @@ local function publishReady()
 		if ready[player] then
 			count += 1
 		end
-		player:SetAttribute("Ready", ready[player] == true)
+		player:SetAttribute(Attributes.Ready, ready[player] == true)
 	end
-	workspace:SetAttribute("ReadyCount", count)
-	workspace:SetAttribute("ReadyNeeded", #Players:GetPlayers())
+	workspace:SetAttribute(Attributes.ReadyCount, count)
+	workspace:SetAttribute(Attributes.ReadyNeeded, #Players:GetPlayers())
 end
 
 local function clearReady()
 	table.clear(ready)
 	readyGeneration += 1
-	workspace:SetAttribute("ReadyUpEndsAt", 0)
+	workspace:SetAttribute(Attributes.ReadyUpEndsAt, 0)
 	publishReady()
 end
 
 local function setState(state: RunStates.RunState, result: RunStates.RunResult?)
-	workspace:SetAttribute("RunState", state)
+	workspace:SetAttribute(Attributes.RunState, state)
 	if result then
-		workspace:SetAttribute("RunResult", result)
+		workspace:SetAttribute(Attributes.RunResult, result)
 	end
 	print("[RunManager] RunState ->", state, result or "")
 end
@@ -82,7 +70,7 @@ local function beginRun()
 			return
 		end
 		setState("Explore")
-		EnemyService.startSortie()
+		EnemyService.startMission()
 		ObjectiveService.arm()
 	end)
 end
@@ -112,41 +100,16 @@ local function onDied()
 	end
 end
 
--- One player's run state, back to a fresh start (loadout, call-in charges, class, stats,
--- fire timing).
-local function resetPlayer(player: Player)
-	AssaultClassService.resetPlayer(player)
-	ItemEffectService.resetPlayer(player)
-	LoadoutService.resetPlayer(player)
-	CallInService.resetPlayer(player)
-	PlayerStatsService.resetPlayer(player)
-	ProjectileServer.resetPlayer(player)
-end
-
--- A fresh run for the whole squad: every run-level service resets once, then every player
--- is reset and respawned (register #8). Public so DevTestService can force one.
+-- A fresh run for the whole squad: every registered onRunStart hook runs once, then every
+-- player's onPlayerReset hooks, then everyone respawns (register #8). Public so DevTestService can force one.
 function RunManager.startRun()
 	clearReady()
-	PauseService.setPaused(false)
-	EnemyService.reset()
-	EnemyProjectileService.reset()
-	DroneService.reset()
-	ProjectileServer.reset()
-	IncendiaryService.reset()
-	MineService.reset()
-	ShockCoilService.reset()
-	AirStrikeService.reset()
-	RequisitionService.reset()
-	ItemEffectService.reset()
-	AssaultClassService.reset()
-	DifficultyService.restart()
-	ObjectiveService.reset()
-	IndexService.reset()
-	ExtractionService.reset()
-	Squad.resetRun()
+	-- Every service resets its own run and player state through its registered hooks
+	-- (Lifecycle, docs/ARCHITECTURE.md F2); nothing here names a service.
+	Lifecycle.runStart()
 	local players = Players:GetPlayers()
 	for _, player in players do
-		resetPlayer(player)
+		Lifecycle.playerReset(player)
 	end
 	beginRun()
 	for _, player in players do
@@ -183,12 +146,12 @@ local function onRestartRequest(player: Player)
 		RunManager.startRun()
 		return
 	end
-	if ((workspace:GetAttribute("ReadyUpEndsAt") :: number?) or 0) > 0 then
+	if ((workspace:GetAttribute(Attributes.ReadyUpEndsAt) :: number?) or 0) > 0 then
 		return
 	end
 	local generation = readyGeneration
 	workspace:SetAttribute(
-		"ReadyUpEndsAt",
+		Attributes.ReadyUpEndsAt,
 		workspace:GetServerTimeNow() + Config.Run.ReadyUpSeconds
 	)
 	task.delay(Config.Run.ReadyUpSeconds, function()
@@ -219,6 +182,21 @@ local function onPlayerAdded(player: Player)
 end
 
 function RunManager.init()
+	Lifecycle.register("RunManager", {
+		onPlayerRemoving = function(player: Player)
+			ready[player] = nil
+			task.defer(function()
+				onDied()
+				-- The one holding out left: everyone still here may already be ready.
+				if RunStates.current() == "Ended" then
+					publishReady()
+					if allReady() then
+						RunManager.startRun()
+					end
+				end
+			end)
+		end,
+	})
 	-- Death ends the run; respawning only happens through resetRun.
 	Players.CharacterAutoLoads = false
 	setState("Lobby", "")
@@ -256,19 +234,6 @@ function RunManager.init()
 	for _, player in Players:GetPlayers() do
 		onPlayerAdded(player)
 	end
-	Players.PlayerRemoving:Connect(function(player)
-		ready[player] = nil
-		task.defer(function()
-			onDied()
-			-- The one holding out left: everyone still here may already be ready.
-			if RunStates.current() == "Ended" then
-				publishReady()
-				if allReady() then
-					RunManager.startRun()
-				end
-			end
-		end)
-	end)
 	Players.PlayerAdded:Connect(publishReady)
 	clearReady()
 

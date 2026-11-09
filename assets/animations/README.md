@@ -58,6 +58,22 @@ animations, played by `src/client/AnimationController.luau` (players) and
 | downed_crawl (Crawling, hands and knees) | Downed crawl (client DownedController, bots hold it still) | `in_place`; 1.8 s loop, rate follows crawl speed, frozen when still; published 2026-11-07 |
 | zombie_stumble (Zombie Stumble) | spare: Infected flinch | |
 | zombie_scream (Zombie Scream) | spare: Hocker windup | |
+| *Warden set, 2026-11-07 (Mixamo clips picked for the boss fight; file names only):* | | |
+| warden_walk | Warden walk (`Config.Animations.Infected.Warden.move`) | `in_place`, 6 studs/s authored, rate follows ground speed |
+| warden_run | Warden charge | `in_place`, 16 studs/s; plays while the root is anchored for the wind-up |
+| warden_idle | Warden idle | only while the root is slower than `Config.Index.Warden.IdleSpeed` |
+| warden_guard | Warden guard, upper body | held for the guard; `IndexService.cancelGuard` stops it on any action change |
+| warden_bash | Warden bash | rate set so the strike lands at `Bash.StrikeAt` of the windup |
+| warden_riot | Warden Riot Call roar | held `RiotCallHold` |
+| warden_death | Warden death | |
+| warden_pound (Sword And Shield Jump Attack) | Warden Ground Pound | `in_place`; the fists land at `Pound.StrikeAt` of it when the windup ends |
+| warden_sweep (Sword And Shield Cross Slash) | Warden Shield Sweep | `in_place`, `Sweep.StrikeAt` |
+| warden_slam (Sword And Shield Downward Slash) | Warden Overhead Slam | `in_place`, `Slam.StrikeAt` |
+| warden_stomp (Stomp, Hard Floor Stomp) | Warden Stomp | `in_place`, `Stomp.StrikeAt` |
+| warden_hit (Sword And Shield Impact, head) | Warden flinch on a plate break | `in_place` |
+| knockdown_back (Knocked Out, falling to back) | Assault + bots knocked down: the fall | `in_place`, `trim` (0, 0.45): the fall without the lying still; rate fits the knockdown minus `Config.Knockdown.GetUp` |
+| getup_back (Getting Up, from back) | Assault + bots knocked down: the get-up | `in_place`, `trim` (0.55, 1): the rise; rate fits `Config.Knockdown.GetUp` |
+| ladder_climb (Roblox stock R15 ClimbAnim, `rbxassetid://507765644`) | Assault on a TrussPart ladder | not retargeted (owner: the default is fine); `AnimationController` plays it in the Humanoid's Climbing state, rate from the vertical speed against `Animations.LadderClipSpeed` |
 
 ## Pipeline
 
@@ -71,7 +87,8 @@ animations, played by `src/client/AnimationController.luau` (players) and
    overlay, `in_place` = strip horizontal hip travel from a clip with baked root motion; the
    script prints the clip's authored ground speed for `Config.Animations.MoveClipSpeed`;
    `root_lock` = drop every hip translation for a vault/climb clip the game carries itself,
-   the script prints the hip rise and reach instead).
+   the script prints the hip rise and reach instead; `trim` = (start, end) fractions of the
+   clip to keep, for a long Mixamo clip of which only one part is wanted).
    Mixamo packs download as a zip of FBX files with root motion baked in; copy the ones you
    need into `source/mixamo/` under the clip name and mark them `in_place`. The method: every Mixamo bone's world rotation delta from its rest pose, a fixed
    rest correspondence per R15 limb (Mixamo rests in a T-pose, R15 with the arms down), joint
@@ -80,12 +97,15 @@ animations, played by `src/client/AnimationController.luau` (players) and
 3. **Preview** in Studio: with `Config.Animations.Ids[clip] == ""`, `Animations.init()` on the
    server registers the retargeted clip through `KeyframeSequenceProvider` and the game plays
    it in a playtest (temporary id, Studio only). Verify every clip this way before publishing.
-4. **Publish** (scripted, no clicks; Open Cloud accepts Animation uploads): in Studio edit
+4. **Publish** (scripted, no clicks; Open Cloud accepts Animation uploads). Without Studio:
+   `lune run assets/animations/build/build_rbxm.luau` writes one `.rbxm` per clip, then
+   `upload_asset` each with `groupId` 270506601 (the group owns every asset). Or in Studio edit
    mode build every unpublished clip into `ServerStorage.AnimationPublish` with
    `AnimationBuilder.build(AnimationBuilder.loadClip(name))`, export each with the Studio
    MCP `export_rbxm` tool, upload each with `upload_asset` (`assetType = "Animation"`),
    write the ids into `Config.Animations.Ids` and `ASSET_IDS.md`, delete the folder. Done
-   for all 15 clips on 2026-11-06 and the 21 movement-set clips on 2026-11-07.
+   for all 15 clips on 2026-11-06, the 21 movement-set clips, the 7 Warden clips and the 7
+   kit-expansion clips (5 Warden, 2 knockdown) on 2026-11-07. Ids are written with the `rbxassetid://` prefix (a bare number fails to load).
 5. **Play**: `AnimationController` (client) and `EnemyService` (server) load clips by name
    through `Animations.load`. The player's walk and run states each blend four directional
    clips by the direction of travel in the body's frame (`AdjustWeight`), so strafing and

@@ -1,5 +1,5 @@
 --!strict
--- Downed crawl (2026-11-07). While the local character is Downed (Squad: SquadState
+-- Downed crawl. While the local character is Downed (Squad: SquadState
 -- attribute) it crawls on hands and knees at Config.Downed.CrawlSpeed (SprintController
 -- sets the speed). This plays the Mixamo crawl clip over everything else, its rate following
 -- ground speed against Config.Animations.MoveClipSpeed, and frozen on all fours when still.
@@ -9,6 +9,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attributes"))
 local Animations = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Animations"))
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 
@@ -24,7 +25,7 @@ local function stop()
 end
 
 local function onStateChanged(character: Model)
-	if character:GetAttribute("SquadState") ~= "Downed" then
+	if character:GetAttribute(Attributes.SquadState) ~= "Downed" then
 		stop()
 		return
 	end
@@ -53,7 +54,7 @@ local function onCharacterAdded(character: Model)
 		end
 		track = loaded
 	end
-	character:GetAttributeChangedSignal("SquadState"):Connect(function()
+	character:GetAttributeChangedSignal(Attributes.SquadState):Connect(function()
 		onStateChanged(character)
 	end)
 	humanoid.Died:Connect(stop)

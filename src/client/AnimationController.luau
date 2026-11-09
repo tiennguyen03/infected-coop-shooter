@@ -8,7 +8,7 @@
 -- stance while the trigger is held, a recoil clip per shot, a flinch on damage, the death
 -- clip and ability clips sit on top; a vault or climb clip (MovementController) replaces
 -- the locomotion while the body is carried over cover. Upper-body clips (aim, fire, hit,
--- breach) carry no leg poses so the legs keep moving underneath them. Other controllers
+-- throw) carry no leg poses so the legs keep moving underneath them. Other controllers
 -- call in: WeaponController (setAiming, onShot), AbilityController (playAbility),
 -- StanceController (setStance), MovementController (playMove).
 
@@ -17,6 +17,9 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Animations = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Animations"))
+local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attributes"))
+local WeaponDefinitions =
+	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("WeaponDefinitions"))
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 
 local FADE = 0.2
@@ -47,14 +50,22 @@ type Tracks = {
 	fire: AnimationTrack?,
 	hit: AnimationTrack?,
 	death: AnimationTrack?,
-	breach: AnimationTrack?,
+	throw: AnimationTrack?,
 	vault: AnimationTrack?,
 	climb: AnimationTrack?,
 	roll: AnimationTrack?,
 	slide: AnimationTrack?,
+	knockdown: AnimationTrack?,
+	getup: AnimationTrack?,
+	ladder: AnimationTrack?,
 }
 
 local tracks: Tracks = {}
+-- Reload clips by name (a gun may name its own, WeaponDefinitions.ReloadClip); loaded once per
+-- character, the one playing now.
+local reloadTracks: { [string]: AnimationTrack } = {}
+local reloadPlaying: AnimationTrack? = nil
+local currentAnimator: Animator? = nil
 local stances: { [string]: StanceSet } = {}
 local stance: Stance = "stand"
 local currentSet: MoveSet? = nil
@@ -228,6 +239,24 @@ local function step(humanoid: Humanoid, root: BasePart)
 	local velocity = root.AssemblyLinearVelocity
 	local flat = Vector3.new(velocity.X, 0, velocity.Z)
 	local speed = flat.Magnitude
+	-- On a ladder (TrussPart): the stock climb clip, rate from the vertical speed, nothing
+	-- else playing. Off it, the clip stops and the locomotion below takes over.
+	local ladder = tracks.ladder
+	if humanoid:GetState() == Enum.HumanoidStateType.Climbing then
+		switchSet(nil)
+		setIdle(false)
+		if ladder then
+			if not ladder.IsPlaying then
+				ladder:Play(0.1)
+			end
+			ladder:AdjustSpeed(
+				math.clamp(math.abs(velocity.Y) / Config.Animations.LadderClipSpeed, 0, 2)
+			)
+		end
+		return
+	elseif ladder and ladder.IsPlaying then
+		ladder:Stop(0.15)
+	end
 	-- Off the ground: hold whatever is playing (no jump clip; cover is vaulted instead).
 	if humanoid.FloorMaterial == Enum.Material.Air then
 		return
@@ -270,16 +299,25 @@ local function setup(character: Model)
 	end
 
 	local clips = Config.Animations.Assault
+	currentAnimator = animator
+	reloadTracks = {}
+	reloadPlaying = nil
 	tracks = {
 		fire = Animations.load(animator, clips.fire, Enum.AnimationPriority.Action2),
 		hit = Animations.load(animator, clips.hit, Enum.AnimationPriority.Action3),
 		death = Animations.load(animator, clips.death, Enum.AnimationPriority.Action4),
-		breach = Animations.load(animator, clips.breach, Enum.AnimationPriority.Action3),
+		throw = Animations.load(animator, clips.throw, Enum.AnimationPriority.Action3),
 		vault = Animations.load(animator, clips.vault, Enum.AnimationPriority.Action3),
 		climb = Animations.load(animator, clips.climb, Enum.AnimationPriority.Action3),
 		roll = Animations.load(animator, clips.roll, Enum.AnimationPriority.Action3),
 		slide = Animations.load(animator, clips.slide, Enum.AnimationPriority.Action3),
+		knockdown = Animations.load(animator, clips.knockdown, Enum.AnimationPriority.Action3),
+		getup = Animations.load(animator, clips.getup, Enum.AnimationPriority.Action3),
+		ladder = Animations.load(animator, clips.ladder, Enum.AnimationPriority.Action),
 	}
+	if tracks.ladder then
+		tracks.ladder.Looped = true
+	end
 	stances = {
 		stand = loadStance(animator, {
 			idle = clips.idle,
@@ -413,12 +451,87 @@ function AnimationController.playMove(
 	return true
 end
 
+-- Knocked down (KnockdownController): the fall clip over the first part of `seconds`, the
+-- get-up over the last Config.Knockdown.GetUp; the locomotion and the aim stay off.
+function AnimationController.playKnockdown(seconds: number)
+	if dead then
+		return
+	end
+	local getUp = math.min(Config.Knockdown.GetUp, seconds * 0.5)
+	local fallTime = seconds - getUp
+	busyUntil = os.clock() + seconds
+	switchSet(nil)
+	setIdle(false)
+	playAim(false)
+	local fall = tracks.knockdown
+	if fall then
+		fall:Play(0.05)
+		fall:AdjustSpeed(math.max(fall.Length, 0.01) / math.max(fallTime, 0.2))
+	end
+	task.delay(fallTime, function()
+		if dead then
+			return
+		end
+		if fall and fall.IsPlaying then
+			fall:Stop(0.1)
+		end
+		local rise = tracks.getup
+		if rise then
+			rise:Play(0.05)
+			rise:AdjustSpeed(math.max(rise.Length, 0.01) / math.max(getUp, 0.2))
+			task.delay(getUp, function()
+				if rise.IsPlaying then
+					rise:Stop(FADE)
+				end
+				if aiming then
+					playAim(true)
+				end
+			end)
+		end
+	end)
+end
+
+local function stopReload()
+	if reloadPlaying then
+		reloadPlaying:Stop(0.15)
+		reloadPlaying = nil
+	end
+end
+
+-- ReloadUntil (server time) rose: play the gun's reload clip so it ends with the reload;
+-- cleared or moved back (a swap, a death): stop it.
+local function onReloadChanged()
+	local player = Players.LocalPlayer
+	local untilAt = (player:GetAttribute(Attributes.ReloadUntil) :: number?) or 0
+	local remaining = untilAt - workspace:GetServerTimeNow()
+	stopReload()
+	local animator = currentAnimator
+	if dead or remaining <= 0.05 or not animator then
+		return
+	end
+	local weapon = WeaponDefinitions.get(player:GetAttribute(Attributes.Weapon) :: string?)
+	local clip = weapon.ReloadClip or Config.Animations.Assault.reload
+	local track = reloadTracks[clip]
+		or Animations.load(animator, clip, Enum.AnimationPriority.Action2)
+	if not track then
+		return
+	end
+	reloadTracks[clip] = track
+	track:Play(0.1)
+	if track.Length > 0 then
+		track:AdjustSpeed(track.Length / remaining)
+	end
+	reloadPlaying = track
+end
+
 function AnimationController.init()
 	local player = Players.LocalPlayer
 	player.CharacterAdded:Connect(setup)
 	if player.Character then
 		task.spawn(setup, player.Character)
 	end
+	player:GetAttributeChangedSignal(Attributes.ReloadUntil):Connect(onReloadChanged)
+	player:GetAttributeChangedSignal(Attributes.Weapon):Connect(stopReload)
 end
 
 return AnimationController

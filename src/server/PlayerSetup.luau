@@ -167,7 +167,7 @@ end
 local PLAYER_BODY = "pc_assault_"
 PlayerSetup.BODY = PLAYER_BODY
 
--- Skinned body (Config.Player.SkinnedBody, 2026-11-07): the whole body is one skinned mesh
+-- Skinned body (Config.Player.SkinnedBody): the whole body is one skinned mesh
 -- (assets/3d pc_assault_skinned) assembled at boot by MeshAssets.buildSkinnedBody from its
 -- two uploaded assets and installed as StarterPlayer.StarterCharacter, so every character
 -- spawns as that rig (R15 part names, Humanoid, Animator) and the limb swap is skipped; the

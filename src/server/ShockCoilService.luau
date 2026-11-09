@@ -1,17 +1,16 @@
 --!strict
--- Pen Coil (Shock Coil call-in, CallInService): a pulse around the user that damages and
--- slows every Infected within Config.CallIns.PenCoil.Radius (the slow lives in
--- EnemyService.slow). Ground Strap (defibrillator upgrade): the same pulse stands up every
--- downed squadmate in its radius (Squad.revive).
+-- The stun-slow helper. Pen Coil (the shock pulse call-in) retired 2026-11-08 as too
+-- sci-fi; its slow lives on for the Stun grenade (docs/PROGRESSION.md > Loadout: 0.4x for
+-- 3 s in 14 studs). `stunArea` slows (EnemyService.slow) and optionally damages every
+-- Infected in a radius, with a quick ring for the look. Owns the "CallInEffects" folder.
+-- Nothing calls it yet; the grenade passes its own Config.Grenade numbers.
 
 local CollectionService = game:GetService("CollectionService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
-local Config = require(ReplicatedStorage.Shared.Config)
 local EnemyService = require(script.Parent.EnemyService)
-local ItemEffectService = require(script.Parent.ItemEffectService)
-local Squad = require(script.Parent.Squad)
+local DamageService = require(script.Parent.DamageService)
+local Lifecycle = require(script.Parent.Lifecycle)
 
 local ENEMY_TAG = "Enemy"
 
@@ -19,72 +18,54 @@ local ShockCoilService = {}
 
 local effectFolder: Folder
 
--- Fires the pulse where `player` stands. `revive` is the Ground Strap flag. False when the
--- player has no body.
-function ShockCoilService.pulse(player: Player, revive: boolean): boolean
-	local member = Squad.fromPlayer(player)
-	local root = member and member.root
-	if not member or not root then
-		return false
-	end
-	local cfg = Config.CallIns.PenCoil
-
+-- Slows every Infected within `radius` of `center` to `factor` for `seconds`, after
+-- `damage` (0 for none) credited to `player`. Returns how many it caught.
+function ShockCoilService.stunArea(
+	player: Player?,
+	center: Vector3,
+	radius: number,
+	factor: number,
+	seconds: number,
+	damage: number
+): number
 	local ring = Instance.new("Part")
-	ring.Name = "CoilPulse"
+	ring.Name = "StunRing"
 	ring.Shape = Enum.PartType.Cylinder
-	ring.Size = Vector3.new(0.5, cfg.Radius * 2, cfg.Radius * 2)
-	ring.CFrame = CFrame.new(root.Position) * CFrame.Angles(0, 0, math.rad(90))
+	ring.Size = Vector3.new(0.5, radius * 2, radius * 2)
+	ring.CFrame = CFrame.new(center) * CFrame.Angles(0, 0, math.rad(90))
 	ring.Anchored = true
 	ring.CanCollide = false
 	ring.CanQuery = false
 	ring.CanTouch = false
+	ring.CastShadow = false
 	ring.Material = Enum.Material.Neon
-	ring.Color = Color3.fromRGB(120, 180, 255)
-	ring.Transparency = 0.4
+	ring.Color = Color3.fromRGB(230, 230, 220)
+	ring.Transparency = 0.5
 	ring.Parent = effectFolder
-	TweenService
-		:Create(ring, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-			Transparency = 1,
-		})
-		:Play()
+	TweenService:Create(ring, TweenInfo.new(0.4), { Transparency = 1 }):Play()
 	task.delay(0.45, function()
 		ring:Destroy()
 	end)
 
+	local caught = 0
 	for _, model in CollectionService:GetTagged(ENEMY_TAG) do
 		if model:IsA("Model") then
 			local humanoid = model:FindFirstChildOfClass("Humanoid")
-			local enemyRoot = model:FindFirstChild("HumanoidRootPart") :: BasePart?
-			if humanoid and humanoid.Health > 0 and enemyRoot then
-				if (enemyRoot.Position - root.Position).Magnitude <= cfg.Radius then
-					ItemEffectService.dealDamage(
-						player,
-						humanoid,
-						cfg.Damage,
-						enemyRoot.Position,
-						"hit"
-					)
+			local root = model:FindFirstChild("HumanoidRootPart") :: BasePart?
+			if humanoid and humanoid.Health > 0 and root then
+				if (root.Position - center).Magnitude <= radius then
+					caught += 1
+					if damage > 0 then
+						DamageService.dealDamage(player, humanoid, damage, root.Position, "hit")
+					end
 					if humanoid.Health > 0 then
-						EnemyService.slow(humanoid, cfg.SlowFactor, cfg.SlowDuration)
+						EnemyService.slow(humanoid, factor, seconds)
 					end
 				end
 			end
 		end
 	end
-
-	if revive then
-		for _, downed in Squad.downed() do
-			local downedRoot = downed.root
-			if
-				downed ~= member
-				and downedRoot
-				and (downedRoot.Position - root.Position).Magnitude <= cfg.Radius
-			then
-				Squad.revive(downed, member)
-			end
-		end
-	end
-	return true
+	return caught
 end
 
 function ShockCoilService.reset()
@@ -94,6 +75,9 @@ function ShockCoilService.reset()
 end
 
 function ShockCoilService.init()
+	Lifecycle.register("ShockCoilService", {
+		onRunStart = ShockCoilService.reset,
+	})
 	effectFolder = Instance.new("Folder")
 	effectFolder.Name = "CallInEffects"
 	effectFolder.Parent = workspace

@@ -1,21 +1,23 @@
 # Handoff — Infected Co-op Shooter (VS Code + Claude Code terminal)
 
 Start here when picking the project up in a fresh Claude Code session.
-Last updated: 2026-11-07, end of the build-round-1 session (the Warden shipped, player
-movement fixed, skinned Weller switched off). **Start the next session at "Open work"
-item 1: the Warden silhouette redesign the owner asked for.** Last verified commit on `main`: the Warden commit (solo + 2-client playtests).
+Last updated: 2026-11-09. Everything is on `main` (merged from `hud-p2` 2026-11-09: the
+foundation F1-F5, the HUD restyle, the Pike rework, dismemberment, the group migration and
+the satisfying pass). Work on a `<name>/<feature>` branch and open a PR to `main`; the
+owner merges. Nova (second developer) owns the lobby and the loadout screen.
 
 ## What this is
 
 Roblox 4-player co-op shooter (Helldivers-style loadout power, grounded military bio-horror
 setting). **Final
-product is 4-player co-op**; the current build is single-player. Full loop works: spawn → fight → kills fill Resupply → flare (3) → pallet (re-arm + 1 of 3
+product is 4-player co-op**; the current build is single-player. Full loop works: spawn → fight → kills fill Resupply → flare (5) → pallet (re-arm + 1 of 3
 supply cards) → Hold Position objective (site crate: 1 of 3 field upgrades) → extraction →
-OPERATION COMPLETE → restart. Service rifle with a magazine, 4 call-ins on keys 1/2, 12 field
-upgrades, 4 Infected forms (Walker, Runner, Brute, Hocker), Weller with Q dash / E breach /
-Combat Momentum, server-authoritative everything.
+OPERATION COMPLETE → restart. Pike soldiers (player Pike One, bots Pike Two-Four): a primary
+of five guns + the M17 picked in the Arms Room (B), Q swap, G frag, V shove, E stim, 4
+call-ins on keys 1-4, 7 field upgrades, 4 Infected forms (Walker, Runner, Brute, Hocker),
+server-authoritative everything.
 
-Repo: https://github.com/tiennguyen03/infected-coop-shooter — folder `~/infected-coop-shooter`.
+Repo: https://github.com/tiennguyen03/infected-coop-shooter — local folder `roguelike-arena-survivor`. New co-developers: `onboarding/`.
 
 Read in this order:
 1. `CLAUDE.md` — conventions, commands, workflow + doc-sync rules (short; always loaded).
@@ -25,8 +27,41 @@ Read in this order:
 5. `docs/PLAN.md` — scope rules + roadmap. `docs/LORE.md` — setting/naming.
 6. `docs/MULTIPLAYER_READINESS.md` — co-op rules + debt register, before touching run flow.
 
-## Current state (verified 2026-11-07 in a live playtest)
+## Current state (verified 2026-11-08 in a live playtest)
 
+- 2026-11-08: **Dismemberment** (`docs/PROGRESSION.md` > Dismemberment, `GoreService`,
+  client `GoreFX`, `Config.Enemies.Dismember`). The joint above the part a round hits keeps a
+  damage total; at MaxHealth x the joint's fraction the limb group falls like a Warden plate
+  and a stump is welded at the joint (rigs use AnimationConstraint joints, not Motor6D).
+  Arm lost: melee x0.6; leg lost: crawl speed 0.35, no climbing; killing headshot throws the
+  head; Anvil / Tripline kills throw 2 groups; flesh chunks per hit on the shooter's screen.
+  Verified in a playtest on Walker, Hocker, Runner and Brute. A rounded Infected redesign was
+  built and dropped the same day (owner prefers the blocky bodies).
+- 2026-11-08: **Skyline towers + clipping pass** (`docs/STYLES.md` §7 and modeling rules,
+  `assets/3d/README.md` city.py and z-fight pass, `docs/LEVELS.md` overlap pass). 23
+  modelled towers (six types, `assets/3d/build/city.py`) with lit-window twins replace the
+  flat slabs. `Builder.resolve_zfight` removed 172 flickering coplanar spots; 12 meshes
+  re-uploaded. Part buildings got eaves and inset floors. Six placement overlaps moved.
+  Ambience beds off (owner: harsh). Verified in a playtest: 0 slope warnings, the scan
+  lists only intended overlaps, the pickup's rear window is clean.
+- 2026-11-08: **Sound pass** (`assets/audio/README.md` banks, tone rules, sound profiles).
+  40 new clips in five banks, all uploaded (`assets/audio/ASSET_IDS.md`): player gear
+  (reload, roll, vault, knockdown, downed, revive, breach, dash, dry fire, low-health
+  breathing), call-ins (throw, Tripline, Anvil, Pen Coil, Magpie hover, flare, pallet), the
+  Warden's own bank (handset tell, roar, steps, swing, impacts, Pound, plates, canister,
+  death), radio / UI (squelch on Control lines, objective complete, card pick, KIA, click)
+  and ambience (the Gate siren through the hold, the Lantern rotor; the city + wind beds are
+  off, owner: they hurt to listen to, regenerate before re-enabling in `SoundFX.BEDS`).
+  `WorldSounds.at / on / loopOn / global`, `SoundFX.ui / loop`. Verified in a playtest by
+  clip offset (no audio capture): every hook fires the right clip. Owner decision: every
+  boss gets its own bank, every speaker a sound profile (`generate.py PROFILES`).
+- 2026-11-08: **Delta visual + traversal pass** (`docs/LEVELS.md` A12b second pass,
+  `docs/STYLES.md` §7 sky, `assets/3d/README.md` props.py). Brighter sky (ClockTime 16.9,
+  thinner haze, ColorCorrection + Bloom on Neon only), skyline lit windows / crowns /
+  antennas; four new car meshes + an army cargo truck (crawl under the bed) from the new
+  `assets/3d/build/props.py`, which now holds every small set piece; palette v5 (glass,
+  car paints); pallets as stacks, 20 placement fixes, stricter slope check (0.35, 0 boot
+  warnings), Deck jersey line. Colliders 242 of 256.
 - 2026-11-07: **Sprint 18, loadout rework shipped and playtested**
   (`docs/sprints/SPRINT_18_LOADOUT.md`). The item economy, XP orbs and levels are gone;
   power is the loadout: service rifle with a 30-round magazine (R reloads, pallets re-arm),
@@ -65,7 +100,51 @@ Read in this order:
   meshes with their own health (rounds into a plate do 25%, into a bared limb 150%);
   Bash / Charge / Gas Canister / Guard with handset tells on the new `BossBarUI`;
   Riot Call at 60% and 25%. Kill → priority pallet, heal, re-arm, `Extract`. Dev: F1
-  `Warden (Gate)` / `Warden here`. 16 meshes uploaded (`assets/3d/ASSET_IDS.md`).
+  `Warden (Gate)` / `Warden here`.
+- 2026-11-07: **Warden v2 body + animation set shipped and playtested** (Sprint 19 doc
+  > *v2*). The owner did not want "a Brute model with riot armor slapped on top", so the
+  Warden was designed live in Blender through the Blender MCP and approved, then ported:
+  his own file `assets/3d/build/warden.py` (one file per singular asset, owner rule),
+  upright asymmetric silhouette (left side shield + shoulder dome + riot collar, right
+  side the bare MP), 18 meshes re-uploaded (2,604 tris with plates,
+  `assets/3d/ASSET_IDS.md`), shield rebuilt as a fist-grip plate so it reads in any pose.
+  Seven Mixamo clips retargeted and published (`warden_walk/run/idle/guard/bash/riot/
+  death`, `assets/animations/ASSET_IDS.md`) and wired in `IndexService` (walk rate-scaled,
+  idle only when the root is still, guard as an upper-body overlay cancelled on every
+  action change, bash timed to the windup, run while charging, roar on Riot Call, death
+  clip). Verified in a playtest with the published ids: all 21 parts dressed, each clip
+  seen, 60 fps.
+- 2026-11-07: **Open perimeter** (`docs/LEVELS.md` A15): the four solid walls are gone;
+  a see-through quarantine fence with wire and watchtowers stands at the edge, the ground,
+  a berm, the broken highway and the road to the city run on past it, an invisible
+  collider behind the fence stops the squad. Studio boot no longer drops the first body
+  through the world (the Baseplate stays solid 5 s).
+- 2026-11-07: **Map placement fix + Blender map view + ladder climb** (`docs/LEVELS.md`
+  A12b, `assets/3d/README.md` > *The map in Blender*): `assets/3d/build/delta_map.py`
+  rebuilds Delta in Blender from the `ArenaService` tables and paints any piece across a
+  slope, in the Warden lane, on the LZ pad or inside a building red; 48 pieces moved (0
+  left), a ramp up the Compound's east container, boot warns on any new straddle. Ladders
+  play Roblox's stock climb clip (`ladder_climb`).
+- 2026-11-07: **Balance pass + downed slide fix** (Sprint 18 doc > *Balance pass*): a
+  third fewer spawns, 9 magazines, cheaper and steadier pallets; a downed body no longer
+  or prone body no longer slides (the prone lift never reached the AnimationConstraint
+  rig; body parts now leave collision while prone or downed, `ProneBody` group, and
+  rejoin only once the root has risen, so spamming C no longer drops you through the floor).
+- 2026-11-07: **M16 pass shipped** (Sprint 18 doc > *M16 pass*): the service rifle is
+  full auto at 750 rpm with a bloom on a held trigger, same damage, 7 magazines; bots
+  0.30 s. TTK roughly halved. Watch the Brute (260 -> 360 if it melts). Backlog:
+  dismemberment (`docs/PROGRESSION.md` > Backlog).
+- 2026-11-07: **Warden kit expansion + shield fix shipped** (Sprint 19 doc > *Kit
+  expansion and the shield*). Shield strapped along the outer forearm (was a slanted plate
+  past the fist). Four new attacks from the systems-designer pass: Ground Pound (ring on
+  the ground, AoE knockdown), Shield Sweep (180°, shove), Overhead Slam (punishes a
+  planted body), Stomp (a hugger, any side); reactions-then-bands selection with a beat
+  between attacks and a no-repeat rule; Guard is a reaction to plate fire. Player
+  knockdown state (`Squad.knock`, `KnockedUntil`, `KnockdownController`, fall + get-up
+  clips), `Config.Knockdown`. Bug fixed: the roll never dodged the Warden (`damagePlayer`
+  "melee" kind). Bots step out of marked danger shapes. Seven more clips published.
+  Watched live with the owner playing: every attack fired in one fight, no errors; a
+  player knockdown has not been seen on screen yet (God mode).
 - 2026-11-07: **Skinned Weller switched off** (`Config.Player.SkinnedBody = false`; players
   wear the tapered rigid body the bots wear). The owner saw the helmet, carrier and
   rifle turn away from the body: measured on the live character, the hidden rig parts
@@ -143,29 +222,66 @@ Read in this order:
 
 ## Open work, in priority order
 
+- **Who owns what (2026-11-09).** Nova: the lobby place and the loadout screen (`LoadoutMenu`,
+  `LoadoutUI`, `ArmsRoom`, `Rules/Loadout`, `LoadoutService.apply`, a lobby place and its
+  project file; `docs/MULTIPLAYER_READINESS.md` decision 7, `docs/ARCHITECTURE.md` lobby).
+  Owner + Claude: everything else below. Bugs found in Nova's files go to Nova, not fixed here.
+- **Satisfying pass built 2026-11-09 (`docs/superpowers/plans/2026-11-09-satisfying-pass.md`).**
+  Camera kick per gun, blast shake per grenade/call-in (`ShakePower`), limp bodies thrown by
+  the killing hit (max 8, 4 s), hit flinch (Brute only from `Heavy` guns), legless crawl,
+  low-health grey/vignette/heartbeat/muffle (`LowHealthFX`, World SoundGroup), reload clip.
+  Every feel value lives on the gun or call-in row, so Nova's loadouts need no feel edits.
+  Verified in a playtest: limp bodies, flinch, reload. Owner to judge by feel: kick and shake
+  strength, the low-health look (overlaps HealthBarUI's red pulse), the crawl. The heartbeat
+  asset was still in moderation at upload.
+- **Group migration done 2026-11-09.** The Roblox group Boomin Dev Studios (id 270506601) owns
+  the group experience "Co-op Zombie Shooter" (place id 87556879379942; the transfer of CZS failed, so the place was published into a new group experience) and every sound (12 uploads) and animation (62 clips;
+  `ladder_climb` is Roblox's stock one). New uploads pass `groupId` 270506601; the group Open
+  Cloud key is in `~/.claude.json`. Verified: every bank and five clips load in the group's
+  place with the right lengths. Owner: rotate that key (it was pasted in chat) and give Nova a
+  group role that can edit experiences.
+- **Pike rework in progress (2026-11-08, `docs/superpowers/plans/2026-11-08-pike-loadout.md`).**
+  Owner approved: Pike soldiers instead of the Chosen, the Arms Room loadout menu, five
+  primaries + pistol, Q swap / G grenade / V shove / E stim / 1-4 call-ins / 5 flare, twelve
+  grounded call-ins (Magpie and Pen Coil retire), blocky Infected lore-accuracy pass. Design
+  in `docs/PROGRESSION.md` > Loadout. Built in four parallel streams, then one playtest.
+  Stream C (call-ins) built, unplaytested: Hammer, Anvil, Shrike, Doorman, Concertina,
+  Speedball, Aid Bag; Magpie / Pen Coil gone (PROGRESSION > Call-ins "First pass built").
+  Verify with dev `FireCallIn <id>`; left for B: drop the Last Flight / Ground Strap rows,
+  add `LoadoutService.refillStims`.
+  Blocky Infected lore-accuracy pass built and uploaded (posture v3, STYLES §7: Walker
+  shoulder/head/blanket, Runner lean + long arms, Brute wide + trench, Hocker head back +
+  bent knees), unplaytested: check the clips, Gore stumps on the offset arms, Brute hitboxes.
+  Stream B (soldier kit + Arms Room) is built, not yet playtested: six guns
+  (`Config.Weapons`), Q swap, G frag / V shove / E stim (`KitService`, AssaultClassService
+  deleted), four call-in slots, the Arms Room on B (`LoadoutMenu`, `Rules/Loadout`),
+  Pike Two-Four bots. Still the rifle mesh on every gun.
+- **Delta traversal: owner calls + playtest** (`docs/LEVELS.md` A12b second pass): generator
+  to 4.8 (explained to the owner 2026-11-08, waiting on a yes), light-tower collision as two
+  boxes; walk the traversal checklist (vault a sedan side-on, crawl under the cargo truck,
+  stand in a pickup bed). Concertina is never vaulted (decided, already true).
+- **Movement keys vs Helldivers 2** (owner asked 2026-11-08 how Helldivers does it, to
+  discuss before deciding): see the session summary; no change until the owner picks.
+- **Foundation backlog (2026-11-08 code review, `docs/ARCHITECTURE.md`).** Ranked concerns
+  and items F1-F11: renames, lifecycle hooks, shared attribute/message constants, the open
+  co-op debt (#3/#5/#9), CI + unit tests, then stage data split before objective pools,
+  weapon/upgrade hooks, class interface, save service, lobby place, and how private match
+  servers and the shared Containment Board scale. **The owner, 2026-11-08: do F1-F5 now**,
+  "I want our foundation to be strong before we drift off into more niche features"
+  (branch `foundation`, plan in `docs/superpowers/plans/`). F1-F5 done; F6-F11 wait
+  for the feature that needs each (`docs/ARCHITECTURE.md`).
 - **The Warden shipped 2026-11-07** (`docs/sprints/SPRINT_19_WARDEN.md` > Open work):
-  handset hiss + squelch tell clip and his own vocals (audio pipeline), an upright
-  walk / shield-square charge clip instead of the mutant set, Gate dressing (chain,
-  spray, MP roster) and the insert / wipe radio lines, a 4-player phone pass on phase
-  2. First real fight on this build: 100-120 s is the target; retune
-  `Config.Index.Warden` plate health if it drags.
-- **NEXT: the Warden silhouette redesign (owner, 2026-11-07).** After playing the shipped
-  Warden the owner said: "I like how he looks, I like the direction with the riot armor. I
-  just don't like that it's essentially just a Brute model with riot armor slapped on top
-  of it." Asked for: design him live in Blender through the Blender MCP (`mcp__blender__*`:
-  `get_addon_status`, `execute_blender_code`, `look`) so the owner can see renders and
-  direct changes before anything is ported to `build_assets.py`. State: the live Blender
-  scene was cleared (default cube removed); nothing built yet. Direction drafted, not yet
-  approved: upright and tall where the Brute is hunched; asymmetric (left side one armoured
-  mass of shield + shoulder dome + raised riot collar, right side the bare man); head sunk
-  into the collar so helmet and shoulders read as one dome; long legs with shin guards;
-  duty belt with canisters; the brassard. Keep the canon (fused helmet with cracked
-  visor, chest plate with the open handset, shield grown into the left forearm, six
-  breakable plates, scale 1.9) and the 5,000-tri boss cap. Build from low-poly primitives
-  with the STYLES §2 swatches, show front / side / three-quarter renders, iterate with the
-  owner, then port the approved shapes into `warden_limb` / `_warden_plate` and re-upload
-  (`assets/3d/ASSET_IDS.md`). Note: in that session the Agent tool listed no
-  `art-director` type even though `.claude/agents/` has it; check before relying on it.
+  (his handset tell and own bank shipped 2026-11-08: listen in a real fight), Gate dressing
+  (chain, spray, MP roster) and the insert / wipe radio lines, a 4-player phone pass on
+  phase 2. First real fight on this build: 100-120 s is the target; retune
+  `Config.Index.Warden` plate health if it drags. Art-director later pass on the v2
+  body: see the Sprint 19 doc > *v2* > open.
+- **Perimeter: measure on a low-end device** (`docs/LEVELS.md` A15): ~458 extra
+  instances (fence, wire, towers) measured 60 fps on the dev PC only; first cut if it costs
+  is the wire on N/E/W. A performance-reviewer pass on it is owed.
+- **Warden kit: watch for** a player knockdown in a real fight (fall + get-up clips,
+  controls locked; only bots were knocked down on screen), the fight length, and the
+  Sweep's shove on a laggy client.
 - **Owner also said "there's other problems"** with the current build beyond the player
   body and the Warden look, not yet listed. Ask for them at the start of the next session
   before building anything new.
@@ -184,8 +300,8 @@ Read in this order:
   game, Hocker heron pose as an idle clip (not buildable inside the R15 boxes).
 - **Backlog (2026-11-07): reload clip and sound.** The magazine shipped in Sprint 18; the
   reload still has no animation and no sound (generate `reload_1..2` into a `player_weapon`
-  bank with the rifle shot). Also open from Sprint 18: icons for the supply and upgrade cards,
-  `assets/icons/build/wire.js` still writes into the deleted ItemDefinitions, Hollow Point
+  bank with the rifle shot). Also open from Sprint 18: icons for the supply and upgrade cards (`wire.js` now only
+  writes the id table; add an IconId field when they land), Hollow Point
   stagger cadence, the Armory (call-in choice before the drop).
 - **Backlog (owner, 2026-11-07, after the movement set playtest).** Hit marker, faster
   vault/climb, climb immunity and quieter footsteps shipped (feel pass, HISTORY). Left, in
@@ -228,7 +344,8 @@ Read in this order:
    2026-11-07; F10 fills the pool, F throws the flare) → ADS, hitscan rifle and headshots
    (done 2026-11-07) → run state machine + Operation
    (= Co-op Sprint A) → objective pools on Delta → the Warden → Containment Board → stage
-   definitions. Owner still to pick "sortie" vs "drop" for a stage.
+   definitions. A stage is a **mission** and three make an **operation** (owner
+   2026-11-08: the Helldivers 2 convention; was "mission").
    **Roblox's own Studio MCP** (`Roblox_Studio`, added 2026-11-06, local scope) is a second
    server: use it only for `generate_animation` (returns a published id; its clips play on
    our R15 rigs, extra bones ignored), `open_cloud_invoke` and camera-positioned
@@ -284,8 +401,8 @@ a nudge.
 
 ## Dev environment
 
-Toolchain is Rokit-managed (`rokit.toml`): rojo 7.6.1, StyLua 2.5.2, selene 0.31.0,
-luau-lsp 1.68.0. Binaries in `~/.rokit/bin` — add to PATH if a tool is "missing":
+Toolchain is Rokit-managed (`rokit.toml`): rojo 7.7.1, StyLua 2.5.2, selene 0.31.0,
+luau-lsp 1.68.0, lune 0.11.1. Binaries in `~/.rokit/bin` — add to PATH if a tool is "missing":
 
 ```bash
 export PATH="$HOME/.rokit/bin:$PATH"
@@ -297,8 +414,8 @@ Sync to Studio (keep this running in a terminal tab):
 rojo serve default.project.json
 ```
 
-Then in Roblox Studio open the test place ("Chance of Drops Testing", place id
-15581035561), Rojo plugin → Connect (localhost:34872). After any `default.project.json`
+Then in Roblox Studio open the test place ("Co-op Zombie Shooter", place id
+87556879379942, owned by the group Boomin Dev Studios), Rojo plugin → Connect (localhost:34872). After any `default.project.json`
 change, restart `rojo serve` and reconnect.
 
 Static checks after every change:
@@ -338,6 +455,23 @@ Hard-won gotchas:
   PlayerModule controls and `UnbindFromRenderStep("Momentum")` on the client, drive
   `Humanoid:Move` yourself and sample `AssemblyLinearVelocity`; a healthy body reaches
   WalkSpeed within 0.1 s. A hand-built minimal rig in the same spot is the reference.
+- **Studio MCP gotchas found in the Warden v2 session (2026-11-07).** (5) When a stale
+  instance is listed, every `robloxstudio` tool needs `instance_id` (here
+  `instance:75r-q99`) or it returns "Unknown error"; `solo_playtest start` also needs
+  `mode: "play"`, and `execute_luau` takes the peer as `target` (`server` / `client-1`),
+  not as part of the instance id. (6) A playtest can boot into `Ended Wiped`; fire
+  `RestartRun` and wait for `RunState Explore` before any spawn command. (7) Client-side
+  `AnimationTrack.Animation.Name` is always "Animation" for server-loaded tracks: identify
+  tracks by `Length` on the client, by name on the server. (8) A server Humanoid driven by
+  `MoveTo` reports `MoveDirection` = 0; test "moving" with the root's
+  `AssemblyLinearVelocity`. (9) Published animation ids go into `Config.Animations.Ids`
+  with the `rbxassetid://` prefix; a bare number fails with "unknown AssetId protocol".
+  (10) The owner may be playing the same Studio playtest you drive (their F1 commands and
+  call-ins show in the logs): read, do not hijack the camera or restart the run under
+  them. To photograph a body without them: `UnbindFromRenderStep("OTSCamera")` on
+  client-1 and set `CurrentCamera` Scriptable. (11) `execute_luau` with a `task.wait`
+  over ~30 s returns "Unknown error": wait in 10 s slices. (12) Vector3 values do not
+  JSON-serialise in a returned table: format them as strings.
 - **`execute_luau` runs in an isolated VM.** `require()` returns a fresh, un-`init()`ed
   module copy — calling service functions from eval hits nil remotes. Drive the real game by
   firing the `DevCommand` RemoteEvent from `client-1`; use eval only to read Instance/
@@ -379,7 +513,7 @@ Hard-won gotchas:
 - `assets/icons/*.png` is gitignored; only SVG sources are committed.
 - Commit attribution: end commit messages with
   `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>` (or whatever model is running).
-- `gh` CLI is not installed; push with plain `git push` (credentials are cached).
+- `gh` is installed and logged in; push with plain `git push` (credentials are cached).
 - If Claude Code's auto permission mode starts refusing Bash/MCP with "claude-opus-4-8 is
   temporarily unavailable, so auto mode cannot determine the safety of…", that is an
   Anthropic-side classifier outage — switch to **bypass permissions** (Shift+Tab) to unblock.

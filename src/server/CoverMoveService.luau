@@ -7,19 +7,27 @@
 -- standing immunity. State is per player and dropped on PlayerRemoving. Every move (and a
 -- slide, which buys no window) drops a reload in progress (LoadoutService.cancelReload).
 
-local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Messages = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Messages"))
+local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attributes"))
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
 local LoadoutService = require(script.Parent.LoadoutService)
+local Lifecycle = require(script.Parent.Lifecycle)
+local WorldSounds = require(script.Parent.WorldSounds)
 
 local CoverMoveService = {}
 
 local windowEnds: { [Player]: number } = {}
 
 local function onCoverMove(player: Player, kind: unknown)
-	if kind ~= "vault" and kind ~= "climb" and kind ~= "roll" and kind ~= "slide" then
+	if
+		kind ~= Messages.CoverMove.Vault
+		and kind ~= Messages.CoverMove.Climb
+		and kind ~= Messages.CoverMove.Roll
+		and kind ~= Messages.CoverMove.Slide
+	then
 		return
 	end
 	local character = player.Character
@@ -28,7 +36,15 @@ local function onCoverMove(player: Player, kind: unknown)
 		return
 	end
 	LoadoutService.cancelReload(player)
-	if kind == "slide" then
+	local root = character:FindFirstChild("HumanoidRootPart")
+	if root and root:IsA("BasePart") then
+		local group = if kind == Messages.CoverMove.Vault
+				or kind == Messages.CoverMove.Climb
+			then "vault"
+			else "roll"
+		WorldSounds.on(root, "player_gear", group, "Move")
+	end
+	if kind == Messages.CoverMove.Slide then
 		return
 	end
 	local settings = Config.Movement
@@ -37,20 +53,22 @@ local function onCoverMove(player: Player, kind: unknown)
 	if lastEnd and now < lastEnd + settings.CoverImmunity.Cooldown then
 		return
 	end
-	local duration = if kind == "vault"
+	local duration = if kind == Messages.CoverMove.Vault
 		then settings.VaultDuration
-		elseif kind == "roll" then settings.Roll.Duration
+		elseif kind == Messages.CoverMove.Roll then settings.Roll.Duration
 		else settings.ClimbDuration
 	local ends = now + duration + settings.CoverImmunity.Grace
 	windowEnds[player] = ends
-	character:SetAttribute("CoverMoveUntil", ends)
+	character:SetAttribute(Attributes.CoverMoveUntil, ends)
 end
 
 function CoverMoveService.init()
+	Lifecycle.register("CoverMoveService", {
+		onPlayerRemoving = function(player: Player)
+			windowEnds[player] = nil
+		end,
+	})
 	Remotes.get("CoverMove").OnServerEvent:Connect(onCoverMove)
-	Players.PlayerRemoving:Connect(function(player)
-		windowEnds[player] = nil
-	end)
 end
 
 return CoverMoveService

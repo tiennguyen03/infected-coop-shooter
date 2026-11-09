@@ -11,16 +11,23 @@
 -- body's yaw can be locked while a vault/climb carries it (MovementController). No
 -- wall-occlusion handling yet - the arena is open ground.
 
+local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
+local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attributes"))
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
+local WeaponDefinitions =
+	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("WeaponDefinitions"))
+local Feel =
+	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Rules"):WaitForChild("Feel"))
 
 local HIP_FOV = 70
 local CROSSHAIR_HIP = 22 -- ring diameter in pixels at the hip
 local CROSSHAIR_ADS = 8
+local CROSSHAIR_PER_BLOOM = 10 -- extra ring diameter (px) per degree of bloom
 
 local CameraController = {}
 
@@ -30,10 +37,53 @@ local distance: number = Config.Camera.Distance
 local aiming = false
 local adsBlend = 0 -- 0 = hip, 1 = sights; eased each frame
 local crosshairRing: Frame? = nil
+local bloomShotAt: number? = nil -- when the Bloom attribute last changed (a shot)
 local cursorHolders: { [string]: boolean } = {}
 local pivotHeight: number = Config.Camera.PivotHeight.stand
 local pivotTarget: number = pivotHeight
 local bodyYawLocked = false
+-- Per-shot kick (Config.Weapons.<id>.Kick): an extra rotation on top of pitch/yaw that eases
+-- back to zero, so the aim itself never drifts. Radians.
+local kickPitch = 0
+local kickYaw = 0
+local kickRecover = 0.12
+-- Blast shake (Config.Camera.Shake): amplitude in degrees, decaying each frame.
+local shakeAmplitude = 0
+local lastFocus: Vector3? = nil
+
+-- Fraction left after `dt` of an exponential ease that is ~95% done after `over` seconds.
+local function decayFactor(dt: number, over: number): number
+	return math.exp(-3 * dt / math.max(over, 0.01))
+end
+
+local function onShot()
+	local player = Players.LocalPlayer
+	local weapon = WeaponDefinitions.get(player:GetAttribute(Attributes.Weapon) :: string?)
+	local kick = weapon.Kick
+	local scale = 1 + (Config.Camera.Kick.AdsScale - 1) * adsBlend
+	kickPitch += math.rad(kick.Pitch) * scale
+	kickYaw += math.rad(kick.Yaw) * (math.random() * 2 - 1) * scale
+	kickRecover = kick.Recover
+end
+
+local function onBlast(instance: Instance)
+	if not instance:IsA("BasePart") then
+		return
+	end
+	local shake = Config.Camera.Shake
+	local power = instance:GetAttribute(Attributes.BlastPower)
+	local global = instance:GetAttribute(Attributes.BlastGlobal)
+	local camera = workspace.CurrentCamera
+	local from = lastFocus or (camera and camera.CFrame.Position) or instance.Position
+	local added = 0
+	if typeof(power) == "number" then
+		added += Feel.shake(power, (instance.Position - from).Magnitude, shake.Radius)
+	end
+	if typeof(global) == "number" then
+		added += global
+	end
+	shakeAmplitude = Feel.addShake(shakeAmplitude, added, shake.Cap)
+end
 
 -- A UI that needs the mouse (the dev panel) frees the cursor while it holds a reason.
 function CameraController.setCursorFree(reason: string, free: boolean)
@@ -72,6 +122,9 @@ local function applyCharacterSettings(character: Model)
 	pivotTarget = Config.Camera.PivotHeight.stand
 	pivotHeight = pivotTarget
 	bodyYawLocked = false
+	kickPitch = 0
+	kickYaw = 0
+	shakeAmplitude = 0
 end
 
 local function createCrosshair()
@@ -137,7 +190,7 @@ local function onRenderStep(deltaTime: number)
 
 	-- Free the cursor while soft-paused (item selection) or dead (death
 	-- screen); otherwise hold it locked for aiming.
-	local needsCursor = workspace:GetAttribute("GamePaused") == true
+	local needsCursor = workspace:GetAttribute(Attributes.GamePaused) == true
 		or not humanoid
 		or humanoid.Health <= 0
 		or next(cursorHolders) ~= nil
@@ -164,6 +217,20 @@ local function onRenderStep(deltaTime: number)
 	local ring = crosshairRing
 	if ring then
 		local size = CROSSHAIR_HIP + (CROSSHAIR_ADS - CROSSHAIR_HIP) * adsBlend
+		-- Bloom (server-owned, ProjectileServer): the ring opens while the trigger is held and
+		-- closes as it recovers; mirror the recovery locally between shots.
+		local player = Players.LocalPlayer
+		local bloomValue = (player:GetAttribute(Attributes.Bloom) :: number?) or 0
+		if bloomValue > 0 then
+			local shotAt = bloomShotAt or os.clock()
+			local idle = os.clock() - shotAt - Config.Weapon.BloomRecoveryDelay
+			if idle > 0 then
+				local weapon =
+					WeaponDefinitions.get(player:GetAttribute(Attributes.Weapon) :: string?)
+				bloomValue = math.max(bloomValue - idle * weapon.BloomRecovery, 0)
+			end
+		end
+		size += bloomValue * CROSSHAIR_PER_BLOOM
 		ring.Size = UDim2.fromOffset(size, size)
 	end
 
@@ -173,13 +240,31 @@ local function onRenderStep(deltaTime: number)
 	pivotHeight += math.clamp(pivotTarget - pivotHeight, -pivotRate, pivotRate)
 
 	camera.CameraType = Enum.CameraType.Scriptable
-	local rotation = CFrame.fromEulerAnglesYXZ(pitch, yaw, 0)
+	-- Kick eases back over the gun's Recover; shake decays over Shake.Decay. Both ride on top
+	-- of pitch/yaw, so the aim returns where the mouse left it.
+	local kickLeft = decayFactor(deltaTime, kickRecover)
+	kickPitch *= kickLeft
+	kickYaw *= kickLeft
+	shakeAmplitude *= decayFactor(deltaTime, Config.Camera.Shake.Decay)
+	if shakeAmplitude < 0.01 then
+		shakeAmplitude = 0
+	end
+	local shakePitch = 0
+	local shakeRoll = 0
+	if shakeAmplitude > 0 then
+		local amplitude = math.rad(shakeAmplitude)
+		shakePitch = amplitude * (math.random() * 2 - 1)
+		shakeRoll = amplitude * (math.random() * 2 - 1)
+	end
+	local rotation =
+		CFrame.fromEulerAnglesYXZ(pitch + kickPitch + shakePitch, yaw + kickYaw, shakeRoll)
 	-- A prone body's root sits lower (StanceService RootDrop); the pivot stays on the body.
-	local dropValue = root.Parent and root.Parent:GetAttribute("RootDrop")
+	local dropValue = root.Parent and root.Parent:GetAttribute(Attributes.RootDrop)
 	local rootDrop = if typeof(dropValue) == "number" then dropValue else 0
 	local focus = root.Position
 		+ Vector3.new(0, pivotHeight + rootDrop, 0)
 		+ rotation:VectorToWorldSpace(Vector3.new(shoulder.X, shoulder.Y, 0))
+	lastFocus = focus
 	camera.CFrame = CFrame.new(focus) * rotation * CFrame.new(0, 0, reach)
 
 	-- Character faces the aim direction while alive.
@@ -205,6 +290,14 @@ function CameraController.init()
 	local player = Players.LocalPlayer
 	UserInputService.MouseIconEnabled = false
 	createCrosshair()
+	-- WeaponController stamps LastShotAt (local only) on every shot, so the ring holds its
+	-- bloom at the cap too (an attribute set to the same value fires no change).
+	player:GetAttributeChangedSignal(Attributes.LastShotAt):Connect(function()
+		bloomShotAt = os.clock()
+		onShot()
+	end)
+	-- Server blast flashes (AirStrikeService, KitService, MineService) shake the view.
+	CollectionService:GetInstanceAddedSignal(Attributes.BlastTag):Connect(onBlast)
 
 	player.CharacterAdded:Connect(applyCharacterSettings)
 	if player.Character then

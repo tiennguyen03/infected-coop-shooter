@@ -5,22 +5,26 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+-- Each remote's message kinds (the first argument) are constants in Messages.luau; the
+-- comments below document the payloads.
 local REMOTE_NAMES = {
 	"FireWeapon", -- client -> server: (origin: Vector3, direction: Vector3, aiming: boolean)
 	"Reload", -- client -> server: start a reload (LoadoutService; Mag/Reserve/ReloadUntil are player attributes)
-	"CallIn", -- client -> server: (slot: 1|2, landingPoint: Vector3?) use the call-in in that slot
+	"CallIn", -- client -> server: (slot: 1..Config.CallIns.Slots, landingPoint: Vector3?) use the call-in in that slot
 	"ShotTracer", -- server -> other clients: (origin: Vector3, endPoint: Vector3) draw a tracer
-	"ObjectiveUpdate", -- server -> client: (kind: "started"|"progress"|"completed", progress: number)
-	"DamageDealt", -- server -> client: (position: Vector3, amount: number, kind: "hit"|"headshot"|"fire"|"breach"|"death"|..., attacker: Player?)
+	"ObjectiveUpdate", -- server -> client: (kind: "started"|"progress"|"completed", progress: number, playersIn: number?, playersLiving: number?)
+	"DamageDealt", -- server -> client (hits: the attacker only; kills: everyone): (position: Vector3, amount: number, kind: "hit"|"headshot"|"fire"|"breach"|"death"|..., attacker: Player?)
 	"Resupply", -- client -> server: ("flare", target) | ("pick", crateId, cardId); server -> client: ("called", thrower) | ("cards", crateId, kind, choices, positions) | ("picked", crateId) | ("closed", crateId)
-	"BuffNotice", -- server -> client: (text: string) short on-screen announcement
+	"BuffNotice", -- server -> client: (text: string, kind: Messages.Notice) a radio line (subtitle) or a pickup / pick notice (card)
 	"RestartRun", -- client -> server: READY for the next run (only once the run has Ended)
 	"DevCommand", -- client -> server: (command: string, ...) Studio/creator-only dev tools
-	"ExtractionUpdate", -- server -> client: (kind: "available"|"progress"|"returning"|"complete"|"hide", progress)
-	"UseAbility", -- client -> server: (abilityName: "dash"|"breach")
-	"AbilityUsed", -- server -> client: (abilityName: string, cooldown: number) for UI countdown
+	"ExtractionUpdate", -- server -> client: (kind: "available"|"progress"|"waiting"|"returning"|"complete"|"hide", progress, playersIn?, playersLiving?)
+	"UseAbility", -- client -> server: (kind: "swap"|"grenade"|"shove"|"stim", target: Vector3?) the soldier's kit (KitService)
+	"AbilityUsed", -- server -> client: (kind: string, cooldown: number) for the UI countdown | ("callin", slot, id)
+	"Loadout", -- client -> server: ("request", {primary, secondary, grenade, callIns}); server -> client: ("result", ok: boolean, reason: string?) the Arms Room
 	"CoverMove", -- client -> server: (kind: "vault"|"climb"|"roll"|"slide") the body started going over cover, rolling or sliding
 	"BossUpdate", -- server -> client: ("show", name, plateNames) | ("state", body, plates, phase) | ("tell", kind) | ("hide"); client -> server: () resend the state
+	"Impact", -- server -> client: ("knockdown", seconds) the body is knocked down (Squad.knock) | ("push", velocity: Vector3) a shove the client applies to its root
 	"Stance", -- client -> server: (stance: "stand"|"crouch"|"prone"); server -> client: ("prone") stand-up refused under a ceiling
 }
 

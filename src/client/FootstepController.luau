@@ -1,5 +1,5 @@
 --!strict
--- Footsteps synced to the locomotion clips (sound day 2026-11-07). For every player
+-- Footsteps synced to the locomotion clips. For every player
 -- character in the place (the local one and, in co-op, the teammates, whose animation
 -- tracks replicate), each frame finds the locomotion track with the most weight and reads
 -- its loop phase (TimePosition / Length). A boot sound plays when the phase crosses one of

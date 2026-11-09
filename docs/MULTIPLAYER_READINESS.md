@@ -25,11 +25,14 @@ drift; the file and symbol names are the stable pointers).
 
 ## Already fine (keep it this way)
 
-Per-player attributes (stat Mults, Kills, MomentumStacks, Mag/Reserve/ReloadUntil,
-CallIn1/2 + charges, Upgrade<Slot>, Shield), per-player loadouts and card offers
-(`LoadoutService`, `CallInService`, `RequisitionService`), per-player fire-rate and ability
-validation, per-player drone/mine/pool caps, every `PlayerRemoving` handler, kill credit via
-the one damage entry point `ItemEffectService.dealDamage`, enemy targeting = nearest living
+Per-player attributes (MoveSpeedMult, Kills, Weapon/Primary/Secondary, Mag/Reserve/
+ReloadUntil/SwapUntil, Grenade/Grenades/Stims, CallIn1-4 + charges, Upgrade<Slot>, Shield,
+Callsign), per-player loadouts, Arms Room picks (kept across runs), calm timers and card
+offers (`LoadoutService`, `CallInService`, `RequisitionService`), per-player fire-rate,
+kit (`KitService`: grenade gap, shove cooldown, stim) and Arms Room gate validation,
+callsigns handed out per player in join order (Pike One to Four; bots take the free ones at
+run start, `Squad.freeCallsigns`), per-player drone/mine/pool caps, every `PlayerRemoving` handler, kill credit via
+the one damage entry point `DamageService.dealDamage`, enemy targeting = nearest living
 member, HUDs reading `LocalPlayer` only.
 
 ## Debt register
@@ -42,13 +45,13 @@ may add to this list.
 |---|---|---|---|---|---|
 | 1 | B | `RunManager` | Death ends the run; `RestartRun` from any dead/extracted player resets global services but only the requester's per-player state, and respawns only the requester. No "all dead" handling. | Run state machine owned by the server: `Lobby → Running → Ended`. Per-player `Alive / Downed / Dead` (#3). Run ends when every player is dead or extraction completes. Start/restart = request + ready-up timer (#4), resets every player. | Done 2026-11-07 (Sprint A step 5) |
 | 2 | B | `PauseService`, `ItemService`, `AssaultClassService`, client `CameraController`/`WeaponController`/`AbilityController`/`AbilityUI` | ~~One player's level-up pauses the whole world.~~ Done 2026-11-07: level-up no longer pauses; the draft is a world pallet (Resupply). `GamePaused` remains only for the run-end freeze. | Decided (#1), shipped as Resupply. | Done |
-| 3 | B | `ObjectiveService`, `ExtractionService` | One zone, any single player inside counts, completion/pause broadcast to all. | Keep shared objective (co-op goal) but define the rule: N-of-players in zone, or any one. Extraction needs a "waiting for squad" state. | Co-op Sprint B |
+| 3 | B | `ObjectiveService`, `ExtractionService` | One zone, any single player inside counts, completion/pause broadcast to all. | Hold: any living member (player or bot) in the zone runs it; the HUD shows `n / living` players in. Extraction: runs only while every living player is on the pad (downed players and bots do not hold it up); some on it shows "WAITING FOR SQUAD (n / m)" (`ExtractionUpdate` `waiting`). One helper, `Squad.zoneCount`. | Done 2026-11-08 (foundation F4, 2-client verified) |
 | 4 | M | ~~`XPOrbService`, `ObjectiveService`~~ | ~~Orb XP goes to the nearest player only; objective XP goes in full to everyone.~~ Superseded 2026-11-07 by the loadout rework: no orbs, no levels; every kill credits its `SupplyValue` to the shared Resupply pool at any distance. | n/a | Superseded (Sprint 18) |
-| 5 | M | `DifficultyService`, `EnemyService`, `Config` MaxAlive schedule | ~~Nothing scales with player count;~~ run clock ignores pause. | Decided (#6): `Config.PlayerCountScaling` scales spawn rate, max-alive and heavy caps per living player, not HP/damage (done 2026-11-07, Sprint 18). Clock = accumulated unpaused time (open). | Co-op Sprint B (clock only) |
+| 5 | M | `DifficultyService`, `EnemyService`, `Config` MaxAlive schedule | ~~Nothing scales with player count;~~ run clock ignores pause. | Decided (#6): `Config.PlayerCountScaling` scales spawn rate, max-alive and heavy caps per living player, not HP/damage (done 2026-11-07, Sprint 18). Clock = accumulated unpaused time: `DifficultyService.getElapsed` adds time only while the field is not paused (the HUD timer stays wall-clock). | Done 2026-11-08 (foundation F4) |
 | 6 | M | `EnemyService` spawn placement | Spawns around a random player without checking they are alive. | Pick from living players only. | Done 2026-11-07 (Sprint A step 3) |
 | 7 | M | ~~`AmmoCacheService`~~ | ~~Any player can take another player's crate.~~ Superseded 2026-11-07: `AmmoCacheService` deleted; the pallet re-arms every living player within `Requisition.RearmRadius` once each (loadout rework). | n/a | Superseded (Sprint 18) |
-| 8 | M | `ItemEffectService.resetPlayer`, `AssaultClassService.resetPlayer`, `ProjectileServer.reset` | Per-player reset wipes humanoid-keyed/global tables; run reset clears per-player `shotCount` but not `lastFireTime`. | Split strictly per the rule above. | Done 2026-11-07 (Sprint A step 2) |
-| 9 | M | `ItemEffectService` damage/death events | Every hit and kill is `FireAllClients`; each client plays every player's hit sounds. | Hit numbers to the damager only; death VFX to all but sound distance-attenuated or owner-only. | Co-op Sprint B |
+| 8 | M | `DamageService.resetPlayer`, `AssaultClassService.resetPlayer`, `ProjectileServer.reset` | Per-player reset wipes humanoid-keyed/global tables; run reset clears per-player `shotCount` but not `lastFireTime`. | Split strictly per the rule above. | Done 2026-11-07 (Sprint A step 2) |
+| 9 | M | `DamageService` damage/death events | Every hit and kill is `FireAllClients`; each client plays every player's hit sounds. | Hits (`DamageDealt`) go to the attacking player only (marker, spark, hit sound); a bot's hit to nobody; kills to everyone (the death burst; the death cry is the body's own 3D sound). | Done 2026-11-08 (foundation F4, 2-client verified) |
 | 10 | M | `ArenaService` | One `SpawnLocation` at the origin. | 4 spawn pads in a cluster; revive happens in place, stage-start respawn at the pads. | Done 2026-11-07 (Sprint A step 4) |
 | 11 | M | `DevTestService` | Falls back to `GetPlayers()[1]`; run-state printouts inspect one player. | Dev commands target the invoking player; printouts loop players. | Done 2026-11-07 (Sprint A step 7) |
 | 12 | C | `DeathScreenUI` | Hardcodes "Extracted: No"; Restart button resets the server's run for everyone. | Downed overlay (timer, "teammate reviving"), spectate on Dead, final screen only on run end. | Done 2026-11-07 (Sprint A step 6) |
@@ -118,3 +121,11 @@ per-player pause/choosing, death/downed, spawn pads, reset split, client screens
 **Co-op Sprint B** (objective/extraction rules, difficulty scaling, shared pickups, event
 routing). Both are designed with the `multiplayer_playtest` Studio MCP tool (2+ clients)
 as the verification step; single-player must keep working throughout.
+
+## Addendum 2026-11-07: knockdown
+
+The Warden's Pound and Stomp knock bodies down (`Squad.knock`). The state is an attribute
+on each character (`KnockedUntil`, `KnockGraceUntil`), the clips play on that client
+(`Impact "knockdown"` to the owner) and bots read the attribute: nothing is keyed to one
+player. A Pound that catches all four is 30 each and 2.4 s down with him stuck for 2.6 s
+and the next pick never a knockdown; the Riot Call adds are what bites a downed squad.

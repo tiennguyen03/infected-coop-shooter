@@ -16,11 +16,14 @@ Read on demand, not up front:
   performance budgets. Read before any visual work.
 - `docs/MULTIPLAYER_READINESS.md` — co-op rules, single-player debt register, open design
   decisions. Read before touching run flow, pause, XP, death, spawning, or objectives.
+- `docs/ARCHITECTURE.md` — code review findings and the ranked foundation backlog
+  (F1-F11), plus how lobby, private match servers and the shared war map scale.
 - `docs/sprints/` — one doc per shipped sprint; linked from HISTORY.md.
 - `.claude/agents/` — design subagents: lore-developer, systems-designer, level-designer,
   playtest-critic. Use them for design calls in their area before building. They are
   read-only and hand back paste-ready doc text: apply what the owner approves, in the same
-  commit as the work. performance-reviewer checks a feature against the STYLES budgets
+  commit as the work. Exception: the lore developer writes its own canon files (LORE.md,
+  CHARACTERS.md, docs/lore/) once the owner approves. performance-reviewer checks a feature against the STYLES budgets
   before it ships. art-director owns the look: build sheets from the lore developer's
   canon, then reviews the Blender preview renders (the engineer routes between them).
 
@@ -39,9 +42,12 @@ concern, not polish.
 | `src/shared/` | `ReplicatedStorage.Shared` |
 
 - `Main.server.luau` / `Main.client.luau` are the only entry points; every other file is a
-  ModuleScript exposing `init()`, started from Main in dependency order.
+  ModuleScript exposing `init()`, started from Main's `BOOT` list in dependency order (a
+  failing `init()` stops boot and is named in the log).
 - All tuning values live in `src/shared/Config.luau`. Never hardcode balance numbers.
-- RemoteEvents are declared in `src/shared/Remotes.luau` (`REMOTE_NAMES`).
+- RemoteEvents are declared in `src/shared/Remotes.luau` (`REMOTE_NAMES`); every message
+  kind a remote carries is a constant in `src/shared/Messages.luau`, every attribute name in
+  `src/shared/Attributes.luau`. Never inline either string.
 - Art sources: `assets/icons/build/icons.js` (icons), `assets/3d/build/build_assets.py`
   (meshes). Rendered PNG/FBX are outputs; edit the generator, not the output.
 
@@ -50,17 +56,24 @@ concern, not polish.
 - `--!strict` in every file. `os.clock()` for timing, `task.*` over `wait`/`spawn`.
 - Server is authoritative: clients send intent, server validates and simulates.
 - Enemies: Models tagged `"Enemy"` with a Humanoid. Damage goes through
-  `ItemEffectService.dealDamage` (the one damage entry point).
+  `DamageService.dealDamage` (the one damage entry point).
 - UI is code-generated; disk is the single source of truth. No hand edits in Studio.
-- Design for up to 4 players: state keyed by `Player` (cleaned on `PlayerRemoving`) or
-  explicitly per run; never `GetPlayers()[1]`; `resetPlayer` touches only that player,
-  `reset` only run state. New single-player shortcuts are not allowed; existing ones are
+- Design for up to 4 players: state keyed by `Player` or explicitly per run; never
+  `GetPlayers()[1]`. A server service with run or player state registers its own hooks in
+  `init()` with `Lifecycle.register` (`onRunStart`, `onPlayerReset`, `onPlayerRemoving`,
+  ...); RunManager never names a service. `onPlayerReset` touches only that player,
+  `onRunStart` only run state. New single-player shortcuts are not allowed; existing ones are
   listed in `docs/MULTIPLAYER_READINESS.md`.
 
 ## Commands (Rokit toolchain; `export PATH="$HOME/.rokit/bin:$PATH"` if a tool is missing)
 
 - `rojo serve default.project.json` — sync (restart + reconnect after any project.json change)
-- `stylua src && selene src && rojo build -o build.rbxlx` — static checks, run after every change
+- `stylua src tests && selene src && rojo build -o build.rbxlx && lune run tests/run` — static
+  checks + unit tests, run after every change; types: `rojo sourcemap default.project.json
+  -o sourcemap.json && luau-lsp analyze --sourcemap sourcemap.json --defs=globalTypes.d.luau
+  src` must report nothing (CI runs all of it on every push:
+  `.github/workflows/ci.yml`). Pure game rules live in `src/shared/Rules/` with a
+  `tests/<Rule>.spec.luau` each; a new rule gets its spec first.
 - Live verification: Studio MCP `solo_playtest` → `execute_luau` (fire `DevCommand` from
   `client-1`) → `capture_screenshot` → `get_runtime_logs`. Details in handoff/README.md.
 

@@ -1,12 +1,15 @@
 --!strict
 -- Per-player stat multipliers. Sources (items, buffs) contribute additive
 -- bonuses keyed by a source name; the recomputed multiplier is published as
--- a player attribute (DamageMult/FireRateMult/MoveSpeedMult) so client
+-- a player attribute (MoveSpeedMult; Combat Momentum's Damage / FireRate are gone) so client
 -- systems read it via replication. Server systems use getMultiplier.
+local Lifecycle = require(script.Parent.Lifecycle)
 
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Attributes = require(ReplicatedStorage.Shared.Attributes)
 
-local STATS = { "Damage", "FireRate", "MoveSpeed" }
+local STATS = { "MoveSpeed" }
 
 local PlayerStatsService = {}
 
@@ -22,7 +25,7 @@ local function recompute(player: Player)
 				total += sourceBonuses[stat] or 0
 			end
 		end
-		player:SetAttribute(stat .. "Mult", total)
+		player:SetAttribute(Attributes.statMult(stat), total)
 	end
 end
 
@@ -42,7 +45,7 @@ function PlayerStatsService.setBonus(
 end
 
 function PlayerStatsService.getMultiplier(player: Player, stat: string): number
-	return (player:GetAttribute(stat .. "Mult") :: number?) or 1
+	return (player:GetAttribute(Attributes.statMult(stat)) :: number?) or 1
 end
 
 function PlayerStatsService.resetPlayer(player: Player)
@@ -51,13 +54,16 @@ function PlayerStatsService.resetPlayer(player: Player)
 end
 
 function PlayerStatsService.init()
+	Lifecycle.register("PlayerStatsService", {
+		onPlayerReset = PlayerStatsService.resetPlayer,
+		onPlayerRemoving = function(player: Player)
+			bonuses[player] = nil
+		end,
+	})
 	Players.PlayerAdded:Connect(recompute)
 	for _, player in Players:GetPlayers() do
 		recompute(player)
 	end
-	Players.PlayerRemoving:Connect(function(player)
-		bonuses[player] = nil
-	end)
 end
 
 return PlayerStatsService

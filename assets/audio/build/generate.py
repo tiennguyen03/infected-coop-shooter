@@ -31,6 +31,9 @@ MODEL = "stabilityai/stable-audio-open-small"
 
 # name: (prompt, seconds, seed). Keep prompts literal and physical; the model does best with
 # "what makes the sound" + "where" + "how it is recorded". Negative traits go in NEGATIVE.
+# A fifth element overrides the negative prompt (TAIL keeps the reverb tail: blasts, beds).
+TAIL = "music, melody, speech, low quality, distortion, clipping"
+
 SOUNDS = {
     # weapon
     "rifle_shot": ("single assault rifle gunshot, close mic, sharp crack with short tail, outdoor, dry", 1.5, 11),
@@ -38,39 +41,11 @@ SOUNDS = {
     "bullet_hit_flesh": ("bullet impact on a body, wet thud with a slap, close, short", 0.8, 21),
     "bullet_hit_concrete": ("bullet ricochet off concrete, sharp crack and debris, short", 0.9, 22),
     # infected
-    "infected_groan": ("zombie groan, low guttural rasping voice, menacing, close", 2.0, 31),
-    "infected_groan_alt": ("zombie moan, hoarse wet growl, mid distance", 2.0, 32),
-    "infected_death": ("zombie death cry, choked gurgling scream cut short, close", 1.6, 33),
-    "runner_shriek": ("fast zombie shriek, high raspy screech, aggressive, close", 1.4, 34),
-    "brute_roar": ("huge monster roar, deep chest rumble, long, close, heavy", 2.5, 35),
-    "brute_death": ("huge monster dying groan collapsing to the ground, deep, heavy thud at the end", 2.5, 36),
     # rat
-    "rat_squeak": ("rat squeak, small animal, quick, close", 0.6, 41),
-    "rat_bite": ("small animal bite and scratch, quick scrabble on skin, close", 0.7, 42),
     # pickups and progression
-    "xp_pickup": ("soft digital pickup blip, short rising tone, clean, game ui", 0.5, 51),
-    "level_up": ("triumphant short military radio sting, two-note brass hit with a crisp snare, clean", 1.5, 52),
-    "item_pick": ("solid metallic click confirm, tactical equipment latch, short, clean", 0.6, 53),
     # items
-    "crate_land": ("wooden ammo crate dropped on concrete, heavy wood thud with rattle of metal inside", 1.2, 61),
-    "crate_open": ("wooden crate lid opening with metal latch and ammunition clinking", 1.2, 62),
-    "mine_arm": ("electronic device arming beep, two quick high beeps, small speaker", 0.8, 63),
-    "mine_blast": ("landmine explosion, sharp blast with dirt debris, outdoor, close", 2.0, 64),
-    "drone_hover": ("small quadcopter drone hovering, steady motor hum, seamless loop, mid distance", 4.0, 65),
-    "drone_shot": ("small energy pistol shot, quick electric zap, clean", 0.7, 66),
-    "airstrike_whistle": ("falling bomb whistle descending in pitch, outdoor, ominous", 2.2, 67),
-    "airstrike_blast": ("large aerial bomb explosion with long rumbling tail, outdoor, distant and heavy", 3.5, 68),
-    "fire_loop": ("ground fire burning, crackling flames, seamless loop, close", 4.0, 69),
-    "shock_zap": ("electric arc discharge, crackling zap, short, close", 0.8, 70),
     # abilities
-    "dash": ("quick whoosh of a person sprinting past, cloth and air rush, short", 0.8, 81),
-    "breach": ("heavy concussive shockwave thump with a bass drop, short, close", 1.2, 82),
     # run flow
-    "player_hurt": ("man grunting in pain from a hit, short, close", 0.8, 91),
-    "player_down": ("man collapsing to the ground with a pained groan, gear clatter", 1.6, 92),
-    "objective_tick": ("short radio beep confirm, military comms, clean", 0.5, 93),
-    "objective_complete": ("military radio confirmation sting, static burst then a clean two-tone chime", 1.5, 94),
-    "extraction_horn": ("distant helicopter approaching with rotor wash, outdoor, long", 5.0, 95),
     # --- sound day 2026-11-07: variant sets, packed into BANKS below ---
     # player boots. "hard" = concrete/asphalt/metal floors, "soft" = dirt/grass/sand.
     "step_hard_1": ("single footstep of a heavy military boot on concrete, close, dry, very short", 0.5, 101),
@@ -126,6 +101,47 @@ SOUNDS = {
     "hocker_hurt_1": ("gurgling pained yelp, wet throat, short", 0.8, 237),
     "hocker_death_1": ("wet gurgling collapse with liquid bursting out, short", 1.6, 238),
     "hocker_death_2": ("choking liquid death rattle fading, body falling", 1.6, 239),
+    # Sound pass 2026-11-08 (lore developer's list; tone rules in assets/audio/README.md)
+    "reload_1": ("rifle magazine released and dropped, fresh magazine slapped in, charging handle racked, close, outdoor", 2.0, 401),
+    "reload_2": ("assault rifle reload, empty magazine drops, new magazine seated with a firm click, bolt released, close, outdoor", 2.0, 402),
+    "dry_fire_1": ("single trigger click on an empty rifle, small dry metal click, close", 0.3, 403),
+    "knockdown_1": ("soldier slammed onto asphalt, plate carrier and helmet clatter, breath knocked out, close", 1.0, 404),
+    "downed_1": ("man collapsing to the ground with a pained groan, rifle and gear clattering", 1.4, 405),
+    "revive_1": ("tourniquet strap ratcheted tight, velcro rip, man exhaling hard, close", 1.5, 406),
+    "roll_1": ("soldier diving into a roll on concrete, body thud, webbing and magazines rattling", 0.8, 407),
+    "roll_2": ("soldier sliding across gravel and concrete, gear scraping, body thud, close", 0.8, 408),
+    "breach_1": ("breaching charge detonation, sharp close blast, door splinters and dust", 1.5, 409, TAIL),
+    "low_health_1": ("man breathing hard and ragged through clenched teeth, muffled, close", 3.0, 410),
+    "vault_1": ("soldier vaulting a concrete barrier, hands slap, gear rattles, boots land", 0.8, 411),
+    "dash_1": ("short burst of sprinting, boots pounding, kit rattling, cloth rush", 0.7, 412),
+    "pallet_land_1": ("heavy supply pallet dropped from height onto concrete, wood crash, metal crates rattling, straps whipping", 2.0, 421),
+    "flare_burn_1": ("road flare burning, sputtering fizz and steady hiss, close", 3.0, 422),
+    "callin_throw_1": ("small metal canister thrown, lands with a clank and rolls on concrete", 0.8, 423),
+    "tripline_arm_1": ("mechanical spring latch snapping shut with one quiet electronic chirp, small device, close", 0.4, 424),
+    "tripline_blast_1": ("anti-personnel mine detonation, sharp blast, dirt and shrapnel, outdoor, close", 1.5, 425, TAIL),
+    "anvil_incoming_1": ("incoming artillery shell tearing overhead, short descending rush, outdoor", 1.0, 426),
+    "anvil_blast_1": ("artillery shell impact, huge blast with debris and rolling rumble, outdoor, medium distance", 2.5, 427, TAIL),
+    "pen_coil_1": ("high-voltage capacitor discharge, heavy electric crack and buzzing arc, close", 1.0, 428),
+    "magpie_hover_1": ("small quadcopter hovering, steady motor whine, mid distance", 3.0, 429),
+    "warden_handset_1": ("radio handset keyed open, squelch then crackling carrier hiss, garbled, small speaker, close", 1.2, 441),
+    "warden_handset_2": ("police radio handset clicking on, burst of static and broken carrier noise, small speaker, close", 1.2, 442),
+    "warden_impact_1": ("heavy armoured fists slammed into asphalt, concrete cracking, grit and debris, close", 1.2, 443),
+    "warden_pound_1": ("massive double impact into a road, deep concrete crack and rumble, debris raining, close", 2.0, 444, TAIL),
+    "warden_swing_1": ("heavy riot shield swung hard, polycarbonate whoosh then a dull body thud, close", 0.8, 445),
+    "warden_step_1": ("very heavy armoured footstep on asphalt, metal plates rattling, close", 0.6, 446),
+    "warden_plate_1": ("thick armour plate torn away, plastic and bone cracking, heavy clatter on road", 1.0, 447),
+    "warden_roar_1": ("huge hoarse man bellowing, ragged wet throat, close", 2.0, 448),
+    "warden_canister_1": ("tear gas canister popping and jetting gas, loud hiss, outdoor, close", 2.0, 449),
+    "warden_death_1": ("huge armoured body collapsing onto asphalt, plates clattering, last wet breath, radio hiss cutting off", 2.5, 450),
+    "radio_in_1": ("military field radio squelch break, short burst of static, small speaker, close", 0.6, 461),
+    "objective_complete_1": ("two short radio squelch clicks, then clean static, small speaker", 1.0, 462),
+    "card_pick_1": ("magazines pushed into a pouch, velcro flap closed, metal clack, close", 0.7, 463),
+    "kia_1": ("radio carrier hiss dropping to dead air, small speaker", 1.5, 464),
+    "ui_click_1": ("rubber radio keypad button press, small dry click, close", 0.2, 465),
+    "lantern_rotor_1": ("military helicopter approaching overhead, heavy rotor thump and wash, outdoor", 6.0, 481, TAIL),
+    "amb_city_1": ("distant city burning at night, low fire roar, faraway gunfire and collapsing debris", 6.0, 482, TAIL),
+    "amb_wind_1": ("night wind through a chain-link fence, metal rattle, outdoor", 6.0, 483, TAIL),
+    "amb_siren_1": ("civil defence siren wailing, slow rise and fall, distant, outdoor", 6.0, 484, TAIL),
 }
 
 # bank: its clips, in file order. A clip may only sit in one bank. The group of a clip is its
@@ -137,6 +153,13 @@ BANKS = {
     "runner": [n for n in SOUNDS if n.startswith("runner_") and n[-1].isdigit()],
     "brute": [n for n in SOUNDS if n.startswith("brute_") and n[-1].isdigit()],
     "hocker": [n for n in SOUNDS if n.startswith("hocker_") and n[-1].isdigit()],
+    "player_gear": ["reload_1", "reload_2", "dry_fire_1", "knockdown_1", "downed_1", "revive_1", "roll_1",
+                    "roll_2", "breach_1", "low_health_1", "vault_1", "dash_1"],
+    "callins": ["pallet_land_1", "flare_burn_1", "callin_throw_1", "tripline_arm_1", "tripline_blast_1",
+                "anvil_incoming_1", "anvil_blast_1", "pen_coil_1", "magpie_hover_1"],
+    "warden": [n for n in SOUNDS if n.startswith("warden_") and n[-1].isdigit()],
+    "ui_radio": ["radio_in_1", "objective_complete_1", "card_pick_1", "kia_1", "ui_click_1"],
+    "ambience": ["lantern_rotor_1", "amb_city_1", "amb_wind_1", "amb_siren_1"],
 }
 BANK_GAP = 0.15  # seconds of silence between clips so a seek never bleeds into the next one
 REPO_ROOT = os.environ.get("RAS_REPO") or os.path.normpath(os.path.join(HERE, "..", "..", ".."))
@@ -155,7 +178,24 @@ def load_model():
     return model, config
 
 
-def generate(model, config, name, prompt, seconds, seed):
+# Sound profiles: one master description per speaker, appended to every prompt of its
+# bank so the clips sound like one character (assets/audio/README.md "Sound profiles").
+# Every boss gets its own bank and profile (docs/PROGRESSION.md "Boss sound"). A bank
+# without a profile here was generated before profiles existed; add one when it is next
+# regenerated, and regenerate the whole bank so it stays uniform.
+PROFILES = {
+    "warden": "one huge man in police riot armour with a radio harness, heavy, low, close, outdoor on asphalt",
+}
+
+
+def profiled(name, prompt):
+    for bank, clips in BANKS.items():
+        if name in clips and bank in PROFILES:
+            return f"{prompt}, {PROFILES[bank]}"
+    return prompt
+
+
+def generate(model, config, name, prompt, seconds, seed, negative_prompt=None):
     import math
 
     import soundfile
@@ -166,7 +206,7 @@ def generate(model, config, name, prompt, seconds, seed):
     sample_rate = config["sample_rate"]
     sample_size = config["sample_size"]
     conditioning = [{"prompt": prompt, "seconds_total": seconds}]
-    negative = [{"prompt": NEGATIVE, "seconds_total": seconds}]
+    negative = [{"prompt": negative_prompt or NEGATIVE, "seconds_total": seconds}]
     t0 = time.time()
     with torch.no_grad():
         latents = generate_diffusion_cond(
@@ -264,7 +304,8 @@ def main(argv):
         build_banks()
         return
     if "--list" in argv:
-        for name, (prompt, seconds, seed) in SOUNDS.items():
+        for name, entry in SOUNDS.items():
+            prompt, seconds = entry[0], entry[1]
             print(f"{name:22s} {seconds:4.1f}s  {prompt}")
         return
     names = [a for a in argv if not a.startswith("--")] or list(SOUNDS)
@@ -274,9 +315,10 @@ def main(argv):
     os.makedirs(OUT_DIR, exist_ok=True)
     model, config = load_model()
     for name in names:
-        prompt, seconds, seed = SOUNDS[name]
-        generate(model, config, name, prompt, seconds, seed)
-    manifest = {n: {"prompt": SOUNDS[n][0], "seconds": SOUNDS[n][1], "seed": SOUNDS[n][2]} for n in SOUNDS}
+        entry = SOUNDS[name]
+        prompt = profiled(name, entry[0])
+        generate(model, config, name, prompt, entry[1], entry[2], entry[3] if len(entry) > 3 else None)
+    manifest = {n: {"prompt": profiled(n, SOUNDS[n][0]), "seconds": SOUNDS[n][1], "seed": SOUNDS[n][2]} for n in SOUNDS}
     with open(os.path.join(HERE, "manifest.json"), "w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=2)
     build_banks()

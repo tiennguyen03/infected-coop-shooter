@@ -6,25 +6,38 @@
 -- but never steers it (Behaviour.Attack "boss"); this service does.
 --
 -- Armour: six plates welded to the limbs, each a part with a PlateHealth attribute. A rifle
--- round into a plate is taken by the plate (ItemEffectService.dealDamage routes it; the
+-- round into a plate is taken by the plate (DamageService.dealDamage routes it; the
 -- armoured rate comes from ProjectileServer.hitMultiplier), a limb whose plate is gone is
 -- Exposed (x1.5) and the helmet coming off opens the head (EnemyDefinitions.Warden
 -- HeadshotMultiplier). A plate at half health is cracked (boss bar pip), at zero it is
 -- unwelded and falls (Debris) and the Warden staggers.
 --
--- Kit: Shield Bash (close, frontal arc), Gate Charge (straight line at speed on an anchored
--- root; into hard cover = WallStun), Gas Canister (phase 2+, lobbed at the furthest member
--- through EnemyProjectileService, leaves a puddle), Guard (shield up: slow, frontal plates
--- take little; the back plate is the flank). Every attack is preceded by the handset tell
--- (BossUpdate "tell"; the carrier hiss clip is open work). Phases by body health: the Riot
--- Call at 60% and 25% (EnemyService.spawnWave round him). On death: the priority pallet
--- (RequisitionService "upgrade" crate), a full heal and re-arm for the squad.
+-- Kit (systems-designer pass): where you stand picks his move. Shield
+-- Bash (close, 70° arc; roll through it), Shield Sweep (180° arc and a shove; get behind
+-- him), Overhead Slam (a narrow line at a body that stopped moving in reach; step aside),
+-- Ground Pound (fists into the road: a disc on the ground knocks everyone down, the roll
+-- does not beat it, distance or a ledge does), Stomp (a body in his boots on any side:
+-- small disc, knockdown; roll it), Gate Charge (straight line at speed on an anchored
+-- root; into hard cover = WallStun), Gas Canister (phase 2+, or any phase at a perched
+-- member; lobbed at the furthest member through EnemyProjectileService, leaves a puddle),
+-- Guard (a reaction to his plates taking fire: shield up, slow, frontal plates take little;
+-- the back plate is the flank). He walks a beat between attacks (AttackGap by phase),
+-- never repeats one except the Bash, never chains two knockdowns. Limb attacks are "melee"
+-- (EnemyProjectileService.damagePlayer: a rolling body is missed). Every attack is preceded
+-- by the handset tell (BossUpdate "tell"; the carrier hiss clip is open work); the Pound
+-- also draws its ring (BossUpdate "zone") and every ground / line attack marks the danger
+-- on workspace attributes so bots step out of it (BotService). Phases by body health: the
+-- Riot Call at 60% and 25% (EnemyService.spawnWave round him). On death: the priority
+-- pallet (RequisitionService "upgrade" crate), a full heal and re-arm for the squad.
 -- docs/PROGRESSION.md "Index kit: the Warden"; docs/sprints/SPRINT_19_WARDEN.md.
 
 local Debris = game:GetService("Debris")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local Messages = require(ReplicatedStorage.Shared.Messages)
+local Attributes = require(ReplicatedStorage.Shared.Attributes)
+local Animations = require(ReplicatedStorage.Shared.Animations)
 local Config = require(ReplicatedStorage.Shared.Config)
 local EnemyDefinitions = require(ReplicatedStorage.Shared.EnemyDefinitions)
 local GroundUtil = require(ReplicatedStorage.Shared.GroundUtil)
@@ -38,6 +51,7 @@ local PauseService = require(script.Parent.PauseService)
 local RequisitionService = require(script.Parent.RequisitionService)
 local Squad = require(script.Parent.Squad)
 local WorldSounds = require(script.Parent.WorldSounds)
+local Lifecycle = require(script.Parent.Lifecycle)
 
 local IndexService = {}
 
@@ -50,8 +64,22 @@ type Plate = {
 	part: BasePart,
 	limb: BasePart,
 	max: number,
+	health: number, -- last seen, for the damage log (Guard trigger)
 	cracked: boolean,
 	broken: boolean,
+}
+
+-- Attacks that put a body on the ground; never two in a row.
+local KNOCKDOWN_ATTACKS: { [string]: boolean } = { pound = true, stomp = true }
+-- Attack -> its Config.Index.Warden block.
+local ATTACK_SETTINGS: { [string]: string } = {
+	bash = "Bash",
+	sweep = "Sweep",
+	slam = "Slam",
+	pound = "Pound",
+	stomp = "Stomp",
+	charge = "Charge",
+	canister = "Canister",
 }
 
 type Charge = {
@@ -81,8 +109,15 @@ type Fight = {
 	charge: Charge?,
 	cooldowns: { [string]: number },
 	chargeCooldown: number,
+	poundCooldown: number,
+	lastAttack: string?, -- the no-repeat rule
+	nextDecisionAt: number, -- the beat: he walks until then after a recovery
+	plateHits: { { t: number, amount: number } }, -- recent plate damage (Guard trigger)
 	nextRepathAt: number,
 	nextSyncAt: number,
+	-- His clips (Config.Animations.Infected.Warden): idle whenever he stands still (Idle
+	-- priority over the Core walk), the rest Action overlays played by the attacks.
+	tracks: { [string]: AnimationTrack },
 }
 
 local fight: Fight?
@@ -99,7 +134,7 @@ end
 local function radio(key: string)
 	local line = cfg().Radio[key]
 	if line then
-		noticeRemote:FireAllClients(line)
+		noticeRemote:FireAllClients(line, Messages.Notice.Radio)
 	end
 end
 
@@ -108,19 +143,68 @@ local function tell(kind: string)
 	if not current then
 		return
 	end
-	bossRemote:FireAllClients("tell", kind)
+	bossRemote:FireAllClients(Messages.BossUpdate.Tell, kind)
 	local head = current.handle.model:FindFirstChild("Head") :: BasePart?
 	if head then
-		-- The handset's carrier hiss is open work (needs the audio pipeline); the Brute's
-		-- bank stands in so the tell is heard, not only read.
-		WorldSounds.voice(head, "brute", "brute_attack")
+		-- The tell: his riot handset keys open (his own bank, docs/PROGRESSION.md "Boss
+		-- sound"); the Pound gets the bellow on top.
+		WorldSounds.on(head, "warden", "warden_handset", "Handset")
+		if kind == "pound" then
+			WorldSounds.voice(head, "warden", "warden_roar")
+		end
 	end
+end
+
+-- Plays one of his clips (fade in), nil-safe for an unpublished clip outside Studio.
+local function play(current: Fight, name: string, fade: number?)
+	local track = current.tracks[name]
+	if track then
+		track:Play(fade or 0.1)
+	end
+	return track
+end
+
+local function stop(current: Fight, name: string, fade: number?)
+	local track = current.tracks[name]
+	if track and track.IsPlaying then
+		track:Stop(fade or 0.2)
+	end
+end
+
+local function loadTracks(handle: EnemyService.BossHandle): { [string]: AnimationTrack }
+	local tracks: { [string]: AnimationTrack } = {}
+	local animator = handle.humanoid:FindFirstChildOfClass("Animator")
+	local clips = Config.Animations.Infected[TYPE_NAME]
+	if not animator or not clips then
+		return tracks
+	end
+	local wanted: { [string]: Enum.AnimationPriority } = {
+		idle = Enum.AnimationPriority.Idle,
+		guard = Enum.AnimationPriority.Action,
+		charge = Enum.AnimationPriority.Action2,
+		riot = Enum.AnimationPriority.Action2,
+		throw = Enum.AnimationPriority.Action,
+		pound = Enum.AnimationPriority.Action2,
+		sweep = Enum.AnimationPriority.Action2,
+		slam = Enum.AnimationPriority.Action2,
+		stomp = Enum.AnimationPriority.Action2,
+		hit = Enum.AnimationPriority.Action3,
+	}
+	for name, priority in wanted do
+		local clip = (clips :: { [string]: string })[name]
+		local track = clip and Animations.load(animator :: Animator, clip, priority)
+		if track then
+			track.Looped = name == "idle" or name == "guard" or name == "charge"
+			tracks[name] = track
+		end
+	end
+	return tracks
 end
 
 local function plateFractions(current: Fight): { number }
 	local fractions = {}
 	for _, plate in current.plates do
-		local health = plate.part:GetAttribute("PlateHealth")
+		local health = plate.part:GetAttribute(Attributes.PlateHealth)
 		local value = if plate.broken or typeof(health) ~= "number" then 0 else health / plate.max
 		table.insert(fractions, math.clamp(value, 0, 1))
 	end
@@ -131,7 +215,7 @@ local function sync(current: Fight)
 	local humanoid = current.handle.humanoid
 	local fraction = if humanoid.MaxHealth > 0 then humanoid.Health / humanoid.MaxHealth else 0
 	bossRemote:FireAllClients(
-		"state",
+		Messages.BossUpdate.State,
 		math.clamp(fraction, 0, 1),
 		plateFractions(current),
 		current.phase
@@ -140,6 +224,104 @@ end
 
 local function flat(v: Vector3): Vector3
 	return Vector3.new(v.X, 0, v.Z)
+end
+
+-- The idle: on when the body is not moving, off the moment it is (the walk shows again).
+local nextStepAt = 0
+
+local function updateIdle(current: Fight)
+	local idle = current.tracks.idle
+	if not idle then
+		return
+	end
+	-- MoveDirection stays zero on a MoveTo-driven server humanoid, so
+	-- the root's ground speed is the test; a charge (anchored root) counts as moving.
+	local root = current.handle.root
+	local moving = current.charge ~= nil
+		or flat(root.AssemblyLinearVelocity).Magnitude > cfg().IdleSpeed
+	local now = os.clock()
+	if moving and now >= nextStepAt then
+		local interval = Config.Audio.WardenStepInterval
+		nextStepAt = now + (if current.charge then interval * 0.4 else interval)
+		WorldSounds.at(root.Position - Vector3.new(0, 3, 0), "warden", "warden_step")
+	end
+	if moving and idle.IsPlaying then
+		idle:Stop(0.2)
+	elseif not moving and not idle.IsPlaying then
+		idle:Play(0.2)
+	end
+end
+
+-- Where a body's feet are: the root sits HipHeight + half its height above them.
+local function feetY(humanoid: Humanoid, root: BasePart): number
+	return root.Position.Y - humanoid.HipHeight - root.Size.Y / 2
+end
+
+-- A member standing PerchHeight above his feet: out of reach of every limb and the Pound.
+local function isPerched(current: Fight, member: Squad.Member): boolean
+	local humanoid, root = member.humanoid, member.root
+	if not humanoid or not root then
+		return false
+	end
+	return feetY(humanoid, root) - feetY(current.handle.humanoid, current.handle.root)
+		>= cfg().PerchHeight
+end
+
+-- The pending attack's shape on workspace attributes (BotService.dodgeDanger): a disc
+-- (Pound, Stomp) or a line (Slam, Charge), until `untilTime`.
+local function markDanger(
+	kind: "disc" | "line",
+	center: Vector3,
+	radius: number,
+	untilTime: number,
+	direction: Vector3?,
+	length: number?
+)
+	workspace:SetAttribute(Attributes.BossDangerKind, kind)
+	workspace:SetAttribute(Attributes.BossDanger, center)
+	workspace:SetAttribute(Attributes.BossDangerRadius, radius)
+	workspace:SetAttribute(Attributes.BossDangerDir, direction or Vector3.zAxis)
+	workspace:SetAttribute(Attributes.BossDangerLength, length or 0)
+	workspace:SetAttribute(Attributes.BossDangerUntil, untilTime)
+end
+
+local function clearDanger()
+	workspace:SetAttribute(Attributes.BossDangerUntil, 0)
+end
+
+-- Plate damage taken inside Guard.TriggerWindow seconds.
+local function recentPlateDamage(current: Fight, now: number): number
+	local window = cfg().Guard.TriggerWindow
+	local total = 0
+	local kept = {}
+	for _, hit in current.plateHits do
+		if now - hit.t <= window then
+			total += hit.amount
+			table.insert(kept, hit)
+		end
+	end
+	current.plateHits = kept
+	return total
+end
+
+-- The no-repeat rule: never the same attack twice in a row except the Bash (the filler),
+-- never a knockdown attack after a knockdown attack.
+local function allowed(current: Fight, kind: string): boolean
+	local last = current.lastAttack
+	if not last then
+		return true
+	end
+	if kind ~= "bash" and kind == last then
+		return false
+	end
+	if KNOCKDOWN_ATTACKS[kind] and KNOCKDOWN_ATTACKS[last] then
+		return false
+	end
+	return true
+end
+
+local function ready(current: Fight, kind: string, now: number): boolean
+	return now >= (current.cooldowns[kind] or 0) and allowed(current, kind)
 end
 
 local function faceToward(root: BasePart, target: Vector3)
@@ -182,6 +364,18 @@ local function lineClear(current: Fight, target: BasePart): boolean
 		or (target.Parent ~= nil and hit.Instance:IsDescendantOf(target.Parent :: Instance))
 end
 
+-- Guard off: speed back, plates take full damage, shield down. Safe to call when he is not
+-- guarding; anything that takes over his action (a stagger, a windup) calls it.
+local function cancelGuard(current: Fight)
+	local humanoid = current.handle.humanoid
+	stop(current, "guard", 0.3)
+	current.handle.model:SetAttribute(Attributes.GuardFactor, nil)
+	local base = (humanoid:GetAttribute(Attributes.BaseWalkSpeed) :: number?) or humanoid.WalkSpeed
+	if not PauseService.isPaused() and humanoid.Health > 0 then
+		humanoid.WalkSpeed = base
+	end
+end
+
 -- --- plates
 
 local function breakPlate(current: Fight, plate: Plate)
@@ -190,11 +384,12 @@ local function breakPlate(current: Fight, plate: Plate)
 	end
 	plate.broken = true
 	current.platesBroken += 1
+	WorldSounds.at(plate.part.Position, "warden", "warden_plate")
 	local settings = cfg()
 	local part = plate.part
-	part:SetAttribute("PlateHealth", nil)
-	part:SetAttribute("PlateMax", nil)
-	plate.limb:SetAttribute("Exposed", true)
+	part:SetAttribute(Attributes.PlateHealth, nil)
+	part:SetAttribute(Attributes.PlateMax, nil)
+	plate.limb:SetAttribute(Attributes.Exposed, true)
 	for _, child in part:GetChildren() do
 		if child:IsA("WeldConstraint") or child:IsA("Weld") then
 			child:Destroy()
@@ -218,12 +413,21 @@ local function breakPlate(current: Fight, plate: Plate)
 	if current.pending then
 		current.pending = nil
 		current.action = nil
+		clearDanger()
+		for _, name in { "pound", "sweep", "slam", "stomp" } do
+			stop(current, name, 0.1)
+		end
 	end
 	if not current.charge then
+		if current.action == "guard" then
+			cancelGuard(current)
+		end
 		current.action = "stagger"
 		current.busyUntil = math.max(current.busyUntil, os.clock() + settings.PlateBreakStagger)
+		stop(current, "idle", 0.05)
+		play(current, "hit", 0.05)
 	end
-	bossRemote:FireAllClients("tell", "break")
+	bossRemote:FireAllClients(Messages.BossUpdate.Tell, Messages.BossTell.Break)
 	if current.platesBroken == 1 then
 		radio("FirstPlate")
 	elseif current.platesBroken == #current.plates then
@@ -234,19 +438,23 @@ end
 
 local function watchPlate(current: Fight, plate: Plate)
 	local settings = cfg()
-	plate.part:GetAttributeChangedSignal("PlateHealth"):Connect(function()
+	plate.part:GetAttributeChangedSignal(Attributes.PlateHealth):Connect(function()
 		if fight ~= current or plate.broken then
 			return
 		end
-		local health = plate.part:GetAttribute("PlateHealth")
+		local health = plate.part:GetAttribute(Attributes.PlateHealth)
 		if typeof(health) ~= "number" then
 			return
 		end
+		if health < plate.health then
+			table.insert(current.plateHits, { t = os.clock(), amount = plate.health - health })
+		end
+		plate.health = health
 		if health <= 0 then
 			breakPlate(current, plate)
 		elseif not plate.cracked and health <= plate.max * settings.CrackFraction then
 			plate.cracked = true
-			plate.part:SetAttribute("Cracked", true)
+			plate.part:SetAttribute(Attributes.Cracked, true)
 			sync(current)
 		end
 	end)
@@ -255,7 +463,7 @@ end
 -- Welds the six plates onto the unscaled rig; EnemyService scales the model afterwards.
 -- The rig's Humanoid scales every part of the character from its OriginalSize value
 -- (BodyWidthScale and friends, set by ScaleTo), so each plate carries one at its build
--- size: without it the plate was scaled twice (seen 2026-11-07). Health goes on in
+-- size: without it the plate was scaled twice. Health goes on in
 -- armPlates once the body is up.
 local function buildPlates(model: Model)
 	local settings = cfg()
@@ -287,7 +495,7 @@ local function buildPlates(model: Model)
 		plate.CastShadow = true
 		plate.CollisionGroup = ENEMY_COLLISION_GROUP
 		if spec.Flank then
-			plate:SetAttribute("Flank", true)
+			plate:SetAttribute(Attributes.Flank, true)
 		end
 		local original = Instance.new("Vector3Value")
 		original.Name = "OriginalSize"
@@ -312,13 +520,14 @@ local function armPlates(current: Fight, healthMultiplier: number)
 			continue
 		end
 		local health = spec.Health * healthMultiplier
-		plate:SetAttribute("PlateHealth", health)
-		plate:SetAttribute("PlateMax", health)
+		plate:SetAttribute(Attributes.PlateHealth, health)
+		plate:SetAttribute(Attributes.PlateMax, health)
 		local record: Plate = {
 			name = name,
 			part = plate,
 			limb = limb,
 			max = health,
+			health = health,
 			cracked = false,
 			broken = false,
 		}
@@ -331,6 +540,10 @@ end
 
 local function startWindup(current: Fight, kind: string, windup: number, target: BasePart?)
 	local now = os.clock()
+	print(`[IndexService] {kind} (phase {current.phase})`)
+	if current.action == "guard" then
+		cancelGuard(current)
+	end
 	current.pending = kind
 	current.action = kind
 	current.resolveAt = now + windup
@@ -340,17 +553,98 @@ local function startWindup(current: Fight, kind: string, windup: number, target:
 	if target then
 		faceToward(root, target.Position)
 	end
+	local settings = cfg()
+	local reach = settings.ScaleReach
+	-- The clip runs so its blow lands at StrikeAt of it when the windup ends; the Bash
+	-- wears the rig's own attack track (EnemyService), the others their named clips.
+	local track = if kind == "bash" then current.handle.attackTrack else current.tracks[kind]
+	local block = ATTACK_SETTINGS[kind] and (settings :: any)[ATTACK_SETTINGS[kind]]
+	if track and block and block.StrikeAt then
+		stop(current, "idle", 0.05)
+		track:Play(0.05)
+		local length = track.Length
+		if length > 0 then
+			track:AdjustSpeed(length * block.StrikeAt / windup)
+		end
+	elseif kind == "canister" then
+		play(current, "throw")
+	end
+	-- The shape of what is coming, for the bots and (the Pound) the squad's ring.
+	local forward = flat(root.CFrame.LookVector)
+	if forward.Magnitude < 0.01 then
+		forward = Vector3.zAxis
+	else
+		forward = forward.Unit
+	end
+	local ground = GroundUtil.GetGroundPosition(root.Position, 0)
+	if kind == "pound" then
+		local radius = settings.Pound.Radius * reach
+		markDanger("disc", ground, radius, current.resolveAt)
+		bossRemote:FireAllClients(Messages.BossUpdate.Zone, ground, radius, windup)
+	elseif kind == "stomp" then
+		markDanger("disc", ground, settings.Stomp.Radius * reach, current.resolveAt)
+	elseif kind == "slam" then
+		markDanger(
+			"line",
+			ground,
+			settings.Slam.Width * reach / 2,
+			current.resolveAt,
+			forward,
+			settings.Slam.Length * reach
+		)
+	elseif kind == "charge" then
+		markDanger(
+			"line",
+			ground,
+			settings.Charge.Width * reach,
+			current.resolveAt + settings.Charge.Distance / settings.Charge.Speed,
+			forward,
+			settings.Charge.Distance
+		)
+	end
 	tell(kind)
 end
 
-local function resolveBash(current: Fight)
-	local settings = cfg().Bash
+-- A limb lands: "melee" damage (a rolling body is missed), the attack's cooldown and
+-- recovery, and the no-repeat memory.
+local function landed(current: Fight, kind: string, settings: any)
+	local now = os.clock()
+	current.cooldowns[kind] = now + settings.Cooldown
+	current.busyUntil = now + settings.Recovery
+	current.action = "swing"
+	current.lastAttack = kind
+	clearDanger()
+end
+
+-- A shove away from him: players through Impact "push" (the client owns its physics),
+-- bots straight on the root.
+local function shove(current: Fight, member: Squad.Member, speed: number)
+	local targetRoot = member.root
+	if not targetRoot then
+		return
+	end
+	local away = flat(targetRoot.Position - current.handle.root.Position)
+	local direction = if away.Magnitude > 0.1
+		then away.Unit
+		else flat(current.handle.root.CFrame.LookVector)
+	local velocity = direction * speed + Vector3.new(0, speed * 0.25, 0)
+	if member.owner then
+		Remotes.get("Impact"):FireClient(member.owner, Messages.Impact.Push, velocity)
+	else
+		targetRoot.AssemblyLinearVelocity = velocity
+	end
+end
+
+-- Bash and Sweep: a frontal arc. The Sweep shoves whoever it catches.
+local function resolveArc(current: Fight, kind: "bash" | "sweep")
+	local settings: any = if kind == "bash" then cfg().Bash else cfg().Sweep
 	local root = current.handle.root
+	WorldSounds.at(root.Position, "warden", "warden_swing")
 	local forward = flat(root.CFrame.LookVector)
 	local cosHalfArc = math.cos(math.rad(settings.ArcDegrees / 2))
 	for _, member in Squad.living() do
 		local humanoid, targetRoot = member.humanoid, member.root
-		if not humanoid or not targetRoot then
+		if not humanoid or not targetRoot or isPerched(current, member) then
 			continue
 		end
 		local offset = flat(targetRoot.Position - root.Position)
@@ -359,15 +653,80 @@ local function resolveBash(current: Fight)
 			distance <= settings.Range * cfg().ScaleReach
 			and (distance < 0.5 or forward:Dot(offset.Unit) >= cosHalfArc)
 		then
-			EnemyProjectileService.damagePlayer(humanoid, settings.Damage)
+			EnemyProjectileService.damagePlayer(humanoid, settings.Damage, "melee")
+			if kind == "sweep" and humanoid.Health > 0 then
+				shove(current, member, settings.Pushback)
+			end
 		end
 	end
-	if current.handle.attackTrack then
-		current.handle.attackTrack:Play(0.1)
+	landed(current, kind, settings)
+end
+
+-- Overhead Slam: a line ahead of him, Length long and Width wide.
+local function resolveSlam(current: Fight)
+	local settings = cfg().Slam
+	local reach = cfg().ScaleReach
+	local root = current.handle.root
+	local forward = flat(root.CFrame.LookVector)
+	if forward.Magnitude > 0.01 then
+		forward = forward.Unit
 	end
-	current.cooldowns.bash = os.clock() + settings.Cooldown
-	current.busyUntil = os.clock() + settings.Recovery
-	current.action = "swing"
+	for _, member in Squad.living() do
+		local humanoid, targetRoot = member.humanoid, member.root
+		if not humanoid or not targetRoot or isPerched(current, member) then
+			continue
+		end
+		local offset = flat(targetRoot.Position - root.Position)
+		local along = offset:Dot(forward)
+		local side = (offset - forward * along).Magnitude
+		if
+			along >= -1
+			and along <= settings.Length * reach
+			and side <= settings.Width * reach / 2
+		then
+			EnemyProjectileService.damagePlayer(humanoid, settings.Damage, "melee")
+		end
+	end
+	WorldSounds.at(root.Position + forward * 6, "warden", "warden_impact")
+	landed(current, "slam", settings)
+end
+
+-- Pound and Stomp: a disc on the ground round him; everyone inside goes down. The Pound is
+-- the ground moving (no roll window), the Stomp a boot (melee: the roll beats it).
+local function resolveDisc(current: Fight, kind: "pound" | "stomp")
+	local settings: any = if kind == "pound" then cfg().Pound else cfg().Stomp
+	local reach = cfg().ScaleReach
+	local root = current.handle.root
+	local hitHeight = if kind == "pound" then settings.HitHeight else cfg().PerchHeight
+	WorldSounds.at(
+		root.Position,
+		"warden",
+		if kind == "pound" then "warden_pound" else "warden_impact"
+	)
+	for _, member in Squad.living() do
+		local humanoid, targetRoot = member.humanoid, member.root
+		if not humanoid or not targetRoot then
+			continue
+		end
+		local offset = targetRoot.Position - root.Position
+		local height = feetY(humanoid, targetRoot) - feetY(current.handle.humanoid, root)
+		if flat(offset).Magnitude <= settings.Radius * reach and height < hitHeight then
+			local before = humanoid.Health
+			EnemyProjectileService.damagePlayer(
+				humanoid,
+				settings.Damage,
+				if kind == "stomp" then "melee" else nil
+			)
+			-- A missed stomp (the roll) is no knockdown either; a Pound always is.
+			if humanoid.Health > 0 and (kind == "pound" or humanoid.Health < before) then
+				Squad.knock(member, settings.Knockdown)
+			end
+		end
+	end
+	landed(current, kind, settings)
+	if kind == "pound" then
+		current.cooldowns.pound = os.clock() + current.poundCooldown
+	end
 end
 
 local function resolveCharge(current: Fight, target: BasePart?)
@@ -398,23 +757,24 @@ local function resolveCharge(current: Fight, target: BasePart?)
 	current.action = "charge"
 	current.busyUntil = now + settings.Distance / settings.Speed
 	current.cooldowns.charge = now + current.chargeCooldown
-	if current.handle.attackTrack then
-		current.handle.attackTrack:Play(0.1)
-	end
+	stop(current, "idle", 0.05)
+	play(current, "charge", 0.05)
 end
 
 local function endCharge(current: Fight, wall: boolean)
 	local root = current.handle.root
 	current.charge = nil
+	stop(current, "charge", 0.15)
 	root.Anchored = false
 	root.AssemblyLinearVelocity = Vector3.zero
 	local now = os.clock()
 	if wall then
 		local stun = cfg().Charge.WallStun
+		WorldSounds.at(root.Position, "warden", "warden_impact")
 		current.action = "stun"
 		current.busyUntil = now + stun
 		EnemyService.stagger(current.handle.humanoid, stun)
-		bossRemote:FireAllClients("tell", "stun")
+		bossRemote:FireAllClients(Messages.BossUpdate.Tell, Messages.BossTell.Stun)
 	else
 		current.action = "recover"
 		current.busyUntil = now + cfg().Charge.Recovery
@@ -470,6 +830,7 @@ local function resolveCanister(current: Fight)
 	local root = current.handle.root
 	if target and target.root then
 		local origin = root.Position + Vector3.new(0, 2, 0) + flat(root.CFrame.LookVector) * 2
+		WorldSounds.at(origin, "warden", "warden_canister")
 		EnemyProjectileService.fire(
 			origin,
 			target.root.Position,
@@ -482,28 +843,26 @@ local function resolveCanister(current: Fight)
 	current.cooldowns.canister = now + settings.Cooldown
 	current.busyUntil = now + settings.Recovery
 	current.action = "throw"
+	current.lastAttack = "canister"
 end
 
 local function startGuard(current: Fight)
 	local settings = cfg().Guard
 	local now = os.clock()
 	local humanoid = current.handle.humanoid
-	local base = (humanoid:GetAttribute("BaseWalkSpeed") :: number?) or humanoid.WalkSpeed
-	current.handle.model:SetAttribute("GuardFactor", settings.PlateDamageFactor)
+	local base = (humanoid:GetAttribute(Attributes.BaseWalkSpeed) :: number?) or humanoid.WalkSpeed
+	current.handle.model:SetAttribute(Attributes.GuardFactor, settings.PlateDamageFactor)
 	humanoid.WalkSpeed = base * settings.SpeedFactor
 	current.action = "guard"
 	current.busyUntil = now + settings.Duration
 	current.cooldowns.guard = now + settings.Cooldown
+	play(current, "guard", 0.2)
+	WorldSounds.at(current.handle.root.Position, "warden", "warden_swing", 0.6)
 	tell("guard")
 end
 
 local function endGuard(current: Fight)
-	local humanoid = current.handle.humanoid
-	current.handle.model:SetAttribute("GuardFactor", nil)
-	local base = (humanoid:GetAttribute("BaseWalkSpeed") :: number?) or humanoid.WalkSpeed
-	if not PauseService.isPaused() and humanoid.Health > 0 then
-		humanoid.WalkSpeed = base
-	end
+	cancelGuard(current)
 end
 
 local function resolvePending(current: Fight)
@@ -511,16 +870,120 @@ local function resolvePending(current: Fight)
 	current.pending = nil
 	local target = nearestTarget(current)
 	local targetRoot = target and target.root
-	if kind == "bash" then
-		resolveBash(current)
+	if kind == "bash" or kind == "sweep" then
+		resolveArc(current, kind)
+	elseif kind == "slam" then
+		resolveSlam(current)
+	elseif kind == "pound" or kind == "stomp" then
+		resolveDisc(current, kind)
 	elseif kind == "charge" then
+		current.lastAttack = "charge"
 		resolveCharge(current, targetRoot)
 	elseif kind == "canister" then
 		resolveCanister(current)
 	end
 end
 
--- Picks the next attack for the hunt. Returns true when one started.
+-- Living members inside a disc of `radius` round him (the crowd test for Sweep and Pound).
+local function countWithin(current: Fight, radius: number, frontal: boolean): number
+	local root = current.handle.root
+	local forward = flat(root.CFrame.LookVector)
+	local count = 0
+	for _, member in Squad.living() do
+		local targetRoot = member.root
+		if not targetRoot or isPerched(current, member) then
+			continue
+		end
+		local offset = flat(targetRoot.Position - root.Position)
+		if
+			offset.Magnitude <= radius
+			and (not frontal or offset.Magnitude < 0.5 or forward:Dot(offset.Unit) >= 0)
+		then
+			count += 1
+		end
+	end
+	return count
+end
+
+-- A member in his boots (any side): the Stomp's trigger.
+local function hugger(current: Fight): Squad.Member?
+	local range = cfg().HugRange * cfg().ScaleReach
+	for _, member in Squad.living() do
+		local targetRoot = member.root
+		if targetRoot and not isPerched(current, member) then
+			if flat(targetRoot.Position - current.handle.root.Position).Magnitude <= range then
+				return member
+			end
+		end
+	end
+	return nil
+end
+
+-- A member in front of him, in Slam reach, that has stopped moving: the Slam's trigger.
+local function planted(current: Fight): Squad.Member?
+	local settings = cfg()
+	local root = current.handle.root
+	local forward = flat(root.CFrame.LookVector)
+	for _, member in Squad.living() do
+		local targetRoot = member.root
+		if not targetRoot or isPerched(current, member) then
+			continue
+		end
+		local offset = flat(targetRoot.Position - root.Position)
+		if
+			offset.Magnitude <= settings.Slam.Length * settings.ScaleReach
+			and (offset.Magnitude < 0.5 or forward:Dot(offset.Unit) >= 0.5)
+			and flat(targetRoot.AssemblyLinearVelocity).Magnitude < settings.PlantedSpeed
+		then
+			return member
+		end
+	end
+	return nil
+end
+
+-- A weighted pick among the ready close-band attacks (CloseWeights; a crowd doubles the
+-- Sweep and the Pound).
+local function pickClose(current: Fight, now: number): string?
+	local settings = cfg()
+	local reach = settings.ScaleReach
+	local crowd = settings.CrowdCount
+	local candidates: { { kind: string, weight: number } } = {}
+	local total = 0
+	for kind, weight in settings.CloseWeights :: { [string]: number } do
+		if not ready(current, kind, now) then
+			continue
+		end
+		local w = weight
+		local crowded = (
+			kind == "sweep"
+			and countWithin(current, settings.Sweep.Range * reach, true) >= crowd
+		)
+			or (
+				kind == "pound"
+				and countWithin(current, settings.Pound.Radius * reach, false) >= crowd
+			)
+		if crowded then
+			w *= 2
+		end
+		table.insert(candidates, { kind = kind, weight = w })
+		total += w
+	end
+	if total <= 0 then
+		return nil
+	end
+	local roll = math.random() * total
+	for _, candidate in candidates do
+		roll -= candidate.weight
+		if roll <= 0 then
+			return candidate.kind
+		end
+	end
+	return candidates[#candidates].kind
+end
+
+-- Picks the next attack for the hunt: reactions first (a body in his boots, plates under
+-- fire, a planted body in reach), then the nearest member's range band. Returns true when
+-- one started.
 local function chooseAttack(current: Fight, now: number, target: Squad.Member): boolean
 	local settings = cfg()
 	local root = current.handle.root
@@ -528,35 +991,80 @@ local function chooseAttack(current: Fight, now: number, target: Squad.Member): 
 	if not targetRoot then
 		return false
 	end
-	local distance = flat(targetRoot.Position - root.Position).Magnitude
 	local reach = settings.ScaleReach
-	if distance <= settings.Bash.Range * reach and now >= (current.cooldowns.bash or 0) then
-		startWindup(current, "bash", settings.Bash.Windup, targetRoot)
-		return true
-	end
-	if
-		distance >= settings.Charge.MinRange
-		and distance <= settings.Charge.MaxRange
-		and now >= (current.cooldowns.charge or 0)
-		and lineClear(current, targetRoot)
-	then
-		startWindup(current, "charge", settings.Charge.Windup, targetRoot)
-		return true
-	end
-	if current.phase >= settings.Canister.MinPhase and now >= (current.cooldowns.canister or 0) then
-		local far = furthestTarget(current, settings.Canister.MaxRange)
-		if far and far.root then
-			startWindup(current, "canister", settings.Canister.Windup, far.root)
+	local perched = isPerched(current, target)
+
+	-- Reactions.
+	if not perched then
+		local close = hugger(current)
+		if close and close.root and ready(current, "stomp", now) then
+			startWindup(current, "stomp", settings.Stomp.Windup, close.root)
 			return true
 		end
 	end
 	if
-		distance >= settings.Guard.MinRange
-		and distance <= settings.Guard.MaxRange
-		and now >= (current.cooldowns.guard or 0)
+		now >= (current.cooldowns.guard or 0)
+		and recentPlateDamage(current, now) >= settings.Guard.TriggerPlateDamage
 	then
 		startGuard(current)
 		return true
+	end
+	if not perched then
+		local still = planted(current)
+		if still and still.root and ready(current, "slam", now) then
+			startWindup(current, "slam", settings.Slam.Windup, still.root)
+			return true
+		end
+	end
+
+	-- Bands.
+	local distance = flat(targetRoot.Position - root.Position).Magnitude
+	local canisterReady = ready(current, "canister", now)
+		and (perched or current.phase >= settings.Canister.MinPhase)
+	if perched then
+		if canisterReady then
+			local far = furthestTarget(current, settings.Canister.MaxRange)
+			if far and far.root then
+				startWindup(current, "canister", settings.Canister.Windup, far.root)
+				return true
+			end
+		end
+		return false
+	end
+	if distance <= settings.HugRange * reach then
+		if ready(current, "bash", now) then
+			startWindup(current, "bash", settings.Bash.Windup, targetRoot)
+			return true
+		end
+	elseif distance <= settings.Bash.Range * reach then
+		local kind = pickClose(current, now)
+		if kind then
+			local block = (settings :: any)[ATTACK_SETTINGS[kind]]
+			startWindup(current, kind, block.Windup, targetRoot)
+			return true
+		end
+	elseif distance <= settings.Pound.MaxRange * reach then
+		if distance >= settings.Pound.MinRange * reach and ready(current, "pound", now) then
+			startWindup(current, "pound", settings.Pound.Windup, targetRoot)
+			return true
+		end
+	elseif distance >= settings.Charge.MinRange and distance <= settings.Charge.MaxRange then
+		if ready(current, "charge", now) and lineClear(current, targetRoot) then
+			startWindup(current, "charge", settings.Charge.Windup, targetRoot)
+			return true
+		end
+	end
+	if canisterReady then
+		local far = furthestTarget(current, settings.Canister.MaxRange)
+		if
+			far
+			and far.root
+			and flat(far.root.Position - root.Position).Magnitude
+				> settings.Pound.MaxRange * reach
+		then
+			startWindup(current, "canister", settings.Canister.Windup, far.root)
+			return true
+		end
 	end
 	return false
 end
@@ -591,15 +1099,38 @@ local function enterPhase(current: Fight, phase: number)
 	if spec.ChargeCooldown then
 		current.chargeCooldown = spec.ChargeCooldown
 	end
+	if spec.PoundCooldown then
+		current.poundCooldown = spec.PoundCooldown
+	end
 	if spec.WalkSpeed then
 		local humanoid = current.handle.humanoid
-		humanoid:SetAttribute("BaseWalkSpeed", spec.WalkSpeed)
+		humanoid:SetAttribute(Attributes.BaseWalkSpeed, spec.WalkSpeed)
 		if current.action ~= "guard" and not PauseService.isPaused() then
 			humanoid.WalkSpeed = spec.WalkSpeed
 		end
 	end
 	radio("RiotCall")
 	tell("riot")
+	-- The call is the beat: a guard or a windup in progress gives way to it (a charge already
+	-- running carries on and skips the roar).
+	if not current.charge then
+		if current.action == "guard" then
+			cancelGuard(current)
+		end
+		if current.pending then
+			current.pending = nil
+			clearDanger()
+			for _, name in { "pound", "sweep", "slam", "stomp" } do
+				stop(current, name, 0.1)
+			end
+		end
+		local now = os.clock()
+		current.handle.humanoid:MoveTo(current.handle.root.Position)
+		current.action = "riot"
+		current.busyUntil = now + settings.RiotCallHold
+		stop(current, "idle", 0.05)
+		play(current, "riot", 0.1)
+	end
 	sync(current)
 end
 
@@ -622,7 +1153,8 @@ local function endFight(current: Fight, defeated: boolean)
 		return
 	end
 	fight = nil
-	workspace:SetAttribute("IndexActive", false)
+	workspace:SetAttribute(Attributes.IndexActive, false)
+	clearDanger()
 	if current.charge then
 		current.handle.root.Anchored = false
 	end
@@ -648,7 +1180,7 @@ local function endFight(current: Fight, defeated: boolean)
 	end
 	task.delay(cfg().HideDelay, function()
 		if fight == nil then
-			bossRemote:FireAllClients("hide")
+			bossRemote:FireAllClients(Messages.BossUpdate.Hide)
 		end
 	end)
 end
@@ -671,6 +1203,7 @@ local function step()
 	end
 	local now = os.clock()
 	local settings = cfg()
+	updateIdle(current)
 
 	if now >= current.nextSyncAt then
 		current.nextSyncAt = now + settings.SyncInterval
@@ -696,6 +1229,9 @@ local function step()
 			endGuard(current)
 		end
 		current.action = nil
+		-- The beat: a walk at the squad before the next decision (AttackGap by phase).
+		local gaps = settings.AttackGap
+		current.nextDecisionAt = now + (gaps[math.clamp(current.phase, 1, #gaps)] or 0)
 	end
 
 	local target = nearestTarget(current)
@@ -709,7 +1245,8 @@ local function step()
 		else
 			if targetRoot and not current.sighted then
 				if
-					(targetRoot.Position - handle.root.Position).Magnitude <= settings.SightingRange
+					(targetRoot.Position - handle.root.Position).Magnitude
+					<= settings.SightingRange
 				then
 					current.sighted = true
 					radio("Sighting")
@@ -745,7 +1282,11 @@ local function step()
 	if not target or not targetRoot then
 		return
 	end
-	if current.action ~= "guard" and chooseAttack(current, now, target) then
+	if
+		current.action ~= "guard"
+		and now >= current.nextDecisionAt
+		and chooseAttack(current, now, target)
+	then
 		return
 	end
 	if now >= current.nextRepathAt then
@@ -785,20 +1326,32 @@ local function spawn(groundPosition: Vector3, walk: boolean): boolean
 		resolveAt = 0,
 		busyUntil = os.clock() + settings.SpawnDelay,
 		charge = nil,
-		cooldowns = { charge = os.clock() + settings.Charge.FirstDelay },
+		cooldowns = {
+			charge = os.clock() + settings.Charge.FirstDelay,
+			pound = os.clock() + settings.Charge.FirstDelay, -- the first move is never the Pound
+		},
 		chargeCooldown = settings.Charge.Cooldown,
+		poundCooldown = settings.Pound.Cooldown,
+		lastAttack = nil,
+		nextDecisionAt = 0,
+		plateHits = {},
 		nextRepathAt = 0,
 		nextSyncAt = 0,
+		tracks = loadTracks(handle),
 	}
 	fight = current
 	armPlates(current, healthMultiplier)
-	workspace:SetAttribute("IndexActive", true)
+	workspace:SetAttribute(Attributes.IndexActive, true)
 
 	local names = {}
 	for _, plate in current.plates do
 		table.insert(names, plate.name)
 	end
-	bossRemote:FireAllClients("show", EnemyDefinitions[TYPE_NAME].DisplayName, names)
+	bossRemote:FireAllClients(
+		Messages.BossUpdate.Show,
+		EnemyDefinitions[TYPE_NAME].DisplayName,
+		names
+	)
 	sync(current)
 
 	humanoid.Died:Connect(function()
@@ -850,15 +1403,18 @@ function IndexService.reset()
 			current.handle.model:Destroy()
 		end
 	end
-	workspace:SetAttribute("IndexActive", false)
+	workspace:SetAttribute(Attributes.IndexActive, false)
 end
 
 -- Fresh clients (a late join mid-fight) get the current state on request.
 function IndexService.init()
+	Lifecycle.register("IndexService", {
+		onRunStart = IndexService.reset,
+	})
 	bossRemote = Remotes.get("BossUpdate")
 	noticeRemote = Remotes.get("BuffNotice")
 	damageRemote = Remotes.get("DamageDealt")
-	workspace:SetAttribute("IndexActive", false)
+	workspace:SetAttribute(Attributes.IndexActive, false)
 	bossRemote.OnServerEvent:Connect(function(player)
 		local current = fight
 		if current then
@@ -866,11 +1422,16 @@ function IndexService.init()
 			for _, plate in current.plates do
 				table.insert(names, plate.name)
 			end
-			bossRemote:FireClient(player, "show", EnemyDefinitions[TYPE_NAME].DisplayName, names)
+			bossRemote:FireClient(
+				player,
+				Messages.BossUpdate.Show,
+				EnemyDefinitions[TYPE_NAME].DisplayName,
+				names
+			)
 			local humanoid = current.handle.humanoid
 			bossRemote:FireClient(
 				player,
-				"state",
+				Messages.BossUpdate.State,
 				math.clamp(humanoid.Health / math.max(humanoid.MaxHealth, 1), 0, 1),
 				plateFractions(current),
 				current.phase

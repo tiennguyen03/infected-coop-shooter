@@ -59,7 +59,7 @@ fell). One rule per form; roster and stage of first appearance in
 
 # The Harlan Corridor
 
-Command lost the Harlan quarantine corridor. The Chosen go up it by helo, one fallen
+Command lost the Harlan quarantine corridor. Pike goes up it by helo, one fallen
 position at a time, toward the station that started it. Each place failed the same way:
 from the inside, by trying to help. Road signs count down the distance to Harlan; the sky
 goes from evening to night to dawn.
@@ -71,7 +71,7 @@ goes from evening to night to dawn.
 5. **Harlan Reservoir Station** — the dam and the research station. Boss: the Specimen.
 
 **Control, Lantern, the Burn.** Harlan Control runs the corridor net; the squad is Pike; the
-helo that carries the Chosen is Lantern, the only thing that stays the same and the only way
+helo that carries Pike is Lantern, the only thing that stays the same and the only way
 out. Command sanitizes what it cannot hold: each district has a scheduled incendiary fire
 mission, the Burn, and the skyline burning beyond the walls is the districts that already
 got theirs. A squad is inserted in the window before the Burn. Prove the district can be
@@ -87,7 +87,7 @@ Control's voice is procedural, short, no banter: "Pike, Control. Green smoke on 
 ## Containment
 
 Control keeps the Containment Board: every district (Delta, Mile 14, Kestrel, the Yard, the
-Reservoir) carries a containment percentage, raised by every sortie any squad brings home.
+Reservoir) carries a containment percentage, raised by every mission any squad brings home.
 Contained does not mean clean; it means the district has stopped exporting hosts, the lights
 are back on and the Burn is deferred. Lost, Contested, Held, Contained are the only four
 words Control uses for a place.
@@ -109,7 +109,7 @@ carrier hiss and a squelch. He still walks the route, Gate to bus line to Inner 
 the Apron, checking buses that have been empty for a week. Shoot the plates off and he
 is just a man again. Optional name for the roster board: SGT HALE (not used in game).
 
-Radio for the Warden sortie (`Config.Index.Warden.Radio`; the insert and wipe lines are
+Radio for the Warden mission (`Config.Index.Warden.Radio`; the insert and wipe lines are
 written but not yet placed):
 
 | Cue | Line |
@@ -144,24 +144,66 @@ you can get the lid off quietly, which you cannot.
 
 ---
 
-# The Chosen
+# Pike
 
-As governments began to fall, intelligence agencies and military leadership identified a
-handful of individuals who possessed extraordinary skills considered critical to humanity's
-survival. These individuals became known informally as **"The Chosen."**
+Canon as of 2026-11-08 (owner: "just soldiers, like Helldivers"; the five Chosen are
+retired, their sheets kept in [lore/retired_chosen.md](lore/retired_chosen.md)).
 
-Each possesses expertise that cannot easily be replaced. They are not superheroes. They are
-specialists. The world needs them because ordinary solutions have already failed. While
-countless soldiers and civilians continue to fight for survival, these individuals are
-uniquely capable of carrying out missions that nobody else can.
+Command does not send heroes up the corridor. It sends window teams: four soldiers, a helo
+and the time before the Burn. On paper each one is a Harlan Recovery Detachment team;
+everyone who has done it calls it "the window". Control knows a team by its callsign and a
+soldier by a number. This team is Pike: Pike One to Pike Four, numbered in boarding order.
+When a soldier goes down, Control says "Pike Three down", and whoever Lantern brings in next
+is Pike Three again. The number belongs to the seat, not the man. In solo, the empty seats
+are filled by soldiers called only by their numbers: Pike Two, Pike Three, Pike Four.
 
-Five of them make the squad Control calls Pike; four deploy on any sortie. They came in on
-Lantern and dress like it: grey fatigues (the corridor garrison wore olive, and the olive is
-on the Infected now) under the Pike carrier, one black plate carrier with a PIKE tab on the
-left shoulder and one square patch on the shoulder and back in the wearer's own colour.
-Weller blue, Cole tan, Reyes white, Cross black with a grey border, Kane orange. From
-behind in the dark, the square is how a squad knows who is who. The dog wears one too.
-Build sheets in [CHARACTERS.md](CHARACTERS.md).
+Pike wears grey fatigues (the garrison wore olive, and the olive is on the Infected now), a
+black plate carrier with a PIKE tab, a helmet and a square on the shoulder and back in the
+seat's colour: One blue, Two tan, Three white, Four orange. From behind in the dark, the
+square tells you who is who. The name tape is the soldier's own name. Kit is the only other
+identity. Build sheet in [CHARACTERS.md](CHARACTERS.md) section C.
+
+## The Arms Room and the call-ins
+
+The loadout menu is the **Arms Room** (the Army's name for a unit armoury). Naming rules:
+
+- **Guns** carry their plain real-world designation on the HUD ("M4A1 Carbine"), no
+  nicknames. Starting list: M4A1 Carbine (default), M16A4 Rifle, Mossberg 590 Shotgun,
+  MP5 SMG, M110 DMR, M17 Pistol (sidearm).
+- **Fire missions** are named by the asset's radio callsign: the player is calling someone
+  on the net.
+- **Support weapons, emplacements and supply** take a soldier's word for the thing, with
+  the designation in small type under it.
+- **Delivery:** Lantern's crew kicks support weapons and supply out of the door as a slung
+  case or a speedball. Nothing falls from orbit.
+
+| HUD name | Under it | Family |
+|---|---|---|
+| **Gun** | M240B machine gun | support weapon |
+| **Goose** | M3 recoilless rifle (anti-tank) | support weapon |
+| **Thumper** | M32 grenade launcher | support weapon |
+| **Kettle** | M9 projector (flamethrower; the Burn crews' kit) | support weapon |
+| **Hammer** | 81 mm mortar section, six rounds | fire mission |
+| **Anvil** | 105 mm battery | fire mission |
+| **Shrike** | helicopter gun run along a line | fire mission |
+| **Doorman** | tripod sentry MG | emplacement |
+| **Tripline** | anti-personnel minefield | emplacement |
+| **Concertina** | wire obstacle | emplacement |
+| **Speedball** | ammunition bundle | supply |
+| **Aid Bag** | medical and plates drop | supply |
+
+Retired 2026-11-08 as too far from the ground: Magpie (the quadcopter beacon) and Pen Coil
+(the shock coil). Hammer and Anvil are a deliberate pair.
+
+Radio, one line per family:
+
+| Cue | Line |
+|---|---|
+| Fire mission call | "Hammer, Pike. Fire mission, my smoke, over." |
+| Fire mission answer | "Hammer. Shot, over." |
+| Supply call | "Lantern, Pike. Need a Speedball at my flare." |
+| Supply answer | "Lantern. Kicking it now." |
+| Gun run | "Shrike inbound. Mark your line." |
 
 ---
 
@@ -188,46 +230,9 @@ meaningful.
 
 # Character Philosophy
 
-Characters should be memorable because of their personalities, beliefs, and roles within
-the world. Characters should NOT be defined solely by their weapons. Weapons may change
-during a run; a character's identity should remain recognizable regardless of equipment.
-A player should be able to describe a character without mentioning their gun.
-
----
-
-# The squad
-
-Canon as of 2026-11-07 (the Assault became Weller when the roster was redesigned).
-
-## Staff Sergeant Isaac Weller — Assault
-
-Pike's rifleman and the default pick. Infantry, by the book, the one who does it the way
-soldiers are trained to. Carries two tourniquets where everyone else carries one. Believes
-the plan is the thing that gets people home.
-
-## Mason Cole — K-9 Handler
-
-Veteran military working dog handler. Protective of civilians. Practical. Calm under
-pressure. Believes nobody should be left behind. His dog is his partner, not equipment.
-His dog is Kilo, a Belgian Malinois, male, in a black harness with a grab handle and
-Cole's tan square on the side. Cole carries Kilo's spare tag on his own chain.
-
-## Dr. Elena Reyes — Epidemiologist
-
-Expert in infectious diseases. Searching for answers behind the outbreak. Focused and
-analytical. Still believes humanity can recover. Often places civilian lives above
-military objectives.
-
-## Ava Cross — Recon Specialist
-
-Scout and intelligence operative. Independent. Confident. Comfortable operating behind
-enemy lines. Believes information is often more valuable than firepower.
-
-## Victor Kane — Field Engineer
-
-Problem solver. Builder. Logistics expert. Keeps equipment and operations functioning
-despite impossible circumstances. Views preparation as the difference between life and
-death.
+The soldiers are not characters; the corridor is. The people a player remembers are the ones
+the strain finished: who they were, and what they still wear. A soldier is told apart by
+seat colour and kit, and kit is supposed to change.
 
 ---
 

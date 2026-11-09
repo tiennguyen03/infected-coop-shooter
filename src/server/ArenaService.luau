@@ -3,7 +3,7 @@
 -- Rain 2 stage: open ground with raised hills (walkable embankments on every side, so the
 -- Infected, who have no pathfinding, can always climb to the player), a landmark comm
 -- tower on the high ground, roads for orientation, and the objective on the hill. Layout
--- per docs/LEVELS.md section A (2026-11-07): insert and extract at the LZ helipad, the
+-- per docs/LEVELS.md section A: insert and extract at the LZ helipad, the
 -- main road south to the Gate (a T-wall line across the map with one lane, buses queued
 -- inside it), the Pens as a hesco-ringed funnel site, the Overlook summit kept open.
 -- Terrain is plain Parts (exact collision, no mesh cost); dressing is MeshAssets templates
@@ -20,8 +20,7 @@ local SkyService = require(script.Parent.SkyService)
 local ArenaService = {}
 
 local HALF = 300 -- half-extent: arena spans -300..+300 on X/Z (600 studs)
-local WALL_HEIGHT = 24
-local WALL_THICKNESS = 3
+local BASEPLATE_GRACE = 5 -- seconds the hidden Studio baseplate stays solid at boot
 
 -- Dusty ground, asphalt roads, concrete pads: the muted "field-kit" palette (docs/STYLES.md).
 local GROUND_COLOR = Color3.fromRGB(94, 88, 76)
@@ -101,7 +100,8 @@ local HILLS: { Hill } = {
 	{ name = "NorthBluff", x = -230, z = 235, top = Vector2.new(56, 56), height = 10 }, -- Suburb
 	{ name = "DepotMound", x = 235, z = -205, top = Vector2.new(50, 50), height = 12 }, -- Depot
 	{ name = "SouthRise", x = -190, z = -235, top = Vector2.new(70, 44), height = 8 }, -- Scrapyard
-	-- The Pens' terrace runs to the west arena wall (vertical there), so the hesco ring has
+	-- The Pens' terrace runs to the west edge (vertical there, the perimeter fence and the
+	-- boundary collider close it: docs/LEVELS.md A15), so the hesco ring has
 	-- no open west side.
 	{
 		name = "ParadeTerrace",
@@ -131,19 +131,24 @@ type Dressing = {
 	shell: boolean?,
 	shadow: boolean?,
 	floor: number?, -- ground height to use instead of the raycast (a piece inside a building)
+	-- Scenery past the perimeter (A15): no collision, no queries, no shadow, no colliders.
+	decor: boolean?,
+	-- A perch container whose own pallet ramp runs under its footprint by design: the
+	-- straddle check skips it (every other piece must stand on one flat height).
+	perch: boolean?,
 }
 local DRESSING: { Dressing } = {
 	-- The Compound lower tier (top x 25..115, z 25..115; zone 27..73; the upper tier's
 	-- slopes cover x,z >= 72) and upper tier (top 82..106)
 	{ name = "env_comm_tower", x = 94, z = 94, yaw = 0 },
-	{ name = "env_twall", x = 84, z = 100, yaw = 90 },
-	{ name = "env_twall", x = 84, z = 92, yaw = 90 },
-	{ name = "env_hesco", x = 100, z = 84, yaw = 0 },
+	{ name = "env_twall", x = 86, z = 100, yaw = 90 },
+	{ name = "env_twall", x = 86, z = 92, yaw = 90 },
+	{ name = "env_hesco", x = 100, z = 86, yaw = 0 },
 	{ name = "env_tent", x = 42, z = 104, yaw = 0 },
 	{ name = "env_tent", x = 42, z = 88, yaw = 0 },
 	{ name = "env_container_olive", x = 100, z = 44, yaw = 0 },
-	{ name = "env_container_rust", x = 100, z = 55, yaw = 8 },
-	{ name = "env_wreck_humvee", x = 62, z = 104, yaw = -30 },
+	{ name = "env_container_rust", x = 106, z = 60, yaw = 90 },
+	{ name = "env_wreck_humvee", x = 61, z = 107.5, yaw = -10 },
 	{ name = "env_sandbag_bunker", x = 86, z = 34, yaw = 180 },
 	{ name = "env_hesco", x = 34, z = 40, yaw = 0 },
 	{ name = "env_hesco", x = 34, z = 47, yaw = 0 },
@@ -152,7 +157,7 @@ local DRESSING: { Dressing } = {
 	{ name = "env_twall", x = 63, z = 34, yaw = 0 },
 	-- The Ridge (hill top x -130..-70, z 23..67)
 	{ name = "env_ruin_building", x = -104, z = 48, yaw = 0, burning = true },
-	{ name = "env_guard_tower", x = -78, z = 30, yaw = 0 },
+	{ name = "env_guard_tower", x = -78, z = 31, yaw = 0 },
 	{ name = "env_barrier_jersey", x = -82, z = 60, yaw = 20 },
 	-- Main road (x = -30, north-south) and the Inner Gate across it at z = -112 (lane x -42..-18)
 	{ name = "env_checkpoint", x = -58, z = -120, yaw = 0 },
@@ -165,7 +170,7 @@ local DRESSING: { Dressing } = {
 	{ name = "env_container_rust", x = -8, z = -84, yaw = 70 },
 	{ name = "env_container_olive", x = 30, z = -10, yaw = -15 },
 	-- On the highway (ground height is found by raycast, so these sit on the deck)
-	{ name = "env_wreck_humvee", x = 100, z = -45, yaw = -80 },
+	{ name = "env_wreck_humvee", x = 100, z = -45, yaw = -10 },
 	{ name = "env_barrier_jersey", x = 20, z = -44, yaw = 5 },
 	{ name = "env_barrier_jersey", x = -100, z = -46, yaw = -8 }, -- was x -120: the deck container's spot
 	{ name = "env_lamp_post", x = -42, z = -80, yaw = 0 },
@@ -178,24 +183,24 @@ local DRESSING: { Dressing } = {
 	-- Helipad (extraction, -90,-90) and the south-west
 	{ name = "env_lamp_post", x = -114, z = -114, yaw = 45 },
 	{ name = "env_lamp_post", x = -66, z = -114, yaw = 135 },
-	{ name = "env_lamp_post", x = -114, z = -66, yaw = -45 },
-	{ name = "env_barrier_jersey", x = -60, z = -70, yaw = 45 },
+	{ name = "env_lamp_post", x = -115, z = -72, yaw = -45 },
+	{ name = "env_barrier_jersey", x = -60, z = -74, yaw = 45 },
 	{ name = "env_barrier_jersey", x = -100, z = -116, yaw = 0 },
 	{ name = "env_barrier_jersey", x = -80, z = -116, yaw = 0 },
-	{ name = "env_hesco", x = -120, z = -40, yaw = 20 },
-	{ name = "env_hesco", x = -113, z = -40, yaw = 20 },
+	{ name = "env_hesco", x = -108, z = -40, yaw = 0 },
+	{ name = "env_hesco", x = -101, z = -40, yaw = 0 },
 	-- South-east corner and the eastern edge
 	-- The Overlook (top x 85..125, z -125..-85)
-	{ name = "env_guard_tower", x = 142, z = -100, yaw = 45 },
+	{ name = "env_guard_tower", x = 150, z = -100, yaw = 45 },
 	{ name = "env_sandbag_bunker", x = 104, z = -108, yaw = 180 },
 	{ name = "env_barrier_jersey", x = 60, z = -80, yaw = 30 },
-	{ name = "env_container_olive", x = 128, z = 10, yaw = 90 },
+	{ name = "env_container_olive", x = 134, z = 10, yaw = 90 },
 	{ name = "env_barrier_jersey", x = 60, z = -110, yaw = 30 },
 	-- Dead trees around the core
 	{ name = "env_dead_tree", x = -136, z = 110, yaw = 0 },
 	{ name = "env_dead_tree", x = -60, z = 132, yaw = 70 },
 	{ name = "env_dead_tree", x = 20, z = 136, yaw = 140 },
-	{ name = "env_dead_tree", x = 136, z = -20, yaw = 200 },
+	{ name = "env_dead_tree", x = 136, z = -16, yaw = 200 },
 	{ name = "env_dead_tree", x = 40, z = -136, yaw = 260 },
 	{ name = "env_dead_tree", x = -136, z = -10, yaw = 320 },
 	{ name = "env_dead_tree", x = 128, z = 130, yaw = 30 },
@@ -228,7 +233,7 @@ local DRESSING: { Dressing } = {
 	{ name = "env_container_rust", x = 198, z = 44, yaw = 90 },
 	{ name = "env_container_olive", x = 224, z = 20, yaw = 90 },
 	{ name = "env_container_rust", x = 224, z = 44, yaw = 90 },
-	{ name = "env_container_rust", x = 250, z = 20, yaw = 90 },
+	{ name = "env_container_rust", x = 250, z = 20, yaw = 90, perch = true, floor = 0.28 }, -- floor: the raycast lands on the Stack's ramp
 	{ name = "env_container_olive", x = 250, z = 44, yaw = 90 },
 	{ name = "env_container_rust", x = 174, z = 86, yaw = 90 }, -- against the Shed's west wall: its roof route
 	{ name = "env_hesco", x = 170, z = 70, yaw = 0 },
@@ -246,13 +251,13 @@ local DRESSING: { Dressing } = {
 	{ name = "env_wreck_humvee", x = 180, z = -150, yaw = 40 },
 	{ name = "env_lamp_post", x = 160, z = 90, yaw = 180 },
 	{ name = "env_lamp_post", x = 260, z = -120, yaw = 0 },
-	{ name = "env_dead_tree", x = 285, z = -70, yaw = 20 },
+	{ name = "env_dead_tree", x = 285, z = -74, yaw = 20 },
 	{ name = "env_dead_tree", x = 170, z = -260, yaw = 120 },
 	-- South: the Scrapyard (z -150..-300) and the Gate: a T-wall line across z = -274 (added
 	-- in code below) with one lane at x -42..-18, the booth beside it, a siren on a lamp post,
 	-- and the bus line queued inside the wire (Hocker-proof cover on the Gate approach).
 	{ name = "env_checkpoint", x = -54, z = -262, yaw = 0 },
-	{ name = "env_lamp_post", x = -10, z = -264, yaw = 0 },
+	{ name = "env_lamp_post", x = -14, z = -264, yaw = 0, floor = 0 }, -- floor: the raycast would land on its own siren head
 	{ name = "env_bus", x = -4, z = -150, yaw = 90 },
 	{ name = "env_bus", x = -4, z = -196, yaw = 90 },
 	{ name = "env_bus", x = -4, z = -242, yaw = 90 },
@@ -275,7 +280,7 @@ local DRESSING: { Dressing } = {
 	-- West: the Barracks row (x -300..-150). Two more blocks, and the Pens: the holding
 	-- tents on the terrace, ringed in hesco with three mouths (ring added in code below).
 	{ name = "env_ruin_building", x = -250, z = 30, yaw = 90, shell = true },
-	{ name = "env_ruin_building", x = -250, z = -60, yaw = 90, burning = true, shell = true },
+	{ name = "env_ruin_building", x = -250, z = -100, yaw = 90, burning = true, shell = true },
 	{ name = "env_tent", x = -266, z = 102, yaw = 0 },
 	{ name = "env_tent", x = -266, z = 120, yaw = 0 },
 	{ name = "env_tent", x = -266, z = 138, yaw = 0 },
@@ -296,7 +301,7 @@ local DRESSING: { Dressing } = {
 -- Only every ninth T-wall casts a shadow (72 walls in a row: the rest share theirs,
 -- docs/STYLES.md §6 budgets). Two stand on cribbing with a crawl gap under them, the
 -- Scrapes (A8): x -150 and x 114, cribs from buildPerches.
-for k = 0, 74 do
+for k = 0, 73 do -- k = 74 (x 298) would stand inside the east wall
 	if k < 32 or k > 34 then
 		table.insert(DRESSING, {
 			name = "env_twall",
@@ -310,94 +315,105 @@ for k = 0, 74 do
 end
 -- The Pens' hesco ring (docs/LEVELS.md A3): tall hesco (8.88: Walkers never climb it,
 -- Runners do) in north and south rows with a 20-wide mouth, an east column with a mouth,
--- the west closed by the arena wall. Infected climb the slope, meet hesco and nudge
+-- the west closed by the perimeter fence (A15). Infected climb the slope, meet hesco and nudge
 -- sideways into a mouth.
-for _, x in { -295.5, -289.6, -283, -276.4, -269.8, -263.2, -236.8, -230.2, -223.6, -217 } do
-	table.insert(DRESSING, { name = "env_hesco_tall", x = x, z = 147, yaw = 0 })
-	table.insert(DRESSING, { name = "env_hesco_tall", x = x, z = 93, yaw = 0 })
+for _, x in { -295.5, -289.6, -283, -276.4, -269.8, -263.2, -238.3, -231.7, -225.1, -218.5 } do
+	table.insert(DRESSING, { name = "env_hesco_tall", x = x, z = 146, yaw = 0 })
+	table.insert(DRESSING, { name = "env_hesco_tall", x = x, z = 94, yaw = 0 })
 end
 for _, z in { 100, 106.5, 133.5, 140 } do
-	table.insert(DRESSING, { name = "env_hesco_tall", x = -218, z = z, yaw = 90 })
+	table.insert(DRESSING, { name = "env_hesco_tall", x = -219, z = z, yaw = 90 })
 end
 -- Perches (A9): containers the squad can hold, each with a pallet ramp (buildPerches).
 table.insert(DRESSING, { name = "env_container_olive", x = -124, z = -82, yaw = 0 }) -- LZ north-west
 table.insert(DRESSING, { name = "env_container_rust", x = -130, z = -45, yaw = 0 }) -- on the highway deck
-table.insert(DRESSING, { name = "env_container_rust", x = -10, z = -10, yaw = 90 }) -- Apron, 40 from (30,-10)
+table.insert(DRESSING, { name = "env_container_rust", x = -10, z = -10, yaw = 90, perch = true }) -- Apron, 40 from (30,-10)
 -- The Stack: a third container across the two of Depot column D (lands in the 2-stud gap
 -- between them at z 32, so its raycast finds the pad, then `lift` puts it on their tops).
 table.insert(DRESSING, { name = "env_container_rust", x = 250, z = 32, yaw = 90, lift = 9.55 })
-table.insert(DRESSING, { name = "env_container_olive", x = 56, z = -45, yaw = 0 }) -- deck gantry step
+table.insert(DRESSING, { name = "env_container_olive", x = 56, z = -45, yaw = 0, perch = true }) -- deck gantry step
 
 -- Props (A11; assets/3d/README.md prop table). Registered meshes without an asset id yet are
 -- skipped at boot, so these placements are live the moment the ids land in MeshAssets.
 -- `floor` pins pieces inside a building to its floor (the raycast would find the roof).
 local PROPS: { Dressing } = {
 	-- The LZ
-	{ name = "prop_light_tower", x = -70, z = -116, yaw = 30 },
-	{ name = "prop_generator", x = -66, z = -108, yaw = 0 },
-	{ name = "prop_pallet", x = -110, z = -66, yaw = 0 },
-	{ name = "prop_pallet", x = -106, z = -66, yaw = 12 },
-	{ name = "prop_pallet", x = -110, z = -62, yaw = -8 },
-	{ name = "prop_body_bag", x = -74, z = -70, yaw = 0 },
-	{ name = "prop_body_bag", x = -74, z = -66, yaw = 4 },
-	{ name = "prop_portable_toilet", x = -118, z = -100, yaw = 90 },
-	{ name = "prop_fuel_bladder", x = -126, z = -100, yaw = 0 },
+	{ name = "prop_light_tower", x = -74, z = -104, yaw = 30 }, -- beside its generator, clear of the checkpoint
+	{ name = "prop_generator", x = -63, z = -108, yaw = 0 },
+	{ name = "prop_pallet", x = -125, z = -118, yaw = 0, lift = 0 }, -- pallets stack beside their source, never singles (LEVELS A12b)
+	{ name = "prop_pallet", x = -125, z = -118, yaw = 4, lift = 0.57 },
+	{ name = "prop_pallet", x = -125, z = -118, yaw = -3, lift = 1.14 },
+	{ name = "prop_pallet", x = -125, z = -118, yaw = 2, lift = 1.71 },
+	{ name = "prop_pallet", x = -120.5, z = -118, yaw = 0, lift = 0 },
+	{ name = "prop_pallet", x = -120.5, z = -118, yaw = 4, lift = 0.57 },
+	{ name = "prop_pallet", x = -120.5, z = -118, yaw = -3, lift = 1.14 },
+	{ name = "prop_pallet", x = -120.5, z = -118, yaw = 2, lift = 1.71 },
+	{ name = "prop_body_bag", x = -64, z = -96, yaw = 90 },
+	{ name = "prop_body_bag", x = -61, z = -96, yaw = 86 },
+	{ name = "prop_portable_toilet", x = -116, z = -106, yaw = 90 },
+	{ name = "prop_fuel_bladder", x = -136, z = -100, yaw = 0 },
 	-- The Apron and the Screening Block
-	{ name = "prop_body_bag", x = -8, z = 56, yaw = 90 },
-	{ name = "prop_body_bag", x = -4, z = 56, yaw = 90 },
-	{ name = "prop_body_bag", x = 0, z = 56, yaw = 90 },
-	{ name = "prop_body_bag", x = 4, z = 56, yaw = 90 },
+	{ name = "prop_body_bag", x = -8, z = 53, yaw = 90 },
+	{ name = "prop_body_bag", x = -4, z = 53, yaw = 90 },
+	{ name = "prop_body_bag", x = 0, z = 53, yaw = 90 },
+	{ name = "prop_body_bag", x = 4, z = 53, yaw = 90 },
 	{ name = "prop_concertina", x = -2, z = 84, yaw = 0 },
-	{ name = "prop_light_tower", x = 16, z = 56, yaw = 0 },
-	{ name = "prop_portable_toilet", x = 10, z = 84, yaw = 180 },
-	{ name = "prop_portable_toilet", x = 14, z = 84, yaw = 180 },
-	{ name = "prop_generator", x = -10, z = 84, yaw = 0 },
-	{ name = "prop_civilian_car", x = 14, z = -30, yaw = 100 },
+	{ name = "prop_light_tower", x = 12, z = 50, yaw = 0 },
+	{ name = "prop_portable_toilet", x = 7, z = 84, yaw = 180 },
+	{ name = "prop_portable_toilet", x = 11.6, z = 84, yaw = 180 },
+	{ name = "prop_generator", x = -16, z = 84, yaw = 0 },
+	{ name = "prop_car_sedan", x = 52, z = -4, yaw = 100 },
 	{ name = "prop_dumpster", x = -8, z = 30, yaw = 20 },
 	-- The Compound (hill top y 8)
 	{ name = "prop_generator", x = 106, z = 30, yaw = 0 },
-	{ name = "prop_pallet", x = 36, z = 66, yaw = 0 },
-	{ name = "prop_pallet", x = 36, z = 70, yaw = 15 },
-	{ name = "prop_cot", x = 54, z = 100, yaw = 0 },
-	{ name = "prop_cot", x = 54, z = 106, yaw = 0 },
+	{ name = "prop_pallet", x = 30, z = 98, yaw = 0, lift = 0 },
+	{ name = "prop_pallet", x = 30, z = 98, yaw = 4, lift = 0.57 },
+	{ name = "prop_pallet", x = 30, z = 98, yaw = -3, lift = 1.14 },
+	{ name = "prop_pallet", x = 30, z = 98, yaw = 2, lift = 1.71 },
+	{ name = "prop_cot", x = 56, z = 92, yaw = 0 },
+	{ name = "prop_cot", x = 56, z = 96, yaw = 0 },
 	{ name = "prop_light_tower", x = 60, z = 40, yaw = 0 },
-	{ name = "prop_body_bag", x = 70, z = 90, yaw = 0 },
-	{ name = "prop_body_bag", x = 70, z = 93, yaw = 0 },
-	{ name = "prop_body_bag", x = 70, z = 96, yaw = 0 },
+	{ name = "prop_body_bag", x = 66, z = 90, yaw = 0 },
+	{ name = "prop_body_bag", x = 66, z = 93, yaw = 0 },
+	{ name = "prop_body_bag", x = 66, z = 96, yaw = 0 },
 	-- The Ridge (hill top y 8; the ruin's ground floor)
 	{ name = "prop_cot", x = -96, z = 42, yaw = 0, floor = 8 },
 	{ name = "prop_cot", x = -96, z = 46, yaw = 0, floor = 8 },
 	{ name = "prop_generator", x = -76, z = 44, yaw = 0 },
 	{ name = "prop_chainlink_panel", x = -126, z = 40, yaw = 90 },
 	{ name = "prop_chainlink_panel", x = -126, z = 52, yaw = 90 },
-	{ name = "prop_pallet", x = -84, z = 58, yaw = 0 },
 	-- The Inner Gate (z -112)
-	{ name = "prop_concertina", x = -80, z = -106, yaw = 0 },
+	{ name = "prop_concertina", x = -44, z = -107, yaw = 0 }, -- clear of the generator (ends x -59)
 	{ name = "prop_concertina", x = 6, z = -106, yaw = 0 },
 	{ name = "prop_light_tower", x = -70, z = -132, yaw = 0 },
 	{ name = "prop_generator", x = -4, z = -126, yaw = 0 },
-	{ name = "prop_body_bag", x = -72, z = -122, yaw = 0 },
-	{ name = "prop_body_bag", x = -72, z = -125, yaw = 0 },
+	{ name = "prop_body_bag", x = -75, z = -121, yaw = 0 },
+	{ name = "prop_body_bag", x = -75, z = -124, yaw = 0 },
 	-- The highway deck (y 12)
-	{ name = "prop_civilian_car", x = -200, z = -43, yaw = 10 },
-	{ name = "prop_civilian_car", x = -70, z = -47, yaw = -8 },
-	{ name = "prop_civilian_car", x = 160, z = -43, yaw = 5 },
-	{ name = "prop_civilian_car", x = 240, z = -47, yaw = -12 },
+	{ name = "prop_car_hatch", x = -200, z = -43, yaw = 10 },
+	{ name = "prop_car_sedan", x = -70, z = -47, yaw = -8 },
+	{ name = "prop_car_pickup", x = 160, z = -43, yaw = 5 },
+	{ name = "prop_car_hatch", x = 240, z = -47, yaw = -12 },
 	-- The Overlook (y 14)
 	{ name = "prop_generator", x = 116, z = -116, yaw = 0 },
-	{ name = "prop_pallet", x = 92, z = -92, yaw = 0 },
-	{ name = "prop_pallet", x = 96, z = -92, yaw = 20 },
-	{ name = "prop_light_tower", x = 118, z = -92, yaw = 0 },
+	{ name = "prop_light_tower", x = 120, z = -90, yaw = 0 },
+	{ name = "env_barrier_jersey", x = 64, z = -38.5, yaw = 0 }, -- Deck jersey line (LEVELS D3)
+	{ name = "env_barrier_jersey", x = 72, z = -38.5, yaw = 0 },
+	{ name = "env_barrier_jersey", x = 84, z = -38.5, yaw = 0 },
+	{ name = "env_barrier_jersey", x = 118, z = -38.5, yaw = 0 },
+	{ name = "env_barrier_jersey", x = 126, z = -38.5, yaw = 0 },
 	-- The Suburb: the Parade, the church, the north road
-	{ name = "prop_civilian_car", x = -100, z = 192, yaw = 80 },
-	{ name = "prop_civilian_car", x = 0, z = 208, yaw = -5 },
-	{ name = "prop_civilian_car", x = 140, z = 192, yaw = 100 },
-	{ name = "prop_civilian_car", x = 220, z = 208, yaw = 3 },
+	{ name = "prop_car_sedan", x = -100, z = 192, yaw = 80 },
+	{ name = "prop_car_hatch", x = 0, z = 208, yaw = -5 },
+	{ name = "prop_car_pickup", x = 156, z = 196, yaw = 100 },
+	{ name = "prop_car_sedan", x = 220, z = 208, yaw = 3 },
+	{ name = "prop_car_sedan", x = -160, z = 204, yaw = 178 },
+	{ name = "prop_car_hatch", x = 180, z = 196, yaw = -4 },
 	{ name = "prop_dumpster", x = 108, z = 167, yaw = 0 }, -- the Walker step to the Parade roof
 	{ name = "prop_dumpster", x = 70, z = 196, yaw = 15 },
-	{ name = "prop_body_bag", x = 56, z = 240, yaw = 0 },
-	{ name = "prop_body_bag", x = 60, z = 240, yaw = 0 },
-	{ name = "prop_body_bag", x = 64, z = 240, yaw = 0 },
+	{ name = "prop_body_bag", x = 56, z = 240, yaw = 90 }, -- side by side (a bag is 6.6 long)
+	{ name = "prop_body_bag", x = 60, z = 240, yaw = 90 },
+	{ name = "prop_body_bag", x = 64, z = 240, yaw = 90 },
 	{ name = "prop_plank", x = 30, z = 270, yaw = 20 },
 	{ name = "prop_plank", x = -60, z = 230, yaw = 70 },
 	{ name = "prop_portable_toilet", x = 100, z = 164, yaw = 0 },
@@ -405,17 +421,23 @@ local PROPS: { Dressing } = {
 	{ name = "prop_chainlink_panel", x = -168, z = 165, yaw = 0 },
 	{ name = "prop_concertina", x = -10, z = 268, yaw = 0 },
 	-- The Depot (pad y 0.3)
-	{ name = "prop_pallet", x = 162, z = 24, yaw = 0 },
-	{ name = "prop_pallet", x = 162, z = 30, yaw = 0 },
-	{ name = "prop_pallet", x = 162, z = 36, yaw = 10 },
-	{ name = "prop_pallet", x = 162, z = 42, yaw = 0 },
-	{ name = "prop_pallet", x = 240, z = 70, yaw = 0 },
-	{ name = "prop_pallet", x = 246, z = 70, yaw = 5 },
-	{ name = "prop_generator", x = 230, z = 100, yaw = 0 },
-	{ name = "prop_light_tower", x = 266, z = 96, yaw = 0 },
+	{ name = "prop_pallet", x = 162, z = 26, yaw = 0, lift = 0 },
+	{ name = "prop_pallet", x = 162, z = 26, yaw = 4, lift = 0.57 },
+	{ name = "prop_pallet", x = 162, z = 26, yaw = -3, lift = 1.14 },
+	{ name = "prop_pallet", x = 162, z = 26, yaw = 2, lift = 1.71 },
+	{ name = "prop_pallet", x = 162, z = 38, yaw = 0, lift = 0 },
+	{ name = "prop_pallet", x = 162, z = 38, yaw = 4, lift = 0.57 },
+	{ name = "prop_pallet", x = 162, z = 38, yaw = -3, lift = 1.14 },
+	{ name = "prop_pallet", x = 162, z = 38, yaw = 2, lift = 1.71 },
+	{ name = "prop_pallet", x = 229, z = 70, yaw = 0, lift = 0 },
+	{ name = "prop_pallet", x = 229, z = 70, yaw = 4, lift = 0.57 },
+	{ name = "prop_pallet", x = 229, z = 70, yaw = -3, lift = 1.14 },
+	{ name = "prop_pallet", x = 229, z = 70, yaw = 2, lift = 1.71 },
+	{ name = "prop_generator", x = 228, z = 100, yaw = 0 },
+	{ name = "prop_light_tower", x = 282, z = 110, yaw = 0 },
 	{ name = "prop_light_tower", x = 166, z = 0, yaw = 0 },
 	{ name = "prop_dumpster", x = 176, z = 104, yaw = 0 },
-	{ name = "prop_fuel_bladder", x = 264, z = 70, yaw = 0 },
+	{ name = "prop_fuel_bladder", x = 282, z = 58, yaw = 0 },
 	{ name = "prop_chainlink_panel", x = 200, z = -8, yaw = 0 },
 	{ name = "prop_chainlink_panel", x = 212, z = -8, yaw = 0 },
 	{ name = "prop_chainlink_panel", x = 224, z = -8, yaw = 0 },
@@ -423,22 +445,24 @@ local PROPS: { Dressing } = {
 	-- The Pumps
 	{ name = "prop_fuel_bladder", x = 100, z = -168, yaw = 0 },
 	{ name = "prop_fuel_bladder", x = 112, z = -170, yaw = 0 },
-	{ name = "prop_civilian_car", x = 130, z = -174, yaw = 95 },
+	{ name = "prop_car_hatch", x = 130, z = -174, yaw = 95 },
 	{ name = "prop_generator", x = 158, z = -168, yaw = 0 },
 	-- The Scrapyard and the Gate
-	{ name = "prop_civilian_car", x = -120, z = -230, yaw = 40 },
-	{ name = "prop_civilian_car", x = -80, z = -250, yaw = -30 },
-	{ name = "prop_civilian_car", x = 16, z = -258, yaw = 20 },
-	{ name = "prop_civilian_car", x = 130, z = -220, yaw = 70 },
-	{ name = "prop_dumpster", x = -150, z = -200, yaw = 0 },
+	{ name = "prop_car_van", x = -120, z = -230, yaw = 40 },
+	{ name = "prop_car_van", x = -80, z = -250, yaw = -30 },
+	{ name = "prop_cargo_truck", x = -143, z = -120, yaw = 0 }, -- LZ supply truck: the pallet stacks sit at its tail (LEVELS D1)
+	{ name = "prop_cargo_truck", x = 242, z = -10, yaw = 0 }, -- closes the Depot south line: crawl under the bed into the yard
+	{ name = "prop_car_sedan", x = 16, z = -258, yaw = 20 },
+	{ name = "prop_car_hatch", x = 130, z = -220, yaw = 70 },
+	{ name = "prop_dumpster", x = -150, z = -198, yaw = 0 },
 	{ name = "prop_dumpster", x = 70, z = -200, yaw = 30 },
-	{ name = "prop_concertina", x = -200, z = -268, yaw = 0 },
+	{ name = "prop_concertina", x = -200, z = -270, yaw = 0 },
 	{ name = "prop_concertina", x = -120, z = -268, yaw = 0 },
 	{ name = "prop_concertina", x = 60, z = -268, yaw = 0 },
 	{ name = "prop_concertina", x = 140, z = -268, yaw = 0 },
-	{ name = "prop_plank", x = -160, z = -220, yaw = 30 },
+	{ name = "prop_plank", x = -164, z = -220, yaw = 30 },
 	{ name = "prop_plank", x = 90, z = -240, yaw = 60 },
-	{ name = "prop_light_tower", x = -70, z = -252, yaw = 0 },
+	{ name = "prop_light_tower", x = -64, z = -244, yaw = 0 },
 	-- The Lines (hut floors at ground), the Pens, the Armoury
 	{ name = "prop_cot", x = -280, z = 64, yaw = 0, floor = 0 },
 	{ name = "prop_cot", x = -274, z = 64, yaw = 0, floor = 0 },
@@ -449,31 +473,33 @@ local PROPS: { Dressing } = {
 	{ name = "prop_cot", x = -220, z = 64, yaw = 0, floor = 0 },
 	{ name = "prop_cot", x = -214, z = 64, yaw = 0, floor = 0 },
 	{ name = "prop_cot", x = -202, z = 64, yaw = 0, floor = 0 },
-	{ name = "prop_portable_toilet", x = -280, z = 78, yaw = 180 },
+	{ name = "prop_portable_toilet", x = -280.6, z = 78, yaw = 180 },
 	{ name = "prop_portable_toilet", x = -276, z = 78, yaw = 180 },
-	{ name = "prop_portable_toilet", x = -272, z = 78, yaw = 180 },
+	{ name = "prop_portable_toilet", x = -271.4, z = 78, yaw = 180 },
 	{ name = "prop_generator", x = -226, z = 78, yaw = 0 },
-	{ name = "prop_light_tower", x = -240, z = 44, yaw = 0 },
-	{ name = "prop_chainlink_panel", x = -190, z = 100, yaw = 90 },
-	{ name = "prop_chainlink_panel", x = -190, z = 112, yaw = 90 },
+	{ name = "prop_light_tower", x = -232, z = 46, yaw = 0 },
+	{ name = "prop_chainlink_panel", x = -184, z = 100, yaw = 90 },
+	{ name = "prop_chainlink_panel", x = -184, z = 112, yaw = 90 },
 	{ name = "prop_concertina", x = -250, z = 160, yaw = 0 },
 	{ name = "prop_body_bag", x = -240, z = 100, yaw = 0 },
-	{ name = "prop_body_bag", x = -240, z = 103, yaw = 0 },
-	{ name = "prop_body_bag", x = -236, z = 100, yaw = 0 },
-	{ name = "prop_body_bag", x = -236, z = 103, yaw = 0 },
-	{ name = "prop_pallet", x = -224, z = 2, yaw = 0 },
-	{ name = "prop_pallet", x = -224, z = 6, yaw = 0 },
+	{ name = "prop_body_bag", x = -240, z = 103.5, yaw = 0 },
+	{ name = "prop_body_bag", x = -232, z = 100, yaw = 0 }, -- 8 apart: a bag is 6.6 long
+	{ name = "prop_body_bag", x = -232, z = 103.5, yaw = 0 },
+	{ name = "prop_pallet", x = -224, z = 4, yaw = 0, lift = 0 },
+	{ name = "prop_pallet", x = -224, z = 4, yaw = 4, lift = 0.57 },
+	{ name = "prop_pallet", x = -224, z = 4, yaw = -3, lift = 1.14 },
+	{ name = "prop_pallet", x = -224, z = 4, yaw = 2, lift = 1.71 },
 	{ name = "prop_generator", x = -196, z = 4, yaw = 0 },
-	{ name = "prop_chainlink_panel", x = -230, z = -12, yaw = 0 },
-	{ name = "prop_chainlink_panel", x = -218, z = -12, yaw = 0 },
+	{ name = "prop_chainlink_panel", x = -236, z = -12, yaw = 0 },
+	{ name = "prop_chainlink_panel", x = -224, z = -12, yaw = 0 },
 	-- Outer hills
 	{ name = "prop_light_tower", x = -172, z = -224, yaw = 0 }, -- SouthRise
-	{ name = "prop_pallet", x = -210, z = -245, yaw = 0 },
-	{ name = "prop_pallet", x = -204, z = -245, yaw = 0 },
+	{ name = "prop_pallet", x = -207, z = -245, yaw = 0, lift = 0 },
+	{ name = "prop_pallet", x = -207, z = -245, yaw = 4, lift = 0.57 },
+	{ name = "prop_pallet", x = -207, z = -245, yaw = -3, lift = 1.14 },
+	{ name = "prop_pallet", x = -207, z = -245, yaw = 2, lift = 1.71 },
 	{ name = "prop_generator", x = 250, z = -220, yaw = 0 }, -- Depot mound
-	{ name = "prop_pallet", x = 222, z = -190, yaw = 0 },
 	{ name = "prop_generator", x = -216, z = 248, yaw = 0 }, -- NorthBluff
-	{ name = "prop_pallet", x = -244, z = 248, yaw = 0 },
 }
 for _, prop in PROPS do
 	table.insert(DRESSING, prop)
@@ -517,7 +543,8 @@ local function buildHill(parent: Instance, hill: Hill)
 		model
 	-- A WedgePart rises from its -Z edge to its +Z face, so each embankment is yawed to put
 	-- the tall face against the plateau.
-	local sides = {
+	type Side = { x: number, z: number, yaw: number, w: number }
+	local sides: { [string]: Side } = {
 		south = { x = 0, z = -(hz + slope / 2), yaw = 0, w = hill.top.X },
 		north = { x = 0, z = hz + slope / 2, yaw = 180, w = hill.top.X },
 		east = { x = hx + slope / 2, z = 0, yaw = -90, w = hill.top.Y },
@@ -664,7 +691,7 @@ local function buildLandmarks(parent: Instance)
 		model
 	makePart(
 		"WhiteboardLegs",
-		Vector3.new(0.3, 2, 5),
+		Vector3.new(0.2, 2, 4.8),
 		CFrame.new(-87, 9, 48),
 		Color3.fromRGB(48, 50, 54)
 	).Parent =
@@ -686,7 +713,7 @@ local function buildLandmarks(parent: Instance)
 	local siren = makePart(
 		"Siren",
 		Vector3.new(1.5, 1.5, 1),
-		CFrame.new(-10, 11, -264),
+		CFrame.new(-14, 11, -264),
 		Color3.fromRGB(185, 52, 52)
 	)
 	siren.Material = Enum.Material.Neon
@@ -699,7 +726,7 @@ local function buildLandmarks(parent: Instance)
 	model.Parent = parent
 end
 
--- Ground patches (docs/LEVELS.md A12, 2026-11-07): thin Mud / Rock / darker-Ground sheets on
+-- Ground patches (docs/LEVELS.md A12): thin Mud / Rock / darker-Ground sheets on
 -- the floor at hill feet, along the roads and in the yards, so the ground reads as used.
 -- Decoration only: no collision, no query (dressing raycasts land on the floor under them).
 type Patch = { x: number, z: number, w: number, d: number, kind: string, yaw: number? }
@@ -742,12 +769,13 @@ local PATCHES: { Patch } = {
 local function buildGroundPatches(parent: Instance)
 	local model = Instance.new("Model")
 	model.Name = "GroundPatches"
-	for _, patch in PATCHES do
+	for index, patch in PATCHES do
 		local look = PATCH_LOOKS[patch.kind]
 		local part = Instance.new("Part")
 		part.Name = "Patch"
 		part.Size = Vector3.new(patch.w, 0.24, patch.d)
-		part.CFrame = CFrame.new(patch.x, 0, patch.z)
+		-- Each patch a hair higher than the last, so two that overlap never share a top face.
+		part.CFrame = CFrame.new(patch.x, -0.04 + index * 0.003, patch.z)
 			* CFrame.Angles(0, math.rad(patch.yaw or 0), 0)
 		part.Anchored = true
 		part.CanCollide = false
@@ -781,6 +809,7 @@ local RAMPS: { Ramp } = {
 	{ x = 250, z = 1.65, yaw = 0, rise = 9.55, base = 0.3 },
 	{ x = 250, z = 15, yaw = 0, rise = 9.55, base = 9.85, length = 12 },
 	{ x = 74.4, z = -45, yaw = -90, rise = 9.55, base = 12 }, -- deck gantry container (56,-45)
+	{ x = 81.9, z = 44, yaw = 90, rise = 9.55, base = 8 }, -- Compound E container (100,44): no Walker-proof camp beside Site 1
 }
 
 local function buildPerches(parent: Instance)
@@ -842,7 +871,7 @@ local function buildGantry(parent: Instance)
 			local leg = steel(
 				"Leg",
 				Vector3.new(1.2, floorY - HIGHWAY_Y, 1.2),
-				CFrame.new(40 + sx * 4.4, (floorY + HIGHWAY_Y) / 2, -45 + sz * 9.4)
+				CFrame.new(40 + sx * 4.3, (floorY + HIGHWAY_Y) / 2, -45 + sz * 9.3) -- inset: no face shared with the floor
 			)
 			leg.Material = Enum.Material.Metal
 		end
@@ -855,6 +884,274 @@ local function buildGantry(parent: Instance)
 	truss.Material = Enum.Material.Metal
 	truss.CollisionGroup = "Ladder"
 	model.Parent = parent
+end
+
+-- ---------------------------------------------------------------- the perimeter
+-- docs/LEVELS.md A15 (level designer). The owner: "get rid of the sense of the
+-- map being walled off and closed in." The four 24-stud concrete walls are gone. What the
+-- squad sees at the edge is the quarantine fence (chain-link with wire on top) and its
+-- towers, and the world carries on past it: dust ground to 700 out, an earth berm on the
+-- west, the highway running on and breaking off to the east and west, the road south to the
+-- burning city with a queue of abandoned traffic, sparse ruins to the north, then fog and
+-- the DistantCity ring. What stops them is an invisible collider just behind the fence
+-- (BoundaryHeight tall; bullets, the camera and the vault/climb checks pass through it).
+-- Everything past the fence is `decor` (no collision, no queries, no shadow) and lives in
+-- the Persistent "Perimeter" model so the far fence never streams out.
+local FENCE_LINE = 299.6 -- the fence stands just inside the boundary collider (inner face 300)
+local FENCE_STEP = 12 -- one chain-link panel (12.06 wide) every 12 studs
+local HIGHWAY_GAP = { -73, -17 } -- z band on the east / west edges: the highway embankment (slopes included) runs out here
+local PERIMETER: { Dressing } = {
+	-- North: towers past the fence, the Suburb running on as shell ruins and dead trees.
+	{ name = "env_guard_tower", x = -180, z = 312, yaw = 180, decor = true },
+	{ name = "env_guard_tower", x = -60, z = 312, yaw = 180, decor = true },
+	{ name = "env_guard_tower", x = 60, z = 312, yaw = 180, decor = true },
+	{ name = "env_guard_tower", x = 180, z = 312, yaw = 180, decor = true },
+	{ name = "env_ruin_building", x = -150, z = 360, yaw = 10, shell = true, decor = true },
+	{ name = "env_ruin_building", x = 40, z = 380, yaw = 185, shell = true, decor = true },
+	{ name = "env_ruin_building", x = 200, z = 350, yaw = -15, shell = true, decor = true },
+	{ name = "env_dead_tree", x = -240, z = 340, yaw = 30, decor = true },
+	{ name = "env_dead_tree", x = -90, z = 410, yaw = 110, decor = true },
+	{ name = "env_dead_tree", x = -20, z = 345, yaw = 200, decor = true },
+	{ name = "env_dead_tree", x = 110, z = 420, yaw = 290, decor = true },
+	{ name = "env_dead_tree", x = 150, z = 335, yaw = 60, decor = true },
+	{ name = "env_dead_tree", x = 270, z = 390, yaw = 150, decor = true },
+	-- East: towers, the field, the highway running on (built below) to a broken end.
+	{ name = "env_guard_tower", x = 312, z = 180, yaw = -90, decor = true },
+	{ name = "env_guard_tower", x = 312, z = 60, yaw = -90, decor = true },
+	{ name = "env_guard_tower", x = 312, z = -150, yaw = -90, decor = true },
+	{ name = "env_container_rust", x = 360, z = 120, yaw = 35, decor = true },
+	{ name = "env_container_olive", x = 400, z = -200, yaw = -20, decor = true },
+	{ name = "env_container_rust", x = 404, z = -45, yaw = 12, floor = 0, decor = true }, -- under the broken deck
+	{ name = "env_dead_tree", x = 345, z = 250, yaw = 20, decor = true },
+	{ name = "env_dead_tree", x = 420, z = 40, yaw = 140, decor = true },
+	{ name = "env_dead_tree", x = 350, z = -110, yaw = 260, decor = true },
+	{ name = "env_dead_tree", x = 380, z = -280, yaw = 80, decor = true },
+	-- West: towers on the berm crest (top 10); the z 60 one lines up with the Lines' huts.
+	{ name = "env_guard_tower", x = -327, z = 180, yaw = 90, floor = 10, decor = true },
+	{ name = "env_guard_tower", x = -327, z = 60, yaw = 90, floor = 10, decor = true },
+	{ name = "env_guard_tower", x = -327, z = -150, yaw = 90, floor = 10, decor = true },
+	{ name = "env_container_olive", x = -404, z = -45, yaw = -12, floor = 0, decor = true },
+	-- South: the outer wire past the Gate, unlit light towers, the road to the city and the
+	-- traffic that never got through.
+	{ name = "prop_light_tower", x = -150, z = -308, yaw = 0, decor = true },
+	{ name = "prop_light_tower", x = -90, z = -308, yaw = 0, decor = true },
+	{ name = "prop_light_tower", x = 30, z = -308, yaw = 0, decor = true },
+	{ name = "prop_light_tower", x = 114, z = -308, yaw = 0, decor = true },
+	{ name = "env_bus", x = -36, z = -345, yaw = 92, decor = true },
+	{ name = "env_bus", x = -23, z = -392, yaw = 85, decor = true },
+	{ name = "env_wreck_humvee", x = -37, z = -420, yaw = 70, decor = true },
+	{ name = "env_container_olive", x = 10, z = -360, yaw = 60, decor = true },
+	{ name = "env_container_rust", x = -80, z = -410, yaw = -30, decor = true },
+	{ name = "env_dead_tree", x = -200, z = -350, yaw = 45, decor = true },
+	{ name = "env_dead_tree", x = 160, z = -380, yaw = 170, decor = true },
+	-- Corners
+	{ name = "env_guard_tower", x = 312, z = 312, yaw = 225, decor = true },
+	{ name = "env_guard_tower", x = -312, z = 312, yaw = 135, floor = 10, decor = true },
+	{ name = "env_guard_tower", x = 312, z = -312, yaw = -45, decor = true },
+	{ name = "env_guard_tower", x = -312, z = -312, yaw = 45, floor = 10, decor = true },
+	-- The Gate's T-wall line carries on outside the fence (decor).
+	{ name = "env_twall", x = -306, z = -274, yaw = 0, decor = true },
+	{ name = "env_twall", x = -314, z = -274, yaw = 0, decor = true },
+	{ name = "env_twall", x = -322, z = -274, yaw = 0, decor = true },
+	{ name = "env_twall", x = 306, z = -274, yaw = 0, decor = true },
+	{ name = "env_twall", x = 314, z = -274, yaw = 0, decor = true },
+	{ name = "env_twall", x = 322, z = -274, yaw = 0, decor = true },
+	-- Roadblocks where the highway deck meets the boundary (inside: real cover).
+	{ name = "env_barrier_jersey", x = 296, z = -51, yaw = 90 },
+	{ name = "env_barrier_jersey", x = 296, z = -45, yaw = 90 },
+	{ name = "env_barrier_jersey", x = 296, z = -39, yaw = 90 },
+	{ name = "env_barrier_jersey", x = -296, z = -51, yaw = 90 },
+	{ name = "env_barrier_jersey", x = -296, z = -45, yaw = 90 },
+	{ name = "env_barrier_jersey", x = -296, z = -39, yaw = 90 },
+	{ name = "prop_concertina", x = 297, z = -48, yaw = 90, lift = 2.75 },
+	{ name = "prop_concertina", x = -297, z = -48, yaw = 90, lift = 2.75 },
+}
+-- The fence: a chain-link panel every FENCE_STEP along each edge (yaw 0 north / south, 90
+-- east / west) with a coil of wire on top, skipping the highway deck's ends (the roadblocks
+-- close those) . Raycast-placed, so it rides the Pens terrace (6) on the west.
+-- The fence line: one entry per panel. `placeFence` stands each panel on the lowest ground
+-- under its two ends (its posts sink into a slope rather than one end floating) and puts a
+-- coil of wire on top.
+type FencePanel = { x: number, z: number, yaw: number }
+local FENCE: { FencePanel } = {}
+for k = 0, 49 do
+	local along = -294 + FENCE_STEP * k
+	for _, edge in
+		{
+			{ x = along, z = FENCE_LINE, yaw = 0 },
+			{ x = along, z = -FENCE_LINE, yaw = 0 },
+			{ x = FENCE_LINE, z = along, yaw = 90 },
+			{ x = -FENCE_LINE, z = along, yaw = 90 },
+		}
+	do
+		local onSide = edge.yaw == 90
+		if not (onSide and along > HIGHWAY_GAP[1] and along < HIGHWAY_GAP[2]) then
+			table.insert(FENCE, edge)
+		end
+	end
+end
+
+local DECOR_DUST = Color3.fromRGB(94, 88, 76)
+
+-- A plain Part with no collision, no queries and no shadow: scenery past the fence.
+local function decorPart(
+	parent: Instance,
+	name: string,
+	size: Vector3,
+	cframe: CFrame,
+	color: Color3,
+	class: string?
+)
+	local part = makePart(name, size, cframe, color, class)
+	part.CanCollide = false
+	part.CanQuery = false
+	part.CanTouch = false
+	part.CastShadow = false
+	part.Parent = parent
+	return part
+end
+
+local function buildPerimeter(arena: Instance)
+	-- The scenery is its own Persistent model beside TestArena, not inside it: it is a few
+	-- hundred meshes placed after boot, and inside TestArena it held back the floor's
+	-- replication, so the first character spawned with no ground under it and fell.
+	local model = Instance.new("Model")
+	model.Name = "Perimeter"
+	model.ModelStreamingMode = Enum.ModelStreamingMode.Persistent
+	-- What stops the squad: invisible walls just behind the fence (inner face at 300).
+	local height = Config.Arena.BoundaryHeight
+	for _, side in
+		{
+			{
+				name = "BoundaryPosX",
+				size = Vector3.new(2, height, 640),
+				at = Vector3.new(HALF + 1, height / 2, 0),
+			},
+			{
+				name = "BoundaryNegX",
+				size = Vector3.new(2, height, 640),
+				at = Vector3.new(-HALF - 1, height / 2, 0),
+			},
+			{
+				name = "BoundaryPosZ",
+				size = Vector3.new(640, height, 2),
+				at = Vector3.new(0, height / 2, HALF + 1),
+			},
+			{
+				name = "BoundaryNegZ",
+				size = Vector3.new(640, height, 2),
+				at = Vector3.new(0, height / 2, -HALF - 1),
+			},
+		}
+	do
+		local wall = makePart(side.name, side.size, CFrame.new(side.at), WALL_COLOR)
+		wall.Transparency = 1
+		wall.CanQuery = false
+		wall.CanTouch = false
+		wall.CastShadow = false
+		wall.Parent = arena -- the boundary is part of the arena itself
+	end
+	-- The ground carries on to 700 out (the play floor is 600 x 600).
+	decorPart(
+		model,
+		"OuterGroundN",
+		Vector3.new(1400, 1, 400),
+		CFrame.new(0, -0.5, 500),
+		DECOR_DUST
+	)
+	decorPart(
+		model,
+		"OuterGroundS",
+		Vector3.new(1400, 1, 400),
+		CFrame.new(0, -0.5, -500),
+		DECOR_DUST
+	)
+	decorPart(model, "OuterGroundE", Vector3.new(400, 1, 600), CFrame.new(500, -0.5, 0), DECOR_DUST)
+	decorPart(
+		model,
+		"OuterGroundW",
+		Vector3.new(400, 1, 600),
+		CFrame.new(-500, -0.5, 0),
+		DECOR_DUST
+	)
+	-- The road south out of the Gate to the city.
+	decorPart(model, "CityRoad", Vector3.new(24, 0.2, 400), CFrame.new(-30, 0.1, -500), ROAD_COLOR)
+	-- West: an earth berm behind the fence (up 0 -> 10 over x -304..-324, crest to -330,
+	-- down to -350), in two runs with a gap where the highway runs out; a fill block levels
+	-- the Pens terrace (6) out to the berm.
+	for _, run in { { z0 = -30, z1 = 300 }, { z0 = -300, z1 = -60 } } do
+		local length = run.z1 - run.z0
+		local zc = (run.z0 + run.z1) / 2
+		decorPart(
+			model,
+			"BermFace",
+			Vector3.new(length, 10, 20),
+			CFrame.new(-314, 5, zc) * CFrame.Angles(0, math.rad(90), 0),
+			HILL_COLOR,
+			"WedgePart"
+		)
+		decorPart(
+			model,
+			"BermCrest",
+			Vector3.new(6, 10, length),
+			CFrame.new(-327, 5, zc),
+			HILL_COLOR
+		)
+		decorPart(
+			model,
+			"BermBack",
+			Vector3.new(length, 10, 20),
+			CFrame.new(-340, 5, zc) * CFrame.Angles(0, math.rad(-90), 0),
+			SLOPE_COLOR,
+			"WedgePart"
+		)
+	end
+	decorPart(model, "PensFill", Vector3.new(12, 6, 74), CFrame.new(-306, 3, 120), HILL_COLOR)
+	-- The highway runs on past the fence both ways and breaks off: embankment, asphalt and
+	-- one fallen deck slab at each end.
+	for _, sx in { -1, 1 } do
+		local cx = sx * 350
+		decorPart(
+			model,
+			"HighwayRunOn",
+			Vector3.new(100, 12, 18),
+			CFrame.new(cx, 6, -45),
+			HILL_COLOR
+		)
+		-- its embankment slopes (14.4 deep, as HighwayWest / HighwayEast)
+		decorPart(
+			model,
+			"HighwayRunOnSlopeS",
+			Vector3.new(100, 12, 14.4),
+			CFrame.new(cx, 6, -61.2),
+			SLOPE_COLOR,
+			"WedgePart"
+		)
+		decorPart(
+			model,
+			"HighwayRunOnSlopeN",
+			Vector3.new(100, 12, 14.4),
+			CFrame.new(cx, 6, -28.8) * CFrame.Angles(0, math.rad(180), 0),
+			SLOPE_COLOR,
+			"WedgePart"
+		)
+		decorPart(
+			model,
+			"HighwayRunOnRoad",
+			Vector3.new(100, 0.2, 14),
+			CFrame.new(cx, 12.1, -45),
+			ROAD_COLOR
+		)
+		decorPart(
+			model,
+			"HighwayFallenSlab",
+			Vector3.new(30, 1.5, 18),
+			CFrame.new(sx * 413, 6, -45) * CFrame.Angles(0, 0, math.rad(sx * 24)),
+			CONCRETE_COLOR
+		)
+	end
+	model.Parent = workspace
+	return model
 end
 
 local colliderCount = 0 -- invisible collider Parts placed (Config.Arena.ColliderBudget)
@@ -883,12 +1180,48 @@ local function placePiece(folder: Folder, params: RaycastParams, entry: Dressing
 	else
 		local hit = workspace:Raycast(Vector3.new(x, 100, z), Vector3.new(0, -200, 0), params)
 		groundY = if hit then hit.Position.Y else 0
+		-- A piece is placed from one raycast at its centre, so one whose footprint crosses
+		-- a hill embankment sinks on the uphill side or floats on the downhill side. Check
+		-- the four corners and say so at boot (the Blender view, assets/3d/build/delta_map.py,
+		-- paints the same pieces red): the fix is always to move the entry.
+		local rotation = CFrame.Angles(0, math.rad(yaw), 0)
+		local low, high = groundY, groundY
+		for _, corner in
+			{
+				Vector3.new(-1, 0, -1),
+				Vector3.new(1, 0, -1),
+				Vector3.new(1, 0, 1),
+				Vector3.new(-1, 0, 1),
+			}
+		do
+			local offset = rotation:VectorToWorldSpace(corner * part.Size / 2)
+			local cornerHit = workspace:Raycast(
+				Vector3.new(x + offset.X, 100, z + offset.Z),
+				Vector3.new(0, -200, 0),
+				params
+			)
+			local y = if cornerHit then cornerHit.Position.Y else 0
+			low, high = math.min(low, y), math.max(high, y)
+		end
+		if high - low > Config.Arena.StraddleTolerance and not entry.decor and not entry.perch then
+			warn(
+				`[ArenaService] {name} at ({x}, {z}) straddles a slope (ground {low} .. {high}): move it`
+			)
+		end
 	end
 	part.Name = name
 	part.CFrame = CFrame.new(x, groundY + part.Size.Y / 2 + (entry.lift or 0), z)
 		* CFrame.Angles(0, math.rad(yaw), 0)
 	if entry.shadow ~= nil then
 		part.CastShadow = entry.shadow
+	end
+	if entry.decor then
+		part.CanCollide = false
+		part.CanQuery = false
+		part.CanTouch = false
+		part.CastShadow = false
+		part.Parent = folder
+		return part
 	end
 	local added = MeshAssets.addColliders(part, name, entry.shell)
 	if added > 0 then
@@ -908,6 +1241,32 @@ local function placePiece(folder: Folder, params: RaycastParams, entry: Dressing
 	return part
 end
 
+local function placeFence(folder: Instance, params: RaycastParams, panel: FencePanel)
+	local rotation = CFrame.Angles(0, math.rad(panel.yaw), 0)
+	local half = rotation:VectorToWorldSpace(Vector3.new(FENCE_STEP / 2, 0, 0))
+	local ground = math.huge
+	for _, offset in { -half, Vector3.zero, half } do
+		local hit = workspace:Raycast(
+			Vector3.new(panel.x + offset.X, 100, panel.z + offset.Z),
+			Vector3.new(0, -200, 0),
+			params
+		)
+		ground = math.min(ground, if hit then hit.Position.Y else 0)
+	end
+	local fence = MeshAssets.waitFor("prop_chainlink_panel", 20)
+	local wire = MeshAssets.waitFor("prop_concertina", 20)
+	if fence then
+		fence.CFrame = CFrame.new(panel.x, ground + fence.Size.Y / 2, panel.z) * rotation
+		fence.Parent = folder
+	end
+	if wire then
+		local top = ground + (if fence then fence.Size.Y else 7)
+		wire.CFrame = CFrame.new(panel.x, top + wire.Size.Y / 2, panel.z) * rotation
+		wire.CastShadow = false
+		wire.Parent = folder
+	end
+end
+
 local function placeDressing()
 	local folder = Instance.new("Folder")
 	folder.Name = "Dressing"
@@ -917,6 +1276,19 @@ local function placeDressing()
 	params.FilterDescendantsInstances = { folder }
 	for _, entry in DRESSING do
 		placePiece(folder, params, entry)
+	end
+	-- The perimeter (A15): fence, roadblocks and the scenery past it, always loaded.
+	local perimeter = workspace:FindFirstChild("Perimeter")
+	if perimeter then
+		local perimeterParams = RaycastParams.new()
+		perimeterParams.FilterType = Enum.RaycastFilterType.Exclude
+		perimeterParams.FilterDescendantsInstances = { folder, perimeter }
+		for _, entry in PERIMETER do
+			placePiece(perimeter :: any, perimeterParams, entry)
+		end
+		for _, panel in FENCE do
+			placeFence(perimeter, perimeterParams, panel)
+		end
 	end
 	if #skippedMeshes > 0 then
 		print(
@@ -939,7 +1311,7 @@ end
 local spawnPads: { [number]: SpawnLocation } = {}
 
 -- ---------------------------------------------------------------- building kit
--- buildBuilding(spec) (docs/LEVELS.md section B, 2026-11-07): enterable buildings from plain
+-- buildBuilding(spec) (docs/LEVELS.md section B): enterable buildings from plain
 -- anchored Parts on the Config.Arena.Kit grid (storey 9, slab 0.6: 8.4 clear, so a 2x Brute
 -- fits only in rooms built taller). Walls are solid spans between openings (door 4 x 8,
 -- window 5 wide at sill 3.2 / head 8.6, breach, gap); every upper floor gets a slab; a
@@ -1008,7 +1380,7 @@ type Rect = { x0: number, x1: number, z0: number, z1: number }
 type Footprint = { name: string, frame: CFrame, halfWidth: number, halfDepth: number, top: number }
 type Look = { Material: Enum.Material, Color: Color3 }
 
--- The seven enterable buildings (docs/LEVELS.md section B, 2026-11-07). Coordinates are
+-- The seven enterable buildings (docs/LEVELS.md section B). Coordinates are
 -- the footprint centre; `at` values are local to the building (x along south/north walls,
 -- z along east/west). Nothing here sits in the Warden lane (x -42..-18) or on a hold zone.
 local BUILDINGS: { BuildingSpec } = {
@@ -1054,8 +1426,8 @@ local BUILDINGS: { BuildingSpec } = {
 			-- Catwalk: first floor (9) east to the Compound top (8); the slope under its far end.
 			{
 				name = "Catwalk",
-				size = Vector3.new(16, 0.6, Config.Arena.Kit.CorridorMin),
-				at = Vector3.new(20, 8.7, 0),
+				size = Vector3.new(16, 0.5, Config.Arena.Kit.CorridorMin),
+				at = Vector3.new(20, 8.77, 0), -- 0.02 proud of the floor and the lip it crosses
 				material = "catwalk",
 			},
 			{
@@ -1070,11 +1442,12 @@ local BUILDINGS: { BuildingSpec } = {
 				at = Vector3.new(20, 9.6, -2.85),
 				material = "ladder",
 			},
-			-- The Recover Logs desk, ground floor north-west corner.
+			-- The Recover Logs desk, ground floor south-west corner under the window (the
+			-- north-west corner is the stair run).
 			{
 				name = "Desk",
 				size = Vector3.new(6, 2.6, 2.4),
-				at = Vector3.new(-8, 1.3, 5.5),
+				at = Vector3.new(-8, 1.3, -5.5),
 				material = "wood",
 			},
 		},
@@ -1715,9 +2088,13 @@ local function buildBuilding(parent: Instance, spec: BuildingSpec): Model
 		end
 	end
 
-	local footprint: Rect = { x0 = -hw, x1 = hw, z0 = -hd, z1 = hd }
+	-- Slab edges never sit flush with the wall faces (a shared face flickers): floors stop
+	-- just inside the walls, the roof overhangs them as an eave.
+	local inset: Rect = { x0 = -hw + 0.05, x1 = hw - 0.05, z0 = -hd + 0.05, z1 = hd - 0.05 }
+	local EAVE = 0.3
+	local eaves: Rect = { x0 = -hw - EAVE, x1 = hw + EAVE, z0 = -hd - EAVE, z1 = hd + EAVE }
 	for storey = 2, spec.storeys do
-		slab("Floor", footprint, (storey - 1) * H, slabMaterial)
+		slab("Floor", inset, (storey - 1) * H, slabMaterial)
 	end
 	local mezzanines: { Mezzanine } = spec.mezzanines or {}
 	for _, mezzanine in mezzanines do
@@ -1755,7 +2132,7 @@ local function buildBuilding(parent: Instance, spec: BuildingSpec): Model
 	end
 	local top = spec.storeys * H
 	if spec.roof ~= false then
-		slab("Roof", footprint, top, roofMaterial)
+		slab("Roof", eaves, top, roofMaterial)
 		if spec.parapet ~= false then
 			local p = kit.Parapet
 			run("Parapet", "x", -hd + T / 2, 0, spec.width, top, p, T, gaps.south, material, false)
@@ -1920,9 +2297,24 @@ function ArenaService.init()
 	end
 	PhysicsService:CollisionGroupSetCollidable("Ladder", "Enemy", false)
 
-	-- Remove the default Baseplate so it can't z-fight (flash) with our floor.
+	-- The default Baseplate would z-fight (flash) with our floor, so it goes, but not at
+	-- once: in Studio the first player is already standing on it when scripts start, and
+	-- its removal reached the client before the much larger arena did, so that body fell
+	-- through the world and the run began wiped. Hidden now, solid for BaseplateGrace
+	-- seconds while the arena replicates, then destroyed.
 	local baseplate = workspace:FindFirstChild("Baseplate")
-	if baseplate then
+	if baseplate and baseplate:IsA("BasePart") then
+		baseplate.Transparency = 1
+		baseplate.CanQuery = false
+		baseplate.CastShadow = false
+		local textures = baseplate:FindFirstChildWhichIsA("Texture")
+		if textures then
+			textures:Destroy()
+		end
+		task.delay(BASEPLATE_GRACE, function()
+			baseplate:Destroy()
+		end)
+	elseif baseplate then
 		baseplate:Destroy()
 	end
 
@@ -1977,36 +2369,7 @@ function ArenaService.init()
 		spawnPads[index] = pad
 	end
 
-	local wy = WALL_HEIGHT / 2
-	local span = HALF * 2 + WALL_THICKNESS
-	makePart(
-		"WallPosX",
-		Vector3.new(WALL_THICKNESS, WALL_HEIGHT, span),
-		CFrame.new(HALF, wy, 0),
-		WALL_COLOR
-	).Parent =
-		arena
-	makePart(
-		"WallNegX",
-		Vector3.new(WALL_THICKNESS, WALL_HEIGHT, span),
-		CFrame.new(-HALF, wy, 0),
-		WALL_COLOR
-	).Parent =
-		arena
-	makePart(
-		"WallPosZ",
-		Vector3.new(span, WALL_HEIGHT, WALL_THICKNESS),
-		CFrame.new(0, wy, HALF),
-		WALL_COLOR
-	).Parent =
-		arena
-	makePart(
-		"WallNegZ",
-		Vector3.new(span, WALL_HEIGHT, WALL_THICKNESS),
-		CFrame.new(0, wy, -HALF),
-		WALL_COLOR
-	).Parent =
-		arena
+	buildPerimeter(arena)
 
 	arena.Parent = workspace
 	buildBuildings() -- after parenting: the kit raycasts the hills (and the church roof)

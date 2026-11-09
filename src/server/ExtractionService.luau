@@ -1,18 +1,23 @@
 --!strict
 -- Extraction phase (Sprint 12): RunManager starts it when the objective completes
 -- (Extract state). Spawns a glowing zone far from the objective; the squad must
--- accumulate HoldDuration seconds inside it (pauses outside, never resets). On completion
+-- accumulate HoldDuration seconds with every living player inside it (pauses otherwise,
+-- never resets). On completion
 -- the onComplete listeners fire and RunManager ends the run as Extracted. Same hold-zone
 -- style as the objective.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local Messages = require(ReplicatedStorage.Shared.Messages)
+local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local EnemyService = require(script.Parent.EnemyService)
 local PauseService = require(script.Parent.PauseService)
 local Squad = require(script.Parent.Squad)
+local Lifecycle = require(script.Parent.Lifecycle)
+local WorldSounds = require(script.Parent.WorldSounds)
 
 local ExtractionService = {}
 
@@ -25,23 +30,6 @@ local active = false
 local completed = false
 local timeSinceSync = 0
 local heartbeatConnection: RBXScriptConnection?
-
-local overlapParams = OverlapParams.new()
-overlapParams.FilterType = Enum.RaycastFilterType.Include
-
-local function isAnyPlayerInZone(zone: BasePart): boolean
-	-- Any living squad member (player or bot) holds the zone.
-	for _, member in Squad.living() do
-		local character = member.character
-		if character then
-			overlapParams.FilterDescendantsInstances = { character }
-			if #workspace:GetPartsInPart(zone, overlapParams) > 0 then
-				return true
-			end
-		end
-	end
-	return false
-end
 
 local function createZone(): BasePart
 	local part = Instance.new("Part")
@@ -83,7 +71,7 @@ local function complete()
 	end
 	completed = true
 	active = false
-	workspace:SetAttribute("ExtractionActive", false)
+	workspace:SetAttribute(Attributes.ExtractionActive, false)
 
 	if heartbeatConnection then
 		heartbeatConnection:Disconnect()
@@ -94,7 +82,15 @@ local function complete()
 		zonePart = nil
 	end
 
-	extractionRemote:FireAllClients("complete", Config.Extraction.HoldDuration)
+	WorldSounds.at(
+		Config.Extraction.ZonePosition + Vector3.new(0, 20, 0),
+		"ambience",
+		"lantern_rotor"
+	)
+	extractionRemote:FireAllClients(
+		Messages.ExtractionUpdate.Complete,
+		Config.Extraction.HoldDuration
+	)
 	print("[ExtractionService] Extraction complete -> mission success")
 	-- RunManager ends the run (Ended / Extracted): freezes the field, clears the horde.
 	for _, listener in completionListeners do
@@ -112,16 +108,28 @@ local function onHeartbeat(deltaTime: number)
 		return
 	end
 
-	local inside = isAnyPlayerInZone(zone)
-	if inside then
+	-- The bird lifts the whole squad (MULTIPLAYER_READINESS #3): the hold runs only while
+	-- every living player is on the pad. Some of them on it: "waiting for squad". Downed
+	-- players and bots do not hold it up.
+	local _, playersIn, playersLiving = Squad.zoneCount(zone)
+	local everyone = playersLiving > 0 and playersIn >= playersLiving
+	if everyone then
 		progress += deltaTime
 	end
 
 	timeSinceSync += deltaTime
 	if timeSinceSync >= Config.Extraction.SyncInterval then
 		timeSinceSync = 0
-		local kind = if inside then "progress" else "returning"
-		extractionRemote:FireAllClients(kind, math.min(progress, Config.Extraction.HoldDuration))
+		local kind = if everyone
+			then Messages.ExtractionUpdate.Progress
+			elseif playersIn > 0 then Messages.ExtractionUpdate.Waiting
+			else Messages.ExtractionUpdate.Returning
+		extractionRemote:FireAllClients(
+			kind,
+			math.min(progress, Config.Extraction.HoldDuration),
+			playersIn,
+			playersLiving
+		)
 	end
 
 	if progress >= Config.Extraction.HoldDuration then
@@ -136,9 +144,14 @@ function ExtractionService.start()
 	active = true
 	progress = 0
 	timeSinceSync = 0
-	workspace:SetAttribute("ExtractionActive", true)
+	workspace:SetAttribute(Attributes.ExtractionActive, true)
 	zonePart = createZone()
-	extractionRemote:FireAllClients("available", 0)
+	WorldSounds.at(
+		Config.Extraction.ZonePosition + Vector3.new(0, 40, 0),
+		"ambience",
+		"lantern_rotor"
+	)
+	extractionRemote:FireAllClients(Messages.ExtractionUpdate.Available, 0)
 
 	for typeName, count in Config.Extraction.PressureWave :: { [string]: number } do
 		EnemyService.spawnWave(typeName, count, Config.Extraction.ZonePosition)
@@ -161,7 +174,7 @@ function ExtractionService.reset()
 	completed = false
 	progress = 0
 	timeSinceSync = 0
-	workspace:SetAttribute("ExtractionActive", false)
+	workspace:SetAttribute(Attributes.ExtractionActive, false)
 	if heartbeatConnection then
 		heartbeatConnection:Disconnect()
 		heartbeatConnection = nil
@@ -170,12 +183,15 @@ function ExtractionService.reset()
 		zonePart:Destroy()
 		zonePart = nil
 	end
-	extractionRemote:FireAllClients("hide", 0)
+	extractionRemote:FireAllClients(Messages.ExtractionUpdate.Hide, 0)
 end
 
 function ExtractionService.init()
+	Lifecycle.register("ExtractionService", {
+		onRunStart = ExtractionService.reset,
+	})
 	extractionRemote = Remotes.get("ExtractionUpdate")
-	workspace:SetAttribute("ExtractionActive", false)
+	workspace:SetAttribute(Attributes.ExtractionActive, false)
 end
 
 return ExtractionService

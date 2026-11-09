@@ -10,6 +10,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local EnemyDefinitions = require(ReplicatedStorage.Shared.EnemyDefinitions)
 local GroundUtil = require(ReplicatedStorage.Shared.GroundUtil)
@@ -18,6 +19,7 @@ local LoadoutService = require(script.Parent.LoadoutService)
 local PauseService = require(script.Parent.PauseService)
 local Squad = require(script.Parent.Squad)
 local WorldSounds = require(script.Parent.WorldSounds)
+local Lifecycle = require(script.Parent.Lifecycle)
 
 -- Last pain grunt per player humanoid (weak keys: a dead character drops out).
 local lastHurtVoiceAt: { [Humanoid]: number } = setmetatable({}, { __mode = "k" }) :: any
@@ -54,23 +56,32 @@ local spits: { Spit } = {}
 local puddles: { Puddle } = {}
 
 -- The one entry point for Infected damage to a player: difficulty scaling, then the
--- player's Armour Plate shield takes the hit before health.
-function EnemyProjectileService.damagePlayer(humanoid: Humanoid, amount: number)
+-- player's Armour Plate shield takes the hit before health. `kind` "melee" is a limb or a
+-- claw: a body inside its roll / vault / climb window (CoverMoveService, CoverMoveUntil)
+-- is missed. Ground attacks, projectiles and puddles pass no kind and always land.
+function EnemyProjectileService.damagePlayer(humanoid: Humanoid, amount: number, kind: string?)
 	if humanoid.Health <= 0 then
 		return
 	end
 	local character = humanoid.Parent
+	if kind == "melee" and character then
+		local coverUntil = character:GetAttribute(Attributes.CoverMoveUntil) :: number?
+		if coverUntil and os.clock() < coverUntil then
+			return
+		end
+	end
 	local member = Squad.fromHumanoid(humanoid)
 	-- A downed body takes no damage (decision #3: a rescue, not a snack).
 	if member and member.state ~= "Alive" then
 		return
 	end
 	-- Dev god mode (DevTestService "God"): Studio / creator only.
-	if member and member.owner and member.owner:GetAttribute("DevGod") == true then
+	if member and member.owner and member.owner:GetAttribute(Attributes.DevGod) == true then
 		return
 	end
 	local dealt = amount * DifficultyService.getDamageMultiplier()
 	if member and member.owner then
+		LoadoutService.noteCombat(member.owner) -- in contact: the Arms Room stays shut
 		dealt = LoadoutService.absorb(member.owner, dealt)
 		if dealt <= 0 then
 			return
@@ -134,8 +145,8 @@ local function spawnPuddle(position: Vector3, spec: Projectile)
 	part.Color = spec.Color
 	part.Transparency = 0.45
 	part.Parent = folder
-	-- Perf cap: the oldest puddle goes when a new one would exceed Config.Zombies.MaxPuddles.
-	if #puddles >= Config.Zombies.MaxPuddles then
+	-- Perf cap: the oldest puddle goes when a new one would exceed Config.Enemies.MaxPuddles.
+	if #puddles >= Config.Enemies.MaxPuddles then
 		puddles[1].part:Destroy()
 		table.remove(puddles, 1)
 	end
@@ -294,6 +305,9 @@ function EnemyProjectileService.reset()
 end
 
 function EnemyProjectileService.init()
+	Lifecycle.register("EnemyProjectileService", {
+		onRunStart = EnemyProjectileService.reset,
+	})
 	folder = Instance.new("Folder")
 	folder.Name = "InfectedProjectiles"
 	folder.Parent = workspace

@@ -1,4 +1,5 @@
 --!strict
+local Attributes = require(script.Parent.Attributes)
 -- The run's phase, shared so services and clients read it without requiring RunManager
 -- (RunManager requires services, never the reverse). RunManager is the only writer of the
 -- workspace attributes RunState and RunResult ("" | "Extracted" | "Wiped").
@@ -19,7 +20,7 @@ RunStates.LIVE = {
 }
 
 function RunStates.current(): RunState
-	local state = workspace:GetAttribute("RunState")
+	local state = workspace:GetAttribute(Attributes.RunState)
 	if typeof(state) == "string" then
 		return state :: RunState
 	end
@@ -27,7 +28,7 @@ function RunStates.current(): RunState
 end
 
 function RunStates.result(): RunResult
-	local result = workspace:GetAttribute("RunResult")
+	local result = workspace:GetAttribute(Attributes.RunResult)
 	if typeof(result) == "string" then
 		return result :: RunResult
 	end

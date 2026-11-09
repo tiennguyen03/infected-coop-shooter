@@ -1,7 +1,8 @@
 --!strict
--- Hit feedback (replaced the floating damage numbers 2026-11-07). The server reports every
--- hit with DamageDealt(position, amount, kind, attacker). Everyone sees the spark burst and
--- hears the 3D hit sound at the hit point; only the attacker gets the crosshair hit marker:
+-- Hit feedback. The server reports each hit to the player who landed it only, and every
+-- kill to everyone, with DamageDealt(position, amount, kind, attacker). The shooter sees
+-- the spark burst and hears the 3D hit sound at the hit point; everyone sees a kill's
+-- burst. Only the attacker gets the crosshair hit marker:
 -- four diagonal ticks, white on a hit, larger and gold on a headshot, larger and red on a
 -- kill. Damage over time (bleed, fire, rats) bursts but never marks, so the marker stays
 -- tied to the trigger. Sizes and timings in Config.HitMarker.
@@ -12,6 +13,7 @@ local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
+local GoreFX = require(script.Parent.GoreFX)
 local SoundFX = require(script.Parent.SoundFX)
 
 local HitMarkerUI = {}
@@ -133,9 +135,13 @@ local function onDamageDealt(position: Vector3, _amount: number, kind: string?, 
 	elseif kind == "headshot" then
 		burst(position, HEADSHOT_COLOR, 10)
 		SoundFX.playAt("player_hits", "headshot", position, "hit")
+		GoreFX.spray(position, Config.Enemies.Dismember.Chunks.Headshot)
 	else
 		burst(position, HIT_COLOR, 7)
 		SoundFX.playAt("player_hits", "bodyshot", position, "hit")
+		if kind == "hit" or kind == "breach" then
+			GoreFX.spray(position, Config.Enemies.Dismember.Chunks.Body)
+		end
 	end
 
 	if attacker ~= Players.LocalPlayer then

@@ -15,7 +15,13 @@ at or hand-tweak anything. Collections inside it:
 
 The `.blend` is **generated** by `build/build_assets.py`. Every asset is described in code
 (boxes, cylinders, icospheres painted with palette swatches), so edits made by hand in Blender
-will be overwritten the next time the build runs. To change an asset, edit its function in
+will be overwritten the next time the build runs. **One file per singular asset** (owner rule,
+2026-11-07): a boss or a body gets its own `build/<name>.py` exposing `register(ba)`, which
+`build_assets.py` imports and calls at the end of its asset list (`warden.py` is the pattern);
+sets of related things (building kit, props, the Infected roster's shared limbs) share
+`build_assets.py`. Design new bodies live first: the Blender MCP (`mcp__blender__*`) renders
+the primitives beside a 5-stud reference man so the owner can direct the shape before it is
+ported into a build file. To change an asset, edit its function in
 the script and rebuild; to keep a hand-made asset, add it to a new `.blend` next to this one
 or ask to have it ported into the script.
 
@@ -74,12 +80,16 @@ Add `-- --only wpn_rifle prop_drone` to build a subset.
 | prop_body_bag | 44 | bottom | 6.6 x 0.95 x 2.2, offset (0.1, 0.475, 0) |
 | prop_dumpster | 164 | bottom | 7.5 x 4.4 x 4.2 (a Walker step: climb 5 up, 4.6 more to a 9 roof) |
 | prop_plank | 48 | bottom | 10 x 0.4 x 2 |
-| prop_civilian_car | 384 | bottom | abandoned hatchback 15.7 x 4.8 x 7.5 |
+| prop_car_sedan | 896 | bottom | silver three-box sedan 14.9 x 4.6 x 6.6 (roof 4.4: VAULT side-on), rear tyre flat; 2 colliders |
+| prop_car_hatch | 968 | bottom | maroon hatchback 12.9 x 5.6 x 8.2: driver window smashed, door open, roof rack with a tarp and a suitcase; 2 colliders |
+| prop_car_pickup | 948 | bottom | rusted pickup 18.1 x 5.4 x 7: open bed (stand in it at 2.6), mattress and a crate, cab 5.4; 5 colliders |
+| prop_car_van | 948 | bottom | white panel van 17.8 x 7.2 x 7.2 (CLIMB only), side door open on a dark interior; 2 colliders |
+| prop_cargo_truck | 856 | bottom | army cargo truck 24.3 x 9.8 x 9.8: cab 8, bed deck 2.9-3.7, CRAWL-UNDER between the axles; 5 colliders |
 | prop_portable_toilet | 92 | bottom | 4.3 x 8.45 x 4.4, offset (0, 4.225, -0.045) |
 | prop_chainlink_panel | 268 | bottom | fence panel 12 x 7 x 0.3 (see-through) |
 | prop_concertina | 288 | bottom | razor wire coil 12.1 x 2.9 x 2.9 |
 | inf_walker_* / inf_runner_* / inf_brute_* / inf_hocker_* | 1.5k / 1.9k / 2.1k / 1.4k per body (caps 1.6k / 2.0k / 2.4k / 2.2k, `BODY_TRI_CAP`) | center | the 15 R15 limb MeshParts of each Infected (`MeshAssets.dressInfected`); skin v2 + limb geometry v2 2026-11-07 |
-| inf_warden_* / inf_warden_plate_* | 2,588 body + 572 plates (cap 5,000) | center | the Warden (Index host): 15 limbs with side-specific arms (`_l` shield grips, `_r` brassard; `INFECTED_SIDED`, `MeshAssets.limbMeshName`) plus six plate meshes welded on by `IndexService.buildPlates` (helmet, chest, back, shoulder ×2, shield); `warden_limb` / `_warden_plate` builders, 2026-11-07 |
+| inf_warden_* / inf_warden_plate_* | 2,604 with plates (cap 5,000) | center | the Warden (Index host), v2 2026-11-07: 12 limb meshes with sided upper arm / lower arm / hand (`_l` shield grip + seam, `_r` brassard; `warden.SIDED`, `MeshAssets.limbMeshName`) plus six plate meshes welded on by `IndexService.buildPlates` (helmet, chest, back, shoulder `_l` / `_r`, fist-grip shield); built by `build/warden.py` |
 | pc_assault_* | ~650 per body | center | Weller, the player's 15 R15 limb MeshParts (`PlayerSetup` -> `MeshAssets.dressModel`); v2 2026-11-07. `PC_TAPER` (on) tapers the forearm/shin to 75% and adds elbow/knee caps: the uploaded ids are the pre-taper build, re-upload lower_arm, lower_leg, upper_arm, upper_leg to ship it |
 | pc_k9_* / pc_epi_* / pc_recon_* / pc_engineer_* | ~650 per body | center | Cole, Reyes, Cross, Kane: built + previewed, not uploaded (no class system yet) |
 | pc_assault_skinned | 944 (+ gear 228) | HRP centre | Weller as one skinned mesh on an R15 armature (section "Skinned Weller"); exported as `.fbx` (rigged, uploaded = the skin), `_mesh.fbx` (unrigged, unused) and `_parts.fbx` (15 parts + attachments, uploaded = the hidden rig) |
@@ -219,7 +229,7 @@ importer):
    sits as before.
 4. **Animate.** Drop the Model in Workspace, press Play with it selected in the Animation
    Editor, or run in the command bar:
-   `local a = Instance.new("Animation") a.AnimationId = "rbxassetid://122515718718000"`
+   `local a = Instance.new("Animation") a.AnimationId = "rbxassetid://76024363213369"`
    (`Config.Animations.Ids.rifle_idle`) and `Humanoid.Animator:LoadAnimation(a):Play()`.
    Then `loco_run_f`, `rifle_aiming_idle`, `crouch_idle`, `prone_idle`, `sprint_roll`,
    `death_from_the_front`: all must move the body (they are R15 clips, so the bones and
@@ -242,6 +252,41 @@ importer):
    and offsets from the build output into `MeshAssets`) for the tapered rigid limbs with
    joint caps; nothing else changes. (Done 2026-11-07 for Weller: the tapered set with
    fist hands is uploaded and is what the bots wear.)
+
+## Small set pieces live in `build/props.py` (owner, 2026-11-08)
+
+Vehicles, gates, barriers, walls, containers and every `prop_*` dressing piece share one
+file, registered with `props.register(ba)` like `warden.py` (mesh names unchanged, so the
+moved pieces export identical FBX: checked by a geometry fingerprint before and after the
+move). `build_assets.py` keeps the palette, the Builder, service-spawned items (crate, mine,
+drone, beacon, rat, orb, rifle), structures and landmarks (ruin, guard tower, comm tower,
+tent, sandbag bunker, dead tree, lamp post) and the bodies. `props.profile()` extrudes a side
+silhouette (the cars); `props.panel()` lays glass on a sloped edge. Cars are built to the
+5-stud figure (roof 4.4-7.2) with composite colliders. Note: `--only <names>` saves
+`arena_survivor.blend` and the lineups with only those assets; run a full build afterwards.
+
+## Gore pieces live in `build/gore.py` (2026-11-08)
+
+`inf_gore_stump` (welded at a joint when a limb comes off, GoreService) and
+`inf_gore_chunk_a/b/c` (thrown at body hits, client GoreFX), built with a small `loft` kit.
+
+## The distant city lives in `build/city.py` (owner, 2026-11-08)
+
+Six skyline towers (`env_city_office`, `_residential`, `_deco`, `_glass`, `_ruined`,
+`_midrise`) built floor by floor with `city.facade()` (glass core, a spandrel ring per
+storey, piers on the bay grid), plus `parapet`, `roof_slab`, `plant`, `tank`, `mast`. Each
+tower registers a `<name>_lit` twin: the lit-window slabs from the same seeded pass, on the
+tower's origin (pivot `origin`, not re-seated), so one placement lines both up through their
+`offset`s. SkyService places them (docs/STYLES.md §7). 960-1,870 tris a tower.
+
+## Z-fighting pass (`Builder.resolve_zfight`, 2026-11-08)
+
+Two faces in one plane flicker in Roblox. `Builder.finish` finds coplanar, same-facing,
+overlapping faces of different swatches in every Environment / Props / Pickups / Weapons /
+City mesh (bodies and the rat excluded) and moves the smaller primitive (by surface area)
+0.05 out along the face normal, repeating until none are left. The build log prints
+`z-fight <name>: N primitives pushed forward`; a mesh listed there for the first time changed
+and needs a re-upload. Still model details proud (0.03+) so the pass has little to do.
 
 ## Getting a mesh into Roblox (the pipeline that shipped 2026-11-06)
 
@@ -276,6 +321,40 @@ Rules once live: Claude may inspect and prototype in the open scene, but every a
 ships is still written into `build/build_assets.py` and rebuilt, so the `.blend` stays
 reproducible (no hand-edited geometry as the only source). Re-install the add-on from
 https://github.com/ahujasid/blender-mcp/blob/main/addon.py if Blender is reinstalled.
+
+## The map in Blender (`build/delta_map.py`, `delta_map.blend`; 2026-11-07)
+
+Checkpoint Delta is built from plain Parts by `src/server/ArenaService.luau` (exact
+collision, built-in materials, streaming, the building kit), and that stays: nothing of the
+map is imported as a mesh. What was missing was a way to **see** the layout while placing
+things, so pieces ended up inside the hill embankments (one raycast at a piece's centre
+puts it at that one height; a footprint across a slope sinks uphill or floats downhill).
+`delta_map.py` reads the layout tables straight out of `ArenaService.luau` (`HILLS`,
+`DRESSING`, `PROPS`, `RAMPS`, `PATCHES`, `BUILDINGS`, plus the loops that add the Gate
+line, the Pens ring and the perch containers), rebuilds the same ground in a fresh Blender
+scene (plateaus, wedge slopes, corner blocks, roads, pads, the bridge, ramps, the gantry,
+building footprints as boxes) and stands the real environment meshes (`export/*.fbx`) on
+it at the height the game's raycast would find. Every piece that breaks a placement rule is
+painted red and listed on stdout: footprint across a slope (`Config.Arena.StraddleTolerance`,
+the same check `ArenaService.placePiece` warns about at boot), inside the Warden lane, on
+the LZ pad, inside a building footprint.
+
+```bash
+"/c/Program Files/Blender Foundation/Blender 5.2/blender.exe" --background --python assets/3d/build/delta_map.py
+```
+
+writes `assets/3d/delta_map.blend` and `build/previews/map_{whole,core,lz_gate,suburb,
+depot,barracks,scrapyard,oblique}.png` (top-down Workbench renders, the A13 item 1
+screenshots). Open the `.blend` in the live Blender (`bpy.ops.wm.open_mainfile`) and the MCP
+`look` tool frames any object (`target=["HelipadLZ"]`, `["Overlook"]`, a building name).
+
+The loop: edit the numbers in `ArenaService.luau` -> rebuild the view -> look -> playtest.
+Or the other way round: move a piece in the Blender viewport, then in the live Blender run
+`exec(open("assets/3d/build/delta_map.py").read()); write_back()`: every static entry's
+object carries `arena_table` / `arena_index`, and the moved ones have their `x` / `z` /
+`yaw` rewritten in place in the Luau. Entries the Luau generates in loops are `arena_locked`
+(edit the loop). `ArenaService.luau` stays the single source of truth; the `.blend` is a
+build output like the previews.
 
 ## Style rules
 

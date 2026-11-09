@@ -7,7 +7,7 @@
 -- placeholder Part when it returns nil (template missing or still loading), so a slow asset
 -- fetch never breaks gameplay. Asset ids are recorded in assets/3d/ASSET_IDS.md.
 --
--- Composite colliders (Delta rework, 2026-11-07): a mesh with `colliders` renders only; its
+-- Composite colliders (Delta rework): a mesh with `colliders` renders only; its
 -- collision and raycast shape is the listed invisible Parts (walls, steps, decks, a
 -- TrussPart ladder), so bunkers, humvees, towers and the ruin have real openings and steps
 -- that the vault/climb code (Shared.Ledge: anchored, CanCollide parts) and the Infected
@@ -27,7 +27,10 @@ local ServerStorage = game:GetService("ServerStorage")
 local MeshAssets = {}
 
 -- Shared palette texture (assets/3d/palette.png as an Image asset).
-local PALETTE_TEXTURE = "rbxassetid://115366221483568"
+local PALETTE_TEXTURE = "rbxassetid://121741835746247" -- palette v3 (vehicle glass, 2026-11-08)
+-- What a palette mesh shows if its texture has not loaded (the client retries it:
+-- PaletteController): a neutral mid grey, never the black a leftover BodyColors gave.
+local PALETTE_FALLBACK = Color3.fromRGB(118, 122, 128)
 
 -- `solid` = a static obstacle: CanCollide + CastShadow on (buildings, barriers).
 -- `offset` = the mesh's bounds centre relative to its design origin (Infected limbs are
@@ -107,9 +110,9 @@ local MESHES: { [string]: MeshDef } = {
 	},
 	-- Legs, deck at 14, rails with a gate on the ladder (+Z) side, roof slab, and a TrussPart
 	-- ladder on the +Z face (Ladder collision group: the Infected never climb it).
-	-- v3 (rail gate) uploaded 2026-11-07.
+	-- v3 (rail gate) uploaded.
 	env_guard_tower = {
-		meshId = "rbxassetid://115469907629978",
+		meshId = "rbxassetid://85279268257603",
 		size = Vector3.new(11, 27.25, 11),
 		solid = true,
 		offset = Vector3.new(0, 13.625, 0),
@@ -128,12 +131,12 @@ local MESHES: { [string]: MeshDef } = {
 			{ size = Vector3.new(2, 14, 2), offset = Vector3.new(0, 7.5, 5), class = "TrussPart" },
 		},
 	},
-	-- Ruin v2 (2026-11-07): enterable ground floor (4 x 8 door in the -Z face, 6-wide breach
+	-- Ruin v2: enterable ground floor (4 x 8 door in the -Z face, 6-wide breach
 	-- in the +Z face at x +7, vaultable front windows sill 4 / head 9.4), first floor slab at
 	-- 10.0 reached by mantling the one-storey back wall; no roof. `shell` seals it (5 parts)
-	-- for the outer ruins. v2 uploaded 2026-11-07.
+	-- for the outer ruins. v2 uploaded.
 	env_ruin_building = {
-		meshId = "rbxassetid://97636619216682",
+		meshId = "rbxassetid://72875984069129",
 		size = Vector3.new(32.09, 23.6, 25.15),
 		solid = true,
 		offset = Vector3.new(0.847, 11.8, -0.517),
@@ -188,11 +191,11 @@ local MESHES: { [string]: MeshDef } = {
 		meshId = "rbxassetid://108583453603951",
 		size = Vector3.new(22.1, 9.55, 9.2),
 		solid = true,
-		surface = { material = Enum.Material.CorrodedMetal, color = Color3.fromRGB(92, 50, 30) }, -- rust, darker (art pass 2026-11-07)
+		surface = { material = Enum.Material.CorrodedMetal, color = Color3.fromRGB(92, 50, 30) }, -- rust, darker
 	},
 	-- Three steps (nose toward -X): hood 4 (vault), cab 6.5 (climb), rear bed 4.8.
 	env_wreck_humvee = {
-		meshId = "rbxassetid://101500567016827",
+		meshId = "rbxassetid://87433680532014",
 		size = Vector3.new(17, 7.11, 8.1),
 		solid = true,
 		offset = Vector3.new(-0.25, 3.557, 0),
@@ -203,8 +206,8 @@ local MESHES: { [string]: MeshDef } = {
 		},
 	},
 	env_twall = {
-		meshId = "rbxassetid://123453107626792",
-		size = Vector3.new(8, 12.5, 2.6),
+		meshId = "rbxassetid://107388028009682",
+		size = Vector3.new(8.05, 12.5, 2.6),
 		solid = true,
 		surface = { material = Enum.Material.Concrete, color = Color3.fromRGB(124, 122, 116) }, -- concrete
 	},
@@ -217,8 +220,8 @@ local MESHES: { [string]: MeshDef } = {
 	},
 	-- Two stacked units, 8.9 tall: Walkers (ClimbHeight 5) stop, Runners and players mantle.
 	env_hesco_tall = {
-		meshId = "rbxassetid://87652619532508",
-		size = Vector3.new(6.22, 8.88, 4.72),
+		meshId = "rbxassetid://80810183774155",
+		size = Vector3.new(6.32, 8.88, 4.72),
 		solid = true,
 		surface = { material = Enum.Material.Fabric, color = Color3.fromRGB(158, 131, 90) }, -- tan
 	},
@@ -250,13 +253,13 @@ local MESHES: { [string]: MeshDef } = {
 	},
 	-- Transit bus (docs/LEVELS.md B): Hocker-proof cover, a lane wide across a road.
 	env_bus = {
-		meshId = "rbxassetid://115848012015557",
+		meshId = "rbxassetid://132803646952127",
 		size = Vector3.new(42.9, 12.75, 10.9),
 		solid = true,
 	},
 	-- Hull: the 4.5 walls (climbable) and two wedge roof slopes up to the ridge at 8.
 	env_tent = {
-		meshId = "rbxassetid://81822440803835",
+		meshId = "rbxassetid://96064782371543",
 		size = Vector3.new(19.2, 8.6, 12),
 		solid = true,
 		surface = { material = Enum.Material.Fabric, color = Color3.fromRGB(99, 110, 66) }, -- olive
@@ -304,7 +307,7 @@ local MESHES: { [string]: MeshDef } = {
 		fidelity = Enum.CollisionFidelity.Hull,
 		surface = { material = Enum.Material.Metal, color = Color3.fromRGB(99, 109, 119) }, -- gun
 	},
-	-- Delta props (assets/3d prop_*, built 2026-11-07, not uploaded: meshId "" until the ids
+	-- Delta props (assets/3d prop_*, not uploaded: meshId "" until the ids
 	-- from assets/3d/ASSET_IDS.md land). Sizes are the build's Roblox dims. S = solid cover,
 	-- D = decoration (no collision), T = see-through (solid, bullets pass).
 	prop_cot = {
@@ -352,10 +355,67 @@ local MESHES: { [string]: MeshDef } = {
 		solid = true,
 		castShadow = false,
 	}, -- S
-	prop_civilian_car = {
-		meshId = "rbxassetid://131007713996765",
-		size = Vector3.new(15.7, 4.8, 7.5),
+	-- Vehicles v2 (assets/3d/build/props.py, 2026-11-08): built to the 5-stud figure, composite
+	-- colliders (no mirrors or open doors in them, so the vault check sees the true width).
+	-- Sedan and hatch: VAULT side-on (top 4.4-4.6). Pickup: stand in the bed (2.6), climb the
+	-- cab (5.4). Van: CLIMB only (7.2, a Walker cannot reach the roof).
+	prop_car_sedan = {
+		meshId = "rbxassetid://133589928038621",
+		size = Vector3.new(14.88, 4.57, 6.61),
 		solid = true,
+		offset = Vector3.new(0, 2.286, -0.098),
+		colliders = {
+			{ size = Vector3.new(14.4, 2.75, 6), offset = Vector3.new(0, 1.68, 0) },
+			{ size = Vector3.new(7.4, 1.4, 5.2), offset = Vector3.new(0.7, 3.7, 0) },
+		},
+	}, -- S
+	prop_car_hatch = {
+		meshId = "rbxassetid://97663934153782",
+		size = Vector3.new(12.88, 5.6, 8.24),
+		solid = true,
+		offset = Vector3.new(0, 2.8, -0.919),
+		colliders = {
+			{ size = Vector3.new(12.4, 2.7, 5.8), offset = Vector3.new(0, 1.65, 0) },
+			{ size = Vector3.new(8.5, 1.6, 5), offset = Vector3.new(1.45, 3.8, 0) },
+		},
+	}, -- S
+	prop_car_pickup = {
+		meshId = "rbxassetid://117043997323617",
+		size = Vector3.new(18.14, 5.4, 7),
+		solid = true,
+		offset = Vector3.new(0.38, 2.7, 0),
+		colliders = {
+			{ size = Vector3.new(16.9, 2.1, 6.4), offset = Vector3.new(0, 1.55, 0) }, -- body to the bed floor
+			{ size = Vector3.new(6.65, 0.8, 6.4), offset = Vector3.new(-4.9, 3, 0) }, -- bonnet
+			{ size = Vector3.new(2.8, 2.1, 5.8), offset = Vector3.new(-3, 4.35, 0) }, -- cab
+			{ size = Vector3.new(9.85, 1.2, 0.3), offset = Vector3.new(3.3, 3, 3.05) }, -- bed rails
+			{ size = Vector3.new(9.85, 1.2, 0.3), offset = Vector3.new(3.3, 3, -3.05) },
+		},
+	}, -- S
+	prop_car_van = {
+		meshId = "rbxassetid://107756699293007",
+		size = Vector3.new(17.81, 7.2, 7.2),
+		solid = true,
+		offset = Vector3.new(0.467, 3.6, 0),
+		colliders = {
+			{ size = Vector3.new(14, 6.6, 6.6), offset = Vector3.new(1, 3.9, 0) },
+			{ size = Vector3.new(2, 3, 6.6), offset = Vector3.new(-7, 2.1, 0) }, -- nose
+		},
+	}, -- S
+	-- Army cargo truck (docs/LEVELS.md D1): cab CLIMB at 8, bed CLIMB at 5.7, and CRAWL-UNDER
+	-- the bed between the axles (clearance 2.9): no collider fills that gap.
+	prop_cargo_truck = {
+		meshId = "rbxassetid://109079007816233",
+		size = Vector3.new(24.28, 9.82, 9.75),
+		solid = true,
+		offset = Vector3.new(0.392, 4.912, 0),
+		colliders = {
+			{ size = Vector3.new(6.5, 7.7, 8.4), offset = Vector3.new(-7.75, 4.15, 0) }, -- cab
+			{ size = Vector3.new(15.1, 0.8, 9), offset = Vector3.new(3.45, 3.3, 0) }, -- bed deck
+			{ size = Vector3.new(15.1, 2, 0.35), offset = Vector3.new(3.45, 4.7, 4.33) }, -- bed sides
+			{ size = Vector3.new(15.1, 2, 0.35), offset = Vector3.new(3.45, 4.7, -4.33) },
+			{ size = Vector3.new(3, 2.9, 9), offset = Vector3.new(7.6, 1.45, 0) }, -- rear axle
+		},
 	}, -- S
 	prop_portable_toilet = {
 		meshId = "rbxassetid://106338287683599",
@@ -377,90 +437,181 @@ local MESHES: { [string]: MeshDef } = {
 		seeThrough = true,
 		castShadow = false,
 	}, -- T
+	-- The distant city (assets/3d/build/city.py, 2026-11-08): skyline towers placed by
+	-- SkyService 470-560 studs out, never collide or cast. Each `_lit` twin is the tower's
+	-- lit windows on the same origin, rendered Neon (SkyService recolours sodium /
+	-- fluorescent); `offset` is each mesh's bounds centre above the shared base.
+	env_city_office = {
+		meshId = "rbxassetid://99343457194346",
+		size = Vector3.new(65.6, 178.5, 45.6),
+		offset = Vector3.new(0, 89.25, 0),
+		castShadow = false,
+	},
+	env_city_office_lit = {
+		meshId = "rbxassetid://137262251701871",
+		size = Vector3.new(64.34, 146.1, 44.34),
+		offset = Vector3.new(0, 74.45, 0),
+		surface = { material = Enum.Material.Neon, color = Color3.fromRGB(255, 170, 90) }, -- sodium
+		castShadow = false,
+	},
+	env_city_residential = {
+		meshId = "rbxassetid://105255167927156",
+		size = Vector3.new(52.2, 126.5, 37),
+		offset = Vector3.new(0, 63.25, 0),
+		castShadow = false,
+	},
+	env_city_residential_lit = {
+		meshId = "rbxassetid://77011644815213",
+		size = Vector3.new(50.34, 102.6, 32.34),
+		offset = Vector3.new(0, 54, 0),
+		surface = { material = Enum.Material.Neon, color = Color3.fromRGB(255, 170, 90) }, -- sodium
+		castShadow = false,
+	},
+	env_city_deco = {
+		meshId = "rbxassetid://74663241301810",
+		size = Vector3.new(58, 253, 58),
+		offset = Vector3.new(0, 126.5, 0),
+		castShadow = false,
+	},
+	env_city_deco_lit = {
+		meshId = "rbxassetid://108427367633529",
+		size = Vector3.new(56.34, 252.5, 56.34),
+		offset = Vector3.new(0, 127.95, 0),
+		surface = { material = Enum.Material.Neon, color = Color3.fromRGB(255, 170, 90) }, -- sodium
+		castShadow = false,
+	},
+	env_city_glass = {
+		meshId = "rbxassetid://94468053772491",
+		size = Vector3.new(51.39, 202.2, 51.39),
+		offset = Vector3.new(0, 101.1, 0),
+		castShadow = false,
+	},
+	env_city_glass_lit = {
+		meshId = "rbxassetid://109060226686011",
+		size = Vector3.new(48.34, 167.8, 48.34),
+		offset = Vector3.new(0, 85, 0),
+		surface = { material = Enum.Material.Neon, color = Color3.fromRGB(255, 170, 90) }, -- sodium
+		castShadow = false,
+	},
+	env_city_ruined = {
+		meshId = "rbxassetid://91159310318208",
+		size = Vector3.new(55.6, 132.64, 37.85),
+		offset = Vector3.new(0, 66.32, -0.125),
+		castShadow = false,
+	},
+	env_city_ruined_lit = {
+		meshId = "rbxassetid://128244578925003",
+		size = Vector3.new(53.47, 65.2, 29.47),
+		offset = Vector3.new(-0.435, 35, 3.435),
+		surface = { material = Enum.Material.Neon, color = Color3.fromRGB(255, 170, 90) }, -- sodium
+		castShadow = false,
+	},
+	env_city_midrise = {
+		meshId = "rbxassetid://131802731205834",
+		size = Vector3.new(93.2, 85, 43.2),
+		offset = Vector3.new(0, 42.5, 0),
+		castShadow = false,
+	},
+	env_city_midrise_lit = {
+		meshId = "rbxassetid://92670539790330",
+		size = Vector3.new(91.34, 58.1, 42.34),
+		offset = Vector3.new(0.5, 30.25, 0),
+		surface = { material = Enum.Material.Neon, color = Color3.fromRGB(255, 170, 90) }, -- sodium
+		castShadow = false,
+	},
 	-- The Chosen (assets/3d pc_<class>_<limb>): player bodies, swapped onto the player's R15
 	-- rig by PlayerSetup via dressModel. Only Assault is uploaded; the other four classes are
 	-- built in Blender (previews) and wait for a class system.
-	-- The Warden (Sprint 19): side-specific arms (`_l` / `_r`; dressModel looks the side up
-	-- first) and six plates welded on by IndexService (uploaded 2026-11-07).
+	-- The Warden v2 (assets/3d/build/warden.py): side-specific arms	-- and hands (`_l` / `_r`; dressModel looks the side up first) and six plates welded on	-- by IndexService (shoulder_l / shoulder_r are different meshes).
 	inf_warden_head = {
-		meshId = "rbxassetid://91451946704174",
-		size = Vector3.new(1.260, 1.220, 1.260),
-		offset = Vector3.new(0.020, 0.020, -0.050),
+		meshId = "rbxassetid://114272288507850",
+		size = Vector3.new(1.030, 1.200, 1.100),
+		offset = Vector3.new(0.015, 0.050, -0.050),
 	},
 	inf_warden_upper_torso = {
-		meshId = "rbxassetid://127929460133902",
-		size = Vector3.new(2.100, 1.930, 1.230),
-		offset = Vector3.new(0.000, 0.115, -0.044),
+		meshId = "rbxassetid://129465433234843",
+		size = Vector3.new(1.940, 2.600, 1.520),
+		offset = Vector3.new(0.000, 0.450, 0.000),
 	},
 	inf_warden_lower_torso = {
-		meshId = "rbxassetid://135925546743840",
-		size = Vector3.new(2.360, 0.500, 1.130),
-		offset = Vector3.new(0.040, -0.040, -0.055),
+		meshId = "rbxassetid://95229929171070",
+		size = Vector3.new(2.240, 1.120, 1.090),
+		offset = Vector3.new(-0.011, -0.350, -0.065),
 	},
 	inf_warden_upper_arm_l = {
-		meshId = "rbxassetid://128429828626584",
-		size = Vector3.new(0.900, 1.240, 0.870),
-		offset = Vector3.new(-0.018, 0.000, 0.000),
+		meshId = "rbxassetid://90178215038369",
+		size = Vector3.new(0.920, 1.270, 0.920),
+		offset = Vector3.new(0.000, -0.015, 0.000),
 	},
 	inf_warden_upper_arm_r = {
-		meshId = "rbxassetid://92719408011297",
-		size = Vector3.new(0.880, 1.240, 0.870),
-		offset = Vector3.new(0.008, 0.000, 0.000),
+		meshId = "rbxassetid://114663756538931",
+		size = Vector3.new(0.910, 1.320, 0.930),
+		offset = Vector3.new(0.013, -0.040, 0.023),
 	},
 	inf_warden_lower_arm_l = {
-		meshId = "rbxassetid://119556389365321",
-		size = Vector3.new(1.280, 1.100, 0.990),
-		offset = Vector3.new(-0.160, -0.010, -0.015),
+		meshId = "rbxassetid://109428525195459",
+		size = Vector3.new(0.960, 1.210, 0.960),
+		offset = Vector3.new(0.000, -0.025, 0.000),
 	},
 	inf_warden_lower_arm_r = {
-		meshId = "rbxassetid://103182885123605",
-		size = Vector3.new(1.160, 1.100, 1.000),
-		offset = Vector3.new(0.099, -0.010, -0.020),
+		meshId = "rbxassetid://108686202348825",
+		size = Vector3.new(1.200, 1.170, 1.060),
+		offset = Vector3.new(0.081, -0.025, -0.012),
 	},
-	inf_warden_hand = {
-		meshId = "rbxassetid://90513292529609",
-		size = Vector3.new(0.980, 0.410, 1.050),
-		offset = Vector3.new(0.000, -0.005, -0.035),
+	inf_warden_hand_l = {
+		meshId = "rbxassetid://87995320009567",
+		size = Vector3.new(0.900, 0.360, 0.700),
+		offset = Vector3.new(0.000, 0.000, 0.100),
+	},
+	inf_warden_hand_r = {
+		meshId = "rbxassetid://118060365841446",
+		size = Vector3.new(1.100, 0.440, 1.120),
+		offset = Vector3.new(0.000, 0.000, -0.040),
 	},
 	inf_warden_upper_leg = {
-		meshId = "rbxassetid://135036799820300",
-		size = Vector3.new(0.960, 1.380, 1.080),
-		offset = Vector3.new(0.000, -0.010, -0.060),
+		meshId = "rbxassetid://110518444449837",
+		size = Vector3.new(0.850, 1.430, 1.000),
+		offset = Vector3.new(0.000, -0.035, -0.078),
 	},
 	inf_warden_lower_leg = {
-		meshId = "rbxassetid://110791812728893",
-		size = Vector3.new(0.990, 1.300, 1.090),
-		offset = Vector3.new(0.000, 0.000, -0.058),
+		meshId = "rbxassetid://83521572303302",
+		size = Vector3.new(0.860, 1.300, 1.010),
+		offset = Vector3.new(0.000, 0.000, -0.075),
 	},
 	inf_warden_foot = {
-		meshId = "rbxassetid://88019661795689",
-		size = Vector3.new(1.010, 0.340, 1.050),
-		offset = Vector3.new(0.000, 0.017, -0.025),
+		meshId = "rbxassetid://108286072751669",
+		size = Vector3.new(1.050, 0.340, 1.080),
+		offset = Vector3.new(0.000, 0.020, -0.010),
 	},
 	inf_warden_plate_helmet = {
-		meshId = "rbxassetid://93019556832338",
-		size = Vector3.new(1.510, 1.120, 1.650),
-		offset = Vector3.new(0.025, 0.160, -0.065),
+		meshId = "rbxassetid://131116560609697",
+		size = Vector3.new(1.440, 1.460, 2.200),
+		offset = Vector3.new(0.019, 0.060, 0.250),
 	},
 	inf_warden_plate_chest = {
-		meshId = "rbxassetid://119813747852082",
-		size = Vector3.new(1.900, 1.420, 0.600),
-		offset = Vector3.new(0.000, -0.010, -0.770),
+		meshId = "rbxassetid://126497846796573",
+		size = Vector3.new(1.560, 1.560, 0.590),
+		offset = Vector3.new(0.000, -0.010, -0.755),
 	},
 	inf_warden_plate_back = {
-		meshId = "rbxassetid://117946002815095",
-		size = Vector3.new(1.900, 1.400, 0.530),
-		offset = Vector3.new(0.000, 0.000, 0.735),
+		meshId = "rbxassetid://93038447341544",
+		size = Vector3.new(1.590, 2.720, 0.570),
+		offset = Vector3.new(-0.015, 0.590, 0.745),
 	},
-	inf_warden_plate_shoulder = {
-		meshId = "rbxassetid://138769670496956",
-		size = Vector3.new(1.330, 0.510, 1.330),
-		offset = Vector3.new(0.000, 0.515, 0.000),
+	inf_warden_plate_shoulder_l = {
+		meshId = "rbxassetid://78932474946165",
+		size = Vector3.new(1.660, 1.060, 1.660),
+		offset = Vector3.new(0.000, 0.280, 0.000),
+	},
+	inf_warden_plate_shoulder_r = {
+		meshId = "rbxassetid://94157814542903",
+		size = Vector3.new(1.110, 0.300, 1.110),
+		offset = Vector3.new(0.000, 0.480, 0.000),
 	},
 	inf_warden_plate_shield = {
-		meshId = "rbxassetid://81264490942347",
-		size = Vector3.new(2.080, 4.000, 0.680),
-		offset = Vector3.new(-0.600, -0.300, -0.510),
+		meshId = "rbxassetid://126685145123461",
+		size = Vector3.new(0.480, 2.280, 4.280),
+		offset = Vector3.new(-0.670, -0.200, 0.300),
 	},
 	pc_assault_head = {
 		meshId = "rbxassetid://113120416771558",
@@ -477,7 +628,7 @@ local MESHES: { [string]: MeshDef } = {
 		size = Vector3.new(2.010, 0.400, 1.120),
 		offset = Vector3.new(0.000, 0.000, -0.050),
 	},
-	-- Tapered forearms/shins with elbow and knee pads, fist-sized hands (2026-11-07): the
+	-- Tapered forearms/shins with elbow and knee pads, fist-sized hands: the
 	-- rigid fallback for the skinned body, and the bots' body.
 	pc_assault_upper_arm = {
 		meshId = "rbxassetid://137615567202319",
@@ -523,32 +674,56 @@ local MESHES: { [string]: MeshDef } = {
 		offset = Vector3.new(-0.025, 0.120, -0.025),
 		castShadow = true,
 	},
+	-- Gore pieces (assets/3d/build/gore.py; GoreService): the stump welded where a limb came
+	-- off, and the three chunks GoreFX throws at body hits (copied to ReplicatedStorage).
+	inf_gore_stump = {
+		meshId = "rbxassetid://85306816428466",
+		size = Vector3.new(0.42, 0.24, 0.44),
+		offset = Vector3.new(0.014, 0.070, 0.000),
+	},
+	inf_gore_chunk_a = {
+		meshId = "rbxassetid://114738807263836",
+		size = Vector3.new(0.29, 0.32, 0.30),
+	},
+	inf_gore_chunk_b = {
+		meshId = "rbxassetid://101420964172693",
+		size = Vector3.new(0.36, 0.26, 0.27),
+	},
+	inf_gore_chunk_c = {
+		meshId = "rbxassetid://120197171903263",
+		size = Vector3.new(0.34, 0.18, 0.17),
+	},
 	-- Infected limb sets (assets/3d inf_<type>_<limb>): swapped onto the R15 rig by dressInfected.
-	-- Rebuilt 2026-11-07 to docs/CHARACTERS.md (walker, runner, brute, hocker); skin v2 repaint
+	-- Built to docs/CHARACTERS.md (walker, runner, brute, hocker); skin v2 repaint
 	-- (pallor / flesh / bruise / wound / pus rows, tapered limbs) uploaded the same day.
 	inf_walker_head = {
-		meshId = "rbxassetid://100636262646383",
-		size = Vector3.new(1.220, 1.290, 1.310),
-		offset = Vector3.new(-0.000, -0.016, -0.035),
+		meshId = "rbxassetid://100515274220050",
+		size = Vector3.new(1.220, 1.600, 1.480),
+		offset = Vector3.new(-0.000, -0.115, -0.344),
 	},
 	inf_walker_upper_torso = {
-		meshId = "rbxassetid://119661347321934",
+		meshId = "rbxassetid://133210664116166",
 		size = Vector3.new(2.000, 1.750, 1.200),
 		offset = Vector3.new(0.000, 0.025, 0.000),
 	},
 	inf_walker_lower_torso = {
-		meshId = "rbxassetid://115889571442634",
-		size = Vector3.new(2.050, 0.430, 1.370),
-		offset = Vector3.new(0.000, 0.005, -0.045),
+		meshId = "rbxassetid://78160694473395",
+		size = Vector3.new(2.050, 1.510, 1.530),
+		offset = Vector3.new(0.000, -0.535, 0.036),
 	},
-	inf_walker_upper_arm = {
+	inf_walker_upper_arm_l = {
 		meshId = "rbxassetid://88373539845018",
 		size = Vector3.new(0.920, 1.240, 0.920),
 		offset = Vector3.new(0.000, 0.000, 0.000),
 	},
+	inf_walker_upper_arm_r = {
+		meshId = "rbxassetid://80180134149538",
+		size = Vector3.new(0.920, 1.000, 0.920),
+		offset = Vector3.new(0.000, -0.140, 0.000),
+	},
 	inf_walker_lower_arm = {
-		meshId = "rbxassetid://81627412669309",
-		size = Vector3.new(0.780, 1.120, 0.780),
+		meshId = "rbxassetid://119147668768706",
+		size = Vector3.new(0.850, 1.120, 0.850),
 		offset = Vector3.new(0.000, 0.000, 0.000),
 	},
 	inf_walker_hand = {
@@ -557,12 +732,12 @@ local MESHES: { [string]: MeshDef } = {
 		offset = Vector3.new(0.000, 0.002, -0.002),
 	},
 	inf_walker_upper_leg = {
-		meshId = "rbxassetid://133917422037960",
-		size = Vector3.new(1.000, 1.400, 1.130),
-		offset = Vector3.new(0.000, -0.020, 0.016),
+		meshId = "rbxassetid://100166126486572",
+		size = Vector3.new(0.890, 1.400, 0.990),
+		offset = Vector3.new(0.000, -0.020, -0.052),
 	},
 	inf_walker_lower_leg = {
-		meshId = "rbxassetid://129665594524599",
+		meshId = "rbxassetid://104774868957400",
 		size = Vector3.new(0.990, 1.300, 0.970),
 		offset = Vector3.new(0.000, 0.000, 0.000),
 	},
@@ -572,14 +747,14 @@ local MESHES: { [string]: MeshDef } = {
 		offset = Vector3.new(0.000, 0.000, 0.000),
 	},
 	inf_runner_head = {
-		meshId = "rbxassetid://137864155811153",
-		size = Vector3.new(1.220, 1.180, 1.260),
-		offset = Vector3.new(0.000, 0.000, -0.050),
+		meshId = "rbxassetid://115350210417323",
+		size = Vector3.new(1.220, 1.360, 1.390),
+		offset = Vector3.new(0.000, -0.320, -0.570),
 	},
 	inf_runner_upper_torso = {
-		meshId = "rbxassetid://80475549545734",
-		size = Vector3.new(1.940, 1.810, 1.250),
-		offset = Vector3.new(0.000, 0.055, -0.015),
+		meshId = "rbxassetid://106499208970226",
+		size = Vector3.new(1.980, 2.360, 1.770),
+		offset = Vector3.new(0.000, 0.158, -0.260),
 	},
 	inf_runner_lower_torso = {
 		meshId = "rbxassetid://88359244284243",
@@ -587,19 +762,19 @@ local MESHES: { [string]: MeshDef } = {
 		offset = Vector3.new(0.000, 0.000, -0.035),
 	},
 	inf_runner_upper_arm = {
-		meshId = "rbxassetid://123865928638635",
+		meshId = "rbxassetid://99272691499999",
 		size = Vector3.new(0.890, 1.220, 0.900),
-		offset = Vector3.new(0.000, 0.010, -0.010),
+		offset = Vector3.new(0.000, 0.010, -0.460),
 	},
 	inf_runner_lower_arm = {
-		meshId = "rbxassetid://105743362905245",
-		size = Vector3.new(0.740, 1.120, 0.770),
-		offset = Vector3.new(0.000, 0.000, -0.005),
+		meshId = "rbxassetid://125089922702221",
+		size = Vector3.new(0.740, 1.670, 0.770),
+		offset = Vector3.new(0.000, -0.275, -0.455),
 	},
 	inf_runner_hand = {
-		meshId = "rbxassetid://112441012464559",
-		size = Vector3.new(0.980, 0.340, 1.180),
-		offset = Vector3.new(0.000, 0.010, -0.080),
+		meshId = "rbxassetid://117210071350373",
+		size = Vector3.new(0.860, 0.880, 0.600),
+		offset = Vector3.new(0.000, -0.860, -0.410),
 	},
 	inf_runner_upper_leg = {
 		meshId = "rbxassetid://77353023411798",
@@ -617,44 +792,59 @@ local MESHES: { [string]: MeshDef } = {
 		offset = Vector3.new(0.000, 0.008, 0.075),
 	},
 	inf_brute_head = {
-		meshId = "rbxassetid://111819664336015",
+		meshId = "rbxassetid://103853795558690",
 		size = Vector3.new(1.270, 1.240, 1.300),
-		offset = Vector3.new(0.015, 0.030, -0.030),
+		offset = Vector3.new(0.015, -0.420, -0.110),
 	},
 	inf_brute_upper_torso = {
-		meshId = "rbxassetid://74874414531963",
-		size = Vector3.new(2.100, 1.950, 1.470),
-		offset = Vector3.new(0.000, 0.125, 0.034),
+		meshId = "rbxassetid://99564421484824",
+		size = Vector3.new(2.860, 3.110, 1.870),
+		offset = Vector3.new(0.000, 0.566, 0.094),
 	},
 	inf_brute_lower_torso = {
-		meshId = "rbxassetid://123309828753718",
-		size = Vector3.new(2.010, 0.400, 1.090),
-		offset = Vector3.new(0.000, 0.000, -0.035),
+		meshId = "rbxassetid://70399681157365",
+		size = Vector3.new(2.400, 1.000, 1.280),
+		offset = Vector3.new(0.000, -0.300, -0.040),
 	},
-	inf_brute_upper_arm = {
-		meshId = "rbxassetid://133254036749836",
-		size = Vector3.new(0.820, 1.240, 0.780),
-		offset = Vector3.new(0.000, 0.000, 0.000),
+	inf_brute_upper_arm_l = {
+		meshId = "rbxassetid://128620933727692",
+		size = Vector3.new(0.860, 1.260, 0.820),
+		offset = Vector3.new(-0.420, 0.010, -0.001),
 	},
-	inf_brute_lower_arm = {
-		meshId = "rbxassetid://131637342574392",
-		size = Vector3.new(1.190, 1.120, 1.010),
-		offset = Vector3.new(0.095, 0.000, -0.006),
+	inf_brute_upper_arm_r = {
+		meshId = "rbxassetid://109702256756531",
+		size = Vector3.new(0.860, 1.260, 0.820),
+		offset = Vector3.new(0.420, 0.010, -0.001),
 	},
-	inf_brute_hand = {
-		meshId = "rbxassetid://139690589575020",
-		size = Vector3.new(0.980, 0.410, 1.050),
-		offset = Vector3.new(0.000, -0.005, -0.035),
+	inf_brute_lower_arm_l = {
+		meshId = "rbxassetid://89240920651366",
+		size = Vector3.new(1.190, 2.120, 1.010),
+		offset = Vector3.new(-0.515, -0.500, -0.006),
+	},
+	inf_brute_lower_arm_r = {
+		meshId = "rbxassetid://102739257900431",
+		size = Vector3.new(1.190, 2.120, 1.010),
+		offset = Vector3.new(0.515, -0.500, -0.006),
+	},
+	inf_brute_hand_l = {
+		meshId = "rbxassetid://121604236987350",
+		size = Vector3.new(0.980, 0.530, 1.050),
+		offset = Vector3.new(-0.420, -1.145, -0.035),
+	},
+	inf_brute_hand_r = {
+		meshId = "rbxassetid://99800347349644",
+		size = Vector3.new(0.980, 0.530, 1.050),
+		offset = Vector3.new(0.420, -1.145, -0.035),
 	},
 	inf_brute_upper_leg = {
-		meshId = "rbxassetid://96003182956310",
-		size = Vector3.new(1.020, 1.490, 1.130),
-		offset = Vector3.new(0.020, -0.065, -0.076),
+		meshId = "rbxassetid://105750520943611",
+		size = Vector3.new(1.040, 1.490, 1.130),
+		offset = Vector3.new(0.030, -0.065, -0.076),
 	},
 	inf_brute_lower_leg = {
-		meshId = "rbxassetid://104847318095639",
-		size = Vector3.new(0.990, 1.300, 1.030),
-		offset = Vector3.new(0.000, 0.000, -0.028),
+		meshId = "rbxassetid://88426621788507",
+		size = Vector3.new(1.040, 1.320, 1.070),
+		offset = Vector3.new(0.000, 0.010, -0.025),
 	},
 	inf_brute_foot = {
 		meshId = "rbxassetid://129900549102552",
@@ -662,19 +852,19 @@ local MESHES: { [string]: MeshDef } = {
 		offset = Vector3.new(0.000, 0.027, -0.035),
 	},
 	inf_hocker_head = {
-		meshId = "rbxassetid://126429750811463",
-		size = Vector3.new(1.330, 1.580, 1.680),
-		offset = Vector3.new(0.000, 0.002, -0.040),
+		meshId = "rbxassetid://108032089223800",
+		size = Vector3.new(1.330, 1.600, 1.700),
+		offset = Vector3.new(0.000, -0.029, 0.189),
 	},
 	inf_hocker_upper_torso = {
-		meshId = "rbxassetid://136320366451034",
-		size = Vector3.new(2.000, 1.750, 1.190),
-		offset = Vector3.new(0.000, 0.025, 0.003),
+		meshId = "rbxassetid://72787016240114",
+		size = Vector3.new(2.000, 1.770, 1.270),
+		offset = Vector3.new(0.000, 0.035, -0.035),
 	},
 	inf_hocker_lower_torso = {
-		meshId = "rbxassetid://115889571442634",
-		size = Vector3.new(2.050, 0.430, 1.370),
-		offset = Vector3.new(0.000, 0.005, -0.045),
+		meshId = "rbxassetid://78160694473395",
+		size = Vector3.new(2.050, 1.510, 1.530),
+		offset = Vector3.new(0.000, -0.535, 0.036),
 	},
 	inf_hocker_upper_arm = {
 		meshId = "rbxassetid://126385736674962",
@@ -692,14 +882,14 @@ local MESHES: { [string]: MeshDef } = {
 		offset = Vector3.new(0.000, -0.090, -0.067),
 	},
 	inf_hocker_upper_leg = {
-		meshId = "rbxassetid://133917422037960",
-		size = Vector3.new(1.000, 1.400, 1.130),
-		offset = Vector3.new(0.000, -0.020, 0.016),
+		meshId = "rbxassetid://71651625363542",
+		size = Vector3.new(0.890, 1.520, 1.230),
+		offset = Vector3.new(0.000, 0.012, -0.235),
 	},
 	inf_hocker_lower_leg = {
-		meshId = "rbxassetid://129665594524599",
-		size = Vector3.new(0.990, 1.300, 0.970),
-		offset = Vector3.new(0.000, 0.000, 0.000),
+		meshId = "rbxassetid://78707080286405",
+		size = Vector3.new(0.990, 1.380, 1.110),
+		offset = Vector3.new(0.000, -0.093, -0.074),
 	},
 	inf_hocker_foot = {
 		meshId = "rbxassetid://79144855233866",
@@ -762,6 +952,7 @@ local function buildTemplate(folder: Folder, name: string, def: MeshDef)
 	else
 		part.TextureID = PALETTE_TEXTURE
 		part.Material = Enum.Material.SmoothPlastic
+		part.Color = PALETTE_FALLBACK
 	end
 	part.Anchored = true
 	-- A piece with composite colliders only renders: the invisible Parts carry collision
@@ -784,6 +975,16 @@ end
 function MeshAssets.getSize(name: string): Vector3?
 	local def = MESHES[name]
 	return def and def.size
+end
+
+-- The mesh's bounds centre above its design origin (Roblox axes); the bottom-centre pivot
+-- (half the height up) when the entry names none.
+function MeshAssets.getOffset(name: string): Vector3
+	local def = MESHES[name]
+	if not def then
+		return Vector3.zero
+	end
+	return def.offset or Vector3.new(0, def.size.Y / 2, 0)
 end
 
 -- Builds the composite colliders of a placed piece as invisible anchored Parts parented to
@@ -823,7 +1024,7 @@ end
 -- Yields until the template exists (or the timeout passes). For boot-time placement.
 function MeshAssets.waitFor(name: string, timeoutSeconds: number): MeshPart?
 	local deadline = os.clock() + timeoutSeconds
-	while templates[name] == nil and os.clock() < deadline do
+	while not templates[name] and os.clock() < deadline do
 		task.wait(0.25)
 	end
 	return MeshAssets.clone(name)
@@ -906,7 +1107,14 @@ function MeshAssets.dressModel(model: Model, prefix: string): boolean
 		return false
 	end
 	for _, child in model:GetChildren() do
-		if child:IsA("Accoutrement") or child:IsA("Clothing") or child:IsA("ShirtGraphic") then
+		-- BodyColors would tint the new limbs (bots came out black when the palette texture
+		-- failed to load): the palette carries every colour.
+		if
+			child:IsA("Accoutrement")
+			or child:IsA("Clothing")
+			or child:IsA("ShirtGraphic")
+			or child:IsA("BodyColors")
+		then
 			child:Destroy()
 		end
 	end
@@ -926,7 +1134,21 @@ function MeshAssets.dressModel(model: Model, prefix: string): boolean
 		replacement.CanTouch = part.CanTouch
 		replacement.CastShadow = true
 		for _, child in part:GetChildren() do
-			if child:IsA("Attachment") then
+			local originalSize = if child.Name == "OriginalSize" and child:IsA("Vector3Value")
+				then child
+				else nil
+			if originalSize then
+				-- The Humanoid resizes each part to OriginalSize x its body scales. Keep the
+				-- ratio it applied to the old part so the mesh comes out at its own size.
+				local old = originalSize.Value
+				local ratio = Vector3.new(
+					if old.X > 0 then part.Size.X / old.X else 1,
+					if old.Y > 0 then part.Size.Y / old.Y else 1,
+					if old.Z > 0 then part.Size.Z / old.Z else 1
+				)
+				originalSize.Value = replacement.Size / ratio
+				originalSize.Parent = replacement
+			elseif child:IsA("Attachment") then
 				-- Keep the attachment at the same place in the limb: the new part centre moved.
 				child.CFrame = child.CFrame - offset
 				child.Parent = replacement
@@ -949,7 +1171,7 @@ function MeshAssets.dressModel(model: Model, prefix: string): boolean
 end
 
 -- The mesh's bounds-centre offset from its design origin (nil when the mesh is not defined).
--- Skinned bodies (2026-11-07): a Chosen as one skinned mesh. Two Model assets per body,
+-- Skinned bodies: a Chosen as one skinned mesh. Two Model assets per body,
 -- both uploaded from assets/3d/export: `body` (<name>.fbx) is the single skinned MeshPart
 -- with the R15 bone tree; `parts` (<name>_parts.fbx) is the same geometry split into the 15
 -- R15 limbs, with the Motor6Ds Studio's importer builds from the rig attachments. The
@@ -1093,6 +1315,9 @@ end
 function MeshAssets.dressInfected(model: Model, typeName: string): boolean
 	return MeshAssets.dressModel(model, `inf_{string.lower(typeName)}_`)
 end
+
+-- The shared palette texture every palette mesh uses (PaletteController re-applies it).
+MeshAssets.PALETTE_TEXTURE = PALETTE_TEXTURE
 
 function MeshAssets.clone(name: string): MeshPart?
 	local template = templates[name]

@@ -121,3 +121,82 @@ ForceObjectiveComplete adds 500 supply; ForceMissionSuccess → Extracted → RE
 with a full magazine, no shield, no upgrades. Not yet run: the 2-client checks (Last Flight,
 per-player cards). Perf: 60 fps with 20 Walkers plus mines and drones; the script lane is
 within 0.2 ms/frame of the pre-sprint capture.
+
+## M16 pass (owner, 2026-11-07)
+
+The owner: "our first gun should resemble what an M16 does in real life, so it should mimic
+that fire rate. But we also need to consider how that will affect the TTK." The systems
+designer's call: full auto at the M16A1's cyclic rate, per-round damage unchanged so
+rounds-to-kill stay realistic, a bloom so a held trigger sprays at range (trigger
+discipline is the skill, no fire-mode switch), the real basic load of 7 magazines.
+
+| Key (`Config.Weapon` / `Bots`) | Old | New |
+|---|---|---|
+| FireCooldown | 0.15 (400 rpm) | 0.08 (750 rpm) |
+| Damage | 20 | 20 |
+| ReserveStart / ReserveMax | 120 | 180 (30 + 180 = 7 mags) |
+| BloomPerShot / BloomMax / BloomRecovery / BloomRecoveryDelay | none | 0.3 deg / 3.5 deg / 12 deg/s / 0.1 s |
+| Bots.FireCooldown | 0.45 | 0.30 |
+
+| Form (body / head rounds) | TTK before | TTK now |
+|---|---|---|
+| Walker 3 / 1 | 0.30 s | 0.16 s |
+| Runner 2 / 1 | 0.15 s | 0.08 s |
+| Hocker 4 / 2 | 0.45 s | 0.24 s |
+| Brute 13 / 11 | 1.80 s | 0.96 s |
+
+Burst DPS 133 -> 250; sustained over a magazine plus reload 92 -> 133. A magazine empties in
+2.4 s, so the pressure window is the 2.2 s reload. The bloom is server-owned
+(`ProjectileServer`, per Player, cleared on leave / reset) and mirrored to the crosshair ring
+(`CameraController`, `Bloom` attribute + the local `LastShotAt` stamp). The client now
+carries the leftover time between shots (`WeaponController`), so 750 rpm holds at 30 fps.
+
+Verified (solo playtest): held trigger, rounds every 0.083 s (~720 rpm at the frame
+cadence), bloom 0.3 per round, magazine dry then reload to 30. Watch in play: if the Brute
+melts, raise its `MaxHealth` 260 -> 360 (18 body rounds); if holds feel easy, `Spawning.
+MaxAliveLate` 30 -> 34. Measure first.
+
+## Balance pass and the downed slide (owner, 2026-11-07)
+
+The owner played the M16 pass: "the rate of spawn of zombies might be too high, and there's
+not enough ammo." The systems designer's arithmetic (60% hits with the bloom, the spawn mix,
+bots taking ~45% of kills in solo): the hold asked 178 rounds a minute and the Warden fight
+~215 against a 210-round load with the third pallet at 911 supply, so ~85 s empty in the boss.
+Fire rate, damage and rounds-to-kill unchanged; data only:
+
+| Key | Old | New |
+|---|---|---|
+| `Zombies.SpawnInterval` | 2 | 3 (20 a minute at insert) |
+| `Difficulty.SpawnIntervalDecayPerMinute` / `MinSpawnInterval` | 0.93 / 1.0 | 0.95 / 1.5 |
+| `Weapon.ReserveStart` / `ReserveMax` | 180 | 240 (9 mags) |
+| `Requisition.BaseCost` / `CostGrowth` / `CostCap` / `CostPerExtraPlayer` | 500 / 1.35 / 3000 / 0.8 | 300 / 1.15 / 1000 / 0.4 |
+
+Expected (solo + 3 bots): first pallet ~1:15, never below ~100 rounds in the Warden fight, the
+hold the one spike. Next if it still runs dry: `Index.Warden.Pressure.SpawnFactor` 1.5 -> 2.0
+before his health. Verified: insert with 30 + 240, spawns every ~3 s.
+
+**Downed slide (bug).** Going down set the prone stance, which drops the Humanoid's
+HipHeight to 0.3 for crawl spaces; the downed crawl clip is authored for a standing root, so
+the solid torso and head held the root ~2.3 studs above its floor ray, the Humanoid sat in
+Freefall (no ground friction) and contact jitter threw the body at up to 140 studs/s. Fix in
+`StanceService`: a Downed body keeps the standing hip (prone requests are ignored while
+Downed, and a body that goes down while prone is stood back up unless a ceiling is above).
+Verified: 0 of 24 samples in Freefall, drift under 1 stud/s with no input (was 140).
+
+**Prone slide (bug, the real root cause).** The owner: "when I prone I am still sliding."
+The dressed player rig is rebuilt with `BuildRigFromAttachments`, which joins the root with
+an `AnimationConstraint`, not a `Motor6D`; `StanceService` only lifted a Motor6D, so prone
+dropped the hip to 0.3 without ever lifting the rig and the body hung on its torso in
+Freefall. Fixes: `liftRig` lifts the constraint's root attachment; while prone or Downed
+every body part but the root is in the `ProneBody` collision group (touches nothing), so
+the prone / crawl clips cannot prop the root off the floor. Verified: prone crawls at 4
+studs/s and stops dead, 0.7 studs of drift over 8 s idle, 0 Freefall; Downed crawls at 3
+and drifts 0.0 over 7 s; standing up restores the hip, the attachment and the group.
+
+**Falling through the floor on C spam (bug, same day).** Standing up restored the hip and
+lowered the rig in one step while the root was still at prone height, so the legs sat ~2
+studs inside the floor; switching their collision back on that frame made the solver push
+the body down through the map. The body parts now stay in `ProneBody` until the Humanoid
+has raised the root by 80% of the lift (or 1 s), and a newer stance change cancels the
+wait (`StanceSettle` token). Verified: 48 server toggles at 0.05-0.9 s gaps (root never
+below 1.5) and 8 rapid C taps: standing, grounded, colliding.

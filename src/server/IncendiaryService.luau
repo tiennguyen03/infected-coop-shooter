@@ -1,7 +1,7 @@
 --!strict
--- Flare Straps (fire_trail upgrade, AssaultClassService): the Combat Dash leaves burning
--- pools along its path (Config.Upgrades.FireTrail) that tick damage on the Infected standing
--- in them. Pools never hurt the squad.
+-- Burning pools (Config.Upgrades.FireTrail) that tick damage on the Infected standing in
+-- them; pools never hurt the squad. No caller since the Pike rework retired the dash and
+-- Flare Straps: kept for the Incendiary grenade and the Kettle (docs/PROGRESSION.md > Loadout).
 
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -10,8 +10,9 @@ local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local GroundUtil = require(ReplicatedStorage.Shared.GroundUtil)
-local ItemEffectService = require(script.Parent.ItemEffectService)
+local DamageService = require(script.Parent.DamageService)
 local PauseService = require(script.Parent.PauseService)
+local Lifecycle = require(script.Parent.Lifecycle)
 
 local ENEMY_TAG = "Enemy"
 
@@ -116,7 +117,7 @@ local function onHeartbeat()
 					local root = model:FindFirstChild("HumanoidRootPart") :: BasePart?
 					if humanoid and humanoid.Health > 0 and root then
 						if (root.Position - center).Magnitude <= cfg.Radius then
-							ItemEffectService.dealDamage(
+							DamageService.dealDamage(
 								pool.owner,
 								humanoid,
 								cfg.DamagePerSecond,
@@ -142,6 +143,9 @@ function IncendiaryService.reset()
 end
 
 function IncendiaryService.init()
+	Lifecycle.register("IncendiaryService", {
+		onRunStart = IncendiaryService.reset,
+	})
 	poolFolder = Instance.new("Folder")
 	poolFolder.Name = "FirePools"
 	poolFolder.Parent = workspace

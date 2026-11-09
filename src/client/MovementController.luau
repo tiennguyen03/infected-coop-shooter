@@ -1,5 +1,5 @@
 --!strict
--- Vault and climb (2026-11-07) in place of the stock jump. Space, with cover in front
+-- Vault and climb in place of the stock jump. Space, with cover in front
 -- (Shared.Ledge), carries the body over thin low cover (jersey, hesco: the vault clip) or
 -- onto taller cover (bunker, humvee, container: the climb clip); sprinting into low cover
 -- vaults by itself. T-walls and buses are too tall and stay walls. During a move the root
@@ -8,7 +8,7 @@
 -- (StanceController). Space with nothing in front stands a crouched or prone body up; it
 -- never jumps (PlayerSetup zeroes JumpPower as well).
 --
--- Roll and slide (2026-11-07): while sprinting, LeftControl rolls and C slides along the
+-- Roll and slide: while sprinting, LeftControl rolls and C slides along the
 -- direction of travel (StanceController leaves those keys alone while sprinting). Both
 -- lock the heading, drive the humanoid along that direction at a speed this module owns
 -- (SprintController.setOverrideSpeed) and hand the exit speed back to MomentumController.
@@ -20,6 +20,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
+local Messages = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Messages"))
+local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attributes"))
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Ledge = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Ledge"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
@@ -97,7 +99,9 @@ end
 local function begin(humanoid: Humanoid, root: BasePart, ledge: Ledge.Ledge)
 	local settings = Config.Movement
 	local kind: "vault" | "climb" = if ledge.over then "vault" else "climb"
-	local duration = if kind == "vault" then settings.VaultDuration else settings.ClimbDuration
+	local duration = if kind == Messages.CoverMove.Vault
+		then settings.VaultDuration
+		else settings.ClimbDuration
 	StanceController.setStance("stand")
 	CameraController.setBodyYawLocked(true)
 	MomentumController.suspend()
@@ -136,11 +140,17 @@ local function onSpace(_name: string, state: Enum.UserInputState): Enum.ContextA
 	if state ~= Enum.UserInputState.Begin then
 		return Enum.ContextActionResult.Sink
 	end
-	if move or dash or workspace:GetAttribute("GamePaused") == true then
+	if move or dash or workspace:GetAttribute(Attributes.GamePaused) == true then
 		return Enum.ContextActionResult.Sink
 	end
 	local model, humanoid, root = character()
-	if not model or not humanoid or not root or model:GetAttribute("SquadState") == "Downed" then
+	if
+		not model
+		or not humanoid
+		or not root
+		or model:GetAttribute(Attributes.SquadState) == "Downed"
+		or model:GetAttribute(Attributes.KnockedUntil) ~= nil
+	then
 		return Enum.ContextActionResult.Sink
 	end
 	local ledge = findLedge(model, humanoid, root, Config.Movement.ClimbMaxHeight)
@@ -164,7 +174,7 @@ local function endDash(current: Dash)
 		MomentumController.resume(Vector3.zero)
 	end
 	readyAt[current.kind] = os.clock()
-		+ Config.Movement[if current.kind == "roll" then "Roll" else "Slide"].Cooldown
+		+ Config.Movement[if current.kind == Messages.CoverMove.Roll then "Roll" else "Slide"].Cooldown
 end
 
 local function stepDash(current: Dash)
@@ -184,14 +194,20 @@ end
 
 -- Sprint + LeftControl (roll) or sprint + C (slide). Returns true when it started.
 function MovementController.tryDash(kind: "roll" | "slide"): boolean
-	if move or dash or workspace:GetAttribute("GamePaused") == true then
+	if move or dash or workspace:GetAttribute(Attributes.GamePaused) == true then
 		return false
 	end
 	if os.clock() < readyAt[kind] then
 		return false
 	end
 	local model, humanoid, root = character()
-	if not model or not humanoid or not root or model:GetAttribute("SquadState") == "Downed" then
+	if
+		not model
+		or not humanoid
+		or not root
+		or model:GetAttribute(Attributes.SquadState) == "Downed"
+		or model:GetAttribute(Attributes.KnockedUntil) ~= nil
+	then
 		return false
 	end
 	local heading = MomentumController.getVelocity()
@@ -205,7 +221,7 @@ function MovementController.tryDash(kind: "roll" | "slide"): boolean
 	local direction = heading.Unit
 	local settings = Config.Movement
 	local duration, startSpeed, endSpeed
-	if kind == "roll" then
+	if kind == Messages.CoverMove.Roll then
 		duration, startSpeed, endSpeed =
 			settings.Roll.Duration, settings.Roll.Speed, settings.Roll.Speed
 	else

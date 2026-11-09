@@ -1,0 +1,44 @@
+# Static checks and unit tests on every push and pull request (docs/ARCHITECTURE.md F5).
+# The same commands run locally:
+#   stylua --check src tests && selene src && rojo build -o build.rbxlx && lune run tests/run
+#   rojo sourcemap default.project.json -o sourcemap.json
+#   luau-lsp analyze --sourcemap sourcemap.json --defs=globalTypes.d.luau src
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    env:
+      # Rokit downloads the pinned tools (rokit.toml) from GitHub releases; the token lifts
+      # the anonymous API rate limit.
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rokit and the pinned toolchain
+        run: |
+          curl -sSf https://raw.githubusercontent.com/rojo-rbx/rokit/main/scripts/install.sh | bash
+          echo "$HOME/.rokit/bin" >> "$GITHUB_PATH"
+          "$HOME/.rokit/bin/rokit" install --no-trust-check
+
+      - name: Format (StyLua)
+        run: stylua --check src tests
+
+      - name: Lint (Selene)
+        run: selene src
+
+      - name: Build (Rojo)
+        run: rojo build -o build.rbxlx
+
+      - name: Types (luau-lsp; a misspelt Attributes / Messages key fails here)
+        run: |
+          curl -sSfL -o globalTypes.d.luau https://raw.githubusercontent.com/JohnnyMorganz/luau-lsp/main/scripts/globalTypes.d.luau
+          rojo sourcemap default.project.json -o sourcemap.json
+          luau-lsp analyze --sourcemap sourcemap.json --defs=globalTypes.d.luau src
+
+      - name: Unit tests (Lune)
+        run: lune run tests/run

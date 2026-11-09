@@ -1,7 +1,7 @@
 --!strict
 -- Resupply (docs/PROGRESSION.md > Loadout, pallets and field upgrades). Every kill credits
 -- its form's SupplyValue to one run-wide pool (EnemyService kill listener; no orbs since
--- the loadout rework 2026-11-07), the hold objective adds its reward. When the pool covers
+-- the loadout rework), the hold objective adds its reward. When the pool covers
 -- the current cost any living player throws the red flare (key 3); for DropDelay seconds
 -- the Infected nearby walk to the flare instead of the squad, then a pallet drops out of
 -- the sky and lands loud (a wave spawns around it). The pallet is the ammo box: every
@@ -16,6 +16,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
+local Messages = require(ReplicatedStorage.Shared.Messages)
+local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local GroundUtil = require(ReplicatedStorage.Shared.GroundUtil)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
@@ -27,6 +29,8 @@ local EnemyService = require(script.Parent.EnemyService)
 local LoadoutService = require(script.Parent.LoadoutService)
 local PauseService = require(script.Parent.PauseService)
 local Squad = require(script.Parent.Squad)
+local Lifecycle = require(script.Parent.Lifecycle)
+local WorldSounds = require(script.Parent.WorldSounds)
 
 local FLARE_COLOR = Color3.fromRGB(255, 60, 40)
 local CRATE_DROP_HEIGHT = 60
@@ -83,10 +87,10 @@ local function currentCost(): number
 end
 
 local function publish()
-	workspace:SetAttribute("ResupplyPool", math.floor(pool))
-	workspace:SetAttribute("ResupplyCost", currentCost())
+	workspace:SetAttribute(Attributes.ResupplyPool, math.floor(pool))
+	workspace:SetAttribute(Attributes.ResupplyCost, currentCost())
 	workspace:SetAttribute(
-		"ResupplyDropIn",
+		Attributes.ResupplyDropIn,
 		if pending then math.max(pending.landAt - os.clock(), 0) else -1
 	)
 end
@@ -144,7 +148,7 @@ local function closeCrate(index: number)
 	local crate = crates[index]
 	crate.part:Destroy()
 	table.remove(crates, index)
-	resupplyRemote:FireAllClients("closed", crate.id)
+	resupplyRemote:FireAllClients(Messages.Resupply.Closed, crate.id)
 end
 
 local function cardPositions(center: Vector3, facing: Vector3): { Vector3 }
@@ -224,6 +228,7 @@ function RequisitionService.dropCrate(
 	if not part.Parent then
 		return
 	end
+	WorldSounds.at(ground, "callins", "pallet_land")
 
 	local living = livingPlayers()
 	if loud then
@@ -231,7 +236,7 @@ function RequisitionService.dropCrate(
 		local wave = cfg.Lure.Wave + cfg.Lure.WavePerExtraPlayer * math.max(#living - 1, 0)
 		EnemyService.spawnMixedWave(wave, ground)
 		pressureUntil = os.clock() + cfg.Lure.SpawnFactorDuration
-		workspace:SetAttribute("ResupplyActive", true)
+		workspace:SetAttribute(Attributes.ResupplyActive, true)
 	end
 
 	-- Personal cards: the same three positions for everyone, each player's own offer.
@@ -255,7 +260,14 @@ function RequisitionService.dropCrate(
 		local choices = offerFor(player, kind)
 		crate.offers[player] = choices
 		if #choices > 0 then
-			resupplyRemote:FireClient(player, "cards", crate.id, kind, choices, crate.cardPositions)
+			resupplyRemote:FireClient(
+				player,
+				Messages.Resupply.Cards,
+				crate.id,
+				kind,
+				choices,
+				crate.cardPositions
+			)
 		end
 	end
 	print(`[Requisition] {kind} crate {crate.id} down, {#living} players offered`)
@@ -301,10 +313,14 @@ local function onFlare(player: Player, target: unknown)
 		position = landing,
 		facing = Vector3.new(facing.X, 0, facing.Z).Unit,
 		landAt = now + cfg.DropDelay,
-		flare = buildFlare(landing),
+		flare = (function()
+			local flare = buildFlare(landing)
+			WorldSounds.loopOn(flare, "callins", "flare_burn")
+			return flare
+		end)(),
 	}
 	EnemyService.setLure(landing, cfg.Lure.Radius, cfg.DropDelay)
-	resupplyRemote:FireAllClients("called", player.Name)
+	resupplyRemote:FireAllClients(Messages.Resupply.Called, Squad.callsign(player))
 	publish()
 	print(`[Requisition] {player.Name} threw the flare; pallet in {cfg.DropDelay}s (drop {drops})`)
 end
@@ -325,14 +341,17 @@ local function applyCard(player: Player, cardId: string): string?
 		if humanoid and humanoid.Health > 0 then
 			humanoid.Health = humanoid.MaxHealth
 		end
+		LoadoutService.refillStims(player)
 	elseif cardId == "restock" then
 		CallInService.refill(player)
+		LoadoutService.refillGrenades(player)
+		LoadoutService.refillStims(player)
 	elseif cardId == "armour_plate" then
 		LoadoutService.addShield(player, Config.Crates.ArmourPlate)
 	else
 		return nil
 	end
-	return `{player.Name} took {definition.Name}`
+	return `{Squad.callsign(player)} took {definition.Name}`
 end
 
 local function onPick(player: Player, crateId: unknown, cardId: unknown)
@@ -368,18 +387,19 @@ local function onPick(player: Player, crateId: unknown, cardId: unknown)
 		return
 	end
 	crate.picked[player] = true
-	resupplyRemote:FireClient(player, "picked", crate.id)
+	WorldSounds.on(root, "ui_radio", "card_pick", "Gear")
+	resupplyRemote:FireClient(player, Messages.Resupply.Picked, crate.id)
 	for _, other in Players:GetPlayers() do
 		if other ~= player then
-			noticeRemote:FireClient(other, notice)
+			noticeRemote:FireClient(other, notice, Messages.Notice.Pickup)
 		end
 	end
 end
 
 local function onRemote(player: Player, kind: unknown, ...: unknown)
-	if kind == "flare" then
+	if kind == Messages.Resupply.Flare then
 		onFlare(player, ...)
-	elseif kind == "pick" then
+	elseif kind == Messages.Resupply.Pick then
 		onPick(player, ...)
 	end
 end
@@ -397,7 +417,7 @@ local function rearmNearby()
 			if root and (root.Position - crate.position).Magnitude <= radius then
 				crate.rearmed[player] = true
 				LoadoutService.refillAmmo(player)
-				noticeRemote:FireClient(player, "RE-ARMED")
+				noticeRemote:FireClient(player, "RE-ARMED", Messages.Notice.Pickup)
 			end
 		end
 	end
@@ -434,7 +454,7 @@ local function step()
 	rearmNearby()
 	if pressureUntil > 0 and now >= pressureUntil then
 		pressureUntil = 0
-		workspace:SetAttribute("ResupplyActive", false)
+		workspace:SetAttribute(Attributes.ResupplyActive, false)
 	end
 	publish()
 end
@@ -453,11 +473,21 @@ function RequisitionService.reset()
 		closeCrate(index)
 	end
 	EnemyService.setLure(nil)
-	workspace:SetAttribute("ResupplyActive", false)
+	workspace:SetAttribute(Attributes.ResupplyActive, false)
 	publish()
 end
 
 function RequisitionService.init()
+	Lifecycle.register("RequisitionService", {
+		onRunStart = RequisitionService.reset,
+		onPlayerRemoving = function(player: Player)
+			for _, crate in crates do
+				crate.offers[player] = nil
+				crate.picked[player] = nil
+				crate.rearmed[player] = nil
+			end
+		end,
+	})
 	folder = Instance.new("Folder")
 	folder.Name = "Resupply"
 	folder.Parent = workspace
@@ -467,18 +497,10 @@ function RequisitionService.init()
 	EnemyService.addKillListener(function(supplyValue: number)
 		RequisitionService.addRequisition(supplyValue)
 	end)
-	workspace:SetAttribute("ResupplyActive", false)
+	workspace:SetAttribute(Attributes.ResupplyActive, false)
 	publish()
 	lastStep = os.clock()
 	RunService.Heartbeat:Connect(step)
-
-	Players.PlayerRemoving:Connect(function(player)
-		for _, crate in crates do
-			crate.offers[player] = nil
-			crate.picked[player] = nil
-			crate.rearmed[player] = nil
-		end
-	end)
 end
 
 return RequisitionService

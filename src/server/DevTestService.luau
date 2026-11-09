@@ -6,7 +6,7 @@
 -- Invoke from the client DevTestPanel (creator), or directly via the Studio
 -- MCP runtime eval, e.g.:
 --   require(game.ServerScriptService.Server.DevTestService).spawnEnemy("Brute", 1)
--- Loadout rework (2026-11-07): SetCallIn / GiveUpgrade / ClearUpgrades / RefillAmmo /
+-- Loadout rework: SetCallIn / FireCallIn / GiveUpgrade / ClearUpgrades / RefillAmmo /
 -- RestockCallIns / SetWeapon / DropUpgradeCrate / DropSupplyCrate drive LoadoutService,
 -- CallInService and RequisitionService directly.
 
@@ -15,6 +15,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local CallInDefinitions = require(ReplicatedStorage.Shared.CallInDefinitions)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local UpgradeDefinitions = require(ReplicatedStorage.Shared.UpgradeDefinitions)
@@ -26,6 +27,8 @@ local LoadoutService = require(script.Parent.LoadoutService)
 local PlayerStatsService = require(script.Parent.PlayerStatsService)
 local RequisitionService = require(script.Parent.RequisitionService)
 local RunManager = require(script.Parent.RunManager)
+local DifficultyService = require(script.Parent.DifficultyService)
+local PauseService = require(script.Parent.PauseService)
 
 local CREATOR_USER_ID = 67169996
 local ENEMY_TAG = "Enemy"
@@ -42,7 +45,7 @@ local function folderCount(name: string): number
 	return if folder then #folder:GetChildren() else 0
 end
 
--- Accepts a snake_case id ("fire_trail") or a loose alias ("FireTrail", "Fire Trail").
+-- Accepts a snake_case id ("hollow_point") or a loose alias ("HollowPoint", "Hollow Point").
 local function resolveId(rows: { [string]: any }, input: string): string?
 	if rows[input] then
 		return input
@@ -86,9 +89,28 @@ function DevTestService.clearUpgrades(player: Player)
 	print(`[DevTest] ClearUpgrades -> {player.Name}`)
 end
 
--- Destroys call-in world objects (drones, fire pools, mines, strike markers).
+-- Fires call-in `callInId` (id or loose alias) 20 studs in front of the player: no slot,
+-- no charge spent. The quick way to see one work.
+function DevTestService.fireCallIn(player: Player, callInId: string)
+	local resolved = resolveId(CallInDefinitions.Rows, callInId)
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if not resolved or not root then
+		warn(`[DevTest] FireCallIn: unknown call-in '{callInId}' or no body`)
+		return
+	end
+	local look = root.CFrame.LookVector
+	local flat = Vector3.new(look.X, 0, look.Z)
+	flat = if flat.Magnitude > 0.01 then flat.Unit else Vector3.zAxis
+	local ok = CallInService.fireFree(player, resolved, root.Position + flat * 20)
+	print(`[DevTest] FireCallIn {resolved} -> {player.Name} ({if ok then "fired" else "refused"})`)
+end
+
+-- Destroys call-in world objects (sentries, wire, supply drops, fire pools, mines, strikes).
 function DevTestService.clearCallInObjects()
-	require(script.Parent.DroneService).reset()
+	require(script.Parent.SentryService).reset()
+	require(script.Parent.ConcertinaService).reset()
+	require(script.Parent.SupplyDropService).reset()
 	require(script.Parent.IncendiaryService).reset()
 	require(script.Parent.MineService).reset()
 	require(script.Parent.ShockCoilService).reset()
@@ -154,30 +176,34 @@ function DevTestService.printRunState(): { [string]: any }
 	local zone = workspace:FindFirstChild("ObjectiveZone")
 
 	local state: { [string]: any } = {
-		runState = workspace:GetAttribute("RunState"),
-		runResult = workspace:GetAttribute("RunResult"),
+		runState = workspace:GetAttribute(Attributes.RunState),
+		runResult = workspace:GetAttribute(Attributes.RunResult),
 		elapsed = math.floor(
 			(
 				workspace:GetServerTimeNow()
 				- (
-					(workspace:GetAttribute("RunStartTime") :: number?)
+					(workspace:GetAttribute(Attributes.RunStartTime) :: number?)
 					or workspace:GetServerTimeNow()
 				)
 			)
 		),
+		threatClock = math.floor(DifficultyService.getElapsed()), -- unpaused seconds
+		spawnInterval = math.floor(DifficultyService.getSpawnInterval() * 100) / 100,
 		enemyCount = EnemyService.count(),
 		walkerCount = EnemyService.count("Walker"),
 		runnerCount = EnemyService.count("Runner"),
 		bruteCount = EnemyService.count("Brute"),
 		hockerCount = EnemyService.count("Hocker"),
-		droneCount = folderCount("Drones"),
+		sentryCount = folderCount("Sentries"),
+		wireCount = folderCount("Wire"),
+		supplyDropCount = folderCount("SupplyDrops"),
 		projectileCount = folderCount("Projectiles"),
 		firePoolCount = folderCount("FirePools"),
 		mineCount = folderCount("Mines"),
 		strikeEffectCount = folderCount("StrikeEffects"),
-		resupplyPool = workspace:GetAttribute("ResupplyPool"),
-		resupplyCost = workspace:GetAttribute("ResupplyCost"),
-		objectiveActive = workspace:GetAttribute("ObjectiveActive") == true,
+		resupplyPool = workspace:GetAttribute(Attributes.ResupplyPool),
+		resupplyCost = workspace:GetAttribute(Attributes.ResupplyCost),
+		objectiveActive = workspace:GetAttribute(Attributes.ObjectiveActive) == true,
 		objectiveZoneExists = zone ~= nil,
 	}
 
@@ -201,7 +227,7 @@ function DevTestService.printRunState(): { [string]: any }
 	for _, player in Players:GetPlayers() do
 		local upgrades = {}
 		for _, slot in UpgradeDefinitions.SLOTS do
-			local id = player:GetAttribute("Upgrade" .. slot)
+			local id = player:GetAttribute(Attributes.upgrade(slot))
 			if typeof(id) == "string" and id ~= "" then
 				table.insert(upgrades, `{slot}={id}`)
 			end
@@ -210,15 +236,15 @@ function DevTestService.printRunState(): { [string]: any }
 			string.format(
 				"  player %s: %s mag %s/%s, kills %s, shield %s, call-ins %s(%s) %s(%s), upgrades [%s]",
 				player.Name,
-				tostring(player:GetAttribute("Weapon")),
-				tostring(player:GetAttribute("Mag")),
-				tostring(player:GetAttribute("Reserve")),
-				tostring(player:GetAttribute("Kills")),
-				tostring(player:GetAttribute("Shield")),
-				tostring(player:GetAttribute("CallIn1")),
-				tostring(player:GetAttribute("CallIn1Charges")),
-				tostring(player:GetAttribute("CallIn2")),
-				tostring(player:GetAttribute("CallIn2Charges")),
+				tostring(player:GetAttribute(Attributes.Weapon)),
+				tostring(player:GetAttribute(Attributes.Mag)),
+				tostring(player:GetAttribute(Attributes.Reserve)),
+				tostring(player:GetAttribute(Attributes.Kills)),
+				tostring(player:GetAttribute(Attributes.Shield)),
+				tostring(player:GetAttribute(Attributes.callIn(1))),
+				tostring(player:GetAttribute(Attributes.callInCharges(1))),
+				tostring(player:GetAttribute(Attributes.callIn(2))),
+				tostring(player:GetAttribute(Attributes.callInCharges(2))),
 				table.concat(upgrades, ", ")
 			)
 		)
@@ -238,7 +264,9 @@ function DevTestService.verifyCleanup(): { pass: boolean, leftovers: { string } 
 	end
 
 	check("enemies", #CollectionService:GetTagged(ENEMY_TAG))
-	check("drones", folderCount("Drones"))
+	check("sentries", folderCount("Sentries"))
+	check("wire strips", folderCount("Wire"))
+	check("supply drops", folderCount("SupplyDrops"))
 	check("projectiles", folderCount("Projectiles"))
 	check("fire pools", folderCount("FirePools"))
 	check("mines", folderCount("Mines"))
@@ -251,32 +279,32 @@ function DevTestService.verifyCleanup(): { pass: boolean, leftovers: { string } 
 	if workspace:FindFirstChild("ObjectiveZone") then
 		table.insert(leftovers, "objective zone still exists")
 	end
-	if workspace:GetAttribute("ExtractionActive") == true then
+	if workspace:GetAttribute(Attributes.ExtractionActive) == true then
 		table.insert(leftovers, "ExtractionActive still true")
 	end
-	if workspace:GetAttribute("RunState") == "Ended" then
+	if workspace:GetAttribute(Attributes.RunState) == "Ended" then
 		table.insert(leftovers, "RunState still Ended")
 	end
-	if workspace:GetAttribute("ObjectiveCompleted") == true then
+	if workspace:GetAttribute(Attributes.ObjectiveCompleted) == true then
 		table.insert(leftovers, "ObjectiveCompleted still true")
 	end
 
 	for _, player in Players:GetPlayers() do
-		for _, stat in { "Damage", "FireRate", "MoveSpeed" } do
-			local mult = (player:GetAttribute(stat .. "Mult") :: number?) or 1
+		for _, stat in { "MoveSpeed" } do
+			local mult = (player:GetAttribute(Attributes.statMult(stat)) :: number?) or 1
 			if math.abs(mult - 1) > 0.001 then
 				table.insert(leftovers, `{player.Name}: {stat} multiplier still {mult}`)
 			end
 		end
 		local weapon = LoadoutService.getWeapon(player)
-		if (player:GetAttribute("Mag") :: number?) ~= weapon.MagazineSize then
+		if (player:GetAttribute(Attributes.Mag) :: number?) ~= weapon.MagazineSize then
 			table.insert(leftovers, `{player.Name}: magazine not full`)
 		end
-		if ((player:GetAttribute("Shield") :: number?) or 0) ~= 0 then
+		if ((player:GetAttribute(Attributes.Shield) :: number?) or 0) ~= 0 then
 			table.insert(leftovers, `{player.Name}: shield remains`)
 		end
 		for _, slot in UpgradeDefinitions.SLOTS do
-			local id = player:GetAttribute("Upgrade" .. slot)
+			local id = player:GetAttribute(Attributes.upgrade(slot))
 			if typeof(id) == "string" and id ~= "" then
 				table.insert(leftovers, `{player.Name}: upgrade {id} remains in {slot}`)
 			end
@@ -304,6 +332,11 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 	SetCallIn = function(player, slot, callInId)
 		DevTestService.setCallIn(player, tonumber(slot) or 1, tostring(callInId))
 	end,
+	-- Call-ins: SetCallIn puts any call-in in a slot (full charges); FireCallIn fires one
+	-- 20 studs ahead with no slot or charge.
+	FireCallIn = function(player, callInId)
+		DevTestService.fireCallIn(player, tostring(callInId))
+	end,
 	GiveUpgrade = function(player, upgradeId)
 		DevTestService.giveUpgrade(player, tostring(upgradeId))
 	end,
@@ -323,7 +356,15 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 		if LoadoutService.setWeapon(player, id) then
 			print(`[DevTest] SetWeapon {id} -> {player.Name}`)
 		else
-			warn(`[DevTest] SetWeapon: unknown weapon '{id}' (have: {WeaponDefinitions.DEFAULT})`)
+			local known = table.clone(WeaponDefinitions.PRIMARIES)
+			table.move(
+				WeaponDefinitions.SECONDARIES,
+				1,
+				#WeaponDefinitions.SECONDARIES,
+				#known + 1,
+				known
+			)
+			warn(`[DevTest] SetWeapon: unknown weapon '{id}' (have: {table.concat(known, ", ")})`)
 		end
 	end,
 	DropUpgradeCrate = function(player)
@@ -337,6 +378,18 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 	end,
 	ClearEnemies = function()
 		DevTestService.clearEnemies()
+	end,
+	-- Ends the Warden fight at once (his body to 0): the run moves on to extraction.
+	KillWarden = function()
+		for _, model in CollectionService:GetTagged("Enemy") do
+			if model:GetAttribute(Attributes.EnemyType) == "Warden" then
+				local humanoid = model:FindFirstChildOfClass("Humanoid")
+				if humanoid then
+					humanoid.Health = 0
+				end
+			end
+		end
+		print("[DevTest] KillWarden")
 	end,
 	-- The Index: the full entrance from the Gate, or the Warden in front of you (no walk).
 	SpawnWarden = function()
@@ -375,6 +428,11 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 	RestartRun = function(player)
 		DevTestService.restartRun(player)
 	end,
+	-- Freezes / unfreezes the field (the threat clock, cooldowns and timers stop).
+	TogglePause = function()
+		PauseService.setPaused(not PauseService.isPaused())
+		print(`[DevTest] Paused -> {PauseService.isPaused()}`)
+	end,
 	PrintRunState = function()
 		DevTestService.printRunState()
 	end,
@@ -388,14 +446,14 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 		DevTestService.forceMissionSuccess()
 	end,
 	FillResupply = function()
-		local cost = (workspace:GetAttribute("ResupplyCost") :: number?) or 0
+		local cost = (workspace:GetAttribute(Attributes.ResupplyCost) :: number?) or 0
 		RequisitionService.addRequisition(math.max(cost - RequisitionService.getPool(), 0))
 		print("[DevTest] FillResupply -> pool covers the next flare")
 	end,
-	-- Dev tools v2 (2026-11-07). Toggles answer with the new state in the output.
+	-- Dev tools v2. Toggles answer with the new state in the output.
 	God = function(player)
-		local on = player:GetAttribute("DevGod") ~= true
-		player:SetAttribute("DevGod", on)
+		local on = player:GetAttribute(Attributes.DevGod) ~= true
+		player:SetAttribute(Attributes.DevGod, on)
 		print(`[DevTest] God {if on then "ON" else "OFF"} -> {player.Name}`)
 	end,
 	Heal = function(player)
@@ -410,8 +468,8 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 		end
 	end,
 	ToggleSpawns = function()
-		local off = workspace:GetAttribute("DevSpawnsOff") ~= true
-		workspace:SetAttribute("DevSpawnsOff", off)
+		local off = workspace:GetAttribute(Attributes.DevSpawnsOff) ~= true
+		workspace:SetAttribute(Attributes.DevSpawnsOff, off)
 		print(`[DevTest] Infected spawning {if off then "OFF" else "ON"}`)
 	end,
 	ActivateObjective = function()

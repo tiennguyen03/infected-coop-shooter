@@ -1,5 +1,5 @@
 --!strict
--- Sound banks (sound day 2026-11-07). Every generated variant clip lives inside one packed
+-- Sound banks. Every generated variant clip lives inside one packed
 -- bank wav per speaker (assets/audio/build/generate.py BANKS): one Roblox audio asset per
 -- bank, and a clip is played by seeking the Sound to the clip's offset and stopping it after
 -- the clip's length. Offsets come from the generated SoundBankData; ids and the per-group
@@ -21,12 +21,18 @@ export type Clip = { start: number, length: number }
 -- Uploaded bank audio ids (assets/audio/ASSET_IDS.md). "" = not uploaded yet: the bank is
 -- silent and `play` returns nil.
 local IDS: { [string]: string } = {
-	player_steps = "rbxassetid://108017161918767",
-	player_hits = "rbxassetid://125307477830610",
-	walker = "rbxassetid://91556910469203",
-	runner = "rbxassetid://134864043657246",
-	brute = "rbxassetid://96804079589453",
-	hocker = "rbxassetid://82465252830201",
+	player_steps = "rbxassetid://100789185448666",
+	player_hits = "rbxassetid://91277491081004",
+	walker = "rbxassetid://78379861633223",
+	runner = "rbxassetid://77436367980865",
+	brute = "rbxassetid://109978857666947",
+	hocker = "rbxassetid://123541518944531",
+	-- sound pass 2026-11-08
+	player_gear = "rbxassetid://71009256896523",
+	callins = "rbxassetid://110309276934239",
+	warden = "rbxassetid://77678057873649",
+	ui_radio = "rbxassetid://71130678294211",
+	ambience = "rbxassetid://98770253514208",
 }
 
 local SoundBanks = {}
@@ -131,10 +137,57 @@ function SoundBanks.play(sound: Sound, bank: string, group: string, volume: numb
 	return duration
 end
 
--- A 3D Sound ready for `play`: inverse-tapered rolloff between the two distances.
+-- Loops a random variant of `group` on `sound` (the bank's other clips stay out: the
+-- playback and loop regions are the clip). Returns false when the bank has no id yet.
+function SoundBanks.loop(sound: Sound, bank: string, group: string, volume: number?): boolean
+	local id = SoundBanks.id(bank)
+	if not id then
+		return false
+	end
+	local clip, offsets = SoundBanks.pick(bank, group)
+	if not clip or not offsets then
+		return false
+	end
+	sound.SoundId = id
+	sound.Volume = volume or SoundBanks.volume(group)
+	local region = NumberRange.new(offsets.start, offsets.start + offsets.length)
+	sound.PlaybackRegionsEnabled = true
+	sound.PlaybackRegion = region
+	sound.LoopRegion = region
+	sound.Looped = true
+	sound.TimePosition = offsets.start
+	sound:Play()
+	return true
+end
+
+-- The SoundGroup every in-world sound plays through (voices, blasts, gunshots, footsteps,
+-- hits), so the client can treat the world apart from UI stings and the player's own body
+-- (LowHealthFX muffles it). The server makes it in SoundService and it replicates; a client
+-- only finds it (nil until it arrives; a sound made before then plays ungrouped).
+SoundBanks.WORLD_GROUP = "World"
+
+function SoundBanks.worldGroup(): SoundGroup?
+	local SoundService = game:GetService("SoundService")
+	local existing = SoundService:FindFirstChild(SoundBanks.WORLD_GROUP)
+	if existing and existing:IsA("SoundGroup") then
+		return existing
+	end
+	if not game:GetService("RunService"):IsServer() then
+		return nil
+	end
+	local group = Instance.new("SoundGroup")
+	group.Name = SoundBanks.WORLD_GROUP
+	group.Volume = 1
+	group.Parent = SoundService
+	return group
+end
+
+-- A 3D Sound ready for `play`: inverse-tapered rolloff between the two distances, in the
+-- World group.
 function SoundBanks.create(name: string, rollOffMin: number, rollOffMax: number): Sound
 	local sound = Instance.new("Sound")
 	sound.Name = name
+	sound.SoundGroup = SoundBanks.worldGroup()
 	sound.RollOffMode = Enum.RollOffMode.InverseTapered
 	sound.RollOffMinDistance = rollOffMin
 	sound.RollOffMaxDistance = rollOffMax

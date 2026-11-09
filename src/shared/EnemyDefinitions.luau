@@ -1,8 +1,8 @@
 --!strict
--- Enemy archetype stats and behaviour (Sprint 9, extended 2026-11-06 for the Infected
+-- Enemy archetype stats and behaviour (extended for the Infected
 -- roster in docs/PROGRESSION.md). All enemy tuning lives here; EnemyService reads the
 -- Behaviour table and has no per-type branches. The curve is flat (Config.Difficulty is
--- 1x since the loadout rework 2026-11-07); spawn weights and caps from Config.Spawning.
+-- 1x since the the loadout rework); spawn weights and caps from Config.Spawning.
 -- Health and damage sit on the realistic time-to-kill in Config.Weapon (rifle 20, head x3):
 -- Walker 3 body / 1 head, Runner 2 / 1, Hocker 4 / 2, Brute 13 / 11.
 
@@ -99,7 +99,7 @@ local EnemyDefinitions: { [string]: EnemyDefinition } = {
 		HeadshotMultiplier = 1.25, -- bone overgrowth: the head is barely a weak point
 	},
 	-- Ranged: plants, rears back, lobs caustic fluid that leaves a puddle. The one rule:
-	-- a Hocker that stops moving is about to spit. Numbers: systems designer 2026-11-06.
+	-- a Hocker that stops moving is about to spit. Numbers: systems designer.
 	Hocker = {
 		DisplayName = "Hocker",
 		Scale = 1,

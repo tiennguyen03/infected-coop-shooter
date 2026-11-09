@@ -19,8 +19,17 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local Messages = require(ReplicatedStorage.Shared.Messages)
+local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
+local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local ArenaService = require(script.Parent.ArenaService)
+local Lifecycle = require(script.Parent.Lifecycle)
+local WorldSounds = require(script.Parent.WorldSounds)
+-- LoadoutService requires Squad, so Squad reaches it lazily (knock only).
+local function loadoutService(): any
+	return require(script.Parent.LoadoutService) :: any
+end
 
 export type MemberKind = "player" | "bot"
 export type MemberState = "Alive" | "Downed" | "Dead"
@@ -78,9 +87,9 @@ local function publish(member: Member)
 	end
 	for _, target in { member.character :: Instance?, member.owner :: Instance? } do
 		if target then
-			target:SetAttribute("SquadState", member.state)
-			target:SetAttribute("BleedOutAt", bleedOutServer)
-			target:SetAttribute("SelfReviveAt", selfReviveServer)
+			target:SetAttribute(Attributes.SquadState, member.state)
+			target:SetAttribute(Attributes.BleedOutAt, bleedOutServer)
+			target:SetAttribute(Attributes.SelfReviveAt, selfReviveServer)
 		end
 	end
 end
@@ -88,7 +97,7 @@ end
 local function setReviver(member: Member, name: string)
 	for _, target in { member.character :: Instance?, member.owner :: Instance? } do
 		if target then
-			target:SetAttribute("Reviver", name)
+			target:SetAttribute(Attributes.Reviver, name)
 		end
 	end
 end
@@ -107,6 +116,16 @@ local function setState(member: Member, state: MemberState)
 		return
 	end
 	member.state = state
+	if member.root then
+		if state == "Downed" then
+			WorldSounds.voice(member.root, "player_gear", "downed")
+		elseif old == "Downed" and state == "Alive" then
+			WorldSounds.on(member.root, "player_gear", "revive", "Gear")
+		end
+	end
+	if state == "Dead" then
+		WorldSounds.global("ui_radio", "kia")
+	end
 	if state ~= "Downed" then
 		member.bleedOutAt = nil
 		member.selfReviveAt = nil
@@ -167,6 +186,23 @@ local function remove(member: Member)
 	end
 end
 
+-- The callsigns (Config.Bots.Callsigns) no player holds, in order: the bots take these.
+function Squad.freeCallsigns(): { string }
+	local free = {}
+	for _, callsign in Config.Bots.Callsigns do
+		local taken = false
+		for _, member in members do
+			if member.kind == "player" and member.name == callsign then
+				taken = true
+			end
+		end
+		if not taken then
+			table.insert(free, callsign)
+		end
+	end
+	return free
+end
+
 function Squad.addBot(slot: number, name: string): Member
 	local member = newMember("b:" .. slot, "bot", nil, name)
 	add(member)
@@ -200,9 +236,47 @@ function Squad.isActive(member: Member): boolean
 	return (member.state == "Alive" or member.state == "Downed") and hasBody(member)
 end
 
--- May act (fire, use abilities, throw the flare): Alive.
+-- Knocked down (Squad.knock): the KnockedUntil attribute is on the character while it lasts.
+function Squad.isKnocked(member: Member): boolean
+	local character = member.character
+	return character ~= nil and character:GetAttribute(Attributes.KnockedUntil) ~= nil
+end
+
+-- May act (fire, use abilities, throw the flare): Alive and on their feet.
 function Squad.canAct(member: Member): boolean
-	return isAlive(member)
+	return isAlive(member) and not Squad.isKnocked(member)
+end
+
+-- Knocks a living member down for `seconds` (the Warden's Pound and Stomp): no moving,
+-- firing or abilities (canAct), the reload dropped, the fall and get-up clips on the client
+-- (Impact "knockdown"); bots read the attribute. Config.Knockdown.Grace after standing
+-- refuses the next knockdown so two of them cannot chain. Returns true when it took.
+function Squad.knock(member: Member, seconds: number): boolean
+	local character = member.character
+	if not isAlive(member) or not character then
+		return false
+	end
+	local now = os.clock()
+	local grace = character:GetAttribute(Attributes.KnockGraceUntil) :: number?
+	if (grace and now < grace) or character:GetAttribute(Attributes.KnockedUntil) ~= nil then
+		return false
+	end
+	local until_ = now + seconds
+	character:SetAttribute(Attributes.KnockedUntil, until_)
+	if member.root then
+		WorldSounds.on(member.root, "player_gear", "knockdown", "Move")
+	end
+	if member.owner then
+		loadoutService().cancelReload(member.owner)
+		Remotes.get("Impact"):FireClient(member.owner, Messages.Impact.Knockdown, seconds)
+	end
+	task.delay(seconds, function()
+		if character.Parent and character:GetAttribute(Attributes.KnockedUntil) == until_ then
+			character:SetAttribute(Attributes.KnockedUntil, nil)
+			character:SetAttribute(Attributes.KnockGraceUntil, os.clock() + Config.Knockdown.Grace)
+		end
+	end)
+	return true
 end
 
 function Squad.members(): { Member }
@@ -241,6 +315,33 @@ function Squad.livingOwners(): { Player }
 	return result
 end
 
+-- Who is inside a hold zone (MULTIPLAYER_READINESS #3): whether any living member (player
+-- or bot) is in it, how many living players are, and how many living players there are.
+-- Downed bodies count for neither; bots never count toward the player totals.
+local zoneOverlap = OverlapParams.new()
+zoneOverlap.FilterType = Enum.RaycastFilterType.Include
+function Squad.zoneCount(zone: BasePart): (boolean, number, number)
+	local anyone, playersIn, playersLiving = false, 0, 0
+	for _, member in members do
+		if isAlive(member) then
+			local inside = false
+			local character = member.character
+			if character then
+				zoneOverlap.FilterDescendantsInstances = { character }
+				inside = #workspace:GetPartsInPart(zone, zoneOverlap) > 0
+			end
+			anyone = anyone or inside
+			if member.owner then
+				playersLiving += 1
+				if inside then
+					playersIn += 1
+				end
+			end
+		end
+	end
+	return anyone, playersIn, playersLiving
+end
+
 -- Players still in the fight (Alive or Downed): the run is wiped when this is empty.
 function Squad.activeOwners(): { Player }
 	local result = {}
@@ -254,6 +355,12 @@ end
 
 function Squad.fromPlayer(player: Player): Member?
 	return byPlayer[player]
+end
+
+-- The player's radio callsign ("Pike One"), for HUD and radio text.
+function Squad.callsign(player: Player): string
+	local member = byPlayer[player]
+	return if member then member.name else player.DisplayName
 end
 
 function Squad.fromHumanoid(humanoid: Humanoid): Member?
@@ -321,7 +428,7 @@ local function addPrompt(member: Member)
 	prompt.RequiresLineOfSight = false
 	prompt.Style = Enum.ProximityPromptStyle.Default
 	prompt.PromptButtonHoldBegan:Connect(function(player)
-		setReviver(member, player.DisplayName)
+		setReviver(member, Squad.callsign(player))
 	end)
 	prompt.PromptButtonHoldEnded:Connect(function()
 		setReviver(member, "")
@@ -365,7 +472,7 @@ function Squad.down(member: Member)
 	-- Spare Tourniquet: the body gets itself up, once per run.
 	if
 		not member.tourniquetUsed
-		and Squad.ownerAttribute(member, "UpgradeKit", "") == "tourniquet"
+		and Squad.ownerAttribute(member, Attributes.UpgradeKit, "") == "tourniquet"
 	then
 		member.tourniquetUsed = true
 		member.selfReviveAt = os.clock() + Config.Upgrades.Tourniquet.Seconds
@@ -422,7 +529,10 @@ function Squad.ownerAttribute(member: Member, name: string, default: any): any
 end
 
 local function onPlayerAdded(player: Player)
-	local member = newMember("p:" .. player.UserId, "player", player, player.DisplayName)
+	-- The radio name: the lowest callsign no other player holds (solo: Pike One).
+	local callsign = Squad.freeCallsigns()[1] or player.DisplayName
+	local member = newMember("p:" .. player.UserId, "player", player, callsign)
+	player:SetAttribute(Attributes.Callsign, callsign)
 	byPlayer[player] = member
 	add(member)
 	-- Every (re)spawn lands on the member's own pad around the LZ helipad.
@@ -461,16 +571,20 @@ local function step()
 end
 
 function Squad.init()
+	Lifecycle.register("Squad", {
+		onRunStart = Squad.resetRun,
+		onPlayerRemoving = function(player: Player)
+			local member = byPlayer[player]
+			if member then
+				remove(member)
+			end
+		end,
+		last = true,
+	})
 	Players.PlayerAdded:Connect(onPlayerAdded)
 	for _, player in Players:GetPlayers() do
 		onPlayerAdded(player)
 	end
-	Players.PlayerRemoving:Connect(function(player)
-		local member = byPlayer[player]
-		if member then
-			remove(member)
-		end
-	end)
 	RunService.Heartbeat:Connect(step)
 end
 

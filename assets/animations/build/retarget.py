@@ -74,6 +74,8 @@ CLIPS = {
     "rifle_aiming_idle": {"loop": True, "step": 2, "upper": True},
     "firing_rifle": {"loop": False, "step": 1, "upper": True},
     "hit_reaction": {"loop": False, "step": 1, "upper": True},
+    "zombie_hit": {"loop": False, "step": 1, "upper": True},  # Zombie Reaction Hit: the Infected flinch (satisfying pass)
+    "rifle_reload": {"loop": False, "step": 1, "upper": True},  # Reloading (rifle, standing): R, rate fitted to the gun's ReloadTime
     "death_from_the_front": {"loop": False, "step": 2},
     "grenade_throw": {"loop": False, "step": 1, "upper": True},
     "zombie_idle": {"loop": True, "step": 2},
@@ -127,6 +129,26 @@ CLIPS = {
     "zombie_crawl": {"loop": True, "step": 1, "in_place": True},
     "zombie_stumble": {"loop": False, "step": 1, "in_place": True},
     "zombie_scream": {"loop": False, "step": 1, "in_place": True},
+    # The Warden (2026-11-07): Mixamo Sword And Shield pack, shield on the left arm like his.
+    # Walk / run in place (locomotion), the rest keep their hip motion; guard and idle loop.
+    "warden_walk": {"loop": True, "step": 1, "in_place": True},
+    "warden_run": {"loop": True, "step": 1, "in_place": True},
+    "warden_idle": {"loop": True, "step": 2},
+    "warden_guard": {"loop": True, "step": 2, "upper": True},  # Sword And Shield Block Idle: shield up, the walk shows through the legs
+    "warden_bash": {"loop": False, "step": 1},  # Sword And Shield Power Slash
+    "warden_riot": {"loop": False, "step": 1},  # Sword And Shield Power Up
+    "warden_death": {"loop": False, "step": 2},  # Sword And Shield Falling Forward Death
+    # Kit expansion (2026-11-07): the new attacks and his flinch, all in place so he never
+    # drifts off his root while he swings.
+    "warden_pound": {"loop": False, "step": 1, "in_place": True},  # Sword And Shield Jump Attack: the Ground Pound
+    "warden_sweep": {"loop": False, "step": 1, "in_place": True},  # Sword And Shield Cross Slash: the Shield Sweep
+    "warden_slam": {"loop": False, "step": 1, "in_place": True},  # Sword And Shield Downward Slash: the Overhead Slam
+    "warden_stomp": {"loop": False, "step": 1, "in_place": True},  # Stomp (Hard Floor Stomp)
+    "warden_hit": {"loop": False, "step": 1, "in_place": True},  # Sword And Shield Impact (head): a plate coming off
+    # Player knockdown (the Pound and the Stomp): the fall and the get-up, trimmed to the
+    # part that moves (`trim` = fractions of the clip kept); hips keep their drop.
+    "knockdown_back": {"loop": False, "step": 1, "in_place": True, "trim": (0.0, 0.45)},  # Knocked Out (falling to back)
+    "getup_back": {"loop": False, "step": 1, "in_place": True, "trim": (0.55, 1.0)},  # Getting Up (from back)
 }
 
 
@@ -158,6 +180,10 @@ def retarget(name: str, cfg: dict):
     fps = scene.render.fps
     action = arm.animation_data.action
     f0, f1 = (int(round(v)) for v in action.frame_range)
+    trim = cfg.get("trim")
+    if trim:  # keep a fraction of the clip (start, end), e.g. the fall without the lying still
+        span = f1 - f0
+        f0, f1 = f0 + int(round(span * trim[0])), f0 + int(round(span * trim[1]))
     rest = {part: rest_rotation(arm, arm.data.bones[bones[bone]]) for part, (bone, _, _) in LIMBS.items()}
     hips_rest = (arm.matrix_world @ arm.data.bones[bones["Hips"]].head_local).copy()
 

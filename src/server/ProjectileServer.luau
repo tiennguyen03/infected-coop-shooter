@@ -1,5 +1,5 @@
 --!strict
--- Server-authoritative shooting. The player's rifle is hitscan (2026-11-07): the client
+-- Server-authoritative shooting. The player's rifle is hitscan: the client
 -- sends a fire request, the server validates it (alive or Last Stand, rate, a round in the
 -- magazine: LoadoutService), applies the weapon's spread cone, raycasts once and lands the
 -- damage the same frame (a Head hit is a headshot). Through-and-Through carries the round
@@ -11,16 +11,17 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local EnemyDefinitions = require(ReplicatedStorage.Shared.EnemyDefinitions)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
 local EnemyService = require(script.Parent.EnemyService)
-local ItemEffectService = require(script.Parent.ItemEffectService)
+local DamageService = require(script.Parent.DamageService)
 local LoadoutService = require(script.Parent.LoadoutService)
 local PauseService = require(script.Parent.PauseService)
-local PlayerStatsService = require(script.Parent.PlayerStatsService)
 local Squad = require(script.Parent.Squad)
+local Lifecycle = require(script.Parent.Lifecycle)
 
 local ENEMY_TAG = "Enemy"
 -- How far a reported fire origin may be from the character before the
@@ -35,7 +36,7 @@ local PASS_THROUGH_FOLDERS = {
 	"Drones",
 	"Mines",
 	"FirePools",
-	"AssaultEffects",
+	"KitEffects",
 	"CallInEffects",
 	"StrikeEffects",
 }
@@ -67,6 +68,8 @@ local projectileFolder: Folder
 local tracerRemote: RemoteEvent
 local activeProjectiles: { Projectile } = {}
 local lastFireTime: { [Player]: number } = {}
+-- Bloom (the gun's Bloom* numbers): extra spread in degrees per player, as of lastFireTime.
+local bloom: { [Player]: number } = {}
 
 local function findEnemyHumanoid(hit: Instance): Humanoid?
 	local model = hit:FindFirstAncestorOfClass("Model")
@@ -141,7 +144,7 @@ local function stepProjectiles(deltaTime: number)
 		if result then
 			local humanoid = findEnemyHumanoid(result.Instance)
 			if humanoid and humanoid.Health > 0 then
-				ItemEffectService.dealDamage(
+				DamageService.dealDamage(
 					projectile.owner,
 					humanoid,
 					projectile.damage,
@@ -184,22 +187,22 @@ function ProjectileServer.hitMultiplier(
 	headshotMultiplier: number?
 ): (number, string)
 	-- The Index's armour (IndexService): a plated part takes the round at the armoured rate
-	-- (ItemEffectService routes it to the plate); a limb whose plate is gone is exposed.
-	if typeof(part:GetAttribute("PlateHealth")) == "number" then
+	-- (DamageService routes it to the plate); a limb whose plate is gone is exposed.
+	if typeof(part:GetAttribute(Attributes.PlateHealth)) == "number" then
 		return Config.Index.Warden.ArmouredMultiplier, "plate"
 	end
 	if part.Name ~= "Head" then
-		if part:GetAttribute("Exposed") == true then
+		if part:GetAttribute(Attributes.Exposed) == true then
 			return Config.Index.Warden.ExposedMultiplier, "exposed"
 		end
 		return 1, "hit"
 	end
 	local model = humanoid.Parent
-	local typeName = model and model:GetAttribute("EnemyType")
+	local typeName = model and model:GetAttribute(Attributes.EnemyType)
 	local definition = if typeof(typeName) == "string" then EnemyDefinitions[typeName] else nil
 	local multiplier = (definition and definition.HeadshotMultiplier)
 		or headshotMultiplier
-		or Config.Weapon.HeadshotMultiplier
+		or WeaponDefinitions.get(WeaponDefinitions.DEFAULT).HeadshotMultiplier
 	return multiplier, "headshot"
 end
 
@@ -249,7 +252,7 @@ local function fireHitscan(
 		end
 		local multiplier, kind =
 			ProjectileServer.hitMultiplier(result.Instance, humanoid, weapon.HeadshotMultiplier)
-		ItemEffectService.dealDamage(
+		DamageService.dealDamage(
 			player,
 			humanoid,
 			damage * multiplier,
@@ -301,13 +304,11 @@ local function onFireRequest(player: Player, origin: unknown, direction: unknown
 		end
 	end
 
-	-- Server-side cooldown scaled by the player's fire rate multiplier;
-	-- slight tolerance so honest clients at the rate limit aren't rejected
-	-- by network jitter.
+	-- Server-side cooldown of the gun in hand; slight tolerance so honest clients at the
+	-- rate limit aren't rejected by network jitter.
 	local weapon = LoadoutService.getWeapon(player)
 	local now = os.clock()
-	local cooldown = weapon.FireCooldown / PlayerStatsService.getMultiplier(player, "FireRate")
-	if now - (lastFireTime[player] or 0) < cooldown * 0.9 then
+	if now - (lastFireTime[player] or 0) < weapon.FireCooldown * 0.9 then
 		return
 	end
 
@@ -327,15 +328,26 @@ local function onFireRequest(player: Player, origin: unknown, direction: unknown
 		return
 	end
 
+	local previousShot = lastFireTime[player]
 	lastFireTime[player] = now
 	local exclude = excludeList(character)
 	-- The client says whether it is aiming down sights; that only tightens the cone (the
 	-- speed penalty is client-owned movement either way), so trusting it costs nothing.
 	local spread = if aiming == true and not lastStand then weapon.AdsSpread else weapon.HipSpread
+	-- Bloom (the gun's own numbers): recover what the pause since the previous shot earned,
+	-- add this shot's kick. A swap carries the bloom over, capped at the new gun's max.
+	local previous = math.min(bloom[player] or 0, weapon.BloomMax)
+	local idle = now - (previousShot or now) - Config.Weapon.BloomRecoveryDelay
+	if idle > 0 then
+		previous = math.max(previous - idle * weapon.BloomRecovery, 0)
+	end
+	spread += previous
+	bloom[player] = math.min(previous + weapon.BloomPerShot, weapon.BloomMax)
+	player:SetAttribute(Attributes.Bloom, bloom[player])
 	if lastStand then
 		spread *= Config.Upgrades.LastStand.SpreadMultiplier
 	end
-	local baseDamage = weapon.Damage * PlayerStatsService.getMultiplier(player, "Damage")
+	local baseDamage = weapon.Damage
 	local pierce = weapon.Pierce or 0
 	if LoadoutService.hasUpgrade(player, "through_and_through") then
 		pierce += Config.Upgrades.ThroughAndThrough.Pierce
@@ -361,9 +373,19 @@ end
 -- One player's fire timing.
 function ProjectileServer.resetPlayer(player: Player)
 	lastFireTime[player] = nil
+	bloom[player] = nil
+	player:SetAttribute(Attributes.Bloom, 0)
 end
 
 function ProjectileServer.init()
+	Lifecycle.register("ProjectileServer", {
+		onRunStart = ProjectileServer.reset,
+		onPlayerReset = ProjectileServer.resetPlayer,
+		onPlayerRemoving = function(player: Player)
+			lastFireTime[player] = nil
+			bloom[player] = nil
+		end,
+	})
 	projectileFolder = Instance.new("Folder")
 	projectileFolder.Name = "Projectiles"
 	projectileFolder.Parent = workspace
@@ -371,10 +393,6 @@ function ProjectileServer.init()
 	tracerRemote = Remotes.get("ShotTracer")
 	Remotes.get("FireWeapon").OnServerEvent:Connect(onFireRequest)
 	RunService.Heartbeat:Connect(stepProjectiles)
-
-	Players.PlayerRemoving:Connect(function(player)
-		lastFireTime[player] = nil
-	end)
 end
 
 return ProjectileServer

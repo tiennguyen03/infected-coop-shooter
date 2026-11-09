@@ -1,16 +1,18 @@
 --!strict
--- The Index boss bar (Sprint 19): top centre while the Warden is up. The body bar, six
+-- The Index boss bar (Sprint 19): top right while the Warden is up (HudTheme language). The body bar, six
 -- plate pips (full -> cracked at Config.Index.Warden.CrackFraction -> gone) and the tell
 -- line: the handset's words before each attack (BossUpdate "tell"). Driven entirely by the
 -- BossUpdate remote: ("show", name, plateNames) | ("state", bodyFraction, plateFractions,
 -- phase) | ("tell", kind) | ("hide"). Asks the server for the state on boot (late join).
 
-local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
+local Messages = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Messages"))
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
+local BuffNoticeUI = require(script.Parent.BuffNoticeUI)
+local HudTheme = require(script.Parent.HudTheme)
 
 local BossBarUI = {}
 
@@ -21,7 +23,6 @@ local PLATE_COLOR = Color3.fromHex("8f969c") -- gun.l
 local CRACK_COLOR = Color3.fromHex("e6bd60") -- objective yellow
 local TELL_COLOR = Color3.fromHex("e6bd60")
 local STUN_COLOR = Color3.fromHex("3fa7d6") -- friendly blue
-local PANEL_COLOR = Color3.fromRGB(28, 30, 34)
 local TEXT_COLOR = Color3.fromRGB(240, 240, 240)
 local DIM_TEXT = Color3.fromRGB(120, 120, 124)
 
@@ -42,44 +43,43 @@ local TELL_TEXT: { [string]: string } = {
 	guard = "GUARD UP: flank him",
 	stun = "STUNNED",
 	["break"] = "PLATE OFF",
+	-- Kit expansion (placeholders in the MP's voice until the lore pass).
+	pound = "...GET DOWN. Get down, get down...",
+	sweep = "...clear the lane. CLEAR THE LANE...",
+	slam = "...hold still. HOLD STILL...",
+	stomp = "...off the wire. OFF THE WIRE...",
 }
 
-local frame: Frame
-local nameLabel: TextLabel
-local bodyFill: Frame
-local tellLabel: TextLabel
-local pipRow: Frame
+local frame: Frame = nil :: any
+local nameLabel: TextLabel = nil :: any
+local bodyFill: Frame = nil :: any
+local emblemStroke: UIStroke = nil :: any
+local pipRow: Frame = nil :: any
 local pips: { { holder: Frame, fill: Frame, label: TextLabel } } = {}
-local tellGeneration = 0
+local stunUntil = 0
 
-local function makePip(name: string): { holder: Frame, fill: Frame, label: TextLabel }
+local C = HudTheme.Color
+local BAR_WIDTH = 380
+local PLATE_WIDTH = 56
+
+local function makePip(
+	name: string,
+	order: number
+): { holder: Frame, fill: Frame, label: TextLabel }
 	local holder = Instance.new("Frame")
-	holder.Size = UDim2.new(1 / 6, -4, 1, 0)
 	holder.BackgroundTransparency = 1
+	holder.Size = UDim2.fromOffset(PLATE_WIDTH, 20)
+	holder.LayoutOrder = order
 	holder.Parent = pipRow
-
-	local track = Instance.new("Frame")
-	track.Size = UDim2.new(1, 0, 0, 8)
-	track.Position = UDim2.fromOffset(0, 0)
-	track.BackgroundColor3 = Color3.fromRGB(44, 46, 52)
-	track.BorderSizePixel = 0
-	track.Parent = holder
-
-	local fill = Instance.new("Frame")
-	fill.Size = UDim2.fromScale(1, 1)
-	fill.BackgroundColor3 = PLATE_COLOR
-	fill.BorderSizePixel = 0
-	fill.Parent = track
-
-	local label = Instance.new("TextLabel")
-	label.Size = UDim2.new(1, 0, 0, 12)
-	label.Position = UDim2.fromOffset(0, 10)
-	label.BackgroundTransparency = 1
-	label.Text = PLATE_LABELS[name] or string.upper(name)
-	label.TextColor3 = TEXT_COLOR
-	label.TextSize = 12
-	label.Font = Enum.Font.GothamBold
-	label.Parent = holder
+	local track =
+		HudTheme.rect(holder, UDim2.fromOffset(PLATE_WIDTH, 6), C.Track, HudTheme.TrackTransparency)
+	local fill = HudTheme.rect(track, UDim2.fromScale(1, 1), PLATE_COLOR)
+	local label = HudTheme.label(holder, {
+		text = PLATE_LABELS[name] or string.upper(name),
+		font = HudTheme.Font.Line,
+		size = 11,
+	})
+	label.Position = UDim2.fromOffset(0, 8)
 	return { holder = holder, fill = fill, label = label }
 end
 
@@ -89,12 +89,12 @@ local function show(name: string, plateNames: { string })
 		pip.holder:Destroy()
 	end
 	table.clear(pips)
-	for _, plateName in plateNames do
-		table.insert(pips, makePip(plateName))
+	for index, plateName in plateNames do
+		table.insert(pips, makePip(plateName, index))
 	end
 	bodyFill.Size = UDim2.fromScale(1, 1)
-	tellLabel.Text = ""
 	frame.Visible = true
+	BuffNoticeUI.setCardTop(120)
 end
 
 local function state(bodyFraction: number, plateFractions: { number }, _phase: number)
@@ -116,106 +116,147 @@ local function state(bodyFraction: number, plateFractions: { number }, _phase: n
 	end
 end
 
+-- The handset's words before each attack, as a subtitle under the mission line; a stun
+-- turns the emblem blue for its length.
 local function tell(kind: string)
-	tellGeneration += 1
-	local generation = tellGeneration
-	tellLabel.Text = TELL_TEXT[kind] or string.upper(kind)
-	tellLabel.TextColor3 = if kind == "stun" then STUN_COLOR else TELL_COLOR
-	tellLabel.TextTransparency = 0
-	local hold = if kind == "stun"
-		then Config.Index.Warden.Charge.WallStun
-		else Config.Index.Warden.TellHold
-	task.delay(hold, function()
-		if generation == tellGeneration then
-			TweenService:Create(tellLabel, TweenInfo.new(0.4), { TextTransparency = 1 }):Play()
-		end
-	end)
+	local stun = kind == Messages.BossTell.Stun
+	local text = TELL_TEXT[kind] or string.upper(kind)
+	local hold = if stun then Config.Index.Warden.Charge.WallStun else Config.Index.Warden.TellHold
+	local speaker = if string.sub(text, 1, 3) == "..." then "Handset" else nil
+	BuffNoticeUI.subtitle(speaker, text, if stun then STUN_COLOR else TELL_COLOR, hold)
+	if stun then
+		stunUntil = os.clock() + hold
+		emblemStroke.Color = STUN_COLOR
+		task.delay(hold, function()
+			if os.clock() >= stunUntil then
+				emblemStroke.Color = C.RedLight
+			end
+		end)
+	end
 end
 
 local function hide()
 	frame.Visible = false
+	BuffNoticeUI.setCardTop(12)
+end
+
+-- The Pound's ring on the ground through its windup: one flat cylinder, no particles.
+local zonePart: BasePart? = nil
+local function zone(position: Vector3, radius: number, seconds: number)
+	if zonePart then
+		zonePart:Destroy()
+	end
+	local part = Instance.new("Part")
+	part.Name = "BossZone"
+	part.Shape = Enum.PartType.Cylinder
+	part.Size = Vector3.new(0.2, radius * 2, radius * 2)
+	part.CFrame = CFrame.new(position + Vector3.new(0, 0.15, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	part.Anchored = true
+	part.CanCollide = false
+	part.CanQuery = false
+	part.CanTouch = false
+	part.CastShadow = false
+	part.Material = Enum.Material.Neon
+	part.Color = TELL_COLOR
+	part.Transparency = 0.55
+	part.Parent = workspace
+	zonePart = part
+	TweenService:Create(part, TweenInfo.new(seconds), { Transparency = 0.15 }):Play()
+	task.delay(seconds + 0.15, function()
+		if zonePart == part then
+			zonePart = nil
+		end
+		part:Destroy()
+	end)
 end
 
 local function onUpdate(kind: string, ...: any)
-	if kind == "show" then
+	if kind == Messages.BossUpdate.Show then
 		show(...)
-	elseif kind == "state" then
+	elseif kind == Messages.BossUpdate.State then
 		state(...)
-	elseif kind == "tell" then
+	elseif kind == Messages.BossUpdate.Tell then
 		tell(...)
-	elseif kind == "hide" then
+	elseif kind == Messages.BossUpdate.Zone then
+		zone(...)
+	elseif kind == Messages.BossUpdate.Hide then
 		hide()
+		if zonePart then
+			zonePart:Destroy()
+			zonePart = nil
+		end
 	end
 end
 
+-- Top right, mirroring the player's health stack (HudTheme; after Prototype 2's boss bar):
+-- the name right-aligned in red, a faceted red body bar ending in a round emblem, the six
+-- plates as small bars under it.
 function BossBarUI.init()
-	local gui = Instance.new("ScreenGui")
-	gui.Name = "BossBarUI"
-	gui.ResetOnSpawn = false
-	gui.DisplayOrder = 11
-
+	local gui = HudTheme.gui("BossBarUI", 11)
 	frame = Instance.new("Frame")
-	frame.AnchorPoint = Vector2.new(0.5, 0)
-	-- Below the loadout rows (slots end near y 136) and clear of the objective panel's spot.
-	frame.Position = UDim2.new(0.5, 0, 0, 148)
-	frame.Size = UDim2.fromOffset(440, 92)
-	frame.BackgroundColor3 = PANEL_COLOR
-	frame.BackgroundTransparency = 0.25
-	frame.BorderSizePixel = 0
+	frame.BackgroundTransparency = 1
+	frame.AnchorPoint = Vector2.new(1, 0)
+	frame.Position = UDim2.new(1, -HudTheme.Margin, 0, 12)
+	frame.Size = UDim2.fromOffset(BAR_WIDTH + 44, 92)
 	frame.Visible = false
 	frame.Parent = gui
 
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 10)
-	corner.Parent = frame
+	nameLabel = HudTheme.label(frame, {
+		text = "THE WARDEN",
+		font = HudTheme.Font.Headline,
+		size = 16,
+		color = C.RedLight,
+		align = Enum.TextXAlignment.Right,
+	})
+	nameLabel.AnchorPoint = Vector2.new(1, 0)
+	nameLabel.Position = UDim2.new(1, -44, 0, 0)
 
-	nameLabel = Instance.new("TextLabel")
-	nameLabel.Position = UDim2.fromOffset(10, 4)
-	nameLabel.Size = UDim2.new(1, -20, 0, 22)
-	nameLabel.BackgroundTransparency = 1
-	nameLabel.Text = "THE WARDEN"
-	nameLabel.TextColor3 = BODY_COLOR
-	nameLabel.TextSize = 18
-	nameLabel.TextXAlignment = Enum.TextXAlignment.Left
-	nameLabel.Font = Enum.Font.GothamBlack
-	nameLabel.Parent = frame
+	local track = HudTheme.rect(
+		frame,
+		UDim2.fromOffset(BAR_WIDTH, 16),
+		C.Track,
+		HudTheme.TrackTransparency,
+		true
+	)
+	track.AnchorPoint = Vector2.new(1, 0)
+	track.Position = UDim2.new(1, -44, 0, 22)
+	bodyFill = HudTheme.rect(track, UDim2.fromScale(1, 1), BODY_COLOR)
+	bodyFill.AnchorPoint = Vector2.new(1, 0)
+	bodyFill.Position = UDim2.fromScale(1, 0)
+	HudTheme.facet(bodyFill, C.RedLight, C.Red)
 
-	local bodyTrack = Instance.new("Frame")
-	bodyTrack.Position = UDim2.fromOffset(10, 28)
-	bodyTrack.Size = UDim2.new(1, -20, 0, 12)
-	bodyTrack.BackgroundColor3 = Color3.fromRGB(44, 46, 52)
-	bodyTrack.BorderSizePixel = 0
-	bodyTrack.Parent = frame
-
-	bodyFill = Instance.new("Frame")
-	bodyFill.Size = UDim2.fromScale(1, 1)
-	bodyFill.BackgroundColor3 = BODY_COLOR
-	bodyFill.BorderSizePixel = 0
-	bodyFill.Parent = bodyTrack
+	local emblem = HudTheme.rect(frame, UDim2.fromOffset(34, 34), C.Track, 0.2)
+	emblem.AnchorPoint = Vector2.new(1, 0)
+	emblem.Position = UDim2.new(1, 0, 0, 13)
+	local emblemCorner = Instance.new("UICorner")
+	emblemCorner.CornerRadius = UDim.new(1, 0)
+	emblemCorner.Parent = emblem
+	emblemStroke = Instance.new("UIStroke")
+	emblemStroke.Color = C.RedLight
+	emblemStroke.Thickness = 2
+	emblemStroke.Parent = emblem
+	local glyph = HudTheme.label(
+		emblem,
+		{ text = "W", font = HudTheme.Font.Headline, size = 16, color = C.RedLight }
+	)
+	glyph.AutomaticSize = Enum.AutomaticSize.None
+	glyph.Size = UDim2.fromScale(1, 1)
+	glyph.TextXAlignment = Enum.TextXAlignment.Center
 
 	pipRow = Instance.new("Frame")
-	pipRow.Position = UDim2.fromOffset(10, 46)
-	pipRow.Size = UDim2.new(1, -20, 0, 22)
 	pipRow.BackgroundTransparency = 1
+	pipRow.AnchorPoint = Vector2.new(1, 0)
+	pipRow.Position = UDim2.new(1, -44, 0, 44)
+	pipRow.Size = UDim2.fromOffset(BAR_WIDTH, 22)
 	pipRow.Parent = frame
-
 	local layout = Instance.new("UIListLayout")
 	layout.FillDirection = Enum.FillDirection.Horizontal
-	layout.Padding = UDim.new(0, 4)
+	layout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+	layout.Padding = UDim.new(0, 8)
 	layout.SortOrder = Enum.SortOrder.LayoutOrder
 	layout.Parent = pipRow
 
-	tellLabel = Instance.new("TextLabel")
-	tellLabel.Position = UDim2.fromOffset(10, 70)
-	tellLabel.Size = UDim2.new(1, -20, 0, 18)
-	tellLabel.BackgroundTransparency = 1
-	tellLabel.Text = ""
-	tellLabel.TextColor3 = TELL_COLOR
-	tellLabel.TextSize = 13
-	tellLabel.Font = Enum.Font.GothamBold
-	tellLabel.Parent = frame
-
-	gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+	HudTheme.parent(gui)
 	local remote = Remotes.get("BossUpdate")
 	remote.OnClientEvent:Connect(onUpdate)
 	remote:FireServer()

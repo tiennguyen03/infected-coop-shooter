@@ -10,20 +10,21 @@ Canon lives in [LORE.md](LORE.md); tuning in `src/shared/Config.luau`; what has 
 
 Harlan Control inserts the squad ("Pike") by helo ("Lantern") into a district of the Harlan
 quarantine corridor ahead of its scheduled fire mission, **the Burn**. Each district is one
-**sortie**: Control gives a **Primary** objective drawn from the stage's pool and two
+**mission**: Control gives a **Primary** objective drawn from the stage's pool and two
 optional **Secondaries**. The squad explores, loots the position's abandoned **stores**,
 earns **Resupply** pallets and **field upgrades** while the difficulty clock runs. Completing the
 Primary calls the district's **Index** host (the boss). When the squad is ready it pops
 green smoke and Lantern takes 90 seconds to arrive; the squad holds the LZ and boards. Three
-sorties (Delta, Mile 14, Kestrel) make an **operation**. Boarding at Kestrel is **Stand
-Down**: the run ends on your terms, scored. Every sortie brought home raises that district's
+missions (Delta, Mile 14, Kestrel) make an **operation**. Boarding at Kestrel is **Stand
+Down**: the run ends on your terms, scored. Every mission brought home raises that district's
 **containment %** on Control's **Containment Board**, the meta-progression across runs.
 
 What stays from Risk of Rain 2: loot then commit, a continuous clock, a boss per stage, an
 exit on your own terms. What comes from Helldivers 2: objective pools, a mission timer, a
 called extraction, a war map the whole player base pushes. Names, places and numbers are ours.
 
-One stage is a **sortie** (Control's word; decided 2026-11-06).
+One stage is a **mission**, and a set of missions an **operation** (owner 2026-11-08: the
+Helldivers 2 convention; was "mission", decided 2026-11-06).
 
 ## The loop
 
@@ -33,11 +34,11 @@ One stage is a **sortie** (Control's word; decided 2026-11-06).
 | Explore | Loot stores, earn Resupply, find field upgrades; clock runs (`Config.Difficulty`) | Resupply and the loadout shipped 2026-11-07 (no stores yet) |
 | Primary | One of the stage's pool, placed at one of its three sites or a named landmark; the squad starts it when ready | hold zone appears at one spot after 180 s |
 | Index | Completing the Primary calls the boss from its canon entry | the Warden on Delta (shipped 2026-11-07, `IndexService`) |
-| Call the bird | Green smoke at a pad; Lantern inbound 90 s; squad holds the LZ; everyone inside boards, anyone outside is left (Dead for the sortie) | 30 s hold, run ends |
-| Next sortie | Dead players respawn at the next pad; clock, Resupply pool and drop counter carry over | n/a |
+| Call the bird | Green smoke at a pad; Lantern inbound 90 s; squad holds the LZ; everyone inside boards, anyone outside is left (Dead for the mission) | 30 s hold, run ends |
+| Next mission | Dead players respawn at the next pad; clock, Resupply pool and drop counter carry over | n/a |
 | Stand Down | After Kestrel: board = run ends, scored; or ask for a **Second Pass** (same corridor, higher clock floor, later forms from drop, containment gains doubled) | n/a |
 
-Failure: squad all dead = sortie lost, operation over; containment from sorties already
+Failure: squad all dead = mission lost, operation over; containment from missions already
 extracted still counts. The Burn running out does not end the run (see Operation).
 
 ## Loadout, pallets and field upgrades (spine v1, shipped 2026-11-07)
@@ -46,56 +47,133 @@ Power comes from the loadout, not from in-run growth: the Helldivers 2 model wit
 Hades-style twist (field upgrades). The Risk of Rain item economy, XP orbs and levels are
 gone (`docs/sprints/SPRINT_18_LOADOUT.md`). Lore names on the HUD ([LORE.md](LORE.md)).
 
-- **Loadout.** A Chosen is a weapon, Q dash, E breach, the Momentum passive and two
-  **call-in** slots on keys 1 and 2, chosen before the drop (the dev panel today, the Armory
-  later). The rifle (`WeaponDefinitions.service_rifle`, from `Config.Weapon`) has a
-  30-round magazine and a 120-round reserve: R reloads (2.2 s; a roll, a slide or going
-  down cancels it), an empty magazine refuses the shot and asks for a reload. The server
-  owns the magazine (`LoadoutService`).
-- **Call-ins** (`CallInDefinitions`, numbers in `Config.CallIns`; no friendly fire). Each
-  slot holds charges that refill one at a time:
+- **Loadout (Pike rework, owner 2026-11-08: "just soldiers", like Helldivers; plan in
+  `docs/superpowers/plans/2026-11-08-pike-loadout.md`).** Every player is a Pike soldier
+  (Pike One to Four, [LORE.md](LORE.md)); there are no classes and no hero kit. A soldier
+  carries a primary, a sidearm, a grenade type and four call-ins on keys 1-4, picked in the
+  **Arms Room** menu (B). Q swaps long gun and sidearm, G throws a grenade (3 carried; a
+  pallet refills them), V shoves (15 dmg, 0.8 s stagger, 6-stud push, 1 s cooldown), E uses a
+  stim (2 carried, heals 60 over 1 s; the Medkit card refills them), 5 throws the Resupply
+  flare (always carried). Q dash, E breach and Combat Momentum are gone. Every gun is
+  hitscan at its real-world rate; the server owns every magazine (`LoadoutService`).
 
-  | Key | Lore name | Tool | Charges / cooldown | What it does |
+  | Gun (real) | Role | Mode, rpm (`FireCooldown`) | Dmg | Mag + reserve | Reload | Hip / ADS | Bloom per shot / max | Range | Pierce | HS |
+  |---|---|---|---|---|---|---|---|---|---|---|
+  | **M16A4 Service Rifle** (baseline) | all-rounder, 3-5 round bursts | auto, 750 (0.08) | 20 | 30 + 240 | 2.2 | 1.5 / 0.3 | 0.3 / 3.5 | 400 | 0 | 3.0 |
+  | **MP5 SMG** | best hip-fire; chews Runners, weak on Brutes | auto, 800 (0.075) | 14 | 30 + 210 | 1.8 | 0.9 / 0.6 | 0.15 / 2.0 | 150 | 0 | 3.0 |
+  | **M249 LMG** | 100-round belt, no reload in a hold; slow to aim moving | auto, 800 (0.075) | 20 | 100 + 300 | 5.5 | 3.0 / 0.5 | 0.15 / 2.5 | 400 | 0 | 3.0 |
+  | **Mossberg 590 Shotgun** | point-blank, one decision per pull | pump, 80 (0.75) | 11 x 8 pellets | 8 + 40 | 3.5 | 5.0 / 3.5 | 0 | 45 | 0 | 1.5 |
+  | **M110 DMR** | one-taps Walkers, hits two in a line; poor up close | semi, 300 (0.2) | 60 | 20 + 80 | 2.6 | 4.0 / 0.1 | 1.2 / 3.0 (recovery 8) | 600 | 1 | 3.0 |
+  | **M17 Pistol** (sidearm) | backup when the primary runs dry | semi, 400 (0.15) | 25 | 17 + 68 | 1.5 | 1.2 / 0.5 | 0.6 / 2.5 | 120 | 0 | 3.0 |
+
+  ADS move factor: rifle 0.6, SMG 0.85, LMG 0.35, shotgun 0.7, DMR 0.5, pistol 0.9. The
+  .357 revolver (55 dmg, 6 + 30, 150 rpm) comes later. Rounds to kill body / head: rifle
+  Walker 3 / 1, Brute 13 / 11; SMG 4 / 2, 19 / 15; DMR 1 / 1, 5 / 4; shotgun one pull for
+  every form but the Brute (3). Ammo reins in the DMR (100 x 60 is the M16's 270 x 20).
+  Built 2026-11-08 (stream B): numbers in `Config.Weapons.<Gun>`, rows in `WeaponDefinitions`
+  (Slot, FireMode, Bloom*, AdsMoveFactor, Description); the semi guns fire once per click.
+  The Q swap takes `Config.Weapon.SwapTime` 0.5 s (no shot, no reload; a reload in progress
+  is dropped); each gun keeps its own magazine and reserve. Every gun still wears the rifle
+  mesh until the gun meshes exist. Bots carry the service rifle.
+  Grenades: **Frag** (110 in 10 studs, 0.8 s fuse; one-shots a Hocker, not a Brute) first;
+  **Incendiary** (3 fire pools) and **Stun** (0.4x slow 3 s in 14 studs, Pen Coil's slow)
+  later.
+- **The Arms Room** (loadout menu). Pick one primary, one sidearm, one grenade and four
+  different call-ins, at most one support weapon. Open during Insert / ready-up, or in a run
+  within `Config.Loadout.LzRadius` 30 of the LZ pad after `Config.Loadout.CalmSeconds` 5
+  without dealing or taking damage. A newly picked gun starts full (re-picking the carried one
+  keeps its ammo); a call-in that changes slot in a run starts empty with its cooldown
+  running (before the drop it starts full), and a field upgrade follows its call-in to its
+  new slot. The pick survives a run restart.
+  Module boundary, so a lobby can host it later: `src/shared/Rules/Loadout.luau` (pure, spec
+  first: `default(catalog)`, `validate(loadout, catalog) -> (ok, reason)`,
+  `canChange(state, settings)` for the timing gate, `changedSlots(old, new)`; the catalog of
+  what is on offer comes from `src/shared/ArmsRoom.luau`, Tripline first by default),
+  `src/client/LoadoutMenu.luau` (UI only: `mount(parent, onConfirm)` returns a handle with
+  `set` / `status`; LoadoutUI hosts it on B), `LoadoutService.apply(player, loadout)`
+  (server: validation plus the timing gate). Remote `Loadout` carries
+  `Messages.Loadout.Request` `{primary, secondary, grenade, callIns}` and
+  `Messages.Loadout.Result` `(ok, reason)`; the server publishes `Primary`, `Secondary`,
+  `Weapon` (in hand), `Grenade`, `Grenades`, `Stims`, `SwapUntil`, `CallIn1`-`CallIn4`
+  attributes. The lobby (F10) later validates with the same Rules module, saves through F9
+  and passes the table in teleport data.
+- **Call-ins** (`CallInDefinitions`, numbers in `Config.CallIns`; no friendly fire). Four
+  slots, keys 1-4; each holds charges that refill one at a time. Lantern's crew kicks support
+  weapons and supply out of the door; fire missions are someone on the net ("Hammer, Pike.
+  Fire mission, my smoke, over."). Names: the lore developer's kit (HUD name, designation
+  under it).
+
+  | # | Kind | Name (designation) | What it does | Charges / cooldown |
   |---|---|---|---|---|
-  | 1 (default) | **Magpie** | Drone Beacon | 1 / 90 s | thrown 35 studs; two of Lantern's quadcopters follow the thrower 30 s, Damage 6 every 0.6 s, range 60 |
-  | 2 (default) | **Tripline** | Mines | 2 / 60 s | thrown; 6 charges on an 8-stud arc bulging away from you; trigger 5, blast 10, Damage 80, 90 s |
-  | swap-in | **Anvil** | Fire Mission | 1 / 150 s | thrown marker; after 3 s the battery lands 3 shells 1 s apart, Damage 80 in 12 studs |
-  | swap-in | **Pen Coil** | Shock Coil | 2 / 25 s | pulse around you: Damage 25 and a 0.4x slow for 3 s inside 14 studs |
+  | 1 | Support | **Gun** (M240B) | 40 dmg, 650 rpm, pierce 1, 100 + 100 belt, 7 s reload, ADS move 0.3; takes the long-gun slot until empty, downed (drops at the body) or replaced | 1 / 240 |
+  | 2 | Support | **Goose** (M3 recoilless) | 2 single shots; 400 direct, 120 in 6 studs | 1 / 120 |
+  | 3 | Support | **Thumper** (M32) | 6-round drum, 0.5 s apart, 70 in 7 studs, 24 rounds | 1 / 180 |
+  | 4 | Support | **Kettle** (M9 projector, the Burn crews' flamer) | 15-stud cone, 10 per 0.1 s, fire pools, 20 s of fuel | 1 / 180 |
+  | 5 | Fire mission | **Hammer** (81 mm mortar section) | 6 shells 1 s apart, 80 in 12 studs, scatter 4 | 1 / 120 |
+  | 6 | Fire mission | **Anvil** (105 mm battery) | one shell after 5 s, 500 in 20 studs | 1 / 180 |
+  | 7 | Fire mission | **Shrike** (helicopter gun run) | 10 bursts stepping 4 studs along the throw, 120 in 5 studs each, 4 s delay | 1 / 150 |
+  | 8 | Emplacement | **Doorman** (tripod sentry MG) | 45 s, 20 dmg every 0.15 s, range 70 | 1 / 150 |
+  | 9 | Emplacement | **Tripline** (AP mines, kept) | unchanged | 2 / 60 |
+  | 10 | Emplacement | **Concertina** (wire) | 16 x 3 strip for 60 s: 0.4x slow, 5 dps | 2 / 90 |
+  | 11 | Supply | **Speedball** (ammo bundle) | 4 re-arms, no lure wave | 1 / 180 |
+  | 12 | Supply | **Aid Bag** (medical drop) | every soldier within 6 studs: full heal, stims refilled, +25 plate; once each | 1 / 180 |
+
+  Retired: **Magpie** (drones) and **Pen Coil** (shock pulse), too sci-fi for the setting;
+  Pen Coil's slow becomes the Stun grenade. Build order: Hammer, Anvil, Shrike, Doorman,
+  Concertina, Speedball and Aid Bag first (they reuse AirStrike, Drone, FireTrail and pallet
+  code); Gun, Goose, Thumper and Kettle need the support-weapon carry and the explosive
+  projectile hook (ARCHITECTURE F7) and come second.
+
+  **First pass built (stream C, 2026-11-08; not yet playtested).** All seven are thrown
+  (`Kind "throw"`, ThrowUtil clamp). `AirStrikeService`: Hammer and Anvil share
+  `fireMission(cfg, point, direction, step)` (impact times and offsets from
+  `Rules/StrikePattern`, the incoming rush `Audio.AnvilIncomingLead` before each impact);
+  Shrike's `gunRun` centres its ten bursts on the mark (Bursts 0.15 s apart) under a Part
+  gunship flying the line at 45 studs with the rotor loop and a tracer per burst.
+  `SentryService` (Doorman, replaced DroneService): a Part tripod, a ray from the muzzle
+  picks the nearest Infected it can see and every round hits the first Infected on the line
+  (plates still count); one per player. `ConcertinaService`: the `prop_concertina` mesh
+  stretched to 16 x 3 across the throw; every 0.5 s each Infected inside is slowed
+  (`EnemyService.slow`) and takes 2.5. `SupplyDropService`: Speedball and Aid Bag fall 50
+  studs and land quiet; Speedball serves 4 visits (a player again only after stepping out),
+  Aid Bag treats every soldier once (bots get the heal only; stims through
+  `LoadoutService.refillStims` once the soldier kit adds it). `ShockCoilService` is now only
+  `stunArea` (the Stun grenade's slow). Default slots: Hammer, Tripline (then Doorman, Aid
+  Bag when `Config.CallIns.Slots` is 4). Dev: `SetCallIn <slot> <id>` (dev panel "1: / 2:")
+  and `FireCallIn <id>` (panel "Fire ...": 20 studs ahead, no slot or charge).
 
 - **Pallets are tactical.** The Resupply pool (one meter on every HUD) is fed by every
   kill's `SupplyValue` at any distance (Walker 10, Runner 12, Hocker 18, Brute 35) and by the
   Primary (`Objective.SupplyReward 500`); the meter pulses on a kill. When it covers the cost
-  (`Requisition.BaseCost 500`, x1.35 per drop, cap 3000, +80% per extra player) any living
-  player throws the red flare (key 3, 35 studs); for 20 s the Infected inside 120 studs walk
+  (`Requisition.BaseCost 300`, x1.15 per drop, cap 1000, +40% per extra player) any living
+  player throws the red flare (key 5, 35 studs); for 20 s the Infected inside 120 studs walk
   to the flare, then the pallet lands loud (`Lure.Wave 10` +3 per extra player, spawn
   interval x0.7 for 30 s). **The pallet is the ammo box**: every living player who walks
-  within `RearmRadius 6` is re-armed once (full magazine and reserve). Its three cards are
-  the same for everyone (`Crates.SupplyCards`): **Medkit** (full heal), **Restock** (both
-  call-in slots full), **Armour Plate** (+50 shield soaked before health, cap 100). One pick
+  within `RearmRadius 6` is re-armed once (both guns full, grenades back). Its three cards are
+  the same for everyone (`Crates.SupplyCards`): **Medkit** (full heal, stims back), **Restock**
+  (every call-in slot full, grenades and stims too), **Armour Plate** (+50 shield soaked before health, cap 100). One pick
   per player per pallet, cards vanish at 60 s. No rarity, no upgrades from pallets.
 - **Field upgrades** (`UpgradeDefinitions`, flags on `LoadoutService`, numbers in
-  `Config.Upgrades`). Six slots, one per tool (Dash, Breach, Rifle, Kit, call-in A, call-in
-  B); a new pick in a filled slot replaces it. Sources: the Primary's site crate (lands when
-  the hold zone appears; shows 3 you can still take), later Stores and Secondary crates and
-  the Index pallet (3-5 per sortie). Each changes how a tool works, never a percentage:
+  `Config.Upgrades`). Slots: Grenade, Weapon, Kit and one per carried call-in (slot keys
+  `CallIn1`-`CallIn4`, the upgrade moves with its call-in); a new pick in a filled slot
+  replaces it. Walk It In rides on Anvil until stream C's Hammer lands. Sources: the Primary's site crate (lands when the hold zone
+  appears; shows 3 you can still take), later Stores and Secondary crates and the Index pallet
+  (3-5 per mission). Each changes how a tool works, never a percentage:
 
   | Slot | Lore name | Effect |
   |---|---|---|
-  | Dash | Flare Straps | the dash leaves 3 fire pools (radius 6, 8/s for 5 s) |
-  | Dash | Smoke Dash | Infected melee cannot find you for 1.5 s after the dash |
-  | Breach | Bait Charge | the breach charge lures the Infected inside 18 studs for a 3 s fuse |
-  | Rifle | Through-and-Through | a round carries into the next Infected |
-  | Rifle | Hollow Point | the hit Infected stops for 0.6 s |
-  | Kit | Combat Reload | reload is instant at 5 Momentum |
+  | Grenade | Bait Charge | a frag lures the Infected inside 18 studs for 3 s before it goes |
+  | Weapon | Through-and-Through | a round carries into the next Infected (any gun) |
+  | Weapon | Hollow Point | the hit Infected stops for 0.6 s (any gun) |
   | Kit | Last Stand | fire from the ground while downed (hip, spread x2) |
-  | Kit | Spare Tourniquet | stand up on your own 4 s after going down, once per sortie, no revive spent |
-  | Anvil | Walk It In | 5 shells stepping 8 studs along the throw |
-  | Magpie | Last Flight | the drones stay with a downed owner, their clock paused |
-  | Tripline | Daisy Chain | press 2 again to blow every armed mine (no charge) |
-  | Pen Coil | Ground Strap | the pulse stands up every downed squadmate in reach |
+  | Kit | Spare Tourniquet | stand up on your own 4 s after going down, once per mission, no revive spent |
+  | Hammer | Walk It In | the shells step 8 studs along the throw |
+  | Tripline | Daisy Chain | press the key again to blow every armed mine (no charge) |
 
+  Retired with the class kit: Flare Straps (becomes the Incendiary grenade), Smoke Dash,
+  Combat Reload (a Momentum hook), Last Flight (Magpie), Ground Strap (Pen Coil).
 - **Flat threat curve.** `Config.Difficulty` health and damage at 1x; pressure is the spawn
-  interval decay (0.93/min to 1.0 s), the max-alive schedule (10 / 14 / 20 / 26, late 30),
+  interval decay (3 s, x0.95/min to 1.5 s; balance pass 2026-11-07), the max-alive schedule (10 / 14 / 20 / 26, late 30),
   the phase mix (Walker-only to W38 R30 B16 H16) and the player count
   (`Config.PlayerCountScaling`: spawn interval x0.8, +3 alive and +1 heavy per extra
   living player, hard cap 44). `Config.Overrun` is reserved for the Burn.
@@ -120,13 +198,13 @@ gone (`docs/sprints/SPRINT_18_LOADOUT.md`). Lore names on the HUD ([LORE.md](LOR
   constant the squad plans around. Alternate pads come from the "Light the Pad" Secondary.
 - **Secondaries** reward a Secondary crate on site and +3 containment; no timer extension,
   no Resupply.
-- **Score per sortie:** Win (Primary done, extracted before the Burn) 12; Partial (Primary
+- **Score per mission:** Win (Primary done, extracted before the Burn) 12; Partial (Primary
   done, extracted after the Burn or wiped after it) 6; Loss (wiped before the Primary) 0;
   each Secondary +3. Perfect operation = 18 per district.
 
 ## The Containment Board (war map)
 
-Every district carries a containment % raised by every extracted sortie. Delta starts at 25
+Every district carries a containment % raised by every extracted mission. Delta starts at 25
 (today's tuning); other districts at 0; the next district unlocks at 50 of the previous.
 Perfect play reaches 100 in 6 operations; a first-timer in 10–12 (a weekend). The board is
 **shared across all players** from the start (owner, 2026-11-06): one global DataStore key
@@ -161,10 +239,10 @@ survive, reach.
 | Recover the Record | "Recover Delta's screening record. Control needs to know who went north." | pick up at A, carry to B; carrier cannot sprint; dropped when downed | Delta Ridge → comm tower; Mile 14 toll log → Overpass; Kestrel manifest → roof | Runner, Hocker |
 | Restore Comms | "Get the mast up. Control is blind north of the gate." | hold E 10 s (interruptible) at the high prop, then survive 60 s there | Delta comm tower; Mile 14 water tower; Kestrel roof | Hocker shelling high ground |
 | Confirm Casualties | "Control is tracking six heavy hosts in the Depot. Put them down." | kill N marked (outlined) spawns at a landmark | Delta Brutes in the Depot; Mile 14 Hockers on the deck; Kestrel Bloats in the Ward | Brute / Hocker / Bloat |
-| Open the Route | "The Gate is chained from outside. Open it; the next sortie walks through here." | destroy 3 shootable props, then one player reaches the point beyond | Delta the Gate (Warden walks through); Mile 14 the lead bus (the Bloat is inside) | the boss entry |
+| Open the Route | "The Gate is chained from outside. Open it; the next mission walks through here." | destroy 3 shootable props, then one player reaches the point beyond | Delta the Gate (Warden walks through); Mile 14 the lead bus (the Bloat is inside) | the boss entry |
 | Evacuate the Holdouts | "Transponder in the Ward. Alive inside. Get them to the LZ." | 2–3 survivors follow the nearest player; must reach the pad alive | Kestrel (canon payoff), Mile 14 Rest Stop. Never Delta ("CLEARED 0") | Runner, Hocker puddles |
 
-### Secondaries (two offered per sortie)
+### Secondaries (two offered per mission)
 
 | Name | Radio brief | Player rule | Stages | Effect beyond the crate |
 |---|---|---|---|---|
@@ -264,7 +342,7 @@ their Burn.
 Harlan Yard (rail yard; Index the Lineman, an alpha Runner that drags a player and calls the
 map; Kites first appear). Harlan Reservoir Station (the dam and the program's research
 station; Index the Specimen, every form in one body; Growths everywhere). When they exist the
-operation is five sorties and Second Pass moves after the Reservoir.
+operation is five missions and Second Pass moves after the Reservoir.
 
 ## Index hosts (bosses)
 
@@ -279,6 +357,12 @@ form on Kestrel (the player learns it twice). An Index kill drops a priority pal
 | the Patient | Kestrel | the host that got the antiviral | regenerates in waves: damage windows between surges |
 | the Lineman | Harlan Yard | a Runner the strain finished | drags a player; its call pulls the map |
 | the Specimen | Reservoir | the station's live host | every mechanic above, in phases |
+
+**Boss sound (decided by the owner 2026-11-08).** Every Index has its own sound bank, never a
+regular form's: a bellow, its own footfalls, an impact per attack, a tell the squad learns
+to hear, and a death. Its prompts share one sound profile (`assets/audio/build/generate.py`
+`PROFILES`) so the clips sound like one body. The Warden's tell is his riot handset keying
+open; his bank is `warden` (assets/audio/README.md).
 
 ### Index kit: the Warden (shipped 2026-11-07, `docs/sprints/SPRINT_19_WARDEN.md`)
 
@@ -296,12 +380,22 @@ Numbers in `Config.Index.Warden`; the service is `src/server/IndexService.luau`.
   round into a limb whose plate is gone does 150%. At half a plate cracks (yellow pip);
   at zero it flies off, he staggers 1.5 s, the limb is bare. Order on the HUD: HELM,
   CHEST, BACK, L SHLD, R SHLD, SHIELD. Radio on the first and the last plate.
-- **Attacks**, each with the handset's words on the boss bar first: **Bash** (8 studs,
-  90° arc, 40 damage, 0.9 s windup); **Charge** (15-45 studs, 1.2 s windup, 45 studs at
-  40/s, 35 damage, hard cover stuns him 3 s; first one 6 s after spawning, every 10 s
-  after); **Gas Canister** (phase 2+, lobbed at the furthest member within 70 studs, 10 +
-  a 9-stud puddle for 6 s); **Guard** (8-16 studs: shield up 2.5 s, half speed, plates
-  take 25% except the back; "flank him").
+- **Attacks**, each with the handset's words on the boss bar first. Where you stand picks
+  his move (kit expansion 2026-11-07, `Config.Index.Warden`): **Bash** (0-15 studs, 70°
+  arc, 40, 0.9 s windup; roll through it); **Shield Sweep** (17 studs, 180°, 25 and a
+  shove; get behind him); **Overhead Slam** (a 17 x 6 line at a body that stopped moving
+  in reach, 60, 1.3 s; step aside); **Ground Pound** (fists into the road: a 23-stud ring
+  drawn on the ground through the 1.4 s windup, 30 and 2.4 s knocked down; the roll does
+  not beat it, distance or a ledge does; he is stuck 2.6 s after); **Stomp** (a body
+  within 7 studs on any side: 8.5-stud disc, 20 and 1.8 s knocked down, 0.6 s; roll it);
+  **Charge** (19-45 studs, 1.2 s windup, 45 studs at 40/s, 35, hard cover stuns him 3 s);
+  **Gas Canister** (phase 2+, or any phase at a perched member; furthest member within
+  70, 10 + a 9-stud puddle 6 s); **Guard** (his plates took 150 inside 3 s: shield up
+  2.5 s, half speed, frontal plates take 25%; flank him). He walks a beat between attacks
+  (1.0 / 0.7 / 0.4 s by phase), never repeats one except the Bash, never chains two
+  knockdowns. Limb attacks miss a rolling body; the Pound and the Charge do not. Knocked
+  down: no moving, firing or abilities; the Infected still bite; 1 s of knockdown
+  immunity on the get-up (`Config.Knockdown`). Bots step out of the ring and the lines.
 - **Phases** by body health: below 60% the **Riot Call** (6 Walkers + 2 Runners round
   him, +3 Walkers per extra player, one body per frame); below 25% a second call, charges
   every 5 s, walk 11. While he is up the wave loop spawns at ×1.5 interval, 8 fewer
@@ -344,9 +438,11 @@ the `ShotTracer` remote). A `Head` hit deals `Weapon.HeadshotMultiplier 3.0` (th
 definition overrides to 1.25, bone overgrowth) and arrives as damage kind `"headshot"`:
 white, larger number and a sharper placeholder sound until the sound day. Drones still fly
 projectiles. Realistic time-to-kill since the loadout rework (`Weapon.Damage 20`, flat
-curve): Walker 3 body / 1 head, Runner 2 / 1, Hocker 4 / 2, Brute 13 / 11. Bots fire the
-same rifle at a third of the rate (`Bots.FireCooldown 0.45`) with the same magazine and an
-infinite reserve, and use `ProjectileServer.hitMultiplier` so the Brute's plate applies.
+curve): Walker 3 body / 1 head, Runner 2 / 1, Hocker 4 / 2, Brute 13 / 11. Since the M16
+pass (2026-11-07) the rifle is full auto at 750 rpm (`Weapon.FireCooldown 0.08`) with a
+bloom on a held trigger and 7 magazines; time-to-kill roughly halved (Walker 0.16 s body,
+Brute 0.96 s). Bots fire the same rifle slower (`Bots.FireCooldown 0.30`: three bots on
+sustained fire ~ one player) with the same magazine and an infinite reserve, and use `ProjectileServer.hitMultiplier` so the Brute's plate applies.
 
 ## Technical plan (debt first, then content)
 
@@ -369,7 +465,7 @@ infinite reserve, and use `ProjectileServer.hitMultiplier` so the Brute's plate 
    Armory, pallet/rotor sounds.
 3. **ADS and headshots.** Small; slots anywhere after 2.
 4. **Run state machine + Operation.** `RunManager` owns `Insert → Explore → Primary → Index
-   → Extract → (next sortie | Stand Down | Second Pass)` per run with stage index and pass
+   → Extract → (next mission | Stand Down | Second Pass)` per run with stage index and pass
    count; `OperationService` owns the Burn and overrun; extraction becomes a called 90 s
    hold with waves; downed/revive, spawn pads, reset split, client screens
    (= Co-op Sprint A). Delta is the only stage, which proves the machine.
@@ -428,8 +524,25 @@ open for a later Armory page.
   (`assets/audio/README.md > Banks`); still to generate: Control's radio lines, Lantern's
   rotor, the Burn, the pickup and item one-shots.
 - **Infected visual redesign.** Own limb sets per form, Hocker first; hollow breach ring.
+- **Dismemberment (built 2026-11-08, `Config.Enemies.Dismember`, `GoreService`).** The
+  joint above the part a round hits keeps a running damage total; at the form's MaxHealth x
+  the joint's fraction (elbow 0.35, shoulder 0.5, knee 0.5, hip 0.6) it breaks on that hit,
+  the killing hit included, and the parts below fall like a Warden plate with a raw stump
+  left at the joint. Rounds still do full body damage: time-to-kill is unchanged. Arm lost:
+  melee x0.6 per arm. Leg lost: 0.35 speed, never climbs again (a crawl clip is still to
+  come: the body limps on the stump for now). Brute legs never break. A killing headshot
+  throws the head; the neck never breaks on a living body. Blast kills (Anvil, Tripline)
+  throw 2 extra groups. At most 20 loose groups, 4 s each, anchored after 1.5 s. Flesh
+  chunks at every body hit are client-side (`GoreFX`, 2 a hit, 4 a headshot, 24 alive).
+  The Index hosts never sever: their plates are the mechanic. (Systems designer.)
+- **Limp bodies and flinch (satisfying pass, 2026-11-09, `Config.Enemies.Ragdoll` / `Flinch`).**
+  A dead Infected goes limp and the killing hit throws it (rounds scale with damage, blasts
+  throw hardest); 8 limp at once, the rest play the death clip; bodies stay 4 s. A hit that
+  does not kill flinches the body at most every 0.6 s; a headshot jerks harder and slows it
+  for 0.15 s; the Brute flinches only from the shotgun, the DMR or a blast. A leg lost: the
+  body crawls (`zombie_crawl`).
 - **Hollow Point tuning.** The stagger lands on every hit; watch for chain-stunning a Brute
-  at 6.7 rounds/s (shorten `Upgrades.HollowPoint.StaggerSeconds` or add a per-body gap).
+  at 12.5 rounds/s since the M16 pass (shorten `Upgrades.HollowPoint.StaggerSeconds` or add a per-body gap).
 
 ## Open questions (for the owner)
 

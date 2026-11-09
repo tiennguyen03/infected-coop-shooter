@@ -8,6 +8,8 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local Messages = require(ReplicatedStorage.Shared.Messages)
+local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local DifficultyService = require(script.Parent.DifficultyService)
@@ -15,6 +17,8 @@ local EnemyService = require(script.Parent.EnemyService)
 local PauseService = require(script.Parent.PauseService)
 local RequisitionService = require(script.Parent.RequisitionService)
 local Squad = require(script.Parent.Squad)
+local Lifecycle = require(script.Parent.Lifecycle)
+local WorldSounds = require(script.Parent.WorldSounds)
 
 local ObjectiveService = {}
 
@@ -31,23 +35,6 @@ local timeSinceSync = 0
 -- Bumped on every run reset so a pending activation timer from a previous
 -- run never fires into the new one.
 local runGeneration = 0
-
-local overlapParams = OverlapParams.new()
-overlapParams.FilterType = Enum.RaycastFilterType.Include
-
-local function isAnyPlayerInZone(zone: BasePart): boolean
-	-- Any living squad member (player or bot) holds the zone.
-	for _, member in Squad.living() do
-		local character = member.character
-		if character then
-			overlapParams.FilterDescendantsInstances = { character }
-			if #workspace:GetPartsInPart(zone, overlapParams) > 0 then
-				return true
-			end
-		end
-	end
-	return false
-end
 
 local function createZone(): BasePart
 	local part = Instance.new("Part")
@@ -85,13 +72,31 @@ local function createZone(): BasePart
 	return part
 end
 
+-- The Gate lamp post's siren head (ArenaService) carries the alarm loop.
+local siren: Sound? = nil
+
+local function startSiren()
+	local head = workspace:FindFirstChild("Siren", true)
+	if head and head:IsA("BasePart") then
+		siren = WorldSounds.loopOn(head, "ambience", "amb_siren")
+	end
+end
+
+local function stopSiren()
+	if siren then
+		siren:Destroy()
+		siren = nil
+	end
+end
+
 local function complete()
 	if completed then
 		return
 	end
 	completed = true
-	workspace:SetAttribute("ObjectiveActive", false)
-	workspace:SetAttribute("ObjectiveCompleted", true)
+	stopSiren()
+	workspace:SetAttribute(Attributes.ObjectiveActive, false)
+	workspace:SetAttribute(Attributes.ObjectiveCompleted, true)
 	if heartbeatConnection then
 		heartbeatConnection:Disconnect()
 		heartbeatConnection = nil
@@ -103,7 +108,10 @@ local function complete()
 
 	RequisitionService.addRequisition(Config.Objective.SupplyReward)
 
-	objectiveRemote:FireAllClients("completed", Config.Objective.RequiredSeconds)
+	objectiveRemote:FireAllClients(
+		Messages.ObjectiveUpdate.Completed,
+		Config.Objective.RequiredSeconds
+	)
 	print("[ObjectiveService] Objective complete -> extraction")
 	for _, listener in completionListeners do
 		listener()
@@ -126,7 +134,9 @@ local function onHeartbeat(deltaTime: number)
 		return
 	end
 
-	if isAnyPlayerInZone(zone) then
+	-- Any living member (player or bot) holds the zone; the HUD shows how many players are in.
+	local anyone, playersIn, playersLiving = Squad.zoneCount(zone)
+	if anyone then
 		progress += deltaTime
 	end
 
@@ -134,8 +144,10 @@ local function onHeartbeat(deltaTime: number)
 	if timeSinceSync >= Config.Objective.SyncInterval then
 		timeSinceSync = 0
 		objectiveRemote:FireAllClients(
-			"progress",
-			math.min(progress, Config.Objective.RequiredSeconds)
+			Messages.ObjectiveUpdate.Progress,
+			math.min(progress, Config.Objective.RequiredSeconds),
+			playersIn,
+			playersLiving
 		)
 	end
 
@@ -149,10 +161,11 @@ local function activate()
 		return
 	end
 	zonePart = createZone()
-	objectiveRemote:FireAllClients("started", 0)
+	startSiren()
+	objectiveRemote:FireAllClients(Messages.ObjectiveUpdate.Started, 0)
 	heartbeatConnection = RunService.Heartbeat:Connect(onHeartbeat)
 	-- Pressure: faster spawns while active + a typed wave around the zone.
-	workspace:SetAttribute("ObjectiveActive", true)
+	workspace:SetAttribute(Attributes.ObjectiveActive, true)
 	for typeName, count in Config.Objective.PressureWave :: { [string]: number } do
 		EnemyService.spawnWave(typeName, count, Config.Objective.ZonePosition)
 	end
@@ -192,11 +205,12 @@ local function scheduleActivation()
 end
 
 function ObjectiveService.reset()
+	stopSiren()
 	completed = false
 	progress = 0
 	timeSinceSync = 0
-	workspace:SetAttribute("ObjectiveActive", false)
-	workspace:SetAttribute("ObjectiveCompleted", false)
+	workspace:SetAttribute(Attributes.ObjectiveActive, false)
+	workspace:SetAttribute(Attributes.ObjectiveCompleted, false)
 	if heartbeatConnection then
 		heartbeatConnection:Disconnect()
 		heartbeatConnection = nil
@@ -205,7 +219,7 @@ function ObjectiveService.reset()
 		zonePart:Destroy()
 		zonePart = nil
 	end
-	objectiveRemote:FireAllClients("completed", 0) -- hides any open objective UI
+	objectiveRemote:FireAllClients(Messages.ObjectiveUpdate.Completed, 0) -- hides any open objective UI
 	runGeneration += 1 -- cancels a pending activation from the previous run
 end
 
@@ -221,6 +235,9 @@ function ObjectiveService.arm()
 end
 
 function ObjectiveService.init()
+	Lifecycle.register("ObjectiveService", {
+		onRunStart = ObjectiveService.reset,
+	})
 	objectiveRemote = Remotes.get("ObjectiveUpdate")
 end
 

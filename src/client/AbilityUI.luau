@@ -1,183 +1,327 @@
 --!strict
--- Bottom-right ability panel: Q Dash + E Breach with cooldown countdowns, then the two
--- call-in tiles [1] / [2] (loadout rework 2026-11-07) with the lore name, charge pips and
--- the time to the next charge (CallIn<n>Charges / CallIn<n>ReadyAt attributes, server
--- time), plus a Combat Momentum stack readout. Ability cooldowns are driven by the
--- AbilityUsed remote (server authority); the UI counts down locally for display only.
+-- Abilities, top left under the health stack (HUD language: HudTheme; after Prototype 2's
+-- power circles): seven circles, G grenade, V shove, E stim, then 1-4 the call-ins (Q swap
+-- reads beside the ammo counter, LoadoutUI; 5 flare on the resupply meter). Ready: a white
+-- outline and the key letter. Cooling: a white fill rises from the bottom and the seconds
+-- show under the circle. Grenades, stims and call-in charges show as small squares under
+-- the circle (yellow on, dim off) and the circle dims out when empty. A small white diamond
+-- on a circle marks a field upgrade in that slot. The shove's cooldown comes from the
+-- AbilityUsed remote (server authority); counts and charges from the Grenades / Stims /
+-- CallIn<n>Charges / CallIn<n>ReadyAt attributes; display only, refreshed at 15 Hz and
+-- written only when a value changes.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
-local CallInDefinitions =
-	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("CallInDefinitions"))
-local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
-local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
+local Shared = ReplicatedStorage:WaitForChild("Shared")
+local CallInDefinitions = require(Shared:WaitForChild("CallInDefinitions"))
+local Attributes = require(Shared:WaitForChild("Attributes"))
+local Config = require(Shared:WaitForChild("Config"))
+local Remotes = require(Shared:WaitForChild("Remotes"))
+local UpgradeDefinitions = require(Shared:WaitForChild("UpgradeDefinitions"))
+local WeaponDefinitions = require(Shared:WaitForChild("WeaponDefinitions"))
+local HudTheme = require(script.Parent.HudTheme)
 
 local AbilityUI = {}
 
-type Slot = { frame: Frame, label: TextLabel, cdLabel: TextLabel, readyUntil: number }
-type CallInTile = { frame: Frame, label: TextLabel, cdLabel: TextLabel, pips: { Frame } }
-local slots: { [string]: Slot } = {}
-local callInTiles: { CallInTile } = {}
-local momentumLabel: TextLabel
-
-local READY_COLOR = Color3.fromRGB(60, 120, 180)
-local COOLING_COLOR = Color3.fromRGB(45, 48, 55)
-local PIP_ON = Color3.fromRGB(232, 181, 75)
-local PIP_OFF = Color3.fromRGB(70, 72, 78)
-local TILE_WIDTH = 96
-local TILE_GAP = 8
+local C = HudTheme.Color
+local CIRCLE = 38
+local GAP = 8
 local MAX_PIPS = 3
+local TOP = 44 -- under the health stack
 
-local function makeSlot(parent: Frame, key: string, name: string, order: number): Slot
-	local frame = Instance.new("Frame")
-	frame.Size = UDim2.fromOffset(TILE_WIDTH, 52)
-	frame.Position = UDim2.fromOffset(order * (TILE_WIDTH + TILE_GAP), 0)
-	frame.BackgroundColor3 = READY_COLOR
-	frame.BackgroundTransparency = 0.15
-	frame.BorderSizePixel = 0
-	frame.Parent = parent
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 8)
-	corner.Parent = frame
+type Circle = {
+	frame: Frame,
+	stroke: UIStroke,
+	letter: TextLabel,
+	caption: TextLabel,
+	fill: UIGradient,
+	fillFrame: Frame,
+	pips: { Frame },
+	upgrade: Frame,
+	name: string,
+	readyUntil: number,
+	shown: { [string]: any }, -- last written values (write only on change)
+}
 
-	local label = Instance.new("TextLabel")
-	label.Size = UDim2.new(1, 0, 0, 30)
-	label.BackgroundTransparency = 1
-	label.Text = `[{key}] {name}`
-	label.TextColor3 = Color3.fromRGB(245, 245, 245)
-	label.TextScaled = true
-	label.Font = Enum.Font.GothamBold
-	label.Parent = frame
+local circles: { [string]: Circle } = {}
 
-	local cdLabel = Instance.new("TextLabel")
-	cdLabel.Position = UDim2.fromOffset(0, 28)
-	cdLabel.Size = UDim2.new(1, 0, 0, 20)
-	cdLabel.BackgroundTransparency = 1
-	cdLabel.Text = "READY"
-	cdLabel.TextColor3 = Color3.fromRGB(180, 230, 200)
-	cdLabel.TextScaled = true
-	cdLabel.Font = Enum.Font.Gotham
-	cdLabel.Parent = frame
-
-	return { frame = frame, label = label, cdLabel = cdLabel, readyUntil = 0 }
+local function setIf(circle: Circle, key: string, value: any, apply: () -> ())
+	if circle.shown[key] ~= value then
+		circle.shown[key] = value
+		apply()
+	end
 end
 
--- A call-in tile: the slot's base layout plus a row of charge pips under the name.
-local function makeCallInTile(parent: Frame, slot: number, order: number): CallInTile
-	local base = makeSlot(parent, tostring(slot), "", order)
-	base.cdLabel.Position = UDim2.fromOffset(0, 34)
-	base.cdLabel.Size = UDim2.new(1, 0, 0, 16)
+local function makeCircle(parent: Frame, key: string, name: string, order: number): Circle
+	local frame =
+		HudTheme.rect(parent, UDim2.fromOffset(CIRCLE, CIRCLE), C.Track, HudTheme.TrackTransparency)
+	frame.Position = UDim2.fromOffset(order * (CIRCLE + GAP), 0)
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(1, 0)
+	corner.Parent = frame
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = C.White
+	stroke.Transparency = 0.6
+	stroke.Thickness = 1
+	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	stroke.Parent = frame
+
+	-- The cooldown fill: a white disc whose gradient shows only the bottom `fraction`.
+	local fillFrame = HudTheme.rect(frame, UDim2.fromScale(1, 1), C.White, 0)
+	local fillCorner = Instance.new("UICorner")
+	fillCorner.CornerRadius = UDim.new(1, 0)
+	fillCorner.Parent = fillFrame
+	local fill = Instance.new("UIGradient")
+	fill.Rotation = -90
+	fill.Transparency = NumberSequence.new(1)
+	fill.Parent = fillFrame
+
+	local letter = HudTheme.label(frame, { text = key, font = HudTheme.Font.Headline, size = 16 })
+	letter.AutomaticSize = Enum.AutomaticSize.None
+	letter.Size = UDim2.fromScale(1, 1)
+	letter.TextXAlignment = Enum.TextXAlignment.Center
+	letter.ZIndex = 3
+
+	local caption = HudTheme.label(frame, { text = name, font = HudTheme.Font.Body, size = 11 })
+	caption.AutomaticSize = Enum.AutomaticSize.None
+	caption.AnchorPoint = Vector2.new(0.5, 0)
+	caption.Position = UDim2.new(0.5, 0, 1, 7)
+	caption.Size = UDim2.fromOffset(CIRCLE + GAP, 12)
+	caption.TextXAlignment = Enum.TextXAlignment.Center
+	caption.Visible = not HudTheme.isTouch()
+
 	local pips = {}
 	for index = 1, MAX_PIPS do
-		local pip = Instance.new("Frame")
-		pip.Size = UDim2.fromOffset(14, 5)
-		pip.Position = UDim2.fromOffset(8 + (index - 1) * 18, 28)
-		pip.BackgroundColor3 = PIP_OFF
-		pip.BorderSizePixel = 0
+		local pip = HudTheme.rect(frame, UDim2.fromOffset(6, 3), C.TextDim)
+		pip.AnchorPoint = Vector2.new(0.5, 0)
+		pip.Position = UDim2.new(0.5, (index - 2) * 9, 1, 2)
 		pip.Visible = false
-		pip.Parent = base.frame
-		local corner = Instance.new("UICorner")
-		corner.CornerRadius = UDim.new(0, 2)
-		corner.Parent = pip
 		table.insert(pips, pip)
 	end
-	return { frame = base.frame, label = base.label, cdLabel = base.cdLabel, pips = pips }
+
+	local upgrade = HudTheme.rect(frame, UDim2.fromOffset(6, 6), C.White)
+	upgrade.AnchorPoint = Vector2.new(0.5, 0.5)
+	upgrade.Position = UDim2.new(1, -3, 0, 3)
+	upgrade.Rotation = 45
+	upgrade.Visible = false
+	upgrade.ZIndex = 4
+
+	return {
+		frame = frame,
+		stroke = stroke,
+		letter = letter,
+		caption = caption,
+		fill = fill,
+		fillFrame = fillFrame,
+		pips = pips,
+		upgrade = upgrade,
+		name = name,
+		readyUntil = 0,
+		shown = {},
+	}
 end
 
-local function updateCallInTile(tile: CallInTile, slot: number)
+-- The white fill rising from the bottom: `fraction` of the cooldown still to run.
+local function setFill(circle: Circle, fraction: number)
+	local step = math.floor(math.clamp(fraction, 0, 1) * 40 + 0.5) / 40
+	setIf(circle, "fill", step, function()
+		if step <= 0 then
+			circle.fill.Transparency = NumberSequence.new(1)
+		elseif step >= 1 then
+			circle.fill.Transparency = NumberSequence.new(0.55)
+		else
+			circle.fill.Transparency = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 0.55),
+				NumberSequenceKeypoint.new(step, 0.55),
+				NumberSequenceKeypoint.new(math.min(step + 0.001, 1), 1),
+				NumberSequenceKeypoint.new(1, 1),
+			})
+		end
+	end)
+end
+
+local function setReady(circle: Circle, ready: boolean, empty: boolean)
+	setIf(
+		circle,
+		"ready",
+		if empty then "empty" elseif ready then "ready" else "cooling",
+		function()
+			circle.letter.TextColor3 = if ready then C.Text else C.TextDim
+			circle.stroke.Transparency = if ready then 0.6 else 0.85
+			circle.frame.BackgroundTransparency = if empty then 0.6 else HudTheme.TrackTransparency
+			if ready then
+				-- The ready flash: the outline goes red, then back to white.
+				circle.stroke.Color = C.RedLight
+				circle.stroke.Transparency = 0
+				task.delay(0.25, function()
+					circle.stroke.Color = C.White
+					circle.stroke.Transparency = 0.6
+				end)
+			end
+		end
+	)
+end
+
+local function setCaption(circle: Circle, text: string)
+	setIf(circle, "caption", text, function()
+		circle.caption.Text = text
+	end)
+end
+
+local function updateAbility(circle: Circle, now: number, cooldown: number)
+	local remaining = circle.readyUntil - now
+	if remaining > 0 then
+		setReady(circle, false, false)
+		setFill(circle, remaining / math.max(cooldown, 0.01))
+		setCaption(circle, string.format("%.0fs", math.ceil(remaining)))
+	else
+		setReady(circle, true, false)
+		setFill(circle, 0)
+		setCaption(circle, circle.name)
+	end
+end
+
+local function updateCallIn(circle: Circle, slot: number)
 	local player = Players.LocalPlayer
-	local definition = CallInDefinitions.get(player:GetAttribute(`CallIn{slot}`) :: string?)
+	local definition =
+		CallInDefinitions.get(player:GetAttribute(Attributes.callIn(slot)) :: string?)
 	if not definition then
-		tile.frame.Visible = false
+		circle.frame.Visible = false
 		return
 	end
-	tile.frame.Visible = true
+	circle.frame.Visible = true
 	local cfg = (Config.CallIns :: { [string]: any })[definition.ConfigKey]
-	local charges = (player:GetAttribute(`CallIn{slot}Charges`) :: number?) or 0
-	local readyAt = (player:GetAttribute(`CallIn{slot}ReadyAt`) :: number?) or 0
-	tile.label.Text = `[{slot}] {definition.Name}`
-	for index, pip in tile.pips do
-		pip.Visible = index <= cfg.Charges
-		pip.BackgroundColor3 = if index <= charges then PIP_ON else PIP_OFF
-	end
+	local charges = (player:GetAttribute(Attributes.callInCharges(slot)) :: number?) or 0
+	local readyAt = (player:GetAttribute(Attributes.callInReadyAt(slot)) :: number?) or 0
 	local remaining = readyAt - workspace:GetServerTimeNow()
+	circle.name = definition.Name
+	for index, pip in circle.pips do
+		local visible = index <= cfg.Charges
+		local color = if index <= charges then C.Yellow else C.TextDim
+		setIf(circle, "pip" .. index, `{visible}{index <= charges}`, function()
+			pip.Visible = visible
+			pip.BackgroundColor3 = color
+		end)
+	end
 	if charges > 0 then
-		tile.frame.BackgroundColor3 = READY_COLOR
-		tile.cdLabel.Text = if remaining > 0 and charges < cfg.Charges
-			then string.format("%d  +%.0fs", charges, remaining)
-			else "READY"
+		setReady(circle, true, false)
+		setFill(circle, 0)
+		setCaption(circle, definition.Name)
 	else
-		tile.frame.BackgroundColor3 = COOLING_COLOR
-		tile.cdLabel.Text = if remaining > 0 then string.format("%.0fs", remaining) else "..."
+		setReady(circle, false, true)
+		setFill(circle, if remaining > 0 then remaining / math.max(cfg.Cooldown, 0.01) else 0)
+		setCaption(
+			circle,
+			if remaining > 0 then string.format("%.0fs", math.ceil(remaining)) else "..."
+		)
+	end
+end
+
+-- A carried tool (the grenades, the stims): one pip per item carried, dim when gone.
+local function updateCount(circle: Circle, count: number, carried: number)
+	for index, pip in circle.pips do
+		local visible = index <= carried
+		local color = if index <= count then C.Yellow else C.TextDim
+		setIf(circle, "pip" .. index, `{visible}{index <= count}`, function()
+			pip.Visible = visible
+			pip.BackgroundColor3 = color
+		end)
+	end
+	setReady(circle, count > 0, count <= 0)
+	setFill(circle, 0)
+	setCaption(circle, circle.name)
+end
+
+-- Field-upgrade slot -> the circle that carries its mark.
+local UPGRADE_SLOTS: { [string]: string } = { Grenade = "grenade" }
+for slot = 1, Config.CallIns.Slots do
+	UPGRADE_SLOTS[UpgradeDefinitions.callInSlot(slot)] = `callin{slot}`
+end
+local ABILITY_COOLDOWNS: { [string]: number } = {
+	shove = Config.Shove.Cooldown,
+}
+
+local function updateUpgradeMarks()
+	local player = Players.LocalPlayer
+	for slotName, key in UPGRADE_SLOTS do
+		local circle = circles[key]
+		local upgrade = player:GetAttribute(Attributes.upgrade(slotName))
+		if circle then
+			circle.upgrade.Visible = typeof(upgrade) == "string" and upgrade ~= ""
+		end
 	end
 end
 
 function AbilityUI.init()
-	local gui = Instance.new("ScreenGui")
-	gui.Name = "AbilityUI"
-	gui.ResetOnSpawn = false
+	local gui = HudTheme.gui("AbilityUI")
+	local count = 3 + Config.CallIns.Slots
+	local row = Instance.new("Frame")
+	row.BackgroundTransparency = 1
+	row.Position = UDim2.fromOffset(HudTheme.Margin, TOP)
+	row.Size = UDim2.fromOffset(count * CIRCLE + (count - 1) * GAP, CIRCLE + 20)
+	row.Parent = gui
 
-	local container = Instance.new("Frame")
-	container.AnchorPoint = Vector2.new(1, 1)
-	container.Position = UDim2.new(1, -16, 1, -16)
-	container.Size = UDim2.fromOffset(4 * TILE_WIDTH + 3 * TILE_GAP, 52)
-	container.BackgroundTransparency = 1
-	container.Parent = gui
+	local grenade = WeaponDefinitions.grenade(nil)
+	circles.grenade = makeCircle(row, "G", grenade.Name, 0)
+	circles.shove = makeCircle(row, "V", "Shove", 1)
+	circles.stim = makeCircle(row, "E", "Stim", 2)
+	for slot = 1, Config.CallIns.Slots do
+		circles[`callin{slot}`] = makeCircle(row, tostring(slot), "", 2 + slot)
+	end
 
-	slots.dash = makeSlot(container, "Q", "Dash", 0)
-	slots.breach = makeSlot(container, "E", "Breach", 1)
-	callInTiles[1] = makeCallInTile(container, 1, 2)
-	callInTiles[2] = makeCallInTile(container, 2, 3)
-
-	momentumLabel = Instance.new("TextLabel")
-	momentumLabel.AnchorPoint = Vector2.new(1, 1)
-	momentumLabel.Position = UDim2.new(1, -16, 1, -76)
-	momentumLabel.Size = UDim2.fromOffset(200, 18)
-	momentumLabel.BackgroundTransparency = 1
-	momentumLabel.Text = ""
-	momentumLabel.TextColor3 = Color3.fromRGB(255, 200, 90)
-	momentumLabel.TextScaled = true
-	momentumLabel.TextXAlignment = Enum.TextXAlignment.Right
-	momentumLabel.Font = Enum.Font.GothamBold
-	momentumLabel.Parent = gui
-
-	gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+	HudTheme.parent(gui)
 
 	Remotes.get("AbilityUsed").OnClientEvent:Connect(function(name: string, cooldown: unknown)
-		local slot = slots[name]
-		if slot and typeof(cooldown) == "number" then
-			slot.readyUntil = os.clock() + cooldown
+		local circle = circles[name]
+		if circle and typeof(cooldown) == "number" then
+			circle.readyUntil = os.clock() + cooldown
+			circle.shown.cooldown = cooldown
 		end
 	end)
+	local player = Players.LocalPlayer
+	for slotName in UPGRADE_SLOTS do
+		player:GetAttributeChangedSignal(Attributes.upgrade(slotName)):Connect(updateUpgradeMarks)
+	end
+	updateUpgradeMarks()
 
 	local lastClock = os.clock()
-	RunService.RenderStepped:Connect(function()
+	local accumulator = 0
+	RunService.Heartbeat:Connect(function(dt)
+		accumulator += dt
+		if accumulator < 1 / 15 then
+			return
+		end
+		accumulator = 0
 		local now = os.clock()
-		local dt = now - lastClock
+		local step = now - lastClock
 		lastClock = now
-		-- Freeze the countdown while the field is frozen (run end) so the display matches
-		-- the server, which also pauses cooldown progress.
-		local paused = workspace:GetAttribute("GamePaused") == true
-		for _, slot in slots do
-			if paused and slot.readyUntil > now then
-				slot.readyUntil += dt
+		-- Freeze the countdown while the field is frozen (run end), as the server does.
+		local paused = workspace:GetAttribute(Attributes.GamePaused) == true
+		for key, cooldown in ABILITY_COOLDOWNS do
+			local circle = circles[key]
+			if paused and circle.readyUntil > now then
+				circle.readyUntil += step
 			end
-			local remaining = slot.readyUntil - now
-			if remaining > 0 then
-				slot.frame.BackgroundColor3 = COOLING_COLOR
-				slot.cdLabel.Text = string.format("%.1fs", remaining)
-			else
-				slot.frame.BackgroundColor3 = READY_COLOR
-				slot.cdLabel.Text = "READY"
-			end
+			updateAbility(circle, now, (circle.shown.cooldown :: number?) or cooldown)
 		end
-		for slot, tile in callInTiles do
-			updateCallInTile(tile, slot)
+		local grenadeCircle = circles.grenade
+		grenadeCircle.name =
+			WeaponDefinitions.grenade(player:GetAttribute(Attributes.Grenade) :: string?).Name
+		updateCount(
+			grenadeCircle,
+			(player:GetAttribute(Attributes.Grenades) :: number?) or 0,
+			Config.Grenade.Carried
+		)
+		updateCount(
+			circles.stim,
+			(player:GetAttribute(Attributes.Stims) :: number?) or 0,
+			Config.Stim.Carried
+		)
+		for slot = 1, Config.CallIns.Slots do
+			updateCallIn(circles[`callin{slot}`], slot)
 		end
-		local stacks = (Players.LocalPlayer:GetAttribute("MomentumStacks") :: number?) or 0
-		momentumLabel.Text = if stacks > 0 then `MOMENTUM x{stacks}` else ""
 	end)
 end
 
