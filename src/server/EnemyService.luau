@@ -271,10 +271,19 @@ local function goLimp(zombie: Zombie): boolean
 			part:SetNetworkOwner(nil)
 		end)
 	end
+	-- Tumble: a small random spin so the body rolls over instead of sliding as one piece.
+	local chest = model:FindFirstChild("UpperTorso") :: BasePart?
+	if chest then
+		chest.AssemblyAngularVelocity =
+			Vector3.new(math.random() * 6 - 3, math.random() * 6 - 3, math.random() * 6 - 3)
+	end
+	-- Settle: parts that have stopped are anchored and stop colliding (no more physics, no
+	-- bumping the squad); one still falling keeps falling until the body is removed.
 	task.delay(cfg.Settle, function()
 		for _, part in parts do
-			if part.Parent then
+			if part.Parent and part.AssemblyLinearVelocity.Magnitude < cfg.SettleSpeed then
 				part.Anchored = true
+				part.CanCollide = false
 			end
 		end
 	end)
@@ -384,6 +393,12 @@ local function onZombieDied(zombie: Zombie)
 		listener(zombie.supplyValue, zombie.root.Position)
 	end
 	DamageService.onEnemyKilled(zombie.humanoid)
+	-- Rounds pass through the dead (a hitscan stops at the first body it meets).
+	for _, item in zombie.model:GetDescendants() do
+		if item:IsA("BasePart") then
+			item.CanQuery = false
+		end
+	end
 	local lifetime = if boss
 		then Config.Enemies.BossCorpseLifetime
 		else Config.Enemies.CorpseLifetime
@@ -1158,7 +1173,8 @@ function EnemyService.slow(humanoid: Humanoid, factor: number, duration: number)
 	task.delay(duration, function()
 		if humanoid.Parent and slowGeneration[humanoid] == generation then
 			if not PauseService.isPaused() then
-				humanoid.WalkSpeed = base
+				local now = (humanoid:GetAttribute(Attributes.BaseWalkSpeed) :: number?) or base
+				humanoid.WalkSpeed = now
 			end
 			slowGeneration[humanoid] = nil
 		end

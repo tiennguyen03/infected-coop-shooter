@@ -1136,9 +1136,10 @@ local Config = {
 		Ragdoll = {
 			MaxBodies = 8,
 			Settle = 2.5,
+			SettleSpeed = 2, -- studs/s: below this a part is anchored at Settle; faster ones keep falling
 			MaxUp = 18, -- studs/s: the upward part of a throw never exceeds this
 			UpShare = 0.4, -- upward speed as a share of the throw
-			Push = { Blast = 60, PerDamage = 0.5, Max = 30 }, -- studs/s (Feel.knockback)
+			Push = { Blast = 40, PerDamage = 0.5, Max = 30 }, -- studs/s (Feel.knockback)
 		},
 		-- Hit flinch (satisfying pass): a hit that does not kill plays the form's `hit` clip
 		-- (Config.Animations.Infected) at most once per Cooldown, so full auto never stun-locks.
