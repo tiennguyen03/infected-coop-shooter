@@ -526,10 +526,11 @@ when the player stands inside it, so a hollow ring is a later polish item.
   sights scales it by `Config.Camera.Kick.AdsScale` (0.6).
 - Blast shake (2026-11-09): every server blast flash (frag, Hammer, Anvil, Shrike burst,
   Tripline) carries the CollectionService tag `Attributes.BlastTag` ("Blast") and a
-  `BlastPower` (`Config.Camera.Shake.Power`: Frag 3, Hammer 3.5, Anvil 6, Shrike 2, Tripline
-  3 degrees). The client adds `Rules/Feel.shake` (linear falloff to 0 at 60 studs from the
+  `BlastPower` from that grenade's or call-in's own Config block (`ShakePower`: Frag 3, Hammer
+  3.5, Anvil 6, Shrike 2, Tripline 3 degrees; `Config.Camera.Shake.DefaultPower` 2.5 for a
+  call-in that names none, so loadout changes need no camera edits). The client adds `Rules/Feel.shake` (linear falloff to 0 at 60 studs from the
   camera focus), sums blasts up to a 6-degree cap, decays over 0.45 s and jitters pitch and
-  roll by it. The Anvil also sets `BlastGlobal` (1.0) felt anywhere on the map.
+  roll by it. A block with `ShakeGlobal` (the Anvil, 1.0) is also felt anywhere on the map.
 - Low-health feedback (2026-11-09, `src/client/LowHealthFX.luau`, numbers in
   `Config.Audio.LowHealth`): under 35% health one eased intensity (0 at the threshold, 1 at
   zero health or downed, 0 dead) greys the screen (its own `LowHealthCC` ColorCorrection,

@@ -38,6 +38,7 @@ export type WeaponDefinition = {
 	Pellets: number?, -- rounds per trigger pull (shotguns); nil = 1
 	Pierce: number?, -- Infected a round passes through after the first; nil = 0
 	Kick: WeaponKick, -- per-shot camera kick (CameraController)
+	Heavy: boolean, -- staggers a Brute (Config.Enemies.Flinch)
 }
 
 export type GrenadeDefinition = {
@@ -67,6 +68,7 @@ type Tuning = {
 	Pellets: number?,
 	Pierce: number?,
 	Kick: WeaponKick,
+	Heavy: boolean?,
 }
 
 local function row(
@@ -101,6 +103,7 @@ local function row(
 		Pellets = tuning.Pellets,
 		Pierce = tuning.Pierce,
 		Kick = tuning.Kick,
+		Heavy = tuning.Heavy == true,
 	}
 end
 

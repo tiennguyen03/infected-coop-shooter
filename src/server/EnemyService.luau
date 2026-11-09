@@ -28,6 +28,7 @@ local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
 local Animations = require(ReplicatedStorage.Shared.Animations)
 local Ledge = require(ReplicatedStorage.Shared.Ledge)
 local Feel = require(ReplicatedStorage.Shared.Rules.Feel)
+local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
 local RunStates = require(ReplicatedStorage.Shared.RunStates)
 local ArenaService = require(script.Parent.ArenaService)
 local DifficultyService = require(script.Parent.DifficultyService)
@@ -305,8 +306,7 @@ local function flinch(zombie: Zombie, info: DamageService.HitInfo)
 	end
 	if (cfg.HeavyOnly :: { [string]: boolean })[zombie.typeName] then
 		local weapon = info.attacker and info.attacker:GetAttribute(Attributes.Weapon)
-		local heavy = typeof(weapon) == "string"
-			and (cfg.HeavyWeapons :: { [string]: boolean })[weapon] == true
+		local heavy = typeof(weapon) == "string" and WeaponDefinitions.get(weapon).Heavy == true
 		if not heavy then
 			return
 		end

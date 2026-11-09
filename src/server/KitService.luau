@@ -95,7 +95,10 @@ local function blast(player: Player, center: Vector3, settings: FragSettings)
 	flash.Material = Enum.Material.Neon
 	flash.Color = Color3.fromRGB(255, 150, 60)
 	-- Tagged for the client screen shake (CameraController).
-	flash:SetAttribute(Attributes.BlastPower, Config.Camera.Shake.Power.Frag)
+	flash:SetAttribute(
+		Attributes.BlastPower,
+		(settings :: any).ShakePower or Config.Camera.Shake.DefaultPower
+	)
 	CollectionService:AddTag(flash, Attributes.BlastTag)
 	flash.Parent = effectsFolder
 	TweenService

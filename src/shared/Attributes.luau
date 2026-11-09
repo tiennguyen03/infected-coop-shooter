@@ -76,7 +76,7 @@ local Attributes = table.freeze({
 
 	-- Blast visuals (AirStrikeService, KitService, MineService): the server tags each blast
 	-- flash part with the CollectionService tag BlastTag (a tag, not an attribute, kept here
-	-- so writer and reader share one spelling) and sets BlastPower (Config.Camera.Shake.Power)
+	-- so writer and reader share one spelling) and sets BlastPower (the call-in or grenade block's ShakePower)
 	-- and, for the Anvil, BlastGlobal (shake added at any distance). CameraController reads
 	-- them for the screen shake.
 	BlastTag = "Blast",

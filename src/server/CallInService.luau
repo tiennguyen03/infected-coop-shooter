@@ -159,23 +159,9 @@ local function fire(
 	if id == "hammer" then
 		local walking = LoadoutService.hasUpgrade(player, "walking_barrage")
 		local step = if walking then Config.Upgrades.WalkingBarrage.Step else 0
-		return AirStrikeService.fireMission(
-			player,
-			Config.CallIns.Hammer,
-			landing,
-			direction,
-			step,
-			"Hammer"
-		)
+		return AirStrikeService.fireMission(player, Config.CallIns.Hammer, landing, direction, step)
 	elseif id == "anvil" then
-		return AirStrikeService.fireMission(
-			player,
-			Config.CallIns.Anvil,
-			landing,
-			direction,
-			0,
-			"Anvil"
-		)
+		return AirStrikeService.fireMission(player, Config.CallIns.Anvil, landing, direction, 0)
 	elseif id == "shrike" then
 		return AirStrikeService.gunRun(player, landing, direction)
 	elseif id == "doorman" then

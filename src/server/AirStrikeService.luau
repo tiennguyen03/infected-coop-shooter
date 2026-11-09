@@ -35,6 +35,12 @@ export type Shell = {
 	BlastDamage: number,
 }
 
+-- A call-in block's own camera shake (ShakePower, ShakeGlobal): a call-in added to the
+-- loadouts brings its own; Config.Camera.Shake.DefaultPower when it names none.
+local function shakeOf(cfg: any): (number, number?)
+	return cfg.ShakePower or Config.Camera.Shake.DefaultPower, cfg.ShakeGlobal
+end
+
 local AirStrikeService = {}
 
 local effectFolder: Folder
@@ -58,7 +64,7 @@ local function enemyRootsNear(position: Vector3, range: number): { BasePart }
 end
 
 -- The visible blast, tagged for the client screen shake (CameraController): `power` from
--- Config.Camera.Shake.Power, `global` shake felt at any distance (the Anvil).
+-- the call-in's ShakePower, `global` shake felt at any distance (its ShakeGlobal).
 local function flash(
 	center: Vector3,
 	radius: number,
@@ -109,10 +115,7 @@ local function hurtAround(player: Player, center: Vector3, shell: Shell)
 	end
 end
 
--- Which fire mission a shell belongs to (its shake power).
-export type BlastKind = "Hammer" | "Anvil"
-
-local function detonate(player: Player, center: Vector3, shell: Shell, blast: BlastKind)
+local function detonate(player: Player, center: Vector3, shell: Shell)
 	-- Stock Explosion for the flash and boom only: zeroed radius/pressure so it can't hurt
 	-- anyone; damage is applied manually below.
 	local boom = Instance.new("Explosion")
@@ -121,10 +124,7 @@ local function detonate(player: Player, center: Vector3, shell: Shell, blast: Bl
 	boom.BlastPressure = 0
 	boom.DestroyJointRadiusPercent = 0
 	boom.Parent = workspace
-	local shake = Config.Camera.Shake
-	local anvil = blast == "Anvil"
-	local power = if anvil then shake.Power.Anvil else shake.Power.Hammer
-	local global = if anvil then shake.AnvilGlobal else nil
+	local power, global = shakeOf(shell)
 	flash(center, shell.BlastRadius, Color3.fromRGB(255, 140, 40), 0.45, power, global)
 	hurtAround(player, center, shell)
 end
@@ -179,8 +179,7 @@ function AirStrikeService.fireMission(
 	cfg: MissionConfig,
 	point: Vector3,
 	direction: Vector3,
-	step: number,
-	blast: BlastKind
+	step: number
 ): boolean
 	local flat = flatUnit(direction)
 	local impacts: { Vector3 } = {}
@@ -215,7 +214,7 @@ function AirStrikeService.fireMission(
 				disc:Destroy()
 			end
 			WorldSounds.at(impact, "callins", "anvil_blast")
-			detonate(player, impact + Vector3.new(0, 2, 0), cfg, blast)
+			detonate(player, impact + Vector3.new(0, 2, 0), cfg)
 		end)
 	end
 	return true
@@ -327,7 +326,7 @@ function AirStrikeService.gunRun(player: Player, point: Vector3, direction: Vect
 			end
 			local muzzle = if hull.Parent then hull.Position else impact + Vector3.new(0, 40, 0)
 			tracer(muzzle, impact)
-			local power = Config.Camera.Shake.Power.Shrike
+			local power = shakeOf(cfg)
 			flash(impact + Vector3.new(0, 1, 0), cfg.BlastRadius, SHRIKE_COLOR, 0.25, power)
 			if index % 2 == 1 then
 				WorldSounds.at(impact, "callins", "tripline_blast", 0.6)

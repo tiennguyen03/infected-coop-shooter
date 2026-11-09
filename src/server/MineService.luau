@@ -56,7 +56,10 @@ local function detonate(mine: Mine)
 	flash.Material = Enum.Material.Neon
 	flash.Color = Color3.fromRGB(120, 180, 255)
 	-- Tagged for the client screen shake (CameraController).
-	flash:SetAttribute(Attributes.BlastPower, Config.Camera.Shake.Power.Tripline)
+	flash:SetAttribute(
+		Attributes.BlastPower,
+		(Config.CallIns.Tripline :: any).ShakePower or Config.Camera.Shake.DefaultPower
+	)
 	CollectionService:AddTag(flash, Attributes.BlastTag)
 	flash.Parent = mineFolder
 	TweenService

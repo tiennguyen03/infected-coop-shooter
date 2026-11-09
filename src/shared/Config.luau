@@ -192,13 +192,15 @@ local Config = {
 		-- Blast shake (CameraController): every server blast part tagged Attributes.BlastTag
 		-- carries BlastPower (degrees at the centre, falling to 0 at Radius studs from the
 		-- camera focus). Blasts add up to Cap degrees and decay exponentially over Decay
-		-- seconds; the Anvil adds AnvilGlobal on top wherever the soldier stands.
+		-- seconds; a block with ShakeGlobal (the Anvil) adds it wherever the soldier stands.
 		Shake = {
 			Radius = 60,
 			Cap = 6,
 			Decay = 0.45,
-			Power = { Frag = 3, Hammer = 3.5, Anvil = 6, Shrike = 2, Tripline = 3 },
-			AnvilGlobal = 1.0,
+			-- Each grenade / call-in block carries its own ShakePower (and ShakeGlobal, felt at
+			-- any distance), so a call-in added or swapped in a loadout brings its own shake;
+			-- DefaultPower covers one that names none.
+			DefaultPower = 2.5,
 		},
 	},
 
@@ -295,6 +297,7 @@ local Config = {
 		-- Mossberg 590: point-blank, one decision per pull; one pull drops every form but the
 		-- Brute (3).
 		Shotgun = {
+			Heavy = true, -- staggers a Brute (Config.Enemies.Flinch)
 			FireMode = "semi", -- pump
 			Damage = 11, -- per pellet
 			Pellets = 8,
@@ -316,6 +319,7 @@ local Config = {
 		-- M110: one-taps Walkers, hits two in a line, poor up close. Ammo reins it in
 		-- (100 x 60 is the M16's 270 x 20).
 		Dmr = {
+			Heavy = true, -- staggers a Brute (Config.Enemies.Flinch)
 			FireMode = "semi",
 			Damage = 60,
 			Pierce = 1,
@@ -366,6 +370,7 @@ local Config = {
 			ThrowDistance = 35, -- studs
 			FuseTime = 0.8, -- seconds after it lands
 			Radius = 10, -- studs
+			ShakePower = 3, -- camera shake at the centre (Config.Camera.Shake)
 			Damage = 110,
 		},
 	},
@@ -663,6 +668,7 @@ local Config = {
 			Shells = 6,
 			ShellInterval = 1,
 			BlastRadius = 12,
+			ShakePower = 3.5,
 			BlastDamage = 80,
 			Scatter = 4,
 		},
@@ -675,6 +681,8 @@ local Config = {
 			Shells = 1,
 			ShellInterval = 1,
 			BlastRadius = 20,
+			ShakePower = 6,
+			ShakeGlobal = 1.0, -- felt anywhere on the map
 			BlastDamage = 500,
 			Scatter = 0,
 		},
@@ -689,6 +697,7 @@ local Config = {
 			Step = 4,
 			BurstInterval = 0.15,
 			BlastRadius = 5,
+			ShakePower = 2,
 			BlastDamage = 120,
 			PassHeight = 45, -- the helicopter's flight height over the mark (look only)
 		},
@@ -714,6 +723,7 @@ local Config = {
 			ArcRadius = 8, -- studs from the landing point to each mine
 			ArcDegrees = 160, -- the arc's span
 			TriggerRadius = 5,
+			ShakePower = 3,
 			BlastRadius = 10,
 			Damage = 80,
 			Lifetime = 90,
@@ -1127,14 +1137,13 @@ local Config = {
 		-- Hit flinch (satisfying pass): a hit that does not kill plays the form's `hit` clip
 		-- (Config.Animations.Infected) at most once per Cooldown, so full auto never stun-locks.
 		-- A headshot plays it harder and slows the body briefly. HeavyOnly forms flinch only
-		-- from a blast or a HeavyWeapons gun (weapon ids, WeaponDefinitions).
+		-- from a blast or a gun whose Config.Weapons row has Heavy = true.
 		Flinch = {
 			Cooldown = 0.6,
 			HeadshotSpeed = 1.3,
 			HeadshotSlow = 0.4, -- WalkSpeed factor
 			HeadshotSlowTime = 0.15,
 			HeavyOnly = { Brute = true },
-			HeavyWeapons = { shotgun = true, dmr = true },
 		},
 		BossCorpseLifetime = 8, -- an Index host's body stays long enough to read
 		MaxPuddles = 8, -- caustic puddles alive at once (perf); the oldest goes first
