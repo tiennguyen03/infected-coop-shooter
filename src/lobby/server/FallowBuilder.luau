@@ -507,49 +507,146 @@ local function buildSpawn(ship: Folder)
 	spawn.Parent = ship
 end
 
-local function buildWorld(ship: Folder)
+-- The sea: a shallow sheet of Terrain water (the engine animates the waves) from astern of
+-- the ship to the coast, over a dark seabed part that gives it depth. Filled in 500-stud
+-- tiles on the 4-stud voxel grid. Terrain is cleared first: disk is the source of truth.
+local SEA_TILE = 500
+local SEA_X = 1000 -- the water spans -SEA_X..SEA_X
+local SEA_AFT = -1100 -- and from here to the coast
+
+local function buildSea(ship: Folder)
 	local sky = Config.Lobby.Sky
-	Build.part(ship, "Sea", Vector3.new(2048, 1, 2048), CFrame.new(0, -0.5, 400), sky.Sea, {
-		material = Enum.Material.SmoothPlastic,
-		collide = false,
-		shadow = false,
-	})
-	-- The coast to the north, and the Burn's smoke standing over it: a low fire line at the
-	-- foot of each column (the orange shows at night once there is a night).
-	Build.part(
-		ship,
-		"Coast",
-		Vector3.new(2048, 24, 120),
-		CFrame.new(0, 10, Layout.CoastZ),
-		LAND,
-		{ material = Enum.Material.SmoothPlastic, collide = false, shadow = false }
-	)
-	for index, x in { -700, -380, -120, 260, 610 } do
-		local base = Vector3.new(x, 22, Layout.CoastZ - 40)
-		Build.part(ship, "Burn", Vector3.new(60 + index * 10, 4, 24), CFrame.new(base), BURN, {
-			material = Enum.Material.Neon,
-			collide = false,
-			shadow = false,
-		})
-		-- Three puffs per column, each higher, wider and fainter.
-		for step = 1, 3 do
-			local width = 30 + step * 24 + index * 4
-			Build.part(
-				ship,
-				"Smoke",
-				Vector3.new(width, width, width),
-				CFrame.new(base + Vector3.new(step * 18, step * 46, 0)),
-				SMOKE,
-				{
-					shape = Enum.PartType.Ball,
-					material = Enum.Material.SmoothPlastic,
-					transparency = 0.2 + step * 0.15,
-					collide = false,
-					shadow = false,
-				}
+	local water = sky.Water
+	local terrain = Workspace.Terrain
+	terrain:Clear()
+	for x = -SEA_X, SEA_X - SEA_TILE, SEA_TILE do
+		for z = SEA_AFT, Layout.CoastZ - SEA_TILE, SEA_TILE do
+			terrain:FillBlock(
+				CFrame.new(x + SEA_TILE / 2, -water.Depth / 2, z + SEA_TILE / 2),
+				Vector3.new(SEA_TILE, water.Depth, SEA_TILE),
+				Enum.Material.Water
 			)
 		end
 	end
+	terrain.WaterWaveSize = water.WaveSize
+	terrain.WaterWaveSpeed = water.WaveSpeed
+	terrain.WaterColor = water.Color
+	terrain.WaterReflectance = water.Reflectance
+	terrain.WaterTransparency = water.Transparency
+	Build.part(
+		ship,
+		"Seabed",
+		Vector3.new(SEA_X * 2, 1, Layout.CoastZ - SEA_AFT),
+		CFrame.new(0, -water.Depth - 0.5, (SEA_AFT + Layout.CoastZ) / 2),
+		sky.Seabed,
+		{ material = Enum.Material.SmoothPlastic, collide = false, shadow = false }
+	)
+end
+
+-- Fire and smoke for one burn site, after the match's burning skyline (SkyService: stock
+-- fire_main / smoke_main, a light westerly drift), scaled up to read across the water.
+local FIRE_COLOR = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 214, 120)),
+	ColorSequenceKeypoint.new(0.4, BURN),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(120, 40, 20)),
+})
+
+local function burnSite(emitterPart: BasePart)
+	local burn = Config.Lobby.Sky.Burn
+	local fire = Instance.new("ParticleEmitter")
+	fire.Name = "Fire"
+	fire.Texture = "rbxasset://textures/particles/fire_main.dds"
+	fire.Color = FIRE_COLOR
+	fire.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, burn.FireSize * 0.6),
+		NumberSequenceKeypoint.new(0.3, burn.FireSize),
+		NumberSequenceKeypoint.new(1, burn.FireSize * 0.3),
+	})
+	fire.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.15),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+	fire.Lifetime = NumberRange.new(1, 1.8)
+	fire.Rate = burn.FireRate
+	fire.Speed = NumberRange.new(burn.FireSize * 0.6, burn.FireSize * 1.1)
+	fire.SpreadAngle = Vector2.new(14, 14)
+	fire.LightEmission = 1
+	fire.LightInfluence = 0
+	fire.EmissionDirection = Enum.NormalId.Top
+	fire.Parent = emitterPart
+
+	local smoke = Instance.new("ParticleEmitter")
+	smoke.Name = "Smoke"
+	smoke.Texture = "rbxasset://textures/particles/smoke_main.dds"
+	smoke.Color = ColorSequence.new(SMOKE)
+	smoke.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, burn.SmokeSize),
+		NumberSequenceKeypoint.new(1, burn.SmokeSize * 3.2),
+	})
+	smoke.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.3),
+		NumberSequenceKeypoint.new(0.6, 0.65),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+	smoke.Lifetime = NumberRange.new(14, 22)
+	smoke.Rate = burn.SmokeRate
+	smoke.Speed = NumberRange.new(burn.SmokeSize * 0.5, burn.SmokeSize * 0.7)
+	smoke.SpreadAngle = Vector2.new(6, 6)
+	smoke.Acceleration = Vector3.new(burn.SmokeSize * 0.12, 0, 0) -- a light westerly wind
+	smoke.Rotation = NumberRange.new(-30, 30)
+	smoke.RotSpeed = NumberRange.new(-4, 4)
+	smoke.LightInfluence = 0.8
+	smoke.EmissionDirection = Enum.NormalId.Top
+	smoke.Parent = emitterPart
+end
+
+-- The coast to the north: a shore strip with low ridges behind it, and the Burn along the
+-- waterline (fire with its smoke standing over it).
+local function buildCoast(ship: Folder)
+	local shoreTop = 22
+	Build.part(
+		ship,
+		"Coast",
+		Vector3.new(2048, 26, 120),
+		CFrame.new(0, shoreTop - 13, Layout.CoastZ),
+		LAND,
+		{ material = Enum.Material.Ground, collide = false, shadow = false }
+	)
+	-- Ridges rising inland (a wedge climbs toward +Z, away from the ship).
+	for _, ridge in
+		{
+			{ x = -640, width = 420, height = 60 },
+			{ x = -240, width = 360, height = 90 },
+			{ x = 160, width = 440, height = 70 },
+			{ x = 560, width = 380, height = 100 },
+		}
+	do
+		Build.part(
+			ship,
+			"Ridge",
+			Vector3.new(ridge.width, ridge.height, 160),
+			CFrame.new(ridge.x, shoreTop + ridge.height / 2, Layout.CoastZ + 140),
+			LAND,
+			{ wedge = true, material = Enum.Material.Ground, collide = false, shadow = false }
+		)
+	end
+	for _, x in Layout.BurnSites do
+		local site = Build.part(
+			ship,
+			"BurnSite",
+			Vector3.new(90, 1, 18),
+			CFrame.new(x, shoreTop + 0.5, Layout.CoastZ - 40),
+			BURN,
+			{ transparency = 1, collide = false, shadow = false }
+		)
+		burnSite(site)
+	end
+end
+
+local function buildWorld(ship: Folder)
+	local sky = Config.Lobby.Sky
+	buildSea(ship)
+	buildCoast(ship)
 
 	-- A clear afternoon (Config.Lobby.Sky). Templates arrive with their own effects; the
 	-- Fallow's sky replaces them so the place looks the same however it was created.

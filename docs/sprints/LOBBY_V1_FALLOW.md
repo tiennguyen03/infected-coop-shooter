@@ -17,8 +17,13 @@ match place.
 - **The ship** (`FallowBuilder`, plain anchored Parts, no meshes yet): hull and raked bow,
   70 x 390 flight deck, the island (bridge windows, hull number painted out, HRD sprayed over
   it, mast), the hangar deck under it with an open side lift to port, a ramp from the hangar
-  rising aft to the deck through an open well, invisible walls at every edge, the sea, the coast to
-  the north with the Burn's smoke columns standing over it. A clear afternoon
+  rising aft to the deck through an open well, invisible walls at every edge. **The sea** is a
+  shallow sheet of Terrain water, 8 studs deep, from 1100 astern to the coast, with small
+  slow engine waves ("low tide", Nova) over a dark seabed part (`Config.Lobby.Sky.Water`,
+  `Seabed`). **The coast** is 900 studs past the bow: a shore strip, four low ridges inland,
+  and the Burn on four sites along the waterline. Each site has the match's skyline fire and
+  smoke particles (stock `fire_main` / `smoke_main`, westerly drift), scaled up for distance:
+  8 emitters in all (`Config.Lobby.Sky.Burn`). A clear afternoon
   (`Config.Lobby.Sky`: ClockTime 14, engine clouds, light atmosphere). ShadowMap with
   GlobalShadows (`lobby.project.json` sets `Lighting.Technology`), so the hangar under the
   deck is in shade; only solid opaque parts bigger than clutter cast shadows
@@ -119,7 +124,9 @@ Deck surface y 40, hangar floor y 20, sea y 0. Every position is in `FallowLayou
 - **Art**: the art director's build sheet for the Fallow and the desk crew; Lantern mesh;
   sounds (rotor spool on lift, ship PA tone, the plotter's grease pencil, a low radio net).
 - **Day/night cycle** (owner and Nova, an idea for later): drive `Config.Lobby.Sky` over time,
-  light the deck floodlight housings and the Burn's orange at night.
+  light the deck floodlight housings at night.
+- **Sea extras** (optional): spray at the bow, a foam line along the waterline, a stern wake
+  (a few burst emitters, inside the STYLES particle budget).
 - **The Plot's launch and recovery radio lines** (LORE.md > The Fallow) are not played yet.
 - **Other teams' callsigns** (not all Pike) are open with the lore developer.
 - **The match's animations in the lobby** (unarmed idle and walk): the Pike body uses Roblox's

@@ -96,7 +96,10 @@ FallowLayout.Desks = {
 	},
 } :: { DeskPlace }
 
--- The coast to the north and the Burn along it, far past the bow.
-FallowLayout.CoastZ = 1400
+-- The coast to the north and the Burn along it, past the bow (close enough that the fires
+-- read through the haze).
+FallowLayout.CoastZ = 900
+-- Where the four burn sites sit along the shore (X).
+FallowLayout.BurnSites = { -520, -210, 140, 470 }
 
 return FallowLayout

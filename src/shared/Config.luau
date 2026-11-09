@@ -1438,7 +1438,25 @@ local Config = {
 				Haze = 0.8,
 			},
 			Clouds = { Cover = 0.5, Density = 0.7 },
-			Sea = Color3.fromRGB(40, 78, 102),
+			-- The sea: a shallow sheet of Terrain water (engine waves) over a dark seabed
+			-- part that gives it depth. Low tide (Nova): small, slow waves.
+			Water = {
+				WaveSize = 0.12, -- 0..1
+				WaveSpeed = 8,
+				Color = Color3.fromRGB(34, 84, 98),
+				Reflectance = 0.4, -- 0..1, how much sky it mirrors
+				Transparency = 0.35, -- 0..1
+				Depth = 8, -- studs of water below y 0 (keep a multiple of 4: the voxel size)
+			},
+			Seabed = Color3.fromRGB(18, 40, 52),
+			-- The Burn on the coast (docs/STYLES.md: the match's skyline fire and smoke, scaled
+			-- for distance). Four sites, one fire and one smoke emitter each: 8 emitters.
+			Burn = {
+				FireSize = 18,
+				FireRate = 18,
+				SmokeSize = 34,
+				SmokeRate = 4,
+			},
 		},
 	},
 }
