@@ -1350,6 +1350,11 @@ import guns  # noqa: E402
 
 guns.register(sys.modules[__name__])
 
+# Aircraft (the Shrike gunship and its rotor) live in aircraft.py (2026-11-09).
+import aircraft  # noqa: E402
+
+aircraft.register(sys.modules[__name__])
+
 # The distant skyline towers (and their lit-window twins) live in city.py (owner, 2026-11-08).
 import city  # noqa: E402
 

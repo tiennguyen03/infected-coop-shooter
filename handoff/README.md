@@ -262,6 +262,10 @@ Read in this order:
   (`guns` bank). In the dev panel (F1 > WEAPONS lists every gun); **Nova** adds them to the
   Arms Room lists (`WeaponDefinitions.PRIMARIES` / `SECONDARIES`). Per gun: `Model`,
   `Sound`, `Explosive`, `ProjectileSpeed` on the `Config.Weapons` row.
+- **Aimed throws + the Shrike helicopter (2026-11-09, `docs/sprints/SPRINT_22_AIMED_CALLINS.md`):**
+  G and every thrown call-in are hold to aim, release to throw, with an arc and the item's
+  own marker (`Config.CallIns.<Name>.Aim`); the Shrike gun run is flown by a modelled attack
+  helicopter (`assets/3d/build/aircraft.py`) with a spinning rotor.
 - **Delta traversal: owner calls + playtest** (`docs/LEVELS.md` A12b second pass): generator
   to 4.8 (explained to the owner 2026-11-08, waiting on a yes), light-tower collision as two
   boxes; walk the traversal checklist (vault a sedan side-on, crawl under the cargo truck,

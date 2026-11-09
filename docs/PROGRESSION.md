@@ -58,6 +58,7 @@ gone (`docs/sprints/SPRINT_18_LOADOUT.md`). Lore names on the HUD ([LORE.md](LOR
   hitscan at its real-world rate; the server owns every magazine (`LoadoutService`). A
   shotgun's pellets are drawn by the client and checked by the server against its cone
   (`Rules/Spread`), so the pellets you see are the ones that hit.
+- **Aiming throws (owner 2026-11-09: "hold and release ... so I actually know where it lands").** G and every thrown call-in (CallInDefinitions Kind "throw") are held to aim and thrown on release: a dotted arc from the hand and the item's own marker on the ground (`Config.CallIns.<Name>.Aim`: a ring of Radius, or a strip of Length x Width along the throw, `Across` for the wire) follow the crosshair. The flare (5) and the "self" call-ins still fire on the press. `AbilityController`.
 
   | Gun (real) | Role | Mode, rpm (`FireCooldown`) | Dmg | Mag + reserve | Reload | Hip / ADS | Bloom per shot / max | Range | Pierce | HS |
   |---|---|---|---|---|---|---|---|---|---|---|
