@@ -28,6 +28,9 @@ uploaded 2026-11-07 and wired; rows below.
 | prop_drone | 132929388031760 | 93513427419630 | 1.94 x 0.43 x 1.94 | 0.8x of the Blender size (2.43 read too big in-hand scale) |
 | prop_drone_beacon | 117405323536844 | 71937735064271 | 1.56 x 3.21 x 1.36 | pivot bottom: place at ground + 1.60; not used by a service yet |
 | wpn_rifle | 86613539481097 | 77112302177721 | 0.195 x 0.84 x 2.9 | 0.65x of the Blender size; grip offset handled in PlayerSetup |
+| wpn_revolver | 133525801275343 | 110455613061010 | 0.25 x 0.76 x 1.0 | S&W 686 sample gun (guns.py, in-game size); offset/muzzle in MeshAssets |
+| wpn_sniper | 86507403821540 | 138249511970708 | 0.46 x 1.07 x 3.65 | M2010 ESR sample gun |
+| wpn_goose | 82637563176152 | 80902890703049 | 0.6 x 0.94 x 3.03 | M3 recoilless ("Goose") sample launcher |
 | prop_plague_rat | 102065990394982 | 135041557109073 | 0.47 x 0.52 x 1.88 | 0.7x of Blender; PlagueRatService PrimaryPart, faces -Z |
 | prop_car_sedan | 133589928038621 | 139871373094934 | 14.88 x 4.57 x 6.61 | offset (0, 2.286, -0.098); 2026-11-08, `props.py` |
 | prop_car_hatch | 97663934153782 | 136632195416849 | 12.88 x 5.6 x 8.24 | offset (0, 2.8, -0.919) |

@@ -112,4 +112,14 @@ return {
 		amb_wind_1 = { start = 11.048, length = 5.09 },
 		amb_siren_1 = { start = 16.287, length = 5.88 },
 	},
+	guns = {
+		revolver_shot_1 = { start = 0.0, length = 1.017 },
+		revolver_shot_2 = { start = 1.167, length = 0.991 },
+		revolver_reload_1 = { start = 2.308, length = 1.38 },
+		sniper_shot_1 = { start = 3.839, length = 1.711 },
+		sniper_shot_2 = { start = 5.699, length = 1.944 },
+		sniper_reload_1 = { start = 7.793, length = 1.212 },
+		goose_shot_1 = { start = 9.156, length = 2.132 },
+		goose_reload_1 = { start = 11.438, length = 3.101 },
+	},
 }

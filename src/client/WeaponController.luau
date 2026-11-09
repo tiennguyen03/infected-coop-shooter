@@ -203,7 +203,7 @@ local function tryFire()
 	drawTracer(origin, aimPoint)
 
 	-- Local-only muzzle flash and shot sound for instant feedback.
-	SoundFX.play("shoot")
+	SoundFX.gunshot(weapon.Sound)
 	local flash = Instance.new("Part")
 	flash.Shape = Enum.PartType.Ball
 	flash.Size = Vector3.new(0.7, 0.7, 0.7)
@@ -237,10 +237,11 @@ function WeaponController.init()
 	folder.Parent = workspace
 	tracerFolder = folder
 	-- Another squad member's shot (a player or a bot): the tracer plus a 3D gunshot.
-	Remotes.get("ShotTracer").OnClientEvent:Connect(function(origin: Vector3, endPoint: Vector3)
-		drawTracer(origin, endPoint)
-		SoundFX.playWorld("shoot", origin, 0.8)
-	end)
+	Remotes.get("ShotTracer").OnClientEvent
+		:Connect(function(origin: Vector3, endPoint: Vector3, sound: string?)
+			drawTracer(origin, endPoint)
+			SoundFX.gunshot(if typeof(sound) == "string" then sound else nil, origin, 0.8)
+		end)
 
 	UserInputService.InputBegan:Connect(function(input, gameProcessed)
 		if gameProcessed then

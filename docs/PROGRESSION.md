@@ -65,16 +65,25 @@ gone (`docs/sprints/SPRINT_18_LOADOUT.md`). Lore names on the HUD ([LORE.md](LOR
   | **Mossberg 590 Shotgun** | point-blank, one decision per pull | pump, 80 (0.75) | 11 x 8 pellets | 8 + 40 | 3.5 | 5.0 / 3.5 | 0 | 45 | 0 | 1.5 |
   | **M110 DMR** | one-taps Walkers, hits two in a line; poor up close | semi, 300 (0.2) | 60 | 20 + 80 | 2.6 | 4.0 / 0.1 | 1.2 / 3.0 (recovery 8) | 600 | 1 | 3.0 |
   | **M17 Pistol** (sidearm) | backup when the primary runs dry | semi, 400 (0.15) | 25 | 17 + 68 | 1.5 | 1.2 / 0.5 | 0.6 / 2.5 | 120 | 0 | 3.0 |
+  | **S&W 686 Revolver** (sidearm, sample) | panic button: one round per Walker, staggers a Brute | semi, 150 (0.4) | 55 | 6 + 30 | 2.8 | 1.8 / 0.4 | 1.5 / 3.5 (recovery 10) | 150 | 0 | 3.0 |
+  | **M2010 ESR Sniper** (sample) | one round per kill, Brute in 2, through four in a line; useless from the hip | bolt, 48 (1.25) | 140 | 5 + 30 | 3.2 | 6.0 / 0.05 | 0 | 800 | 3 | 3.0 |
+  | **Goose, M3 recoilless** (sample "RPG" in the primary slot; later the call-in) | a visible rocket at 220 studs/s: 400 to the Infected struck, then the frag's blast 120 in 6 studs, no friendly fire | single, reload 6 s | 400 + blast | 1 + 1 | 6.0 | 2.0 / 0.25 | 0 | 300 | 0 | 1.0 |
 
-  ADS move factor: rifle 0.6, SMG 0.85, LMG 0.35, shotgun 0.7, DMR 0.5, pistol 0.9. The
-  .357 revolver (55 dmg, 6 + 30, 150 rpm) comes later. Rounds to kill body / head: rifle
+  ADS move factor: rifle 0.6, SMG 0.85, LMG 0.35, shotgun 0.7, DMR 0.5, pistol 0.9, revolver
+  0.85, sniper 0.4, Goose 0.4. The three sample guns (2026-11-09) are in the dev panel
+  (WEAPONS); the Arms Room lists them once the loadout work adds them. Revolver Walker 1 / 1,
+  Brute 5 / 4; sniper every form 1, Brute 2 / 2. Rounds to kill body / head: rifle
   Walker 3 / 1, Brute 13 / 11; SMG 4 / 2, 19 / 15; DMR 1 / 1, 5 / 4; shotgun one pull for
   every form but the Brute (3). Ammo reins in the DMR (100 x 60 is the M16's 270 x 20).
   Built 2026-11-08 (stream B): numbers in `Config.Weapons.<Gun>`, rows in `WeaponDefinitions`
   (Slot, FireMode, Bloom*, AdsMoveFactor, Description); the semi guns fire once per click.
   The Q swap takes `Config.Weapon.SwapTime` 0.5 s (no shot, no reload; a reload in progress
-  is dropped); each gun keeps its own magazine and reserve. Every gun still wears the rifle
-  mesh until the gun meshes exist. Bots carry the service rifle.
+  is dropped); each gun keeps its own magazine and reserve. Each gun row may name its held
+  mesh (`Model`, default the rifle; PlayerSetup swaps it when the gun in hand changes), its
+  clips in the `guns` sound bank (`Sound`: `<Sound>_shot`, `<Sound>_reload`; default the
+  shared shot and the gear reload) and, for a launcher, `Explosive` + `ProjectileSpeed` (a
+  rocket that blows with `KitService.blast` at impact). The six original guns still wear
+  the rifle mesh. Bots carry the service rifle.
   Grenades: **Frag** (110 in 10 studs, 0.8 s fuse; one-shots a Hocker, not a Brute) first;
   **Incendiary** (3 fire pools) and **Stun** (0.4x slow 3 s in 14 studs, Pen Coil's slow)
   later.

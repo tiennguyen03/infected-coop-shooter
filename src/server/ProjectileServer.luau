@@ -17,6 +17,7 @@ local EnemyDefinitions = require(ReplicatedStorage.Shared.EnemyDefinitions)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
 local EnemyService = require(script.Parent.EnemyService)
+local KitService = require(script.Parent.KitService)
 local DamageService = require(script.Parent.DamageService)
 local LoadoutService = require(script.Parent.LoadoutService)
 local PauseService = require(script.Parent.PauseService)
@@ -49,6 +50,9 @@ type Projectile = {
 	speed: number,
 	expiresAt: number,
 	raycastParams: RaycastParams,
+	-- A rocket: called where it hits (or where it runs out of flight) instead of the direct
+	-- damage; `humanoid` is the Infected it struck, if any.
+	onImpact: ((position: Vector3, humanoid: Humanoid?) -> ())?,
 }
 
 export type FireOptions = {
@@ -60,6 +64,8 @@ export type FireOptions = {
 	size: Vector3?,
 	color: Color3?,
 	exclude: { Instance }?, -- extra raycast exclusions beyond projectiles
+	lifetime: number?, -- seconds before it despawns (default Config.Weapon.ProjectileLifetime)
+	onImpact: ((position: Vector3, humanoid: Humanoid?) -> ())?,
 }
 
 local ProjectileServer = {}
@@ -115,8 +121,9 @@ function ProjectileServer.fire(options: FireOptions)
 		owner = options.owner,
 		damage = options.damage,
 		speed = options.speed or Config.Weapon.ProjectileSpeed,
-		expiresAt = os.clock() + Config.Weapon.ProjectileLifetime,
+		expiresAt = os.clock() + (options.lifetime or Config.Weapon.ProjectileLifetime),
 		raycastParams = params,
+		onImpact = options.onImpact,
 	})
 end
 
@@ -135,7 +142,12 @@ local function stepProjectiles(deltaTime: number)
 	for index = #activeProjectiles, 1, -1 do
 		local projectile = activeProjectiles[index]
 		if os.clock() >= projectile.expiresAt then
+			local onImpact = projectile.onImpact
+			local at = projectile.part.Position
 			removeProjectile(index)
+			if onImpact then
+				onImpact(at, nil)
+			end
 			continue
 		end
 
@@ -143,6 +155,15 @@ local function stepProjectiles(deltaTime: number)
 		local result = workspace:Raycast(projectile.part.Position, step, projectile.raycastParams)
 		if result then
 			local humanoid = findEnemyHumanoid(result.Instance)
+			local onImpact = projectile.onImpact
+			if onImpact then
+				removeProjectile(index)
+				onImpact(
+					result.Position,
+					if humanoid and humanoid.Health > 0 then humanoid else nil
+				)
+				continue
+			end
 			if humanoid and humanoid.Health > 0 then
 				DamageService.dealDamage(
 					projectile.owner,
@@ -278,7 +299,43 @@ local function fireHitscan(
 	end
 	for _, other in Players:GetPlayers() do
 		if other ~= player then
-			tracerRemote:FireClient(other, origin, endPoint)
+			tracerRemote:FireClient(other, origin, endPoint, weapon.Sound)
+		end
+	end
+end
+
+-- A launcher's round (Config.Weapons.<id>.Explosive): a visible rocket at the gun's
+-- ProjectileSpeed. A direct hit deals the gun's Damage to that Infected, then the blast
+-- (KitService.blast, the frag's) hits everything in Radius. Other clients hear the launch.
+local function fireRocket(
+	player: Player,
+	origin: Vector3,
+	direction: Vector3,
+	weapon: WeaponDefinitions.WeaponDefinition,
+	explosive: WeaponDefinitions.Explosive,
+	exclude: { Instance }
+)
+	local speed = weapon.ProjectileSpeed or Config.Weapon.ProjectileSpeed
+	ProjectileServer.fire({
+		owner = player,
+		origin = origin,
+		direction = direction,
+		damage = weapon.Damage,
+		speed = speed,
+		size = Config.Weapon.RocketSize,
+		color = Config.Weapon.RocketColor,
+		exclude = exclude,
+		lifetime = weapon.Range / speed,
+		onImpact = function(position: Vector3, humanoid: Humanoid?)
+			if humanoid then
+				DamageService.dealDamage(player, humanoid, weapon.Damage, position, "breach")
+			end
+			KitService.blast(player, position, explosive)
+		end,
+	})
+	for _, other in Players:GetPlayers() do
+		if other ~= player then
+			tracerRemote:FireClient(other, origin, origin, weapon.Sound)
 		end
 	end
 end
@@ -353,6 +410,11 @@ local function onFireRequest(player: Player, origin: unknown, direction: unknown
 		pierce += Config.Upgrades.ThroughAndThrough.Pierce
 	end
 	local stagger = LoadoutService.hasUpgrade(player, "hollow_point")
+	local explosive = weapon.Explosive
+	if explosive then
+		fireRocket(player, origin, applySpread(direction.Unit, spread), weapon, explosive, exclude)
+		return
+	end
 	for _ = 1, weapon.Pellets or 1 do
 		local aim = applySpread(direction.Unit, spread)
 		fireHitscan(player, origin, aim, baseDamage, weapon, pierce, stagger, exclude)

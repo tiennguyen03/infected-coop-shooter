@@ -142,6 +142,16 @@ SOUNDS = {
     "amb_city_1": ("distant city burning at night, low fire roar, faraway gunfire and collapsing debris", 6.0, 482, TAIL),
     "amb_wind_1": ("night wind through a chain-link fence, metal rattle, outdoor", 6.0, 483, TAIL),
     "amb_siren_1": ("civil defence siren wailing, slow rise and fall, distant, outdoor", 6.0, 484, TAIL),
+    # --- sample guns 2026-11-09 (the `guns` bank: <Sound>_shot / <Sound>_reload per gun row,
+    # Config.Weapons.<id>.Sound). Full and punchy, never piercing (owner: no harsh sound).
+    "revolver_shot_1": (".357 magnum revolver single gunshot, heavy deep boom, close, outdoor, full low end, not piercing", 1.2, 501),
+    "revolver_shot_2": ("magnum revolver gunshot, heavy thump and crack, close, outdoor, warm, not piercing", 1.2, 502),
+    "revolver_reload_1": ("revolver reload, cylinder swings open, spent brass casings rattle out, speedloader clicks in, cylinder snaps shut, close, dry", 2.6, 503),
+    "sniper_shot_1": ("high caliber bolt action sniper rifle gunshot, deep heavy boom with rolling outdoor echo, close, not piercing", 2.0, 511, TAIL),
+    "sniper_shot_2": ("magnum sniper rifle shot, big deep report rolling across open ground, close, warm low end", 2.0, 512, TAIL),
+    "sniper_reload_1": ("bolt action rifle reload, bolt pulled back, magazine dropped out, fresh magazine clicked in, bolt pushed forward and locked, close, dry", 3.0, 513),
+    "goose_shot_1": ("shoulder fired recoilless rifle launching a rocket, deep boom and loud backblast whoosh, rocket motor hiss flying away, outdoor", 2.5, 521, TAIL),
+    "goose_reload_1": ("heavy steel breech swung open, large rocket round slid into a tube, breech latched shut with a heavy clunk, close, dry", 3.5, 522),
 }
 
 # bank: its clips, in file order. A clip may only sit in one bank. The group of a clip is its
@@ -160,6 +170,8 @@ BANKS = {
     "warden": [n for n in SOUNDS if n.startswith("warden_") and n[-1].isdigit()],
     "ui_radio": ["radio_in_1", "objective_complete_1", "card_pick_1", "kia_1", "ui_click_1"],
     "ambience": ["lantern_rotor_1", "amb_city_1", "amb_wind_1", "amb_siren_1"],
+    "guns": ["revolver_shot_1", "revolver_shot_2", "revolver_reload_1", "sniper_shot_1", "sniper_shot_2",
+             "sniper_reload_1", "goose_shot_1", "goose_reload_1"],
 }
 BANK_GAP = 0.15  # seconds of silence between clips so a seek never bleeds into the next one
 REPO_ROOT = os.environ.get("RAS_REPO") or os.path.normpath(os.path.join(HERE, "..", "..", ".."))
