@@ -1,10 +1,10 @@
 # Handoff — Infected Co-op Shooter (VS Code + Claude Code terminal)
 
 Start here when picking the project up in a fresh Claude Code session.
-Last updated: 2026-11-07, end of the build-round-1 session (the Warden shipped, player
-movement fixed, skinned Weller switched off). **Start the next session at "Open work"
-item 1: the Warden silhouette redesign the owner asked for.** Then ask the owner where the
-foundation backlog (`docs/ARCHITECTURE.md`, 2026-11-08 review) slots in. Last verified commit on `main`: the Warden commit (solo + 2-client playtests).
+Last updated: 2026-11-09 (cloud sessions on pull request #1: foundation work, collaborator
+setup). Last playtest-verified commit on `main`: the Warden commit, 2026-11-07 (solo +
+2-client). **Start the next session by merging and playtesting #1 (Open work, Foundation
+backlog), then the Warden silhouette redesign the owner asked for.**
 
 ## What this is
 
@@ -151,21 +151,13 @@ Read in this order:
   collaborator, one place per developer inside the owner's experience). In Studio the
   `[AssetAccess]` line in Output says whether this place can load them. Owner to do the
   setup; the check itself has not run in Studio yet.
-- **Foundation backlog (2026-11-08 code review, `docs/ARCHITECTURE.md`).** Ranked concerns
-  and items F1-F11: renames, lifecycle hooks, shared attribute/message constants, the open
-  co-op debt (#3/#5/#9), CI + unit tests, then stage data split before objective pools,
-  weapon/upgrade hooks, class interface, save service, lobby place, and how private match
-  servers and the shared Containment Board scale. The owner decides where the rest slots
-  against the Warden redesign below. **Done 2026-11-08 in a cloud session, CI green but not
-  playtested:** F5 (CI + tests), the F1 renames (`DamageService`, `Config.Zombies` folded),
-  the icon scripts, three type fixes. First thing on the PC: pull, sync, Play, run one full
-  run to extraction and check the output for errors.
-- **The Warden shipped 2026-11-07** (`docs/sprints/SPRINT_19_WARDEN.md` > Open work):
-  handset hiss + squelch tell clip and his own vocals (audio pipeline), an upright
-  walk / shield-square charge clip instead of the mutant set, Gate dressing (chain,
-  spray, MP roster) and the insert / wipe radio lines, a 4-player phone pass on phase
-  2. First real fight on this build: 100-120 s is the target; retune
-  `Config.Index.Warden` plate health if it drags.
+- **Foundation backlog (`docs/ARCHITECTURE.md`, items F1-F11).** Done 2026-11-08/09 in
+  cloud sessions on pull request #1, CI green but **not playtested**: F5 (CI + tests), the
+  F1 renames (`DamageService`, `Config.Zombies` folded), the icon scripts, three type fixes,
+  the asset access check. First thing on the PC: push local work, merge #1, sync, Play, one
+  full run to extraction with the Output clean. Still open: the rest of F1 (dated
+  comments), F2-F4, rule-logic tests for F5, and F6-F11 before the feature each one names.
+  The owner decides where they slot against the Warden redesign below.
 - **NEXT: the Warden silhouette redesign (owner, 2026-11-07).** After playing the shipped
   Warden the owner said: "I like how he looks, I like the direction with the riot armor. I
   just don't like that it's essentially just a Brute model with riot armor slapped on top
@@ -181,11 +173,50 @@ Read in this order:
   breakable plates, scale 1.9) and the 5,000-tri boss cap. Build from low-poly primitives
   with the STYLES §2 swatches, show front / side / three-quarter renders, iterate with the
   owner, then port the approved shapes into `warden_limb` / `_warden_plate` and re-upload
-  (`assets/3d/ASSET_IDS.md`). Note: in that session the Agent tool listed no
-  `art-director` type even though `.claude/agents/` has it; check before relying on it.
-- **Owner also said "there's other problems"** with the current build beyond the player
-  body and the Warden look, not yet listed. Ask for them at the start of the next session
-  before building anything new.
+  (`assets/3d/ASSET_IDS.md`). The Blender MCP only runs on the owner's PC (its `.mcp.json`
+  path is Windows). The `art-director` agent was missing from one PC session's Agent list
+  but is present in cloud sessions; check before relying on it.
+- **Owner also said "there's other problems"** with the build beyond the player body and
+  the Warden look, not yet listed. Ask for them before building anything new.
+- **Warden follow-ups** (`docs/sprints/SPRINT_19_WARDEN.md` > Open work): handset hiss +
+  squelch tell clip and his own vocals (audio pipeline), an upright walk / shield-square
+  charge clip instead of the mutant set, Gate dressing (chain, spray, MP roster) and the
+  insert / wipe radio lines, a 4-player phone pass on phase 2. First real fight: 100-120 s
+  is the target; retune `Config.Index.Warden` plate health if it drags.
+- **Next on the roadmap** (`docs/PROGRESSION.md` > Technical plan, the spine): objective
+  pools on Delta (do F6, the stage data split, first), then Co-op Sprint B (register rows
+  3/5/9, extraction rule; = F4) and the lobby place (`docs/MULTIPLAYER_READINESS.md`
+  decision 7, after F9), then Mile 14 + the Bloat, Kestrel, Stand Down.
+- **Sprint 13 Full MVP Balance + Fun Test** — still open, the gate for calling the MVP done.
+  Needs 3 natural human playtests; tune `src/shared/Config.luau` only. Plan:
+  `docs/sprints/SPRINT_13_FULL_MVP_BALANCE_TEST.md`.
+- **Owner's feel backlog (2026-11-07), in the owner's order:**
+  1. **Realistic time-to-kill.** Shots-to-kill per form should read like real bullets into a
+     body, and differ per weapon once there is more than one; retune `Weapon.Damage` and
+     the roster `MaxHealth` together (systems-designer call; flat curve per the spine).
+  2. **More Infected vocal variety.** Three idle / two attack lines per form is thin; add
+     variants to each bank (`generate.py` `SOUNDS` + `BANKS`, re-upload the bank).
+  3. **Low-health feedback.** As health drops the screen greys out (`ColorCorrectionEffect`
+     saturation toward -1, a dark vignette), a heartbeat loop fades in and speeds up, and
+     the world's sound muffles (a low-pass `EqualizerSoundEffect` on the world
+     `SoundGroup`); all of it eases back as health returns. Client-only, one module keyed on
+     the local humanoid's health fraction, thresholds in Config; heartbeat clip via the
+     sound pipeline. Downed (Squad) is the floor of the same effect.
+  4. **Movement keys rework.** Shift+Ctrl roll and Shift+C slide are too many chords. Owner
+     is weighing sprint as the default speed (no walk, or walk on a key) so roll and slide
+     become single keys. Decide with the systems designer before touching
+     `SprintController` / `StanceController` / `MovementController` bindings.
+- **Sprint 18 leftovers:** the reload has no animation and no sound (generate `reload_1..2`
+  into a `player_weapon` bank with the rifle shot); icons for the supply and upgrade cards
+  (the icon pipeline is ready: name each icon after its card id and `icons.js` / `wire.js`
+  take the row's Color and write its IconId); Hollow Point stagger cadence; the Armory
+  (call-in choice before the drop).
+- **Delta loose ends** (map rework, `docs/LEVELS.md` A/B): bots are not in a collision group
+  against the `Ladder` trusses, the bot slot clamp is not implemented, a failed ComputeAsync
+  keeps its pathing slot, 10 permanent PointLights (6 skyline fires) and continuous fire
+  emitters break the STYLES light/particle budget; the A13 walk-through is still owed
+  (routes, staircases, vertical chase, 2-client streaming, device simulator, interior
+  darkness check). From the Stage 1 playtest: rock outcrops / a sunken road for more cover.
 - **Skinned Weller is off (2026-11-07).** To bring it back: make the skin's bones follow
   the hidden rig (per frame after the animation step, `Bone.Transform` from each hidden
   part's CFrame and the bind-pose offset), or re-export the FBX so the bone rest frames
@@ -194,106 +225,17 @@ Read in this order:
   the walk and aim clips play. Also keep `Model:GetScale() == 1`.
   Art-director later pass: carrier straps to z 0.80, a 75/25 loop either side of the elbow
   and knee rings, toe step on the boot. The other four Chosen stay rigid until a class
-  system exists (build `_pc_skin_body` for them then).
-- **Infected skin v2 shipped 2026-11-07** (owner direction: no "zombie green"). Open from
-  the art-director pass, for the next body sprint: `Limb.lesion` cores rotated ~20°, eye rim
-  `+0.06`, Walker rib slab bars varied, Brute `pallor_d` base if it still reads purple in
-  game, Hocker heron pose as an idle clip (not buildable inside the R15 boxes).
-- **Backlog (2026-11-07): reload clip and sound.** The magazine shipped in Sprint 18; the
-  reload still has no animation and no sound (generate `reload_1..2` into a `player_weapon`
-  bank with the rifle shot). Also open from Sprint 18: icons for the supply and upgrade cards
-  (the icon pipeline is ready for them since 2026-11-08: name each icon after its card id and
-  `icons.js` / `wire.js` take the row's Color and write its IconId), Hollow Point stagger
-  cadence, the Armory (call-in choice before the drop).
-- **Backlog (owner, 2026-11-07, after the movement set playtest).** Hit marker, faster
-  vault/climb, climb immunity and quieter footsteps shipped (feel pass, HISTORY). Left, in
-  the owner's order:
-  1. **Realistic time-to-kill.** Shots-to-kill per form should read like real bullets into a
-     body, and differ per weapon once there is more than one; retune `Weapon.Damage` and
-     the roster `MaxHealth` together (systems-designer call; flat curve per the spine).
-  2. **More Infected vocal variety.** Three idle / two attack lines per form is thin; add
-     variants to each bank (`generate.py` `SOUNDS` + `BANKS`, re-upload the bank).
-  3. **Low-health feedback (owner, 2026-11-07).** As health drops the screen greys out
-     (`ColorCorrectionEffect` saturation toward -1, a dark vignette), a heartbeat loop fades
-     in and speeds up, and the world's sound muffles (a low-pass `EqualizerSoundEffect` on
-     the world `SoundGroup`); all of it eases back as health returns. Client-only, one
-     module keyed on the local humanoid's health fraction, thresholds in Config; heartbeat
-     clip via the sound pipeline. Downed (Squad) is the floor of the same effect.
-  5. **Movement keys rework (owner, 2026-11-07).** Shift+Ctrl roll and Shift+C slide are
-     too many chords. Owner is weighing sprint as the default speed (no walk, or walk on a
-     key) so roll and slide become single keys. Decide with the systems designer before
-     touching `SprintController` / `StanceController` / `MovementController` bindings.
-  4. **Map rework shipped 2026-11-07** (`docs/LEVELS.md` A/B built in `ArenaService`).
-     Performance review passed (60 fps at 40 Walkers; spawn raycast now ignores bodies,
-     one engine Path per Infected). Left: bots are not in a collision group against the
-     `Ladder` trusses, the bot slot clamp is not implemented, a failed ComputeAsync keeps
-     its pathing slot, 10 permanent PointLights (6 skyline fires) and continuous fire
-     emitters predate this round and break the STYLES light/particle budget; A13 walk-
-     through still owed (routes, staircases, vertical chase, 2-client streaming, device
-     simulator, interior darkness check).
-
-0. **Progression (designed 2026-11-06):** `docs/PROGRESSION.md` — three-stage first loop
-   (Checkpoint Delta, Mile 14, Aid Station Kestrel), player-started hold at one of three
-   sites, a boss per stage, Stand Down, the nine-form Infected roster. **Built so far:**
-   behaviour hooks in `EnemyDefinitions` + `EnemyProjectileService`, and the Hocker on
-   Delta (verified 2026-11-06; wears the Walker limb set with a throat sac until it has its
-   own mesh). **Next per the build order:** stage definitions + run state machine with
-   Delta as the only stage, then Mile 14 + Bloat. Design subagents in `.claude/agents/`
-   (lore-developer, systems-designer, level-designer, playtest-critic) argue the design
-   before code; the lore developer owns canon.
-   **Direction (decided 2026-11-06, in PROGRESSION.md):** Helldivers 2 structure on the
-   roguelike run. Build order from PROGRESSION.md > Technical plan: Resupply (done
-   2026-11-07; F10 fills the pool, F throws the flare) → ADS, hitscan rifle and headshots
-   (done 2026-11-07) → run state machine + Operation
-   (= Co-op Sprint A) → objective pools on Delta → the Warden → Containment Board → stage
-   definitions. Owner still to pick "sortie" vs "drop" for a stage.
-   **Roblox's own Studio MCP** (`Roblox_Studio`, added 2026-11-06, local scope) is a second
-   server: use it only for `generate_animation` (returns a published id; its clips play on
-   our R15 rigs, extra bones ignored), `open_cloud_invoke` and camera-positioned
-   `screen_capture`. The `robloxstudio` server stays the one that drives playtests.
-   **Animations shipped 2026-11-06, verified in a playtest** (`assets/animations/`,
-   `AnimationController`, per-type Infected clips, hold-E breach ghost). All 15 clips are
-   published through Open Cloud (ids in `Config.Animations.Ids`, `assets/animations/
-   ASSET_IDS.md`), so they play outside Studio too. Polish later: a hollow breach ring.
-1. **Co-op Sprint A shipped 2026-11-07** (`docs/sprints/SPRINT_17_COOP_A.md`): `Squad` roster, run state machine, reset split, spawn pads, run-end screens + ready-up, downed/revive (F), bot squadmates. **Loadout rework shipped 2026-11-07 (Sprint 18).** **The Warden shipped 2026-11-07 (Sprint 19).** **Next per the spine:** objective pools on Delta; Co-op Sprint B (register rows 3/5/7/9, extraction rule) and the lobby place (decision 7) after.
-   Planned after it (owner, 2026-11-07): a **lobby place** with a main menu where parties
-   queue and teleport together into the match (`docs/MULTIPLAYER_READINESS.md` decision 7);
-   number keys 1-4 take call-ins and the flare (decision 8).
-   (the `Squad` member abstraction that bots reuse, run state machine, downed/revive, four
-   LZ pads, reset split, client screens; seven playtest-verified steps). The spine it
-   serves: `docs/PROGRESSION.md > The spine` (decided 2026-11-07: loadout power, call-ins,
-   field upgrades, flat curve, bot squadmates after Sprint A).
-2. **Sprint 13 Full MVP Balance + Fun Test** — still OPEN. Needs 3 natural human playtests;
-   tune `src/shared/Config.luau` only. Plan: `docs/sprints/SPRINT_13_FULL_MVP_BALANCE_TEST.md`.
-   This is the gate for calling the MVP done (criteria in `docs/PLAN.md`).
-3. **Stage 1 "Checkpoint Delta" shipped 2026-11-06** (`ArenaService`: 600 x 600 studs,
-   the central checkpoint plus four outer districts (Suburb north, Depot east, Scrapyard
-   south, Barracks west), ten hills on five height levels, a highway embankment the full
-   width with a bridge over the main road, roads, helipad, 138 dressing pieces from 14
-   character-scale Blender meshes, three burning ruins; objective zone on the Compound's
-   lower tier). **Sky shipped** (`SkyService`: burnt-orange outbreak sky, smoke-stained
-   clouds, a ring of burning city silhouettes outside the walls; values in
-   `docs/STYLES.md > Stage 1 sky`). Verified in a playtest (Infected climb every slope,
-   the tent roof slope is walkable: tent / guard tower / comm tower use
-   PreciseConvexDecomposition collision, the rest Box or Hull). **Player body shipped**: the Assault class wears
-   the `pc_assault_*` limb set (`PlayerSetup` -> `MeshAssets.dressModel`; avatar appearance
-   off). K-9 / Epidemiologist / Recon / Engineer bodies are built and previewed in Blender,
-   not uploaded (no class system yet). Pipeline `assets/3d/README.md`. Next: react to the
-   owner's playtest, rock outcrops / a sunken road for more cover, class selection.
-4. **Generated SFX pipeline (2026-11-06, banks 2026-11-07):** `assets/audio/build/
-   generate.py` makes sounds from text prompts with Stable Audio Open Small, run in Docker
-   (`generate.sh`; Docker Desktop must be running; ~1 min per sound on CPU). Shipped: the
-   rifle shot (`SoundFX` `shoot`) and the six banks (steps, hits, four Infected forms).
-   Next: the remaining single prompts (xp/level/item pickups, crate, mine, drone, airstrike,
-   fire, shock, dash, breach, objective, extraction) as one or two more banks, then the
-   reload bank with the backlog item above (`assets/audio/README.md`).
-5. **Live Blender control (blender-mcp) — set up and socket-verified 2026-11-05**
-   (`.mcp.json` + add-on; `assets/3d/README.md` > Live Blender). Not yet used from a Claude
-   Code session (needs a restart to load the tools). Shipped meshes still go through the
-   headless build script.
-6. **Post-MVP roadmap** (`docs/PLAN.md` order): Co-op Sprints A/B, second playable
-   character from LORE.md ("The Chosen"), elite enemies, bosses, stage progression. All new
-   visual work (Blender low-poly assets, VFX, UI) follows `docs/STYLES.md`.
+  system exists (build `_pc_skin_body` for them then; class selection comes with F8).
+- **Infected skin v2 follow-ups** (art-director pass): `Limb.lesion` cores rotated ~20°, eye
+  rim `+0.06`, Walker rib slab bars varied, Brute `pallor_d` base if it still reads purple
+  in game, Hocker heron pose as an idle clip (not buildable inside the R15 boxes).
+- **Sound pipeline** (`assets/audio/README.md`; `generate.py` in Docker, Docker Desktop must
+  be running, ~1 min per sound on CPU): the remaining prompts (crate, mine, drone,
+  airstrike, fire, shock, dash, breach, objective, extraction) as one or two more banks,
+  plus the reload bank above.
+- **Polish later:** a hollow breach ring.
+- **Post-MVP roadmap** (`docs/PLAN.md` order): second playable character from LORE.md ("The
+  Chosen"), elite enemies, stages 4 and 5. All new visual work follows `docs/STYLES.md`.
 
 Minor loose ends: get an explicit `VerifyCleanup` PASS printout in a fresh playtest;
 track down the harmless `rbxassetid://203785492 … Asset type does not match` warning
@@ -343,6 +285,11 @@ configured at user scope in `~/.claude.json`, so it is available in any Claude C
 Studio must be open with the MCP plugin connected. Tools: `solo_playtest`, `execute_luau`
 (targets `server` / `client-1`), `grep_scripts`, `get_script_source`, `get_runtime_logs`,
 `capture_screenshot`, `upload_asset`, `manage_instance`.
+
+**Roblox's own Studio MCP** (`Roblox_Studio`, added 2026-11-06, local scope) is a second
+server: use it only for `generate_animation` (returns a published id; its clips play on our
+R15 rigs, extra bones ignored), `open_cloud_invoke` and camera-positioned `screen_capture`.
+The `robloxstudio` server stays the one that drives playtests.
 
 Hard-won gotchas:
 - **Studio MCP gotchas found 2026-11-07.** (1) A runtime error inside `execute_luau`

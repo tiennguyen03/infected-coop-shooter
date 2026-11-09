@@ -33,6 +33,6 @@ jobs:
         run: |
           v=$(sed -n 's/^luau-lsp = "[^@]*@\(.*\)"$/\1/p' rokit.toml)
           base=https://raw.githubusercontent.com/JohnnyMorganz/luau-lsp/$v/scripts
-          curl -fsSL -o globalTypes.d.luau "$base/globalTypes.d.luau"
+          curl -fsSL --retry 4 --retry-delay 3 --retry-all-errors -o globalTypes.d.luau "$base/globalTypes.d.luau"
           rojo sourcemap default.project.json -o sourcemap.json
           luau-lsp analyze --sourcemap=sourcemap.json --definitions=globalTypes.d.luau src

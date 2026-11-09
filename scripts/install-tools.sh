@@ -16,7 +16,8 @@ version() {
 fetch() {
 	local tmp
 	tmp="$(mktemp -d)"
-	curl -fsSL -o "$tmp/tool.zip" "$1"
+	# GitHub release downloads sometimes answer 502/504; retry before failing the build.
+	curl -fsSL --retry 4 --retry-delay 3 --retry-all-errors -o "$tmp/tool.zip" "$1"
 	unzip -oq "$tmp/tool.zip" -d "$tmp"
 	install -m 755 "$tmp/$2" "$BIN/$2"
 	rm -rf "$tmp"
