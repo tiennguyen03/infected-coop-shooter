@@ -230,7 +230,8 @@ Read in this order:
   the Pike body built after it, not yet re-checked; a real launch from a published place
   untested; branch `nova/lobby`,
   `docs/sprints/LOBBY_V1_FALLOW.md`): the Fallow (`lobby.project.json`, `src/lobby/`), a
-  hangar spawn by the desks with the ramp up to the spots, the match's Pike body, four Lantern spots that teleport a squad into a reserved match server, four
+  hangar spawn by the desks with the ramp up to the spots, the match's Pike body (Roblox's
+  default walking sound muted), four Lantern spots that teleport a squad into a reserved match server, four
   hangar desks (lines only, no trades), the Plot's Containment Board on placeholder numbers.
   Next: re-check the loop and body in the `Lobby (dev)` place, then a published launch test.
 - **Satisfying pass built 2026-11-09 (`docs/superpowers/plans/2026-11-09-satisfying-pass.md`).**

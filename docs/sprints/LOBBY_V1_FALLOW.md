@@ -38,7 +38,12 @@ match place.
   match (`MeshAssets.dressModel` with `PlayerSetup.BODY`; the match's `PlayerSetup` and the
   client `PaletteController` are mapped into the lobby, not copied), no avatar clothing or
   accessories, no rifle. The match's animation set is not in the lobby yet: the body moves
-  with Roblox's default R15 animations.
+  with Roblox's default R15 animations. Roblox's default walking sound (the "Running" Sound
+  the engine puts in each root part) is muted for every character (`DefaultStepMute`), so
+  the ship has no footsteps until the match's synced ones come with its animations.
+- **Known warning**: `rbxassetid://203785492 … Asset type does not match requested type`
+  shows in the lobby's output as it does in the match's (handoff "Minor loose ends"). No file
+  in the repo names that id; it is not from lobby code and does not affect play.
 - **Four Lantern spots** (`LaunchService`, rule `Rules/Manifest`): a block-built helo on
   each numbered spot and a yellow boarding box beside its starboard door. Stand in the box
   to board. The first aboard starts a 20 s countdown, a full bird (4) cuts it to 5 s, the
