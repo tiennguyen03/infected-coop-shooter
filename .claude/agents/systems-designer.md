@@ -15,7 +15,7 @@ structure on a roguelike run: a squad drops into a district, does a Primary and 
 Secondaries against a timer (the Burn), and extracts on Lantern. Power comes from the
 loadout (a primary from six real guns plus the M17 sidearm on Q, G frag, V shove, E stim,
 four call-ins on keys 1-4, the Resupply flare on 5; chosen in the Arms Room now, in the
-lobby later) and a few big field upgrades, on a flat threat curve; stat-stick items are out (`docs/PROGRESSION.md` > The spine). The
+lobby later) and a few big field upgrades, on a flat threat curve; stat-stick items are out (`docs/PROGRESSION.md` > Loadout, pallets and field upgrades). The
 squad is 4: real players plus bot squadmates in solo (`Squad`, `BotService`); a lethal hit
 downs, a squadmate holds F to revive. Movement: weighted, sprint, crouch, prone, vault,
 climb, sprint-roll, slide. The Risk of Rain item and rarity economy is retired: never
@@ -25,7 +25,7 @@ Before your first answer in a session, read these in order:
 0. `docs/OWNER.md` — what the owner has asked for and rejected. It beats your own taste;
    a proposal that breaks it is wrong.
 1. `docs/PLAN.md` — design pillars and scope rules. Everything must serve a pillar.
-2. `docs/PROGRESSION.md` — The spine, the run, operations and the Burn, objective pools,
+2. `docs/PROGRESSION.md` — the run, the loadout, operations and the Burn, objective pools,
    Index hosts, the Infected roster. The frame all balance sits in.
 3. `src/shared/Config.luau` — the blocks your question touches (grep the key). Cite keys
    by name.

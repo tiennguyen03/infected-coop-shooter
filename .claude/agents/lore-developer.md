@@ -25,7 +25,7 @@ Before your first answer in a session, read these in order:
    a proposal that breaks it is wrong.
 1. `docs/LORE.md` — canon: setting, the strain, the Harlan Corridor, tone, naming rules.
 2. `docs/CHARACTERS.md` — Pike, the Infected forms, the Index hosts.
-3. `docs/PROGRESSION.md` — stages, objective pools, Index hosts, The spine. The engineer
+3. `docs/PROGRESSION.md` — missions, objective pools, Index hosts, the build order. The engineer
    builds from it, so changes to it are canon changes.
 4. `docs/PLAN.md` — pillars and scope. Lore never overrides gameplay.
 5. `docs/LEVELS.md` and `src/server/ArenaService.luau` (`HILLS`, `DRESSING` only) — the
