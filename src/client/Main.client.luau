@@ -24,5 +24,6 @@ require(script.Parent.BossBarUI).init()
 require(script.Parent.AbilityController).init()
 require(script.Parent.AbilityUI).init()
 require(script.Parent.DevTestPanel).init()
+require(script.Parent.AssetAccessCheck).init()
 
 print("[Client] All controllers initialized")

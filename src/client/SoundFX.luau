@@ -34,6 +34,18 @@ local SoundFX = {}
 local templates: { [string]: Sound } = {}
 local variances: { [string]: number } = {}
 
+-- The uploaded audio ids among the definitions (built-in rbxasset sounds always load), by
+-- sound name, for the Studio asset access check.
+function SoundFX.uploadedIds(): { [string]: string }
+	local out = {}
+	for name, definition in DEFINITIONS do
+		if string.sub(definition.id, 1, 13) == "rbxassetid://" then
+			out[name] = definition.id
+		end
+	end
+	return out
+end
+
 function SoundFX.play(name: SoundName)
 	local template = templates[name]
 	if not template then

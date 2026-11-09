@@ -73,6 +73,17 @@ function SoundBanks.id(bank: string): string?
 	return nil
 end
 
+-- Every uploaded bank's audio id, by bank name (the Studio asset access check reads it).
+function SoundBanks.ids(): { [string]: string }
+	local out = {}
+	for bank, id in IDS do
+		if id ~= "" then
+			out[bank] = id
+		end
+	end
+	return out
+end
+
 function SoundBanks.has(bank: string): boolean
 	return groups[bank] ~= nil and SoundBanks.id(bank) ~= nil
 end

@@ -15,7 +15,9 @@ single-player; every system is written for four.
 ## Setup (one time)
 
 1. Install [Rokit](https://github.com/rojo-rbx/rokit), then run `rokit install` in this folder.
-2. Open Roblox Studio, create a new **Baseplate** place.
+2. Open Roblox Studio, create a new **Baseplate** place. A second developer instead opens their
+   own place inside the owner's experience, or every sound and animation is missing: see
+   [docs/COLLABORATING.md](docs/COLLABORATING.md).
 3. Install the Rojo plugin in Studio: `rojo plugin install` (or from the Creator Store).
 
 ## Run

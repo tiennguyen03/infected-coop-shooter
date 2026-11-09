@@ -145,6 +145,12 @@ Read in this order:
 
 ## Open work, in priority order
 
+- **Second developer (Nova) has no sounds or animations (2026-11-09).** Roblox loads audio
+  and animations only in the uploader's games or games granted access; code cannot get
+  around it. Setup without a group, step by step: `docs/COLLABORATING.md` (friends, Edit
+  collaborator, one place per developer inside the owner's experience). In Studio the
+  `[AssetAccess]` line in Output says whether this place can load them. Owner to do the
+  setup; the check itself has not run in Studio yet.
 - **Foundation backlog (2026-11-08 code review, `docs/ARCHITECTURE.md`).** Ranked concerns
   and items F1-F11: renames, lifecycle hooks, shared attribute/message constants, the open
   co-op debt (#3/#5/#9), CI + unit tests, then stage data split before objective pools,
