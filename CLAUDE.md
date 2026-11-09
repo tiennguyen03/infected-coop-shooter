@@ -3,6 +3,9 @@
 Roblox 4-player co-op shooter (Helldivers-style loadout power, original mechanics), grounded
 military bio-horror setting. **Final product is 4-player co-op**; single-player is the current build target. Enemies are "the Infected" (model name `Infected`).
 
+**`docs/OWNER.md` is what the owner has asked for and rejected; read it before proposing
+or building anything new.** Every design agent reads it first.
+
 Read on demand, not up front:
 - `handoff/README.md` — **current state, open work, dev-env startup, Studio MCP gotchas.**
   Start here in a fresh session.
