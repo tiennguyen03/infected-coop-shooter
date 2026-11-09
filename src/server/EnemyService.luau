@@ -27,6 +27,7 @@ local EnemyDefinitions = require(ReplicatedStorage.Shared.EnemyDefinitions)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
 local Animations = require(ReplicatedStorage.Shared.Animations)
 local Ledge = require(ReplicatedStorage.Shared.Ledge)
+local Feel = require(ReplicatedStorage.Shared.Rules.Feel)
 local RunStates = require(ReplicatedStorage.Shared.RunStates)
 local ArenaService = require(script.Parent.ArenaService)
 local DifficultyService = require(script.Parent.DifficultyService)
@@ -69,6 +70,11 @@ type Zombie = {
 	lastAttackTime: number,
 	attackTrack: AnimationTrack?,
 	deathTrack: AnimationTrack?,
+	moveTrack: AnimationTrack?,
+	-- The killing push (satisfying pass): set by the killing hit or a blast, read on death.
+	push: { direction: Vector3, speed: number, blast: boolean }?,
+	hitTrack: AnimationTrack?, -- the flinch (Config.Enemies.Flinch); loaded on the first one
+	lastFlinchAt: number?,
 	nextRepathTime: number,
 	lastRepathPosition: Vector3,
 	nudgeSign: number,
@@ -129,6 +135,8 @@ local lures: { Lure } = {}
 -- Slows (Pen Coil, Hollow Point stagger): per-humanoid generation so overlapping slows never
 -- strand a body at reduced speed.
 local slowGeneration: { [Humanoid]: number } = {}
+-- Limp bodies alive now (Config.Enemies.Ragdoll.MaxBodies).
+local limpBodies = 0
 -- Kill listeners (RequisitionService): every death credits its SupplyValue to the squad.
 local killListeners: { (supplyValue: number, position: Vector3) -> () } = {}
 
@@ -209,6 +217,146 @@ local function randomIdleDelay(): number
 	return range[1] + math.random() * (range[2] - range[1])
 end
 
+local function zombieOfHumanoid(humanoid: Humanoid): Zombie?
+	for _, zombie in zombies do
+		if zombie.humanoid == humanoid then
+			return zombie
+		end
+	end
+	return nil
+end
+
+local function flatDirection(away: Vector3, fallback: Vector3): Vector3
+	local flat = Vector3.new(away.X, 0, away.Z)
+	return if flat.Magnitude > 0.01 then flat.Unit else fallback
+end
+
+-- Loosens a dead body and throws it along its push. False when the rig has no ball sockets
+-- to hold it together (then the death clip plays instead).
+local function goLimp(zombie: Zombie): boolean
+	local model = zombie.model
+	if not model:FindFirstChildWhichIsA("BallSocketConstraint", true) then
+		return false
+	end
+	local cfg = Config.Enemies.Ragdoll
+	local push = zombie.push
+	local direction = if push then push.direction else -zombie.root.CFrame.LookVector
+	local speed = if push then push.speed else cfg.Push.PerDamage * 20
+	local up = math.min(speed * cfg.UpShare, cfg.MaxUp)
+	local velocity = direction * speed + Vector3.new(0, up, 0)
+	local parts: { BasePart } = {}
+	for _, item in model:GetDescendants() do
+		if item:IsA("AnimationConstraint") then
+			item.Enabled = false
+		elseif item:IsA("Motor6D") then
+			item.Enabled = false
+		elseif item:IsA("BallSocketConstraint") then
+			item.Enabled = true
+		elseif item:IsA("BasePart") then
+			table.insert(parts, item)
+		end
+	end
+	-- The invisible root leaves the body (its joint is off): pinned where it stood, so it
+	-- does not fall through the world.
+	zombie.root.Anchored = true
+	zombie.root.CanCollide = false
+	for _, part in parts do
+		if part == zombie.root then
+			continue
+		end
+		part.Anchored = false
+		part.CanCollide = true
+		part.CollisionGroup = "Gore" -- GoreService: never collides with the living Infected
+		part.AssemblyLinearVelocity = velocity
+		pcall(function()
+			part:SetNetworkOwner(nil)
+		end)
+	end
+	task.delay(cfg.Settle, function()
+		for _, part in parts do
+			if part.Parent then
+				part.Anchored = true
+			end
+		end
+	end)
+	return true
+end
+
+-- GoreService.blast: a blast killed this body; it is thrown away from `center`.
+function EnemyService.noteBlast(humanoid: Humanoid, center: Vector3)
+	local zombie = zombieOfHumanoid(humanoid)
+	if not zombie then
+		return
+	end
+	local fallback = -zombie.root.CFrame.LookVector
+	zombie.push = {
+		direction = flatDirection(zombie.root.Position - center, fallback),
+		speed = Feel.knockback("Blast", 0, Config.Enemies.Ragdoll.Push),
+		blast = true,
+	}
+end
+
+-- A hit that did not kill: a flinch, unless one played inside the cooldown.
+local function flinch(zombie: Zombie, info: DamageService.HitInfo)
+	local cfg = Config.Enemies.Flinch
+	local now = os.clock()
+	if not Feel.canFlinch(now, zombie.lastFlinchAt, cfg.Cooldown) then
+		return
+	end
+	if (cfg.HeavyOnly :: { [string]: boolean })[zombie.typeName] then
+		local weapon = info.attacker and info.attacker:GetAttribute(Attributes.Weapon)
+		local heavy = typeof(weapon) == "string"
+			and (cfg.HeavyWeapons :: { [string]: boolean })[weapon] == true
+		if not heavy then
+			return
+		end
+	end
+	if not zombie.hitTrack then
+		local clips = (Config.Animations.Infected :: any)[zombie.typeName]
+		local clip: string? = clips and clips.hit
+		local animator = zombie.humanoid:FindFirstChildOfClass("Animator")
+		zombie.hitTrack = clip
+				and animator
+				and Animations.load(animator, clip, Enum.AnimationPriority.Action2)
+			or nil
+	end
+	local track = zombie.hitTrack
+	if not track then
+		return
+	end
+	zombie.lastFlinchAt = now
+	local headshot = info.kind == "headshot"
+	track:Play(0.05, 1, if headshot then cfg.HeadshotSpeed else 1)
+	if headshot then
+		EnemyService.slow(zombie.humanoid, cfg.HeadshotSlow, cfg.HeadshotSlowTime)
+	end
+end
+
+-- A killing round: the body goes over away from whoever fired it. Any other hit: a flinch.
+local function onHit(info: DamageService.HitInfo)
+	if not info.killed then
+		local zombie = zombieOfHumanoid(info.humanoid)
+		if zombie and not zombie.climb then
+			flinch(zombie, info)
+		end
+		return
+	end
+	local zombie = zombieOfHumanoid(info.humanoid)
+	if not zombie or (zombie.push and zombie.push.blast) then
+		return
+	end
+	local fallback = -zombie.root.CFrame.LookVector
+	local character = info.attacker and info.attacker.Character
+	local from = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	zombie.push = {
+		direction = if from
+			then flatDirection(zombie.root.Position - from.Position, fallback)
+			else fallback,
+		speed = Feel.knockback(info.kind, info.amount, Config.Enemies.Ragdoll.Push),
+		blast = false,
+	}
+end
+
 local function onZombieDied(zombie: Zombie)
 	CollectionService:RemoveTag(zombie.model, ENEMY_TAG)
 	voice(zombie, "death")
@@ -223,18 +371,28 @@ local function onZombieDied(zombie: Zombie)
 			track:Stop(0.1)
 		end
 	end
-	if zombie.deathTrack then
+	local definition = EnemyDefinitions[zombie.typeName]
+	local boss = definition and definition.Boss
+	local limp = false
+	if not boss and limpBodies < Config.Enemies.Ragdoll.MaxBodies then
+		limp = goLimp(zombie)
+	end
+	if limp then
+		limpBodies += 1
+	elseif zombie.deathTrack then
 		zombie.deathTrack:Play(0.1)
 	end
 	for _, listener in killListeners do
 		listener(zombie.supplyValue, zombie.root.Position)
 	end
 	DamageService.onEnemyKilled(zombie.humanoid)
-	local definition = EnemyDefinitions[zombie.typeName]
-	local lifetime = if definition and definition.Boss
+	local lifetime = if boss
 		then Config.Enemies.BossCorpseLifetime
 		else Config.Enemies.CorpseLifetime
 	task.delay(lifetime, function()
+		if limp then
+			limpBodies -= 1
+		end
 		zombie.model:Destroy()
 	end)
 end
@@ -330,6 +488,7 @@ local function spawnZombie(
 	humanoid.BreakJointsOnDeath = false
 	local attackTrack: AnimationTrack? = nil
 	local deathTrack: AnimationTrack? = nil
+	local movingTrack: AnimationTrack? = nil
 	pcall(function()
 		local animator = humanoid:FindFirstChildOfClass("Animator") :: Animator
 		local clips = Config.Animations.Infected[typeName]
@@ -340,6 +499,7 @@ local function spawnZombie(
 			moveTrack.Looped = true
 			moveTrack:Play()
 			moveTrack:AdjustSpeed(definition.WalkSpeed / reference)
+			movingTrack = moveTrack
 			attackTrack = Animations.load(animator, clips.attack, Enum.AnimationPriority.Action)
 			deathTrack = Animations.load(animator, clips.death, Enum.AnimationPriority.Action4)
 		else
@@ -364,6 +524,7 @@ local function spawnZombie(
 		lastAttackTime = 0,
 		attackTrack = attackTrack,
 		deathTrack = deathTrack,
+		moveTrack = movingTrack,
 		nextRepathTime = 0,
 		lastRepathPosition = Vector3.new(1e9, 0, 0),
 		nudgeSign = 1,
@@ -1036,6 +1197,23 @@ function EnemyService.cripple(model: Model, factor: number)
 	if not PauseService.isPaused() then
 		zombie.humanoid.WalkSpeed = zombie.walkSpeed
 	end
+	-- On its hands now: the crawl clip replaces the walk (Config.Animations.Infected.crawl).
+	local clips = (Config.Animations.Infected :: any)[zombie.typeName]
+	local crawl: string? = clips and clips.crawl
+	local animator = zombie.humanoid:FindFirstChildOfClass("Animator")
+	if crawl and animator then
+		local track = Animations.load(animator, crawl, Enum.AnimationPriority.Core)
+		if track then
+			if zombie.moveTrack then
+				zombie.moveTrack:Stop(0.3)
+			end
+			local reference = (Config.Animations.MoveClipSpeed :: any)[crawl] or zombie.walkSpeed
+			track.Looped = true
+			track:Play(0.3)
+			track:AdjustSpeed(zombie.walkSpeed / reference)
+			zombie.moveTrack = track
+		end
+	end
 end
 
 -- Hollow Point: the body stops for `seconds`.
@@ -1163,6 +1341,7 @@ function EnemyService.init()
 			end
 		end)
 	end
+	DamageService.addHitListener(onHit)
 	RunService.Heartbeat:Connect(stepZombies)
 	task.spawn(spawnLoop)
 end

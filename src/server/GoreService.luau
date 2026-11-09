@@ -303,6 +303,7 @@ end
 -- A blast kill (AirStrikeService, MineService): throws BlastKillSevers random limb groups
 -- away from `center`.
 function GoreService.blast(humanoid: Humanoid, center: Vector3)
+	EnemyService.noteBlast(humanoid, center) -- the limp body is thrown away from the blast
 	local settings = cfg()
 	local model = humanoid.Parent
 	if not settings.Enabled or not model or not model:IsA("Model") then

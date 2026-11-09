@@ -535,6 +535,12 @@ open for a later Armory page.
   throw 2 extra groups. At most 20 loose groups, 4 s each, anchored after 1.5 s. Flesh
   chunks at every body hit are client-side (`GoreFX`, 2 a hit, 4 a headshot, 24 alive).
   The Index hosts never sever: their plates are the mechanic. (Systems designer.)
+- **Limp bodies and flinch (satisfying pass, 2026-11-09, `Config.Enemies.Ragdoll` / `Flinch`).**
+  A dead Infected goes limp and the killing hit throws it (rounds scale with damage, blasts
+  throw hardest); 8 limp at once, the rest play the death clip; bodies stay 4 s. A hit that
+  does not kill flinches the body at most every 0.6 s; a headshot jerks harder and slows it
+  for 0.15 s; the Brute flinches only from the shotgun, the DMR or a blast. A leg lost: the
+  body crawls (`zombie_crawl`).
 - **Hollow Point tuning.** The stagger lands on every hit; watch for chain-stunning a Brute
   at 12.5 rounds/s since the M16 pass (shorten `Upgrades.HollowPoint.StaggerSeconds` or add a per-body gap).
 

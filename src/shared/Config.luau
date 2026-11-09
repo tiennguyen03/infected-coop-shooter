@@ -506,6 +506,8 @@ local Config = {
 		Infected = {
 			Walker = {
 				move = "zombie_walk",
+				crawl = "zombie_crawl", -- a leg gone (GoreService -> EnemyService.cripple)
+				hit = "zombie_hit", -- flinch on a hit that does not kill (upper body)
 				attack = "zombie_attack",
 				death = "zombie_death",
 				climb = "climb_low",
@@ -516,9 +518,22 @@ local Config = {
 				death = "zombie_death",
 				climb = "climb_low",
 				climbHigh = "climb_high", -- above EnemyDefinitions ClimbLowHeight
+				crawl = "zombie_crawl",
+				hit = "zombie_hit",
 			},
-			Brute = { move = "mutant_walking", attack = "mutant_swiping", death = "zombie_death" },
-			Hocker = { move = "zombie_walk", attack = "hocker_spit", death = "zombie_death" },
+			Brute = {
+				move = "mutant_walking",
+				attack = "mutant_swiping",
+				death = "zombie_death",
+				hit = "zombie_hit",
+			},
+			Hocker = {
+				move = "zombie_walk",
+				attack = "hocker_spit",
+				death = "zombie_death",
+				crawl = "zombie_crawl",
+				hit = "zombie_hit",
+			},
 			-- The Warden stands upright: his own set. idle plays whenever he stands still,
 			-- guard is an upper-body overlay (shield up) over the walk, charge loops during
 			-- the Gate Charge, riot on each Riot Call, throw on the Gas Canister (upper body).
@@ -1059,7 +1074,29 @@ local Config = {
 			-- Client flesh chunks per hit (GoreFX; the attacker's screen only).
 			Chunks = { Body = 2, Headshot = 4, MaxAlive = 24, Lifetime = 1.2, Speed = 14 },
 		},
-		CorpseLifetime = 1.5, -- seconds before a dead Infected is removed
+		CorpseLifetime = 4, -- seconds before a dead Infected is removed (satisfying pass 2026-11-09)
+		-- Limp bodies (satisfying pass): a dead Infected's joints go loose and the killing hit
+		-- throws it (Rules/Feel.knockback). Only MaxBodies at once; past that the death clip.
+		-- A body is anchored after Settle seconds (no more physics). Bosses never go limp.
+		Ragdoll = {
+			MaxBodies = 8,
+			Settle = 2.5,
+			MaxUp = 18, -- studs/s: the upward part of a throw never exceeds this
+			UpShare = 0.4, -- upward speed as a share of the throw
+			Push = { Blast = 60, PerDamage = 0.5, Max = 30 }, -- studs/s (Feel.knockback)
+		},
+		-- Hit flinch (satisfying pass): a hit that does not kill plays the form's `hit` clip
+		-- (Config.Animations.Infected) at most once per Cooldown, so full auto never stun-locks.
+		-- A headshot plays it harder and slows the body briefly. HeavyOnly forms flinch only
+		-- from a blast or a HeavyWeapons gun (weapon ids, WeaponDefinitions).
+		Flinch = {
+			Cooldown = 0.6,
+			HeadshotSpeed = 1.3,
+			HeadshotSlow = 0.4, -- WalkSpeed factor
+			HeadshotSlowTime = 0.15,
+			HeavyOnly = { Brute = true },
+			HeavyWeapons = { shotgun = true, dmr = true },
+		},
 		BossCorpseLifetime = 8, -- an Index host's body stays long enough to read
 		MaxPuddles = 8, -- caustic puddles alive at once (perf); the oldest goes first
 		ThroatSacSwell = 1.8, -- Hocker sac size multiplier at the end of the windup

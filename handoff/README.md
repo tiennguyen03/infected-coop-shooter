@@ -234,7 +234,8 @@ Read in this order:
 - **Satisfying pass in progress (2026-11-09, `docs/superpowers/plans/2026-11-09-satisfying-pass.md`).**
   Camera kick + blast shake, limp bodies (4 s, max 8, thrown by the killing hit), hit flinch
   (Mixamo Zombie Reaction Hit), low-health grey/heartbeat/muffle, reload clip (Mixamo
-  Reloading), legless crawl (`zombie_crawl`). Done: `Rules/Feel` + spec.
+  Reloading), legless crawl (`zombie_crawl`). Done: `Rules/Feel` + spec; limp bodies (playtested),
+  crawl and flinch wiring (flinch waits on the Mixamo clip; owner must log in to Mixamo).
 - **Group migration done 2026-11-09.** The Roblox group Boomin Dev Studios (id 270506601) owns
   CZS (place id now 89609223317309) and every sound (12 uploads) and animation (62 clips;
   `ladder_climb` is Roblox's stock one). New uploads pass `groupId` 270506601; the group Open
