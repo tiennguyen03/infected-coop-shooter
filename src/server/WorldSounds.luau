@@ -109,6 +109,7 @@ function WorldSounds.global(bank: string, group: string): number?
 end
 
 function WorldSounds.init()
+	SoundBanks.worldGroup() -- made now so clients find it before the first sound
 	SoundBanks.preload(SoundService)
 end
 

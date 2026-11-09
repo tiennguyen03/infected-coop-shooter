@@ -19,3 +19,4 @@ built-in `rbxasset://` fallback per sound until the id loads.
 | bank `warden` | 77678057873649 | 2026-11-08 | `SoundBanks.IDS` (`IndexService`, his death through `EnemyService`) |
 | bank `ui_radio` | 71130678294211 | 2026-11-08 | `SoundBanks.IDS` (radio squelch, objective complete, card pick, KIA, click) |
 | bank `ambience` | 98770253514208 | 2026-11-08 | `SoundBanks.IDS` (Lantern rotor, city and wind beds, the Gate siren) |
+| heartbeat (`build/heartbeat.py`) | 117572779728629 | 2026-11-09 | `Config.Audio.LowHealth.HeartbeatId` (`LowHealthFX`) |

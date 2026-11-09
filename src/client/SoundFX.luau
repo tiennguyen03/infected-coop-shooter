@@ -2,7 +2,8 @@
 -- Tiny client sound player. Generated SFX (assets/audio, ids in assets/audio/ASSET_IDS.md)
 -- are uploaded audio assets; each has a Roblox built-in (rbxasset) `fallback` that always
 -- loads, used while the upload is still in moderation or if it fails. Each play clones the
--- template so rapid sounds overlap instead of restarting.
+-- template so rapid sounds overlap instead of restarting. Gunshots and hits play through the
+-- World SoundGroup (SoundBanks.worldGroup); UI stings and loops (breathing) do not.
 
 local ContentProvider = game:GetService("ContentProvider")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -48,6 +49,7 @@ function SoundFX.play(name: SoundName)
 	if vary then
 		sound.PlaybackSpeed += (math.random() * 2 - 1) * vary
 	end
+	sound.SoundGroup = SoundBanks.worldGroup()
 	sound.Parent = SoundService
 	sound.Ended:Once(function()
 		sound:Destroy()
@@ -91,6 +93,7 @@ function SoundFX.playWorld(name: SoundName, position: Vector3, volume: number?)
 	sound.RollOffMode = Enum.RollOffMode.InverseTapered
 	sound.RollOffMinDistance = 10
 	sound.RollOffMaxDistance = 250
+	sound.SoundGroup = SoundBanks.worldGroup()
 	local vary = variances[name]
 	if vary then
 		sound.PlaybackSpeed += (math.random() * 2 - 1) * vary

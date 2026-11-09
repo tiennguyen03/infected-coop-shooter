@@ -519,6 +519,13 @@ when the player stands inside it, so a hollow ring is a later polish item.
 - Fire ground: faceted orange/yellow triangles on the floor, flicker by scale not by light.
 - Shock: 2–3 segment jagged lines in `shield blue`, 0.1 s lifetime.
 - Hunter's Mark: red chevron billboard above the target (matches the icon).
+- Low-health feedback (2026-11-09, `src/client/LowHealthFX.luau`, numbers in
+  `Config.Audio.LowHealth`): under 35% health one eased intensity (0 at the threshold, 1 at
+  zero health or downed, 0 dead) greys the screen (its own `LowHealthCC` ColorCorrection,
+  saturation to -0.8, SkyService's grade untouched), darkens the edges (four black gradient
+  strips 40% deep, 0.55 opaque at full, under the HUD), fades in a quickening heartbeat
+  (1.0x to 1.6x) and muffles the World SoundGroup (equalizer, high -30 dB, mid -12 dB). UI
+  stings, breathing and the heartbeat stay clear. Sits under HealthBarUI's red pulse.
 
 ---
 
