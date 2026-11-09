@@ -6,5 +6,6 @@ require(script.Parent.PaletteController).init()
 require(script.Parent.DefaultStepMute).init()
 require(script.Parent.LaunchUI).init()
 require(script.Parent.DeskDialogUI).init()
+require(script.Parent.RadarSpin).init()
 
 print("[Lobby] Client up")

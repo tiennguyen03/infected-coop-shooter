@@ -72,6 +72,52 @@ match place.
   every 60 s and wipes and rewrites a changed number. **The numbers are placeholders**
   (`Config.Containment.Districts`: Delta 25, the rest 0) until the save service.
 
+## Ship art (2026-11-09: built, not uploaded, not playtested)
+
+The owner's "ship upgrade": the art director's build sheet for the exterior, blocked out live
+in Blender with the owner, then ported to `assets/3d/build/fallow.py`. Why v1 read as a barge:
+the hull ran vertical from waterline to deck, so nothing overhung, and the island was one
+box. The sheet fixes the silhouette, not the layout: every `FallowLayout` position is
+unchanged.
+
+- **Hull** in four sections, each a **shell** (one swatch, drawn as Metal (100,106,112)
+  through `MeshAssets` `surface`, `render` Precise, casts shadows) and a **trim** (palette):
+  `env_fallow_bow` (raked stem, flare from the waterline out to the square deck end; the
+  165 -> 185 band above the knuckle is one plane so the painted-out hull number lies flat on it),
+  `env_fallow_mid_port` / `_mid_stbd` (hull side to a knuckle at y 17, hangar plating, a lip
+  below the deck top; the island sponson with knee braces to starboard, the lift opening to
+  port), `env_fallow_stern` (square transom, aft sponsons, the screening lane's sponson).
+  Trims: rub strake, boot-top, scuppers with rust, hawse pipes, the stern gallery and gate,
+  flagstaff, canvas-covered gun tubs, folded whip antennas, the lane's decon tank and hose
+  reel, the lift's guide frames.
+- **Island** `env_fallow_island` (Metal (116,122,128), lighter than the hull so it stands off
+  the deck) + `_island_trim`: base, an O4 level stepped back, the glassed Pri-Fly over the
+  spots, the bridge and its wing, two capped funnels, a mast with legs, platform, yard and
+  domes. Glass is opaque `glass` with a `glass_l` sky strip (STYLES §6).
+- **Radar** `env_fallow_radar` on the mast platform (`FallowLayout.Radar`); each client turns
+  it (`RadarSpin`, `Config.Lobby.Ship.RadarRpm` 6).
+- **Catwalk bays** `env_fallow_catwalk` / `_rafts` (one 24-stud bay, instanced 18 times from
+  `FallowLayout.Catwalks`, port bays turned 180 degrees): grating, rail, safety-net arms,
+  wires and the net's outer rail at deck height; one bay in three carries four white raft
+  canisters.
+- **Budget**: 3,302 unique tris over 12 meshes; ~8,000 in the scene with the bays (cap
+  18,000 for the ship).
+- **Owner decisions (2026-11-09)**: the radar turns; the port lift is lowered to hangar
+  level as a **walkable balcony** (`FallowLayout.Balcony`, Part deck and yellow rails, its own
+  invisible walls; built now, mesh or not); the grey deck-top `EdgeRail` goes once the nets are
+  up (white deck-edge lines replace it as paint); the old hull number is painted out on both bow
+  sides and at the deck's bow end, HRD sprayed over each, as on the island.
+- **How it lands** (`FallowArt`): Parts keep every collider. The balcony, deck-edge lines and
+  deck-end patch build now. Each mesh group (hull, hull trim, island + radar, catwalks)
+  replaces its blocks only when every mesh in it has loaded: the hull hides `Hull` and `Bow`
+  (still colliding), shrinks `AftSpaces` / `ForeSpaces` inside the skin and adds the bow
+  patches; the island hides `Island` and drops `BridgeWindows`, `Mast`, `Yard` and its
+  floodlights. With no ids pasted in (today) the lobby looks as before plus the balcony. The
+  sea carve steps in with the bow's taper.
+- **Previews**: `assets/3d/build/previews/fallow_before_*.png` (v1),
+  `fallow_built_quarter.png`, `fallow_built_portquarter.png`, `fallow_built_deck.png` (the
+  built meshes assembled with the bays and radar), and one `env_fallow_*.png` per mesh.
+
 ## Plan view (studs; +Z bow, +X starboard)
 
 ```
@@ -99,8 +145,9 @@ Deck surface y 40, hangar floor y 20, sea y 0. Every position is in `FallowLayou
 | Place | File |
 |---|---|
 | Project | `lobby.project.json` (shares `src/shared`; `src/lobby/shared` as `ReplicatedStorage.Lobby`; maps the match's `src/server/PlayerSetup.luau` into the lobby server and `src/client/HudTheme.luau`, `PaletteController.luau` into the lobby client; sets `Lighting.Technology`) |
-| Server | `src/lobby/server/`: `Main.server`, `FallowLayout`, `Build`, `FallowBuilder`, `PikeBody`, `NpcBody`, `DeskService`, `ContainmentBoard`, `PlotService`, `LaunchService` |
-| Client | `src/lobby/client/`: `Main.client`, `LaunchUI`, `DeskDialogUI` |
+| Server | `src/lobby/server/`: `Main.server`, `FallowLayout`, `Build`, `FallowBuilder`, `FallowArt`, `PikeBody`, `NpcBody`, `DeskService`, `ContainmentBoard`, `PlotService`, `LaunchService` |
+| Client | `src/lobby/client/`: `Main.client`, `LaunchUI`, `DeskDialogUI`, `RadarSpin` |
+| Art | `assets/3d/build/fallow.py` (12 `env_fallow_*` meshes); `MeshAssets` entries; `Config.Lobby.Ship` |
 | Shared | `src/lobby/shared/LobbyDesks`; rules `src/shared/Rules/Manifest`, `Rules/Containment` (+ specs); `Config.Lobby`, `Config.Containment`; remote `Launch` + `Messages.Launch`; attribute `DeskId` |
 
 ## How to test it
@@ -127,8 +174,18 @@ Deck surface y 40, hangar floor y 20, sea y 0. Every position is in `FallowLayou
 - **Back to the Fallow at run end** (decision 7: once meta progression exists).
 - **Real board numbers** and **desk trades** wait for the save service (F9) and a name for
   the record currency (lore + systems designer).
-- **Art**: the art director's build sheet for the Fallow and the desk crew; Lantern mesh;
-  sounds (rotor spool on lift, ship PA tone, the plotter's grease pencil, a low radio net).
+- **Ship art: upload and playtest** (needs Roblox Studio with its MCP): upload the 12
+  `assets/3d/export/env_fallow_*.fbx` as Models, read each MeshId, paste them into the
+  `env_fallow_*` entries in `MeshAssets` and record them in `assets/3d/ASSET_IDS.md`, then check
+  in the `Lobby (dev)` place: the hull hides its blocks with no gaps, the bow patches lie flat,
+  the radar turns, the balcony is walkable and walled, no water shows inside the bow.
+- **Art, next**: the Lantern helo sheet (art director: shared by the lobby and the match, after
+  the lore developer names the airframe; the cube helos are what the deck view lands on now);
+  the desk crew; sounds (rotor spool on lift, ship PA tone, the plotter's grease pencil, a low
+  radio net); a vertical rib over each hull seam (the sheet's 0.4-proud frame).
+- **Lore flags from the art pass** (lore developer): the sponson mounts (built as
+  canvas-covered); a name on the transom or painted out; what flies from the flagstaff; the
+  Lantern's airframe.
 - **Day/night cycle** (owner and Nova, an idea for later): drive `Config.Lobby.Sky` over time,
   light the deck floodlight housings at night.
 - **Sea extras** (optional): spray at the bow, a foam line along the waterline, a stern wake

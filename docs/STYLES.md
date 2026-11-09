@@ -430,6 +430,19 @@ this section; the bullets below describe the 2026-11-06 build still worn by the 
   set uploaded and worn in game, the other four built and previewed). Not built: Bloat,
   Shedder, Crawler, Kite, Growth, the Index hosts, Kilo.
 
+### The Fallow, the lobby ship (art pass 2026-11-09, not uploaded yet)
+
+Build sheet and decisions: `docs/sprints/LOBBY_V1_FALLOW.md` > Ship art; meshes in
+`assets/3d/build/fallow.py`. Read: a carrier because the deck overhangs the hull (sponsons,
+catwalks, safety nets), the bow tapers and flares under a square deck end, and the island
+steps up to bridge, Pri-Fly, funnels and mast. Shells are one-material meshes in Metal: hull
+(100,106,112), island (116,122,128), lighter so it stands off the Asphalt deck; trims keep the
+palette. The one loud mark is the HRD spray (island, both bow sides, the deck's bow end);
+canvas tubs (`tan_d`), raft canisters (`white_l`) and the hose station (`red`) are small
+accents. The v1 `BridgeWindows` Part (Glass, transparency 0.1) broke the no-transparency rule;
+the island mesh replaces it with opaque `glass` and FallowArt removes the Part. Budget: ~8,000
+tris for the whole ship with 18 instanced catwalk bays (cap 18,000).
+
 ### Stage 1 "Checkpoint Delta" (shipped 2026-11-06, relaid 2026-11-07)
 
 Layout as of 2026-11-07 follows [LEVELS.md](LEVELS.md) section A (insert and extract on the

@@ -96,6 +96,47 @@ FallowLayout.Desks = {
 	},
 } :: { DeskPlace }
 
+-- Ship art (assets/3d/build/fallow.py, placed by FallowArt).
+-- The port side lift lowered to hangar level as a walkable balcony (owner, 2026-11-09).
+FallowLayout.Balcony = { x0 = -47, x1 = -35, z0 = -38, z1 = -2 }
+
+-- Catwalk bays (24 studs) along the deck edge, hung off the hull face: clear of the sponsons,
+-- the island, the balcony and the tapering bow. `side` +1 starboard, -1 port; one bay in
+-- three carries the life-raft canisters.
+export type Bay = { side: number, z: number, rafts: boolean }
+FallowLayout.Catwalks = {
+	{ side = 1, z = -124, rafts = false },
+	{ side = 1, z = -100, rafts = true },
+	{ side = 1, z = -76, rafts = false },
+	{ side = 1, z = -52, rafts = false },
+	{ side = 1, z = -28, rafts = true },
+	{ side = 1, z = 66, rafts = false },
+	{ side = 1, z = 90, rafts = false },
+	{ side = 1, z = 114, rafts = true },
+	{ side = -1, z = -133, rafts = false },
+	{ side = -1, z = -109, rafts = true },
+	{ side = -1, z = -85, rafts = false },
+	{ side = -1, z = -61, rafts = false },
+	{ side = -1, z = 12, rafts = true },
+	{ side = -1, z = 36, rafts = false },
+	{ side = -1, z = 60, rafts = false },
+	{ side = -1, z = 84, rafts = true },
+	{ side = -1, z = 108, rafts = false },
+	{ side = -1, z = 132, rafts = false },
+} :: { Bay }
+FallowLayout.CatwalkHullX = 35 -- the bays' pivot: the hull face, at deck height
+
+-- The radar's turning axis, on the mast platform forward of the pole.
+FallowLayout.Radar = Vector3.new(31, 92, 44.5)
+
+-- The bow's flat facet above the knuckle (fallow.py BOW, stations 165 -> 185, starboard):
+-- the painted-out hull number lies on it, mirrored to port.
+FallowLayout.BowFacet = {
+	knuckle165 = Vector3.new(31, 17, 165),
+	top165 = Vector3.new(34.5, 38, 165),
+	knuckle185 = Vector3.new(26.5, 17, 185),
+}
+
 -- The coast to the north and the Burn along it, past the bow (close enough that the fires
 -- read through the haze).
 FallowLayout.CoastZ = 900

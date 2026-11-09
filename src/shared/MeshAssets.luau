@@ -56,6 +56,7 @@ type MeshDef = {
 	colliders: { Collider }?, -- composite collision; the mesh itself stops colliding
 	shell: { Collider }?, -- sealed cheaper set, chosen per placement (ArenaService `shell`)
 	castShadow: boolean?, -- override: small cover never casts (default = solid)
+	render: Enum.RenderFidelity?, -- default Automatic; huge pieces always near (the Fallow) use Precise
 	seeThrough: boolean?, -- fences and wire: solid to walk into, bullets and sight pass
 	-- The earlier upload that stands in while meshId is "" (see the header). At upload:
 	-- paste the new meshId and delete the fallback.
@@ -896,6 +897,92 @@ local MESHES: { [string]: MeshDef } = {
 		size = Vector3.new(1.010, 0.310, 1.000),
 		offset = Vector3.new(0.000, 0.000, 0.000),
 	},
+	-- The Fallow, the lobby ship (assets/3d/build/fallow.py; FallowArt places them). Built in
+	-- ship coordinates: `offset` is the mesh centre on the ship (radar: from its turning axis;
+	-- catwalk bays: from the hull face at deck height). Shells draw as Metal (`surface`),
+	-- trims use the palette. Look only: every collider stays a Part in FallowBuilder.
+	env_fallow_bow = {
+		meshId = "",
+		size = Vector3.new(84.00, 46.00, 67.00),
+		offset = Vector3.new(0.000, 15.000, 173.500),
+		surface = { material = Enum.Material.Metal, color = Color3.fromRGB(100, 106, 112) },
+		render = Enum.RenderFidelity.Precise,
+		castShadow = true,
+	},
+	env_fallow_bow_trim = {
+		meshId = "",
+		size = Vector3.new(108.38, 28.06, 40.35),
+		offset = Vector3.new(0.000, 31.081, 167.025),
+		castShadow = false,
+	},
+	env_fallow_mid_port = {
+		meshId = "",
+		size = Vector3.new(1.40, 47.60, 240.00),
+		offset = Vector3.new(-35.000, 15.800, 20.000),
+		surface = { material = Enum.Material.Metal, color = Color3.fromRGB(100, 106, 112) },
+		render = Enum.RenderFidelity.Precise,
+		castShadow = true,
+	},
+	env_fallow_mid_stbd = {
+		meshId = "",
+		size = Vector3.new(6.70, 47.60, 240.00),
+		offset = Vector3.new(37.650, 15.800, 20.000),
+		surface = { material = Enum.Material.Metal, color = Color3.fromRGB(100, 106, 112) },
+		render = Enum.RenderFidelity.Precise,
+		castShadow = true,
+	},
+	env_fallow_mid_trim = {
+		meshId = "",
+		size = Vector3.new(98.19, 47.71, 240.00),
+		offset = Vector3.new(4.095, 22.856, 20.000),
+		castShadow = false,
+	},
+	env_fallow_stern = {
+		meshId = "",
+		size = Vector3.new(82.00, 47.60, 80.60),
+		offset = Vector3.new(-1.000, 15.800, -140.300),
+		surface = { material = Enum.Material.Metal, color = Color3.fromRGB(100, 106, 112) },
+		render = Enum.RenderFidelity.Precise,
+		castShadow = true,
+	},
+	env_fallow_stern_trim = {
+		meshId = "",
+		size = Vector3.new(93.39, 46.11, 83.60),
+		offset = Vector3.new(-7.495, 22.056, -141.800),
+		castShadow = false,
+	},
+	env_fallow_island = {
+		meshId = "",
+		size = Vector3.new(23.50, 45.98, 60.00),
+		offset = Vector3.new(32.250, 63.010, 20.000),
+		surface = { material = Enum.Material.Metal, color = Color3.fromRGB(116, 122, 128) },
+		render = Enum.RenderFidelity.Precise,
+		castShadow = true,
+	},
+	env_fallow_island_trim = {
+		meshId = "",
+		size = Vector3.new(22.60, 75.90, 58.50),
+		offset = Vector3.new(31.600, 78.050, 18.950),
+		castShadow = false,
+	},
+	env_fallow_radar = {
+		meshId = "",
+		size = Vector3.new(7.30, 7.20, 2.12),
+		offset = Vector3.new(0.000, 3.599, -0.122),
+		castShadow = false,
+	},
+	env_fallow_catwalk = {
+		meshId = "",
+		size = Vector3.new(6.05, 4.35, 23.25),
+		offset = Vector3.new(3.625, -1.725, 0.000),
+		castShadow = false,
+	},
+	env_fallow_catwalk_rafts = {
+		meshId = "",
+		size = Vector3.new(6.05, 4.35, 23.25),
+		offset = Vector3.new(3.625, -1.725, 0.000),
+		castShadow = false,
+	},
 }
 
 -- Swap in each pending entry's `fallback` (header): the earlier mesh at its own size, plain
@@ -934,7 +1021,7 @@ local function buildTemplate(folder: Folder, name: string, def: MeshDef)
 		return InsertService:CreateMeshPartAsync(
 			def.meshId,
 			def.fidelity or Enum.CollisionFidelity.Box,
-			Enum.RenderFidelity.Automatic
+			def.render or Enum.RenderFidelity.Automatic
 		)
 	end)
 	if not ok or typeof(result) ~= "Instance" then

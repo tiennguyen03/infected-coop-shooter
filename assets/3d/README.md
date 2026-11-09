@@ -42,7 +42,10 @@ Outputs:
   a readable scale) + `lineup_env.png` (the environment next to the 5-stud figure) — Workbench
   renders to check the look
 
-Add `-- --only wpn_rifle prop_drone` to build a subset.
+Add `-- --only wpn_rifle prop_drone` to build a subset. A subset build still saves
+`arena_survivor.blend` (with only that subset in it) and re-renders `lineup_*.png`: restore them
+with `git checkout` afterwards, or run the full build. A full build rewrites every FBX and
+preview with new bytes but the same geometry; commit only the assets that changed.
 
 ## Current assets
 
@@ -72,6 +75,7 @@ Add `-- --only wpn_rifle prop_drone` to build a subset.
 | env_dead_tree | 96 | bottom | 14-stud bare tree (Hull collision) |
 | env_lamp_post | 76 | bottom | 13-stud street light (Hull collision) |
 | env_bus | 712 | bottom | 42-stud transit bus, 12.5 tall (Hocker-proof cover); the Gate bus line, Mile 14's jam |
+| env_fallow_* (12) | 3,302 unique; ~8,000 placed | ship (no shift: `offset` is the position on the ship) | the Fallow, the lobby ship (`build/fallow.py`, collection `Fallow`): hull shells bow / mid_port / mid_stbd / stern + their trims, island + trim, radar (pivot on its axis), catwalk / catwalk_rafts bays (pivot at the hull face, instanced 18x). Not uploaded: ids empty in `MeshAssets`, FallowArt keeps the blocks until they are pasted in |
 | prop_cot | 108 | bottom | field cot 6.5 x 2.1 x 3 (huts, tents, the ruin) |
 | prop_generator | 172 | bottom | towed generator 8 x 5.2 x 4.5 |
 | prop_light_tower | 260 | bottom | mast light tower 4.7 x 18 x 3.9, offset (0.35, 8.975, 0) |

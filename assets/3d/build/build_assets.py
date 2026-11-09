@@ -129,7 +129,7 @@ def build_palette_material(img):
 
 # ------------------------------------------------------------------ bmesh helpers
 # Static set pieces get the z-fight pass in Builder.finish; bodies and limbs do not.
-ZFIGHT_COLLECTIONS = {"Environment", "Props", "Pickups", "Weapons", "City"}
+ZFIGHT_COLLECTIONS = {"Environment", "Props", "Pickups", "Weapons", "City", "Fallow"}
 ZFIGHT_SKIP = {"prop_plague_rat"}  # a creature: its overlaps are sub-stud and its size is tuned
 
 
@@ -1354,6 +1354,11 @@ city.register(sys.modules[__name__])
 import gore  # noqa: E402
 
 gore.register(sys.modules[__name__])
+
+# The lobby ship, the Fallow (hull, island, catwalks, radar) lives in fallow.py (2026-11-09).
+import fallow  # noqa: E402
+
+fallow.register(sys.modules[__name__])
 
 
 # ------------------------------------------------------------------ The Chosen (player bodies)

@@ -1414,6 +1414,11 @@ local Config = {
 			RetryDelay = 2,
 			Cooldown = 6, -- seconds a spot rests after a lift or a failed one
 		},
+		-- The Fallow's meshes (FallowArt; docs/sprints/LOBBY_V1_FALLOW.md > Ship art).
+		Ship = {
+			TemplateWait = 30, -- seconds FallowArt waits for an uploaded mesh before keeping the blocks
+			RadarRpm = 6, -- the air-search radar on the mast turns (client only)
+		},
 		DeskPromptDistance = 10, -- studs a soldier can talk to a desk from
 		DialogSeconds = 8, -- a desk's line stays up this long
 		-- The Fallow's sky: a clear afternoon at sea (owner and Nova, 2026-11-09). One table

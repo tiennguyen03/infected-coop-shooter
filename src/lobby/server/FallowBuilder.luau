@@ -5,7 +5,8 @@
 -- Plot's walls and chart table, the screening lane where soldiers arrive, the sea, the coast
 -- with the Burn's smoke along it, and the sky (Config.Lobby.Sky). Desks (DeskService), the
 -- board (PlotService) and the birds on their spots (LaunchService) build their own pieces
--- from FallowLayout. Blocks only: the art director's build sheet replaces them later.
+-- from FallowLayout. These blocks carry all collision; FallowArt lays the ship's meshes over
+-- them once uploaded (assets/3d/build/fallow.py) and builds the lift balcony.
 -- docs/STYLES.md: ShadowMap with GlobalShadows (lobby.project.json sets Technology), only
 -- large pieces cast shadows, four lights (three in the hangar, one in the Plot), Shadows off,
 -- Range <= 56. No two faces share a plane (they flicker): surface pieces sit on, not in.
@@ -16,6 +17,7 @@ local Workspace = game:GetService("Workspace")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local Build = require(script.Parent.Build)
+local FallowArt = require(script.Parent.FallowArt)
 local Layout = require(script.Parent.FallowLayout)
 
 local FallowBuilder = {}
@@ -116,7 +118,7 @@ local function buildHull(ship: Folder)
 		Vector3.new(-W + 2, DECK_BOTTOM, Layout.HangarFore),
 		HANGAR_WALL
 	)
-	Build.barrier(ship, Vector3.new(-W - 1, HANGAR_Y, -40), Vector3.new(-W + 1, DECK_BOTTOM, 0))
+	-- The opening's walls are the balcony's (FallowArt: the lift lowered to hangar level).
 	Build.box(
 		ship,
 		"SideLiftEdge",
@@ -288,7 +290,7 @@ local function buildIsland(ship: Folder)
 		ship,
 		"PaintedOut",
 		Vector3.new(0.2, 12, 28),
-		CFrame.new(island.x0 - 0.12, DECK_Y + 17, midZ),
+		CFrame.new(island.x0 - 0.12, DECK_Y + 11, midZ), -- on the island's base level (FallowArt)
 		Color3.fromRGB(78, 82, 86)
 	)
 	Build.text(
@@ -540,13 +542,18 @@ local function buildSea()
 			z += length
 		end
 	end
-	-- No water inside the hull: it showed through at the waterline. The carve is inset a stud
-	-- so the water's edge stays hidden inside the hull's sides.
-	terrain:FillBlock(
-		CFrame.new(0, -water.Depth / 2, 0),
-		Vector3.new(W * 2 - 2, water.Depth, L * 2 - 2),
-		Enum.Material.Air
-	)
+	-- No water inside the hull: it showed through at the waterline. The carve stays inside the
+	-- hull's sides (inset a stud), stepping in with the bow's taper (fallow.py BOW: waterline
+	-- half-beam 34.5 at Z 140, 28 at 165, 16 at 185, 1.5 at 196); a carve wider than the hull
+	-- would leave a hole in the sea beside it.
+	for _, step in { { -L + 1, 140, W - 1 }, { 140, 165, 27 }, { 165, 185, 15 }, { 185, 192, 6 } } do
+		local z0, z1, half = step[1], step[2], step[3]
+		terrain:FillBlock(
+			CFrame.new(0, -water.Depth / 2, (z0 + z1) / 2),
+			Vector3.new(half * 2, water.Depth, z1 - z0),
+			Enum.Material.Air
+		)
+	end
 	terrain.WaterWaveSize = water.WaveSize
 	terrain.WaterWaveSpeed = water.WaveSpeed
 	terrain.WaterColor = water.Color
@@ -735,6 +742,7 @@ function FallowBuilder.init()
 	buildLane(ship)
 	buildSpawn(ship)
 	buildWorld(ship)
+	FallowArt.build(ship)
 end
 
 return FallowBuilder
