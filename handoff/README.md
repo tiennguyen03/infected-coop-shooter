@@ -227,6 +227,10 @@ Read in this order:
 
 ## Open work, in priority order
 
+- **Who owns what (2026-11-09).** Nova: the lobby place and the loadout screen (`LoadoutMenu`,
+  `LoadoutUI`, `ArmsRoom`, `Rules/Loadout`, `LoadoutService.apply`, a lobby place and its
+  project file; `docs/MULTIPLAYER_READINESS.md` decision 7, `docs/ARCHITECTURE.md` lobby).
+  Owner + Claude: everything else below. Bugs found in Nova's files go to Nova, not fixed here.
 - **Group migration done 2026-11-09.** The Roblox group Boomin Dev Studios (id 270506601) owns
   CZS (place id now 89609223317309) and every sound (12 uploads) and animation (62 clips;
   `ladder_climb` is Roblox's stock one). New uploads pass `groupId` 270506601; the group Open
