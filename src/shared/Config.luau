@@ -1447,13 +1447,19 @@ local Config = {
 				Reflectance = 0.4, -- 0..1, how much sky it mirrors
 				Transparency = 0.35, -- 0..1
 				Depth = 8, -- studs of water below y 0 (keep a multiple of 4: the voxel size)
+				-- How far the sea runs to each side and astern (Nova: at 1000 the edge of the
+				-- world showed). Out here the haze hides the edge. A multiple of 512.
+				Extent = 2560,
 			},
+			-- The seabed under the water: a layer of tinted Terrain mud (gives the water its
+			-- depth; a part could not cover the whole sea).
 			Seabed = Color3.fromRGB(18, 40, 52),
 			-- The coast is Terrain (a sand beach into the water, grass land, rock and grass
 			-- hills); these tint the engine materials toward the game's muted palette.
 			Coast = {
 				Seed = 1985, -- the hills are placed from this seed, the same every server
-				Hills = 16,
+				Hills = 40, -- along the whole coast (Water.Extent each side)
+				Outcrops = 24, -- rock outcrops at the waterline
 				Sand = Color3.fromRGB(176, 162, 128),
 				Grass = Color3.fromRGB(88, 98, 68),
 				Rock = Color3.fromRGB(102, 100, 94),
@@ -1461,11 +1467,13 @@ local Config = {
 			},
 			-- The Burn on the coast (docs/STYLES.md: the match's skyline fire and smoke, scaled
 			-- for distance). Four sites, one fire and one smoke emitter each: 8 emitters.
+			-- Nova: bigger fires (was FireSize 18, SmokeSize 34, a 90-stud line).
 			Burn = {
-				FireSize = 18,
-				FireRate = 18,
-				SmokeSize = 34,
-				SmokeRate = 4,
+				FireSize = 42,
+				FireRate = 26,
+				SmokeSize = 70,
+				SmokeRate = 5,
+				Width = 180, -- studs of shoreline each site burns along
 			},
 		},
 	},

@@ -18,16 +18,18 @@ match place.
   70 x 390 flight deck, the island (bridge windows, hull number painted out, HRD sprayed over
   it, mast), the hangar deck under it with an open side lift to port, a ramp from the hangar
   rising aft to the deck through an open well, invisible walls at every edge. **The sea** is a
-  shallow sheet of Terrain water, 8 studs deep, from 1100 astern to the coast, with small
-  slow engine waves ("low tide", Nova) over a dark seabed part (`Config.Lobby.Sky.Water`,
-  `Seabed`); the water is carved out of the hull's footprint (inset a stud) so it never
+  shallow sheet of Terrain water, 8 studs deep, 2560 studs to each side and astern
+  (`Water.Extent`: at 1000 the edge of the world showed; out here the haze hides it), with
+  small slow engine waves ("low tide", Nova) over a 4-stud layer of dark-tinted Terrain mud
+  (`Config.Lobby.Sky.Water`, `Seabed`); the water is carved out of the hull's footprint (inset a stud) so it never
   shows through the hull. **The coast** is Terrain too, 900 studs past the bow, so land meets
-  water at a real shoreline: a sand beach sloping under the water, a grass shelf, a row of
-  16 grass and rock hills placed from a fixed seed (`Config.Lobby.Sky.Coast`, the same on
+  water at a real shoreline: a sand beach sloping under the water, a grass shelf 800 deep, a
+  row of 40 grass and rock hills along the whole coast placed from a fixed seed (`Config.Lobby.Sky.Coast`, the same on
   every server; material colours tinted to the palette), rock outcrops at the waterline,
   and the Burn on four sites on the shore in front of the hills. Each site has the match's skyline fire and
-  smoke particles (stock `fire_main` / `smoke_main`, westerly drift), scaled up for distance:
-  8 emitters in all (`Config.Lobby.Sky.Burn`). A clear afternoon
+  smoke particles (stock `fire_main` / `smoke_main`, westerly drift), scaled up for distance
+  and enlarged at Nova's ask (fire 42, smoke 70, each site 180 studs of shoreline): 8
+  emitters in all (`Config.Lobby.Sky.Burn`). A clear afternoon
   (`Config.Lobby.Sky`: ClockTime 14, engine clouds, light atmosphere). ShadowMap with
   GlobalShadows (`lobby.project.json` sets `Lighting.Technology`), so the hangar under the
   deck is in shade; only solid opaque parts bigger than clutter cast shadows

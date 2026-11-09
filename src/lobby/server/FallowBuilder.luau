@@ -506,25 +506,38 @@ local function buildSpawn(ship: Folder)
 	spawn.Parent = ship
 end
 
--- The sea: a shallow sheet of Terrain water (the engine animates the waves) from astern of
--- the ship to the coast, over a dark seabed part that gives it depth. Filled in 500-stud
--- tiles on the 4-stud voxel grid. Terrain is cleared first: disk is the source of truth.
-local SEA_TILE = 500
-local SEA_X = 1000 -- the water spans -SEA_X..SEA_X
-local SEA_AFT = -1100 -- and from here to the coast
+-- The sea: a shallow sheet of Terrain water (the engine animates the waves) from far astern
+-- to the coast and far to each side (Config.Lobby.Sky.Water.Extent: the haze hides the edge),
+-- over a layer of dark Terrain mud that gives it depth. Filled in tiles on the 4-stud voxel
+-- grid. Terrain is cleared first: disk is the source of truth.
+local SEA_TILE = 512
+local SEA_X = Config.Lobby.Sky.Water.Extent -- the water spans -SEA_X..SEA_X
+local SEA_AFT = -Config.Lobby.Sky.Water.Extent -- and from here to the coast
+local SEABED = 4 -- studs of mud under the water
 
-local function buildSea(ship: Folder)
+local function buildSea()
 	local sky = Config.Lobby.Sky
 	local water = sky.Water
 	local terrain = Workspace.Terrain
 	terrain:Clear()
+	terrain:SetMaterialColor(Enum.Material.Mud, sky.Seabed)
 	for x = -SEA_X, SEA_X - SEA_TILE, SEA_TILE do
-		for z = SEA_AFT, Layout.CoastZ - SEA_TILE, SEA_TILE do
+		local z = SEA_AFT
+		while z < Layout.CoastZ do
+			-- The last row stops at the coast.
+			local length = math.min(SEA_TILE, Layout.CoastZ - z)
+			local middle = Vector3.new(x + SEA_TILE / 2, 0, z + length / 2)
 			terrain:FillBlock(
-				CFrame.new(x + SEA_TILE / 2, -water.Depth / 2, z + SEA_TILE / 2),
-				Vector3.new(SEA_TILE, water.Depth, SEA_TILE),
+				CFrame.new(middle - Vector3.new(0, water.Depth / 2, 0)),
+				Vector3.new(SEA_TILE, water.Depth, length),
 				Enum.Material.Water
 			)
+			terrain:FillBlock(
+				CFrame.new(middle - Vector3.new(0, water.Depth + SEABED / 2, 0)),
+				Vector3.new(SEA_TILE, SEABED, length),
+				Enum.Material.Mud
+			)
+			z += length
 		end
 	end
 	-- No water inside the hull: it showed through at the waterline. The carve is inset a stud
@@ -539,14 +552,6 @@ local function buildSea(ship: Folder)
 	terrain.WaterColor = water.Color
 	terrain.WaterReflectance = water.Reflectance
 	terrain.WaterTransparency = water.Transparency
-	Build.part(
-		ship,
-		"Seabed",
-		Vector3.new(SEA_X * 2, 1, Layout.CoastZ - SEA_AFT),
-		CFrame.new(0, -water.Depth - 0.5, (SEA_AFT + Layout.CoastZ) / 2),
-		sky.Seabed,
-		{ material = Enum.Material.SmoothPlastic, collide = false, shadow = false }
-	)
 end
 
 -- Fire and smoke for one burn site, after the match's burning skyline (SkyService: stock
@@ -613,7 +618,7 @@ end
 -- Terrain fills after the sea, so land replaces water where they overlap.
 local BEACH = 60 -- studs of beach slope out from the shoreline into the water
 local LAND_TOP = 8 -- the grass shelf's surface (the water is at 0)
-local LAND_DEPTH = 400 -- how far inland the shelf runs
+local LAND_DEPTH = 800 -- how far inland the shelf runs (past it the haze hides the edge)
 
 local function buildCoast(ship: Folder)
 	local coast = Config.Lobby.Sky.Coast
@@ -654,7 +659,7 @@ local function buildCoast(ship: Folder)
 		terrain:FillBall(Vector3.new(x, y, z), radius, material)
 	end
 	-- Rock outcrops breaking the beach at the waterline.
-	for _ = 1, 9 do
+	for _ = 1, coast.Outcrops do
 		local x = random:NextNumber(-SEA_X + 60, SEA_X - 60)
 		terrain:FillBall(
 			Vector3.new(x, random:NextNumber(-4, 2), shore - random:NextNumber(10, 30)),
@@ -667,7 +672,7 @@ local function buildCoast(ship: Folder)
 		local site = Build.part(
 			ship,
 			"BurnSite",
-			Vector3.new(90, 1, 18),
+			Vector3.new(Config.Lobby.Sky.Burn.Width, 1, 24),
 			CFrame.new(x, LAND_TOP + 0.5, shore + 20),
 			BURN,
 			{ transparency = 1, collide = false, shadow = false }
@@ -678,7 +683,7 @@ end
 
 local function buildWorld(ship: Folder)
 	local sky = Config.Lobby.Sky
-	buildSea(ship)
+	buildSea()
 	buildCoast(ship)
 
 	-- A clear afternoon (Config.Lobby.Sky). Templates arrive with their own effects; the
