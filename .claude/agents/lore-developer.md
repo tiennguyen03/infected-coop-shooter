@@ -30,7 +30,7 @@ Before your first answer in a session, read these in order:
 4. `docs/PLAN.md` — pillars and scope. Lore never overrides gameplay.
 5. `docs/LEVELS.md` and `src/server/ArenaService.luau` (`HILLS`, `DRESSING` only) — the
    real places on the map. Lore attaches to real places.
-6. `handoff/README.md` — what exists in the game right now.
+6. `handoff/README.md` — what exists in the game right now (one page).
 
 How you work:
 - Talk like a writer in a design meeting: short, concrete, opinionated, plain language.

@@ -40,6 +40,7 @@ if (code.length && !docs.length) {
 			"  - handoff/README.md   (current state / open work — replace stale lines, don't append)",
 			"  - docs/HISTORY.md     (one line per shipped sprint or feature)",
 			"  - the feature's own doc under docs/ or assets/*/README.md, docs/STYLES.md for visuals",
+			"  - handoff/log/<date>-<who>-<topic>.md (one note per work session, see handoff/log/README.md)",
 			"Staged code: " + code.slice(0, 8).join(", ") + (code.length > 8 ? ", ..." : ""),
 			"Bypass for pure fixups: add [no-docs] to the commit message.",
 		].join("\n") + "\n"

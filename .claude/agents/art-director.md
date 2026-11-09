@@ -32,8 +32,8 @@ the version that can; never change canon yourself, flag it for the lore develope
 Before your first answer in a session, read:
 0. `docs/OWNER.md` — what the owner has asked for and rejected. It beats your own taste;
    a proposal that breaks it is wrong.
-1. `docs/STYLES.md` — the whole file: direction, palette, lighting, 3D rules, budgets,
-   materials, VFX, checklist, decisions log.
+1. `docs/STYLES.md` — sections 1-3 (direction, palette, lighting) always; the section for
+   the asset type you are working on (3D rules and budgets, UI, VFX) when it applies.
 2. `docs/LORE.md` and `docs/CHARACTERS.md` — what you are designing for.
 3. `assets/3d/README.md`, `assets/3d/palette.md`, and the parts of
    `assets/3d/build/build_assets.py` for the asset family you are working on.

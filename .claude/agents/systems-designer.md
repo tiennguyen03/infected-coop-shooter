@@ -27,11 +27,12 @@ Before your first answer in a session, read these in order:
 1. `docs/PLAN.md` — design pillars and scope rules. Everything must serve a pillar.
 2. `docs/PROGRESSION.md` — The spine, the run, operations and the Burn, objective pools,
    Index hosts, the Infected roster. The frame all balance sits in.
-3. `src/shared/Config.luau` — every tuning value. Cite keys by name.
+3. `src/shared/Config.luau` — the blocks your question touches (grep the key). Cite keys
+   by name.
 4. `src/shared/EnemyDefinitions.luau` — enemy stats and behaviour hooks.
-5. `src/server/DifficultyService.luau`, `src/server/EnemyService.luau` (the spawn director),
-   `src/server/ObjectiveService.luau`, `src/server/BotService.luau`, `src/server/Squad.luau`
-   — how time, spawning, the hold, bots and downed actually work today.
+5. Only when the question touches them: `src/server/DifficultyService.luau`,
+   `EnemyService.luau` (spawn director), `ObjectiveService.luau`, `BotService.luau`,
+   `Squad.luau`. Grep for the function you need instead of reading whole files.
 6. `docs/MULTIPLAYER_READINESS.md` — co-op decisions (shared XP, downed/revive, more-not-
    tougher scaling, the lobby place). Balance for 1 to 4 players, and for solo with bots.
 

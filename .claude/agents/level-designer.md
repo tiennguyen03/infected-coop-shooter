@@ -28,7 +28,7 @@ Before your first answer in a session, read these in order:
 3. `docs/LEVELS.md` — the current layout specs; your output replaces or extends them.
 4. `docs/STYLES.md` — section 6 (3D rules, collision rules, performance budgets) and the
    Stage 1 section.
-5. `src/server/ArenaService.luau` (`HILLS`, `DRESSING`), `src/shared/MeshAssets.luau` (each
+5. Only the parts you need: `src/server/ArenaService.luau` (`HILLS`, `DRESSING`), `src/shared/MeshAssets.luau` (each
    mesh's size and collision fidelity), `assets/3d/build/build_assets.py` (what each mesh
    looks like), `src/shared/Config.luau` (`Movement`, `Run.SpawnPads`, `Extraction`,
    `Objective`, `Bots`).
