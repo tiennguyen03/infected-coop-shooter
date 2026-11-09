@@ -36,8 +36,11 @@ so they are shared with the group once; new uploads go to the group directly.
    collaborator's role **Edit group games** (and **Create and edit group assets** if they
    will upload). Invite the collaborator and assign that role.
 2. **Publish the game into the group.** In Studio, File > **Publish to Roblox As** > a new
-   game with the **group** as creator (keep it private). This is the experience everyone
-   works in. Give each developer their own place in it (Studio **Asset Manager** >
+   game with the **group** as creator (keep it private), or transfer the existing game to
+   the group in Creator Hub. A transfer keeps the game's id but can take a few hours, with
+   the game unreachable meanwhile; let it finish rather than retrying, since forum reports
+   describe "try again later" blocks after a failed request and a 30-day wait before the
+   same game can move again. Either way this is the experience everyone works in. Give each developer their own place in it (Studio **Asset Manager** >
    **Places**, right-click > **Add New Place**, e.g. `Dev - Nova`) so two `rojo serve`
    sessions never write into the same place.
 3. **Share the existing assets with the group.** For each sound and animation: Creator
@@ -46,6 +49,8 @@ so they are shared with the group once; new uploads go to the group directly.
    group needs the owner to have **Edit group games** in it (the group owner does). The
    **Asset Manager** beta can bulk-share all of them at once. The ids do not change, so no
    code changes.
+   After a transfer, the sounds and animations still belong to the owner's account; the
+   `[AssetAccess]` line in step 6 shows whether this step is still needed.
 4. **Grant the group game access, once.** Open the group game in Studio and press Play. If
    Output lists restricted-asset errors, click them: that grants this game the asset, and a
    game's access is permanent and covers every place in the game.
