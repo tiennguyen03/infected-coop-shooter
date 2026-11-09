@@ -160,10 +160,34 @@ function SoundBanks.loop(sound: Sound, bank: string, group: string, volume: numb
 	return true
 end
 
--- A 3D Sound ready for `play`: inverse-tapered rolloff between the two distances.
+-- The SoundGroup every in-world sound plays through (voices, blasts, gunshots, footsteps,
+-- hits), so the client can treat the world apart from UI stings and the player's own body
+-- (LowHealthFX muffles it). The server makes it in SoundService and it replicates; a client
+-- only finds it (nil until it arrives; a sound made before then plays ungrouped).
+SoundBanks.WORLD_GROUP = "World"
+
+function SoundBanks.worldGroup(): SoundGroup?
+	local SoundService = game:GetService("SoundService")
+	local existing = SoundService:FindFirstChild(SoundBanks.WORLD_GROUP)
+	if existing and existing:IsA("SoundGroup") then
+		return existing
+	end
+	if not game:GetService("RunService"):IsServer() then
+		return nil
+	end
+	local group = Instance.new("SoundGroup")
+	group.Name = SoundBanks.WORLD_GROUP
+	group.Volume = 1
+	group.Parent = SoundService
+	return group
+end
+
+-- A 3D Sound ready for `play`: inverse-tapered rolloff between the two distances, in the
+-- World group.
 function SoundBanks.create(name: string, rollOffMin: number, rollOffMax: number): Sound
 	local sound = Instance.new("Sound")
 	sound.Name = name
+	sound.SoundGroup = SoundBanks.worldGroup()
 	sound.RollOffMode = Enum.RollOffMode.InverseTapered
 	sound.RollOffMinDistance = rollOffMin
 	sound.RollOffMaxDistance = rollOffMax

@@ -953,6 +953,24 @@ local Config = {
 		} :: { [string]: boolean },
 		-- The ragged breathing loop below this health fraction (client, LowHealthSound).
 		LowHealthFraction = 0.3,
+		-- Low-health feedback (client, LowHealthFX): below Start (a health fraction) the screen
+		-- greys and darkens at the edges, a heartbeat fades in and speeds up, and the World
+		-- SoundGroup muffles; intensity runs 0 at Start to 1 at zero health (Rules/Feel
+		-- lowHealth), 1 while downed, 0 dead. Everything eases toward it over Ease seconds.
+		LowHealth = {
+			Start = 0.35,
+			Saturation = -0.8, -- ColorCorrection saturation at full intensity
+			Vignette = 0.55, -- edge darkness opacity at full intensity
+			-- World muffle, dB at full intensity. EqualizerSoundEffect has fixed bands (no
+			-- cutoff setting): high above ~4 kHz, mid ~400 Hz-4 kHz, low left alone.
+			MuffleHigh = -30,
+			MuffleMid = -12,
+			HeartbeatId = "rbxassetid://117572779728629", -- assets/audio/build/heartbeat.py
+			HeartbeatVolume = 0.8,
+			RateMin = 1.0, -- heartbeat PlaybackSpeed at the threshold
+			RateMax = 1.6, -- and at zero health / downed
+			Ease = 0.4, -- seconds to ease toward the target intensity
+		},
 		-- The Warden's boots: one step clip every this many seconds while he walks.
 		WardenStepInterval = 0.75,
 		-- Anvil: the incoming rush starts this long before each shell lands.

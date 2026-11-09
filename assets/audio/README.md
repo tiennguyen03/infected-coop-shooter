@@ -37,6 +37,14 @@ Prompts work best as "what makes the sound, where, how close"; the shared negati
 keeps music and speech out. On this machine a sound takes about a minute on CPU (the
 autoencoder decode dominates, whatever the clip length), so a 46-clip batch is ~45 min.
 
+### Heartbeat (no model)
+
+`build/heartbeat.py` synthesises the low-health heartbeat with numpy: a 1.0 s mono loop, two
+low thumps 0.14 s apart (55-70 Hz sine bodies, ~80 ms decay, a low-passed noise click, the
+second at 70%), peak -3 dBFS, silent tail. `uv run --no-project --with numpy python -I
+assets/audio/build/heartbeat.py` writes `assets/audio/heartbeat.wav`; the id is
+`Config.Audio.LowHealth.HeartbeatId`.
+
 ## Banks (sound day 2026-11-07)
 
 Roblox caps audio uploads per account per month, so variant clips are not uploaded one by

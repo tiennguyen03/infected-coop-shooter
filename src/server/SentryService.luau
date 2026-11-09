@@ -15,6 +15,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local DamageService = require(script.Parent.DamageService)
 local PauseService = require(script.Parent.PauseService)
 local Lifecycle = require(script.Parent.Lifecycle)
+local SoundBanks = require(ReplicatedStorage.Shared.SoundBanks)
 
 local ENEMY_TAG = "Enemy"
 local RETARGET_INTERVAL = 0.25
@@ -208,6 +209,7 @@ function SentryService.deploy(owner: Player, point: Vector3, facing: Vector3): b
 	sound.Volume = 0.45
 	sound.RollOffMinDistance = 12
 	sound.RollOffMaxDistance = 200
+	sound.SoundGroup = SoundBanks.worldGroup()
 	sound.Parent = head
 	table.insert(sentries, {
 		model = model,
