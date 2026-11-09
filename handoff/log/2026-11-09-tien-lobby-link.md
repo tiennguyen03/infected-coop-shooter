@@ -2,7 +2,7 @@
 
 **Changed:** a squad the lobby sends now lands together: the match waits for everyone the lobby
 sent (or 30 s; "WAITING FOR SQUAD n / N"), gives each player the loadout the lobby sent, and at
-run end READY becomes BACK TO THE FALLOW and flies the squad home with the result
+run end READY becomes BACK TO THE CARRIER and flies the squad home with the result
 (`HandoffService`, `RunManager`, `Rules/Handoff`, `Config.Places`). A direct join and Studio
 play exactly as before.
 **Verified:** Studio with mock lobby data (ServerStorage `MockTeleportData`): staging line,

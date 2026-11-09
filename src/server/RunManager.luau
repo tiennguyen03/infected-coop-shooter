@@ -105,7 +105,7 @@ function RunManager.endRun(result: RunStates.RunResult)
 	EnemyService.clearAll()
 	clearReady()
 	setState("Ended", result)
-	-- A squad from the lobby goes home: READY now means "back to the Fallow", and the bird
+	-- A squad from the lobby goes home: READY now means "back to the Carrier", and the bird
 	-- lifts on its own after Config.Handoff.ReturnAfterSeconds.
 	if HandoffService.canReturn() then
 		homeGeneration += 1

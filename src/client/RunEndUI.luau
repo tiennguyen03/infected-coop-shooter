@@ -70,7 +70,7 @@ local function refreshStatus()
 	local returnsHome = workspace:GetAttribute(Attributes.ReturnsHome) == true
 	local homebound = workspace:GetAttribute(Attributes.Homebound) == true
 	if homebound then
-		text = "Lantern inbound · back to the Fallow"
+		text = "Lantern inbound · back to the Carrier"
 	elseif returnsHome then
 		text = string.gsub(text, "next deployment", "Lantern lifts")
 	end
@@ -85,7 +85,7 @@ local function refreshStatus()
 		and returnsHome
 		and Players.LocalPlayer:GetAttribute(Attributes.Ready) ~= true
 	then
-		button.Text = "BACK TO THE FALLOW"
+		button.Text = "BACK TO THE CARRIER"
 	end
 	if button and not homebound and Players.LocalPlayer:GetAttribute(Attributes.Ready) == true then
 		button.Text = "READY ✓"

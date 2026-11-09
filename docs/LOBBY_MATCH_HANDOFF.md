@@ -121,11 +121,11 @@ run earned; the lobby reads progress from the DataStore, never from this table.
     `StagingSeconds` after the first arrival. Bots are sized at Insert, so they fill exactly the
     missing seats (no bot churn). A direct join (`expected` 1) starts at once, as before.
   - **at run end**, if the squad can go home (`canReturn`: lobby published, a live server, the
-    squad came from the lobby), READY reads **BACK TO THE FALLOW** and the squad flies home on
+    squad came from the lobby), READY reads **BACK TO THE CARRIER** and the squad flies home on
     the first full READY, the countdown, or `ReturnAfterSeconds` after the results screen
     opens, with `Handoff.result`. If every retry fails, a radio line says so and READY restarts
     in the match. Nobody is stranded.
-- **Screens**: `StagingUI` ("WAITING FOR SQUAD 1 / 3 · 0:20"); `RunEndUI` (BACK TO THE FALLOW,
+- **Screens**: `StagingUI` ("WAITING FOR SQUAD 1 / 3 · 0:20"); `RunEndUI` (BACK TO THE CARRIER,
   LIFTING…). **Dev panel**: RUN > "Go to the lobby (live)" (`ToLobby`) flies a tester to the
   lobby while the live game still opens in the match.
 - **Verified in Studio** (separate window): no data starts at once with 3 bots (unchanged); a
@@ -162,7 +162,7 @@ run earned; the lobby reads progress from the DataStore, never from this table.
 
 **The live test (published places, Tien + a friend):** join (the game still opens in the
 match), F1 > "Go to the lobby (live)", board one spot together, land in one server (the
-staging line counts you in, no bots pop in and out), extract, see BACK TO THE FALLOW, fly
+staging line counts you in, no bots pop in and out), extract, see BACK TO THE CARRIER, fly
 home, see the debrief. Repeat with a wipe, and with one player stepping off during the
 countdown (the match waits out the timeout and a bot takes the seat).
 

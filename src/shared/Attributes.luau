@@ -15,7 +15,7 @@ local Attributes = table.freeze({
 	ReadyNeeded = "ReadyNeeded",
 	ReadyUpEndsAt = "ReadyUpEndsAt",
 	-- workspace: the lobby trip (HandoffService, RunManager): staging waits for the squad the
-	-- lobby sent; at run end READY means "back to the Fallow" and the squad flies home
+	-- lobby sent; at run end READY means "back to the Carrier" and the squad flies home
 	SquadExpected = "SquadExpected",
 	SquadArrived = "SquadArrived",
 	StagingEndsAt = "StagingEndsAt",
