@@ -45,7 +45,7 @@ second at 70%), peak -3 dBFS, silent tail. `uv run --no-project --with numpy pyt
 assets/audio/build/heartbeat.py` writes `assets/audio/heartbeat.wav`; the id is
 `Config.Audio.LowHealth.HeartbeatId`.
 
-## Banks (sound day 2026-11-07)
+## Banks
 
 Roblox caps audio uploads per account per month, so variant clips are not uploaded one by
 one. `BANKS` in `generate.py` packs each speaker's clips into one
@@ -55,20 +55,20 @@ to `src/shared/SoundBankData.luau` (generated; never edit it). One upload per ba
 | bank | clips (group = name without `_<n>`) | played by |
 |---|---|---|
 | `player_steps` | `step_hard_1..4`, `step_soft_1..3` | `client/FootstepController` (surface from `FloorMaterial`) |
-| `player_hits` | `bodyshot_1..3`, `headshot_1..2`, `hurt_1..2` | `DamageNumberUI` at the hit point; `EnemyProjectileService.damagePlayer` on the head |
+| `player_hits` | `bodyshot_1..3`, `headshot_1..2`, `hurt_1..2` | client `HitMarkerUI` (body / head shots); `EnemyProjectileService` (hurt) |
 | `walker`, `runner`, `brute`, `hocker` | `<form>_idle`, `_attack`, `_hurt`, `_death` (+ `hocker_windup`, `hocker_spit`) | `EnemyService` → `server/WorldSounds` on the head, 3D, replicated |
-| `player_gear` (2026-11-08) | `reload_1..2`, `dry_fire`, `knockdown`, `downed`, `revive`, `roll_1..2`, `breach`, `low_health` (loop), `vault`, `dash` | server on the body: `LoadoutService` (reload, cut by `cancelReload`), `CoverMoveService` (vault/climb → vault, roll/slide → roll), `AssaultClassService` (dash, breach), `Squad` (knockdown, downed, revive); client `WeaponController` (dry fire), `SoundFX` (low health under `Config.Audio.LowHealthFraction`) |
+| `player_gear` | `reload_1..2`, `dry_fire`, `knockdown`, `downed`, `revive`, `roll_1..2`, `breach`, `low_health` (loop), `vault`, `dash` | server on the body: `LoadoutService` (reload, cut by `cancelReload`; dry fire), `CoverMoveService` (vault/climb → vault, roll/slide → roll), `KitService` (breach on the frag blast, vault on the shove, revive on the stim), `Squad` (knockdown, downed, revive); client `WeaponController` (dry fire), `SoundFX` (low_health breathing under `Config.Audio.LowHealthFraction`). `dash` is unused (Q dash retired) |
 | `guns` (2026-11-09) | `<gun>_shot_1..2`, `<gun>_reload` for smg, lmg, shotgun (the pump rack is in the shot), dmr, pistol, revolver, sniper; `goose_shot`, `goose_reload` | each gun row's `Sound` (`Config.Weapons.<id>.Sound`): client `SoundFX.gunshot` (own shot 2D, others' 3D via `ShotTracer`), server `LoadoutService.startReload`; the M16 (no `Sound`) plays the shared rifle shot and the gear reload |
-| `callins` | `pallet_land`, `flare_burn` (loop), `callin_throw`, `tripline_arm`, `tripline_blast`, `anvil_incoming`, `anvil_blast`, `pen_coil`, `magpie_hover` (loop) | `RequisitionService`, `CallInService`, `MineService`, `AirStrikeService`, `ShockCoilService`, `DroneService` via `WorldSounds` |
+| `callins` | `pallet_land`, `flare_burn` (loop), `callin_throw`, `tripline_arm`, `tripline_blast`, `anvil_incoming`, `anvil_blast`, `pen_coil`, `magpie_hover` (loop) | `RequisitionService`, `SupplyDropService`, `CallInService`, `KitService`, `MineService`, `AirStrikeService` via `WorldSounds`. `pen_coil` and `magpie_hover` are unused (Pen Coil and Magpie retired) |
 | `warden` | `warden_handset_1..2` (the tell), `_impact`, `_pound`, `_swing`, `_step`, `_plate`, `_roar`, `_canister`, `_death` | `IndexService` via `WorldSounds`; death through `EnemyService` |
-| `ui_radio` | `radio_in`, `objective_complete`, `card_pick`, `kia`, `ui_click` | client `SoundFX.ui` (`BuffNoticeUI` radio lines, `ObjectiveUI`, `RunEndUI`); server `card_pick` (`RequisitionService`), `kia` (`Squad`, `WorldSounds.global`) |
-| `ambience` | `lantern_rotor`, `amb_city` (loop), `amb_wind` (loop), `amb_siren` (loop) | `ExtractionService` (rotor), `ObjectiveService` (the Gate siren through the hold, silenced when secured), client `SoundFX` (city and wind beds: **off** since 2026-11-08, owner found them painful; `SoundFX.BEDS` is empty until they are regenerated) |
+| `ui_radio` | `radio_in`, `objective_complete`, `card_pick`, `kia`, `ui_click` | client `SoundFX.ui` (`BuffNoticeUI` radio lines, `ObjectiveUI`, `RunEndUI` click); server `card_pick` (`RequisitionService`), `kia` (`Squad`, `WorldSounds.global`) |
+| `ambience` | `lantern_rotor`, `amb_city` (loop), `amb_wind` (loop), `amb_siren` (loop) | `ExtractionService` / `AirStrikeService` (rotor), `ObjectiveService` (the Gate siren through the hold, silenced when secured). City and wind beds are **off** (owner: harsh on the ears); `SoundFX.BEDS` stays empty until they are regenerated |
 
 Loops use `SoundBanks.loop` (the playback and loop regions are the clip). Server shapes are in
 `server/WorldSounds` (`voice`/`on` a slot on a part, `at` a position, `loopOn`, `global`);
 groups in `Config.Audio.FarGroups` carry with the `Far` rolloff.
 
-### Tone rules (sound pass 2026-11-08)
+### Tone rules
 
 Grounded military, never a monster movie or a game: no zombie groans, no chimes or coins;
 electronics are army gear only; the radio is never a voice (text stays text, the squelch
@@ -92,14 +92,14 @@ repacks), re-upload that bank, update its id.
 Footsteps are synced to the locomotion clips, not to a timer: `FootstepController` reads the
 phase of the dominant walk/run track and steps when it crosses a footfall phase in
 `Config.Audio.Footsteps.Phases`, measured in Studio from the feet's lowest points (the
-measuring script is in handoff/README.md > Studio MCP gotchas). Re-measure if a locomotion
+measuring script is in docs/STUDIO_MCP.md > Measuring footfall phases). Re-measure if a locomotion
 clip changes.
 
 ## Upload and wire
 
-1. Upload with the Studio MCP `upload_asset` tool (`assetType: "Audio"`, one call per file)
-   or Studio's Asset Manager. Audio uploads are rate-limited per account per month; batch the
-   ones that matter first.
+1. Upload with the Studio MCP `upload_asset` tool (`assetType: "Audio"`, `groupId`
+   270506601, one call per file). Audio uploads are rate-limited per month; batch the ones
+   that matter first.
 2. Record `name → asset id` in `ASSET_IDS.md`.
 3. Put the id in `src/client/SoundFX.luau` `DEFINITIONS` (`rbxassetid://<id>`), keep the
    `rbxasset://` built-in as the fallback until the upload is approved. A bank id goes in

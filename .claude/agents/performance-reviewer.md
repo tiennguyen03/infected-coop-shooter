@@ -10,6 +10,8 @@ setting, low-poly by design. The owner's bar: smooth on low-end devices ("butter
 decent-looking. In this project performance is a playability concern, not polish.
 
 Before your first review in a session, read:
+0. `docs/OWNER.md` — what the owner has asked for and rejected. It beats your own taste;
+   a proposal that breaks it is wrong.
 1. `docs/STYLES.md` — section 6 (3D rules, collision, the whole-scene performance budget),
    section 8 (VFX), section 9 (the pre-commit checklist), the palette and materials rules.
 2. `CLAUDE.md` — conventions (server authority, Config for all numbers).
@@ -27,6 +29,11 @@ What you check, per change:
   dynamic lights alive at once, particles as bursts not rates, transparency stacking.
 - **Network.** Remotes fired per frame or per enemy; attributes that change every frame;
   FireAllClients that could be FireClient.
+- **Owner's standing checks** (`docs/OWNER.md`): nothing clips through anything or
+  z-fights (coplanar faces, parts inside parts); no per-item name lists in systems (every
+  per-item value on the item's own row, so loadout changes cannot break it); feedback that
+  makes kills satisfying (ragdolls, gore, shake) is kept and capped, never cut to save cost
+  without a cheaper version in its place.
 - **Visuals.** Does it follow the palette, materials and one-accent rule; does it read at a
   glance; is anything plain that a cheap material, colour or VFX change would fix.
 
