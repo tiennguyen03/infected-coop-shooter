@@ -227,10 +227,11 @@ Read in this order:
 
 ## Open work, in priority order
 
-- **Group migration (owner, 2026-11-08).** The owner is creating a Roblox group (Community) so
+- **Group migration (owner, 2026-11-08).** Group "Boomin Dev Studios", id **270506601**
+  (`upload_asset` takes `groupId`); CZS transferred to it. The owner made it so
   co-developers (intern Nova) can use the audio and animations, which are owned by the owner's
-  account and blocked in other people's places. When it exists: publish CZS under the group
-  (new place id), make a group Open Cloud key, re-upload every sound bank and animation
+  account and blocked in other people's places. Steps: the group Open Cloud key goes into
+  `ROBLOX_OPEN_CLOUD_API_KEY` (owner does it; restart Claude Code), re-upload every sound bank and animation
   under the group, swap the ids (`src/` and `assets/*/ASSET_IDS.md`), playtest. Meshes stay.
   Until then Nova tests inside CZS as a collaborator (`onboarding/README.md`).
 - **Pike rework in progress (2026-11-08, `docs/superpowers/plans/2026-11-08-pike-loadout.md`).**
