@@ -247,10 +247,8 @@ local function goLimp(zombie: Zombie): boolean
 	local velocity = direction * speed + Vector3.new(0, up, 0)
 	local parts: { BasePart } = {}
 	for _, item in model:GetDescendants() do
-		if item:IsA("AnimationConstraint") then
-			item.Enabled = false
-		elseif item:IsA("Motor6D") then
-			item.Enabled = false
+		if item:IsA("AnimationConstraint") or item:IsA("Motor6D") then
+			(item :: any).Enabled = false
 		elseif item:IsA("BallSocketConstraint") then
 			item.Enabled = true
 		elseif item:IsA("BasePart") then
