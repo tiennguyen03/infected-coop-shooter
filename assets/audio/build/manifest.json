@@ -453,5 +453,45 @@
     "prompt": "civil defence siren wailing, slow rise and fall, distant, outdoor",
     "seconds": 6.0,
     "seed": 484
+  },
+  "revolver_shot_1": {
+    "prompt": ".357 magnum revolver single gunshot, heavy deep boom, close, outdoor, full low end, not piercing",
+    "seconds": 1.2,
+    "seed": 501
+  },
+  "revolver_shot_2": {
+    "prompt": "magnum revolver gunshot, heavy thump and crack, close, outdoor, warm, not piercing",
+    "seconds": 1.2,
+    "seed": 502
+  },
+  "revolver_reload_1": {
+    "prompt": "revolver reload, cylinder swings open, spent brass casings rattle out, speedloader clicks in, cylinder snaps shut, close, dry",
+    "seconds": 2.6,
+    "seed": 503
+  },
+  "sniper_shot_1": {
+    "prompt": "high caliber bolt action sniper rifle gunshot, deep heavy boom with rolling outdoor echo, close, not piercing",
+    "seconds": 2.0,
+    "seed": 511
+  },
+  "sniper_shot_2": {
+    "prompt": "magnum sniper rifle shot, big deep report rolling across open ground, close, warm low end",
+    "seconds": 2.0,
+    "seed": 512
+  },
+  "sniper_reload_1": {
+    "prompt": "bolt action rifle reload, bolt pulled back, magazine dropped out, fresh magazine clicked in, bolt pushed forward and locked, close, dry",
+    "seconds": 3.0,
+    "seed": 513
+  },
+  "goose_shot_1": {
+    "prompt": "shoulder fired recoilless rifle launching a rocket, deep boom and loud backblast whoosh, rocket motor hiss flying away, outdoor",
+    "seconds": 2.5,
+    "seed": 521
+  },
+  "goose_reload_1": {
+    "prompt": "heavy steel breech swung open, large rocket round slid into a tube, breech latched shut with a heavy clunk, close, dry",
+    "seconds": 3.5,
+    "seed": 522
   }
 }
