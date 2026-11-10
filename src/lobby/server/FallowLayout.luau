@@ -41,6 +41,23 @@ FallowLayout.ChartTable = CFrame.new(21, FallowLayout.HangarY, 0)
 -- (scenery for now: nobody spawns there).
 FallowLayout.Lane = { x0 = 19, x1 = 29, z0 = -172, z1 = -136 }
 
+-- Where the walking crew walk (LobbyCrew ids; CrewService, CrewWalk): there and back along
+-- the points, pausing at each end. Flight deck crew stay clear of the spots' rotor discs.
+local D, H = FallowLayout.DeckY, FallowLayout.HangarY
+FallowLayout.Crew = {
+	director = { Vector3.new(8, D, -140), Vector3.new(8, D, -20) }, -- along the spots' safe line
+	deckhand = { Vector3.new(-28, D, -160), Vector3.new(-28, D, -100), Vector3.new(-28, D, -30) },
+	mechanic = { Vector3.new(14, H, 35), Vector3.new(14, H, 95) }, -- the hangar's starboard side
+	runner = {
+		Vector3.new(11, H, 10),
+		Vector3.new(3, H, 12),
+		Vector3.new(2, H, 40),
+		Vector3.new(-6, H, 78),
+	}, -- Plot door to the ramp
+	medic = { Vector3.new(24, D, -166), Vector3.new(24, D, -142) }, -- up and down the screening lane
+	sentry = { Vector3.new(32, D, -170), Vector3.new(32, D, -136) }, -- the deck edge over the lane
+} :: { [string]: { Vector3 } }
+
 -- Soldiers spawn at the fore end of the hangar, facing aft down the desks to the ramp.
 local spawnAt = Vector3.new(0, FallowLayout.HangarY + 0.5, 125)
 FallowLayout.Spawn = CFrame.lookAt(spawnAt, spawnAt - Vector3.new(0, 0, 1))

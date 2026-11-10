@@ -94,6 +94,16 @@ match place.
   pencilled track, a title, a legend and a red Plot stamp; about 150 flat parts, built once. **The numbers are placeholders**
   (`Config.Containment.Districts`: Delta 25, the rest 0) until the save service.
 
+- **The walking crew** (2026-11-10, Nova: "give the fallow some life"; roles and lines by the
+  lore developer, docs/lore/ship_company.md): six of the ship's company and Army staff -
+  plane director (yellow), deck hand (blue), hangar mechanic (green), Plot runner, screening
+  medic (white smock), lane sentry - walk there and back along `FallowLayout.Crew`, pausing
+  at each end. `CrewService` places NpcBody figures once (tag `Crew`, route as an attribute);
+  each client walks its own copy (`CrewWalk`: one `BulkMoveTo` a frame, a leg and arm swing,
+  nothing replicates) and shows a line over a head when a soldier comes within
+  `Config.Lobby.Crew.BubbleDistance` (lines in `LobbyCrew`). No prompts, no Humanoids. Routes
+  checked clear of walls and desks in a playtest.
+
 ## Ship art (2026-11-09: built; uploaded and seen in a Studio playtest)
 
 The owner's "ship upgrade": the art director's build sheet for the exterior, blocked out live

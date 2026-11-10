@@ -98,6 +98,12 @@ local Attributes = table.freeze({
 	-- Lobby place: a desk's ProximityPrompt carries its desk id (LobbyDesks), read by the
 	-- client's DeskDialogUI.
 	DeskId = "DeskId",
+	-- Lobby place: a walking crew member (CrewService) carries the tag CrewTag (a tag, kept
+	-- here so writer and reader share one spelling), its LobbyCrew id and its route
+	-- ("x,y,z;x,y,z"), read by the client's CrewWalk.
+	CrewTag = "Crew",
+	CrewId = "CrewId",
+	CrewRoute = "CrewRoute",
 
 	-- Names built from a slot or a clip, so they stay in one place too.
 	-- Player: the upgrade in a field-upgrade slot (UpgradeDefinitions.SLOTS).

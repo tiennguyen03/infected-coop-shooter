@@ -1596,6 +1596,16 @@ local Config = {
 			FadeOutSeconds = 2.5, -- as the Lantern lifts
 			GapSeconds = 3, -- silence between tracks
 		},
+		-- The walking crew (LobbyCrew, CrewWalk): pace, stride and when they speak.
+		Crew = {
+			WalkSpeed = 5, -- studs a second (a soldier walks 16)
+			Stride = 2.4, -- studs per step
+			SwingDegrees = 22, -- leg and arm swing
+			Pause = 4, -- seconds standing at each end of the route
+			BubbleDistance = 12, -- studs: a soldier this close hears a line
+			BubbleSeconds = 4,
+			BubbleCooldown = 14, -- seconds before the same one speaks again
+		},
 		-- The Plot's paper map (WorldMap, WorldMapData; canon docs/lore/world_map.md).
 		WorldMap = {
 			StudsPerUnit = 1.4, -- the 10 x 7 map grid at 1.4 studs a unit: a 14 x 9.8 sheet
