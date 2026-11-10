@@ -242,8 +242,8 @@ Read in this order:
   side playtested, match side needs a published launch** (sprint doc > Loadmaster and Loadout): talk, LOADOUT screen, SIGN FOR IT,
   `LoadmasterService`, teleport data (`Rules/LaunchData`), the match seeds the pick (`JoinData`);
   the rack is for buying with merits once F9 exists. Test launches go `Lobby (Dev)` ->
-  `Match (Dev)` (`Config.Lobby.DevMatchPlaceIds`); getting into `Lobby (Dev)` live is open
-  (not the experience's start place). Next: re-check the loop, body, ship (gaps, bow patches, radar,
+  `Match (Dev)` (`Config.Lobby.DevMatchPlaceIds`); live tests run in Nova's own test experience
+  (start place ZCS Dev 83558708746036 -> Match Dev 108949482095254). Next: re-check the loop, body, ship (gaps, bow patches, radar,
   balcony) and the birds' spool and lift in the `Lobby (dev)` place, then a published launch
   test.
 - **Satisfying pass built 2026-11-09 (`docs/superpowers/plans/2026-11-09-satisfying-pass.md`).**

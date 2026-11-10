@@ -237,7 +237,8 @@ Deck surface y 40, hangar floor y 20, sea y 0. Every position is in `FallowLayou
    (70420018035843), not the real match (`Config.Lobby.DevMatchPlaceIds`). Publish this branch
    into both (match: `rojo serve default.project.json`, lobby: the lobby project) and Tien's
    match place is never touched. Both sit in the group experience, whose start place is the
-   real match, so the app cannot join `Lobby (Dev)` directly (see handoff).
+   real match, so the app cannot join `Lobby (Dev)` directly. Nova's own test experience
+   does: its start place ZCS Dev (83558708746036) launches into Match Dev (108949482095254).
 5. Launch for real: publish the place, join it from the Roblox app (with a friend for a
    two-person bird), board a spot. You should land in a match server together.
 
