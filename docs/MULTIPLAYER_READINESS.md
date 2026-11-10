@@ -85,7 +85,8 @@ Planned shape | Fix when`.
    lobby and loadout screens. Rules that keep this cheap:
    - **The match server never assumes who is coming.** The expected party, each member's
      loadout and the squad's operation choice arrive as teleport data
-     (`player:GetJoinData().TeleportData`), read in one place (`RunManager`), with a
+     (`player:GetJoinData().TeleportData`), read in one place (`HandoffService`, called only by
+     `RunManager`; built 2026-11-09, `docs/LOBBY_MATCH_HANDOFF.md`), with a
      Studio/solo fallback to the defaults. Late joiners and missing players are normal.
    - **`Lobby` state in the match = staging, not the menu.** It waits for the party to load
      (or a timeout), then the ready-up/Insert flow runs.

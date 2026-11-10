@@ -166,8 +166,25 @@ local Config = {
 		Missions = { "delta" },
 	},
 
+	-- The experience's places (docs/LOBBY_MATCH_HANDOFF.md). Both the lobby and the match read
+	-- them here. Lobby 0 = not published yet: no trip home, READY restarts in the match.
+	Places = {
+		Match = 87556879379942, -- "Co-op Zombie Shooter"
+		Lobby = 0,
+	},
+
+	-- The trip between the lobby and the match (HandoffService).
+	Handoff = {
+		ReturnAfterSeconds = 60, -- after a run ends, the squad flies home this long after the results screen opens
+		Retries = 2, -- teleport retries before giving up
+		RetryDelay = 2, -- seconds between them
+	},
+
 	Run = {
 		InsertSeconds = 3, -- Insert -> Explore: the squad lands before the first wave
+		-- A squad from the lobby: the run starts when everyone the lobby sent has a body, or
+		-- this long after the first one arrived (bots fill the seats of anyone missing).
+		StagingSeconds = 30,
 		-- After a run ends, the first READY opens this countdown; the next run starts when it
 		-- runs out or every player is ready (solo: at once). Decision #4.
 		ReadyUpSeconds = 10,
