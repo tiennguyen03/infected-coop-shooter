@@ -33,6 +33,8 @@ local IDS: { [string]: string } = {
 	warden = "rbxassetid://77678057873649",
 	ui_radio = "rbxassetid://71130678294211",
 	ambience = "rbxassetid://98770253514208",
+	-- each gun's own shot and reload (Config.Weapons.<id>.Sound), 2026-11-09
+	guns = "rbxassetid://138267385221045",
 }
 
 local SoundBanks = {}
@@ -81,6 +83,12 @@ end
 
 function SoundBanks.has(bank: string): boolean
 	return groups[bank] ~= nil and SoundBanks.id(bank) ~= nil
+end
+
+-- True when `bank` is uploaded and has clips for `group`.
+function SoundBanks.hasGroup(bank: string, group: string): boolean
+	local bankGroups = groups[bank]
+	return SoundBanks.has(bank) and bankGroups ~= nil and bankGroups[group] ~= nil
 end
 
 function SoundBanks.volume(group: string): number
@@ -165,6 +173,8 @@ end
 -- (LowHealthFX muffles it). The server makes it in SoundService and it replicates; a client
 -- only finds it (nil until it arrives; a sound made before then plays ungrouped).
 SoundBanks.WORLD_GROUP = "World"
+-- The bank holding each gun's own shot and reload clips (`<Sound>_shot`, `<Sound>_reload`).
+SoundBanks.GUN_BANK = "guns"
 
 function SoundBanks.worldGroup(): SoundGroup?
 	local SoundService = game:GetService("SoundService")

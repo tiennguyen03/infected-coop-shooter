@@ -1,0 +1,186 @@
+# Lobby <-> match handoff (Tien + Nova, 2026-11-09)
+
+How the lobby place and the match place fit together, and exactly what passes between them.
+Nova owns the lobby side; Tien (+ Claude) the match side. If both sides follow this page, the
+two halves snap together without either waiting on the other. The shape lives in code as
+`src/shared/Rules/Handoff.luau` (spec: `tests/Handoff.spec.luau`); change both together.
+
+## The flow
+
+```
+ LOBBY place (Nova)                    MATCH place (today's game, "Co-op Zombie Shooter")
+ main menu                  teleport   Mission 1: Checkpoint Delta
+ party up (1-4)            ─────────►    insert, explore, Primary, boss, call Lantern, board
+ loadout (Arms Room rules)  party +             | helo ride = the loading screen
+ pick the operation         loadouts +  Mission 2: Mile 14      (same server)
+ READY                      operation           |
+     ▲                                  Mission 3: Kestrel      (same server)
+     |          teleport home                   |
+     └────────── with the result ───── Stand Down: score screen
+```
+
+- **One operation = three missions in a row on the same match server.** The match clears the
+  map and builds the next mission itself (missions are built from code). Players teleport
+  only twice per operation: lobby to match, match to lobby.
+- **Why not one teleport per mission:** teleports are slow, can fail, do not work in Studio,
+  and can split a squad. Building the next map in place is cheap because every map is code.
+- Both places are in the same experience (owned by Boomin Dev Studios), so they share
+  DataStores and the group's sounds and animations.
+
+## Lobby -> match (Nova sends)
+
+The lobby reserves a private server of the match place and teleports the whole party with one
+call, carrying this table as teleport data:
+
+```lua
+-- TeleportOptions: ReservedServerAccessCode = TeleportService:ReserveServer(MATCH_PLACE_ID)
+-- options:SetTeleportData(data); TeleportService:TeleportAsync(MATCH_PLACE_ID, players, options)
+local data = {
+	version = 1, -- Handoff.VERSION; the match ignores any other version
+	operation = "harlan_corridor", -- which operation the squad picked (one exists today)
+	party = {
+		-- keyed by tostring(player.UserId)
+		["12345"] = {
+			slot = 1, -- squad slot 1-4 (Pike One to Four)
+			loadout = {
+				primary = "service_rifle", -- WeaponDefinitions ids
+				secondary = "pistol",
+				grenade = "frag",
+				callIns = { "hammer", "anvil", "shrike", "doorman" }, -- [slot] = CallInDefinitions id
+			},
+		},
+		-- one entry per party member
+	},
+}
+```
+
+- The loadout uses the same shape and the same rules as the in-match Arms Room
+  (`Rules/Loadout`, `ArmsRoom.catalog()`). Build the lobby's loadout screen on those so a pick
+  that is legal in the lobby is legal in the match.
+- New guns: the sample guns (`revolver`, `sniper`, `goose`; PR #4) are rows in
+  `WeaponDefinitions`; add them to `PRIMARIES` / `SECONDARIES` (or the lobby's own list) and
+  they become pickable.
+- Retry a failed teleport (`TeleportInitFailed`); a match starts with whoever arrived.
+
+## Match reads it (Tien)
+
+`Handoff.readJoin(player:GetJoinData().TeleportData, player.UserId, check)` per joining player,
+in one place (`RunManager`):
+
+- **No data** (Studio, a direct join) or **another `version`**: today's defaults, so Studio
+  testing never needs the lobby.
+- **A loadout the catalog does not offer** (old lobby, forged data): that player gets the
+  default loadout; everything else still works.
+- **A player missing from `party`, or a late joiner:** plays on the defaults. Missing players
+  are normal: the match never waits forever (staging timeout).
+- `partySize` is how many the lobby sent, so the match knows whom to wait for in staging.
+- **Never trust teleport data for progress.** It is client-visible. Unlocks and the Containment
+  Board are saved by the match server itself (DataStore, keyed by UserId).
+
+## Match -> lobby (Tien sends home)
+
+At Stand Down or a wipe, the match teleports the party back to the lobby with
+`Handoff.result(operation, missions, standDown)`:
+
+```lua
+{
+	version = 1,
+	operation = "harlan_corridor",
+	missions = {
+		{ id = "delta", outcome = "win", secondaries = 2 }, -- outcome: "win" | "partial" | "loss"
+		{ id = "mile14", outcome = "partial", secondaries = 1 },
+	},
+	standDown = true, -- boarded at the last mission (false = the squad wiped)
+}
+```
+
+The lobby only **shows** it (an operation summary). The match has already saved whatever the
+run earned; the lobby reads progress from the DataStore, never from this table.
+
+## The match side, built (2026-11-09, plan by the architect agent)
+
+- **Shared rule** `Rules/Handoff`: `departure(operation, aboardUserIds, loadouts?)` builds the
+  lobby's teleport data (slots in boarding order, at most 4, a loadout only when given);
+  `readJoin` reads it in the match; `outcome(runResult, primaryDone)` (extracted = win, a wipe
+  after the Primary = partial, else loss); `result(...)` builds the trip home and
+  `readResult(data)` checks it in the lobby (nil for anything else). Spec:
+  `tests/Handoff.spec.luau`. Neither side builds the table by hand.
+- **`Config.Places`**: `Match` 87556879379942, `Lobby` (0 until the lobby is published in the
+  experience: then no trip home and READY restarts in the match). Both places read their ids
+  here. **`Config.Handoff`**: `ReturnAfterSeconds` 60, `Retries` 2, `RetryDelay` 2.
+  `Config.Run.StagingSeconds` 30.
+- **`HandoffService`** (match server): reads each player's join data once (`joinFor`), knows
+  whether the squad came from the lobby and which operation, and `sendHome(result)` (one
+  TeleportOptions for the squad, retried; `TeleportInitFailed` retries that player on the same
+  options). Studio: join data comes from the ServerStorage attribute `MockTeleportData` (a JSON
+  teleport-data table), so the lobby's side can be stood in for without teleports.
+- **`RunManager`**:
+  - each arriving player gets the lobby's loadout through `LoadoutService.apply` (the Arms
+    Room's own rules; a refused or forged one leaves the default);
+  - **staging**: the `Lobby` state now waits until everyone the lobby sent has a body, or
+    `StagingSeconds` after the first arrival. Bots are sized at Insert, so they fill exactly the
+    missing seats (no bot churn). A direct join (`expected` 1) starts at once, as before.
+  - **at run end**, if the squad can go home (`canReturn`: lobby published, a live server, the
+    squad came from the lobby), READY reads **BACK TO THE CARRIER** and the squad flies home on
+    the first full READY, the countdown, or `ReturnAfterSeconds` after the results screen
+    opens, with `Handoff.result`. If every retry fails, a radio line says so and READY restarts
+    in the match. Nobody is stranded.
+- **Screens**: `StagingUI` ("WAITING FOR SQUAD 1 / 3 · 0:20"); `RunEndUI` (BACK TO THE CARRIER,
+  LIFTING…). **Dev panel**: RUN > "Go to the lobby (live)" (`ToLobby`) flies a tester to the
+  lobby while the live game still opens in the match.
+- **Verified in Studio** (separate window): no data starts at once with 3 bots (unchanged); a
+  mock squad of 3 shows the staging line, keeps the lobby's SMG and call-ins, starts at the
+  30 s timeout with 3 bots; a forged gun falls back to the rifle; an extracted run in Studio
+  keeps READY = restart, and READY restarts. Not verifiable in Studio: real teleports (both
+  ways); that needs the published test below.
+
+## What each of us does next
+
+**Tien (Roblox, once):**
+1. Make sure the lobby place is published **inside the Co-op Zombie Shooter experience**
+   (Creator Hub > the experience > Places). Your `Lobby (Dev)` place (id 125769854992316) is
+   the candidate if it lives there.
+2. Send its place id: it goes into `Config.Places.Lobby` (one line).
+3. After every change that matters to the trip, publish both places (a teleport always lands
+   on the published version): the match from `default.project.json`, the lobby from
+   `lobby.project.json`.
+
+**Nova (lobby side, `src/lobby/server/LaunchService.luau`):**
+1. Merge `main` into `nova/lobby` (brings `Rules/Handoff`, `Config.Places`, Missions).
+2. In `lift()`: send `Handoff.departure(Handoff.DEFAULT_OPERATION, state.manifest.aboard, nil)`
+   instead of `{spot, party}` (`spot` may stay as an extra field; `readJoin` ignores it). `nil`
+   loadouts until the rack issues one; the match then gives the default.
+3. Reserve once per lift: `TeleportService:ReserveServer(Config.Places.Match)` and
+   `options.ReservedServerAccessCode = code`, reused for every retry (today's
+   `ShouldReserveServer` sends each retry to a new server and can split the squad).
+4. `Config.Lobby.MatchPlaceId` becomes `Config.Places.Match`.
+5. New `DebriefUI` (lobby client): `Handoff.readResult(TeleportService:GetLocalPlayerTeleportData())`
+   and, when it returns a result, a one-time panel: the operation, STAND DOWN or SQUAD LOST,
+   one row per mission (Delta: WIN / PARTIAL / LOSS). Display only.
+6. Later, when the rack issues loadouts: pass `{[userId] = pick}` as `departure`'s third
+   argument; that is when the match's B Arms Room can be turned off for lobby runs.
+
+**The live test (published places, Tien + a friend):** join (the game still opens in the
+match), F1 > "Go to the lobby (live)", board one spot together, land in one server (the
+staging line counts you in, no bots pop in and out), extract, see BACK TO THE CARRIER, fly
+home, see the debrief. Repeat with a wipe, and with one player stepping off during the
+countdown (the match waits out the timeout and a bot takes the seat).
+
+## Decisions (architect's recommendations, taken as defaults)
+
+- **The lobby is not the start place yet**: after the live test passes. Moving it may mean
+  publishing the lobby into the start place and the match into a new place; both ids live in
+  `Config.Places`, so it is a two-line change.
+- **The in-match Arms Room (B) stays** until the lobby rack issues loadouts.
+- **Home both ways**: the READY button and an automatic lift after 60 s, so nobody idles in a
+  dead server. A wipe goes home too (`standDown = false`), Helldivers-style.
+- **Home now, before the save service (F9)**: nothing is saved either way, so returning loses
+  nothing and closes the loop.
+
+## Open questions
+
+- **Operation ids:** only one operation exists (Delta, Mile 14, Kestrel). The lobby can send
+  `"harlan_corridor"` and show no picker until a second operation exists.
+- **Matchmaking strangers** across lobby servers needs a MemoryStore queue
+  (`docs/ARCHITECTURE.md` > Sessions); party-only first.
+- **Teleports do not work in Studio.** Test the real round trip in a published private copy.

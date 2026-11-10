@@ -16,6 +16,8 @@ HumanoidRootPart centre, exported three ways (rigged, mesh-only, 15-part) for St
 Avatar Setup / 3D Importer; steps in assets/3d/README.md "Skinned Weller".
 """
 
+import hashlib
+import json
 import math
 import os
 import sys
@@ -1345,6 +1347,16 @@ import props  # noqa: E402
 
 props.register(sys.modules[__name__])
 
+# Held guns beyond the rifle (the sample guns, 2026-11-09) live in guns.py.
+import guns  # noqa: E402
+
+guns.register(sys.modules[__name__])
+
+# Aircraft (the Shrike gunship and its rotor) live in aircraft.py (2026-11-09).
+import aircraft  # noqa: E402
+
+aircraft.register(sys.modules[__name__])
+
 # The distant skyline towers (and their lit-window twins) live in city.py (owner, 2026-11-08).
 import city  # noqa: E402
 
@@ -1850,6 +1862,60 @@ class mirrored_x:
         return False
 
 
+# ------------------------------------------------------------------ unchanged assets stay put
+# An FBX carries its export time, so re-exporting an unchanged mesh still rewrites the file
+# and git sees every asset change on every build. Each mesh gets a fingerprint of what
+# actually ships (vertices, faces, UVs, rounded to the 4th decimal) kept in
+# export/fingerprints.json; an asset whose fingerprint and files are unchanged is not
+# exported or re-rendered. `-- --force` rebuilds everything.
+FINGERPRINTS = os.path.join(EXPORT, "fingerprints.json")
+
+
+def load_fingerprints():
+    try:
+        with open(FINGERPRINTS, encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return {}
+
+
+def save_fingerprints(prints):
+    with open(FINGERPRINTS, "w", encoding="utf-8", newline="\n") as f:
+        json.dump(dict(sorted(prints.items())), f, indent=1)
+        f.write("\n")
+
+
+def fingerprint(*objs):
+    """A hash of the meshes (and armatures) as they will be exported."""
+    h = hashlib.sha1()
+    for obj in objs:
+        if obj is None:
+            continue
+        if obj.type == "ARMATURE":
+            for bone in obj.data.bones:
+                h.update(bone.name.encode())
+                h.update(("%.4f %.4f %.4f %.4f %.4f %.4f" % (*bone.head_local, *bone.tail_local)).encode())
+            continue
+        me = obj.data
+        h.update(obj.name.encode())
+        for v in me.vertices:
+            h.update(("%.4f %.4f %.4f;" % tuple(v.co)).encode())
+        for p in me.polygons:
+            h.update((",".join(str(i) for i in p.vertices) + ";").encode())
+        uv = me.uv_layers.active
+        if uv:
+            for loop in uv.data:
+                h.update(("%.4f %.4f;" % tuple(loop.uv)).encode())
+        for group in obj.vertex_groups:
+            h.update(group.name.encode())
+    return h.hexdigest()
+
+
+def unchanged(prints, name, fp, files):
+    """True when `name` was built with this fingerprint before and its output files exist."""
+    return prints.get(name) == fp and all(os.path.exists(f) for f in files)
+
+
 def export_fbx(obj, path):
     bpy.ops.object.select_all(action="DESELECT")
     obj.select_set(True)
@@ -2113,7 +2179,10 @@ def main():
     argv = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
     only = None
     if "--only" in argv:
-        only = argv[argv.index("--only") + 1 :]
+        only = [a for a in argv[argv.index("--only") + 1 :] if a != "--force"]
+    force = "--force" in argv
+    prints = {} if force else load_fingerprints()
+    changed = []
     os.makedirs(EXPORT, exist_ok=True)
     os.makedirs(PREVIEWS, exist_ok=True)
 
@@ -2139,13 +2208,22 @@ def main():
 
     # lay out for the lineup render (x spacing), export + preview each asset at the origin first
     ref = built.get("ref_human_5st")
+    ref_fp = fingerprint(ref) if ref is not None else ""
     for name, obj in built.items():
-        if not name.startswith("ref_"):
+        fbx = os.path.join(EXPORT, name + ".fbx")
+        png = os.path.join(PREVIEWS, name + ".png")
+        # env previews stand the 5-stud figure beside the piece: it is part of the picture
+        fp = fingerprint(obj) + (ref_fp if name.startswith("env_") else "")
+        same = unchanged(prints, name, fp, ([] if name.startswith("ref_") else [fbx]) + [png])
+        if not same:
+            changed.append(name)
+            prints[name] = fp
+        if not name.startswith("ref_") and not same:
             if obj.users_collection[0].name in MIRROR_X_COLLECTIONS:
                 with mirrored_x(obj):
-                    export_fbx(obj, os.path.join(EXPORT, name + ".fbx"))
+                    export_fbx(obj, fbx)
             else:
-                export_fbx(obj, os.path.join(EXPORT, name + ".fbx"))
+                export_fbx(obj, fbx)
         d = obj.dimensions
         print(f"dims {name}: roblox Size = Vector3.new({d.x:.2f}, {d.z:.2f}, {d.y:.2f})")
         # Bounds centre relative to the design origin, Roblox axis order: the `offset` of
@@ -2153,12 +2231,14 @@ def main():
         # collider boxes can be written in build coordinates).
         c = [(min(v[i] for v in obj.bound_box) + max(v[i] for v in obj.bound_box)) / 2 for i in range(3)]
         print(f"offset {name}: Vector3.new({c[0]:.3f}, {c[2]:.3f}, {c[1]:.3f})")
+        if same:
+            continue
         objs = [obj]
         if ref is not None and ref is not obj and name.startswith("env_"):
             # environment pieces are judged against the character: stand the reference beside them
             ref.location = (max(c[0] for c in obj.bound_box) + 1.5, min(c[1] for c in obj.bound_box), 0)
             objs.append(ref)
-        frame_and_render(scene, cam, objs, os.path.join(PREVIEWS, name + ".png"))
+        frame_and_render(scene, cam, objs, png)
         if name.startswith("ref_inf_"):  # posture reads in profile and from behind
             frame_and_render(scene, cam, objs, os.path.join(PREVIEWS, name + "_side.png"), direction=(1.0, -0.05, 0.12))
             frame_and_render(scene, cam, objs, os.path.join(PREVIEWS, name + "_back.png"), direction=(-0.5, 1.2, 0.5))
@@ -2175,6 +2255,12 @@ def main():
         obj, arm = build_rigged(name, fn, col_name, mat)
         built[name] = obj
         rigs[name] = arm
+        fp = fingerprint(obj, arm, *[built[g] for g in deps if g in built])
+        outs = [os.path.join(EXPORT, name + s) for s in (".fbx", "_mesh.fbx", "_parts.fbx")]
+        if unchanged(prints, name, fp, outs + [os.path.join(PREVIEWS, name + ".png")]):
+            continue
+        changed.append(name)
+        prints[name] = fp
         export_fbx_rigged(obj, arm, os.path.join(EXPORT, name + ".fbx"))
         export_fbx(obj, os.path.join(EXPORT, name + "_mesh.fbx"))  # the same body unrigged, for Avatar Auto Setup
         parts, empties = split_rigged(obj, arm, name, get_collection("_Reference"))
@@ -2226,11 +2312,17 @@ def main():
 
     chars = [n for n in built if n.startswith(("ref_inf_", "ref_pc_", "prop_", "wpn_", "pick_"))]
     env = [n for n in built if n.startswith("env_")] + (["ref_human_5st"] if ref is not None else [])
-    lineup(chars, os.path.join(PREVIEWS, "lineup_chars.png"), (1800, 700), (0.35, -1.0, 0.55))
-    lineup(env, os.path.join(PREVIEWS, "lineup_env.png"), (1800, 700), (0.35, -1.0, 0.55))
-
-    bpy.ops.wm.save_as_mainfile(filepath=BLEND)
     total = sum(o["tri_count"] for o in built.values())
+    if not changed:
+        print(f"nothing changed: {len(built)} assets, {total} tris total (exports, previews and the .blend untouched; -- --force rebuilds)")
+        return
+    print(f"changed: {', '.join(changed)}")
+    if any(n in changed for n in chars):
+        lineup(chars, os.path.join(PREVIEWS, "lineup_chars.png"), (1800, 700), (0.35, -1.0, 0.55))
+    if any(n in changed for n in env):
+        lineup(env, os.path.join(PREVIEWS, "lineup_env.png"), (1800, 700), (0.35, -1.0, 0.55))
+    save_fingerprints(prints)
+    bpy.ops.wm.save_as_mainfile(filepath=BLEND)
     print(f"saved {BLEND}; {len(built)} assets, {total} tris total")
 
 

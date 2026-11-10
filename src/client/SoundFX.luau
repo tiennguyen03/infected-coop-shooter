@@ -105,6 +105,39 @@ function SoundFX.playWorld(name: SoundName, position: Vector3, volume: number?)
 	end)
 end
 
+-- A gun's shot: its own `<Sound>_shot` clip in the `guns` bank (Config.Weapons.<id>.Sound),
+-- else the shared rifle shot. 2D for your own (no `position`), 3D at another member's muzzle.
+function SoundFX.gunshot(sound: string?, position: Vector3?, volume: number?)
+	local group = if sound then sound .. "_shot" else nil
+	if not group or not SoundBanks.hasGroup(SoundBanks.GUN_BANK, group) then
+		if position then
+			SoundFX.playWorld("shoot", position, volume)
+		else
+			SoundFX.play("shoot")
+		end
+		return
+	end
+	local rolloff = Config.Audio.Voice
+	local holder: Instance = SoundService
+	if position then
+		local attachment = Instance.new("Attachment")
+		attachment.WorldPosition = position
+		attachment.Parent = workspace.Terrain
+		holder = attachment
+	end
+	local shot = SoundBanks.create(group, rolloff.RollOffMin * 2, 250)
+	shot.Parent = holder
+	local duration =
+		SoundBanks.play(shot, SoundBanks.GUN_BANK, group, SoundBanks.volume(group) * (volume or 1))
+	task.delay((duration or 0) + 0.2, function()
+		if holder ~= SoundService then
+			holder:Destroy()
+		else
+			shot:Destroy()
+		end
+	end)
+end
+
 -- A random variant of a bank group, 2D (the radio squelch, a menu click). Silent while the
 -- bank is not uploaded.
 function SoundFX.ui(bank: string, group: string)

@@ -16,6 +16,8 @@ local CallInDefinitions =
 	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("CallInDefinitions"))
 local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attributes"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
+local WeaponDefinitions =
+	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("WeaponDefinitions"))
 local UpgradeDefinitions =
 	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("UpgradeDefinitions"))
 local CameraController = require(script.Parent.CameraController)
@@ -93,6 +95,15 @@ local function sections(): { Section }
 		table.insert(loadout, { label = `2: {definition.Name}`, send = cmd("SetCallIn", 2, id) })
 		table.insert(loadout, { label = `Fire {definition.Name}`, send = cmd("FireCallIn", id) })
 	end
+	-- Every gun row, Arms Room or not (the sample guns live here until the loadout lists them).
+	local weapons: { Action } = {}
+	for _, id in WeaponDefinitions.allIds() do
+		local definition = WeaponDefinitions.get(id)
+		table.insert(weapons, {
+			label = `{definition.Name} ({definition.Designation})`,
+			send = cmd("SetWeapon", id),
+		})
+	end
 	local upgrades: { Action } = {}
 	for _, id in UpgradeDefinitions.upgradeIds() do
 		local definition = UpgradeDefinitions.get(id) :: UpgradeDefinitions.CardDefinition
@@ -116,6 +127,7 @@ local function sections(): { Section }
 			title = "RUN",
 			actions = {
 				{ label = "Restart run", send = cmd("RestartRun"), hotkey = Enum.KeyCode.F5 },
+				{ label = "Go to the lobby (live)", send = cmd("ToLobby") },
 				{ label = "Hold zone now", send = cmd("ActivateObjective") },
 				{ label = "Complete hold", send = cmd("ForceObjectiveComplete") },
 				{ label = "Extract (win)", send = cmd("ForceMissionSuccess") },
@@ -150,6 +162,7 @@ local function sections(): { Section }
 				{ label = "3 bots", send = cmd("SetBots", 3) },
 			},
 		},
+		{ title = "WEAPONS", actions = weapons },
 		{ title = "LOADOUT", actions = loadout },
 		{ title = "FIELD UPGRADES", actions = upgrades },
 		{ title = "TELEPORT", actions = teleports },

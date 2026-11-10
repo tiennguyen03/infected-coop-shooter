@@ -1,18 +1,16 @@
-# Levels: Checkpoint Delta redesign, Mile 14, Aid Station Kestrel
+# Levels: Checkpoint Delta, Mile 14, Aid Station Kestrel
 
-Layout spec from the level designer, 2026-11-07, for the operations structure in
-`docs/PROGRESSION.md`. Frame: 600 x 600, origin centre, +X east, +Z north (ArenaService
-convention). Positions are (x, z) of a piece's bounds centre; y only where it matters. Ground
-is raycast.
+Layout spec from the level designer for the three missions of an operation
+([PROGRESSION.md](PROGRESSION.md)). Frame: 600 x 600, origin centre, +X east, +Z north
+(ArenaService convention). Positions are (x, z) of a piece's bounds centre; y only where it
+matters. Ground is raycast. Visual rules (materials, colours, sky) are in
+[STYLES.md](STYLES.md) §6-7.
 
-Status (2026-11-07, Delta rework): **section A and the building kit (B1-B2) are built** in
-`ArenaService` (composite colliders, seven enterable kit buildings, perches with ramps, the
-Scrapes, the deck gantry, ground patches, tall Pens ring, prop placements) with the systems
-they need (`EnemyService` spawn filter + vertical chase, `BotService` unstick,
-`StanceService` crawl, StreamingEnabled). A6 the Warden built 2026-11-07. Still not built:
-A5 Primary props and points, A7 stores crates and Secondaries, per-site spawn points, A10 Containment band
-dressing (now in `docs/PROGRESSION.md`'s plan), and Mile 14 / Kestrel (section C). The
-`prop_*` and new `env_*` meshes are uploaded and wired (`assets/3d/ASSET_IDS.md`).
+**Status.** Built in `ArenaService`: section A (Checkpoint Delta) and the building kit
+(B1-B2), with the systems they need (`EnemyService` spawn filter + vertical chase,
+`BotService` unstick, `StanceService` crawl, StreamingEnabled), and the Warden (A6). Not
+built: A5 Primary props and points, A7 stores crates and Secondaries, per-site spawn points,
+and Mile 14 / Kestrel (section C).
 
 Two engine facts that drive every site:
 
@@ -27,44 +25,15 @@ Two engine facts that drive every site:
    above its head. Hesco (4.6) and sandbags (4) stop Walkers, not spit. Buses (12.5) and
    T-walls (12.5) stop both. Low cover = melee funnel, tall cover = Hocker shadow.
 
-## Checkpoint Delta as it stands
-
-Reads well: the comm tower on the 16 tier is visible from anywhere; the main road under the
-bridge gives a spine; the Compound hold with four climbable slopes is a real fight; the four
-outer districts each have a silhouette. Dead space: the south-west Barracks, the origin spawn
-pad (the run starts in the middle of nowhere), the Scrapyard south of the Inner Gate. Three
-changes first: (1) start and end at the helipad so the LZ is known from minute one and the
-walk south to the Gate is the stage's main street; (2) turn the far checkpoint into a real
-Gate: a full T-wall line across z = -274 with one 24-wide lane, buses queued inside it, the
-Warden spawning beyond it; (3) pull the Parade Terrace against the west wall and ring it in
-hesco with three mouths, so the Pens is a low funnel site that plays nothing like the Compound.
-
 ---
 
 # A. Checkpoint Delta
 
-Relaid 2026-11-07 for the movement set (vault / climb / crawl, climbing Infected, buildings).
-A1-A7 are the layout as built; A8-A14 are the rework rules, the routes, the verticality and
-the checks still owed. Section B is the building kit.
+Insert and extract on the LZ helipad; the walk south to the Gate is the mission's main
+street; the Gate is a full T-wall line with one lane and the Warden beyond it; the Pens is a
+low hesco funnel that plays nothing like the Compound.
 
-## A1. Keep / cut / add
-
-| Keep (works) | Why |
-|---|---|
-| All hills; levels 0/6/8/12/14/16 | Height set is right; everything climbable or ramped |
-| Main road x=-30, north road z=200, bridge x -46..-14 (underside 10.5) | The spine; the Warden walks it |
-| Compound dressing; the LZ helipad (-90,-90); Depot pad x155..285, z-5..105; Suburb ruins | Silhouettes per district |
-| The Gate line at z=-274, the bus line, the Pens terrace + ring | The Delta A1/A2 relay (2026-11-07 morning) |
-
-| Cut / move (2026-11-07 rework) | Why |
-|---|---|
-| Box collision on bunker / humvee / ruins / towers / tent / checkpoint / comm tower | Replaced by composite colliders (A8): the bunker is a U, the humvee three steps, the ruins enterable |
-| Jersey (-24,70) -> (-16,52); jersey (-120,-46) -> (-100,-46); jersey (-200,70) -> (-200,80) | Out of the Warden lane / the deck perch / the Lines' north wall |
-| Depot container (214,100) -> (174,86) yaw 90 | Parked against the Shed's west wall: its roof route |
-| Dead tree (-285,60) -> (-292,75) | The Lines' west hut |
-| Pens ring `env_hesco` -> `env_hesco_tall` (8.88); ParadeTerrace (-250,120) 70x60 -> (-257.5,120) 85x60, west side vertical | Walkers climb 4.6 hesco, so the ring funnelled nothing; the west slope was an unguarded fourth mouth |
-
-## A2. Final landmark list
+## A2. Landmarks
 
 | Landmark | Centre | Bounds (top) | Level | Built from | Job |
 |---|---|---|---|---|---|
@@ -72,29 +41,32 @@ the checks still owed. Section B is the building kit.
 | Inner Gate | (-30,-112) | lane x-42..-18 | 0 | T-walls (-54,-112),(-46,-112),(-14,-112),(-6,-112); booth (-58,-120); bunker (-52,-98) yaw 0; container (-8,-84) yaw 70; jersey (10,-78) yaw 80 | Screening lane; flare spot 1; stores #4; the Warden's second checkpoint |
 | the Apron | (0,0) | 44x44 concrete | 0 | containers (30,-10) yaw -15 and (-10,-10) yaw 90, 40 apart, each with a ramp (A9); wreck (-27,28) on the road | Boss ground (A6) |
 | Screening Block (B-1) | (-2,70) | x-14..10, z61..79 | 0 / 9 / 18 | kit: 2 storeys, catwalk to the Compound at 9, roof hatch ladder | Overwatch on the Warden walk; Recover Logs desk |
-| Screening Compound | (70,70) | x25..115, z25..115 | 8 | as built + the Shelf (78,52) block top 14 + ramp | Site 1 |
+| Screening Compound | (70,70) | x25..115, z25..115 | 8 | the Shelf (78,52) block top 14 + ramp | Site 1 |
 | Compound upper tier | (94,94) | x82..106, z82..106 | 16 | comm tower (94,94), T-walls (84,100),(84,92) yaw 90, hesco (100,84) | Restore Comms, Record B |
-| Ridge | (-100,45) | x-130..-70, z23..67 | 8 | ruin v2 (-104,48) burning, enterable; tower (-78,30) with ladder; jersey (-82,60); whiteboard (-87,11,48) | Stores #2, story spot 1, Record A, flare spot 3 |
+| Ridge | (-100,45) | x-130..-70, z23..67 | 8 | ruin (-104,48) burning, enterable; tower (-78,30) with ladder; jersey (-82,60); whiteboard (-87,11,48) | Stores #2, story spot 1, Record A, flare spot 3 |
 | the Lines (B-2) | (-240,60) | x-285..-195, z52..68 | 0 / 9 | kit: 3 huts 30x16 shoulder to shoulder, end doors in line (a 90-stud tube), middle hut ladder to the roofs | The Barracks' walk-through; rooftop route R7 |
 | the Armoury | (-210,0) | x-218..-202, z-6..6 | 0 / 9 | kit: 16x12, one door S, slit windows, roof ladder N | Barracks stores / cover |
 | the Pens | (-257,120) | x-300..-215, z90..150 | 6 | ParadePad (-250,6.15,120) 56x46; 24 tall hesco (A3); tents (-266,102/120/138); lamps (-218,160),(-200,120) | Site 2, Sanitize |
 | Overlook | (105,-105) | x85..125, z-125..-85 | 14 | bunker (104,-108) yaw 180; tower (150,-100) with ladder; jerseys (60,-80),(60,-110) | Site 3 |
-| Highway | z=-45 | x-300..300, z-54..-36 | 12 | deck container perch (-130,-45) + ramp; deck gantry at x 40 floor 23.5 off container (56,-45) + ramp (A9) | Hocker gallery; the ridge route W-E; R2 |
+| Highway | z=-45 | x-300..300, z-54..-36 | 12 | deck container perch (-130,-45) + ramp; deck gantry at x 40 floor 23.5 off container (56,-45) + ramp (A9); jersey line at z -38.5 (x 64, 72, 84, 118, 126) | Hocker gallery; the ridge route W-E; R2 |
 | the Pumps (B-6) | (130,-155) | canopy x116..144, z-163..-147; kiosk x144..156, z-160..-150 | 0 / 9 / 10.5 | kit: kiosk (door W, ladder E, no parapet) + walkable canopy on 4 columns over 2 pump islands | Scrapyard north edge cover; a Hocker shadow |
 | Depot | (210,40) | pad x155..285, z-5..105 | 0 | A4 table + the Shed (B-3) + the Stack (A9) | Stores #1/#3, Confirm Casualties, generator, alt pad |
 | the Shed (B-3) | (196,86) | x180..212, z74..98 | 0 / 6.5 / 12.5 | kit: 12.5 clear (Brute room), vehicle door S at x 198..210, doors N and E, mezzanine W up a flight, roof off the container (174,86) | Confirm Casualties Brutes |
-| the Gate | (-30,-274) | wall x-294..290 (the perimeter fence closes the ends); lane x-42..-18 | 0 | 71 T-walls at z=-274 (x=-294+8k, k 0..73, skip k=32..34; k=74 stood in the east wall), every ninth casting a shadow; the Scrapes at x -150 and x 114 (A10); booth (-54,-262); siren lamp (-14,-264) | Index entry, Open the Route, Silence the Alarm |
+| the Gate | (-30,-274) | wall x-294..290 (the perimeter fence closes the ends); lane x-42..-18 | 0 | 71 T-walls at z=-274 (x=-294+8k, k 0..73, skip k=32..34), every ninth casting a shadow; the Scrapes at x -150 and x 114 (A10); booth (-54,-262); siren lamp (-14,-264) | Index entry, Open the Route, Silence the Alarm |
 | Bus line | (-4,-196) | x-9.5..1.5, z-263..-129 | 0 | 3x env_bus yaw 90 at (-4,-150),(-4,-196),(-4,-242); 4th bus (40,-205) yaw 60 | Hocker-proof cover on the Gate approach; Bus 7 story spot |
 | Suburb: the Parade (B-5) | (124,178) | x100..148, z170..186 | 0 / 9 | kit: 4 shops facing the north road, front door + broken shopfront (sill 1) + back door each, party-wall doors, one 48-stud roof; dumpster (108,167) is the Walker step | R6 Suburb Run |
 | Suburb: the church (B-4) | (60,262) | x50..70, z246..278 | 0 / 7 / 14 / 20 | kit: 14-stud nave, choir loft over the south end up an east flight, inside ladder loft -> roof, belfry 8x8 on the roof (arches, ladder N) top 20 | The Suburb's lookout; story spot |
 | Outer hills | as built | | 10/8/12 | NorthBluff, SouthRise and Depot-mound towers (ladders), ruins | Misdrop crates: (20,250) Suburb, (-250,-20) Barracks, (235,12,-205) Depot Mound |
+
+Main road x=-30, north road z=200, bridge x -46..-14 (underside 10.5): the spine the Warden
+walks. Hill levels 0/6/8/12/14/16; everything climbable or ramped.
 
 ## A3. The three sites
 
 **Site 1: Screening Compound** (zone (50,8.5,50) 46x46)
 - Approaches: 4 slopes. Direct: W slope (foot x15) and S slope (foot z15). Indirect: N slope
   through the tents (42,88/104) and wreck (62,104); E slope through the containers (100,44/55).
-  Upper tier slopes (x,z >= 72) drop Infected onto the zone's NE corner. New: the Screening
+  Upper tier slopes (x,z >= 72) drop Infected onto the zone's NE corner. The Screening
   Block's catwalk lands on the W edge at (26,9,70); the Shelf (78,52) overlooks the E edge.
 - Cover: hesco column (34,40..54) W; T-walls (55,34),(63,34) + bunker (86,34) S; containers E.
 - Hocker stands: upper tier SW corner (84,16,84); ground W (8,0,50); ground S (50,0,8).
@@ -102,9 +74,10 @@ the checks still owed. Section B is the building kit.
 
 **Site 2: the Pens** (zone (-240,6.5,120) 46x46)
 - Tall hesco ring (8.88: Walkers never climb it, Runners do) on the terrace top: N row z=146,
-  S row z=94, x = -295.5,-289.6,-283,-276.4,-269.8,-263.2 | -238.3,-231.7,-225.1,-218.5 (10 each;
-  mouth x-260..-241.4; pulled in off the crest 2026-11-07); E column x=-219 yaw 90, z = 100,106.5 | 133.5,140 (mouth z110..130).
-  West: the perimeter fence on the terrace edge, the boundary collider behind it (A15).
+  S row z=94, x = -295.5,-289.6,-283,-276.4,-269.8,-263.2 | -238.3,-231.7,-225.1,-218.5 (10
+  each; mouth x-260..-241.4); E column x=-219 yaw 90, z = 100,106.5 | 133.5,140 (mouth
+  z110..130). West: the perimeter fence on the terrace edge, the boundary collider behind it
+  (A15).
 - Approaches: exactly three mouths N, E, S. Tents (roof walkable) on the west half are
   climbable cover inside.
 - Hocker stands (outside the ring, lobbing over hesco): N (-250,170), E (-190,120), S (-250,70).
@@ -114,11 +87,11 @@ the checks still owed. Section B is the building kit.
 **Site 3: the Overlook** (zone (105,14.5,-105) 28x28)
 - Approaches: 4 slopes, all in view. The N slope foot (z-68.2) meets the highway's S slope
   foot (z-68.4): a continuous ridge route to the deck.
-- Cover: the bunker (104,-108), opening south (A14 #9 checks the mesh's open side in game).
+- Cover: the bunker (104,-108), opening south (A14 #9).
 - Hocker stands: highway deck (105,12,-52); ground E (150,0,-105); the Pumps' canopy (130,10.5,-155).
 - Squad holds: in and behind the bunker. Escape: N slope onto the deck, west to the bridge.
 
-## A4. Depot (as built, 2026-11-07)
+## A4. Depot
 
 | Piece | Position | Yaw | Note |
 |---|---|---|---|
@@ -131,10 +104,11 @@ the checks still owed. Section B is the building kit.
 | container rust | (174,86) | 90 | against the Shed's west wall (x 169.4..178.6): climb 9.55 -> parapet 13.7 |
 | the Shed | (196,86) | | B-3 |
 | alt helipad | (255,85) | | 40x40 pad + H; marker (255,0.6,85) for Light the Pad |
+| cargo truck | (242,-10) | | the south line; crawl under it into the yard |
 | tower (280,40), checkpoint (160,120), tents (215,140),(240,140), lamp (160,90), bunker (235,-205), wreck (180,-150) | as built | | |
 | stores crates | A1 (185,0.3,32); A3 (237,0.3,32) | | #1 always; #3 at Held+ |
 
-## A5. Primary placements
+## A5. Primary placements (not built)
 
 | Primary | Where | Props / points |
 |---|---|---|
@@ -147,13 +121,13 @@ the checks still owed. Section B is the building kit.
 | Open the Route | the Gate | 4 jersey barriers across the lane at z-274, x-39,-33,-27,-21; 3 lock blocks at (-36,2.9,-274),(-30,2.9,-274),(-24,2.9,-274); point beyond (-30,0,-288) |
 | Evacuate | never at Delta | |
 
-## A6. Index entry: the Warden (built 2026-11-07; `Config.Index.Warden`, `IndexService`)
+## A6. Index entry: the Warden (`Config.Index.Warden`, `IndexService`)
 
 - Spawn (-30,-290). Waypoints: (-30,-274) Gate lane, (-30,-200), (-30,-112) Inner Gate lane,
   (-30,-45) under the bridge, (-30,0) Apron, then free chase.
 - Lane: 24 wide at both gates (x-42..-18), 16-wide road elsewhere: lamps at x=-42, buses at
   x >= -9.5, nothing else within 10 studs. Bridge underside 10.5; he is scale 1.9 (~9.9
-  tall) and walked under it in the playtest.
+  tall) and walks under it. Open the Route's barrier line must be gone before he spawns.
 - Boss ground: the Apron plus open ground x-20..25, z-36..25. Two perches 40 apart
   ((30,-10) and (-10,-10), ramped: A9) are the line-breakers; the Screening Block's west
   windows (storey 2, y 9..17.6) overlook the whole walk from the Inner Gate; the Compound W
@@ -165,7 +139,7 @@ the checks still owed. Section B is the building kit.
 |---|---|
 | Main pad (insert + extract) | (-90,0.6,-90), hold zone 28x28 |
 | Alternate pad | (255,0.6,85) on the Depot pad; overwatched from the Stack |
-| Stores crates | #1 Depot A1 (185,0.3,32); #2 Ridge (-90,8.3,40); #3 Depot A3 (237,0.3,32) [Held+]; #4 Inner Gate bunker (-52,0.3,-98) [Contained] |
+| Stores crates (not built) | #1 Depot A1 (185,0.3,32); #2 Ridge (-90,8.3,40); #3 Depot A3 (237,0.3,32) [Held+]; #4 Inner Gate bunker (-52,0.3,-98) [Contained] |
 | Silence the Alarm | siren at the Gate (-14,-264) |
 | Lights On | generator (178,-2) |
 | Light the Pad | (255,0.6,85) |
@@ -175,35 +149,38 @@ the checks still owed. Section B is the building kit.
 
 ## A8. Traversal rules and composite colliders
 
-Every piece carries a traversal tag against `Config.Movement` (Reach 3.2, VaultMaxHeight 5,
-ClimbMaxHeight 10.5, VaultDepth 6.5, Headroom 5):
+Every piece carries a traversal class from `Ledge.find` and `Config.Movement` (Reach 3.2,
+VaultMaxHeight 5, ClimbMaxHeight 10.5, VaultDepth 6.5, Headroom 5; prone root 0.3-2.3):
 
-| Tag | Rule | Pieces |
+| Class | Rule | Pieces (top) |
 |---|---|---|
-| VAULT | top 1.2-5, thinner than 6.5 with ground behind | jersey 2.75, hesco 4.6, sandbag walls 4, humvee hood/steps, window sills |
-| CLIMB | top 5-10.5 | bunker roof-line 6.3, humvee 7.1, container 9.55, ruin slab 10, hut and shop roofs 9 (+1.2 parapet), the Shelf 14 from the hill (6) |
-| WALL | > 10.5 | T-walls 12.5, buses 12.5, tall hesco from a Walker's view (8.88 < 10.5: Runners climb it) |
-| CRAWL-UNDER | underside 2.8, no more than 5 deep, open both ends | the Scrapes (A10); prone only (players only) |
-| HIDE | a Hocker shadow | anything taller than 7 and 3 deep: buses, T-walls, buildings, the canopy |
+| WALK | top under 1.0 | single pallet 0.57, plank 0.4; body bags have no collision |
+| dead band | 1.0-1.2 | build nothing with collision at this height |
+| VAULT | 1.2-5, thinner than 6.5 with ground behind | cot 2.1, pallet stack 2.28, jersey 2.75, hesco 4.58, dumpster side-on 4.4, sedan / hatch side-on 4.4-4.6, bunker walls 4, humvee hood/steps, window sills |
+| CLIMB-low | 1.2-5, deeper than 6.5 | fuel bladder 3.03, dumpster and sedan end-on |
+| CLIMB | 5-10.5, flat top | generator 5.2, pickup cab 5.4 (bed 2.6), bunker roof-line 6.3, humvee 7.1, van 7.2, truck bed 5.7 and cab 8, toilet 8.45, tall hesco 8.88, container 9.55, ruin slab 10, hut and shop roofs 9 (+1.2 parapet) |
+| WALL | over 10.5, or a top under 0.6 thick | T-wall 12.5, bus 12.75, chainlink (bullets pass), lamp, tree, light tower |
+| CRAWL-UNDER | gap 2.8+, no more than 5 deep, open both ends; prone, players only | the Scrapes 2.8, cargo truck bed 2.9 (between the axles), checkpoint boom 3.97 |
+| HIDE | a Hocker shadow: taller than 7 and 3 deep | buses, T-walls, buildings, the canopy |
 
-- **Walker staircase rule**: no piece within 3.2 of one more than 5 taller unless the step
-  between them is 5 or less (a Walker climbs 5; a Runner 10.5; a Brute nothing).
+- **Who climbs what:** Walker `ClimbHeight` 5 (about 4.6 in practice), Runner 10.5 (about
+  9.6), Brute nothing (`EnemyDefinitions`). Bots climb nothing: every crawl or climb route
+  keeps a walk-around within 40 studs (ramps, slopes, doors).
+- **Walker staircase rule:** no piece within 3.2 of one more than 5 taller unless the step
+  between them is 5 or less.
+- **Concertina is never vaulted** (owner). Wire is CanQuery off, so `Ledge.find` never sees
+  it, and JumpPower is 0: the body stops or walks round the end.
 - **Composite colliders** (`MeshAssets.MESHES[*].colliders`, placed by
   `MeshAssets.addColliders`): the mesh is CanCollide/CanQuery false and a list of invisible
   anchored boxes is the body. Sandbag bunker 3 walls (open top and the +Z side); humvee 3
-  steps (bumper 2.5, hood 4, roof 7.1); ruin v2 26 boxes (enterable ground floor, 4 x 8
-  door, windows sill 4 / head 9.4, back wall one storey with a 6-wide breach, slab 10) with
-  a 5-box sealed `shell` for the outer ruins; guard tower legs/deck/rails + a TrussPart
-  ladder (deck 14, rail gate on the ladder side); checkpoint booth + boom; comm tower 2
-  boxes; tent hull + 2 wedge roofs. Budget ~194 colliders (26 + 5 x 5 ruins, 60 towers,
-  27 humvees, 21 tents, 18 bunkers, 15 checkpoints, 2 comm tower) of the 256 ceiling
-  (`Config.Arena.ColliderBudget`, counted and warned at boot: `[ArenaService] dressing
-  placed: N pieces, M colliders`). Until the ruin v2 and tower v3 FBX are uploaded their
-  earlier uploads stand in as plain solid meshes (`MeshAssets` `fallback`), so the count
-  reads 83 and neither piece is enterable yet.
+  steps (bumper 2.5, hood 4, roof 7.1); ruin 26 boxes (enterable ground floor, 4 x 8 door,
+  windows sill 4 / head 9.4, back wall one storey with a 6-wide breach, slab 10) with a
+  5-box sealed `shell` for the outer ruins; guard tower legs/deck/rails + a TrussPart ladder
+  (deck 14, rail gate on the ladder side); checkpoint booth + boom; comm tower 2 boxes; tent
+  hull + 2 wedge roofs; vehicles 2-5 boxes each. Budget 256 (`Config.Arena.ColliderBudget`,
+  counted and warned at boot: `[ArenaService] dressing placed: N pieces, M colliders`).
 - **Ladders** are TrussParts in the `Ladder` collision group, non-collidable with `Enemy`:
   the squad climbs, the Infected walk through.
-- Every shortcut has a walk-around within 40 studs for the bots (ramps, slopes, doors).
 
 ## A9. Routes and perches
 
@@ -222,7 +199,7 @@ WedgeParts at the kit's 33 degrees) so a Walker can follow and no perch is a fre
 | LZ north-west container (-124,-82) | 9.55 | from the south, (-124,-101) -> (-124,-86.6) |
 | Deck container (-130,-45) | 21.55 | along the deck from the west, x -155.7 -> -141 |
 | the Shelf (78,52) | 14 | from the east on the hill, x 91.2 -> 82 |
-| Compound E container (100,44) | 17.55 | from the west on the hill, x 74.5 -> 89 (added 2026-11-07: it was a Walker-proof camp 6 studs from the hold) |
+| Compound E container (100,44) | 17.55 | from the west on the hill, x 74.5 -> 89 |
 | Apron containers (30,-10) yaw -15 and (-10,-10) yaw 90 | 9.55 | the north face of (30,-10); the east face of (-10,-10) |
 | the Stack (250,32) | 19.4 | two flights up column D's south end: (250,-5.7) -> (250,9) -> (250,21) |
 | Deck gantry (40,-45) | 23.5 | container (56,-45) on the deck (top 21.55, a Walker step) ramped from the east x 81.8 -> 67; a truss on the west face for the squad |
@@ -241,24 +218,25 @@ Infected or bot goes prone. The Index comes through the lane; the squad has two 
 ## A11. Props by district
 
 `ArenaService.PROPS` (~130 placements) use the `prop_*` meshes in `assets/3d/README.md`.
-Each district has an identity: the LZ light tower + generator + pallets + body bags; the
-Screening Block's body-bag row and concertina; the Compound's cots and light tower; the
-Ridge's chainlink and cots in the ruin (`floor = 8`); the Inner Gate's concertina and light
-tower; civilian cars on the highway deck; the Overlook's generator; the Suburb's cars,
-dumpsters, planks and the church's body bags; the Depot's pallets, dumpster, fuel bladder and
-chainlink; the Pumps' fuel bladders and a car; the Scrapyard's cars, dumpsters, planks and the
-concertina inside the Gate; the Lines' nine cots (`floor = 0`), toilets and generator; the
-Pens' body bags; the Armoury's pallets. Until a prop's mesh id lands in `MeshAssets` the
-placement is skipped and listed at boot (`dressing meshes await upload`).
+Each district has an identity: the LZ light tower + generator + pallets + body bags + the
+supply cargo truck (-143,-120); the Screening Block's body-bag row and concertina; the
+Compound's cots and light tower; the Ridge's chainlink and cots in the ruin (`floor = 8`);
+the Inner Gate's concertina and light tower; cars on the highway deck; the Overlook's
+generator; the Suburb's cars, dumpsters, planks and the church's body bags; the Depot's
+pallets, dumpster, fuel bladder and chainlink; the Pumps' fuel bladders and a car; the
+Scrapyard's cars, dumpsters, planks and the concertina inside the Gate; the Lines' nine cots
+(`floor = 0`), toilets and generator; the Pens' body bags; the Armoury's pallets. Cars are
+sedans, hatchbacks, pickups and vans 2:2:1:1 (vans at the Gate queue and the Scrapyard).
+**Pallets are stacks of four beside their source, never singles** (lift 0 / 0.57 / 1.14 /
+1.71). A prop whose mesh id is not in `MeshAssets` is skipped and listed at boot.
 
-## A12b. Slope setbacks (2026-11-07, the map fix)
+## A12b. Placement rules (slopes and overlaps)
 
-The owner: "there's random pallets inside of the slants and the hills." Every dressing
-piece is placed by one raycast at its centre, so a footprint across an embankment sinks or
-floats. Rules (level designer), checked twice: `assets/3d/build/delta_map.py` rebuilds the
-layout in Blender and paints a breaking piece red, and `ArenaService.placePiece` raycasts a
-piece's four corners at boot and warns past `Config.Arena.StraddleTolerance` (0.35 since
-2026-11-08).
+Every dressing piece is placed by one raycast at its centre, so a footprint across an
+embankment sinks or floats. Two checks enforce the rules: `assets/3d/build/delta_map.py`
+rebuilds the layout in Blender and paints a breaking piece red, and `ArenaService.placePiece`
+raycasts a piece's four corners at boot and warns past `Config.Arena.StraddleTolerance`
+(0.35). Both should read 0.
 
 | Rule | Value |
 |---|---|
@@ -268,73 +246,20 @@ piece's four corners at boot and warns past `Config.Arena.StraddleTolerance` (0.
 | On a slope | nothing with a base; only the kit's own ramps |
 | At a hill foot | Mud / Rock sheets only |
 | Hold zones, pads | A3 cover only; the LZ pad and the alt helipad stay bare |
+| Overlaps | no piece inside another (owner); meant overlaps: the cots inside the ruin, the siren on its lamp post, roads over pads |
 
-Applied 2026-11-07: 48 table moves (the level designer's list: the Barracks ruin out of the
-highway (-250,-60) -> (-250,-100), the LZ pallets and bags off the embankment and the pad,
-the Overlook tower and zone props, the car on the highway slope, the Compound's upper-tier
-T-walls and hesco off the crest, the Depot alt pad cleared, the Armoury's door unblocked,
-the Pens ring pulled in, overlaps between props), the new Compound ramp, the Gate line's
-75th wall removed. The Blender check reads 0 problems. At boot the corner check still names
-pieces that are meant to touch other geometry (the Stack and gantry containers under their
-ramps and floors, the Apron containers' ramps, the siren on its lamp): accepted.
+Exceptions: perch containers whose own pallet ramp runs under them carry `perch = true` and
+skip the check; a piece whose raycast lands on its own parts or a neighbour carries `floor`
+(the Gate lamp post `floor = 0`, the Depot perch container `floor = 0.28`).
 
-**Second pass (2026-11-08, level designer).** Owner: pallets and body bags "on the slants", a
-car "inside the slant", and "keep in mind the character's traversal". Changes:
-- Tolerance 0.6 -> **0.35** (`Config.Arena.StraddleTolerance` and `delta_map.py`); boot prints
-  0 warnings. Perch containers whose own pallet ramp runs under them carry `perch = true`
-  (the Stack, the Apron and the gantry containers) and skip the check; the Gate lamp post
-  carries `floor = 0` (the raycast was landing on its own siren head, 11.8 up).
-- **Pallets are stacks of four beside their source, never singles** (lift 0 / 0.57 / 1.14 /
-  1.71): the LZ stacks at the supply truck's tail, the Compound stores, the Depot aisle, the
-  Armoury, the Scrapyard. Litter singles removed (Ridge, Overlook crest, Depot alt pad).
-- Moves: the LZ toilet off the ramp, the Compound rust container off the Shelf ramp's foot,
-  the Compound humvee off the cots, the cots and body bags off the upper-tier toe, the Ridge
-  tower off the crest, the bags out of the checkpoint mesh, the Deck humvee square across
-  the deck, the Apron sedan off the highway toe, the Overlook light tower, the SouthRise
-  dumpster, the LZ lamp and two generators off pad edges.
-- **Vehicles v2** (`assets/3d/build/props.py`): the 14 `prop_civilian_car` became sedans,
-  hatchbacks, pickups and vans (2:2:1:1, vans at the Gate queue and the Scrapyard) plus two
-  north-road cars; two army cargo trucks: the LZ supply truck (-143,-120) and the Depot's
-  south line (242,-10), which you crawl under into the yard.
-- **Deck jersey line** (D3): five jerseys at z -38.5 (x 64, 72, 84, 118, 126), low cover on
-  R2 against the Apron and the Compound.
+Open (owner calls): generator to 4.8 so it vaults; light-tower collision as two boxes (its
+18-tall Box is an invisible wall in the air).
 
-**Traversal classes** (from `Ledge.find`: vault 1.2-5 above the feet with ground 6.5 past the
-face; climb to 10.5 with 5 of headroom; prone root 0.3-2.3):
+## A15. The perimeter
 
-| Class | Rule | Pieces (top) |
-|---|---|---|
-| WALK | top under 1.0 | single pallet 0.57, plank 0.4; body bags have no collision |
-| dead band | 1.0-1.2 | build nothing with collision at this height |
-| VAULT | 1.2-5, thinner than 6.5 | cot 2.1, pallet stack 2.28, jersey 2.75, hesco 4.58, dumpster side-on 4.4, sedan / hatch side-on 4.4-4.6, bunker walls 4 |
-| CLIMB-low | 1.2-5, deeper than 6.5 | fuel bladder 3.03, dumpster and sedan end-on |
-| CLIMB | 5-10.5, flat top | generator 5.2, pickup cab 5.4 (bed 2.6), humvee 7.1, van 7.2, truck bed 5.7 and cab 8, toilet 8.45, tall hesco 8.88, container 9.55 |
-| WALL | over 10.5, or a top under 0.6 thick | T-wall 12.5, bus 12.75, chainlink (bullets pass), lamp, tree, light tower |
-| CRAWL-UNDER | gap 2.8+ | the Scrapes 2.8, cargo truck bed 2.9 (between the axles), checkpoint boom 3.97 |
-
-Walkers climb to about 4.6, Runners to 9.6; bots climb nothing, so every crawl or climb route
-keeps a walk-around within 40 studs. Concertina: never vaulted (owner 2026-11-08: "what
-would the alternative even be"). Already true by construction: wire is CanQuery off, so
-`Ledge.find` never sees it, and JumpPower is 0 (checked in a playtest: no ledge, the body
-stops or walks round the end). Open (owner calls, recommendations): generator to 4.8 so it
-vaults, light-tower collision as two boxes (its 18-tall Box is an invisible wall in the air).
-
-Overlap pass (2026-11-08, owner: pieces "clipping through each other"): a Studio scan of
-every placed piece against every other moved the LZ light tower beside its generator
-(-74,-104, was inside the checkpoint), the Inner Gate wire to x -44 (was through the
-generator), the Depot's perch container to `floor = 0.28` (its raycast landed on the
-Stack's ramp and sat it on top), the Lines and churchyard body bags apart, and the
-Screening Block desk out of the stair run. What the scan still lists is meant: the cots
-inside the ruin, the siren on its lamp post, roads over pads.
-
-## A15. The perimeter (level designer, built 2026-11-07)
-
-The owner: "get rid of the sense of the map being walled off and closed in." How games do
-it: a barrier the player believes in at the edge, and the world carrying on past it
-(Left 4 Dead's see-through chain-link and burning wrecks, Call of Duty's streets and hills
-running on as scenery, Half-Life 2's far city behind fog), with the invisible wall right
-behind the visible barrier so the player never touches empty air. No soft out-of-bounds
-warning: there is no way out to warn about.
+The map must not feel walled in (owner). A barrier the player believes in at the edge, the
+world carrying on past it, and the invisible wall right behind the visible barrier so the
+player never touches empty air. No soft out-of-bounds warning: there is no way out.
 
 | Edge | What you see | Built from (`ArenaService.PERIMETER`, `FENCE`, `buildPerimeter`) |
 |---|---|---|
@@ -348,44 +273,32 @@ warning: there is no way out to warn about.
 
 - **What stops the squad:** four invisible Parts in `TestArena`, 2 thick and
   `Config.Arena.BoundaryHeight` (80) tall, inner face at 300; CanQuery / CanTouch off so
-  bullets, the camera and the vault / climb checks ignore them. Verified: a body shoved at
-  80 studs/s into the north fence, the east roadblock and the Pens' west edge never passed
-  299.
+  bullets, the camera and the vault / climb checks ignore them.
 - **Past the edge everything is `decor`** (no collision, no queries, no shadow, colliders
   skipped) and lives in its own Persistent model `workspace.Perimeter`, so the far fence
   never streams out. Ground slabs run 700 out; dressing thins with distance, then fog and
-  the DistantCity ring.
+  the DistantCity ring ([STYLES.md](STYLES.md) §7).
 - **Spawns** are clamped inside `Config.Arena.SpawnInset` (292) in
-  `EnemyService.groundPositionNear` (its last-try fallback could land outside).
-- **Budget:** ~458 instances in `Perimeter` (190 panels, 198 coils, 14 towers, 4 light
-  towers, 6 T-walls, ~30 scenery pieces, 20 Parts), +0 composite colliders, +0 shadow
-  casters, no new meshes. Measured 60 fps on the dev PC looking along each edge. Not yet
-  measured on a low-end device; if it costs, cut the wire on N/E/W first (-~148 coils),
-  then the scenery.
-- **Boot fix found on the way:** in Studio the first player stands on the default Baseplate
-  when scripts start; deleting it outright reached the client before the arena did and the
-  body fell through the world (the "playtest boots wiped" gotcha). The Baseplate is now
-  hidden at once and destroyed after 5 s.
+  `EnemyService.groundPositionNear`.
+- **Budget:** ~458 instances in `Perimeter`, +0 composite colliders, +0 shadow casters, no
+  new meshes. 60 fps on the dev PC; not yet measured on a low-end device. If it costs, cut
+  the wire on N/E/W first (-~148 coils), then the scenery.
+- The Studio Baseplate is hidden at once and destroyed after 5 s (deleting it at boot
+  dropped the first player through the world).
 
 ## A12. Ground
 
-`ArenaService.PATCHES`: thin (0.24) no-collision, no-query sheets. Darker Ground verges 8
-wide along both roads; Mud at the hill feet (Compound W/S, Ridge S, Overlook N, the Pens,
-the Lines, the Shed's yard, the Pumps' forecourt, the churchyard) and as puddles along the
-main road; Rock in the Scrapyard, the Depot's south-east, the Suburb's north-west and
-north-east corners and at the Depot-mound and SouthRise feet. The rust container tint is
-darker (92,50,30). Shadows: jerseys, bunkers, hesco and all but every ninth Gate T-wall
-cast none; buildings, towers, containers, buses, ruins do.
+`ArenaService.PATCHES`: thin (0.24) no-collision, no-query sheets (colours in
+[STYLES.md](STYLES.md) §6). Darker Ground verges 8 wide along both roads; Mud at the hill
+feet (Compound W/S, Ridge S, Overlook N, the Pens, the Lines, the Shed's yard, the Pumps'
+forecourt, the churchyard) and as puddles along the main road; Rock in the Scrapyard, the
+Depot's south-east, the Suburb's north-west and north-east corners and at the Depot-mound
+and SouthRise feet.
 
-## A13. Verification list
+## A13. Verification still owed
 
-Done 2026-11-07 (solo playtest, merge day): boot prints 10 building models / 342 parts and
-369 dressing pieces / 194 colliders (budget 256); `Ladder` and `Enemy` groups registered and
-non-collidable; item 7 (40 dev-spawned Walkers, all on the ground, none on a roof or a prop);
-item 8 (60 fps held with 40 Walkers, server script lane 1.6 ms/frame against 0.9 idle before
-the round); prone drops the hip to 0.3 and stand restores it (a body standing over the player
-no longer blocks it). Still owed: items 1-6 and 9 below.
-
+Done: building and dressing counts at boot under budget, `Ladder` / `Enemy` groups, the
+spawn filter (item 7), 60 fps with 40 Walkers (item 8), prone and stand. Still owed:
 
 1. Top-down screenshots at y 400 (whole map) and y 120 over each district; compare with A2.
 2. Walk every route R1-R7 as the player: reachable / blocked at each step; every door,
@@ -394,36 +307,25 @@ no longer blocks it). Still owed: items 1-6 and 9 below.
    by its ramp; the Shelf, the Stack and the gantry are the ones to watch.
 4. Vertical chase: stand on the Screening Block's first floor, the Shed mezzanine and the
    church loft with Walkers below; up to 10 should path in through the door and up the
-   flight (`[EnemyService]` has no print: watch them).
+   flight.
 5. Sight-line screenshots: the Screening Block west windows over the Inner Gate; the
    belfry over the Suburb; the gantry over the Apron.
 6. Hocker shadow raycasts under the canopy, inside the Parade and behind the buses.
-7. Spawn filter: no Infected appears on a roof, a container or inside a building
-   (`Config.Spawning.SpawnAttempts` retries).
-8. MicroProfiler at 45 Infected in the Suburb and the Depot, before/after; reject > 1 ms.
 9. Streaming: join, run LZ -> Depot -> Suburb, check nothing pops in late within 128 studs
    and the skyline never disappears.
 
-## A14. Engineering questions (status)
+## A14. Open engineering questions
 
-1. Crawl clearance: **built** (A10). Risk: the prone clip is authored for a standing root;
-   the Root Motor6D lift keeps the body on the ground, untested in game.
-2. Ladders: **built** (TrussParts, `Ladder` group non-collidable with `Enemy`). Brutes and
-   the Warden walk through them; exits get a parapet gap (`Config.Arena.Kit.LadderGap`).
-3. Nudge oscillation on long cover: **open** (keep the side for 3 nudges).
-4. Spawn raycast hits dressing tops: **built** (retry past Dressing / Buildings / Perches /
-   DeckGantry / Landmarks and building footprints + 2).
-5. Vault headroom on over-moves: **built** (ruin v2 windows head 9.4).
-6. Bots stuck pressing cover: **built** (3 s / 1 stud -> teleport to the slot at floor level).
-7. Perch vs Warden cheese: **open** (systems).
-8. Carry rules (carriers vault, never climb or crawl): **open** (no carry system yet).
-9. Bridge underside 10.5 vs 2x R15 ~10.4; which side of the bunker mesh is open: **open**,
-   check in game (the bunker colliders assume the +Z side open).
-10. (new) Vertical chase EQ-B1: **built** with PathfindingService for <= 10 bodies; the
-    navmesh must see the kit's WedgePart stairs and 4-wide doors (AgentRadius 1.5).
-11. (new) Streaming: client scripts look up folders with `FindFirstChild` and tolerate nil;
-    enemy and bot rigs are atomic; other players' characters are the engine's business.
-    Risk: a folder that has not streamed in yet is simply skipped by raycast filters.
+Built and closed: crawl clearance, ladders, spawn raycast past dressing tops, vault headroom,
+bot unstick, vertical chase (PathfindingService, <= 10 bodies, AgentRadius 1.5), streaming
+(client scripts tolerate a folder that has not streamed in). Still open:
+
+1. Crawl: the prone clip is authored for a standing root; the Root Motor6D lift keeps the
+   body on the ground, untested in game.
+3. Nudge oscillation on long cover (keep the side for 3 nudges).
+7. Perch vs Warden cheese (systems).
+8. Carry rules (carriers vault, never climb or crawl): no carry system yet.
+9. Which side of the bunker mesh is open: check in game (the colliders assume +Z).
 
 ---
 
@@ -439,15 +341,13 @@ no longer blocks it). Still owed: items 1-6 and 9 below.
 | B4 the 8-stud rule | no solid outside run longer than 8 without an opening: ground floors always have a way in |
 | B5 stairs | WedgeParts at 33 degrees, 5 wide, head-clearance hole cut in the slab above (`Config.Movement.Headroom`) |
 | B6 climb lips | a 2.5 cornice outside every upper floor no higher than 10.5: mantle from the street, vault a window in |
-| B7 roofs | flat, 1.2 parapet, reached by ladder or climb; outside ladders get a parapet / lip gap of 3 |
+| B7 roofs | flat, 1.2 parapet, reached by ladder or climb; outside ladders get a parapet / lip gap of 3 (`Config.Arena.Kit.LadderGap`) |
 | B8 corridors and catwalks | 6 minimum (`CorridorMin`) |
 | B9 interiors | Hocker cover; no hold zone inside a building; one atomic Model per building |
 
-Materials are Roblox built-ins per type (`Config.Arena.Materials`): cinder (Screening
-Block), wood (the Lines), corroded metal (the Shed), brick (church), rendered concrete (the
-Parade), painted panel (the Pumps), concrete (the Armoury), slab / roof concrete, metal
-ladders, diamond-plate catwalk. Footprints are kept for the spawn filter
-(`ArenaService.insideBuilding`) and the vertical chase (`ArenaService.buildingDistance`).
+Materials per type are in `Config.Arena.Materials` ([STYLES.md](STYLES.md) §6). Footprints
+are kept for the spawn filter (`ArenaService.insideBuilding`) and the vertical chase
+(`ArenaService.buildingDistance`).
 
 ## B2. The seven buildings (`ArenaService.BUILDINGS`)
 
@@ -461,28 +361,22 @@ ladders, diamond-plate catwalk. Footprints are kept for the spawn filter
 | B-6 | the Pumps | kiosk (150,-155), canopy (130,-155) | 12x10 + 28x16 canopy | 0, 9, 10.5 | kiosk door W, ladder E; kiosk roof (no parapet) steps onto the canopy |
 | -- | the Armoury | (-210,0) | 16x12 | 0, 9 | door S, slit windows, ladder N |
 
-Parts: ~400 per boot (`[ArenaService] buildings: 8 models, N parts`).
-
-## B3. New environment pieces (reuse first)
+## B3. Environment pieces still to build (reuse first)
 
 | Piece | Size (studs) | Pivot | Collision | Derive from | Needed by |
 |---|---|---|---|---|---|
-| **env_bus** | 42 x 12.5 x 10 (L x H x W) | bottom centre | Box | shipped | Delta bus line (4), Mile 14 the Jam (24) |
-| **env_hesco_tall** | 6.22 x 8.88 x 4.72 | bottom | Box | hesco mesh stretched (same id until its own upload) | the Pens ring |
-| **env_crib_stack**, **env_deck_plate** | 1.2 x 2.8 x 2.6; 12 x 0.33 x 5 | bottom | Box | built, await upload (Parts stand in) | the Scrapes; container roof chains |
 | **env_water_tower** | 16 x 48 x 16 | bottom | Box | env_comm_tower + tank cylinder | Mile 14 landmark + Restore Comms |
 | **env_hospital_bed** | 6 x 2.8 x 3 | bottom | Box | crate + 4 legs ~120 tris | Kestrel Ward rows (18) |
 | **env_bleachers** | 40 x 8 x 12, four 2-stud steps | bottom | none | stacked boxes ~120 tris | Kestrel |
 | env_tent_medical | = env_tent | | | swatch variant (white + red facet) | Kestrel Triage |
-| Parts, no mesh | siren head, lock blocks, whiteboards/signs, canopy, alt helipads, Ward walls (env_twall rows), pallet ramps, cribs | | | | |
+| Parts, no mesh | siren head, lock blocks, whiteboards/signs, canopy, alt helipads, Ward walls (env_twall rows), pallet ramps | | | | |
 
-Toll booth = env_checkpoint as is. PA speaker = lamp post + box. Convoy cargo truck = container.
-The 12 `prop_*` meshes (cot, generator, light tower, fuel bladder, pallet, body bag, dumpster,
-plank, civilian car, portable toilet, chainlink panel, concertina) are in `assets/3d/README.md`.
+Toll booth = env_checkpoint as is. PA speaker = lamp post + box. Convoy cargo truck =
+container. Built pieces are listed in `assets/3d/README.md`.
 
 ---
 
-# C. Mile 14 and Aid Station Kestrel
+# C. Mile 14 and Aid Station Kestrel (not built)
 
 ## C1. Mile 14 (full dark)
 
@@ -533,7 +427,7 @@ doors to 6; Contained a 7th medical tent at (-150,-100) with a stores crate.
 
 ---
 
-# D. The three things most likely wrong on first playtest
+# D. Risks to check in a playtest
 
 1. **Infected stuck on the Pens ring / Depot columns / Ward walls.** Hold a Secure at the
    Pens for 60 s, screenshot from 80 studs up over (-250,120). Wrong = clusters pressed against
@@ -542,16 +436,5 @@ doors to 6; Contained a 7th medical tent at (-150,-100) with a stores crate.
 2. **Floating or sunk dressing on hill edges.** The Pens hesco and the Gate T-wall line are
    the risk. Two head-height screenshots: along the Gate line from (-200,2,-285) looking east,
    and along the Pens N row from (-290,8,147). Fix: move the piece 2 studs onto the flat.
-3. **The Warden's walk.** A 2x R15 is ~10.4 tall; the bridge underside is 10.5; Open the
-   Route's barrier line must be gone before it spawns. Force the Index with the squad on the
-   Apron; screenshot from (0,6,-20) looking SSW as it comes under the bridge. Fix: thin the
-   deck to 1.0 (underside 11), or Scale 1.9 for the Warden; keep x-42..-18 free at z -274 and
-   -112. **Resolved 2026-11-07: scale 1.9; the walk verified in a playtest.**
-
-Bonus: flare under the bridge at (-30,-45); if the pallet lands on the deck above, land it by
-a raycast from the flare's resting point + 2, not from the sky.
-
-Everything here is table edits to `src/server/ArenaService.luau` (HILLS, DRESSING, a loop for
-the Gate line, `buildHelipad` taking a position), a SpawnLocation move, the nudge rule in
-`src/server/EnemyService.luau`, and per-site spawn points in the coming StageDefinitions. Net
-dressing delta at Delta: about +110 instances, one new mesh (env_bus) required.
+3. **Flare under the bridge** at (-30,-45): if the pallet lands on the deck above, land it by
+   a raycast from the flare's resting point + 2, not from the sky.

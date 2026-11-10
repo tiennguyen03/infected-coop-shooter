@@ -6,8 +6,10 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
+local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
+local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
 
 local PlayerSetup = {}
 
@@ -80,31 +82,10 @@ function PlayerSetup.attachRifle(character: Model, humanoid: Humanoid)
 		return part
 	end
 
-	-- Handle-local layout: grip at the origin (the palm), barrel along -Z.
-	-- waitFor: the first character spawns before the boot-time template build finishes.
-	local body = MeshAssets.waitFor("wpn_rifle", 5)
-	if body then
-		-- Low-poly rifle mesh (assets/3d wpn_rifle, 0.65x). The mesh pivot is the grip; the
-		-- MeshPart is centred on its bounding box, so offset by the mesh's centre-from-grip.
-		body.Name = "Body"
-		body.Anchored = false
-		body.Massless = true
-		body.CFrame = handle.CFrame * CFrame.new(0, 0.185, -0.54)
-		local weld = Instance.new("WeldConstraint")
-		weld.Part0 = handle
-		weld.Part1 = body
-		weld.Parent = body
-		body.Parent = tool
-		-- Invisible muzzle marker at the barrel tip (WeaponController fires from it).
-		local muzzle = riflePart(
-			"Muzzle",
-			Vector3.new(0.2, 0.2, 0.14),
-			CFrame.new(0, 0.42, -1.95),
-			Color3.new()
-		)
-		muzzle.Transparency = 1
-	else
-		-- Placeholder rifle from Parts when the mesh template is missing.
+	-- Handle-local layout: grip at the origin (the palm), barrel along -Z. The gun in hand
+	-- names its mesh (Config.Weapons.<id>.Model); the placeholder Parts stand in until the
+	-- mesh loads (waitFor: the first character spawns before the boot-time template build).
+	local function placeholder()
 		riflePart(
 			"Body",
 			Vector3.new(0.34, 0.46, 1.5),
@@ -123,25 +104,51 @@ function PlayerSetup.attachRifle(character: Model, humanoid: Humanoid)
 			CFrame.new(0, 0.28, -1.6),
 			Color3.fromRGB(28, 28, 28)
 		)
-		riflePart(
-			"Stock",
-			Vector3.new(0.28, 0.4, 0.7),
-			CFrame.new(0, 0.06, 0.78),
-			Color3.fromRGB(82, 64, 42),
-			Enum.Material.Wood
-		)
-		riflePart(
-			"TriggerGrip",
-			Vector3.new(0.2, 0.42, 0.24),
-			CFrame.new(0, -0.18, 0.1),
-			Color3.fromRGB(40, 42, 45)
-		)
-		riflePart(
-			"Foregrip",
-			Vector3.new(0.16, 0.34, 0.2),
-			CFrame.new(0, -0.06, -0.6),
-			Color3.fromRGB(40, 42, 45)
-		)
+	end
+	-- Swaps the visible gun for `model`'s mesh, the Muzzle at its barrel tip (WeaponController
+	-- fires from it). Keeps whatever is there when the mesh never loads.
+	local function dress(wanted: string)
+		-- A gun whose mesh is not uploaded yet wears the rifle.
+		local model = if MeshAssets.isUploaded(wanted) then wanted else "wpn_rifle"
+		local body = MeshAssets.waitFor(model, 5)
+		if not body or not tool.Parent and not handle.Parent then
+			return
+		end
+		for _, child in tool:GetChildren() do
+			if child ~= handle and child:IsA("BasePart") then
+				child:Destroy()
+			end
+		end
+		body.Name = "Body"
+		body.Anchored = false
+		body.Massless = true
+		body.CFrame = handle.CFrame * CFrame.new(MeshAssets.getOffset(model))
+		local weld = Instance.new("WeldConstraint")
+		weld.Part0 = handle
+		weld.Part1 = body
+		weld.Parent = body
+		body.Parent = tool
+		local size = MeshAssets.getSize(model) or Vector3.zero
+		local muzzleAt = MeshAssets.getMuzzle(model) or Vector3.new(0, 0, -size.Z)
+		local muzzle =
+			riflePart("Muzzle", Vector3.new(0.2, 0.2, 0.14), CFrame.new(muzzleAt), Color3.new())
+		muzzle.Transparency = 1
+	end
+	placeholder()
+	local player = Players:GetPlayerFromCharacter(character)
+	local function current(): string
+		local id = player and player:GetAttribute(Attributes.Weapon)
+		return WeaponDefinitions.get(if typeof(id) == "string" then id else nil).Model
+	end
+	task.spawn(dress, current())
+	if player then
+		-- A swap (Q), the Arms Room or the dev panel changes the gun in hand: change the mesh.
+		local changed = player:GetAttributeChangedSignal(Attributes.Weapon):Connect(function()
+			task.spawn(dress, current())
+		end)
+		tool.Destroying:Once(function()
+			changed:Disconnect()
+		end)
 	end
 
 	-- Seat the rifle in the hand. Tilt the grip so the barrel rides level/up
