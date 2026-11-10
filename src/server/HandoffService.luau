@@ -20,7 +20,6 @@ local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Handoff = require(ReplicatedStorage.Shared.Rules.Handoff)
 local Loadout = require(ReplicatedStorage.Shared.Rules.Loadout)
-local Places = require(ReplicatedStorage.Shared.Places)
 local Lifecycle = require(script.Parent.Lifecycle)
 
 local HandoffService = {}
@@ -90,10 +89,23 @@ function HandoffService.operation(): string
 	return Handoff.DEFAULT_OPERATION
 end
 
+-- The lobby this match flies home to: a Dev pair's lobby when this is that pair's match, else
+-- Config.Places.Lobby (0 = none).
+function HandoffService.lobbyPlaceId(): number
+	for lobby, match in Config.Places.Dev do
+		if match == game.PlaceId then
+			return lobby
+		end
+	end
+	return Config.Places.Lobby
+end
+
 -- True when the squad can be sent home: the lobby is published (Config.Places.Lobby), this
 -- is a live server (teleports never run in Studio) and the squad came from the lobby.
 function HandoffService.canReturn(): boolean
-	return Places.lobby() ~= 0 and not RunService:IsStudio() and HandoffService.fromLobby()
+	return HandoffService.lobbyPlaceId() ~= 0
+		and not RunService:IsStudio()
+		and HandoffService.fromLobby()
 end
 
 -- Teleports everyone here to the lobby carrying `result` (Handoff.result). Yields through the
@@ -109,7 +121,7 @@ function HandoffService.sendHome(result: Handoff.Result): boolean
 			return true
 		end
 		local ok, err = pcall(function()
-			TeleportService:TeleportAsync(Places.lobby(), players, options)
+			TeleportService:TeleportAsync(HandoffService.lobbyPlaceId(), players, options)
 		end)
 		if ok then
 			return true
@@ -143,7 +155,11 @@ function HandoffService.init()
 		task.delay(Config.Handoff.RetryDelay, function()
 			if player.Parent then
 				pcall(function()
-					TeleportService:TeleportAsync(Places.lobby(), { player }, options)
+					TeleportService:TeleportAsync(
+						HandoffService.lobbyPlaceId(),
+						{ player },
+						options
+					)
 				end)
 			end
 		end)

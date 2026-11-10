@@ -105,9 +105,11 @@ run earned; the lobby reads progress from the DataStore, never from this table.
   after the Primary = partial, else loss); `result(...)` builds the trip home and
   `readResult(data)` checks it in the lobby (nil for anything else). Spec:
   `tests/Handoff.spec.luau`. Neither side builds the table by hand.
-- **`Config.Places`**: `Match` 87556879379942, `Lobby` (0 until the lobby is published in the
-  experience: then no trip home and READY restarts in the match). Both places read their ids
-  here. **`Config.Handoff`**: `ReturnAfterSeconds` 60, `Retries` 2, `RetryDelay` 2.
+- **`Config.Places`** (both places read their ids here, 2026-11-09): `Lobby` 87556879379942
+  (the start place, "Co-op Zombie Shooter": the game opens in the lobby), `Match`
+  125769854992316 ("Checkpoint Delta"), and `Dev`, test pairs lobby -> match (Nova's ZCS Dev
+  83558708746036 -> Match Dev 108949482095254): a launch from a Dev lobby goes to its match, and
+  that match flies home to its own lobby (`HandoffService.lobbyPlaceId`). **`Config.Handoff`**: `ReturnAfterSeconds` 60, `Retries` 2, `RetryDelay` 2.
   `Config.Run.StagingSeconds` 30.
 - **`HandoffService`** (match server): reads each player's join data once (`joinFor`), knows
   whether the squad came from the lobby and which operation, and `sendHome(result)` (one
@@ -126,48 +128,47 @@ run earned; the lobby reads progress from the DataStore, never from this table.
     opens, with `Handoff.result`. If every retry fails, a radio line says so and READY restarts
     in the match. Nobody is stranded.
 - **Screens**: `StagingUI` ("WAITING FOR SQUAD 1 / 3 · 0:20"); `RunEndUI` (BACK TO THE CARRIER,
-  LIFTING…). **Dev panel**: RUN > "Go to the lobby (live)" (`ToLobby`) flies a tester to the
-  lobby while the live game still opens in the match.
+  LIFTING…). **Dev panel**: RUN > "Go to the lobby (live)" (`ToLobby`) flies a tester who
+  joined the match place directly to its lobby.
 - **Verified in Studio** (separate window): no data starts at once with 3 bots (unchanged); a
   mock squad of 3 shows the staging line, keeps the lobby's SMG and call-ins, starts at the
   30 s timeout with 3 bots; a forged gun falls back to the rifle; an extracted run in Studio
   keeps READY = restart, and READY restarts. Not verifiable in Studio: real teleports (both
   ways); that needs the published test below.
 
-## What each of us does next
+## The lobby side, joined up (2026-11-09, branch `claude/lobby-reconcile` off `nova/lobby`)
 
-**Tien (Roblox, once):**
-1. Make sure the lobby place is published **inside the Co-op Zombie Shooter experience**
-   (Creator Hub > the experience > Places). Your `Lobby (Dev)` place (id 125769854992316) is
-   the candidate if it lives there.
-2. Send its place id: it goes into `Config.Places.Lobby` (one line).
-3. After every change that matters to the trip, publish both places (a teleport always lands
-   on the published version): the match from `default.project.json`, the lobby from
-   `lobby.project.json`.
+- `nova/lobby` merged with main; one handoff shape: the Loadmaster's `LaunchService.lift()`
+  sends `Handoff.departure(DEFAULT_OPERATION, aboard, LoadmasterService.loadoutsFor(party))`
+  plus `spot`. Nova's own reader (`JoinData`, `Rules/LaunchData` + spec) is retired: the match
+  reads the signed Loadout once in `HandoffService` and `RunManager.receive` applies it
+  (`LoadoutService.apply`, the Arms Room's checks).
+- **One server per lift**: `ReserveServer` once, `ReservedServerAccessCode` reused on every
+  retry (no split squad). `Config.Lobby.MatchPlaceId` / `DevMatchPlaceIds` became
+  `Config.Places`.
 
-**Nova (lobby side, `src/lobby/server/LaunchService.luau`):** steps 1-4 and 6 done on
-`nova/lobby` 2026-11-10: `main` merged; `lift()` sends `Handoff.departure(DEFAULT_OPERATION,
-aboard, loadouts)` with each soldier's Loadout signed at the Loadmaster (plus `spot`); one
-`ReserveServer` per lift, reused by every retry; the target is `Places.match()`
-(`Config.Places.Match`, or a test pair from `Config.Places.Dev`, which `Places.lobby()` also
-uses for the trip home). Left:
-5. New `DebriefUI` (lobby client): `Handoff.readResult(TeleportService:GetLocalPlayerTeleportData())`
-   and, when it returns a result, a one-time panel: the operation, STAND DOWN or SQUAD LOST,
-   one row per mission (Delta: WIN / PARTIAL / LOSS). Display only.
-6. (Done: the Loadmaster's signed Loadouts are passed.) The match's B Arms Room can now be
-   turned off for lobby runs once buying limits what a soldier may carry.
+## What's next
 
-**The live test (published places, Tien + a friend):** join (the game still opens in the
-match), F1 > "Go to the lobby (live)", board one spot together, land in one server (the
-staging line counts you in, no bots pop in and out), extract, see BACK TO THE CARRIER, fly
-home, see the debrief. Repeat with a wipe, and with one player stepping off during the
-countdown (the match waits out the timeout and a bot takes the seat).
+**Tien (Roblox):** publish both places from this code (a teleport always lands on the
+published version): the lobby from `lobby.project.json` into the start place
+(87556879379942), the match from `default.project.json` into Checkpoint Delta
+(125769854992316).
+
+**Nova (lobby side):** a `DebriefUI` (lobby client):
+`Handoff.readResult(TeleportService:GetLocalPlayerTeleportData())` and, when it returns a
+result, a one-time panel: the operation, STAND DOWN or SQUAD LOST, one row per mission (Delta:
+WIN / PARTIAL / LOSS). Display only. Then, once the lobby issues every loadout, the match's B
+Arms Room can be turned off for lobby runs.
+
+**The live test (published places, Tien + a friend):** join (the game opens on the Carrier),
+board one spot together, land in one server (the staging line counts you in, no bots pop in
+and out), extract, see BACK TO THE CARRIER, fly home. Repeat with a wipe, and with one player
+stepping off during the countdown (the match waits out the timeout and a bot takes the seat).
 
 ## Decisions (architect's recommendations, taken as defaults)
 
-- **The lobby is not the start place yet**: after the live test passes. Moving it may mean
-  publishing the lobby into the start place and the match into a new place; both ids live in
-  `Config.Places`, so it is a two-line change.
+- **The lobby is the start place** (owner, 2026-11-09): the start place can't be changed, so
+  the lobby was published into it and the match into Checkpoint Delta.
 - **The in-match Arms Room (B) stays** until the lobby rack issues loadouts.
 - **Home both ways**: the READY button and an automatic lift after 60 s, so nobody idles in a
   dead server. A wipe goes home too (`standDown = false`), Helldivers-style.

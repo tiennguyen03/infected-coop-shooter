@@ -208,10 +208,11 @@ The rack is where guns are **bought** (merits, onto the soldier's record; owner 
   MERITS may show; never shop, store, wares, sell, lock or unlock.
 - **The rack** (`ArmsRack`, `FallowLayout.ArmsRack`): a board on the hangar's port wall behind
   the cage (the cage lost its back row of bars and the old RifleRack block). Every catalog item
-  hangs on two pegs in catalog order: the five long guns in a column, the pistol and the frag
-  beside them. Every gun hangs as the model it is held as in the match (its row's `Model`,
-  Tien's `guns.py` meshes, 2026-11-10); the frag keeps a block silhouette. A new gun needs no
-  change in `ArmsRack`.
+  hangs on two pegs in catalog order: the seven long guns in a column, the sidearms and the
+  frag beside them. Each gun hangs its own held mesh (its row's `Model`, the one the match puts
+  in the hands; 2026-11-09), with a block silhouette until it loads or when it has none (the
+  frag). A new gun needs no rack edit, only a row; an eighth long gun needs a row added
+  to `FallowLayout.ArmsRack.longRows`.
 - **Looking** (all local to the player, so four can look at once): the camera glides inside
   the cage to frame the whole board (movement off, the prompt off, the Quartermaster hidden for this
   player only). The gun under the cursor slides 0.6 off its pegs with a soft yellow rim (a
@@ -255,24 +256,24 @@ Deck surface y 40, hangar floor y 20, sea y 0. Every position is in `FallowLayou
 | Server | `src/lobby/server/`: `Main.server`, `FallowLayout`, `Build`, `FallowBuilder`, `FallowArt`, `PikeBody`, `NpcBody`, `DeskService`, `ContainmentBoard`, `PlotService`, `LaunchService`, `LanternBird`, `ArmsRack`, `LoadmasterService` |
 | Client | `src/lobby/client/`: `Main.client`, `LaunchUI`, `DeskDialogUI`, `ArmsRackUI`, `LoadmasterUI`, `HoldStill`, `RadarSpin`, `LanternSpool` |
 | Art | `assets/3d/build/fallow.py` (12 `env_fallow_*` meshes), `lantern.py` (4 `veh_lantern_*`); `MeshAssets` entries; `Config.Lobby.Ship`, `Config.Lobby.Lantern`; attribute `LiftAt`; rule `Rules/ArmsStats` (+ spec), `Config.Lobby.Rack` |
-| Shared | `src/lobby/shared/LobbyDesks`; rules `src/shared/Rules/Manifest`, `Rules/Containment`, `Rules/RotorBlur`, `Rules/LoadoutSave` (+ specs), `Rules/Handoff` (Tien's); `src/shared/Places` (`Config.Places`, incl. the `Dev` test pairs); `Config.Lobby`, `Config.Containment`; remotes `Launch` + `Messages.Launch`, `Loadout` (shared with the match); attribute `DeskId` |
-| Match side | Tien's `HandoffService` reads the teleport data (`Places.lobby()` for the trip home); `LoadoutMenu.mount` options (title, hint, confirm) |
+| Shared | `src/lobby/shared/LobbyDesks`; rules `src/shared/Rules/Manifest`, `Rules/Containment`, `Rules/Handoff` (main's, the teleport data both places share); `Config.Lobby`, `Config.Places`, `Config.Containment`; remotes `Launch` + `Messages.Launch`, `Loadout` (shared with the match); attribute `DeskId` |
+| Match side | `HandoffService` reads the teleport data and `RunManager.receive` applies the signed Loadout (2026-11-09; `JoinData` retired); `LoadoutMenu.mount` options (title, hint, confirm) |
 
 ## How to test it
 
-1. In Studio open the group experience Co-op Zombie Shooter, Asset Manager > Places >
-   right-click > **Add New Place**, name it `Lobby (dev)`, open it.
+1. In Studio open a lobby place: Nova's ZCS Dev (his test experience), or the start place
+   "Co-op Zombie Shooter" (the real lobby; publish there from `main` only). Never connect
+   this project in a match place (`docs/STUDIO_MCP.md` > Places and publishing). The old
+   `Lobby (dev)` place (125769854992316) is now the real match, Checkpoint Delta.
 2. `rojo serve lobby.project.json --port 34873` (a different port from the match's 34872),
    Rojo plugin > set the port > Connect, Play.
 3. Check: spawn in the hangar in the Pike body, talk to each desk (F), read the board in the
    Plot, climb the ramp to the spots, stand in a boarding box (panel + countdown; in Studio it ends with the
    "Teleports don't run in Studio" line).
-4. Dev places (2026-11-09): `Lobby (Dev)` (125769854992316) launches into `Match (Dev)`
-   (70420018035843), not the real match (`Config.Places.Dev`, `Places`). Publish this branch
-   into both (match: `rojo serve default.project.json`, lobby: the lobby project) and Tien's
-   match place is never touched. Both sit in the group experience, whose start place is the
-   real match, so the app cannot join `Lobby (Dev)` directly. Nova's own test experience
-   does: its start place ZCS Dev (83558708746036) launches into Match Dev (108949482095254).
+4. Test places: Nova's own test experience, start place ZCS Dev (83558708746036), launches
+   into Match Dev (108949482095254) and that match flies home to ZCS Dev (`Config.Places.Dev`).
+   The group experience opens on the lobby (87556879379942) and launches into Checkpoint
+   Delta (125769854992316): `docs/LOBBY_MATCH_HANDOFF.md`.
 5. Launch for real: publish the place, join it from the Roblox app (with a friend for a
    two-person bird), board a spot. You should land in a match server together.
 

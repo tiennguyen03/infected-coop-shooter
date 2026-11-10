@@ -12,13 +12,13 @@ Palette texture (v5, cells 0-60): decal `120194869942486` → image **`121741835
 Rows marked "unused in game" are still registered in `MeshAssets` but no service clones
 them.
 
-Lobby meshes (12 `env_fallow_*`, 4 `veh_lantern_*`) uploaded 2026-11-09 to the group (270506601); MeshIds read in Studio through the built-in Studio MCP; rows at the end of the table. Re-uploaded the same day pre-mirrored in X (`build_assets.MIRROR_X_COLLECTIONS`: Roblox showed the first upload mirrored left-right); the rows carry the v2 ids.
-
 | Mesh | MeshId | Model asset (upload) | In-game Size (studs) | Placement note |
 |---|---|---|---|---|
 | pick_xp_orb | 95196197176639 | 134499655967097 | 1.0 x 1.0 x 1.0 | unused in game (XP orbs retired) |
 | prop_ammo_crate | 70908704628683 | 111854712064143 | 2.86 x 1.68 x 1.92 | pivot bottom: place at ground + 0.84 |
 | prop_repulsor_mine | 122106813224951 | 102515645095030 | 1.9 x 0.97 x 2.0 | pivot bottom: place at ground + 0.485 |
+Lobby meshes (12 `env_fallow_*`, 4 `veh_lantern_*`) uploaded 2026-11-09 to the group (270506601); MeshIds read in Studio through the built-in Studio MCP; rows at the end of the table. Re-uploaded the same day pre-mirrored in X (`build_assets.MIRROR_X_COLLECTIONS`: Roblox showed the first upload mirrored left-right); the rows carry the v2 ids.
+
 | prop_drone | 132929388031760 | 93513427419630 | 1.94 x 0.43 x 1.94 | unused in game (drones retired) |
 | prop_drone_beacon | 117405323536844 | 71937735064271 | 1.56 x 3.21 x 1.36 | unused in game |
 | wpn_rifle | 86613539481097 | 77112302177721 | 0.195 x 0.84 x 2.9 | 0.65x of the Blender size; grip offset handled in PlayerSetup |

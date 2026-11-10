@@ -410,32 +410,6 @@ switched off (`Config.Player.SkinnedBody = false`, see `assets/3d/README.md`).
 - Weapons: `gun` and `dark` materials, one accent facet (sight, mag tape) in the owning
   item's accent color.
 
-### The Fallow, the lobby ship (art pass 2026-11-09, uploaded 2026-11-09)
-
-Build sheet and decisions: `docs/sprints/LOBBY_V1_FALLOW.md` > Ship art; meshes in
-`assets/3d/build/fallow.py`. Read: a carrier because the deck overhangs the hull (sponsons,
-catwalks, safety nets), the bow tapers and flares under a square deck end, and the island
-steps up to bridge, Pri-Fly, funnels and mast. Shells are one-material meshes in Metal: hull
-(100,106,112), island (116,122,128), lighter so it stands off the Asphalt deck; trims keep the
-palette. The one loud mark is the HRD spray (island, both bow sides, the deck's bow end);
-canvas tubs (`tan_d`), raft canisters (`white_l`) and the hose station (`red`) are small
-accents. The v1 `BridgeWindows` Part (Glass, transparency 0.1) broke the no-transparency rule;
-the island mesh replaces it with opaque `glass` and FallowArt removes the Part. Budget: ~8,000
-tris for the whole ship with 18 instanced catwalk bays (cap 18,000).
-
-### Lantern, the lift bird (art pass 2026-11-09, uploaded 2026-11-09)
-
-Canon: `docs/LORE.md` > Lantern; sheet and decisions: `docs/sprints/LOBBY_V1_FALLOW.md` >
-Lantern; meshes in `assets/3d/build/lantern.py`. Vehicles take the prefix `veh_` (collection
-`Vehicles`). Read from 40 studs: the dark open door (the interior is `dark` / `dark_d` on
-purpose), the long thin boom with a fin taller than the rotor, the amber lamp. Shell Metal
-(104,110,80), faded olive; trim on the palette; the one loud mark is HRD, the number is white
-stencil. 1,912 tris a bird with both rotors (vehicle cap 5,000). Light: one PointLight per bird
-(amber, Range 12, Shadows off), on only while its spot counts down. **Exception to "no
-transparency on geometry"**: the rotor blur discs (two flat cylinders a bird, fading
-in to 0.8 transparent over the last 6 s before lift while the blades fade to 0.6, never out;
-`Rules/RotorBlur`) are VFX, like the breach ghost.
-
 ### Mission 1 "Checkpoint Delta"
 
 Layout, landmarks, traversal and dressing rules are in [LEVELS.md](LEVELS.md) A. Style
@@ -463,6 +437,32 @@ studs out, clustered north-east (`SkyService.SKYLINE`), six types from
 4-9), 960-1,870 tris, placed at 0.75-1.05 scale with the long face toward the arena. Each
 tower's `_lit` twin holds its lit windows as Neon slabs: sodium in most, fluorescent in a
 quarter, fire orange in the six burning ones (smoke and fire at 60% height). 46 MeshParts,
+### The Fallow, the lobby ship (art pass 2026-11-09, uploaded 2026-11-09)
+
+Build sheet and decisions: `docs/sprints/LOBBY_V1_FALLOW.md` > Ship art; meshes in
+`assets/3d/build/fallow.py`. Read: a carrier because the deck overhangs the hull (sponsons,
+catwalks, safety nets), the bow tapers and flares under a square deck end, and the island
+steps up to bridge, Pri-Fly, funnels and mast. Shells are one-material meshes in Metal: hull
+(100,106,112), island (116,122,128), lighter so it stands off the Asphalt deck; trims keep the
+palette. The one loud mark is the HRD spray (island, both bow sides, the deck's bow end);
+canvas tubs (`tan_d`), raft canisters (`white_l`) and the hose station (`red`) are small
+accents. The v1 `BridgeWindows` Part (Glass, transparency 0.1) broke the no-transparency rule;
+the island mesh replaces it with opaque `glass` and FallowArt removes the Part. Budget: ~8,000
+tris for the whole ship with 18 instanced catwalk bays (cap 18,000).
+
+### Lantern, the lift bird (art pass 2026-11-09, uploaded 2026-11-09)
+
+Canon: `docs/LORE.md` > Lantern; sheet and decisions: `docs/sprints/LOBBY_V1_FALLOW.md` >
+Lantern; meshes in `assets/3d/build/lantern.py`. Vehicles take the prefix `veh_` (collection
+`Vehicles`). Read from 40 studs: the dark open door (the interior is `dark` / `dark_d` on
+purpose), the long thin boom with a fin taller than the rotor, the amber lamp. Shell Metal
+(104,110,80), faded olive; trim on the palette; the one loud mark is HRD, the number is white
+stencil. 1,912 tris a bird with both rotors (vehicle cap 5,000). Light: one PointLight per bird
+(amber, Range 12, Shadows off), on only while its spot counts down. **Exception to "no
+transparency on geometry"**: the rotor blur discs (two flat cylinders a bird, fading
+in to 0.8 transparent over the last 6 s before lift while the blades fade to 0.6, never out;
+`Rules/RotorBlur`) are VFX, like the breach ghost.
+
 ~42k tris, no lights, no collision or queries. `SkyService.burn(part)` puts the same fire +
 smoke on a dressing piece (`burning = true` in `ArenaService.DRESSING`). Smoke is the stock
 `smoke_main` particle at rate 5, 14-22 s life, a light westerly drift; fire is `fire_main`,

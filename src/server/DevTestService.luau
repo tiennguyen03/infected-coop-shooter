@@ -16,13 +16,13 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
-local Config = require(ReplicatedStorage.Shared.Config)
 local CallInDefinitions = require(ReplicatedStorage.Shared.CallInDefinitions)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local UpgradeDefinitions = require(ReplicatedStorage.Shared.UpgradeDefinitions)
 local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
 local CallInService = require(script.Parent.CallInService)
 local EnemyService = require(script.Parent.EnemyService)
+local HandoffService = require(script.Parent.HandoffService)
 local IndexService = require(script.Parent.IndexService)
 local LoadoutService = require(script.Parent.LoadoutService)
 local PlayerStatsService = require(script.Parent.PlayerStatsService)
@@ -429,17 +429,16 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 	RestartRun = function(player)
 		DevTestService.restartRun(player)
 	end,
-	-- The live game still opens in the match: this flies the caller to the lobby place
-	-- (Config.Places.Lobby) so a tester can board a Lantern. Teleports never run in Studio.
+	-- Flies the caller to this match's lobby (HandoffService.lobbyPlaceId: Config.Places), for
+	-- a tester who joined the match place directly. Teleports never run in Studio.
 	ToLobby = function(player)
-		if Config.Places.Lobby == 0 or RunService:IsStudio() then
-			warn(
-				"[DevTest] ToLobby: the lobby place is not set (Config.Places.Lobby) or this is Studio"
-			)
+		local lobby = HandoffService.lobbyPlaceId()
+		if lobby == 0 or RunService:IsStudio() then
+			warn("[DevTest] ToLobby: no lobby place (Config.Places) or this is Studio")
 			return
 		end
 		local ok, err = pcall(function()
-			game:GetService("TeleportService"):TeleportAsync(Config.Places.Lobby, { player })
+			game:GetService("TeleportService"):TeleportAsync(lobby, { player })
 		end)
 		print(`[DevTest] ToLobby {player.Name}: {if ok then "sent" else err}`)
 	end,

@@ -77,6 +77,8 @@ end
 local function pickFor(player: Player): Loadout.Loadout
 	local pick = picks[player]
 	if not pick then
+		-- The default; the Loadout signed for at the lobby's Loadmaster replaces it on arrival
+		-- (RunManager.receive -> LoadoutService.apply, read by HandoffService).
 		pick = ArmsRoom.default()
 		picks[player] = pick
 	end

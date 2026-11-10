@@ -28,6 +28,15 @@ local GREY = Color3.fromRGB(75, 81, 89)
 local OLIVE = Color3.fromRGB(99, 110, 66)
 local WOOD = Color3.fromRGB(110, 90, 60)
 
+-- Each gun hangs its own held mesh (its row's Model, the one the match puts in the hands);
+-- the silhouette shows until that mesh loads, or for good if it is not uploaded (grenades).
+local function meshFor(id: string): string?
+	if not WeaponDefinitions.exists(id) then
+		return nil
+	end
+	return WeaponDefinitions.get(id).Model
+end
+
 type Block = { size: Vector3, at: Vector3, color: Color3, ball: boolean? }
 
 local function b(sx: number, sy: number, x: number, y: number, color: Color3, sz: number?): Block
@@ -156,16 +165,6 @@ function ArmsRack.build(parent: Instance)
 	local side: { string } = table.clone(catalog.secondaries)
 	for _, id in catalog.grenades do
 		table.insert(side, id)
-	end
-	-- The gun's own held mesh (nil for a grenade).
-	local guns: { [string]: boolean } = {}
-	for _, list in { catalog.primaries, catalog.secondaries } do
-		for _, id in list do
-			guns[id] = true
-		end
-	end
-	local function meshFor(id: string): string?
-		return if guns[id] then WeaponDefinitions.get(id).Model else nil
 	end
 	local function hang(ids: { string }, rows: { number }, z: number)
 		for index, id in ids do

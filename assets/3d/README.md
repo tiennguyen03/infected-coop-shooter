@@ -15,15 +15,19 @@ One Blender project holds every asset: **`arena_survivor.blend`**. Collections i
 
 The `.blend` is **generated** by `build/build_assets.py`. Every asset is described in code
 (boxes, cylinders, icospheres painted with palette swatches), so edits made by hand in Blender
-are overwritten by the next build. **Roblox mirrors an imported mesh in X** about its bounds
-centre (found 2026-11-09 on the Fallow): the `Fallow` and `Vehicles` collections export
-pre-mirrored (`MIRROR_X_COLLECTIONS`, previews and offsets unchanged); an asymmetric mesh in
-another collection needs the same before upload. **One file per singular asset** (owner): a boss or a body
+are overwritten by the next build. **One file per singular asset** (owner): a boss or a body
 gets its own `build/<name>.py` exposing `register(ba)`, which `build_assets.py` imports and
 calls at the end of its asset list (`warden.py` is the pattern); sets of related things share
 one file (`props.py`, `city.py`, `gore.py`, the Infected roster in `build_assets.py`). Design
 new bodies in live Blender first (below) so the owner can direct the shape before it is
 ported into a build file.
+
+**Roblox mirrors an imported mesh in X** about its bounds centre (found 2026-11-09 on the
+Fallow): the `Fallow` and `Vehicles` collections export pre-mirrored (`MIRROR_X_COLLECTIONS`;
+previews and offsets unchanged). An asymmetric mesh in another collection needs the same
+before upload. The lobby's art: `build/fallow.py` (12 `env_fallow_*`, the ship) and
+`build/lantern.py` (4 `veh_lantern_*`, the lift bird); ids in `ASSET_IDS.md`, budgets in
+`docs/STYLES.md`.
 
 ## Rebuild everything
 

@@ -100,10 +100,11 @@ FallowLayout.Desks = {
 -- Quartermaster's cage. Long guns hang in a column, muzzles toward the bow; sidearms and grenades in
 -- a column beside them. The board's outward face is +X (into the hangar).
 FallowLayout.ArmsRack = {
-	board = { x0 = -32.95, x1 = -32.75, z0 = 100.5, z1 = 109.5, y0 = 22, y1 = 28.5 },
+	board = { x0 = -32.95, x1 = -32.75, z0 = 100.5, z1 = 109.5, y0 = 21.4, y1 = 28.6 },
 	out = 0.45, -- studs the guns hang off the board
 	longZ = 103.4,
-	longRows = { 27.6, 26.4, 25.2, 24.0, 22.8 },
+	-- one row per long gun in the Arms Room (WeaponDefinitions.PRIMARIES: seven today)
+	longRows = { 27.9, 26.9, 25.9, 24.9, 23.9, 22.9, 21.9 },
 	sideZ = 107.6,
 	sideRows = { 26.6, 25.0, 23.4 },
 }

@@ -167,16 +167,16 @@ local Config = {
 	},
 
 	-- The experience's places (docs/LOBBY_MATCH_HANDOFF.md). Both the lobby and the match read
-	-- them here. Lobby 0 = not published yet: no trip home, READY restarts in the match.
+	-- them here. The lobby is the start place (2026-11-09: the places' contents were swapped).
+	-- Lobby 0 would mean no trip home: READY restarts in the match.
 	Places = {
-		Match = 87556879379942, -- "Co-op Zombie Shooter"
-		Lobby = 0,
-		-- Test pairs, lobby place -> match place (`Places`): a launch from a test lobby lands in
-		-- its own test match and that match flies the squad home to the same lobby, so testing
-		-- never republishes the real places (Nova, 2026-11-09).
+		Lobby = 87556879379942, -- "Co-op Zombie Shooter", the start place: the Fallow
+		Match = 125769854992316, -- "Checkpoint Delta"
+		-- Test pairs, lobby place -> match place: a launch from one of these lobbies goes to its
+		-- own match and that match flies home to it, so testing never needs the real places
+		-- republished (Nova's own test experience).
 		Dev = {
-			[83558708746036] = 108949482095254, -- Nova's test experience: ZCS Dev -> Match Dev
-			[125769854992316] = 70420018035843, -- the group experience: Lobby (Dev) -> Match (Dev)
+			[83558708746036] = 108949482095254, -- ZCS Dev -> Match Dev
 		} :: { [number]: number },
 	},
 
@@ -295,6 +295,7 @@ local Config = {
 			Kick = { Pitch = 0.9, Yaw = 0.3, Recover = 0.12 }, -- degrees up, +/- degrees, seconds
 			Model = "wpn_m16",
 			Price = 0, -- merits at the Quartermaster's rack (Rules/Record); issued free
+			ArmsOrder = 1, -- Arms Room position in its slot (rack, menu); the first is the default
 		},
 		-- MP5: the best hip-fire; chews Runners, weak on Brutes (Walker 4 / 2, Brute 19 / 15).
 		Smg = {
@@ -316,6 +317,7 @@ local Config = {
 			Kick = { Pitch = 0.5, Yaw = 0.2, Recover = 0.12 },
 			Model = "wpn_mp5",
 			Price = 300, -- merits at the Quartermaster's rack (Rules/Record)
+			ArmsOrder = 2,
 			Sound = "smg",
 		},
 		-- M249: a 100-round belt, no reload inside a hold; slow to aim on the move.
@@ -338,6 +340,7 @@ local Config = {
 			Kick = { Pitch = 1.1, Yaw = 0.5, Recover = 0.12 },
 			Model = "wpn_m249",
 			Price = 600, -- merits at the Quartermaster's rack (Rules/Record)
+			ArmsOrder = 3,
 			Sound = "lmg",
 		},
 		-- Mossberg 590: point-blank, one decision per pull; one pull drops every form but the
@@ -363,6 +366,7 @@ local Config = {
 			Kick = { Pitch = 4.0, Yaw = 0.8, Recover = 0.12 },
 			Model = "wpn_mossberg",
 			Price = 400, -- merits at the Quartermaster's rack (Rules/Record)
+			ArmsOrder = 4,
 			Sound = "shotgun",
 		},
 		-- M110: one-taps Walkers, hits two in a line, poor up close. Ammo reins it in
@@ -388,6 +392,7 @@ local Config = {
 			Kick = { Pitch = 2.6, Yaw = 0.4, Recover = 0.12 },
 			Model = "wpn_m110",
 			Price = 500, -- merits at the Quartermaster's rack (Rules/Record)
+			ArmsOrder = 5,
 			Sound = "dmr",
 		},
 		-- M17: the sidearm, backup when the primary runs dry.
@@ -410,6 +415,7 @@ local Config = {
 			Kick = { Pitch = 1.6, Yaw = 0.3, Recover = 0.12 },
 			Model = "wpn_m17",
 			Price = 0, -- merits at the Quartermaster's rack (Rules/Record); issued free
+			ArmsOrder = 1,
 			Sound = "pistol",
 		},
 		-- Sample guns (2026-11-09, dev menu; the Arms Room lists them once Nova's loadout work
@@ -436,6 +442,7 @@ local Config = {
 			HeadshotMultiplier = 3.0,
 			Kick = { Pitch = 3.0, Yaw = 0.6, Recover = 0.18 },
 			Model = "wpn_revolver",
+			ArmsOrder = 2,
 			Sound = "revolver",
 		},
 		-- M2010 ESR: one round per form but the Brute (2), through three more in a line. One
@@ -460,6 +467,7 @@ local Config = {
 			HeadshotMultiplier = 3.0,
 			Kick = { Pitch = 5.0, Yaw = 0.8, Recover = 0.25 },
 			Model = "wpn_sniper",
+			ArmsOrder = 6,
 			Sound = "sniper",
 		},
 		-- M3 recoilless ("Goose", the squad's RPG): a visible rocket. A direct hit kills anything
@@ -486,6 +494,7 @@ local Config = {
 			ProjectileSpeed = 220, -- studs/s
 			Explosive = { Radius = 6, Damage = 120, ShakePower = 4 },
 			Model = "wpn_goose",
+			ArmsOrder = 7,
 			Sound = "goose",
 		},
 	},
@@ -1551,6 +1560,7 @@ local Config = {
 
 	-- The lobby place: the Fallow (docs/sprints/LOBBY_V1_FALLOW.md, LORE.md > The Fallow).
 	Lobby = {
+		-- The match a squad launches into: Config.Places (Match, or a Dev pair's).
 		-- What the lobby keeps per soldier between visits (SaveSlot; a stand-in for the F9 save
 		-- service): the Loadmaster's signed Loadout (LoadmasterService, Rules/LoadoutSave) and the
 		-- record, merits and guns bought (RecordService, Rules/Record). Gun prices sit on each
