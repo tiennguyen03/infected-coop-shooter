@@ -248,7 +248,7 @@ Deck surface y 40, hangar floor y 20, sea y 0. Every position is in `FallowLayou
   `TeleportOptions.ShouldReserveServer` (documented, missing from the luau-lsp definitions,
   set through a cast in `LaunchService`). If the live launch errors there, switch to
   `TeleportService:ReserveServer` and pass the access code.
-## Loadmaster and Loadout (2026-11-09: prototype built; lobby side playtested, match side static checks only)
+## Loadmaster and Loadout (2026-11-09: prototype built; verified live end to end)
 
 Owner and Tien: the Loadmaster at the foot of the ramp is where a soldier equips; the menu is
 called **Loadout**. Lines by the lore developer (merits, the record, `LobbyDesks` `kit`).
@@ -265,8 +265,11 @@ called **Loadout**. Lines by the lore developer (merits, the record, `LobbyDesks
   spot, party, loadouts keyed by UserId string).
 - **Match** (`JoinData`, the one reader of teleport data): `LoadoutService` seeds a soldier's
   first pick from it, re-validated against the match catalog; no data or a bad Loadout falls
-  back to `ArmsRoom.default()`. `RunManager` is untouched. Untestable in Studio (no teleports):
-  check on the published places.
+  back to `ArmsRoom.default()`. `RunManager` is untouched. Untestable in Studio (no teleports);
+  verified live 2026-11-10 in Nova's test experience: a Loadout signed in ZCS Dev arrives in
+  Match Dev after a real Lantern launch. A publish made before Rojo synced the dev pair
+  launched toward the real match (another experience) and failed with "Lantern couldn't
+  lift": republish after the sync.
 
 - **Make the lobby the experience's start place** (owner's call): today players still join
   the match place directly. The match reads only the Loadouts from the teleport data
