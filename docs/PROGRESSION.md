@@ -51,7 +51,8 @@ gone (`docs/sprints/SPRINT_18_LOADOUT.md`). Lore names on the HUD ([LORE.md](LOR
   `docs/superpowers/plans/2026-11-08-pike-loadout.md`).** Every player is a Pike soldier
   (Pike One to Four, [LORE.md](LORE.md)); there are no classes and no hero kit. A soldier
   carries a primary, a sidearm, a grenade type and four call-ins on keys 1-4, picked in the
-  **Arms Room** menu (B). Q swaps long gun and sidearm, G throws a grenade (3 carried; a
+  **Loadout** menu (B in the match; signed for at the lobby's Loadmaster, which the match
+  reads on arrival: `JoinData`). Q swaps long gun and sidearm, G throws a grenade (3 carried; a
   pallet refills them), V shoves (15 dmg, 0.8 s stagger, 6-stud push, 1 s cooldown), E uses a
   stim (2 carried, heals 60 over 1 s; the Medkit card refills them), 5 throws the Resupply
   flare (always carried). Q dash, E breach and Combat Momentum are gone. Every gun is

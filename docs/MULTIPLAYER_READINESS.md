@@ -97,7 +97,8 @@ may add to this list.
    which is today's game. Rules that keep this cheap later:
    - **The match server never assumes who is coming.** The expected party, each member's
      class and loadout, and the squad's operation choice arrive as teleport data
-     (`player:GetJoinData().TeleportData`), read in one place (`RunManager`), with a
+     (`player:GetJoinData().TeleportData`), read in one place (`JoinData`; the Loadout is
+     read today, 2026-11-09, via `Rules/LaunchData`), with a
      Studio/solo fallback to today's defaults. Late joiners and missing players are normal.
    - **`Lobby` state in the match = staging, not the menu.** It waits for the party to load
      (or a timeout), then the ready-up/Insert flow runs. The menu itself lives only in the

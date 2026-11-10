@@ -232,7 +232,8 @@ not a lit display: no spotlights, turntables or display lighting. The one feedba
 hovered gun sliding 0.6 studs off its pegs with a faint yellow rim (`Highlight`, fill 0.85,
 outline 0.3, `HudTheme.Color.Yellow`). The card follows the HUD: `HudTheme` track panel and
 outline, GothamBlack name, dim designation, yellow ON ISSUE, stat bars as a 6 px white track
-with a yellow fill. Words never used on it: price, buy, sell, lock, unlock, shop, store, wares.
+with a yellow fill. BUY and a price in MERITS may show (owner, 2026-11-09); words never used on it: sell,
+lock, unlock, shop, store, wares.
 
 ## 6. 3D assets (Blender → Roblox)
 

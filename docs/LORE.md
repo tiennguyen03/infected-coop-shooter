@@ -165,11 +165,14 @@ how the other teams are called is open, for the lore developer.
 
 - **Flight deck.** Numbered Lantern spots; a team launches by boarding its bird. By day smoke
   stands over the coast where the Burn has been; at night it shows orange.
-- **Hangar deck.** Where the teams wait, and where they draw kit. Nobody sells anything; a
-  team draws against its record (what the record is, the unlock currency, is open; not
-  "Requisition", which is the pallet cost). The desks: the **Arms Room** (the armorer behind
-  a wire cage: guns, sidearms, grenades), the **Loadmaster** (Lantern's crew chief:
-  everything kicked out of the door), **Fires** (a fire support officer: your callsign on the
+- **Hangar deck.** Where the teams wait, and where they kit up (owner, 2026-11-09). Every
+  soldier has a **record**: the kit signed to their name. A soldier buys kit onto it at the
+  **Arms Room** with **merits**, which the Plot pays a window team for containment work done
+  before the Burn (not "Requisition", which is the pallet cost). The desks: the **Arms Room**
+  (the **Quartermaster** behind a wire cage: guns, sidearms, grenades, bought off the rack),
+  the **Loadmaster** (Lantern's crew chief: he makes up each soldier's **Loadout**, what they
+  carry and what is kicked out of the door, and they sign for it before they walk up the
+  ramp), **Fires** (a fire support officer: your callsign on the
   Hammer, Anvil and Shrike nets), the **Engineers** (a sapper sergeant: Doorman, Tripline,
   Concertina). Desk crew wear ship or Army working dress, never Pike grey.
 - **The Plot.** Control's map room under the island, lit red. The corridor chart on the
@@ -183,7 +186,8 @@ how the other teams are called is open, for the lore developer.
 
 Keep it ours: the ship is shared and never upgraded by players (no ship modules), the board
 is paper and perspex (no hologram), a team launches by boarding a helo (no drop pods), the
-desks are people at counters (no rotating store), and the PA is procedural (no propaganda).
+desks are people at counters (no rotating store: the rack has fixed prices, no sales, no
+daily stock), and the PA is procedural (no propaganda).
 
 | Cue | Line |
 |---|---|
@@ -204,8 +208,8 @@ feet.
 - **The door.** The starboard cargo door slides all the way back and stays open in flight.
   The crew chief rides in it on a monkey strap, clipped to a kick rail along the sill.
   Everything the Loadmaster issues goes out of that door: slung cases, speedballs, pallets.
-  The crew chiefs are the Loadmaster's people; the desk on the hangar deck is where they sign
-  for the load.
+  The crew chiefs are the Loadmaster's people; at his desk on the hangar deck each soldier
+  signs for their Loadout before boarding.
 - **No door gun.** The pintle mount is still on the door frame, empty, its arm swung inboard
   and tied off. Lantern does not fight for its LZ. Pike holds it. When the squad needs a gun
   from the air, it calls Shrike.
@@ -247,7 +251,9 @@ identity. Build sheet in [CHARACTERS.md](CHARACTERS.md) section C.
 
 ## The Arms Room and the call-ins
 
-The loadout menu is the **Arms Room** (the Army's name for a unit armoury). Naming rules:
+The loadout menu is the **Loadout** (owner, 2026-11-09: signed for at the Loadmaster's desk).
+The **Arms Room** (the Army's name for a unit armoury) is the Quartermaster's cage on the
+Fallow, where kit is bought onto a soldier's record. Naming rules:
 
 - **Guns** carry their plain real-world designation on the HUD ("M4A1 Carbine"), no
   nicknames. Starting list: M4A1 Carbine (default), M16A4 Rifle, Mossberg 590 Shotgun,

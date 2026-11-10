@@ -166,13 +166,14 @@ there is no PlayerModule, and the keys unbind only once the rack is open. The ar
 renamed **the Quartermaster** (owner, 2026-11-09).
 
 The owner's ask (after a GTA gun counter): give the Quartermaster a use as the place the guns live.
-Loadout selection is not part of it; nothing is drawn yet.
+The rack is where guns are **bought** (merits, onto the soldier's record; owner and Tien,
+2026-11-09), not equipped: equipping is the Loadmaster's (below). Buying waits for the save
+service (F9).
 
 - **Talk** (F on the Quartermaster, `ArmsRackUI` instead of `DeskDialogUI` for a desk with a `rack`
   in `LobbyDesks`): his line and three choices, "Any work going?" (his answer: work comes from
-  the Plot; no taskings yet), "Show me the rack." and "Carry on." Wording by the lore developer:
-  nothing on the Fallow is bought or sold, so no price, buy, sell, lock, unlock, shop, store
-  or wares anywhere.
+  the Plot; no taskings yet), "Show me the rack." and "Carry on." Wording by the lore developer: BUY and a price in
+  MERITS may show; never shop, store, wares, sell, lock or unlock.
 - **The rack** (`ArmsRack`, `FallowLayout.ArmsRack`): a board on the hangar's port wall behind
   the cage (the cage lost its back row of bars and the old RifleRack block). Every catalog item
   hangs on two pegs in catalog order: the five long guns in a column, the pistol and the frag
@@ -182,8 +183,8 @@ Loadout selection is not part of it; nothing is drawn yet.
   the cage to frame the whole board (movement off, the prompt off, the Quartermaster hidden for this
   player only). The gun under the cursor slides 0.6 off its pegs with a soft yellow rim (a
   Highlight; the owner asked for the glow, the lore pass wanted none, so it stays faint). Click
-  or tap frames that gun left of centre with its card on the right: name, the real gun, ON ISSUE
-  (the default kit, `ArmsRoom.default()`) or NOT ON ISSUE with "Record not open", its line, and
+  or tap frames that gun left of centre with its card on the right: name, the real gun, ON YOUR
+  RECORD (the default kit, `ArmsRoom.default()`) or NOT ON YOUR RECORD with "Merit book not open", its line, and
   six bars from `Rules/ArmsStats` (damage per pull, fire rate, magazine, reload, range,
   aimed accuracy, each against the best on the rack); the frag shows its numbers without bars.
   ◀ ▶ (or arrow keys, A/D, the d-pad) step along the rack; Back (or Backspace, B) steps back to
@@ -241,12 +242,32 @@ Deck surface y 40, hangar floor y 20, sea y 0. Every position is in `FallowLayou
   `TeleportOptions.ShouldReserveServer` (documented, missing from the luau-lsp definitions,
   set through a cast in `LaunchService`). If the live launch errors there, switch to
   `TeleportService:ReserveServer` and pass the access code.
+## Loadmaster and Loadout (2026-11-09: prototype built; lobby side playtested, match side static checks only)
+
+Owner and Tien: the Loadmaster at the foot of the ramp is where a soldier equips; the menu is
+called **Loadout**. Lines by the lore developer (merits, the record, `LobbyDesks` `kit`).
+
+- **Talk** (F on the Loadmaster, `LoadmasterUI`): his line and 1 "Make up my Loadout." 2 "What
+  do you kick?" 3 "Carry on." (click or keys 1-3, Modal mouse, one dialog at a time).
+- **Loadout**: choice 1 opens the match's `LoadoutMenu` (mapped into the lobby project) with
+  the lobby's words (`LoadoutMenu.mount` options: title LOADOUT, SIGN FOR IT): primary,
+  sidearm, grenade, up to four call-ins. The soldier is held still (`HoldStill`, shared with
+  the rack); BACK or Backspace steps out. Prototype: the whole catalog may be signed for.
+- **Server** (`LoadmasterService`): checks the request with the match's rules and catalog
+  (`Rules/Loadout`, `ArmsRoom`), keeps one signed Loadout per player (not saved), answers on
+  the `Loadout` remote. `LaunchService` sends them as teleport data (`Rules/LaunchData`:
+  spot, party, loadouts keyed by UserId string).
+- **Match** (`JoinData`, the one reader of teleport data): `LoadoutService` seeds a soldier's
+  first pick from it, re-validated against the match catalog; no data or a bad Loadout falls
+  back to `ArmsRoom.default()`. `RunManager` is untouched. Untestable in Studio (no teleports):
+  check on the published places.
+
 - **Make the lobby the experience's start place** (owner's call): today players still join
-  the match place directly. The match ignores the teleport data; reading the party there is
-  `RunManager`'s job (decision 7).
+  the match place directly. The match reads only the Loadouts from the teleport data
+  (`JoinData`); the party and spot are unread (decision 7).
 - **Back to the Fallow at run end** (decision 7: once meta progression exists).
-- **Real board numbers** and **desk trades** wait for the save service (F9) and a name for
-  the record currency (lore + systems designer).
+- **Real board numbers** and **desk trades** wait for the save service (F9); the currency is
+  **merits** (owner, 2026-11-09), how many a run pays is the systems designer's.
 - **Ship and Lantern art: full check** (uploaded and wired 2026-11-09; v2 the same day: the first
   upload showed every mesh mirrored left-right, so the island raft rack hung over the HRD patch
   and one-sided trim sat on the wrong side; `build_assets.MIRROR_X_COLLECTIONS` pre-mirrors
@@ -262,8 +283,9 @@ Deck surface y 40, hangar floor y 20, sea y 0. Every position is in `FallowLayou
 - **Arms Room, later**: Tien's gun meshes (`ArmsRack.MESH`); drawing a gun once the record
   opens (the card's button goes where the status line is); the Quartermaster's taskings.
 - **Lore, to approve** (lore developer, Arms Room pass): "the rack" as the Quartermaster's word for
-  the wall; "on issue" / "not on issue" as the standard words on every desk; "taskings" as the
-  in-world word for desk side work. Canon names the default gun the M4A1 Carbine; the game's
+  the wall; "taskings" as the in-world word for desk side work ("on issue" became "on your
+  record", approved 2026-11-09 with merits). HRD (Harlan Recovery Detachment) has no canon line
+  saying who sprayed it; the lore developer proposes one. Canon names the default gun the M4A1 Carbine; the game's
   catalog issues the Service Rifle (M16A4) and has no carbine: one of them changes.
 - **Lantern in the match** (insert, extraction, supply kicks out of the starboard door): the
   same four meshes; `LanternBird` and `LanternSpool` are lobby modules today.

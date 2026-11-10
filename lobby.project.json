@@ -42,6 +42,9 @@
           },
           "PaletteController": {
             "$path": "src/client/PaletteController.luau"
+          },
+          "LoadoutMenu": {
+            "$path": "src/client/LoadoutMenu.luau"
           }
         }
       }

@@ -70,8 +70,9 @@ function DeskDialogUI.init()
 		if not desk then
 			return
 		end
-		if desk.rack then
-			-- A desk with a rack talks through ArmsRackUI: one dialog on screen at a time.
+		if desk.rack or desk.kit then
+			-- A desk with a rack or a kit talks through its own screen (ArmsRackUI,
+			-- LoadmasterUI): one dialog on screen at a time.
 			panel.Visible = false
 			openPrompt = nil
 			return

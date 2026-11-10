@@ -22,6 +22,7 @@ local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local LobbyDesks = require(ReplicatedStorage.Lobby.LobbyDesks)
 local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
+local HoldStill = require(script.Parent.HoldStill)
 local HudTheme = require(script.Parent.HudTheme)
 
 local ArmsRackUI = {}
@@ -458,41 +459,8 @@ local function fillCard(id: string)
 end
 
 -- --------------------------------------------------------------- modes
--- Stops the soldier walking off while the camera is on the rack. Never yields: this place
--- may run without a PlayerModule in PlayerScripts (the lobby does), and waiting for one
--- hung "Show me the rack." for good. Without it the Humanoid is held still instead.
-local frozen: { humanoid: Humanoid, walk: number, jump: number }? = nil
 local function setMovement(enabled: boolean)
-	local scripts = player:FindFirstChild("PlayerScripts")
-	local module = scripts and scripts:FindFirstChild("PlayerModule")
-	if module and module:IsA("ModuleScript") then
-		local ok, controls = pcall(function()
-			return (require :: any)(module):GetControls()
-		end)
-		if ok and controls then
-			if enabled then
-				controls:Enable()
-			else
-				controls:Disable()
-			end
-			return
-		end
-	end
-	if enabled then
-		if frozen and frozen.humanoid.Parent then
-			frozen.humanoid.WalkSpeed = frozen.walk
-			frozen.humanoid.JumpHeight = frozen.jump
-		end
-		frozen = nil
-		return
-	end
-	local character = player.Character
-	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-	if humanoid and not frozen then
-		frozen = { humanoid = humanoid, walk = humanoid.WalkSpeed, jump = humanoid.JumpHeight }
-		humanoid.WalkSpeed = 0
-		humanoid.JumpHeight = 0
-	end
+	HoldStill.set(not enabled)
 end
 
 local function hideQuartermaster(hide: boolean)

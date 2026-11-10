@@ -4,7 +4,8 @@
 -- aboard (Rules/Manifest: boarding order, up to Config.Lobby.Launch.Capacity); the first
 -- aboard starts the countdown, a full bird shortens it. When it runs out, the server reserves
 -- a private server of the match place and teleports everyone aboard together, with the spot
--- and the party's UserIds as teleport data (the match never trusts it for progress).
+-- the party's UserIds and each soldier's signed Loadout (LoadmasterService) as teleport data
+-- (Rules/LaunchData; the match re-checks the Loadouts and never trusts it for progress).
 -- Teleports do not run in Studio: there the spot reports it and resets.
 
 local Players = game:GetService("Players")
@@ -15,11 +16,13 @@ local Workspace = game:GetService("Workspace")
 
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
+local LaunchData = require(ReplicatedStorage.Shared.Rules.LaunchData)
 local Manifest = require(ReplicatedStorage.Shared.Rules.Manifest)
 local Messages = require(ReplicatedStorage.Shared.Messages)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local Build = require(script.Parent.Build)
 local LanternBird = require(script.Parent.LanternBird)
+local LoadmasterService = require(script.Parent.LoadmasterService)
 local Layout = require(script.Parent.FallowLayout)
 
 local LaunchService = {}
@@ -181,7 +184,11 @@ local function lift(state: SpotState)
 			"Teleports don't run in Studio. Publish the lobby and launch from the live game."
 		)
 	else
-		local data = { spot = state.spot.index, party = table.clone(state.manifest.aboard) }
+		local data = LaunchData.encode(
+			state.spot.index,
+			state.manifest.aboard,
+			LoadmasterService.loadoutsFor(party)
+		)
 		local options = Instance.new("TeleportOptions")
 		-- A fresh private server of the match per launch. ShouldReserveServer is a documented
 		-- TeleportOptions property the luau-lsp definitions do not list yet, hence the cast.

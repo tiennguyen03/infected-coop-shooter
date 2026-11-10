@@ -238,7 +238,10 @@ Read in this order:
   `assets/3d/ASSET_IDS.md`): 12 `env_fallow_*` and 4 `veh_lantern_*` meshes that `FallowArt` /
   `LanternBird` lay over the blocks, re-uploaded pre-mirrored (v2: Roblox mirrored the first upload in X) and checked in a playtest; the walkable lift balcony, deck-edge lines, deck-end HRD and the bird's
   lift on countdown are live now. **Arms Room counter built 2026-11-09, talk panel playtested** (sprint
-  doc > Arms Room counter): the Quartermaster (renamed from the armorer): talk choices (click or 1-3, one dialog at a time), the rack behind the cage, hover, inspect card, arrows (rack not yet playtested). Next: re-check the loop, body, ship (gaps, bow patches, radar,
+  doc > Arms Room counter): the Quartermaster (renamed from the armorer): talk choices (click or 1-3, one dialog at a time), the rack behind the cage, hover, inspect card, arrows (rack not yet playtested). **Loadmaster Loadout prototype built 2026-11-09, lobby
+  side playtested, match side needs a published launch** (sprint doc > Loadmaster and Loadout): talk, LOADOUT screen, SIGN FOR IT,
+  `LoadmasterService`, teleport data (`Rules/LaunchData`), the match seeds the pick (`JoinData`);
+  the rack is for buying with merits once F9 exists. Next: re-check the loop, body, ship (gaps, bow patches, radar,
   balcony) and the birds' spool and lift in the `Lobby (dev)` place, then a published launch
   test.
 - **Satisfying pass built 2026-11-09 (`docs/superpowers/plans/2026-11-09-satisfying-pass.md`).**

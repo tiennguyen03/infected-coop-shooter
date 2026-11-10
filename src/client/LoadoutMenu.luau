@@ -25,6 +25,13 @@ local WIDTH = 760
 local COLUMN = 230
 local ROW = 30
 
+-- What a host may change; left out, the match's Arms Room text is used.
+export type Options = {
+	title: string?, -- the header, after the "//"
+	hint: string?,
+	confirm: string?, -- the confirm button
+}
+
 export type Handle = {
 	frame: Frame,
 	set: (loadout: Loadout.Loadout) -> (),
@@ -91,7 +98,12 @@ local function column(parent: Instance, x: number, y: number, header: string): F
 	return frame
 end
 
-function LoadoutMenu.mount(parent: Instance, onConfirm: (loadout: Loadout.Loadout) -> ()): Handle
+function LoadoutMenu.mount(
+	parent: Instance,
+	onConfirm: (loadout: Loadout.Loadout) -> (),
+	options: Options?
+): Handle
+	local opts: Options = options or {}
 	local catalog = ArmsRoom.catalog()
 	local pick = Loadout.default(catalog)
 	-- Tall enough for the longest list (the call-ins grow with the roster).
@@ -109,14 +121,14 @@ function LoadoutMenu.mount(parent: Instance, onConfirm: (loadout: Loadout.Loadou
 	stroke.Parent = frame
 
 	local header = HudTheme.label(frame, {
-		text = "//ARMS ROOM",
+		text = `//{opts.title or "ARMS ROOM"}`,
 		font = HudTheme.Font.Headline,
 		size = 30,
 		color = C.Text,
 	})
 	header.Position = UDim2.fromOffset(24, 16)
 	local hint = HudTheme.label(frame, {
-		text = "[B] CLOSE   ·   CHANGES AT INSERT, READY-UP, OR AT THE LZ WHEN CALM",
+		text = opts.hint or "[B] CLOSE   ·   CHANGES AT INSERT, READY-UP, OR AT THE LZ WHEN CALM",
 		size = 12,
 		color = C.TextDim,
 	})
@@ -138,7 +150,7 @@ function LoadoutMenu.mount(parent: Instance, onConfirm: (loadout: Loadout.Loadou
 	deploy.Size = UDim2.fromOffset(220, 44)
 	deploy.BackgroundColor3 = C.MenuSelect
 	deploy.BorderSizePixel = 0
-	deploy.Text = "DEPLOY LOADOUT"
+	deploy.Text = opts.confirm or "DEPLOY LOADOUT"
 	deploy.TextColor3 = C.MenuSelectText
 	deploy.TextSize = 18
 	deploy.Font = HudTheme.Font.Headline

@@ -7,6 +7,7 @@ require(script.Parent.DefaultStepMute).init()
 require(script.Parent.LaunchUI).init()
 require(script.Parent.DeskDialogUI).init()
 require(script.Parent.ArmsRackUI).init()
+require(script.Parent.LoadmasterUI).init()
 require(script.Parent.RadarSpin).init()
 require(script.Parent.LanternSpool).init()
 

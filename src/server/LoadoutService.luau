@@ -29,6 +29,7 @@ local RunStates = require(ReplicatedStorage.Shared.RunStates)
 local UpgradeDefinitions = require(ReplicatedStorage.Shared.UpgradeDefinitions)
 local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
 local DamageService = require(script.Parent.DamageService)
+local JoinData = require(script.Parent.JoinData)
 local PauseService = require(script.Parent.PauseService)
 local Squad = require(script.Parent.Squad)
 local Lifecycle = require(script.Parent.Lifecycle)
@@ -76,7 +77,9 @@ end
 local function pickFor(player: Player): Loadout.Loadout
 	local pick = picks[player]
 	if not pick then
-		pick = ArmsRoom.default()
+		-- The Loadout signed for at the lobby's Loadmaster (teleport data, re-checked), else
+		-- the default.
+		pick = JoinData.loadout(player) or ArmsRoom.default()
 		picks[player] = pick
 	end
 	return pick
