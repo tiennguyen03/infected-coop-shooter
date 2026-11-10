@@ -58,6 +58,9 @@ type MeshDef = {
 	castShadow: boolean?, -- override: small cover never casts (default = solid)
 	render: Enum.RenderFidelity?, -- default Automatic; huge pieces always near (the Fallow) use Precise
 	seeThrough: boolean?, -- fences and wire: solid to walk into, bullets and sight pass
+	-- A held gun (wpn_*): the barrel tip relative to the grip (Roblox axes, barrel along -Z);
+	-- PlayerSetup puts the Muzzle there. `offset` is the bounds centre from the grip.
+	muzzle: Vector3?,
 	-- The earlier upload that stands in while meshId is "" (see the header). At upload:
 	-- paste the new meshId and delete the fallback.
 	fallback: { meshId: string, size: Vector3, fidelity: Enum.CollisionFidelity? }?,
@@ -80,7 +83,83 @@ local MESHES: { [string]: MeshDef } = {
 		meshId = "rbxassetid://117405323536844",
 		size = Vector3.new(1.56, 3.21, 1.36),
 	},
-	wpn_rifle = { meshId = "rbxassetid://86613539481097", size = Vector3.new(0.195, 0.84, 2.9) },
+	-- Held guns: designed around the grip (pivot), barrel along -Z; `offset` = bounds centre
+	-- from the grip, `muzzle` = barrel tip from the grip. A gun row names its mesh in
+	-- Config.Weapons.<id>.Model (default wpn_rifle).
+	wpn_rifle = {
+		meshId = "rbxassetid://86613539481097",
+		size = Vector3.new(0.195, 0.84, 2.9),
+		offset = Vector3.new(0, 0.185, -0.54),
+		muzzle = Vector3.new(0, 0.42, -1.95),
+	},
+	-- The Shrike gunship (assets/3d/build/aircraft.py, in-game size): the hull, origin at the
+	-- fuselage centre (`offset` = bounds centre from it), and the main rotor, origin at the hub.
+	veh_shrike_hull = {
+		meshId = "rbxassetid://137109529997310",
+		size = Vector3.new(8.4, 8.62, 29.75),
+		offset = Vector3.new(0, 0.712, 3.425),
+	},
+	veh_shrike_rotor = {
+		meshId = "rbxassetid://137738331555839",
+		size = Vector3.new(18.96, 0.35, 18.89),
+		offset = Vector3.new(0, 0, -0.035),
+	},
+	-- Sample guns (assets/3d/build/guns.py, built at in-game size, 2026-11-09).
+	wpn_revolver = {
+		meshId = "rbxassetid://133525801275343",
+		size = Vector3.new(0.25, 0.76, 1.0),
+		offset = Vector3.new(0, 0.094, -0.258),
+		muzzle = Vector3.new(0, 0.34, -0.76),
+	},
+	wpn_sniper = {
+		meshId = "rbxassetid://86507403821540",
+		size = Vector3.new(0.46, 1.07, 3.65),
+		offset = Vector3.new(0.117, 0.246, -0.795),
+		muzzle = Vector3.new(0, 0.34, -2.62),
+	},
+	wpn_goose = {
+		meshId = "rbxassetid://82637563176152",
+		size = Vector3.new(0.6, 0.94, 3.03),
+		offset = Vector3.new(-0.061, 0.202, -0.078),
+		muzzle = Vector3.new(0, 0.42, -1.58),
+	},
+	-- The six original guns (guns.py, 2026-11-09); until then they all wore wpn_rifle.
+	wpn_m16 = {
+		meshId = "rbxassetid://74091027600803",
+		size = Vector3.new(0.27, 1.02, 3.09),
+		offset = Vector3.new(0.025, 0.144, -0.475),
+		muzzle = Vector3.new(0, 0.36, -2.02),
+	},
+	wpn_mp5 = {
+		meshId = "rbxassetid://84221584333359",
+		size = Vector3.new(0.23, 0.87, 2.19),
+		offset = Vector3.new(-0.025, 0.167, -0.393),
+		muzzle = Vector3.new(0, 0.32, -1.49),
+	},
+	wpn_m249 = {
+		meshId = "rbxassetid://106050421873423",
+		size = Vector3.new(0.32, 0.95, 2.89),
+		offset = Vector3.new(-0.043, 0.207, -0.445),
+		muzzle = Vector3.new(0, 0.38, -1.89),
+	},
+	wpn_mossberg = {
+		meshId = "rbxassetid://101866256014088",
+		size = Vector3.new(0.26, 0.77, 2.82),
+		offset = Vector3.new(-0.025, 0.119, -0.401),
+		muzzle = Vector3.new(0, 0.42, -1.8),
+	},
+	wpn_m110 = {
+		meshId = "rbxassetid://124848490890431",
+		size = Vector3.new(0.23, 1.03, 3.25),
+		offset = Vector3.new(0, 0.24, -0.825),
+		muzzle = Vector3.new(0, 0.4, -2.45),
+	},
+	wpn_m17 = {
+		meshId = "rbxassetid://104797900074658",
+		size = Vector3.new(0.14, 0.76, 0.67),
+		offset = Vector3.new(0, 0.067, -0.148),
+		muzzle = Vector3.new(0, 0.32, -0.485),
+	},
 	-- 0.7x of the Blender size (tail included in the length).
 	prop_plague_rat = {
 		meshId = "rbxassetid://102065990394982",
@@ -1101,6 +1180,12 @@ function MeshAssets.getOffset(name: string): Vector3
 		return Vector3.zero
 	end
 	return def.offset or Vector3.new(0, def.size.Y / 2, 0)
+end
+
+-- A held gun's barrel tip relative to its grip (nil for a mesh that is not a gun).
+function MeshAssets.getMuzzle(name: string): Vector3?
+	local def = MESHES[name]
+	return def and def.muzzle
 end
 
 -- Builds the composite colliders of a placed piece as invisible anchored Parts parented to

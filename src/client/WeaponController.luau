@@ -17,6 +17,7 @@ local UserInputService = game:GetService("UserInputService")
 local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attributes"))
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
+local ShotCone = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("ShotCone"))
 local WeaponDefinitions =
 	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("WeaponDefinitions"))
 local SoundFX = require(script.Parent.SoundFX)
@@ -198,12 +199,37 @@ local function tryFire()
 	lastFireTime = if now - lastFireTime < cooldown * 2 then lastFireTime + cooldown else now
 	player:SetAttribute(Attributes.LastShotAt, now)
 	triggerSpent = true
-	Remotes.get("FireWeapon"):FireServer(origin, direction.Unit, isAiming)
+	-- A shotgun: draw every pellet in its cone and send those directions, so what you see
+	-- is what hits (the server checks each against the cone it allows).
+	local count = weapon.Pellets or 1
+	local pellets: { Vector3 }? = nil
+	if count > 1 then
+		local bloom = (player:GetAttribute(Attributes.Bloom) :: number?) or 0
+		local cone = (if isAiming then weapon.AdsSpread else weapon.HipSpread) + bloom
+		local params = RaycastParams.new()
+		params.FilterType = Enum.RaycastFilterType.Exclude
+		local ignore: { Instance } = { character :: Instance }
+		if tracerFolder then
+			table.insert(ignore, tracerFolder)
+		end
+		params.FilterDescendantsInstances = ignore
+		local list = {}
+		for _ = 1, count do
+			local pellet = ShotCone.random(direction.Unit, cone)
+			table.insert(list, pellet)
+			local hit = workspace:Raycast(origin, pellet * weapon.Range, params)
+			drawTracer(origin, if hit then hit.Position else origin + pellet * weapon.Range)
+		end
+		pellets = list
+	end
+	Remotes.get("FireWeapon"):FireServer(origin, direction.Unit, isAiming, pellets)
 	AnimationController.onShot()
-	drawTracer(origin, aimPoint)
+	if not pellets then
+		drawTracer(origin, aimPoint)
+	end
 
 	-- Local-only muzzle flash and shot sound for instant feedback.
-	SoundFX.play("shoot")
+	SoundFX.gunshot(weapon.Sound)
 	local flash = Instance.new("Part")
 	flash.Shape = Enum.PartType.Ball
 	flash.Size = Vector3.new(0.7, 0.7, 0.7)
@@ -237,10 +263,11 @@ function WeaponController.init()
 	folder.Parent = workspace
 	tracerFolder = folder
 	-- Another squad member's shot (a player or a bot): the tracer plus a 3D gunshot.
-	Remotes.get("ShotTracer").OnClientEvent:Connect(function(origin: Vector3, endPoint: Vector3)
-		drawTracer(origin, endPoint)
-		SoundFX.playWorld("shoot", origin, 0.8)
-	end)
+	Remotes.get("ShotTracer").OnClientEvent
+		:Connect(function(origin: Vector3, endPoint: Vector3, sound: string?)
+			drawTracer(origin, endPoint)
+			SoundFX.gunshot(if typeof(sound) == "string" then sound else nil, origin, 0.8)
+		end)
 
 	UserInputService.InputBegan:Connect(function(input, gameProcessed)
 		if gameProcessed then

@@ -1,6 +1,6 @@
 --!strict
 -- Bot squadmates. In solo generic Pike soldiers fill the squad as server-side AI
--- (docs/PROGRESSION.md > The spine): one fewer per real player, up to a squad of 4. Each
+-- (docs/PROGRESSION.md > The run): one fewer per real player, up to a squad of 4. Each
 -- bot is a Squad member, so the Infected chase it and enemy splash hurts it exactly like a
 -- player. It wears the class body and rifle (PlayerSetup), follows the nearest player in a
 -- formation slot, faces and shoots the nearest Infected it can see through the one damage

@@ -13,24 +13,40 @@ and fair, and to say so plainly when they do not.
 **Where the game is (keep current from the docs, not from this paragraph).** Helldivers 2
 structure on a roguelike run: a squad drops into a district, does a Primary and optional
 Secondaries against a timer (the Burn), and extracts on Lantern. Power comes from the
-loadout (the Chosen's kit plus two call-ins on keys 1-2) and a few big field upgrades, on
-a flat threat curve; stat-stick items are out (`docs/PROGRESSION.md` > The spine). The
+loadout (a primary from six real guns plus the M17 sidearm on Q, G frag, V shove, E stim,
+four call-ins on keys 1-4, the Resupply flare on 5; chosen in the Arms Room now, in the
+lobby later) and a few big field upgrades, on a flat threat curve; stat-stick items are out (`docs/PROGRESSION.md` > Loadout, pallets and field upgrades). The
 squad is 4: real players plus bot squadmates in solo (`Squad`, `BotService`); a lethal hit
 downs, a squadmate holds F to revive. Movement: weighted, sprint, crouch, prone, vault,
 climb, sprint-roll, slide. The Risk of Rain item and rarity economy is retired: never
 design toward it.
 
 Before your first answer in a session, read these in order:
+0. `docs/OWNER.md` — what the owner has asked for and rejected. It beats your own taste;
+   a proposal that breaks it is wrong.
 1. `docs/PLAN.md` — design pillars and scope rules. Everything must serve a pillar.
-2. `docs/PROGRESSION.md` — The spine, the run, operations and the Burn, objective pools,
+2. `docs/PROGRESSION.md` — the run, the loadout, operations and the Burn, objective pools,
    Index hosts, the Infected roster. The frame all balance sits in.
-3. `src/shared/Config.luau` — every tuning value. Cite keys by name.
+3. `src/shared/Config.luau` — the blocks your question touches (grep the key). Cite keys
+   by name.
 4. `src/shared/EnemyDefinitions.luau` — enemy stats and behaviour hooks.
-5. `src/server/DifficultyService.luau`, `src/server/EnemyService.luau` (the spawn director),
-   `src/server/ObjectiveService.luau`, `src/server/BotService.luau`, `src/server/Squad.luau`
-   — how time, spawning, the hold, bots and downed actually work today.
+5. Only when the question touches them: `src/server/DifficultyService.luau`,
+   `EnemyService.luau` (spawn director), `ObjectiveService.luau`, `BotService.luau`,
+   `Squad.luau`. Grep for the function you need instead of reading whole files.
 6. `docs/MULTIPLAYER_READINESS.md` — co-op decisions (shared XP, downed/revive, more-not-
    tougher scaling, the lobby place). Balance for 1 to 4 players, and for solo with bots.
+
+The owner's rules for numbers (full list in `docs/OWNER.md`):
+- **Real guns:** each fires at its real-world rate; balance damage, magazines and ammo around
+  that, never slow a gun down to balance it.
+- **Modular loadouts:** items are added, swapped and cut (Nova's loadout screen). Every
+  per-item number (damage, kick `Kick`, `Heavy`, `ShakePower`, `ReloadClip`, charges) sits on
+  that item's own `Config.Weapons` / `Config.CallIns` / `Config.Grenade` row with a default.
+  Never propose a rule that names items in a list somewhere else.
+- **Satisfying is a requirement:** hits must read (flinch `Config.Enemies.Flinch`, limp
+  bodies `Config.Enemies.Ragdoll`, dismemberment `Config.Enemies.Dismember`, camera
+  `Config.Camera.Kick` / `Shake`). A change that makes a fight correct but flat is a regression.
+- **Grounded call-ins only;** no sci-fi mechanics.
 
 How you work:
 - Lead with the recommendation, then the reason, then the numbers. One screen, not an essay.

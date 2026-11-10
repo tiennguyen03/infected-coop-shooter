@@ -1,135 +1,108 @@
 # Multiplayer readiness — 4-player co-op is the final product
 
-Decided 2026-11-05. The shipped game is a **4-player co-op** roguelike (one shared run, one
-server, up to 4 players). We are still building and balancing single-player first (that is
-the fastest way to find the fun), but from now on **nothing new may assume one player**, and
-the single-player shortcuts listed below are tracked debt with a planned fix, not accepted
-design.
+Decided 2026-11-05. The shipped game is **4-player co-op** (one shared run, one server, up to
+4 players). We build and balance single-player with bots first, but **nothing new may assume
+one player**; any single-player shortcut goes in the debt register below with a planned fix.
 
-Audit source: a full read of `src/` on 2026-11-05 (line numbers are from that tree and will
-drift; the file and symbol names are the stable pointers).
-
-## The rule for all new code (also in CLAUDE.md)
+## The rule for all new code (summary in CLAUDE.md)
 
 - State is **per player** (keyed by `Player`, cleaned up on `PlayerRemoving`) or explicitly
   **per run** (one shared value, documented as such). Never "the player".
 - Never `Players:GetPlayers()[1]`. Pass the `Player` in; iterate when it is really everyone.
-- A per-player reset (`resetPlayer(player)`) touches only that player's state. A run reset
-  (`reset()`) touches only run state. Mixing the two is a bug.
+- A service registers its hooks with `Lifecycle.register`: `onPlayerReset` touches only that
+  player's state, `onRunStart` only run state. Mixing the two is a bug.
 - Anything that pauses, ends, restarts, or awards must say *whom* it affects. Default to
   per player; broadcast (`FireAllClients`) only for things every client must see.
-- Spawn/count/difficulty numbers take the live player count as an input (`Config` may hold a
-  per-player term, default 1 player = today's values).
+- Spawn/count/difficulty numbers take the live player count as an input (`Config` holds a
+  per-player term; 1 player = the solo values).
 - Client UI reads only `LocalPlayer` state unless the value is run-wide by design (run timer,
   objective state).
 
 ## Already fine (keep it this way)
 
-Per-player attributes (MoveSpeedMult, Kills, Weapon/Primary/Secondary, Mag/Reserve/
-ReloadUntil/SwapUntil, Grenade/Grenades/Stims, CallIn1-4 + charges, Upgrade<Slot>, Shield,
-Callsign), per-player loadouts, Arms Room picks (kept across runs), calm timers and card
-offers (`LoadoutService`, `CallInService`, `RequisitionService`), per-player fire-rate,
-kit (`KitService`: grenade gap, shove cooldown, stim) and Arms Room gate validation,
-callsigns handed out per player in join order (Pike One to Four; bots take the free ones at
-run start, `Squad.freeCallsigns`), per-player drone/mine/pool caps, every `PlayerRemoving` handler, kill credit via
-the one damage entry point `DamageService.dealDamage`, enemy targeting = nearest living
-member, HUDs reading `LocalPlayer` only.
+Per-player attributes (Kills, Weapon/Primary/Secondary, Mag/Reserve/ReloadUntil/SwapUntil,
+Grenade/Grenades/Stims, CallIn1-4 + charges, Upgrade<Slot>, Shield, Callsign), per-player
+loadouts and Arms Room picks (kept across runs), calm timers and card offers
+(`LoadoutService`, `CallInService`, `RequisitionService`), per-player fire rate, kit
+(`KitService`: grenade gap, shove cooldown, stim), callsigns handed out in join order (Pike
+One to Four; bots take the free ones at run start, `Squad.freeCallsigns`), per-player
+mine, sentry and wire caps, every `PlayerRemoving` handler, kill credit via
+`DamageService.dealDamage`, enemy targeting = nearest living member, HUDs reading
+`LocalPlayer` only.
+
+## Co-op rules in force
+
+- **Run flow:** the server owns `Lobby → Insert → Explore → Primary → Index → Extract → Ended`
+  (`RunStates`); per member `Alive / Downed / Dead`. The run ends when every member is dead
+  or extraction completes; start and restart use the ready-up (decision 4) and reset every
+  player. Run-end screens follow `RunState` / `RunResult`, not respawn.
+- **Hold:** any living member (player or bot) in the zone runs it; the HUD shows `n / living`.
+- **Extraction:** runs only while every living player is on the pad (downed players and bots
+  do not hold it up); otherwise "WAITING FOR SQUAD (n / m)". One helper, `Squad.zoneCount`.
+- **Hits:** `DamageDealt` goes to the attacking player only; a bot's hit to nobody; kills to
+  everyone.
+- **Clock:** `DifficultyService.getElapsed` adds time only while the field is not paused
+  (the HUD timer stays wall-clock). `GamePaused` is only the run-end freeze.
+- **Spawns:** the Infected spawn around living players only; four spawn pads, one per member.
+- **Dev commands** target the invoking player.
+- **Knockdown** (the Warden's Pound and Stomp, `Squad.knock`): `KnockedUntil` /
+  `KnockGraceUntil` on each character, clips on that client, bots read the attribute.
 
 ## Debt register
 
-Severity: **B** = blocks co-op (architecture change), **M** = per-player bookkeeping missing or
-leaking, **C** = client assumption. "Fix when" says the sprint that must clear it; nothing new
-may add to this list.
+Open: none. The 13 items of the 2026-11-05 audit are fixed (Co-op Sprint A,
+[SPRINT_17_COOP_A.md](sprints/SPRINT_17_COOP_A.md); foundation F4) or superseded by the
+loadout rework ([SPRINT_18_LOADOUT.md](sprints/SPRINT_18_LOADOUT.md)); see
+[HISTORY.md](HISTORY.md). New single-player shortcuts are not allowed; if one is unavoidable,
+add a row: `# | Sev (B blocks co-op, M per-player bookkeeping, C client) | Where | Problem |
+Planned shape | Fix when`.
 
-| # | Sev | Where | Problem today | Planned shape | Fix when |
-|---|---|---|---|---|---|
-| 1 | B | `RunManager` | Death ends the run; `RestartRun` from any dead/extracted player resets global services but only the requester's per-player state, and respawns only the requester. No "all dead" handling. | Run state machine owned by the server: `Lobby → Running → Ended`. Per-player `Alive / Downed / Dead` (#3). Run ends when every player is dead or extraction completes. Start/restart = request + ready-up timer (#4), resets every player. | Done 2026-11-07 (Sprint A step 5) |
-| 2 | B | `PauseService`, `ItemService`, `AssaultClassService`, client `CameraController`/`WeaponController`/`AbilityController`/`AbilityUI` | ~~One player's level-up pauses the whole world.~~ Done 2026-11-07: level-up no longer pauses; the draft is a world pallet (Resupply). `GamePaused` remains only for the run-end freeze. | Decided (#1), shipped as Resupply. | Done |
-| 3 | B | `ObjectiveService`, `ExtractionService` | One zone, any single player inside counts, completion/pause broadcast to all. | Hold: any living member (player or bot) in the zone runs it; the HUD shows `n / living` players in. Extraction: runs only while every living player is on the pad (downed players and bots do not hold it up); some on it shows "WAITING FOR SQUAD (n / m)" (`ExtractionUpdate` `waiting`). One helper, `Squad.zoneCount`. | Done 2026-11-08 (foundation F4, 2-client verified) |
-| 4 | M | ~~`XPOrbService`, `ObjectiveService`~~ | ~~Orb XP goes to the nearest player only; objective XP goes in full to everyone.~~ Superseded 2026-11-07 by the loadout rework: no orbs, no levels; every kill credits its `SupplyValue` to the shared Resupply pool at any distance. | n/a | Superseded (Sprint 18) |
-| 5 | M | `DifficultyService`, `EnemyService`, `Config` MaxAlive schedule | ~~Nothing scales with player count;~~ run clock ignores pause. | Decided (#6): `Config.PlayerCountScaling` scales spawn rate, max-alive and heavy caps per living player, not HP/damage (done 2026-11-07, Sprint 18). Clock = accumulated unpaused time: `DifficultyService.getElapsed` adds time only while the field is not paused (the HUD timer stays wall-clock). | Done 2026-11-08 (foundation F4) |
-| 6 | M | `EnemyService` spawn placement | Spawns around a random player without checking they are alive. | Pick from living players only. | Done 2026-11-07 (Sprint A step 3) |
-| 7 | M | ~~`AmmoCacheService`~~ | ~~Any player can take another player's crate.~~ Superseded 2026-11-07: `AmmoCacheService` deleted; the pallet re-arms every living player within `Requisition.RearmRadius` once each (loadout rework). | n/a | Superseded (Sprint 18) |
-| 8 | M | `DamageService.resetPlayer`, `AssaultClassService.resetPlayer`, `ProjectileServer.reset` | Per-player reset wipes humanoid-keyed/global tables; run reset clears per-player `shotCount` but not `lastFireTime`. | Split strictly per the rule above. | Done 2026-11-07 (Sprint A step 2) |
-| 9 | M | `DamageService` damage/death events | Every hit and kill is `FireAllClients`; each client plays every player's hit sounds. | Hits (`DamageDealt`) go to the attacking player only (marker, spark, hit sound); a bot's hit to nobody; kills to everyone (the death burst; the death cry is the body's own 3D sound). | Done 2026-11-08 (foundation F4, 2-client verified) |
-| 10 | M | `ArenaService` | One `SpawnLocation` at the origin. | 4 spawn pads in a cluster; revive happens in place, stage-start respawn at the pads. | Done 2026-11-07 (Sprint A step 4) |
-| 11 | M | `DevTestService` | Falls back to `GetPlayers()[1]`; run-state printouts inspect one player. | Dev commands target the invoking player; printouts loop players. | Done 2026-11-07 (Sprint A step 7) |
-| 12 | C | `DeathScreenUI` | Hardcodes "Extracted: No"; Restart button resets the server's run for everyone. | Downed overlay (timer, "teammate reviving"), spectate on Dead, final screen only on run end. | Done 2026-11-07 (Sprint A step 6) |
-| 13 | C | `MissionSuccessUI` | ~~Shown to all, hidden only on the local `CharacterAdded`.~~ Done 2026-11-07 (Sprint A step 1): shown and hidden on `RunState`/`RunResult`. | Hide on the run-state change event, not on respawn. | Done |
+## Design decisions (owner, 2026-11-05 unless dated)
 
-## Design decisions (decided by the owner 2026-11-05)
-
-1. **Level-up in co-op: no world pause.** Superseded 2026-11-06 by Resupply
-   ([PROGRESSION.md](PROGRESSION.md)): the draft moves into the world (pallet with personal
-   cards, one pick per player), levels become automatic growth. `PauseService` leaves
-   gameplay entirely (extraction/success can keep a run-end freeze).
-2. **XP is shared.** Superseded 2026-11-07 by the loadout rework
-   ([PROGRESSION.md](PROGRESSION.md) > Loadout, pallets and field upgrades): there is no XP
-   and no level. Every kill credits its `SupplyValue` to the squad's one Resupply pool at
-   any distance; the pool is the only in-run resource and it is shared.
-3. **Death: downed, revivable, respawn at the start of the next stage.** A player at 0 HP
-   drops to a *Downed* state with a bleed-out timer; a teammate standing next to them for a
-   short hold revives them. Owner's concern: late game, a downed player just gets eaten.
-   Claude's call to cover it: **the Infected ignore downed players and downed players take no
-   damage** (they are a rescue target, not a snack), the pressure is the timer and the
-   teammate having to stop shooting. If the timer runs out the player is *Dead* and spectates;
-   dead players **respawn when the next stage starts**, not when an objective completes.
-   Until stage progression exists (post-MVP), a run is one stage, so dead = spectate to run
-   end and revive is the only recovery. Numbers (bleed-out seconds, revive hold, max revives)
-   in `Config.Downed`.
+1. **Level-up in co-op.** Retired 2026-11-07 with XP and levels; see HISTORY.md.
+2. **XP is shared.** Retired 2026-11-07: every kill credits its `SupplyValue` to the squad's
+   one shared Resupply pool at any distance ([PROGRESSION.md](PROGRESSION.md) > Pallets).
+3. **Death: downed, revivable, respawn at the start of the next mission.** At 0 HP a member
+   is *Downed*: bleed-out timer, the Infected ignore them and they take no damage (a rescue
+   target, not a snack); the pressure is the timer and the teammate having to stop shooting.
+   A teammate holds F next to them to revive (bots revive on their own). Timer out = *Dead*,
+   spectate; the dead respawn when the next mission starts. Until missions chain, dead =
+   spectate to run end. Numbers in `Config.Downed` (max revives per run included).
 4. **Run ownership: anyone can request, short ready-up timer.** The first request opens a
-   countdown; the run starts when it expires or everyone readies. Restart after a run ends
-   works the same way.
-5. **Items are per owner.** Inventories stay per player (already true). World pickups
-   (ammo crates, future class drops) are **owner-only**: only the player whose item spawned it
-   can collect it. Reason: future classes should have distinct, self-built kits. Resupply
-   pallets and stores are the exception by design: a shared trigger, personal cards.
-6. **Difficulty per extra player: more Infected, not tougher Infected.** Spawn rate and
-   max-alive scale with living player count; HP/damage per Infected do not. Numbers in
-   `Config.PlayerCountScaling`, with 1 player = today's values. **Exception (2026-11-07):**
-   an Index host is one body, so its body and plate health scale
-   (`Config.Index.Warden.HealthPerExtraPlayer`, 0.33 per extra living player at spawn) and
-   its Riot Call adds Walkers per extra player.
-7. **A lobby place with a main menu; the party teleports into a private match (owner,
-   2026-11-07).** Players land in a separate lobby place: main menu, party up (invite or
-   matchmade squad of up to 4), pick class and loadout, ready. The party is teleported
-   together (`TeleportService:TeleportAsync` to a reserved server) into the match place,
-   which is today's game. Rules that keep this cheap later:
+   countdown; the run starts when it expires or everyone readies. Restart works the same way.
+5. **Items are per owner.** Inventories stay per player. A world pickup that a player's own
+   kit spawns is owner-only. Resupply pallets, stores and the supply call-ins (Speedball, Aid
+   Bag) are shared by design: a shared trigger, personal effects.
+6. **Difficulty per extra player: more Infected, not tougher Infected.** Spawn rate,
+   max-alive and heavy caps scale with living player count (`Config.PlayerCountScaling`);
+   HP/damage per Infected do not. **Exception (2026-11-07):** an Index host is one body, so
+   its body and plate health scale (`Config.Index.Warden.HealthPerExtraPlayer`, 0.33 per extra
+   living player at spawn) and its Riot Call adds Walkers per extra player.
+7. **A lobby place with a main menu; the party teleports into a private match (2026-11-07).**
+   Players land in a lobby place: main menu, party up (invite or matchmade squad of up to 4),
+   pick a loadout, ready. The party is teleported together (`TeleportService:TeleportAsync`
+   to a reserved server) into the match place, which is today's game. Nova is building the
+   lobby and loadout screens. Rules that keep this cheap:
    - **The match server never assumes who is coming.** The expected party, each member's
-     class and loadout, and the squad's operation choice arrive as teleport data
-     (`player:GetJoinData().TeleportData`), read in one place (`JoinData`; the Loadout is
-     read today, 2026-11-09, via `Rules/LaunchData`), with a
-     Studio/solo fallback to today's defaults. Late joiners and missing players are normal.
+     loadout and the squad's operation choice arrive as teleport data
+     (`player:GetJoinData().TeleportData`), read in one place (`RunManager`), with a
+     Studio/solo fallback to the defaults. Late joiners and missing players are normal.
+     (`nova/lobby` reads the Loadout today in `JoinData` from its own shape,
+     `Rules/LaunchData`; it moves to `Rules/Handoff` before that branch merges.)
    - **`Lobby` state in the match = staging, not the menu.** It waits for the party to load
-     (or a timeout), then the ready-up/Insert flow runs. The menu itself lives only in the
-     lobby place.
-   - **A run ends by returning the party to the lobby** (`TeleportAsync` back with results
-     as teleport data) once meta progression exists; until then RESTART stays in-match.
+     (or a timeout), then the ready-up/Insert flow runs.
+   - **A run ends by returning the party to the lobby** (teleport back with results) once
+     meta progression exists; until then RESTART stays in-match.
    - **Persistent progress (unlocks, Containment Board) is saved by the server that earns
      it** (DataStore, keyed by UserId), never trusted from teleport data.
-   - **Disk layout:** a second Rojo project (`lobby.project.json`) sharing `src/shared`; its
-     own `src/lobby/` client and server. v1 built 2026-11-09 and playtested: the Fallow,
-     launch by boarding a Lantern spot (docs/sprints/LOBBY_V1_FALLOW.md). On `nova/lobby` the
-     match reads each soldier's Loadout from the teleport data (`JoinData`, verified live
-     2026-11-10); that branch still sends its own shape, to be aligned with `Rules/Handoff`.
-8. **Keys (owner, 2026-11-07).** F = interact (revive, pickups, prompts). The number row
-   1-4 is free: call-in slots and the Resupply flare move there with the loadout rework
-   (proposal: 1-2 call-ins, 3 flare, 4 spare). Movement chords are under review (handoff
-   backlog: sprint-by-default).
+   - **Disk layout:** a second Rojo project (`lobby.project.json`) sharing `src/shared`, with
+     its own `src/lobby/` client and server. Built and playtested on `nova/lobby`
+     ([sprints/LOBBY_V1_FALLOW.md](sprints/LOBBY_V1_FALLOW.md)): launch by boarding a Lantern
+     spot, verified live 2026-11-10.
+   Server flow and scaling: [ARCHITECTURE.md](ARCHITECTURE.md) > Sessions.
+8. **Keys (2026-11-07, updated 2026-11-08).** F = interact (revive, pickups, prompts); 1-4
+   call-ins, 5 the Resupply flare. Movement chords are undecided; do not change them without
+   the owner ([OWNER.md](OWNER.md)).
 
-## Sequencing
-
-All eight decisions are made. Decision 7 (lobby place) is built after Co-op Sprint A; Sprint A only has to honour its rules (party arrives as teleport data, `Lobby` is staging). Single-player MVP
-balance (Sprint 13) is still the recommended first step. **Co-op Sprint A** (run state machine,
-per-player pause/choosing, death/downed, spawn pads, reset split, client screens) and
-**Co-op Sprint B** (objective/extraction rules, difficulty scaling, shared pickups, event
-routing). Both are designed with the `multiplayer_playtest` Studio MCP tool (2+ clients)
-as the verification step; single-player must keep working throughout.
-
-## Addendum 2026-11-07: knockdown
-
-The Warden's Pound and Stomp knock bodies down (`Squad.knock`). The state is an attribute
-on each character (`KnockedUntil`, `KnockGraceUntil`), the clips play on that client
-(`Impact "knockdown"` to the owner) and bots read the attribute: nothing is keyed to one
-player. A Pound that catches all four is 30 each and 2.4 s down with him stuck for 2.6 s
-and the next pick never a knockdown; the Riot Call adds are what bites a downed squad.
+Verification for co-op work: the `multiplayer_playtest` Studio MCP tool (2+ clients);
+single-player must keep working throughout.

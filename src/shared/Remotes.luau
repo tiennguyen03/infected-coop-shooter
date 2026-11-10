@@ -8,10 +8,10 @@ local RunService = game:GetService("RunService")
 -- Each remote's message kinds (the first argument) are constants in Messages.luau; the
 -- comments below document the payloads.
 local REMOTE_NAMES = {
-	"FireWeapon", -- client -> server: (origin: Vector3, direction: Vector3, aiming: boolean)
+	"FireWeapon", -- client -> server: (origin: Vector3, direction: Vector3, aiming: boolean, pellets: { Vector3 }?) a shotgun sends the pellets it drew
 	"Reload", -- client -> server: start a reload (LoadoutService; Mag/Reserve/ReloadUntil are player attributes)
 	"CallIn", -- client -> server: (slot: 1..Config.CallIns.Slots, landingPoint: Vector3?) use the call-in in that slot
-	"ShotTracer", -- server -> other clients: (origin: Vector3, endPoint: Vector3) draw a tracer
+	"ShotTracer", -- server -> other clients: (origin: Vector3, endPoint: Vector3, sound: string?) draw a tracer, play that gun's shot
 	"ObjectiveUpdate", -- server -> client: (kind: "started"|"progress"|"completed", progress: number, playersIn: number?, playersLiving: number?)
 	"DamageDealt", -- server -> client (hits: the attacker only; kills: everyone): (position: Vector3, amount: number, kind: "hit"|"headshot"|"fire"|"breach"|"death"|..., attacker: Player?)
 	"Resupply", -- client -> server: ("flare", target) | ("pick", crateId, cardId); server -> client: ("called", thrower) | ("cards", crateId, kind, choices, positions) | ("picked", crateId) | ("closed", crateId)

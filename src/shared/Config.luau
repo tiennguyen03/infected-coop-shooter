@@ -159,6 +159,13 @@ local Config = {
 	},
 
 	-- Run flow (RunManager, Shared.RunStates). Co-op Sprint A.
+	-- The operation: its missions in play order, each one data file in src/server/Missions
+	-- (docs/LOBBY_MATCH_HANDOFF.md, docs/ARCHITECTURE.md F6). One mission until Mile 14 is
+	-- built in game; the mission-to-mission transition walks this list.
+	Operation = {
+		Missions = { "delta" },
+	},
+
 	Run = {
 		InsertSeconds = 3, -- Insert -> Explore: the squad lands before the first wave
 		-- After a run ends, the first READY opens this countdown; the next run starts when it
@@ -213,10 +220,17 @@ local Config = {
 		TracerDuration = 0.06,
 		-- Q swaps long gun and sidearm (LoadoutService): no shot and no reload for this long.
 		SwapTime = 0.5,
-		-- Drones still fly projectiles (ProjectileServer.fire): their speed and lifetime.
+		-- Simulated projectiles (ProjectileServer.fire): unused since the drones were retired,
+		-- kept for slow-round weapons (the planned Thumper). Speed and lifetime.
 		ProjectileSpeed = 180, -- studs per second
 		ProjectileLifetime = 3, -- seconds before despawn
 		ProjectileSize = Vector3.new(0.4, 0.4, 1.4),
+		-- Degrees a shotgun pellet the client drew may sit outside the server's cone (aim and
+		-- bloom drift between the two) before the server rolls its own.
+		PelletTolerance = 0.75,
+		-- A launcher's rocket (a gun row with Explosive): bigger and smoky orange.
+		RocketSize = Vector3.new(0.7, 0.7, 2.4),
+		RocketColor = Color3.fromRGB(255, 140, 50),
 		MaxAimDistance = 1000, -- how far the aim raycast reaches
 		-- Aiming down sights (hold RMB): the camera; spread and walk factor are per gun.
 		ADS = {
@@ -255,6 +269,7 @@ local Config = {
 			Range = 400,
 			HeadshotMultiplier = 3.0, -- EnemyDefinitions may override per form
 			Kick = { Pitch = 0.9, Yaw = 0.3, Recover = 0.12 }, -- degrees up, +/- degrees, seconds
+			Model = "wpn_m16",
 		},
 		-- MP5: the best hip-fire; chews Runners, weak on Brutes (Walker 4 / 2, Brute 19 / 15).
 		Smg = {
@@ -274,6 +289,8 @@ local Config = {
 			Range = 150,
 			HeadshotMultiplier = 3.0,
 			Kick = { Pitch = 0.5, Yaw = 0.2, Recover = 0.12 },
+			Model = "wpn_mp5",
+			Sound = "smg",
 		},
 		-- M249: a 100-round belt, no reload inside a hold; slow to aim on the move.
 		Lmg = {
@@ -293,6 +310,8 @@ local Config = {
 			Range = 400,
 			HeadshotMultiplier = 3.0,
 			Kick = { Pitch = 1.1, Yaw = 0.5, Recover = 0.12 },
+			Model = "wpn_m249",
+			Sound = "lmg",
 		},
 		-- Mossberg 590: point-blank, one decision per pull; one pull drops every form but the
 		-- Brute (3).
@@ -315,6 +334,8 @@ local Config = {
 			Range = 45,
 			HeadshotMultiplier = 1.5,
 			Kick = { Pitch = 4.0, Yaw = 0.8, Recover = 0.12 },
+			Model = "wpn_mossberg",
+			Sound = "shotgun",
 		},
 		-- M110: one-taps Walkers, hits two in a line, poor up close. Ammo reins it in
 		-- (100 x 60 is the M16's 270 x 20).
@@ -337,6 +358,8 @@ local Config = {
 			Range = 600,
 			HeadshotMultiplier = 3.0,
 			Kick = { Pitch = 2.6, Yaw = 0.4, Recover = 0.12 },
+			Model = "wpn_m110",
+			Sound = "dmr",
 		},
 		-- M17: the sidearm, backup when the primary runs dry.
 		Pistol = {
@@ -356,6 +379,84 @@ local Config = {
 			Range = 120,
 			HeadshotMultiplier = 3.0,
 			Kick = { Pitch = 1.6, Yaw = 0.3, Recover = 0.12 },
+			Model = "wpn_m17",
+			Sound = "pistol",
+		},
+		-- Sample guns (2026-11-09, dev menu; the Arms Room lists them once Nova's loadout work
+		-- does). Each wears its own Blender mesh (`Model`, MeshAssets wpn_*) and plays its own
+		-- clips from the `guns` sound bank (`Sound`: <Sound>_shot, <Sound>_reload).
+		-- S&W 686 .357: one round per Walker or Runner, staggers a Brute; six shots and a slow
+		-- reload rein it in (Walker 1 / 1, Brute 5 / 4).
+		Revolver = {
+			Heavy = true, -- staggers a Brute (Config.Enemies.Flinch)
+			FireMode = "semi", -- double action
+			Damage = 55,
+			FireCooldown = 0.4, -- 150 rpm
+			MagazineSize = 6,
+			ReloadTime = 2.8, -- speedloader
+			ReserveStart = 30,
+			ReserveMax = 30,
+			HipSpread = 1.8,
+			AdsSpread = 0.4,
+			BloomPerShot = 1.5,
+			BloomMax = 3.5,
+			BloomRecovery = 10,
+			AdsMoveFactor = 0.85,
+			Range = 150,
+			HeadshotMultiplier = 3.0,
+			Kick = { Pitch = 3.0, Yaw = 0.6, Recover = 0.18 },
+			Model = "wpn_revolver",
+			Sound = "revolver",
+		},
+		-- M2010 ESR: one round per form but the Brute (2), through three more in a line. One
+		-- decision per bolt; useless from the hip (Walker 1 / 1, Brute 2 / 2).
+		Sniper = {
+			Heavy = true,
+			FireMode = "semi", -- bolt action
+			Damage = 140,
+			Pierce = 3,
+			FireCooldown = 1.25, -- 48 rpm (bolt cycle)
+			MagazineSize = 5,
+			ReloadTime = 3.2,
+			ReserveStart = 30,
+			ReserveMax = 30,
+			HipSpread = 6.0,
+			AdsSpread = 0.05,
+			BloomPerShot = 0, -- the bolt cycle outlasts any bloom
+			BloomMax = 0,
+			BloomRecovery = 12,
+			AdsMoveFactor = 0.4,
+			Range = 800,
+			HeadshotMultiplier = 3.0,
+			Kick = { Pitch = 5.0, Yaw = 0.8, Recover = 0.25 },
+			Model = "wpn_sniper",
+			Sound = "sniper",
+		},
+		-- M3 recoilless ("Goose", the squad's RPG): a visible rocket. A direct hit kills anything
+		-- but the Warden; the blast (the frag's, no friendly fire) drops every form but the Brute
+		-- in 6 studs. Two rounds: a Brute answer, not a call-in (Hammer 6 x 80, Anvil 500).
+		Goose = {
+			Heavy = true,
+			FireMode = "semi",
+			Damage = 400, -- the Infected struck directly; the blast hits everyone else in Radius
+			FireCooldown = 1.0, -- one round loaded: ReloadTime is the real rate
+			MagazineSize = 1,
+			ReloadTime = 6.0, -- breech open, round in, close
+			ReserveStart = 1,
+			ReserveMax = 1,
+			HipSpread = 2.0,
+			AdsSpread = 0.25,
+			BloomPerShot = 0,
+			BloomMax = 0,
+			BloomRecovery = 12,
+			AdsMoveFactor = 0.4,
+			Range = 300, -- the rocket's reach: about 1.4 s of flight
+			HeadshotMultiplier = 1.0,
+			Kick = { Pitch = 7.0, Yaw = 1.2, Recover = 0.35 },
+			ProjectileSpeed = 220, -- studs/s
+			Explosive = { Radius = 6, Damage = 120, ShakePower = 4 },
+			Model = "wpn_goose",
+			Sound = "goose",
 		},
 	},
 
@@ -662,6 +763,11 @@ local Config = {
 	-- Call-ins (CallInDefinitions; Slots slots on keys 1-4). Charges refill one at a time every
 	-- Cooldown seconds; a Restock card fills them. No friendly fire: only the Infected are hurt.
 	CallIns = {
+		-- A thrown call-in (CallInDefinitions Kind "throw") is held to aim and thrown on release
+		-- (AbilityController): an arc from the hand and its row's `Aim` marker on the ground show
+		-- where it lands and what it covers. Aim.Shape "ring" (Radius) or "strip" (Length along
+		-- the throw, Width; Across = true lays it across). A row without Aim shows a small ring.
+		AimArc = { Beads = 18, Rise = 0.3, MinRise = 3 }, -- the arc: beads, apex height per stud of reach
 		Slots = 4, -- call-in slots per soldier (keys 1-4; the flare is key 5)
 		-- Hammer (81 mm mortar section, AirStrikeService): marks a point; the first shell lands
 		-- Delay seconds after the throw, then one every ShellInterval, each Scatter studs off
@@ -677,6 +783,7 @@ local Config = {
 			ShakePower = 3.5,
 			BlastDamage = 80,
 			Scatter = 4,
+			Aim = { Shape = "ring", Radius = 16 }, -- Scatter + BlastRadius: where shells can land
 		},
 		-- Anvil (105 mm battery, AirStrikeService): one heavy shell Delay seconds after the throw.
 		Anvil = {
@@ -691,6 +798,7 @@ local Config = {
 			ShakeGlobal = 1.0, -- felt anywhere on the map
 			BlastDamage = 500,
 			Scatter = 0,
+			Aim = { Shape = "ring", Radius = 20 }, -- the blast
 		},
 		-- Shrike (helicopter gun run, AirStrikeService): Delay seconds after the throw, Bursts
 		-- impacts centred on the mark, Step studs apart along the throw, BurstInterval apart.
@@ -706,6 +814,14 @@ local Config = {
 			ShakePower = 2,
 			BlastDamage = 120,
 			PassHeight = 45, -- the helicopter's flight height over the mark (look only)
+			-- The gunship (aircraft.py, MeshAssets veh_shrike_*): offsets from the hull's origin
+			-- (Roblox axes, nose toward -Z) to the rotor hub and the chin gun's muzzle; the rotor
+			-- turns RotorSpin degrees per second. The pass falls back to a plain hull Part
+			-- while the meshes are missing.
+			RotorHub = Vector3.new(0, 3.35, -1.5),
+			GunMuzzle = Vector3.new(0, -1.75, -11.4),
+			RotorSpin = 1440,
+			Aim = { Shape = "strip", Length = 46, Width = 10 }, -- the run: Step x (Bursts - 1) + 2 x BlastRadius
 		},
 		-- Doorman (tripod sentry MG, SentryService): stands where it lands for Duration; every
 		-- FireInterval it shoots the nearest Infected in Range it can see.
@@ -718,6 +834,7 @@ local Config = {
 			FireInterval = 0.15,
 			Range = 70,
 			MaxPerPlayer = 1, -- a second Doorman replaces the first
+			Aim = { Shape = "ring", Radius = 2 }, -- where the tripod stands
 		},
 		-- Tripline (Mines): thrown; Mines land on an arc bulging away from the thrower and blow
 		-- when an Infected steps within TriggerRadius.
@@ -734,6 +851,7 @@ local Config = {
 			Damage = 80,
 			Lifetime = 90,
 			MaxMines = 12, -- per player; the oldest goes first
+			Aim = { Shape = "ring", Radius = 8 }, -- ArcRadius: the mines' arc
 		},
 		-- Concertina (wire, ConcertinaService): a Length x Width strip laid across the throw,
 		-- centred where it lands, for Duration. Infected inside walk at SlowFactor and take
@@ -749,6 +867,7 @@ local Config = {
 			DamagePerSecond = 5,
 			TickInterval = 0.5,
 			MaxPerPlayer = 4, -- the oldest strip goes first
+			Aim = { Shape = "strip", Length = 16, Width = 3, Across = true }, -- the wire, laid across the throw
 		},
 		-- Speedball (ammo bundle, SupplyDropService): drops where it lands, no lure wave; each
 		-- living player walking within Radius is re-armed (full magazine and reserve), Visits
@@ -760,6 +879,7 @@ local Config = {
 			Visits = 4,
 			Radius = 6,
 			Lifetime = 90,
+			Aim = { Shape = "ring", Radius = 6 }, -- the re-arm radius
 		},
 		-- Aid Bag (medical drop, SupplyDropService): every soldier within Radius, once each:
 		-- full heal, stims refilled, +Plate shield (Config.Crates.ShieldCap still caps it).
@@ -770,6 +890,7 @@ local Config = {
 			Radius = 6,
 			Plate = 25,
 			Lifetime = 60,
+			Aim = { Shape = "ring", Radius = 6 }, -- the heal radius
 		},
 		-- Shared by the supply drops: the bundle falls this far, this fast.
 		Drop = { Height = 50, FallTime = 0.9 },
