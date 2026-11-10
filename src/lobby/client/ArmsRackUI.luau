@@ -1,5 +1,5 @@
 --!strict
--- The Arms Room counter (owner, 2026-11-09, after a GTA gun counter): talk to the armorer (F)
+-- The Arms Room counter (owner, 2026-11-09, after a GTA gun counter): talk to the Quartermaster (F)
 -- and choose. "Any work going?" gets his answer (no taskings yet); "Show me the rack." turns
 -- the camera to the rack on the wall behind his cage (ArmsRack): the gun under the cursor
 -- slides off its pegs with a soft glow, a click frames it with its card (name, the real gun,
@@ -270,7 +270,7 @@ for _, choice in { choiceWork, choiceRack, choiceLeave } do
 	inset.Parent = choice
 end
 
--- Rack: the header, the armorer's line, a hint, Back.
+-- Rack: the header, the Quartermaster's line, a hint, Back.
 local rackHeader = Instance.new("Frame")
 rackHeader.BackgroundTransparency = 1
 rackHeader.Position = UDim2.fromOffset(HudTheme.Margin * 2, HudTheme.Margin * 2)
@@ -458,19 +458,44 @@ local function fillCard(id: string)
 end
 
 -- --------------------------------------------------------------- modes
-local controls: any = nil
-local function playerControls(): any
-	if controls == nil then
-		local ok, module = pcall(function()
-			local scripts = player:WaitForChild("PlayerScripts")
-			return (require :: any)(scripts:WaitForChild("PlayerModule")):GetControls()
+-- Stops the soldier walking off while the camera is on the rack. Never yields: this place
+-- may run without a PlayerModule in PlayerScripts (the lobby does), and waiting for one
+-- hung "Show me the rack." for good. Without it the Humanoid is held still instead.
+local frozen: { humanoid: Humanoid, walk: number, jump: number }? = nil
+local function setMovement(enabled: boolean)
+	local scripts = player:FindFirstChild("PlayerScripts")
+	local module = scripts and scripts:FindFirstChild("PlayerModule")
+	if module and module:IsA("ModuleScript") then
+		local ok, controls = pcall(function()
+			return (require :: any)(module):GetControls()
 		end)
-		controls = if ok then module else false
+		if ok and controls then
+			if enabled then
+				controls:Enable()
+			else
+				controls:Disable()
+			end
+			return
+		end
 	end
-	return controls or nil
+	if enabled then
+		if frozen and frozen.humanoid.Parent then
+			frozen.humanoid.WalkSpeed = frozen.walk
+			frozen.humanoid.JumpHeight = frozen.jump
+		end
+		frozen = nil
+		return
+	end
+	local character = player.Character
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	if humanoid and not frozen then
+		frozen = { humanoid = humanoid, walk = humanoid.WalkSpeed, jump = humanoid.JumpHeight }
+		humanoid.WalkSpeed = 0
+		humanoid.JumpHeight = 0
+	end
 end
 
-local function hideArmorer(hide: boolean)
+local function hideQuartermaster(hide: boolean)
 	for _, part in hidden do
 		part.LocalTransparencyModifier = 0
 	end
@@ -568,14 +593,12 @@ local function enterRack()
 	hint.Text = if HudTheme.isTouch()
 		then "Tap a weapon to look closer"
 		else "Click a weapon to look closer   ·   Backspace to step back"
-	local c = playerControls()
-	if c then
-		c:Disable()
-	end
+	ContextActionService:UnbindAction(ACTION_CHOOSE)
+	setMovement(false)
 	if prompt then
 		prompt.Enabled = false
 	end
-	hideArmorer(true)
+	hideQuartermaster(true)
 	overview()
 	ContextActionService:BindAction(
 		ACTION_BACK,
@@ -621,11 +644,8 @@ function leaveRack()
 		camera.CameraType = Enum.CameraType.Custom
 		camera.FieldOfView = TUNING.PlayFov
 	end
-	hideArmorer(false)
-	local c = playerControls()
-	if c then
-		c:Enable()
-	end
+	hideQuartermaster(false)
+	setMovement(true)
 	if prompt then
 		prompt.Enabled = true
 	end
@@ -686,8 +706,7 @@ function choose(index: number)
 		talkLine.Text = `"{rack.workAnswer}"`
 		talkCloseAt = os.clock() + Config.Lobby.DialogSeconds * 3
 	elseif index == 2 then
-		ContextActionService:UnbindAction(ACTION_CHOOSE)
-		enterRack()
+		enterRack() -- unbinds the choice keys itself once the rack is really open
 	elseif index == 3 then
 		closeTalk()
 	end

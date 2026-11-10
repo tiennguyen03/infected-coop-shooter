@@ -97,7 +97,7 @@ FallowLayout.Desks = {
 } :: { DeskPlace }
 
 -- The Arms Room's rack (ArmsRack, ArmsRackUI): a board on the hangar's port wall behind the
--- armorer's cage. Long guns hang in a column, muzzles toward the bow; sidearms and grenades in
+-- Quartermaster's cage. Long guns hang in a column, muzzles toward the bow; sidearms and grenades in
 -- a column beside them. The board's outward face is +X (into the hangar).
 FallowLayout.ArmsRack = {
 	board = { x0 = -32.95, x1 = -32.75, z0 = 100.5, z1 = 109.5, y0 = 22, y1 = 28.5 },

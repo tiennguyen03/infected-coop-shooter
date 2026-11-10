@@ -40,7 +40,7 @@ local function props(folder: Folder, id: string, frame: CFrame)
 		Build.part(folder, name, size, frame * CFrame.new(offset), color, options)
 	end
 	if id == "arms_room" then
-		-- The wire cage around the armorer, open at the back: the rack on the hangar wall
+		-- The wire cage around the Quartermaster, open at the back: the rack on the hangar wall
 		-- behind him is the cage's back (ArmsRack).
 		for x = -5, 5, 1.25 do
 			prop("CageBar", Vector3.new(0.15, 9, 0.15), Vector3.new(x, 4.5, -2.6), WIRE)

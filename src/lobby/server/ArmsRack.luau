@@ -1,5 +1,5 @@
 --!strict
--- The rack behind the armorer's cage (owner, 2026-11-09: "somewhere to store the guns"): a
+-- The rack behind the Quartermaster's cage (owner, 2026-11-09: "somewhere to store the guns"): a
 -- board on the hangar wall with every gun, sidearm and grenade the Arms Room catalog lists,
 -- hung in catalog order (ArmsRoom.catalog). Each piece is a Model named by its weapon id;
 -- ArmsRackUI (client) finds them by name, slides the one under the cursor forward and frames

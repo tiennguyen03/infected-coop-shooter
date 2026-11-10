@@ -159,12 +159,16 @@ open door facing the boarding box; no layout change.
 Fixes 2026-11-09 (owner playtest): the choices also answer to the number keys 1-3 (they
 are numbered on screen; before, only a click worked), the choices are `Modal` so the mouse is
 free even zoomed into first person, and one desk dialog shows at a time (talking to another
-desk closes this panel; `DeskDialogUI` hides its panel when the armorer opens).
+desk closes this panel; `DeskDialogUI` hides its panel when the Quartermaster opens). Second
+fix: "Show me the rack." hung for good when the place had no `PlayerModule` (the lobby has
+none), leaving the panel up with the keys unbound; the rack now holds the Humanoid still when
+there is no PlayerModule, and the keys unbind only once the rack is open. The armorer is
+renamed **the Quartermaster** (owner, 2026-11-09).
 
-The owner's ask (after a GTA gun counter): give the armorer a use as the place the guns live.
+The owner's ask (after a GTA gun counter): give the Quartermaster a use as the place the guns live.
 Loadout selection is not part of it; nothing is drawn yet.
 
-- **Talk** (F on the armorer, `ArmsRackUI` instead of `DeskDialogUI` for a desk with a `rack`
+- **Talk** (F on the Quartermaster, `ArmsRackUI` instead of `DeskDialogUI` for a desk with a `rack`
   in `LobbyDesks`): his line and three choices, "Any work going?" (his answer: work comes from
   the Plot; no taskings yet), "Show me the rack." and "Carry on." Wording by the lore developer:
   nothing on the Fallow is bought or sold, so no price, buy, sell, lock, unlock, shop, store
@@ -175,7 +179,7 @@ Loadout selection is not part of it; nothing is drawn yet.
   beside them. Stand-in block silhouettes per id; the Service Rifle swaps to `wpn_rifle` once
   loaded. A new gun model goes in by adding its mesh to `ArmsRack.MESH` (and `MeshAssets`).
 - **Looking** (all local to the player, so four can look at once): the camera glides inside
-  the cage to frame the whole board (movement off, the prompt off, the armorer hidden for this
+  the cage to frame the whole board (movement off, the prompt off, the Quartermaster hidden for this
   player only). The gun under the cursor slides 0.6 off its pegs with a soft yellow rim (a
   Highlight; the owner asked for the glow, the lore pass wanted none, so it stays faint). Click
   or tap frames that gun left of centre with its card on the right: name, the real gun, ON ISSUE
@@ -256,8 +260,8 @@ Deck surface y 40, hangar floor y 20, sea y 0. Every position is in `FallowLayou
   inspect and stepping, Back twice, a second player looking at the same time, touch and gamepad;
   check the rifle mesh's orientation on the rack (turned by reasoning, not seen).
 - **Arms Room, later**: Tien's gun meshes (`ArmsRack.MESH`); drawing a gun once the record
-  opens (the card's button goes where the status line is); the armorer's taskings.
-- **Lore, to approve** (lore developer, Arms Room pass): "the rack" as the armorer's word for
+  opens (the card's button goes where the status line is); the Quartermaster's taskings.
+- **Lore, to approve** (lore developer, Arms Room pass): "the rack" as the Quartermaster's word for
   the wall; "on issue" / "not on issue" as the standard words on every desk; "taskings" as the
   in-world word for desk side work. Canon names the default gun the M4A1 Carbine; the game's
   catalog issues the Service Rifle (M16A4) and has no carbine: one of them changes.

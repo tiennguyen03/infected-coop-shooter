@@ -34,7 +34,7 @@ local LobbyDesks: { Desk } = {
 	{
 		id = "arms_room",
 		title = "ARMS ROOM",
-		who = "The armorer",
+		who = "The Quartermaster",
 		line = "Window team. Record's not cut, so you fly standard issue. What do you need?",
 		issues = "Guns, sidearms, grenades",
 		rack = {
