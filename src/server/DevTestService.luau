@@ -16,6 +16,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
+local Config = require(ReplicatedStorage.Shared.Config)
 local CallInDefinitions = require(ReplicatedStorage.Shared.CallInDefinitions)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local UpgradeDefinitions = require(ReplicatedStorage.Shared.UpgradeDefinitions)
@@ -427,6 +428,20 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 	end,
 	RestartRun = function(player)
 		DevTestService.restartRun(player)
+	end,
+	-- The live game still opens in the match: this flies the caller to the lobby place
+	-- (Config.Places.Lobby) so a tester can board a Lantern. Teleports never run in Studio.
+	ToLobby = function(player)
+		if Config.Places.Lobby == 0 or RunService:IsStudio() then
+			warn(
+				"[DevTest] ToLobby: the lobby place is not set (Config.Places.Lobby) or this is Studio"
+			)
+			return
+		end
+		local ok, err = pcall(function()
+			game:GetService("TeleportService"):TeleportAsync(Config.Places.Lobby, { player })
+		end)
+		print(`[DevTest] ToLobby {player.Name}: {if ok then "sent" else err}`)
 	end,
 	-- Freezes / unfreezes the field (the threat clock, cooldowns and timers stop).
 	TogglePause = function()
