@@ -11,12 +11,15 @@ local Players = game:GetService("Players")
 local ProximityPromptService = game:GetService("ProximityPromptService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local Workspace = game:GetService("Workspace")
 
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local KitPrices = require(ReplicatedStorage.Shared.KitPrices)
 local LobbyDesks = require(ReplicatedStorage.Lobby.LobbyDesks)
 local DeskShop = require(script.Parent.DeskShop)
+local HoldStill = require(script.Parent.HoldStill)
 local HudTheme = require(script.Parent.HudTheme)
 
 local DeskDialogUI = {}
@@ -103,6 +106,34 @@ function DeskDialogUI.init()
 	end
 	HudTheme.parent(gui)
 
+	-- The Plot's map view: the camera looks down on the paper map (WorldMap's sheet) from the
+	-- door side while the watch officer talks; leaving gives the camera back.
+	local viewing = false
+	local function viewMap()
+		local sheet = Workspace:FindFirstChild("WorldMapSheet", true)
+		local camera = Workspace.CurrentCamera
+		if viewing or not (sheet and sheet:IsA("BasePart")) or not camera then
+			return
+		end
+		viewing = true
+		HoldStill.set(true)
+		camera.CameraType = Enum.CameraType.Scriptable
+		local goal = CFrame.lookAt(sheet.Position + Vector3.new(-4.5, 12.5, 0), sheet.Position)
+		TweenService:Create(camera, TweenInfo.new(0.8, Enum.EasingStyle.Sine), { CFrame = goal })
+			:Play()
+	end
+	local function leaveMap()
+		if not viewing then
+			return
+		end
+		viewing = false
+		local camera = Workspace.CurrentCamera
+		if camera then
+			camera.CameraType = Enum.CameraType.Custom
+		end
+		HoldStill.set(false)
+	end
+
 	local desk: LobbyDesks.Desk? = nil
 	local openPrompt: ProximityPrompt? = nil
 	local closeAt = 0
@@ -119,6 +150,7 @@ function DeskDialogUI.init()
 		desk = nil
 		openPrompt = nil
 		DeskShop.hide()
+		leaveMap()
 	end
 
 	local function choose(index: number)
@@ -128,6 +160,10 @@ function DeskDialogUI.init()
 		end
 		if index == 1 then
 			say(current.talk.openLine)
+			if current.id == "plot" then
+				viewMap()
+				closeAt = math.huge -- stays up while you read the map
+			end
 			local sells = KitPrices.soldAt(current.id)
 			if #sells > 0 then
 				DeskShop.show(current.title, sells, current.talk)

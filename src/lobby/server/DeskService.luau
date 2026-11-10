@@ -26,6 +26,7 @@ local DRESS: { [string]: NpcBody.Dress } = {
 	loadmaster = NpcBody.Ship,
 	fires = NpcBody.Army,
 	engineers = NpcBody.Army,
+	plot = NpcBody.Army,
 }
 
 -- Props per desk, relative to the person's feet and facing (X right, Z forward).
@@ -113,15 +114,20 @@ function DeskService.init()
 		local frame = CFrame.lookAt(place.feet, place.feet + place.facing)
 		props(folder, desk.id, frame)
 
-		-- The counter in front of the person, the stencil over it.
-		local counter = Build.part(
-			folder,
-			"Counter",
-			Vector3.new(7, 3.4, 1.4),
-			frame * CFrame.new(0, 1.7, -2.4),
-			COUNTER
-		)
-		Build.sign(counter, desk.title, desk.who, 6.5)
+		-- The counter in front of the person, the stencil over it (or over the person when the
+		-- place has no counter: the Plot's watch officer works at the map table).
+		if place.counter == false then
+			Build.sign(torso, desk.title, desk.who, 4)
+		else
+			local counter = Build.part(
+				folder,
+				"Counter",
+				Vector3.new(7, 3.4, 1.4),
+				frame * CFrame.new(0, 1.7, -2.4),
+				COUNTER
+			)
+			Build.sign(counter, desk.title, desk.who, 6.5)
+		end
 
 		local prompt = Instance.new("ProximityPrompt")
 		prompt.ActionText = "Talk"

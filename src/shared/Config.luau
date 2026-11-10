@@ -1596,6 +1596,11 @@ local Config = {
 			FadeOutSeconds = 2.5, -- as the Lantern lifts
 			GapSeconds = 3, -- silence between tracks
 		},
+		-- The Plot's paper map (WorldMap, WorldMapData; canon docs/lore/world_map.md).
+		WorldMap = {
+			StudsPerUnit = 1.4, -- the 10 x 7 map grid at 1.4 studs a unit: a 14 x 9.8 sheet
+			TableHeight = 3.4, -- studs from the hangar floor to the sheet
+		},
 		-- What the lobby keeps per soldier between visits (SaveSlot; a stand-in for the F9 save
 		-- service): the Loadmaster's signed Loadout (LoadmasterService, Rules/LoadoutSave) and the
 		-- record, merits and guns bought (RecordService, Rules/Record). Gun prices sit on each

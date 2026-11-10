@@ -14,7 +14,6 @@ local Containment = require(ReplicatedStorage.Shared.Rules.Containment)
 local Build = require(script.Parent.Build)
 local ContainmentBoard = require(script.Parent.ContainmentBoard)
 local Layout = require(script.Parent.FallowLayout)
-local NpcBody = require(script.Parent.NpcBody)
 
 local PlotService = {}
 
@@ -69,8 +68,8 @@ local function buildPanel(): Frame
 			Color3.fromRGB(30, 30, 32)
 		)
 	end
-	-- The plotter behind it, reading backwards.
-	NpcBody.build(folder, "Plotter", Layout.Board.plotter, Vector3.new(-1, 0, 0), NpcBody.Ship)
+	-- (The silent plotter who stood behind it is gone: Control's watch officer runs the Plot
+	-- now, a desk at the map table, DeskService; owner 2026-11-10.)
 
 	local gui = Instance.new("SurfaceGui")
 	gui.Face = Enum.NormalId.Left

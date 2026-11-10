@@ -127,6 +127,28 @@ local LobbyDesks: { Desk } = {
 		},
 	},
 	{
+		id = "plot",
+		title = "THE PLOT",
+		who = "Control's watch officer",
+		issues = "The corridor map and the Containment Board",
+		talk = {
+			greetings = {
+				"This is the Plot. I'm Control, the voice on your radio when you're down there.",
+				"Delta's your mission. Do the job, kill the big one, get to your bird before the Burn.",
+				"Every number on that board is a place we're holding. I'd like them higher.",
+				"Keep it down. Half this room is on the net with a team that's still out.",
+			},
+			open = "Show me the map.",
+			ask = "What's the board for?",
+			answer = "How much of each district we hold. Contained isn't clean, it's just stopped spreading.",
+			leave = "That's all.",
+			openLine = "The Harlan Corridor. Coast at the bottom, the dam at the top. You start at Delta.",
+			bought = "That's on your record now. I just keep the map.",
+			short = "You're short on merits. Nothing I can do about that from the Plot.",
+			refused = "Can't do that from here. Try again in a minute.",
+		},
+	},
+	{
 		id = "engineers",
 		title = "ENGINEERS",
 		who = "Sapper sergeant",

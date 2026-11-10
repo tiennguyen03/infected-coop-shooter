@@ -67,6 +67,7 @@ export type DeskPlace = {
 	id: string, -- LobbyDesks id
 	feet: Vector3, -- where the person stands
 	facing: Vector3, -- the way they face (flat)
+	counter: boolean?, -- false: no counter, the sign floats over them (the Plot's watch officer)
 }
 
 -- Hangar desks (LobbyDesks), between the spawn and the ramp's foot: the Arms Room cage on the
@@ -93,6 +94,14 @@ FallowLayout.Desks = {
 		id = "fires",
 		feet = Vector3.new(10, FallowLayout.HangarY, 18),
 		facing = Vector3.new(-1, 0, 0),
+	},
+	-- Control's watch officer at the map table in the Plot, between the table and the board,
+	-- facing the door (owner 2026-11-10: someone real in the Plot).
+	{
+		id = "plot",
+		feet = Vector3.new(27.6, FallowLayout.HangarY, -2),
+		facing = Vector3.new(-1, 0, 0),
+		counter = false,
 	},
 } :: { DeskPlace }
 

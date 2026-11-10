@@ -19,6 +19,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local Build = require(script.Parent.Build)
 local FallowArt = require(script.Parent.FallowArt)
 local Layout = require(script.Parent.FallowLayout)
+local WorldMap = require(script.Parent.WorldMap)
 
 local FallowBuilder = {}
 
@@ -409,38 +410,8 @@ local function buildPlot(ship: Folder)
 		PLOT_WALL
 	)
 
-	-- The chart table: the corridor under tape and grease pencil.
-	local base = Layout.ChartTable
-	local tableTop = Build.part(
-		ship,
-		"ChartTable",
-		Vector3.new(8, 0.6, 14),
-		base * CFrame.new(0, 3.3, 0),
-		Color3.fromRGB(196, 184, 150),
-		{ material = Enum.Material.SmoothPlastic }
-	)
-	Build.text(
-		tableTop,
-		Enum.NormalId.Top,
-		"HARLAN CORRIDOR\n\nRESERVOIR\n|\nTHE YARD\n|\nKESTREL\n|\nMILE 14\n|\nDELTA\n\ncoast",
-		{ size = 34, color = Color3.fromRGB(70, 50, 40), font = Enum.Font.PermanentMarker }
-	)
-	for _, corner in
-		{
-			Vector3.new(-3.5, 0, -6.5),
-			Vector3.new(3.5, 0, -6.5),
-			Vector3.new(-3.5, 0, 6.5),
-			Vector3.new(3.5, 0, 6.5),
-		}
-	do
-		Build.part(
-			ship,
-			"TableLeg",
-			Vector3.new(0.5, 3, 0.5),
-			base * CFrame.new(corner + Vector3.new(0, 1.5, 0)),
-			HULL
-		)
-	end
+	-- The chart table: the Harlan Corridor on paper (WorldMap, the lore's world map).
+	WorldMap.build(ship)
 	-- One red working light.
 	local lamp = Build.part(
 		ship,

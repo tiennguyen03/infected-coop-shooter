@@ -81,9 +81,17 @@ match place.
   Quartermaster talks through `ArmsRackUI`, the Loadmaster through `LoadmasterUI`, Fires and
   the Engineers through `DeskDialogUI` (1 opens their `DeskShop`).
 - **The Plot** (`PlotService`, `ContainmentBoard`, rule `Rules/Containment`): the red-lit
-  map room under the island with the chart table and the Containment Board on a lit perspex
-  panel (five districts: percent and band word) and a plotter behind it. It rereads the board
-  every 60 s and wipes and rewrites a changed number. **The numbers are placeholders**
+  map room under the island with the Containment Board on a lit perspex panel (five
+  districts: percent and band word). It rereads the board every 60 s and wipes and rewrites a
+  changed number. **Since 2026-11-10** (Nova: "replace him with someone real"; canon by the
+  lore developer): the silent plotter is gone; **Control's watch officer** (a major, the voice
+  on your radio; `LobbyDesks` id `plot`, a desk with `counter = false`) stands between the
+  table and the board and talks like every desk; "Show me the map." glides the camera over
+  the **paper map** (`WorldMap` + `WorldMapData`, canon docs/lore/world_map.md): the Harlan
+  Corridor on a 10 x 7 grid at 1.4 studs a unit (`Config.Lobby.WorldMap`) - five districts
+  with borders, the river and dam, Route 9, County Road 40, the coast road, the rail line, the
+  grease-pencil quarantine line, burned towns, forests, the Carrier offshore with Lantern's
+  pencilled track, a title, a legend and a red Plot stamp; about 150 flat parts, built once. **The numbers are placeholders**
   (`Config.Containment.Districts`: Delta 25, the rest 0) until the save service.
 
 ## Ship art (2026-11-09: built; uploaded and seen in a Studio playtest)
