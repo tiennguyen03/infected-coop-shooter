@@ -20,6 +20,7 @@ local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Handoff = require(ReplicatedStorage.Shared.Rules.Handoff)
 local Loadout = require(ReplicatedStorage.Shared.Rules.Loadout)
+local Places = require(ReplicatedStorage.Shared.Places)
 local Lifecycle = require(script.Parent.Lifecycle)
 
 local HandoffService = {}
@@ -92,7 +93,7 @@ end
 -- True when the squad can be sent home: the lobby is published (Config.Places.Lobby), this
 -- is a live server (teleports never run in Studio) and the squad came from the lobby.
 function HandoffService.canReturn(): boolean
-	return Config.Places.Lobby ~= 0 and not RunService:IsStudio() and HandoffService.fromLobby()
+	return Places.lobby() ~= 0 and not RunService:IsStudio() and HandoffService.fromLobby()
 end
 
 -- Teleports everyone here to the lobby carrying `result` (Handoff.result). Yields through the
@@ -108,7 +109,7 @@ function HandoffService.sendHome(result: Handoff.Result): boolean
 			return true
 		end
 		local ok, err = pcall(function()
-			TeleportService:TeleportAsync(Config.Places.Lobby, players, options)
+			TeleportService:TeleportAsync(Places.lobby(), players, options)
 		end)
 		if ok then
 			return true
@@ -142,7 +143,7 @@ function HandoffService.init()
 		task.delay(Config.Handoff.RetryDelay, function()
 			if player.Parent then
 				pcall(function()
-					TeleportService:TeleportAsync(Config.Places.Lobby, { player }, options)
+					TeleportService:TeleportAsync(Places.lobby(), { player }, options)
 				end)
 			end
 		end)

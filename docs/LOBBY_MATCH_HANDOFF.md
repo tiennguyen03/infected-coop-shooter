@@ -145,20 +145,17 @@ run earned; the lobby reads progress from the DataStore, never from this table.
    on the published version): the match from `default.project.json`, the lobby from
    `lobby.project.json`.
 
-**Nova (lobby side, `src/lobby/server/LaunchService.luau`):**
-1. Merge `main` into `nova/lobby` (brings `Rules/Handoff`, `Config.Places`, Missions).
-2. In `lift()`: send `Handoff.departure(Handoff.DEFAULT_OPERATION, state.manifest.aboard, nil)`
-   instead of `{spot, party}` (`spot` may stay as an extra field; `readJoin` ignores it). `nil`
-   loadouts until the rack issues one; the match then gives the default.
-3. Reserve once per lift: `TeleportService:ReserveServer(Config.Places.Match)` and
-   `options.ReservedServerAccessCode = code`, reused for every retry (today's
-   `ShouldReserveServer` sends each retry to a new server and can split the squad).
-4. `Config.Lobby.MatchPlaceId` becomes `Config.Places.Match`.
+**Nova (lobby side, `src/lobby/server/LaunchService.luau`):** steps 1-4 and 6 done on
+`nova/lobby` 2026-11-10: `main` merged; `lift()` sends `Handoff.departure(DEFAULT_OPERATION,
+aboard, loadouts)` with each soldier's Loadout signed at the Loadmaster (plus `spot`); one
+`ReserveServer` per lift, reused by every retry; the target is `Places.match()`
+(`Config.Places.Match`, or a test pair from `Config.Places.Dev`, which `Places.lobby()` also
+uses for the trip home). Left:
 5. New `DebriefUI` (lobby client): `Handoff.readResult(TeleportService:GetLocalPlayerTeleportData())`
    and, when it returns a result, a one-time panel: the operation, STAND DOWN or SQUAD LOST,
    one row per mission (Delta: WIN / PARTIAL / LOSS). Display only.
-6. Later, when the rack issues loadouts: pass `{[userId] = pick}` as `departure`'s third
-   argument; that is when the match's B Arms Room can be turned off for lobby runs.
+6. (Done: the Loadmaster's signed Loadouts are passed.) The match's B Arms Room can now be
+   turned off for lobby runs once buying limits what a soldier may carry.
 
 **The live test (published places, Tien + a friend):** join (the game still opens in the
 match), F1 > "Go to the lobby (live)", board one spot together, land in one server (the

@@ -5,8 +5,8 @@ spawn, deck, ramp, desks, the Plot and the boarding countdown all work; the sunn
 flicker fix confirmed by Nova. Then the loop was reworked (hangar spawn, ramp turned to rise
 toward the spots) and soldiers given the Pike body. A real launch from a published place was
 verified 2026-11-10 in Nova's test experience (ZCS Dev -> Match Dev, a signed Loadout arrived;
-see Loadmaster and Loadout). The hand-off shape still differs from `main`'s `Rules/Handoff`
-(PR #5): align before merge (Open).
+see Loadmaster and Loadout). Since 2026-11-10 the lobby sends the agreed `Rules/Handoff`
+shape and the match reads it in Tien's `HandoffService` (docs/LOBBY_MATCH_HANDOFF.md).
 
 The lobby place (docs/MULTIPLAYER_READINESS.md decision 7, docs/ARCHITECTURE.md F10) as a
 walkable ship you can launch from: the Fallow, a helicopter carrier off the Harlan coast on a
@@ -63,7 +63,9 @@ match place.
   3 / FULL, `Messages.Launch.Squad`, `Manifest.setSquad`; owner 2026-11-10): once that many
   are aboard (4 if nobody picks) the countdown drops to 3 s (`FullCountdown`), so a solo soldier
   lifts 3 s after picking SOLO. The box empty clears it and the pick, a fifth soldier is left off. At zero the server teleports everyone
-  aboard together (`TeleportAsync`, a reserved server, teleport data `Rules/LaunchData`), two
+  aboard together (`TeleportAsync` into one server reserved per lift, `ReserveServer`, reused
+  by every retry; teleport data `Handoff.departure`: slot = boarding order, each soldier's
+  signed Loadout, plus `spot`), two
   retries, then "Lantern couldn't lift". In Studio teleports can't run: the panel says so and
   the spot resets after 6 s. Screen: `LaunchUI` (spot, who is aboard against the squad size, countdown, the picker for the
   first aboard).
@@ -230,8 +232,8 @@ Deck surface y 40, hangar floor y 20, sea y 0. Every position is in `FallowLayou
 | Server | `src/lobby/server/`: `Main.server`, `FallowLayout`, `Build`, `FallowBuilder`, `FallowArt`, `PikeBody`, `NpcBody`, `DeskService`, `ContainmentBoard`, `PlotService`, `LaunchService`, `LanternBird`, `ArmsRack`, `LoadmasterService` |
 | Client | `src/lobby/client/`: `Main.client`, `LaunchUI`, `DeskDialogUI`, `ArmsRackUI`, `LoadmasterUI`, `HoldStill`, `RadarSpin`, `LanternSpool` |
 | Art | `assets/3d/build/fallow.py` (12 `env_fallow_*` meshes), `lantern.py` (4 `veh_lantern_*`); `MeshAssets` entries; `Config.Lobby.Ship`, `Config.Lobby.Lantern`; attribute `LiftAt`; rule `Rules/ArmsStats` (+ spec), `Config.Lobby.Rack` |
-| Shared | `src/lobby/shared/LobbyDesks`; rules `src/shared/Rules/Manifest`, `Rules/Containment`, `Rules/LaunchData` (+ specs); `Config.Lobby` (incl. `DevMatchPlaceIds`), `Config.Containment`; remotes `Launch` + `Messages.Launch`, `Loadout` (shared with the match); attribute `DeskId` |
-| Match side | `src/server/JoinData.luau` (reads the teleport data), the first-pick seed in `LoadoutService.pickFor`; `LoadoutMenu.mount` options (title, hint, confirm) |
+| Shared | `src/lobby/shared/LobbyDesks`; rules `src/shared/Rules/Manifest`, `Rules/Containment`, `Rules/RotorBlur`, `Rules/LoadoutSave` (+ specs), `Rules/Handoff` (Tien's); `src/shared/Places` (`Config.Places`, incl. the `Dev` test pairs); `Config.Lobby`, `Config.Containment`; remotes `Launch` + `Messages.Launch`, `Loadout` (shared with the match); attribute `DeskId` |
+| Match side | Tien's `HandoffService` reads the teleport data (`Places.lobby()` for the trip home); `LoadoutMenu.mount` options (title, hint, confirm) |
 
 ## How to test it
 
@@ -243,7 +245,7 @@ Deck surface y 40, hangar floor y 20, sea y 0. Every position is in `FallowLayou
    Plot, climb the ramp to the spots, stand in a boarding box (panel + countdown; in Studio it ends with the
    "Teleports don't run in Studio" line).
 4. Dev places (2026-11-09): `Lobby (Dev)` (125769854992316) launches into `Match (Dev)`
-   (70420018035843), not the real match (`Config.Lobby.DevMatchPlaceIds`). Publish this branch
+   (70420018035843), not the real match (`Config.Places.Dev`, `Places`). Publish this branch
    into both (match: `rojo serve default.project.json`, lobby: the lobby project) and Tien's
    match place is never touched. Both sit in the group experience, whose start place is the
    real match, so the app cannot join `Lobby (Dev)` directly. Nova's own test experience
@@ -253,10 +255,10 @@ Deck surface y 40, hangar floor y 20, sea y 0. Every position is in `FallowLayou
 
 ## Open (next steps, in order)
 
-- **Re-check the new loop and the Pike body** (the steps above). The one unverified API:
-  `TeleportOptions.ShouldReserveServer` (documented, missing from the luau-lsp definitions,
-  set through a cast in `LaunchService`). If the live launch errors there, switch to
-  `TeleportService:ReserveServer` and pass the access code.
+- **Re-check the new loop and the Pike body** (the steps above). Since 2026-11-10 a lift reserves its server
+  with `TeleportService:ReserveServer` and passes the access code (set through a cast: the
+  luau-lsp definitions lack `ReservedServerAccessCode`); re-check a live launch after
+  publishing both places.
 ## Loadmaster and Loadout (2026-11-09: prototype built; verified live end to end)
 
 Owner and Tien: the Loadmaster at the foot of the ramp is where a soldier equips; the menu is
@@ -276,20 +278,19 @@ called **Loadout**. Lines by the lore developer (merits, the record, `LobbyDesks
   to the desk), writes spaced 6 s and flushed on leave/shutdown (`Config.Lobby.Save`). A failed
   or Studio-blocked DataStore means the default Loadout and one log line; Studio needs Game
   Settings > Security > Enable Studio Access to API Services to test it. Verified live by Nova
-  2026-11-10 (a signed Loadout came back after leaving and rejoining). A stand-in for F9. `LaunchService` sends them as teleport data (`Rules/LaunchData`:
-  spot, party, loadouts keyed by UserId string).
-- **Match** (`JoinData`, the one reader of teleport data): `LoadoutService` seeds a soldier's
-  first pick from it, re-validated against the match catalog; no data or a bad Loadout falls
-  back to `ArmsRoom.default()`. `RunManager` is untouched. Untestable in Studio (no teleports);
-  verified live 2026-11-10 in Nova's test experience: a Loadout signed in ZCS Dev arrives in
-  Match Dev after a real Lantern launch. A publish made before Rojo synced the dev pair
+  2026-11-10 (a signed Loadout came back after leaving and rejoining). A stand-in for F9. `LaunchService` sends them in `Handoff.departure`.
+- **Match**: Tien's `HandoffService` (`Handoff.readJoin`) gives each soldier the Loadout they
+  signed, re-validated against the match catalog; no data or a bad Loadout falls back to the
+  default. Untestable in Studio (no teleports). The first version (2026-11-10, its own shape
+  read by a `JoinData` module) was verified live in Nova's test experience; the `Rules/Handoff`
+  version needs the same live check. A publish made before Rojo synced the dev pair
   launched toward the real match (another experience) and failed with "Lantern couldn't
   lift": republish after the sync.
 
 - **Make the lobby the experience's start place** (owner's call): today players still join
-  the match place directly. The match reads only the Loadouts from the teleport data
-  (`JoinData`); the party and spot are unread (decision 7).
-- **Back to the Fallow at run end** (decision 7: once meta progression exists).
+  the match place directly (docs/LOBBY_MATCH_HANDOFF.md > Decisions).
+- **The debrief panel** (`DebriefUI`, docs/LOBBY_MATCH_HANDOFF.md > Nova step 5): the result
+  of a run, shown once when the squad flies home (BACK TO THE CARRIER is built match side).
 - **Real board numbers** and **desk trades** wait for the save service (F9); the currency is
   **merits** (owner, 2026-11-09), how many a run pays is the systems designer's.
 - **Ship and Lantern art: full check** (uploaded and wired 2026-11-09; v2 the same day: the first

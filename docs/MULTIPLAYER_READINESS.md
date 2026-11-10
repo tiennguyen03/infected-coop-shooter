@@ -88,8 +88,6 @@ Planned shape | Fix when`.
      (`player:GetJoinData().TeleportData`), read in one place (`HandoffService`, called only by
      `RunManager`; built 2026-11-09, `docs/LOBBY_MATCH_HANDOFF.md`), with a
      Studio/solo fallback to the defaults. Late joiners and missing players are normal.
-     (`nova/lobby` reads the Loadout today in `JoinData` from its own shape,
-     `Rules/LaunchData`; it moves to `Rules/Handoff` before that branch merges.)
    - **`Lobby` state in the match = staging, not the menu.** It waits for the party to load
      (or a timeout), then the ready-up/Insert flow runs.
    - **A run ends by returning the party to the lobby** (teleport back with results) once

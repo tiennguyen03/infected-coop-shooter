@@ -3,7 +3,7 @@
 -- him (F) and choose, by click or the keys 1-3. "Make up my Loadout." opens the Loadout
 -- (LoadoutMenu, the match's menu with the lobby's words): primary, sidearm, grenade and up
 -- to four call-ins. SIGN FOR IT sends it to LoadmasterService, which checks it with the
--- match's rules; once signed it rides the Lantern into the match (Rules/LaunchData). The
+-- match's rules; once signed it rides the Lantern into the match (Rules/Handoff). The
 -- soldier is held still while the Loadout is open; Back or Backspace steps out.
 
 local ContextActionService = game:GetService("ContextActionService")
