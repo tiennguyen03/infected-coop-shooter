@@ -2,7 +2,8 @@
 -- Lantern spots on the Fallow's flight deck (docs/MULTIPLAYER_READINESS.md decision 7): a
 -- bird on each numbered spot and a boarding box beside its door. Whoever stands in the box is
 -- aboard (Rules/Manifest: boarding order, up to Config.Lobby.Launch.Capacity); the first
--- aboard starts the countdown, a full bird shortens it. When it runs out, the server reserves
+-- aboard starts the countdown and may pick the squad size (LaunchUI); a full bird (all four,
+-- or the size picked) shortens it to Config.Lobby.Launch.FullCountdown. When it runs out, the server reserves
 -- a private server of the match place and teleports everyone aboard together, with the spot
 -- the party's UserIds and each soldier's signed Loadout (LoadmasterService) as teleport data
 -- (Rules/LaunchData; the match re-checks the Loadouts and never trusts it for progress).
@@ -138,7 +139,9 @@ local function tell(state: SpotState, now: number)
 	local secondsLeft = if state.manifest.liftAt
 		then math.max(0, state.manifest.liftAt - now)
 		else 0
-	local key = `{table.concat(names, ",")}|{state.manifest.liftAt}`
+	local squad = state.manifest.squad or 0
+	local lead = state.manifest.aboard[1]
+	local key = `{table.concat(names, ",")}|{state.manifest.liftAt}|{squad}`
 	for _, player in aboard do
 		if state.sent[player] ~= key then
 			state.sent[player] = key
@@ -147,7 +150,9 @@ local function tell(state: SpotState, now: number)
 				Messages.Launch.Manifest,
 				state.spot.index,
 				names,
-				secondsLeft
+				secondsLeft,
+				squad,
+				player.UserId == lead
 			)
 		end
 	end
@@ -286,6 +291,21 @@ function LaunchService.init()
 	Players.PlayerRemoving:Connect(function(player)
 		for _, state in states do
 			state.sent[player] = nil
+		end
+	end)
+	-- The first aboard picks the squad size; the rule refuses anyone else and any bad size.
+	launchRemote.OnServerEvent:Connect(function(player: Player, kind: unknown, size: unknown)
+		if kind ~= Messages.Launch.Squad or typeof(size) ~= "number" then
+			return
+		end
+		local now = os.clock()
+		for _, state in states do
+			if not state.lifting and Manifest.isAboard(state.manifest, player.UserId) then
+				state.manifest =
+					Manifest.setSquad(state.manifest, player.UserId, size, now, SETTINGS)
+				tell(state, now)
+				publishLift(state, now)
+			end
 		end
 	end)
 

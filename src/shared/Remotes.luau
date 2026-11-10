@@ -26,7 +26,7 @@ local REMOTE_NAMES = {
 	"BossUpdate", -- server -> client: ("show", name, plateNames) | ("state", body, plates, phase) | ("tell", kind) | ("hide"); client -> server: () resend the state
 	"Impact", -- server -> client: ("knockdown", seconds) the body is knocked down (Squad.knock) | ("push", velocity: Vector3) a shove the client applies to its root
 	"Stance", -- client -> server: (stance: "stand"|"crouch"|"prone"); server -> client: ("prone") stand-up refused under a ceiling
-	"Launch", -- lobby place, server -> client: ("manifest", spot, names, secondsLeft) | ("lifting", spot) | ("failed", reason) | ("cleared")
+	"Launch", -- lobby place, server -> client: ("manifest", spot, names, secondsLeft, squad, isLead) | ("lifting", spot) | ("failed", reason) | ("cleared"); client -> server: ("squad", size)
 }
 
 if RunService:IsServer() and not ReplicatedStorage:FindFirstChild("Remotes") then

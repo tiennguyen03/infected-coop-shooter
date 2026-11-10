@@ -77,7 +77,8 @@ local Messages = table.freeze({
 	}),
 	-- Launch (lobby place, server -> client): your seat on a Lantern spot
 	Launch = table.freeze({
-		Manifest = "manifest", -- (spot, names, secondsLeft) you are aboard
+		Manifest = "manifest", -- (spot, names, secondsLeft, squad, isLead) you are aboard; squad 0 = not picked
+		Squad = "squad", -- client -> server: (size) the first aboard picks the squad size, 1 to Capacity
 		Lifting = "lifting", -- (spot) the bird is lifting; the teleport is under way
 		Failed = "failed", -- (reason) the teleport did not happen
 		Cleared = "cleared", -- () you stepped off the spot

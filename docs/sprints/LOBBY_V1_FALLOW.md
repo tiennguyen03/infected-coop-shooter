@@ -59,11 +59,14 @@ match place.
   in the repo names that id; it is not from lobby code and does not affect play.
 - **Four Lantern spots** (`LaunchService`, rule `Rules/Manifest`): a Lantern (`LanternBird`,
   see Lantern below) on each numbered spot and a yellow boarding box beside its starboard door. Stand in the box
-  to board. The first aboard starts a 20 s countdown, a full bird (4) cuts it to 5 s, the
-  box empty clears it, a fifth soldier is left off. At zero the server teleports everyone
-  aboard together (`TeleportAsync`, a reserved server, teleport data `{spot, party}`), two
+  to board. The first aboard starts a 20 s countdown and gets a squad-size picker (SOLO / 2 /
+  3 / FULL, `Messages.Launch.Squad`, `Manifest.setSquad`; owner 2026-11-10): once that many
+  are aboard (4 if nobody picks) the countdown drops to 3 s (`FullCountdown`), so a solo soldier
+  lifts 3 s after picking SOLO. The box empty clears it and the pick, a fifth soldier is left off. At zero the server teleports everyone
+  aboard together (`TeleportAsync`, a reserved server, teleport data `Rules/LaunchData`), two
   retries, then "Lantern couldn't lift". In Studio teleports can't run: the panel says so and
-  the spot resets after 6 s. Screen: `LaunchUI` (spot, who is aboard, countdown).
+  the spot resets after 6 s. Screen: `LaunchUI` (spot, who is aboard against the squad size, countdown, the picker for the
+  first aboard).
 - **Four hangar desks** (`DeskService`, data `LobbyDesks`): Arms Room (cage, port side),
   Engineers (wire spools, starboard), Loadmaster (slung cases at the foot of the ramp), Fires
   (at the Plot door). Block crew figures in working dress, a counter, a sign, an F "Talk" prompt. The
