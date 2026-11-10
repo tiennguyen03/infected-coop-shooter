@@ -5,15 +5,17 @@
 -- ArmsRackUI (client) finds them by name, slides the one under the cursor forward and frames
 -- the one clicked. Nothing is bought here yet (merits wait for F9).
 --
--- Gun models: stand-in block silhouettes per id (SILHOUETTES) until the gun meshes arrive;
--- an id whose MeshAssets mesh is uploaded (MESH) is swapped for it once loaded. A new gun
--- model goes in by adding its mesh name to MESH (and its MeshAssets entry).
+-- Gun models: every gun hangs as the same mesh it is held as in the match (its row's `Model`,
+-- Config.Weapons.<id>.Model, read through WeaponDefinitions), swapped in once loaded; until
+-- then, and for the grenades, a block silhouette (SILHOUETTES) stands in. A new gun needs no
+-- change here.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local ArmsRoom = require(ReplicatedStorage.Shared.ArmsRoom)
 local Config = require(ReplicatedStorage.Shared.Config)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
+local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
 local Build = require(script.Parent.Build)
 local Layout = require(script.Parent.FallowLayout)
 
@@ -25,11 +27,6 @@ local DARK = Color3.fromRGB(48, 53, 59)
 local GREY = Color3.fromRGB(75, 81, 89)
 local OLIVE = Color3.fromRGB(99, 110, 66)
 local WOOD = Color3.fromRGB(110, 90, 60)
-
--- Real gun meshes by weapon id (MeshAssets names). The rest use their silhouette.
-local MESH: { [string]: string } = {
-	service_rifle = "wpn_rifle",
-}
 
 type Block = { size: Vector3, at: Vector3, color: Color3, ball: boolean? }
 
@@ -132,7 +129,7 @@ local function useMesh(model: Model, meshName: string, frame: CFrame)
 		for _, child in model:GetChildren() do
 			child:Destroy()
 		end
-		-- The held rifle's mesh runs along its Z, muzzle to -Z: turn it so the muzzle points
+		-- A held gun's mesh runs along its Z, muzzle to -Z: turn it so the muzzle points
 		-- along the gun frame's +X, like the silhouettes.
 		mesh.CFrame = frame * CFrame.Angles(0, -math.pi / 2, 0)
 		quiet(mesh)
@@ -160,6 +157,16 @@ function ArmsRack.build(parent: Instance)
 	for _, id in catalog.grenades do
 		table.insert(side, id)
 	end
+	-- The gun's own held mesh (nil for a grenade).
+	local guns: { [string]: boolean } = {}
+	for _, list in { catalog.primaries, catalog.secondaries } do
+		for _, id in list do
+			guns[id] = true
+		end
+	end
+	local function meshFor(id: string): string?
+		return if guns[id] then WeaponDefinitions.get(id).Model else nil
+	end
 	local function hang(ids: { string }, rows: { number }, z: number)
 		for index, id in ids do
 			local y = rows[index]
@@ -184,7 +191,7 @@ function ArmsRack.build(parent: Instance)
 				peg.CanQuery = false
 			end
 			model.Parent = folder
-			local meshName = MESH[id]
+			local meshName = meshFor(id)
 			if meshName and MeshAssets.isUploaded(meshName) then
 				useMesh(model, meshName, frame)
 			end

@@ -41,6 +41,7 @@ export type WeaponDefinition = {
 	Heavy: boolean, -- staggers a Brute (Config.Enemies.Flinch)
 	ReloadClip: string?, -- its own reload clip; nil = Config.Animations.Assault.reload
 	Model: string, -- the held mesh (MeshAssets wpn_*); default wpn_rifle
+	Price: number?, -- merits at the lobby's Quartermaster (Rules/Record): 0 = issued free, nil = not for sale
 	Sound: string?, -- its clips in the `guns` bank: <Sound>_shot, <Sound>_reload; nil = the shared rifle shot and gear reload
 	Explosive: Explosive?, -- a launcher: the round is a visible rocket that blows at impact
 	ProjectileSpeed: number?, -- studs/s of that rocket (Explosive only)
@@ -85,6 +86,7 @@ type Tuning = {
 	Heavy: boolean?,
 	ReloadClip: string?,
 	Model: string?,
+	Price: number?,
 	Sound: string?,
 	Explosive: Explosive?,
 	ProjectileSpeed: number?,
@@ -127,6 +129,7 @@ local function row(
 		Heavy = tuning.Heavy == true,
 		ReloadClip = tuning.ReloadClip,
 		Model = tuning.Model or DEFAULT_MODEL,
+		Price = tuning.Price,
 		Sound = tuning.Sound,
 		Explosive = tuning.Explosive,
 		ProjectileSpeed = tuning.ProjectileSpeed,

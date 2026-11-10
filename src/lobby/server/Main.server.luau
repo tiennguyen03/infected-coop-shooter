@@ -17,6 +17,7 @@ local BOOT: { ModuleScript } = {
 	Server.PikeBody,
 	Server.DeskService,
 	Server.PlotService,
+	Server.RecordService,
 	Server.LoadmasterService,
 	Server.LaunchService,
 }

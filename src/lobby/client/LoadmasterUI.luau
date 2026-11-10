@@ -21,6 +21,7 @@ local LobbyDesks = require(ReplicatedStorage.Lobby.LobbyDesks)
 local HoldStill = require(script.Parent.HoldStill)
 local HudTheme = require(script.Parent.HudTheme)
 local LoadoutMenu = require(script.Parent.LoadoutMenu)
+local RecordClient = require(script.Parent.RecordClient)
 
 local LoadmasterUI = {}
 
@@ -209,6 +210,14 @@ local function openLoadout()
 		title = kit.header,
 		hint = "CLICK TO PICK   ·   CALL-INS FILL KEYS 1-4 IN ORDER   ·   [BACKSPACE] STEP AWAY",
 		confirm = kit.confirm,
+		-- Only guns on the record (bought at the Quartermaster's rack, or issued free).
+		locked = function(id: string): string?
+			if RecordClient.owns(id) then
+				return nil
+			end
+			local price = RecordClient.priceOf(id)
+			return if price then `{price} MERITS` else "NOT FOR ISSUE"
+		end,
 	})
 	if signed then
 		handle.set(signed)
@@ -298,7 +307,14 @@ function LoadmasterUI.init()
 			closeLoadout(if kit then kit.confirmLine else nil)
 		elseif menu and kit then
 			pending = nil
-			menu.status(`{kit.reject} ({reason or "refused"})`, false)
+			local line = if reason == "not on record" then kit.notOnRecord else kit.reject
+			menu.status(`{line} ({reason or "refused"})`, false)
+		end
+	end)
+
+	RecordClient.Changed:Connect(function()
+		if menu then
+			menu.refresh()
 		end
 	end)
 

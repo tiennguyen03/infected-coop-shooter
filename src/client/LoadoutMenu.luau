@@ -31,12 +31,16 @@ export type Options = {
 	title: string?, -- the header, after the "//"
 	hint: string?,
 	confirm: string?, -- the confirm button
+	-- A gun the soldier may not carry: returns the badge shown in its place (e.g. its price),
+	-- or nil when it may be picked. Locked items cannot be picked and keep confirm greyed.
+	locked: ((id: string) -> string?)?,
 }
 
 export type Handle = {
 	frame: Frame,
 	set: (loadout: Loadout.Loadout) -> (),
 	status: (text: string, good: boolean?) -> (),
+	refresh: () -> (), -- repaint after what `locked` answers has changed
 	destroy: () -> (),
 }
 
@@ -175,11 +179,18 @@ function LoadoutMenu.mount(
 		end
 	end
 
+	local function isLocked(id: string): string?
+		local locked = opts.locked
+		return if locked then locked(id) else nil
+	end
+
 	local function repaint()
 		for _, paint in painters do
 			paint()
 		end
 		local ok = Loadout.validate(pick, catalog)
+			and not isLocked(pick.primary)
+			and not isLocked(pick.secondary)
 		deploy.Active = ok
 		deploy.BackgroundTransparency = if ok then 0 else 0.5
 	end
@@ -204,17 +215,31 @@ function LoadoutMenu.mount(
 		sub.Name = "Sub"
 		sub.AnchorPoint = Vector2.new(1, 0)
 		sub.Position = UDim2.new(1, -10, 0, 7)
-		item.MouseEnter:Connect(function()
-			describe.Text = `{entry.title}  ·  {entry.description}`
-		end)
+		local function describeIt()
+			local lock = isLocked(entry.id)
+			describe.Text = if lock
+				then `{entry.title}  ·  NOT ON YOUR RECORD ({lock}): buy it at the Quartermaster`
+				else `{entry.title}  ·  {entry.description}`
+		end
+		item.MouseEnter:Connect(describeIt)
 		item.Activated:Connect(function()
-			onPick()
-			describe.Text = `{entry.title}  ·  {entry.description}`
+			if not isLocked(entry.id) then
+				onPick()
+			end
+			describeIt()
 			repaint()
 		end)
 		table.insert(painters, function()
 			local selected, badge = isSelected()
+			local lock = isLocked(entry.id)
 			paintItem(item, entry, selected, badge)
+			if lock then
+				item.BackgroundTransparency = 0.7
+				sub.Text = lock
+				sub.TextColor3 = C.Yellow
+			else
+				sub.Text = entry.subtitle
+			end
 		end)
 	end
 
@@ -285,6 +310,7 @@ function LoadoutMenu.mount(
 			}
 			repaint()
 		end,
+		refresh = repaint,
 		status = function(text: string, good: boolean?)
 			statusLabel.Text = text
 			statusLabel.TextColor3 = if good == true

@@ -77,6 +77,12 @@ local Messages = table.freeze({
 		Slide = "slide",
 	}),
 	-- Launch (lobby place, server -> client): your seat on a Lantern spot
+	-- Record (lobby place): the Quartermaster's rack (RecordService, Rules/Record)
+	Record = table.freeze({
+		Buy = "buy", -- client -> server: (gunId)
+		State = "state", -- server -> client: (merits, ownedIds) the soldier's record
+		Refused = "refused", -- server -> client: (gunId, reason) "short" | "owned" | "unknown" | "loading"
+	}),
 	Launch = table.freeze({
 		Manifest = "manifest", -- (spot, names, secondsLeft, squad, isLead) you are aboard; squad 0 = not picked
 		Squad = "squad", -- client -> server: (size) the first aboard picks the squad size, 1 to Capacity

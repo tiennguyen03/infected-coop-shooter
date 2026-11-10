@@ -25,6 +25,7 @@ local LobbyDesks = require(ReplicatedStorage.Lobby.LobbyDesks)
 local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
 local HoldStill = require(script.Parent.HoldStill)
 local HudTheme = require(script.Parent.HudTheme)
+local RecordClient = require(script.Parent.RecordClient)
 
 local ArmsRackUI = {}
 
@@ -290,6 +291,12 @@ local rackSay = HudTheme.label(
 	{ size = 17, font = HudTheme.Font.Body, color = HudTheme.Color.TextDim }
 )
 rackSay.LayoutOrder = 3
+-- The soldier's merits (RecordClient), under the Quartermaster's line.
+local rackMerits = HudTheme.label(
+	rackHeader,
+	{ size = 20, font = HudTheme.Font.Headline, color = HudTheme.Color.Yellow }
+)
+rackMerits.LayoutOrder = 4
 
 local hint = HudTheme.label(
 	gui,
@@ -339,8 +346,13 @@ local cardDesignation = HudTheme.label(card, { size = 16, color = HudTheme.Color
 cardDesignation.LayoutOrder = 2
 local cardStatus = HudTheme.label(card, { size = 16, font = HudTheme.Font.Headline, rich = true })
 cardStatus.LayoutOrder = 3
+-- BUY, for a gun not on the record (Rules/Record via RecordService).
+local cardBuy = button(card, "", 372)
+cardBuy.LayoutOrder = 4
+cardBuy.Font = HudTheme.Font.Headline
+cardBuy.Visible = false
 local cardLine = HudTheme.label(card, { size = 15, font = HudTheme.Font.Body })
-cardLine.LayoutOrder = 4
+cardLine.LayoutOrder = 5
 cardLine.AutomaticSize = Enum.AutomaticSize.Y
 cardLine.Size = UDim2.fromScale(1, 0)
 cardLine.TextWrapped = true
@@ -348,11 +360,11 @@ local cardRows = Instance.new("Frame")
 cardRows.BackgroundTransparency = 1
 cardRows.Size = UDim2.fromScale(1, 0)
 cardRows.AutomaticSize = Enum.AutomaticSize.Y
-cardRows.LayoutOrder = 5
+cardRows.LayoutOrder = 6
 cardRows.Parent = card
 column(cardRows, 6)
 local cardCount = HudTheme.label(card, { size = 14, color = HudTheme.Color.TextDim })
-cardCount.LayoutOrder = 6
+cardCount.LayoutOrder = 7
 
 local function statRow(row: CardRow, order_: number)
 	local frame = Instance.new("Frame")
@@ -396,7 +408,6 @@ local function statsOf(id: string): ArmsStats.Stats
 end
 
 local catalog = ArmsRoom.catalog()
-local issued = ArmsRoom.default()
 local guns: { [string]: boolean } = {}
 local gunStats: { ArmsStats.Stats } = {}
 for _, list in { catalog.primaries, catalog.secondaries } do
@@ -432,10 +443,6 @@ local function rowsFor(id: string): (string, string, string, { CardRow })
 		}
 end
 
-local function isIssued(id: string): boolean
-	return id == issued.primary or id == issued.secondary or id == issued.grenade
-end
-
 local function fillCard(id: string)
 	local rack = desk and desk.rack
 	if not rack then
@@ -444,9 +451,24 @@ local function fillCard(id: string)
 	local name, designation, line, rows = rowsFor(id)
 	cardName.Text = name
 	cardDesignation.Text = designation
-	cardStatus.Text = if isIssued(id)
+	-- On the record (bought or issued free) or for sale at its price; grenades come with the job.
+	local price = RecordClient.priceOf(id)
+	local owned = RecordClient.owns(id)
+	cardStatus.Text = if owned
 		then HudTheme.tint(rack.onIssue, HudTheme.Color.Yellow)
-		else `{rack.notOnIssue}  {HudTheme.tint(rack.notOnIssueWhy, HudTheme.Color.TextDim)}`
+		else `{rack.notOnIssue}  {HudTheme.tint(
+			`{price or 0} {rack.currency}`,
+			HudTheme.Color.TextDim
+		)}`
+	local forSale = not owned and price ~= nil and RecordClient.loaded()
+	cardBuy.Visible = forSale
+	if forSale then
+		local short = RecordClient.merits() < (price :: number)
+		cardBuy.Text = if short
+			then `{rack.buy} · {price} {rack.currency} (SHORT)`
+			else `{rack.buy} · {price} {rack.currency}`
+		cardBuy.TextTransparency = if short then 0.5 else 0
+	end
 	cardLine.Text = line
 	for _, child in cardRows:GetChildren() do
 		if child:IsA("Frame") then
@@ -559,6 +581,7 @@ local function enterRack()
 	mode = "rack"
 	rackTitle.Text = rack.header
 	rackSay.Text = `"{rack.rackLine}"`
+	rackMerits.Text = `{RecordClient.merits()} {rack.currency}`
 	hint.Text = if HudTheme.isTouch()
 		then "Tap a weapon to look closer"
 		else "Click a weapon to look closer   ·   Backspace to step back"
@@ -699,6 +722,36 @@ function ArmsRackUI.init()
 		local chosen = if type(id) == "string" then byId[id] else nil
 		if chosen and chosen.rack then
 			openTalk(chosen, triggered)
+		end
+	end)
+
+	-- Buying: the server answers with the new record (Changed) or a refusal (Refused).
+	local meritsBefore = RecordClient.merits()
+	cardBuy.Activated:Connect(function()
+		local id = order[selected]
+		if mode == "inspect" and id then
+			meritsBefore = RecordClient.merits()
+			RecordClient.buy(id)
+		end
+	end)
+	RecordClient.Changed:Connect(function()
+		local rack = desk and desk.rack
+		if not rack or (mode ~= "rack" and mode ~= "inspect") then
+			return
+		end
+		rackMerits.Text = `{RecordClient.merits()} {rack.currency}`
+		if RecordClient.merits() < meritsBefore then
+			rackSay.Text = `"{rack.bought}"`
+		end
+		meritsBefore = RecordClient.merits()
+		if mode == "inspect" and order[selected] then
+			fillCard(order[selected])
+		end
+	end)
+	RecordClient.Refused:Connect(function(_id: unknown, reason: unknown)
+		local rack = desk and desk.rack
+		if rack and (mode == "rack" or mode == "inspect") then
+			rackSay.Text = if reason == "short" then `"{rack.short}"` else `"{rack.bookShut}"`
 		end
 	end)
 

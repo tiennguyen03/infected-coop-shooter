@@ -294,6 +294,7 @@ local Config = {
 			HeadshotMultiplier = 3.0, -- EnemyDefinitions may override per form
 			Kick = { Pitch = 0.9, Yaw = 0.3, Recover = 0.12 }, -- degrees up, +/- degrees, seconds
 			Model = "wpn_m16",
+			Price = 0, -- merits at the Quartermaster's rack (Rules/Record); issued free
 		},
 		-- MP5: the best hip-fire; chews Runners, weak on Brutes (Walker 4 / 2, Brute 19 / 15).
 		Smg = {
@@ -314,6 +315,7 @@ local Config = {
 			HeadshotMultiplier = 3.0,
 			Kick = { Pitch = 0.5, Yaw = 0.2, Recover = 0.12 },
 			Model = "wpn_mp5",
+			Price = 300, -- merits at the Quartermaster's rack (Rules/Record)
 			Sound = "smg",
 		},
 		-- M249: a 100-round belt, no reload inside a hold; slow to aim on the move.
@@ -335,6 +337,7 @@ local Config = {
 			HeadshotMultiplier = 3.0,
 			Kick = { Pitch = 1.1, Yaw = 0.5, Recover = 0.12 },
 			Model = "wpn_m249",
+			Price = 600, -- merits at the Quartermaster's rack (Rules/Record)
 			Sound = "lmg",
 		},
 		-- Mossberg 590: point-blank, one decision per pull; one pull drops every form but the
@@ -359,6 +362,7 @@ local Config = {
 			HeadshotMultiplier = 1.5,
 			Kick = { Pitch = 4.0, Yaw = 0.8, Recover = 0.12 },
 			Model = "wpn_mossberg",
+			Price = 400, -- merits at the Quartermaster's rack (Rules/Record)
 			Sound = "shotgun",
 		},
 		-- M110: one-taps Walkers, hits two in a line, poor up close. Ammo reins it in
@@ -383,6 +387,7 @@ local Config = {
 			HeadshotMultiplier = 3.0,
 			Kick = { Pitch = 2.6, Yaw = 0.4, Recover = 0.12 },
 			Model = "wpn_m110",
+			Price = 500, -- merits at the Quartermaster's rack (Rules/Record)
 			Sound = "dmr",
 		},
 		-- M17: the sidearm, backup when the primary runs dry.
@@ -404,6 +409,7 @@ local Config = {
 			HeadshotMultiplier = 3.0,
 			Kick = { Pitch = 1.6, Yaw = 0.3, Recover = 0.12 },
 			Model = "wpn_m17",
+			Price = 0, -- merits at the Quartermaster's rack (Rules/Record); issued free
 			Sound = "pistol",
 		},
 		-- Sample guns (2026-11-09, dev menu; the Arms Room lists them once Nova's loadout work
@@ -1545,10 +1551,14 @@ local Config = {
 
 	-- The lobby place: the Fallow (docs/sprints/LOBBY_V1_FALLOW.md, LORE.md > The Fallow).
 	Lobby = {
-		-- The Loadmaster keeps each soldier's signed Loadout between visits (LoadmasterService,
-		-- Rules/LoadoutSave). A stand-in for the F9 save service.
+		-- What the lobby keeps per soldier between visits (SaveSlot; a stand-in for the F9 save
+		-- service): the Loadmaster's signed Loadout (LoadmasterService, Rules/LoadoutSave) and the
+		-- record, merits and guns bought (RecordService, Rules/Record). Gun prices sit on each
+		-- gun's own row (Config.Weapons.<Gun>.Price).
 		Save = {
 			Store = "LoadmasterLoadouts", -- DataStore name; keys are "u_<UserId>"
+			RecordStore = "PikeRecords", -- DataStore name; keys are "r_<UserId>"
+			StartMerits = 1000, -- a new soldier's merits (earning them from runs is not built yet)
 			MinWriteGap = 6, -- seconds between saves per soldier; the newest pick wins
 			Retries = 2, -- extra attempts after a failed DataStore call
 			RetryDelay = 1,

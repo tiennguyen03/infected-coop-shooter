@@ -177,8 +177,30 @@ renamed **the Quartermaster** (owner, 2026-11-09).
 
 The owner's ask (after a GTA gun counter): give the Quartermaster a use as the place the guns live.
 The rack is where guns are **bought** (merits, onto the soldier's record; owner and Tien,
-2026-11-09), not equipped: equipping is the Loadmaster's (below). Buying waits for the save
-service (F9).
+2026-11-09), not equipped: equipping is the Loadmaster's (below).
+
+**Buying at the Quartermaster (2026-11-10, Studio-verified):**
+- **The record** (`Rules/Record` + spec): merits and the guns bought. A new soldier starts with
+  `Config.Lobby.Save.StartMerits` (1000); prices sit on each gun's own row
+  (`Config.Weapons.<Gun>.Price` via `WeaponDefinitions`): Service Rifle and Pistol 0 (issued
+  free), SMG 300, Shotgun 400, DMR 500, LMG 600; a gun without a Price is not for sale.
+  Grenades and call-ins are not bought.
+- **Server** (`RecordService`): loads the record on join (`SaveSlot`, DataStore
+  `PikeRecords`, key `r_<UserId>`), sends it on the `Record` remote (`Messages.Record`), checks
+  each BUY with the rule and saves. `SaveSlot` is the shared save helper (spaced writes, flush
+  on leave/shutdown, one log line and no saving when the DataStore is unavailable);
+  `LoadmasterService` uses it too.
+- **The rack** (`ArmsRackUI`, `RecordClient`): the header shows the merits; the card shows ON
+  YOUR RECORD, or NOT ON YOUR RECORD with the price and BUY · N MERITS (dim "(SHORT)" when
+  short). He answers with the lore developer's lines ("Signed. It's on your record..." /
+  "You're short. Bring me merits.").
+- **The Loadmaster** signs only for guns on the record: the Loadout locks the rest (dim, the
+  price in yellow, cannot be picked; `LoadoutMenu.mount` option `locked`, `handle.refresh`),
+  the server refuses a forged one ("not on record"), and a saved Loadout naming a gun no longer
+  on the record falls back to the default.
+- **Not built:** earning merits (only the starting grant): a run's pay is the systems
+  designer's call and the match would save it (the record is per UserId in the same
+  experience). The match's B Arms Room still offers every gun.
 
 - **Talk** (F on the Quartermaster, `ArmsRackUI` instead of `DeskDialogUI` for a desk with a `rack`
   in `LobbyDesks`): his line and three choices, "Any work going?" (his answer: work comes from
@@ -187,8 +209,9 @@ service (F9).
 - **The rack** (`ArmsRack`, `FallowLayout.ArmsRack`): a board on the hangar's port wall behind
   the cage (the cage lost its back row of bars and the old RifleRack block). Every catalog item
   hangs on two pegs in catalog order: the five long guns in a column, the pistol and the frag
-  beside them. Stand-in block silhouettes per id; the Service Rifle swaps to `wpn_rifle` once
-  loaded. A new gun model goes in by adding its mesh to `ArmsRack.MESH` (and `MeshAssets`).
+  beside them. Every gun hangs as the model it is held as in the match (its row's `Model`,
+  Tien's `guns.py` meshes, 2026-11-10); the frag keeps a block silhouette. A new gun needs no
+  change in `ArmsRack`.
 - **Looking** (all local to the player, so four can look at once): the camera glides inside
   the cage to frame the whole board (movement off, the prompt off, the Quartermaster hidden for this
   player only). The gun under the cursor slides 0.6 off its pegs with a soft yellow rim (a
@@ -291,8 +314,9 @@ called **Loadout**. Lines by the lore developer (merits, the record, `LobbyDesks
   the match place directly (docs/LOBBY_MATCH_HANDOFF.md > Decisions).
 - **The debrief panel** (`DebriefUI`, docs/LOBBY_MATCH_HANDOFF.md > Nova step 5): the result
   of a run, shown once when the squad flies home (BACK TO THE CARRIER is built match side).
-- **Real board numbers** and **desk trades** wait for the save service (F9); the currency is
-  **merits** (owner, 2026-11-09), how many a run pays is the systems designer's.
+- **Earning merits** (the record only has the starting grant): how many a run pays is the
+  systems designer's; the match would add them to the record. **Real board numbers** wait for
+  the save service (F9).
 - **Ship and Lantern art: full check** (uploaded and wired 2026-11-09; v2 the same day: the first
   upload showed every mesh mirrored left-right, so the island raft rack hung over the HRD patch
   and one-sided trim sat on the wrong side; `build_assets.MIRROR_X_COLLECTIONS` pre-mirrors
@@ -305,8 +329,8 @@ called **Loadout**. Lines by the lore developer (merits, the record, `LobbyDesks
 - **Arms Room counter: playtest** in `Lobby (dev)`: the choices, the glide, hover on each gun,
   inspect and stepping, Back twice, a second player looking at the same time, touch and gamepad;
   check the rifle mesh's orientation on the rack (turned by reasoning, not seen).
-- **Arms Room, later**: Tien's gun meshes (`ArmsRack.MESH`); drawing a gun once the record
-  opens (the card's button goes where the status line is); the Quartermaster's taskings.
+- **Arms Room, later**: the Quartermaster's taskings; the match's B Arms Room limited to the
+  record (or off for lobby runs).
 - **Lore, to approve** (lore developer, Arms Room pass): "the rack" as the Quartermaster's word for
   the wall; "taskings" as the in-world word for desk side work ("on issue" became "on your
   record", approved 2026-11-09 with merits). HRD (Harlan Recovery Detachment) has no canon line
