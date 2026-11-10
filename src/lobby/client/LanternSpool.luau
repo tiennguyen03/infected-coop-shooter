@@ -2,8 +2,8 @@
 -- Lantern turning (owner, 2026-11-09: "Lantern on spot three, turning"). The birds sit still
 -- with their blades drooped and the lamp off. When a spot starts counting down, LaunchService
 -- sets Attributes.LiftAt on its bird (server time); every client then lights the amber lamp,
--- spools the rotor up over the first part of the countdown, shows the blur discs for the last
--- seconds and lifts the bird a few studs, nose down, before the teleport. Cleared (a failed
+-- spools the rotor up over the first part of the countdown, builds the blur over the last
+-- seconds (Rules/RotorBlur: the blades fade part way as the discs thicken) and lifts the bird a few studs, nose down, before the teleport. Cleared (a failed
 -- lift, the box emptied): everything goes back where the server put it. All local: nothing
 -- replicates per frame. Tuning: Config.Lobby.Lantern.
 
@@ -13,10 +13,17 @@ local Workspace = game:GetService("Workspace")
 
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
+local RotorBlur = require(ReplicatedStorage.Shared.Rules.RotorBlur)
 
 local LanternSpool = {}
 
 local TUNING = Config.Lobby.Lantern
+local BLUR: RotorBlur.Settings = {
+	start = TUNING.BlurStart,
+	full = TUNING.BlurFull,
+	bladeFade = TUNING.BladeFade,
+	disc = TUNING.BlurTransparency,
+}
 local BIRD = "Lantern"
 
 type Spin = {
@@ -39,17 +46,18 @@ local function setLamp(bird: Model, on: boolean)
 	end
 end
 
-local function setBlur(bird: Model, blur: boolean)
+-- `blade`: the blades' LocalTransparencyModifier; `disc`: the blur discs' Transparency.
+local function setBlur(bird: Model, blade: number, disc: number)
 	for _, name in { "Rotor", "TailRotor" } do
 		local blades = bird:FindFirstChild(name)
 		if blades and blades:IsA("BasePart") then
-			blades.LocalTransparencyModifier = if blur then 1 else 0
+			blades.LocalTransparencyModifier = blade
 		end
 	end
 	for _, name in { "RotorDisc", "TailDisc" } do
-		local disc = bird:FindFirstChild(name)
-		if disc and disc:IsA("BasePart") then
-			disc.Transparency = if blur then TUNING.BlurTransparency else 1
+		local part = bird:FindFirstChild(name)
+		if part and part:IsA("BasePart") then
+			part.Transparency = disc
 		end
 	end
 end
@@ -67,7 +75,7 @@ local function stop(bird: Model)
 		end
 	end
 	setLamp(bird, false)
-	setBlur(bird, false)
+	setBlur(bird, 0, 1)
 end
 
 local function start(bird: Model)
@@ -96,7 +104,7 @@ local function start(bird: Model)
 		local spool =
 			math.clamp((now - began) / math.max((liftAt - began) * TUNING.SpoolShare, 0.1), 0, 1)
 		angle += spool * TUNING.RotorRpm * math.pi * 2 / 60 * deltaTime
-		setBlur(bird, remaining <= TUNING.BlurSeconds)
+		setBlur(bird, RotorBlur.at(remaining, BLUR))
 		local rise = math.clamp((TUNING.LiftSeconds - remaining) / TUNING.LiftSeconds, 0, 1)
 		local lift = pivot
 			* CFrame.new(0, TUNING.Rise * rise, 0)

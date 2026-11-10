@@ -283,7 +283,12 @@ function LoadmasterUI.init()
 		end)
 	end
 
-	remote.OnClientEvent:Connect(function(kind: string, ok: boolean, reason: string?)
+	remote.OnClientEvent:Connect(function(kind: string, ok: any, reason: string?)
+		-- The Loadout kept from a past visit (LoadmasterService): the screen opens on it.
+		if kind == Messages.Loadout.Signed and typeof(ok) == "table" then
+			signed = ok :: Loadout.Loadout
+			return
+		end
 		if kind ~= Messages.Loadout.Result or mode ~= "loadout" or not pending then
 			return
 		end

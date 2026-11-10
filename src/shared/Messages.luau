@@ -29,6 +29,7 @@ local Messages = table.freeze({
 	Loadout = table.freeze({
 		Request = "request",
 		Result = "result",
+		Signed = "signed", -- lobby, server -> client: (loadout) the Loadout saved from a past visit
 	}),
 	ObjectiveUpdate = table.freeze({
 		Started = "started",

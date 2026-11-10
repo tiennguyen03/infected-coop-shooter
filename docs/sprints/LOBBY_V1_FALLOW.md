@@ -151,8 +151,10 @@ open door facing the boarding box; no layout change.
   (`Config.Lobby.Lantern.BirdNumbers` 22, 24, 21, 23: a bird and a spot are not tied).
 - **Turning** (owner: still on deck, spool on countdown): `LaunchService` publishes
   `Attributes.LiftAt` (server time) on the counting bird; `LanternSpool` on every client lights
-  the lamp, spools the rotor to 40 rpm over the first two thirds of the countdown, swaps the
-  blades for the blur discs for the last 3 s and lifts the bird 4 studs, nose 5 degrees down,
+  the lamp, spools the rotor to 40 rpm over the first two thirds of the countdown, builds the
+  blur over the last 6 s (`Rules/RotorBlur` + spec, eased; owner 2026-11-10: the old swap at
+  3 s made the blades look gone): the blades fade only to 0.6 while the discs thicken to 0.8,
+  complete 1.5 s before lift. Then it lifts the bird 4 studs, nose 5 degrees down,
   over the last 1.5 s; cleared, everything returns. Tuning in `Config.Lobby.Lantern`.
 - **Uploaded 2026-11-09** (ids in `assets/3d/ASSET_IDS.md`). If a mesh fails to load, the v1 block
   bird stays on the spot (it lifts on the countdown too, without a spinning rotor or lamp). The
@@ -267,8 +269,13 @@ called **Loadout**. Lines by the lore developer (merits, the record, `LobbyDesks
   sidearm, grenade, up to four call-ins. The soldier is held still (`HoldStill`, shared with
   the rack); BACK or Backspace steps out. Prototype: the whole catalog may be signed for.
 - **Server** (`LoadmasterService`): checks the request with the match's rules and catalog
-  (`Rules/Loadout`, `ArmsRoom`), keeps one signed Loadout per player (not saved), answers on
-  the `Loadout` remote. `LaunchService` sends them as teleport data (`Rules/LaunchData`:
+  (`Rules/Loadout`, `ArmsRoom`), keeps one signed Loadout per player, answers on the `Loadout`
+  remote. **Kept between visits** (2026-11-10): saved in the DataStore `LoadmasterLoadouts`
+  (key `u_<UserId>`, `Rules/LoadoutSave` + spec, versioned), loaded on join (sent to the client
+  as `Loadout.Signed`, so the screen opens on it, and it rides the Lantern even without a visit
+  to the desk), writes spaced 6 s and flushed on leave/shutdown (`Config.Lobby.Save`). A failed
+  or Studio-blocked DataStore means the default Loadout and one log line; Studio needs Game
+  Settings > Security > Enable Studio Access to API Services to test it. A stand-in for F9. `LaunchService` sends them as teleport data (`Rules/LaunchData`:
   spot, party, loadouts keyed by UserId string).
 - **Match** (`JoinData`, the one reader of teleport data): `LoadoutService` seeds a soldier's
   first pick from it, re-validated against the match catalog; no data or a bad Loadout falls

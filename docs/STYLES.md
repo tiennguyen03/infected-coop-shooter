@@ -462,8 +462,9 @@ purpose), the long thin boom with a fin taller than the rotor, the amber lamp. S
 (104,110,80), faded olive; trim on the palette; the one loud mark is HRD, the number is white
 stencil. 1,912 tris a bird with both rotors (vehicle cap 5,000). Light: one PointLight per bird
 (amber, Range 12, Shadows off), on only while its spot counts down. **Exception to "no
-transparency on geometry"**: the rotor blur discs (two flat cylinders a bird, 0.85
-transparent, shown only for the last 3 s before lift) are VFX, like the breach ghost.
+transparency on geometry"**: the rotor blur discs (two flat cylinders a bird, fading
+in to 0.8 transparent over the last 6 s before lift while the blades fade to 0.6, never out;
+`Rules/RotorBlur`) are VFX, like the breach ghost.
 
 ### Stage 1 "Checkpoint Delta" (shipped 2026-11-06, relaid 2026-11-07)
 

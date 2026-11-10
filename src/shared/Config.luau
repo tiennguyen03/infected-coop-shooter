@@ -1409,6 +1409,14 @@ local Config = {
 			[83558708746036] = 108949482095254, -- Nova's own test experience: ZCS Dev -> Match Dev
 			[125769854992316] = 70420018035843, -- the group experience: Lobby (Dev) -> Match (Dev)
 		} :: { [number]: number },
+		-- The Loadmaster keeps each soldier's signed Loadout between visits (LoadmasterService,
+		-- Rules/LoadoutSave). A stand-in for the F9 save service.
+		Save = {
+			Store = "LoadmasterLoadouts", -- DataStore name; keys are "u_<UserId>"
+			MinWriteGap = 6, -- seconds between saves per soldier; the newest pick wins
+			Retries = 2, -- extra attempts after a failed DataStore call
+			RetryDelay = 1,
+		},
 		Launch = {
 			Spots = 4, -- numbered Lantern spots on the flight deck
 			Capacity = 4, -- soldiers per bird (one squad)
@@ -1427,8 +1435,12 @@ local Config = {
 			RotorRpm = 40, -- main rotor speed at the end of the spool
 			SpoolShare = 2 / 3, -- the rotor reaches RotorRpm this far into the countdown
 			TailRatio = 4.6, -- tail rotor turns this many times per main rotor turn
-			BlurSeconds = 3, -- the last seconds before lift show the blur discs instead of blades
-			BlurTransparency = 0.85,
+			-- The blur builds over the last seconds (Rules/RotorBlur, eased): the blades fade only part
+			-- way while the disc thickens, so the rotor reads as fast, never as gone (owner, 2026-11-10).
+			BlurStart = 6, -- seconds before lift the blur begins
+			BlurFull = 1.5, -- seconds before lift it is complete
+			BladeFade = 0.6, -- the blades' transparency when complete (still seen)
+			BlurTransparency = 0.8, -- the disc's transparency when complete
 			LiftSeconds = 1.5, -- the bird rises and dips its nose over the last seconds
 			Rise = 4, -- studs
 			Dip = 5, -- degrees nose down
