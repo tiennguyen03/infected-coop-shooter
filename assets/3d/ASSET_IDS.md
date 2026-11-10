@@ -17,7 +17,7 @@ Z-fight re-upload (2026-11-08): `env_ruin_building`, `env_bus`, `env_guard_tower
 `env_tent`, `env_wreck_humvee`, `env_twall`, `env_hesco_tall` and the five vehicles were
 rebuilt with `Builder.resolve_zfight` and uploaded again; their rows carry the new ids.
 
-Lobby meshes (12 `env_fallow_*`, 4 `veh_lantern_*`) uploaded 2026-11-09 to the group (270506601); MeshIds read in Studio through the built-in Studio MCP; rows at the end of the table.
+Lobby meshes (12 `env_fallow_*`, 4 `veh_lantern_*`) uploaded 2026-11-09 to the group (270506601); MeshIds read in Studio through the built-in Studio MCP; rows at the end of the table. Re-uploaded the same day pre-mirrored in X (`build_assets.MIRROR_X_COLLECTIONS`: Roblox showed the first upload mirrored left-right); the rows carry the v2 ids.
 
 Delta rework meshes (ruin v2, guard tower v3, tall hesco, crib stack, deck plate, 12 props)
 uploaded 2026-11-07 and wired; rows below.
@@ -80,22 +80,22 @@ uploaded 2026-11-07 and wired; rows below.
 | env_dead_tree | 103119294791056 | 130464254006022 | 4.97 x 13.98 x 7.09 | Hull |
 | env_lamp_post | 132474171948585 | 84369687950095 | 4.9 x 13 x 1.2 | Hull; arm along +X |
 | inf_gore_stump | 85306816428466 | 84507882691071 | 0.42, 0.24, 0.44 | GoreService stump (gore.py 2026-11-08), offset 0.014, 0.070, 0 |
-| env_fallow_bow | 74986436453071 | 96582225413218 | 84.00 x 46.00 x 67.00 | the Fallow (`FallowArt`); offset in MeshAssets |
-| env_fallow_bow_trim | 116636796490383 | 95103707892323 | 108.38 x 28.06 x 40.35 | the Fallow (`FallowArt`); offset in MeshAssets |
-| env_fallow_mid_port | 70845986022805 | 75308682586942 | 1.40 x 47.60 x 240.00 | the Fallow (`FallowArt`); offset in MeshAssets |
-| env_fallow_mid_stbd | 108504105602101 | 113388917011996 | 6.70 x 47.60 x 240.00 | the Fallow (`FallowArt`); offset in MeshAssets |
-| env_fallow_mid_trim | 82771681018761 | 80838573434369 | 98.19 x 47.71 x 240.00 | the Fallow (`FallowArt`); offset in MeshAssets |
-| env_fallow_stern | 84375653072360 | 100562482569604 | 82.00 x 47.60 x 80.60 | the Fallow (`FallowArt`); offset in MeshAssets |
-| env_fallow_stern_trim | 109782787001109 | 71294717611718 | 93.39 x 46.11 x 83.60 | the Fallow (`FallowArt`); offset in MeshAssets |
-| env_fallow_island | 84050689599364 | 87040090211891 | 23.50 x 45.98 x 60.00 | the Fallow (`FallowArt`); offset in MeshAssets |
-| env_fallow_island_trim | 71693304731911 | 73709682234098 | 22.60 x 75.90 x 58.50 | the Fallow (`FallowArt`); offset in MeshAssets |
-| env_fallow_radar | 137563419799049 | 78094847764836 | 7.30 x 7.20 x 2.12 | the Fallow (`FallowArt`); offset in MeshAssets |
-| env_fallow_catwalk | 100919624668027 | 84814762718722 | 6.05 x 4.35 x 23.25 | the Fallow (`FallowArt`); offset in MeshAssets |
-| env_fallow_catwalk_rafts | 136786768434620 | 81567105208312 | 6.05 x 4.35 x 23.25 | the Fallow (`FallowArt`); offset in MeshAssets |
-| veh_lantern_body | 82415489058507 | 121778369869296 | 7.50 x 11.50 x 41.11 | Lantern (`LanternBird`); offset in MeshAssets |
-| veh_lantern_trim | 121076447666708 | 73532697479074 | 7.94 x 11.65 x 30.05 | Lantern (`LanternBird`); offset in MeshAssets |
-| veh_lantern_rotor | 86103260418984 | 93390047190709 | 38.01 x 1.14 x 38.01 | Lantern (`LanternBird`); offset in MeshAssets |
-| veh_lantern_tail_rotor | 77728896084611 | 96196519733072 | 0.40 x 5.20 x 0.60 | Lantern (`LanternBird`); offset in MeshAssets |
+| env_fallow_bow | 79486262325305 | 104622065954343 | 84.00 x 46.00 x 67.00 | the Fallow (`FallowArt`); offset in MeshAssets |
+| env_fallow_bow_trim | 132397837700021 | 97023816902354 | 108.38 x 28.06 x 40.35 | the Fallow (`FallowArt`); offset in MeshAssets |
+| env_fallow_mid_port | 122409690040918 | 88646751785808 | 1.40 x 47.60 x 240.00 | the Fallow (`FallowArt`); offset in MeshAssets |
+| env_fallow_mid_stbd | 88469209943203 | 83063655665064 | 6.70 x 47.60 x 240.00 | the Fallow (`FallowArt`); offset in MeshAssets |
+| env_fallow_mid_trim | 89298549327422 | 137758694973401 | 98.19 x 47.71 x 240.00 | the Fallow (`FallowArt`); offset in MeshAssets |
+| env_fallow_stern | 82182009942595 | 93667458396006 | 82.00 x 47.60 x 80.60 | the Fallow (`FallowArt`); offset in MeshAssets |
+| env_fallow_stern_trim | 73421811886287 | 128754286386619 | 93.39 x 46.11 x 83.60 | the Fallow (`FallowArt`); offset in MeshAssets |
+| env_fallow_island | 130312060133465 | 107187435436606 | 23.50 x 45.98 x 60.00 | the Fallow (`FallowArt`); offset in MeshAssets |
+| env_fallow_island_trim | 77115099660902 | 82654754437766 | 22.60 x 75.90 x 58.50 | the Fallow (`FallowArt`); offset in MeshAssets |
+| env_fallow_radar | 122770221853253 | 132374836460710 | 7.30 x 7.20 x 2.12 | the Fallow (`FallowArt`); offset in MeshAssets |
+| env_fallow_catwalk | 84242427975777 | 70496787014665 | 6.05 x 4.35 x 23.25 | the Fallow (`FallowArt`); offset in MeshAssets |
+| env_fallow_catwalk_rafts | 108793529856112 | 83467676322971 | 6.05 x 4.35 x 23.25 | the Fallow (`FallowArt`); offset in MeshAssets |
+| veh_lantern_body | 96644034649925 | 115134036147611 | 7.50 x 11.50 x 41.11 | Lantern (`LanternBird`); offset in MeshAssets |
+| veh_lantern_trim | 120258286814432 | 120432139146773 | 7.94 x 11.65 x 30.05 | Lantern (`LanternBird`); offset in MeshAssets |
+| veh_lantern_rotor | 72210514497412 | 112438582167862 | 38.01 x 1.14 x 38.01 | Lantern (`LanternBird`); offset in MeshAssets |
+| veh_lantern_tail_rotor | 130131221968255 | 134128773314348 | 0.40 x 5.20 x 0.60 | Lantern (`LanternBird`); offset in MeshAssets |
 | inf_gore_chunk_a | 114738807263836 | 112453961195196 | 0.29, 0.32, 0.30 | GoreFX chunk |
 | inf_gore_chunk_b | 101420964172693 | 102105594077537 | 0.36, 0.26, 0.27 | GoreFX chunk |
 | inf_gore_chunk_c | 120197171903263 | 119620354840068 | 0.34, 0.18, 0.17 | GoreFX chunk (bone shard) |

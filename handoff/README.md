@@ -236,9 +236,9 @@ Read in this order:
   hangar desks (lines only, no trades), the Plot's Containment Board on placeholder numbers.
   **Ship art and Lantern uploaded 2026-11-09** (sprint doc > Ship art, Lantern; ids in
   `assets/3d/ASSET_IDS.md`): 12 `env_fallow_*` and 4 `veh_lantern_*` meshes that `FallowArt` /
-  `LanternBird` lay over the blocks, seen placed in a Studio playtest; the walkable lift balcony, deck-edge lines, deck-end HRD and the bird's
-  lift on countdown are live now. **Arms Room counter built 2026-11-09, not playtested** (sprint
-  doc > Arms Room counter): talk choices, the rack behind the cage, hover, inspect card, arrows. Next: re-check the loop, body, ship (gaps, bow patches, radar,
+  `LanternBird` lay over the blocks, re-uploaded pre-mirrored (v2: Roblox mirrored the first upload in X) and checked in a playtest; the walkable lift balcony, deck-edge lines, deck-end HRD and the bird's
+  lift on countdown are live now. **Arms Room counter built 2026-11-09, talk panel playtested** (sprint
+  doc > Arms Room counter): talk choices (click or 1-3, one dialog at a time), the rack behind the cage, hover, inspect card, arrows (rack not yet playtested). Next: re-check the loop, body, ship (gaps, bow patches, radar,
   balcony) and the birds' spool and lift in the `Lobby (dev)` place, then a published launch
   test.
 - **Satisfying pass built 2026-11-09 (`docs/superpowers/plans/2026-11-09-satisfying-pass.md`).**

@@ -15,7 +15,10 @@ at or hand-tweak anything. Collections inside it:
 
 The `.blend` is **generated** by `build/build_assets.py`. Every asset is described in code
 (boxes, cylinders, icospheres painted with palette swatches), so edits made by hand in Blender
-will be overwritten the next time the build runs. **One file per singular asset** (owner rule,
+will be overwritten the next time the build runs. **Roblox mirrors an imported mesh in X**
+about its bounds centre (found 2026-11-09 on the Fallow): the `Fallow` and `Vehicles`
+collections export pre-mirrored (`MIRROR_X_COLLECTIONS`, previews and offsets unchanged); an
+asymmetric mesh in another collection needs the same before upload. **One file per singular asset** (owner rule,
 2026-11-07): a boss or a body gets its own `build/<name>.py` exposing `register(ba)`, which
 `build_assets.py` imports and calls at the end of its asset list (`warden.py` is the pattern);
 sets of related things (building kit, props, the Infected roster's shared limbs) share

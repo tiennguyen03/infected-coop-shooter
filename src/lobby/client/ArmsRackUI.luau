@@ -32,6 +32,16 @@ local SLIDE = TweenInfo.new(TUNING.SlideSeconds, Enum.EasingStyle.Quad, Enum.Eas
 local ACTION_BACK = "ArmsRackBack"
 local ACTION_NEXT = "ArmsRackNext"
 local ACTION_PREV = "ArmsRackPrev"
+local ACTION_CHOOSE = "ArmsRackChoose"
+-- The talk choices are numbered on screen, so the number keys pick them too.
+local CHOICE_KEYS: { [Enum.KeyCode]: number } = {
+	[Enum.KeyCode.One] = 1,
+	[Enum.KeyCode.Two] = 2,
+	[Enum.KeyCode.Three] = 3,
+	[Enum.KeyCode.KeypadOne] = 1,
+	[Enum.KeyCode.KeypadTwo] = 2,
+	[Enum.KeyCode.KeypadThree] = 3,
+}
 
 type CardRow = { label: string, text: string, fraction: number? }
 type Mode = "closed" | "talk" | "rack" | "inspect"
@@ -483,6 +493,8 @@ end
 local function showOverlay()
 	local inRack = mode == "rack" or mode == "inspect"
 	talk.Visible = mode == "talk"
+	-- Modal frees the mouse while the choices are up, even zoomed into first person.
+	choiceLeave.Modal = mode == "talk"
 	rackHeader.Visible = inRack
 	hint.Visible = mode == "rack"
 	bar.Visible = inRack
@@ -621,6 +633,24 @@ function leaveRack()
 	showOverlay()
 end
 
+local closeTalk: () -> ()
+local choose: (number) -> ()
+local choiceKeyList: { Enum.KeyCode } = {}
+for key in CHOICE_KEYS do
+	table.insert(choiceKeyList, key)
+end
+
+local function chooseAction(
+	_: string,
+	state: Enum.UserInputState,
+	input: InputObject
+): Enum.ContextActionResult
+	if state == Enum.UserInputState.Begin then
+		choose(CHOICE_KEYS[input.KeyCode] or 0)
+	end
+	return Enum.ContextActionResult.Sink
+end
+
 local function openTalk(chosen: LobbyDesks.Desk, from: ProximityPrompt)
 	local rack = chosen.rack
 	if not rack then
@@ -636,12 +666,30 @@ local function openTalk(chosen: LobbyDesks.Desk, from: ProximityPrompt)
 	choiceLeave.Text = `3.  {rack.leave}`
 	talkCloseAt = os.clock() + Config.Lobby.DialogSeconds * 3
 	showOverlay()
+	ContextActionService:BindAction(ACTION_CHOOSE, chooseAction, false, table.unpack(choiceKeyList))
 end
 
-local function closeTalk()
+function closeTalk()
+	ContextActionService:UnbindAction(ACTION_CHOOSE)
 	if mode == "talk" then
 		mode = "closed"
 		showOverlay()
+	end
+end
+
+function choose(index: number)
+	if mode ~= "talk" then
+		return
+	end
+	local rack = desk and desk.rack
+	if index == 1 and rack then
+		talkLine.Text = `"{rack.workAnswer}"`
+		talkCloseAt = os.clock() + Config.Lobby.DialogSeconds * 3
+	elseif index == 2 then
+		ContextActionService:UnbindAction(ACTION_CHOOSE)
+		enterRack()
+	elseif index == 3 then
+		closeTalk()
 	end
 end
 
@@ -653,9 +701,12 @@ function ArmsRackUI.init()
 	end
 
 	ProximityPromptService.PromptTriggered:Connect(function(triggered: ProximityPrompt, who: Player)
-		if who ~= player or mode ~= "closed" then
+		if who ~= player or mode == "rack" or mode == "inspect" then
 			return
 		end
+		-- One dialog at a time: talking to another desk closes this one (DeskDialogUI
+		-- hides its own panel when a rack desk opens).
+		closeTalk()
 		local id = triggered:GetAttribute(Attributes.DeskId)
 		local chosen = if type(id) == "string" then byId[id] else nil
 		if chosen and chosen.rack then
@@ -663,19 +714,11 @@ function ArmsRackUI.init()
 		end
 	end)
 
-	choiceWork.Activated:Connect(function()
-		local rack = desk and desk.rack
-		if rack then
-			talkLine.Text = `"{rack.workAnswer}"`
-			talkCloseAt = os.clock() + Config.Lobby.DialogSeconds * 3
-		end
-	end)
-	choiceRack.Activated:Connect(function()
-		if mode == "talk" then
-			enterRack()
-		end
-	end)
-	choiceLeave.Activated:Connect(closeTalk)
+	for index, choice in { choiceWork, choiceRack, choiceLeave } do
+		choice.Activated:Connect(function()
+			choose(index)
+		end)
+	end
 	backButton.Activated:Connect(function()
 		backAction(ACTION_BACK, Enum.UserInputState.Begin)
 	end)

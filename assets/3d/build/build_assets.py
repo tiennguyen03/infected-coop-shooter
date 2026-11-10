@@ -1820,6 +1820,36 @@ def get_collection(name):
     return col
 
 
+# Roblox shows an imported mesh mirrored left-right (X) about its bounds centre: seen
+# 2026-11-09 on the Fallow, whose island raft rack (built at starboard x 41) rendered on the
+# port face over the HRD patch. Near-symmetric meshes hide it; the ship and Lantern do not,
+# so their export is pre-mirrored about the same centre. Previews and the printed `offset`
+# (the bounds centre, unchanged by this mirror) stay in design coordinates.
+MIRROR_X_COLLECTIONS = {"Fallow", "Vehicles"}
+
+
+class mirrored_x:
+    """Mirrors the object's mesh in X about its bounds centre for the duration of a `with`."""
+
+    def __init__(self, obj):
+        self.me = obj.data
+        xs = [v[0] for v in obj.bound_box]
+        cx = (min(xs) + max(xs)) / 2
+        self.m = Matrix.Translation((2 * cx, 0, 0)) @ Matrix.Scale(-1, 4, (1, 0, 0))
+
+    def _flip(self):
+        self.me.transform(self.m)
+        self.me.flip_normals()  # a reflection turns the winding inside out
+        self.me.update()
+
+    def __enter__(self):
+        self._flip()
+
+    def __exit__(self, *exc):
+        self._flip()
+        return False
+
+
 def export_fbx(obj, path):
     bpy.ops.object.select_all(action="DESELECT")
     obj.select_set(True)
@@ -2111,7 +2141,11 @@ def main():
     ref = built.get("ref_human_5st")
     for name, obj in built.items():
         if not name.startswith("ref_"):
-            export_fbx(obj, os.path.join(EXPORT, name + ".fbx"))
+            if obj.users_collection[0].name in MIRROR_X_COLLECTIONS:
+                with mirrored_x(obj):
+                    export_fbx(obj, os.path.join(EXPORT, name + ".fbx"))
+            else:
+                export_fbx(obj, os.path.join(EXPORT, name + ".fbx"))
         d = obj.dimensions
         print(f"dims {name}: roblox Size = Vector3.new({d.x:.2f}, {d.z:.2f}, {d.y:.2f})")
         # Bounds centre relative to the design origin, Roblox axis order: the `offset` of

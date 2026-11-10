@@ -902,7 +902,7 @@ local MESHES: { [string]: MeshDef } = {
 	-- catwalk bays: from the hull face at deck height). Shells draw as Metal (`surface`),
 	-- trims use the palette. Look only: every collider stays a Part in FallowBuilder.
 	env_fallow_bow = {
-		meshId = "rbxassetid://74986436453071",
+		meshId = "rbxassetid://79486262325305",
 		size = Vector3.new(84.00, 46.00, 67.00),
 		offset = Vector3.new(0.000, 15.000, 173.500),
 		surface = { material = Enum.Material.Metal, color = Color3.fromRGB(100, 106, 112) },
@@ -910,13 +910,13 @@ local MESHES: { [string]: MeshDef } = {
 		castShadow = true,
 	},
 	env_fallow_bow_trim = {
-		meshId = "rbxassetid://116636796490383",
+		meshId = "rbxassetid://132397837700021",
 		size = Vector3.new(108.38, 28.06, 40.35),
 		offset = Vector3.new(0.000, 31.081, 167.025),
 		castShadow = false,
 	},
 	env_fallow_mid_port = {
-		meshId = "rbxassetid://70845986022805",
+		meshId = "rbxassetid://122409690040918",
 		size = Vector3.new(1.40, 47.60, 240.00),
 		offset = Vector3.new(-35.000, 15.800, 20.000),
 		surface = { material = Enum.Material.Metal, color = Color3.fromRGB(100, 106, 112) },
@@ -924,7 +924,7 @@ local MESHES: { [string]: MeshDef } = {
 		castShadow = true,
 	},
 	env_fallow_mid_stbd = {
-		meshId = "rbxassetid://108504105602101",
+		meshId = "rbxassetid://88469209943203",
 		size = Vector3.new(6.70, 47.60, 240.00),
 		offset = Vector3.new(37.650, 15.800, 20.000),
 		surface = { material = Enum.Material.Metal, color = Color3.fromRGB(100, 106, 112) },
@@ -932,13 +932,13 @@ local MESHES: { [string]: MeshDef } = {
 		castShadow = true,
 	},
 	env_fallow_mid_trim = {
-		meshId = "rbxassetid://82771681018761",
+		meshId = "rbxassetid://89298549327422",
 		size = Vector3.new(98.19, 47.71, 240.00),
 		offset = Vector3.new(4.095, 22.856, 20.000),
 		castShadow = false,
 	},
 	env_fallow_stern = {
-		meshId = "rbxassetid://84375653072360",
+		meshId = "rbxassetid://82182009942595",
 		size = Vector3.new(82.00, 47.60, 80.60),
 		offset = Vector3.new(-1.000, 15.800, -140.300),
 		surface = { material = Enum.Material.Metal, color = Color3.fromRGB(100, 106, 112) },
@@ -946,13 +946,13 @@ local MESHES: { [string]: MeshDef } = {
 		castShadow = true,
 	},
 	env_fallow_stern_trim = {
-		meshId = "rbxassetid://109782787001109",
+		meshId = "rbxassetid://73421811886287",
 		size = Vector3.new(93.39, 46.11, 83.60),
 		offset = Vector3.new(-7.495, 22.056, -141.800),
 		castShadow = false,
 	},
 	env_fallow_island = {
-		meshId = "rbxassetid://84050689599364",
+		meshId = "rbxassetid://130312060133465",
 		size = Vector3.new(23.50, 45.98, 60.00),
 		offset = Vector3.new(32.250, 63.010, 20.000),
 		surface = { material = Enum.Material.Metal, color = Color3.fromRGB(116, 122, 128) },
@@ -960,25 +960,25 @@ local MESHES: { [string]: MeshDef } = {
 		castShadow = true,
 	},
 	env_fallow_island_trim = {
-		meshId = "rbxassetid://71693304731911",
+		meshId = "rbxassetid://77115099660902",
 		size = Vector3.new(22.60, 75.90, 58.50),
 		offset = Vector3.new(31.600, 78.050, 18.950),
 		castShadow = false,
 	},
 	env_fallow_radar = {
-		meshId = "rbxassetid://137563419799049",
+		meshId = "rbxassetid://122770221853253",
 		size = Vector3.new(7.30, 7.20, 2.12),
 		offset = Vector3.new(0.000, 3.599, -0.122),
 		castShadow = false,
 	},
 	env_fallow_catwalk = {
-		meshId = "rbxassetid://100919624668027",
+		meshId = "rbxassetid://84242427975777",
 		size = Vector3.new(6.05, 4.35, 23.25),
 		offset = Vector3.new(3.625, -1.725, 0.000),
 		castShadow = false,
 	},
 	env_fallow_catwalk_rafts = {
-		meshId = "rbxassetid://136786768434620",
+		meshId = "rbxassetid://108793529856112",
 		size = Vector3.new(6.05, 4.35, 23.25),
 		offset = Vector3.new(3.625, -1.725, 0.000),
 		castShadow = false,
@@ -987,7 +987,7 @@ local MESHES: { [string]: MeshDef } = {
 	-- trim offsets are in the helo frame (origin at the mast foot on the deck); the rotors'
 	-- from their hubs. Look only: the colliders are Parts.
 	veh_lantern_body = {
-		meshId = "rbxassetid://82415489058507",
+		meshId = "rbxassetid://96644034649925",
 		size = Vector3.new(7.50, 11.50, 41.11),
 		offset = Vector3.new(0.000, 7.551, -7.553),
 		surface = { material = Enum.Material.Metal, color = Color3.fromRGB(104, 110, 80) },
@@ -995,19 +995,19 @@ local MESHES: { [string]: MeshDef } = {
 		castShadow = true,
 	},
 	veh_lantern_trim = {
-		meshId = "rbxassetid://121076447666708",
+		meshId = "rbxassetid://120258286814432",
 		size = Vector3.new(7.94, 11.65, 30.05),
 		offset = Vector3.new(0.080, 5.825, -1.975),
 		castShadow = false,
 	},
 	veh_lantern_rotor = {
-		meshId = "rbxassetid://86103260418984",
+		meshId = "rbxassetid://72210514497412",
 		size = Vector3.new(38.01, 1.14, 38.01),
 		offset = Vector3.new(0.000, -0.320, 0.000),
 		castShadow = true,
 	},
 	veh_lantern_tail_rotor = {
-		meshId = "rbxassetid://77728896084611",
+		meshId = "rbxassetid://130131221968255",
 		size = Vector3.new(0.40, 5.20, 0.60),
 		offset = Vector3.new(0.000, 0.000, 0.000),
 		castShadow = false,

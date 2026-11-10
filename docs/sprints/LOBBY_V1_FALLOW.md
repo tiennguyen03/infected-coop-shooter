@@ -154,7 +154,12 @@ open door facing the boarding box; no layout change.
 - **Previews**: `lantern_before.png`, `lantern_built_door.png`, `lantern_built_profile.png`,
   `lantern_built_board.png` (from the boarding box), one `veh_lantern_*.png` per mesh.
 
-## Arms Room counter (2026-11-09: built, not playtested)
+## Arms Room counter (2026-11-09: built; talk panel playtested)
+
+Fixes 2026-11-09 (owner playtest): the choices also answer to the number keys 1-3 (they
+are numbered on screen; before, only a click worked), the choices are `Modal` so the mouse is
+free even zoomed into first person, and one desk dialog shows at a time (talking to another
+desk closes this panel; `DeskDialogUI` hides its panel when the armorer opens).
 
 The owner's ask (after a GTA gun counter): give the armorer a use as the place the guns live.
 Loadout selection is not part of it; nothing is drawn yet.
@@ -238,8 +243,10 @@ Deck surface y 40, hangar floor y 20, sea y 0. Every position is in `FallowLayou
 - **Back to the Fallow at run end** (decision 7: once meta progression exists).
 - **Real board numbers** and **desk trades** wait for the save service (F9) and a name for
   the record currency (lore + systems designer).
-- **Ship and Lantern art: full check** (uploaded and wired 2026-11-09; a first playtest showed
-  28 ship meshes placed and all four birds on their meshes with rotors and numbers). Still to
+- **Ship and Lantern art: full check** (uploaded and wired 2026-11-09; v2 the same day: the first
+  upload showed every mesh mirrored left-right, so the island raft rack hung over the HRD patch
+  and one-sided trim sat on the wrong side; `build_assets.MIRROR_X_COLLECTIONS` pre-mirrors
+  the export. v2 seen in a playtest: island, both sides, ramp, catwalks, birds). Still to
   check in the `Lobby (dev)` place: the hull hides its blocks
   with no gaps, the bow patches lie flat, the radar turns, the balcony is walkable and walled,
   no water shows inside the bow; each bird shows its number, the crew chief stands in the door,
