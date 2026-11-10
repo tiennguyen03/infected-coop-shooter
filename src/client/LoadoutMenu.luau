@@ -1,5 +1,6 @@
 --!strict
--- The Arms Room (docs/PROGRESSION.md > Loadout): UI only, so a lobby can host it later.
+-- The Loadout menu (docs/PROGRESSION.md > Loadout; titled "Arms Room" in the match): UI only,
+-- hosted by the match (LoadoutUI) and the lobby's Loadmaster (LoadmasterUI, via `options`).
 -- `mount(parent, onConfirm)` builds the panel in the menu style (HudTheme: near-black red
 -- field, "//" header, cream selection) inside `parent` and returns a handle. The soldier
 -- picks one primary, one sidearm, one grenade and up to Config.CallIns.Slots different

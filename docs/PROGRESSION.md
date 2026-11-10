@@ -86,7 +86,8 @@ gone (`docs/sprints/SPRINT_18_LOADOUT.md`). Lore names on the HUD ([LORE.md](LOR
   keeps its ammo); a call-in that changes slot in a run starts empty with its cooldown
   running (before the drop it starts full), and a field upgrade follows its call-in to its
   new slot. The pick survives a run restart.
-  Module boundary, so a lobby can host it later: `src/shared/Rules/Loadout.luau` (pure, spec
+  Module boundary, shared with the lobby (the Loadmaster's Loadout uses the same menu and
+  rules, 2026-11-09): `src/shared/Rules/Loadout.luau` (pure, spec
   first: `default(catalog)`, `validate(loadout, catalog) -> (ok, reason)`,
   `canChange(state, settings)` for the timing gate, `changedSlots(old, new)`; the catalog of
   what is on offer comes from `src/shared/ArmsRoom.luau`, Tripline first by default),

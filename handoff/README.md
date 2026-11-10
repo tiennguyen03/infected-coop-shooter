@@ -226,9 +226,9 @@ Read in this order:
   `LoadoutUI`, `ArmsRoom`, `Rules/Loadout`, `LoadoutService.apply`, a lobby place and its
   project file; `docs/MULTIPLAYER_READINESS.md` decision 7, `docs/ARCHITECTURE.md` lobby).
   Owner + Claude: everything else below. Bugs found in Nova's files go to Nova, not fixed here.
-  **Lobby v1 built and playtested in Studio 2026-11-09** (hangar spawn, the turned ramp and
-  the Pike body built after it, not yet re-checked; a real launch from a published place
-  untested; branch `nova/lobby`,
+  **Lobby v1 built and playtested in Studio 2026-11-09** (a real launch from a published place
+  verified 2026-11-10 in Nova's test experience; draft PR #7; the teleport data shape must be
+  aligned with `Rules/Handoff` from PR #5 before merge; branch `nova/lobby`,
   `docs/sprints/LOBBY_V1_FALLOW.md`): the Fallow (`lobby.project.json`, `src/lobby/`), a
   hangar spawn by the desks with the ramp up to the spots, the match's Pike body (Roblox's
   default walking sound muted), a Terrain-water sea out to the haze and a Terrain coast (beach, hills)

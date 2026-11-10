@@ -66,7 +66,7 @@ it done here and add the HISTORY row; do not delete it.
 | F7 | **Weapon and upgrade hooks** (concern 6): each definition carries its behaviour (`onFire`, `onHit`, `onKill`, ...); combat code calls them generically. | the Armory or a second gun | |
 | F8 | **Class interface**: one shared interface every Chosen implements; today's `AssaultClassService` becomes the first implementation. | the second playable Chosen | |
 | F9 | **Save service**: one server module for per-player data (ProfileStore or similar: session locking, no data loss on crash), a version number in the save format from day one. | unlocks or the Containment Board | the board itself is below |
-| F10 | **Lobby place** ([MULTIPLAYER_READINESS.md](MULTIPLAYER_READINESS.md) decision 7) and split `Config` by domain so the lobby loads no match-only tuning. | after F9 | flow below |
+| F10 | **Lobby place** ([MULTIPLAYER_READINESS.md](MULTIPLAYER_READINESS.md) decision 7) and split `Config` by domain so the lobby loads no match-only tuning. | after F9 | flow below. Lobby v1 + the Loadmaster's Loadout hand-off built on `nova/lobby` (draft PR #7, launch verified live 2026-11-10); its teleport data still to be aligned with `Rules/Handoff`; the `Config` split not started |
 | F11 | **One frame scheduler**: merge the per-system `Heartbeat` connections into one ordered step (concern 8). | when the MicroProfiler shows script time is the problem | measure first |
 
 ## Sessions and the shared war map (how the final product scales)

@@ -108,9 +108,10 @@ may add to this list.
    - **Persistent progress (unlocks, Containment Board) is saved by the server that earns
      it** (DataStore, keyed by UserId), never trusted from teleport data.
    - **Disk layout:** a second Rojo project (`lobby.project.json`) sharing `src/shared`; its
-     own `src/lobby/` client and server. v1 built 2026-11-09, not playtested: the Fallow,
-     launch by boarding a Lantern spot (docs/sprints/LOBBY_V1_FALLOW.md). The match does not
-     read the teleport data yet.
+     own `src/lobby/` client and server. v1 built 2026-11-09 and playtested: the Fallow,
+     launch by boarding a Lantern spot (docs/sprints/LOBBY_V1_FALLOW.md). On `nova/lobby` the
+     match reads each soldier's Loadout from the teleport data (`JoinData`, verified live
+     2026-11-10); that branch still sends its own shape, to be aligned with `Rules/Handoff`.
 8. **Keys (owner, 2026-11-07).** F = interact (revive, pickups, prompts). The number row
    1-4 is free: call-in slots and the Resupply flare move there with the loadout rework
    (proposal: 1-2 call-ins, 3 flare, 4 spare). Movement chords are under review (handoff

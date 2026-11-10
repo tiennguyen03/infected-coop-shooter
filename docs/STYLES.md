@@ -231,7 +231,7 @@ The rack (`docs/sprints/LOBBY_V1_FALLOW.md` > Arms Room counter) is a wall behin
 not a lit display: no spotlights, turntables or display lighting. The one feedback is the
 hovered gun sliding 0.6 studs off its pegs with a faint yellow rim (`Highlight`, fill 0.85,
 outline 0.3, `HudTheme.Color.Yellow`). The card follows the HUD: `HudTheme` track panel and
-outline, GothamBlack name, dim designation, yellow ON ISSUE, stat bars as a 6 px white track
+outline, GothamBlack name, dim designation, yellow ON YOUR RECORD, stat bars as a 6 px white track
 with a yellow fill. BUY and a price in MERITS may show (owner, 2026-11-09); words never used on it: sell,
 lock, unlock, shop, store, wares.
 
@@ -440,7 +440,7 @@ this section; the bullets below describe the 2026-11-06 build still worn by the 
   set uploaded and worn in game, the other four built and previewed). Not built: Bloat,
   Shedder, Crawler, Kite, Growth, the Index hosts, Kilo.
 
-### The Fallow, the lobby ship (art pass 2026-11-09, not uploaded yet)
+### The Fallow, the lobby ship (art pass 2026-11-09, uploaded 2026-11-09)
 
 Build sheet and decisions: `docs/sprints/LOBBY_V1_FALLOW.md` > Ship art; meshes in
 `assets/3d/build/fallow.py`. Read: a carrier because the deck overhangs the hull (sponsons,
@@ -453,7 +453,7 @@ accents. The v1 `BridgeWindows` Part (Glass, transparency 0.1) broke the no-tran
 the island mesh replaces it with opaque `glass` and FallowArt removes the Part. Budget: ~8,000
 tris for the whole ship with 18 instanced catwalk bays (cap 18,000).
 
-### Lantern, the lift bird (art pass 2026-11-09, not uploaded yet)
+### Lantern, the lift bird (art pass 2026-11-09, uploaded 2026-11-09)
 
 Canon: `docs/LORE.md` > Lantern; sheet and decisions: `docs/sprints/LOBBY_V1_FALLOW.md` >
 Lantern; meshes in `assets/3d/build/lantern.py`. Vehicles take the prefix `veh_` (collection

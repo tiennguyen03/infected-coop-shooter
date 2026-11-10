@@ -3,7 +3,7 @@
 -- board on the hangar wall with every gun, sidearm and grenade the Arms Room catalog lists,
 -- hung in catalog order (ArmsRoom.catalog). Each piece is a Model named by its weapon id;
 -- ArmsRackUI (client) finds them by name, slides the one under the cursor forward and frames
--- the one clicked. Nothing is drawn or issued here (the record is not open).
+-- the one clicked. Nothing is bought here yet (merits wait for F9).
 --
 -- Gun models: stand-in block silhouettes per id (SILHOUETTES) until the gun meshes arrive;
 -- an id whose MeshAssets mesh is uploaded (MESH) is swapped for it once loaded. A new gun

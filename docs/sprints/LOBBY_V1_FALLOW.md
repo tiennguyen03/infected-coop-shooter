@@ -3,8 +3,10 @@
 Owner: Nova. Branch `nova/lobby`. Status: **playtested in Studio by Nova 2026-11-09**:
 spawn, deck, ramp, desks, the Plot and the boarding countdown all work; the sunny sky and the
 flicker fix confirmed by Nova. Then the loop was reworked (hangar spawn, ramp turned to rise
-toward the spots) and soldiers given the Pike body: built, not yet re-checked. A real launch
-(published place) is still untested.
+toward the spots) and soldiers given the Pike body. A real launch from a published place was
+verified 2026-11-10 in Nova's test experience (ZCS Dev -> Match Dev, a signed Loadout arrived;
+see Loadmaster and Loadout). The hand-off shape still differs from `main`'s `Rules/Handoff`
+(PR #5): align before merge (Open).
 
 The lobby place (docs/MULTIPLAYER_READINESS.md decision 7, docs/ARCHITECTURE.md F10) as a
 walkable ship you can launch from: the Fallow, a helicopter carrier off the Harlan coast on a
@@ -65,8 +67,9 @@ match place.
 - **Four hangar desks** (`DeskService`, data `LobbyDesks`): Arms Room (cage, port side),
   Engineers (wire spools, starboard), Loadmaster (slung cases at the foot of the ramp), Fires
   (at the Plot door). Block crew figures in working dress, a counter, a sign, an F "Talk" prompt. The
-  line shows in `DeskDialogUI` with what the desk will issue; **nothing is issued yet**. The
-  Arms Room talks through its own counter (see Arms Room counter below).
+  line shows in `DeskDialogUI` with what the desk deals in. The Arms Room (the Quartermaster)
+  talks through its own counter (Arms Room counter below) and the Loadmaster through
+  `LoadmasterUI` (Loadmaster and Loadout below); Fires and the Engineers issue nothing yet.
 - **The Plot** (`PlotService`, `ContainmentBoard`, rule `Rules/Containment`): the red-lit
   map room under the island with the chart table and the Containment Board on a lit perspex
   panel (five districts: percent and band word) and a plotter behind it. It rereads the board
@@ -218,11 +221,12 @@ Deck surface y 40, hangar floor y 20, sea y 0. Every position is in `FallowLayou
 
 | Place | File |
 |---|---|
-| Project | `lobby.project.json` (shares `src/shared`; `src/lobby/shared` as `ReplicatedStorage.Lobby`; maps the match's `src/server/PlayerSetup.luau` into the lobby server and `src/client/HudTheme.luau`, `PaletteController.luau` into the lobby client; sets `Lighting.Technology`) |
-| Server | `src/lobby/server/`: `Main.server`, `FallowLayout`, `Build`, `FallowBuilder`, `FallowArt`, `PikeBody`, `NpcBody`, `DeskService`, `ContainmentBoard`, `PlotService`, `LaunchService`, `LanternBird`, `ArmsRack` |
-| Client | `src/lobby/client/`: `Main.client`, `LaunchUI`, `DeskDialogUI`, `ArmsRackUI`, `RadarSpin`, `LanternSpool` |
+| Project | `lobby.project.json` (shares `src/shared`; `src/lobby/shared` as `ReplicatedStorage.Lobby`; maps the match's `src/server/PlayerSetup.luau` into the lobby server and `src/client/HudTheme.luau`, `PaletteController.luau`, `LoadoutMenu.luau` into the lobby client; sets `Lighting.Technology`) |
+| Server | `src/lobby/server/`: `Main.server`, `FallowLayout`, `Build`, `FallowBuilder`, `FallowArt`, `PikeBody`, `NpcBody`, `DeskService`, `ContainmentBoard`, `PlotService`, `LaunchService`, `LanternBird`, `ArmsRack`, `LoadmasterService` |
+| Client | `src/lobby/client/`: `Main.client`, `LaunchUI`, `DeskDialogUI`, `ArmsRackUI`, `LoadmasterUI`, `HoldStill`, `RadarSpin`, `LanternSpool` |
 | Art | `assets/3d/build/fallow.py` (12 `env_fallow_*` meshes), `lantern.py` (4 `veh_lantern_*`); `MeshAssets` entries; `Config.Lobby.Ship`, `Config.Lobby.Lantern`; attribute `LiftAt`; rule `Rules/ArmsStats` (+ spec), `Config.Lobby.Rack` |
-| Shared | `src/lobby/shared/LobbyDesks`; rules `src/shared/Rules/Manifest`, `Rules/Containment` (+ specs); `Config.Lobby`, `Config.Containment`; remote `Launch` + `Messages.Launch`; attribute `DeskId` |
+| Shared | `src/lobby/shared/LobbyDesks`; rules `src/shared/Rules/Manifest`, `Rules/Containment`, `Rules/LaunchData` (+ specs); `Config.Lobby` (incl. `DevMatchPlaceIds`), `Config.Containment`; remotes `Launch` + `Messages.Launch`, `Loadout` (shared with the match); attribute `DeskId` |
+| Match side | `src/server/JoinData.luau` (reads the teleport data), the first-pick seed in `LoadoutService.pickFor`; `LoadoutMenu.mount` options (title, hint, confirm) |
 
 ## How to test it
 

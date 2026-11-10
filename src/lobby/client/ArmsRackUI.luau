@@ -3,9 +3,10 @@
 -- and choose. "Any work going?" gets his answer (no taskings yet); "Show me the rack." turns
 -- the camera to the rack on the wall behind his cage (ArmsRack): the gun under the cursor
 -- slides off its pegs with a soft glow, a click frames it with its card (name, the real gun,
--- the line, on issue or not, stat bars from Rules/ArmsStats), arrows step along the rack, Back
+-- the line, on the record or not, stat bars from Rules/ArmsStats), arrows step along the rack, Back
 -- steps out. All local: the camera, the slide and the card are this player's alone, so four
--- soldiers can look at once. Nothing is drawn: the record is not open.
+-- soldiers can look at once. The rack is for buying (merits, after F9); equipping is the
+-- Loadmaster's (LoadmasterUI).
 
 local ContextActionService = game:GetService("ContextActionService")
 local Players = game:GetService("Players")
