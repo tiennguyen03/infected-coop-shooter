@@ -111,7 +111,9 @@ FallowLayout.ArmsRack = {
 
 -- Ship art (assets/3d/build/fallow.py, placed by FallowArt).
 -- The port side lift lowered to hangar level as a walkable balcony (owner, 2026-11-09).
-FallowLayout.Balcony = { x0 = -47, x1 = -35, z0 = -38, z1 = -2 }
+-- Fills the port side-lift opening wall to wall: the hull mesh frames it with posts at Z -40
+-- and 0 (0.4 thick), so the clear opening is -39.6..-0.4 (Nova: no gap at the rail ends).
+FallowLayout.Balcony = { x0 = -47, x1 = -35, z0 = -39.6, z1 = -0.4 }
 
 -- Catwalk bays (24 studs) along the deck edge, hung off the hull face: clear of the sponsons,
 -- the island, the balcony and the tapering bow. `side` +1 starboard, -1 port; one bay in
@@ -154,6 +156,6 @@ FallowLayout.BowFacet = {
 -- read through the haze).
 FallowLayout.CoastZ = 900
 -- Where the four burn sites sit along the shore (X).
-FallowLayout.BurnSites = { -520, -210, 140, 470 }
+FallowLayout.BurnSites = { -900, -560, -230, 120, 450, 820 }
 
 return FallowLayout

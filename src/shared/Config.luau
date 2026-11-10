@@ -1724,13 +1724,19 @@ local Config = {
 			},
 			-- The Burn on the coast (docs/STYLES.md: the match's skyline fire and smoke, scaled
 			-- for distance). Four sites, one fire and one smoke emitter each: 8 emitters.
-			-- Nova: bigger fires (was FireSize 18, SmokeSize 34, a 90-stud line).
+			-- Nova: bigger fires (was FireSize 18, SmokeSize 34, a 90-stud line); 2026-11-10: bigger
+			-- and redder again, "the world is really burning and the Carrier is all we have left":
+			-- six sites (FallowLayout.BurnSites, 12 emitters), each on scorched terrain with glowing
+			-- CrackedLava embers the Bloom lifts along the shore (no extra particles or lights).
 			Burn = {
-				FireSize = 42,
-				FireRate = 26,
-				SmokeSize = 70,
+				FireSize = 64,
+				FireRate = 30,
+				SmokeSize = 110,
 				SmokeRate = 5,
-				Width = 180, -- studs of shoreline each site burns along
+				Width = 220, -- studs of shoreline each site burns along
+				Ember = Color3.fromRGB(255, 62, 24), -- the CrackedLava terrain colour (the embers)
+				EmberDepth = 40, -- studs inland the burnt ground runs
+				EmberPatches = 9, -- scorched Basalt blobs per site, each with a CrackedLava heart
 			},
 		},
 	},

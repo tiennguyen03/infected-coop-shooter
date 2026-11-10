@@ -1,7 +1,7 @@
 --!strict
 -- Builds the Fallow (docs/LORE.md > The Fallow): a reactivated helicopter carrier holding
 -- station off the Harlan coast on a clear afternoon. Hull, flight deck with the open well and
--- its ramp, the island (hull number painted out, HRD sprayed over it), the hangar deck, the
+-- its ramp, the island (hull number painted out, HARLAN sprayed over it), the hangar deck, the
 -- Plot's walls and chart table, the screening lane where soldiers arrive, the sea, the coast
 -- with the Burn's smoke along it, and the sky (Config.Lobby.Sky). Desks (DeskService), the
 -- board (PlotService) and the birds on their spots (LaunchService) build their own pieces
@@ -31,8 +31,9 @@ local PLOT_WALL = Color3.fromRGB(40, 40, 42)
 local PAINT = Color3.fromRGB(214, 214, 208)
 local YELLOW = Color3.fromRGB(230, 189, 96)
 local CONCRETE = Color3.fromRGB(122, 120, 114)
-local SMOKE = Color3.fromRGB(64, 62, 60)
-local BURN = Color3.fromRGB(255, 110, 30)
+local SMOKE = Color3.fromRGB(56, 52, 52)
+local SMOKE_LIT = Color3.fromRGB(110, 44, 30) -- the smoke's base, lit red by the fire under it
+local BURN = Color3.fromRGB(235, 74, 26)
 local FLOOD = Color3.fromRGB(255, 226, 190)
 local LAMP_HOUSING = Color3.fromRGB(200, 198, 186)
 local PLOT_RED = Color3.fromRGB(255, 60, 50)
@@ -285,7 +286,7 @@ local function buildIsland(ship: Folder)
 		Color3.fromRGB(20, 26, 30),
 		{ material = Enum.Material.Glass, transparency = 0.1 }
 	)
-	-- The old hull number painted out, HRD sprayed over the patch.
+	-- The old hull number painted out, HARLAN sprayed over the patch (Task Force Harlan, LORE.md).
 	local patch = Build.part(
 		ship,
 		"PaintedOut",
@@ -296,7 +297,7 @@ local function buildIsland(ship: Folder)
 	Build.text(
 		patch,
 		Enum.NormalId.Left,
-		"HRD",
+		"HARLAN",
 		{ size = 220, color = Color3.fromRGB(226, 224, 216), font = Enum.Font.PermanentMarker }
 	)
 	-- A door at deck level.
@@ -564,9 +565,9 @@ end
 -- Fire and smoke for one burn site, after the match's burning skyline (SkyService: stock
 -- fire_main / smoke_main, a light westerly drift), scaled up to read across the water.
 local FIRE_COLOR = ColorSequence.new({
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 214, 120)),
-	ColorSequenceKeypoint.new(0.4, BURN),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(120, 40, 20)),
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 196, 110)),
+	ColorSequenceKeypoint.new(0.3, BURN),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(110, 18, 8)),
 })
 
 local function burnSite(emitterPart: BasePart)
@@ -596,7 +597,11 @@ local function burnSite(emitterPart: BasePart)
 	local smoke = Instance.new("ParticleEmitter")
 	smoke.Name = "Smoke"
 	smoke.Texture = "rbxasset://textures/particles/smoke_main.dds"
-	smoke.Color = ColorSequence.new(SMOKE)
+	smoke.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, SMOKE_LIT),
+		ColorSequenceKeypoint.new(0.35, SMOKE),
+		ColorSequenceKeypoint.new(1, SMOKE),
+	})
 	smoke.Size = NumberSequence.new({
 		NumberSequenceKeypoint.new(0, burn.SmokeSize),
 		NumberSequenceKeypoint.new(1, burn.SmokeSize * 3.2),
@@ -634,6 +639,8 @@ local function buildCoast(ship: Folder)
 	terrain:SetMaterialColor(Enum.Material.Grass, coast.Grass)
 	terrain:SetMaterialColor(Enum.Material.Rock, coast.Rock)
 	terrain:SetMaterialColor(Enum.Material.Ground, coast.Ground)
+	terrain:SetMaterialColor(Enum.Material.Basalt, Color3.fromRGB(34, 30, 28)) -- scorched ground
+	terrain:SetMaterialColor(Enum.Material.CrackedLava, Config.Lobby.Sky.Burn.Ember) -- embers
 
 	local shore = Layout.CoastZ
 	local bottom = -Config.Lobby.Sky.Water.Depth
@@ -675,16 +682,44 @@ local function buildCoast(ship: Folder)
 		)
 	end
 
+	-- Each site sits on the ground the terrain actually built there: the grass shelf's surface
+	-- settles about 2 studs above LAND_TOP (voxel rounding; measured 10), and a raycast this
+	-- soon after the fill still reads the old height, so the floor is LAND_TOP + 2.
+	local function groundAt(x: number, z: number): number
+		local hit = Workspace:Raycast(Vector3.new(x, 200, z), Vector3.new(0, -400, 0))
+		return math.max(if hit then hit.Position.Y else LAND_TOP, LAND_TOP + 2)
+	end
+	local emberRandom = Random.new(Config.Lobby.Sky.Coast.Seed + 7)
 	for _, x in Layout.BurnSites do
+		local ground = groundAt(x, shore + 20)
 		local site = Build.part(
 			ship,
 			"BurnSite",
 			Vector3.new(Config.Lobby.Sky.Burn.Width, 1, 24),
-			CFrame.new(x, LAND_TOP + 0.5, shore + 20),
+			CFrame.new(x, ground + 0.6, shore + 20),
 			BURN,
 			{ transparency = 1, collide = false, shadow = false }
 		)
 		burnSite(site)
+		-- The burnt ground: painted into the terrain so it blends like real scorched earth, a
+		-- scatter of Basalt blobs with glowing CrackedLava embers inside them (sizes and places
+		-- from the coast seed, so every server builds the same); the Bloom lifts the lava.
+		local depth = Config.Lobby.Sky.Burn.EmberDepth
+		local burnWidth = Config.Lobby.Sky.Burn.Width
+		local centreZ = shore + 20 + depth / 2
+		for _ = 1, Config.Lobby.Sky.Burn.EmberPatches do
+			local cx = x + emberRandom:NextNumber(-burnWidth / 2, burnWidth / 2)
+			local cz = centreZ + emberRandom:NextNumber(-depth / 2, depth / 2)
+			local radius = emberRandom:NextNumber(10, 26)
+			local disc = CFrame.new(cx, LAND_TOP, cz)
+			terrain:FillCylinder(disc, 4, radius, Enum.Material.Basalt)
+			terrain:FillCylinder(
+				disc * CFrame.new(emberRandom:NextNumber(-3, 3), 1.2, emberRandom:NextNumber(-3, 3)),
+				4.4, -- a little proud of the scorch, so the lava reads at the surface
+				radius * emberRandom:NextNumber(0.35, 0.6),
+				Enum.Material.CrackedLava
+			)
+		end
 	end
 end
 

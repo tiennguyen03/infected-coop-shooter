@@ -5,7 +5,7 @@
 --
 -- The v1 block bird is built first and stays until the four meshes have loaded; then the
 -- blocks give way to the meshes, invisible colliders, the amber lamp (off until the rotor
--- turns), the stencilled bird number, HRD over the painted-out marks, the hidden blur discs
+-- turns), the stencilled bird number, HARLAN over the painted-out marks, the hidden blur discs
 -- and the crew chief in the door. LanternSpool (client) turns the rotors and lights the lamp
 -- while the spot counts down (Attributes.LiftAt, written by LaunchService).
 
@@ -170,7 +170,7 @@ local function dressMeshes(
 	disc("RotorDisc", 38, base * CFrame.new(HUB) * CFrame.Angles(0, 0, math.pi / 2))
 	disc("TailDisc", 5.2, base * CFrame.new(TAIL_HUB))
 
-	-- The stencilled number on both nose doors and the fin; HRD over the painted-out marks.
+	-- The stencilled number on both nose doors and the fin; HARLAN over the painted-out marks.
 	local stencil = { size = 120, color = STENCIL, font = Enum.Font.GothamBlack }
 	local spray = { size = 120, color = SPRAY, font = Enum.Font.PermanentMarker }
 	local label = tostring(number)
@@ -191,13 +191,20 @@ local function dressMeshes(
 		label,
 		stencil
 	)
-	lettering(model, base * CFrame.new(0, 6.6, -15), Vector3.new(1.95, 1.2, 4), sides, "HRD", spray)
+	lettering(
+		model,
+		base * CFrame.new(0, 6.6, -15),
+		Vector3.new(1.95, 1.2, 4),
+		sides,
+		"HARLAN",
+		spray
+	)
 	lettering(
 		model,
 		base * CFrame.new(-3.84, 6, -3),
 		Vector3.new(0.08, 3, 4),
 		{ Enum.NormalId.Left },
-		"HRD",
+		"HARLAN",
 		spray
 	)
 

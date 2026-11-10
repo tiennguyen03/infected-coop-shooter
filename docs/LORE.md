@@ -62,7 +62,9 @@ fell). One rule per form; roster and stage of first appearance in
 Command lost the Harlan quarantine corridor. Pike goes up it by helo, one fallen
 position at a time, toward the station that started it. Each place failed the same way:
 from the inside, by trying to help. Road signs count down the distance to Harlan; the sky
-goes from evening to night to dawn.
+goes from evening to night to dawn. The geography (coast, Route 9, the river, the rail, the
+towns, the quarantine line and what has burned) is the Plot's map:
+[lore/world_map.md](lore/world_map.md).
 
 1. **Checkpoint Delta** — the southern screening gate. Boss: the Warden.
 2. **Mile 14** — the stalled evacuation convoy on the highway. Boss: the Bloat.
@@ -153,7 +155,7 @@ Fallow" mean this section.
 The corridor runs north from the coast to the dam; Checkpoint Delta is the gate nearest the
 sea. Command runs the corridor from offshore. The Carrier is a helicopter carrier pulled out
 of the reserve fleet for Harlan: a flat deck, one island, a hangar under the deck, her old
-hull number painted out and HRD sprayed over it. She holds station off the coast, past the
+hull number painted out and HARLAN sprayed over it. She holds station off the coast, past the
 reach of anything that walks. Harlan Control works out of her Plot, every Lantern flies off
 her deck, and every window team waits in her hangar until its window opens. The seat home at
 Stand Down is a seat back to the Carrier.
@@ -181,14 +183,27 @@ how the other teams are called is open, for the lore developer.
   thirty years in arms rooms), the Loadmaster (Lantern's crew chief, who rides the door),
   Fires (a lieutenant) and the Engineers (a staff sergeant, a sapper). Voices and lines in
   [lore/desk_crew.md](lore/desk_crew.md).
-- **The Plot.** Control's map room under the island, lit red. The corridor chart on the
-  table under tape and grease pencil; the Containment Board on a lit perspex wall, five
+- **The Plot.** Control's map room under the island, lit red. The corridor chart is a paper
+  map on the table under tape and grease pencil (what it shows:
+  [lore/world_map.md](lore/world_map.md)); the Containment Board on a lit perspex wall, five
   columns, written backwards by a plotter standing behind it. Contained is still not clean.
+  The Plot is run by **Control's watch officer**, a major, the voice on Pike's radio; she
+  talks like a desk (lines in [lore/desk_crew.md](lore/desk_crew.md)).
+- **Ship's company.** Deck crew, a sentry, the screening medic, a mechanic and a runner walk
+  the deck and the hangar while the teams wait. Who they are and what they say:
+  [lore/ship_company.md](lore/ship_company.md).
 - **The ship's dress.** The sponson guns are under canvas: they are aboard, and nothing that
   walks reaches her. The name on the transom is painted out like the hull number; the raised
   weld letters show faintly through the paint and cannot be read. She flies one flag from the
   flagstaff: plain yellow, the quarantine flag, because everything that comes aboard comes
   from the corridor.
+- **The mark: HARLAN.** (2026-11-10, replaces HRD, which the owner did not like and which
+  misread as NRD.) Every hull and airframe drawn from the reserve for the corridor has its
+  old unit marks painted out and HARLAN sprayed over them by hand, white, in capitals: on the
+  island, both bow sides, the deck's bow end and every Lantern. It means the thing belongs to
+  Task Force Harlan and is quarantined with it: nothing that wears the word goes back to the
+  fleet until the corridor is Contained. Soldiers say it is the one promise Command ever
+  wrote down.
 
 Keep it ours: the ship is shared and never upgraded by players (no ship modules), the board
 is paper and perspex (no hologram), a team launches by boarding a helo (no drop pods), the
@@ -224,7 +239,7 @@ feet.
   thrown green smoke and cannot see the smoke. Officially the name comes from the net; nobody
   believes that.
 - **Reserve paint.** The paint is faded, with darker patches where the old unit markings were
-  painted out and HRD sprayed over each one, as on the ship. The bird's number is stencilled
+  painted out and HARLAN sprayed over each one, as on the ship. The bird's number is stencilled
   in white on both nose doors and on the fin. The boom is sooted behind the exhausts. There is
   a tide line on the skids and lower cabin where the bird is hosed down at every recovery: the
   screening lane screens the helo too.
@@ -242,7 +257,7 @@ Canon as of 2026-11-08 (owner: "just soldiers, like Helldivers"; the five Chosen
 retired, their sheets kept in [lore/retired_chosen.md](lore/retired_chosen.md)).
 
 Command does not send heroes up the corridor. It sends window teams: four soldiers, a helo
-and the time before the Burn. On paper each one is a Harlan Recovery Detachment team;
+and the time before the Burn. On paper each one is a Task Force Harlan recovery team;
 everyone who has done it calls it "the window". Control knows a team by its callsign and a
 soldier by a number. This team is Pike: Pike One to Pike Four, numbered in boarding order.
 When a soldier goes down, Control says "Pike Three down", and whoever Lantern brings in next

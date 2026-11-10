@@ -5,7 +5,7 @@
 -- Two halves:
 -- * Always built (Parts, gameplay): the port side lift lowered to hangar level as a walkable
 --   balcony with rails and its own invisible walls, the white deck-edge lines, and the old
---   deck number painted out at the bow end of the deck with HRD sprayed over it.
+--   deck number painted out at the bow end of the deck with HARLAN sprayed over it (Task Force Harlan; was HRD until 2026-11-10).
 -- * Built once the meshes are uploaded (MeshAssets entries with an id): the hull shells and
 --   trims, the island, the radar, the catwalk bays. Each group replaces its block Parts only
 --   when every mesh in it has loaded, so a missing upload leaves the v1 blocks as they were.
@@ -110,7 +110,7 @@ local function buildMarkings(ship: Folder)
 	Build.text(
 		patch,
 		Enum.NormalId.Top,
-		"HRD",
+		"HARLAN",
 		{ size = 300, color = SPRAY, font = Enum.Font.PermanentMarker }
 	)
 end
@@ -174,7 +174,7 @@ local function bowPatch(ship: Folder, side: number)
 	Build.text(
 		patch,
 		Enum.NormalId.Right,
-		"HRD",
+		"HARLAN",
 		{ size = 160, color = SPRAY, font = Enum.Font.PermanentMarker }
 	)
 end

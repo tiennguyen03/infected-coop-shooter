@@ -17,7 +17,7 @@ match place.
 ## What v1 has
 
 - **The ship** (`FallowBuilder`, plain anchored Parts, no meshes yet): hull and raked bow,
-  70 x 390 flight deck, the island (bridge windows, hull number painted out, HRD sprayed over
+  70 x 390 flight deck, the island (bridge windows, hull number painted out, HARLAN sprayed over
   it, mast), the hangar deck under it with an open side lift to port, a ramp from the hangar
   rising aft to the deck through an open well, invisible walls at every edge. **The sea** is a
   shallow sheet of Terrain water, 8 studs deep, 2560 studs to each side and astern
@@ -120,7 +120,7 @@ unchanged.
   level as a **walkable balcony** (`FallowLayout.Balcony`, Part deck and yellow rails, its own
   invisible walls; built now, mesh or not); the grey deck-top `EdgeRail` goes once the nets are
   up (white deck-edge lines replace it as paint); the old hull number is painted out on both bow
-  sides and at the deck's bow end, HRD sprayed over each, as on the island.
+  sides and at the deck's bow end, HARLAN sprayed over each, as on the island.
 - **How it lands** (`FallowArt`): Parts keep every collider. The balcony, deck-edge lines and
   deck-end patch build now. Each mesh group (hull, hull trim, island + radar, catwalks)
   replaces its blocks only when every mesh in it has loaded: the hull hides `Hull` and `Bow`
@@ -147,12 +147,12 @@ open door facing the boarding box; no layout change.
   rails, the kick rail, the empty pintle swung inboard and lashed, the monkey strap; the tally,
   12 strokes and 9 crosses inside the door at the crew chief's shoulder; opaque cockpit glass;
   the bleached tide line on the lower cabin, skids and struts; exhausts; a soot streak on the
-  boom; olive_d patches for the HRD; mast and lamp pedestal), `veh_lantern_rotor` (four
+  boom; olive_d patches for the HARLAN mark; mast and lamp pedestal), `veh_lantern_rotor` (four
   blades drooped 2.5 degrees, 38 across, white tips) and `veh_lantern_tail_rotor` (two blades,
   spins about X). No pilots: the glass is opaque, so they would never be seen.
 - **Parts** (`LanternBird`): three invisible colliders (cabin with skids, boom, fin); the amber
   lamp behind the mast with a PointLight (Range 12, off at rest); the bird's number stencilled
-  on both nose doors and the fin, HRD on the boom and the port cabin side (SurfaceGui); two
+  on both nose doors and the fin, HARLAN on the boom and the port cabin side (SurfaceGui); two
   blur discs, hidden at rest; the crew chief (`NpcBody.Aircrew`: sage flight suit, helmet, visor
   down) at the aft edge of the door facing the box. Numbers per spot are fixed and out of order
   (`Config.Lobby.Lantern.BirdNumbers` 22, 24, 21, 23: a bird and a spot are not tied).
@@ -360,8 +360,7 @@ called **Loadout**. Lines by the lore developer (merits, the record, `LobbyDesks
   record (or off for lobby runs).
 - **Lore, to approve** (lore developer, Arms Room pass): "the rack" as the Quartermaster's word for
   the wall; "taskings" as the in-world word for desk side work ("on issue" became "on your
-  record", approved 2026-11-09 with merits). HRD (Harlan Recovery Detachment) has no canon line
-  saying who sprayed it; the lore developer proposes one. Canon names the default gun the M4A1 Carbine; the game's
+  record", approved 2026-11-09 with merits). HRD was replaced by HARLAN (Task Force Harlan) on 2026-11-10 (Tien disliked HRD; LORE.md > The mark: HARLAN). Canon names the default gun the M4A1 Carbine; the game's
   catalog issues the Service Rifle (M16A4) and has no carbine: one of them changes.
 - **Lantern in the match** (insert, extraction, supply kicks out of the starboard door): the
   same four meshes; `LanternBird` and `LanternSpool` are lobby modules today.

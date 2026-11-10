@@ -53,6 +53,37 @@ and "mind the coils" and jokes about the fingertip he lost ("Nine fingers and co
 thinks the Quartermaster counts everything, which is true. The one detail for art: the tip
 of one finger missing, work gloves and wire cutters on his belt.
 
+## Control's watch officer (the Plot)
+
+Canon 2026-11-10 (replaces the stand-in block figure; owner approved). Major, late forties,
+female, Army. She has the watch in the Plot and she is Control: when Pike hears "Pike,
+Control" on the net, it is her. Off the net she is drier, quieter, a little tired, and kind
+in a way she keeps short. She talks in places and times, never in casualties: a team that
+does not come back is "off the net", and a district is Lost, Contested, Held or Contained,
+nothing else. "Contained isn't clean" is hers; the plotter wrote it on the map. She calls the
+squad "Pike". The one detail for art: a headset worn with one earcup on and one pushed back,
+so she can hear the net and the room at once.
+
+The **plotter** behind the Containment Board is ship's company: a young sailor in dark blue
+writing backwards in grease pencil, a sound-powered phone headset on with its mouthpiece on
+his chest. He never speaks.
+
+## Bodies: what each one wears (for the art director)
+
+Simple low-poly accessories that make each body read as a person. Pike grey is only Pike.
+
+| Body | Dress | Details |
+|---|---|---|
+| Pike (every player and bot) | Pike grey, black carrier, seat square | the Carrier's **screening band** on the left wrist (white paper, one yellow stripe; Delta's was white with red); a chemlight taped to the left shoulder strap; the tourniquet on the carrier (already canon) |
+| The Quartermaster | Army working dress | reading glasses on a cord; the clipboard; the cage keys on a ring at his belt |
+| The Loadmaster | Lantern aircrew flight suit | flight helmet pushed up on his head, visor up; monkey-strap harness on over the suit, tether hanging; a grease pencil in the sleeve pocket (the tally) |
+| Lantern crew chief (on each bird) | aircrew flight suit | helmet on, visor down; tether clipped to the kick rail; flight gloves |
+| Fires | Army working dress | headset round her neck, its cord to the radio on her desk; a small notebook in the sleeve pocket |
+| The Engineers | Army working dress | work gloves tucked in his belt; wire cutters on the belt; a short coil of wire over one shoulder |
+| Control's watch officer | Army working dress | headset, one earcup on, one pushed back; a steel mug (the coffee is cold); rank on the chest tab |
+| The plotter | ship's dark blue | sound-powered phone headset with a chest mouthpiece; a grease pencil in hand |
+| Ship's company walkers | see [ship_company.md](ship_company.md) | the jersey colour is the read; one prop each (ear defenders, chain, rag, clipboard, smock, rifle) |
+
 ## Lines (canon copy)
 
 ### The Quartermaster
@@ -133,6 +164,25 @@ mission.
 | Bought | "It's yours. Set it, step back, let it work." |
 | Short | "You're short. I'd do you a deal, but the Quartermaster counts my wire." |
 | Refused | "Paperwork's jammed. Give it a minute." |
+
+### Control's watch officer (the Plot)
+
+Desk id `plot`; she sells nothing, so her BUY lines are only fallbacks.
+
+| Field | Line |
+|---|---|
+| Greeting | "This is the Plot. I'm Control, the voice on your radio when you're down there." |
+| Greeting | "Delta's your mission. Do the job, kill the big one, get to your bird before the Burn." |
+| Greeting | "Every number on that board is a place we're holding. I'd like them higher." |
+| Greeting | "Keep it down. Half this room is on the net with a team that's still out." |
+| 1 (open) | Show me the map. |
+| 2 (ask) | What's the board for? |
+| Answer | "How much of each district we hold. Contained isn't clean, it's just stopped spreading." |
+| 3 (leave) | That's all. |
+| Map opens | "The Harlan Corridor. Coast at the bottom, the dam at the top. You start at Delta." |
+| Bought | "That's on your record now. I just keep the map." |
+| Short | "You're short on merits. Nothing I can do about that from the Plot." |
+| Refused | "Can't do that from here. Try again in a minute." |
 
 ## Open
 

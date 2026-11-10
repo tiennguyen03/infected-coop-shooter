@@ -465,7 +465,7 @@ Build sheet and decisions: `docs/sprints/LOBBY_V1_FALLOW.md` > Ship art; meshes 
 catwalks, safety nets), the bow tapers and flares under a square deck end, and the island
 steps up to bridge, Pri-Fly, funnels and mast. Shells are one-material meshes in Metal: hull
 (100,106,112), island (116,122,128), lighter so it stands off the Asphalt deck; trims keep the
-palette. The one loud mark is the HRD spray (island, both bow sides, the deck's bow end);
+palette. The one loud mark is the HARLAN spray (was HRD until 2026-11-10) (island, both bow sides, the deck's bow end);
 canvas tubs (`tan_d`), raft canisters (`white_l`) and the hose station (`red`) are small
 accents. The v1 `BridgeWindows` Part (Glass, transparency 0.1) broke the no-transparency rule;
 the island mesh replaces it with opaque `glass` and FallowArt removes the Part. Budget: ~8,000
@@ -477,7 +477,7 @@ Canon: `docs/LORE.md` > Lantern; sheet and decisions: `docs/sprints/LOBBY_V1_FAL
 Lantern; meshes in `assets/3d/build/lantern.py`. Vehicles take the prefix `veh_` (collection
 `Vehicles`). Read from 40 studs: the dark open door (the interior is `dark` / `dark_d` on
 purpose), the long thin boom with a fin taller than the rotor, the amber lamp. Shell Metal
-(104,110,80), faded olive; trim on the palette; the one loud mark is HRD, the number is white
+(104,110,80), faded olive; trim on the palette; the one loud mark is HARLAN, the number is white
 stencil. 1,912 tris a bird with both rotors (vehicle cap 5,000). Light: one PointLight per bird
 (amber, Range 12, Shadows off), on only while its spot counts down. **Exception to "no
 transparency on geometry"**: the rotor blur discs (two flat cylinders a bird, fading
