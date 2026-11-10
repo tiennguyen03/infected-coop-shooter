@@ -1581,6 +1581,21 @@ local Config = {
 	-- The lobby place: the Fallow (docs/sprints/LOBBY_V1_FALLOW.md, LORE.md > The Fallow).
 	Lobby = {
 		-- The match a squad launches into: Config.Places (Match, or a Dev pair's).
+		-- Music on the Carrier (LobbyMusic): licensed tracks from Roblox's audio library, free for
+		-- any experience, picked for an overcast, waiting-to-go-in mood (Nova, 2026-11-10). Low in
+		-- the mix (OWNER.md: no harsh sound); fades out as your Lantern lifts.
+		Music = {
+			Tracks = {
+				"rbxassetid://115363600284265", -- A Light Dies Out On The Water (173 s)
+				"rbxassetid://134330051136419", -- Lost In Time, ambient mix (APM, 120 s)
+				"rbxassetid://106618631548737", -- Fading Hope (115 s)
+				"rbxassetid://134520859422418", -- Silhouette Dream, ambience version (APM, 197 s)
+			},
+			Volume = 0.22, -- the Music SoundGroup's volume once faded in
+			FadeInSeconds = 4,
+			FadeOutSeconds = 2.5, -- as the Lantern lifts
+			GapSeconds = 3, -- silence between tracks
+		},
 		-- What the lobby keeps per soldier between visits (SaveSlot; a stand-in for the F9 save
 		-- service): the Loadmaster's signed Loadout (LoadmasterService, Rules/LoadoutSave) and the
 		-- record, merits and guns bought (RecordService, Rules/Record). Gun prices sit on each
@@ -1648,34 +1663,46 @@ local Config = {
 		DialogSeconds = 8, -- a desk's line stays up this long
 		-- The Fallow's sky: a clear afternoon at sea (owner and Nova, 2026-11-09). One table
 		-- so a day/night cycle can later drive these values instead of FallowBuilder.
+		-- Gloomy (Tien, 2026-11-10): an overcast, cold late afternoon on a grey sea, the sun low
+		-- and hidden, the coast fires glowing through a grey haze. Still readable: the hangar desks
+		-- and the deck markings must read at a glance (the match was once "too gloomy").
 		Sky = {
-			ClockTime = 14,
+			ClockTime = 17.3,
 			GeographicLatitude = 30,
-			Brightness = 2.6,
-			Ambient = Color3.fromRGB(104, 108, 116),
-			OutdoorAmbient = Color3.fromRGB(142, 148, 158),
-			ColorShiftTop = Color3.fromRGB(255, 244, 228),
-			ExposureCompensation = 0,
-			ShadowSoftness = 0.3,
+			Brightness = 1.5,
+			Ambient = Color3.fromRGB(88, 94, 104),
+			OutdoorAmbient = Color3.fromRGB(118, 126, 138),
+			ColorShiftTop = Color3.fromRGB(196, 206, 220),
+			ExposureCompensation = -0.05,
+			ShadowSoftness = 0.75, -- overcast: soft, faint shadows
 			EnvironmentDiffuseScale = 0.8,
-			EnvironmentSpecularScale = 0.25,
+			EnvironmentSpecularScale = 0.2,
 			Atmosphere = {
-				Density = 0.22,
-				Offset = 0.1,
-				Color = Color3.fromRGB(199, 214, 230),
-				Decay = Color3.fromRGB(106, 130, 160),
-				Glare = 0.2,
-				Haze = 0.8,
+				Density = 0.36,
+				Offset = 0.12,
+				Color = Color3.fromRGB(148, 156, 166),
+				Decay = Color3.fromRGB(78, 86, 98),
+				Glare = 0,
+				Haze = 2.2,
 			},
-			Clouds = { Cover = 0.5, Density = 0.7 },
+			Clouds = { Cover = 0.88, Density = 0.8, Color = Color3.fromRGB(112, 118, 126) },
+			-- Colour grade: a little drained and cold. Bloom only lifts fire, Neon and lamps (the
+			-- threshold keeps geometry out of it, STYLES "Bloom only on Neon and fire").
+			ColorCorrection = {
+				Brightness = 0,
+				Contrast = 0.08,
+				Saturation = -0.22,
+				Tint = Color3.fromRGB(232, 238, 248),
+			},
+			Bloom = { Intensity = 0.4, Size = 22, Threshold = 1.6 },
 			-- The sea: a shallow sheet of Terrain water (engine waves) over a dark seabed
 			-- part that gives it depth. Low tide (Nova): small, slow waves.
 			Water = {
 				WaveSize = 0.12, -- 0..1
 				WaveSpeed = 8,
-				Color = Color3.fromRGB(34, 84, 98),
-				Reflectance = 0.4, -- 0..1, how much sky it mirrors
-				Transparency = 0.35, -- 0..1
+				Color = Color3.fromRGB(38, 58, 64), -- a cold grey-green sea under the overcast
+				Reflectance = 0.25, -- 0..1, how much sky it mirrors
+				Transparency = 0.3, -- 0..1
 				Depth = 8, -- studs of water below y 0 (keep a multiple of 4: the voxel size)
 				-- How far the sea runs to each side and astern (Nova: at 1000 the edge of the
 				-- world showed). Out here the haze hides the edge. A multiple of 512.
@@ -1683,7 +1710,7 @@ local Config = {
 			},
 			-- The seabed under the water: a layer of tinted Terrain mud (gives the water its
 			-- depth; a part could not cover the whole sea).
-			Seabed = Color3.fromRGB(18, 40, 52),
+			Seabed = Color3.fromRGB(16, 28, 32),
 			-- The coast is Terrain (a sand beach into the water, grass land, rock and grass
 			-- hills); these tint the engine materials toward the game's muted palette.
 			Coast = {

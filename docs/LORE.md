@@ -71,7 +71,7 @@ goes from evening to night to dawn.
 5. **Harlan Reservoir Station** — the dam and the research station. Boss: the Specimen.
 
 **Control, Lantern, the Burn.** Harlan Control runs the corridor net; the squad is Pike; the
-helo that carries Pike is Lantern (airframe in [The Fallow > Lantern](#lantern)), the only
+helo that carries Pike is Lantern (airframe in [The Carrier > Lantern](#lantern)), the only
 thing that stays the same and the only way out. Command sanitizes what it cannot hold: each district has a scheduled incendiary fire
 mission, the Burn, and the skyline burning beyond the walls is the districts that already
 got theirs. A squad is inserted in the window before the Burn. Prove the district can be
@@ -144,21 +144,23 @@ you can get the lid off quietly, which you cannot.
 
 ---
 
-# The Fallow
+# The Carrier
 
-Canon as of 2026-11-09 (lobby place, Nova; owner and Nova approved the name).
+Canon as of 2026-11-09 (lobby place, Nova). Renamed from "the Fallow" by the owner
+(2026-11-09: easier to understand); older docs and code comments that say "LORE.md > The
+Fallow" mean this section.
 
 The corridor runs north from the coast to the dam; Checkpoint Delta is the gate nearest the
-sea. Command runs the corridor from offshore. The Fallow is a helicopter carrier pulled out
+sea. Command runs the corridor from offshore. The Carrier is a helicopter carrier pulled out
 of the reserve fleet for Harlan: a flat deck, one island, a hangar under the deck, her old
 hull number painted out and HRD sprayed over it. She holds station off the coast, past the
 reach of anything that walks. Harlan Control works out of her Plot, every Lantern flies off
 her deck, and every window team waits in her hangar until its window opens. The seat home at
-Stand Down is a seat back to the Fallow.
+Stand Down is a seat back to the Carrier.
 
 The Infected cannot reach the ship. The one way aboard is Lantern, so everyone who steps off
 a helo walks the screening lane at the deck edge (hose, hands, eyes, band), Pike included,
-every time. Delta screened and failed. The Fallow screens and has not, yet.
+every time. Delta screened and failed. The Carrier screens and has not, yet.
 
 Many window teams share the ship. They are **not** all Pike (owner and Nova, 2026-11-09):
 how the other teams are called is open, for the lore developer.
@@ -174,7 +176,11 @@ how the other teams are called is open, for the lore developer.
   carry and what is kicked out of the door, and they sign for it before they walk up the
   ramp), **Fires** (a fire support officer: your callsign on the
   Hammer, Anvil and Shrike nets), the **Engineers** (a sapper sergeant: Doorman, Tripline,
-  Concertina). Desk crew wear ship or Army working dress, never Pike grey.
+  Concertina). Desk crew wear ship or Army working dress, never Pike grey. The four desks
+  are run by the same four people every visit: the Quartermaster (a sergeant first class,
+  thirty years in arms rooms), the Loadmaster (Lantern's crew chief, who rides the door),
+  Fires (a lieutenant) and the Engineers (a staff sergeant, a sapper). Voices and lines in
+  [lore/desk_crew.md](lore/desk_crew.md).
 - **The Plot.** Control's map room under the island, lit red. The corridor chart on the
   table under tape and grease pencil; the Containment Board on a lit perspex wall, five
   columns, written backwards by a plotter standing behind it. Contained is still not clean.
@@ -199,7 +205,7 @@ daily stock), and the PA is procedural (no propaganda).
 
 Canon as of 2026-11-09 (owner approved).
 
-Every lift bird off the Fallow flies as Lantern. Each is a medium utility helo drawn from the
+Every lift bird off the Carrier flies as Lantern. Each is a medium utility helo drawn from the
 same reserve fleet as the ship: one main rotor, a tail rotor, skids, a boxy cabin and a long
 thin tail boom ending in a tall fin. It is built to carry one window team and nothing else:
 two pilots, a crew chief, four Pike on canvas seats facing the door, and the bundles at their
@@ -226,7 +232,7 @@ feet.
   column of grease-pencil marks: a stroke for every seat taken out, a cross for every seat
   brought home. The crosses are behind.
 - **Numbers.** "Lantern" is the callsign; the number is flight and aircraft. "Lantern 2-1" is
-  the second flight's first bird, stencilled 21. The four birds on the Fallow's deck spots are
+  the second flight's first bird, stencilled 21. The four birds on the Carrier's deck spots are
   21 to 24. A bird and a spot are not tied: Control gives the spot ("Lantern on spot three")
   and the bird answers with its number.
 
@@ -253,7 +259,7 @@ identity. Build sheet in [CHARACTERS.md](CHARACTERS.md) section C.
 
 The loadout menu is the **Loadout** (owner, 2026-11-09: signed for at the Loadmaster's desk).
 The **Arms Room** (the Army's name for a unit armoury) is the Quartermaster's cage on the
-Fallow, where kit is bought onto a soldier's record. Naming rules:
+Carrier, where kit is bought onto a soldier's record. Naming rules:
 
 - **Guns** carry their plain real-world designation on the HUD ("M4A1 Carbine"), no
   nicknames. Starting list: M4A1 Carbine (default), M16A4 Rifle, Mossberg 590 Shotgun,
@@ -263,7 +269,7 @@ Fallow, where kit is bought onto a soldier's record. Naming rules:
 - **Support weapons, emplacements and supply** take a soldier's word for the thing, with
   the designation in small type under it.
 - **Delivery:** Lantern's crew chief kicks support weapons and supply out of the starboard
-  door as a slung case or a speedball ([The Fallow > Lantern](#lantern)). Nothing falls from
+  door as a slung case or a speedball ([The Carrier > Lantern](#lantern)). Nothing falls from
   orbit.
 
 | HUD name | Under it | Family |

@@ -580,7 +580,7 @@ local function enterRack()
 	end
 	mode = "rack"
 	rackTitle.Text = rack.header
-	rackSay.Text = `"{rack.rackLine}"`
+	rackSay.Text = `"{(desk :: LobbyDesks.Desk).talk.openLine}"`
 	rackMerits.Text = `{RecordClient.merits()} {rack.currency}`
 	hint.Text = if HudTheme.isTouch()
 		then "Tap a weapon to look closer"
@@ -672,10 +672,12 @@ local function openTalk(chosen: LobbyDesks.Desk, from: ProximityPrompt)
 	prompt = from
 	mode = "talk"
 	talkTitle.Text = `{chosen.title}  {HudTheme.tint(chosen.who, HudTheme.Color.TextDim)}`
-	talkLine.Text = `"{chosen.line}"`
-	choiceWork.Text = `1.  {rack.askWork}`
-	choiceRack.Text = `2.  {rack.showRack}`
-	choiceLeave.Text = `3.  {rack.leave}`
+	local said = chosen.talk
+	talkLine.Text = `"{said.greetings[math.random(1, #said.greetings)]}"`
+	-- 1 the guns, 2 the question, 3 leave (the same order at every desk).
+	choiceWork.Text = `1.  {said.open}`
+	choiceRack.Text = `2.  {said.ask}`
+	choiceLeave.Text = `3.  {said.leave}`
 	talkCloseAt = os.clock() + Config.Lobby.DialogSeconds * 3
 	showOverlay()
 	ContextActionService:BindAction(ACTION_CHOOSE, chooseAction, false, table.unpack(choiceKeyList))
@@ -693,12 +695,11 @@ function choose(index: number)
 	if mode ~= "talk" then
 		return
 	end
-	local rack = desk and desk.rack
-	if index == 1 and rack then
-		talkLine.Text = `"{rack.workAnswer}"`
-		talkCloseAt = os.clock() + Config.Lobby.DialogSeconds * 3
-	elseif index == 2 then
+	if index == 1 then
 		enterRack() -- unbinds the choice keys itself once the rack is really open
+	elseif index == 2 and desk then
+		talkLine.Text = `"{desk.talk.answer}"`
+		talkCloseAt = os.clock() + Config.Lobby.DialogSeconds * 3
 	elseif index == 3 then
 		closeTalk()
 	end
@@ -740,8 +741,8 @@ function ArmsRackUI.init()
 			return
 		end
 		rackMerits.Text = `{RecordClient.merits()} {rack.currency}`
-		if RecordClient.merits() < meritsBefore then
-			rackSay.Text = `"{rack.bought}"`
+		if RecordClient.merits() < meritsBefore and desk then
+			rackSay.Text = `"{desk.talk.bought}"`
 		end
 		meritsBefore = RecordClient.merits()
 		if mode == "inspect" and order[selected] then
@@ -749,9 +750,10 @@ function ArmsRackUI.init()
 		end
 	end)
 	RecordClient.Refused:Connect(function(_id: unknown, reason: unknown)
-		local rack = desk and desk.rack
-		if rack and (mode == "rack" or mode == "inspect") then
-			rackSay.Text = if reason == "short" then `"{rack.short}"` else `"{rack.bookShut}"`
+		if desk and desk.rack and (mode == "rack" or mode == "inspect") then
+			rackSay.Text = if reason == "short"
+				then `"{desk.talk.short}"`
+				else `"{desk.talk.refused}"`
 		end
 	end)
 

@@ -25,3 +25,8 @@ grenades and call-ins (merits, Nova's call; `docs/ROADMAP.md` still says Credits
 confirm): `KitPrices`, `DeskShop`, a `Price` and `Desk` on each call-in row, `Price` on the
 sample guns and the frag. Not playtested yet: open ZCS Dev and check Fires, the Engineers,
 the Loadmaster's "What do you kick?" and the locked Loadout.
+**Evening:** desk dialog rewritten with the lore developer (four voices, random greetings, every
+desk the same 3-choice talk; `LobbyDesks` now has a `talk` table per desk), the lobby sky made
+gloomy (Tien), and lobby music from Roblox's licensed library (`LobbyMusic`, tracks in
+`Config.Lobby.Music`; picked by name, not by ear). Playtested in ZCS Dev: music plays and
+fades, the Engineers talk and sell, refusals in his voice, the overcast look.

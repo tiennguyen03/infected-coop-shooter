@@ -9,6 +9,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local CallInDefinitions = require(ReplicatedStorage.Shared.CallInDefinitions)
+local LobbyDesks = require(ReplicatedStorage.Lobby.LobbyDesks)
 local HudTheme = require(script.Parent.HudTheme)
 local RecordClient = require(script.Parent.RecordClient)
 
@@ -49,8 +50,13 @@ local merits = HudTheme.label(panel, { size = 15, color = HudTheme.Color.TextDim
 merits.LayoutOrder = 2
 local note = HudTheme.label(panel, { size = 14, color = HudTheme.Color.RedLight })
 note.LayoutOrder = 999
+note.Size = UDim2.fromScale(1, 0)
+note.AutomaticSize = Enum.AutomaticSize.Y
+note.TextWrapped = true
 
 local shown: { string } = {}
+local said: LobbyDesks.Talk? = nil -- the desk's own bought / short / refused lines
+local meritsBefore = 0
 local rows: { Frame } = {}
 
 local function clearRows()
@@ -116,6 +122,7 @@ local function paint()
 			buy.Parent = row
 			buy.Activated:Connect(function()
 				note.Text = ""
+				meritsBefore = RecordClient.merits()
 				RecordClient.buy(id)
 			end)
 		end
@@ -123,9 +130,11 @@ local function paint()
 	end
 end
 
--- Shows what a desk sells (call-in ids); nothing to sell hides the panel.
-function DeskShop.show(heading: string, ids: { string })
+-- Shows what a desk sells (call-in ids), with the desk's own lines; nothing to sell hides it.
+function DeskShop.show(heading: string, ids: { string }, talk: LobbyDesks.Talk?)
 	shown = table.clone(ids)
+	said = talk
+	meritsBefore = RecordClient.merits()
 	if #shown == 0 then
 		DeskShop.hide()
 		return
@@ -147,11 +156,23 @@ function DeskShop.init()
 	RecordClient.Changed:Connect(function()
 		if panel.Visible then
 			paint()
+			if said and RecordClient.merits() < meritsBefore then
+				note.TextColor3 = HudTheme.Color.Yellow
+				note.Text = `"{said.bought}"`
+			end
+			meritsBefore = RecordClient.merits()
 		end
 	end)
 	RecordClient.Refused:Connect(function(_id: unknown, reason: unknown)
 		if panel.Visible then
-			note.Text = if reason == "short" then "Short of merits." else "Not on the books today."
+			note.TextColor3 = HudTheme.Color.RedLight
+			local line = if said
+				then (if reason == "short" then said.short else said.refused)
+				else nil
+			note.Text = if line
+				then `"{line}"`
+				elseif reason == "short" then "Not enough merits."
+				else "Try again in a minute."
 		end
 	end)
 end

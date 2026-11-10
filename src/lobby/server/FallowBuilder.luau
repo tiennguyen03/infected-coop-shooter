@@ -693,7 +693,7 @@ local function buildWorld(ship: Folder)
 	buildSea()
 	buildCoast(ship)
 
-	-- A clear afternoon (Config.Lobby.Sky). Templates arrive with their own effects; the
+	-- An overcast late afternoon (Config.Lobby.Sky). Templates arrive with their own effects; the
 	-- Fallow's sky replaces them so the place looks the same however it was created.
 	for _, child in Lighting:GetChildren() do
 		if
@@ -724,10 +724,22 @@ local function buildWorld(ship: Folder)
 	atmosphere.Glare = sky.Atmosphere.Glare
 	atmosphere.Haze = sky.Atmosphere.Haze
 	atmosphere.Parent = Lighting
+	local grade = Instance.new("ColorCorrectionEffect")
+	grade.Brightness = sky.ColorCorrection.Brightness
+	grade.Contrast = sky.ColorCorrection.Contrast
+	grade.Saturation = sky.ColorCorrection.Saturation
+	grade.TintColor = sky.ColorCorrection.Tint
+	grade.Parent = Lighting
+	local bloom = Instance.new("BloomEffect")
+	bloom.Intensity = sky.Bloom.Intensity
+	bloom.Size = sky.Bloom.Size
+	bloom.Threshold = sky.Bloom.Threshold
+	bloom.Parent = Lighting
 	-- Engine clouds live under Terrain.
 	local clouds = Workspace.Terrain:FindFirstChildOfClass("Clouds") or Instance.new("Clouds")
 	clouds.Cover = sky.Clouds.Cover
 	clouds.Density = sky.Clouds.Density
+	clouds.Color = sky.Clouds.Color
 	clouds.Parent = Workspace.Terrain
 end
 

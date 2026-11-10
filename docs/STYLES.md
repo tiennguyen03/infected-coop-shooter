@@ -410,6 +410,17 @@ switched off (`Config.Player.SkinnedBody = false`, see `assets/3d/README.md`).
 - Weapons: `gun` and `dark` materials, one accent facet (sight, mag tape) in the owning
   item's accent color.
 
+### The Carrier's sky (gloomy, 2026-11-10)
+
+Tien: gloomier. An overcast, cold late afternoon on a grey sea (`Config.Lobby.Sky`): ClockTime
+17.3, Brightness 1.5, Ambient `rgb(88,94,104)`, OutdoorAmbient `rgb(118,126,138)`, ColorShift
+top `rgb(196,206,220)`, Exposure -0.05, ShadowSoftness 0.75; Atmosphere Density 0.36, Color
+`rgb(148,156,166)`, Decay `rgb(78,86,98)`, Glare 0, Haze 2.2; Clouds Cover 0.88, Density 0.8,
+Color `rgb(112,118,126)`; ColorCorrection Contrast 0.08, Saturation -0.22, Tint
+`rgb(232,238,248)`; Bloom 0.4 / 22 / threshold 1.6 (fire, Neon and lamps only). Sea
+`rgb(38,58,64)`, reflectance 0.25, seabed `rgb(16,28,32)`. The orange coast fires and the
+Lantern lamps are the warm notes. The hangar desks must still read at a glance.
+
 ### The Carrier's buying panels (2026-11-10)
 
 The Quartermaster's rack card (above) and `DeskShop` (call-ins at Fires, the Engineers and

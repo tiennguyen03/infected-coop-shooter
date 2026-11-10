@@ -31,8 +31,10 @@ match place.
   and the Burn on four sites on the shore in front of the hills. Each site has the match's skyline fire and
   smoke particles (stock `fire_main` / `smoke_main`, westerly drift), scaled up for distance
   and enlarged at Nova's ask (fire 42, smoke 70, each site 180 studs of shoreline): 8
-  emitters in all (`Config.Lobby.Sky.Burn`). A clear afternoon
-  (`Config.Lobby.Sky`: ClockTime 14, engine clouds, light atmosphere). ShadowMap with
+  emitters in all (`Config.Lobby.Sky.Burn`). **Gloomy since 2026-11-10** (Tien): an overcast,
+  cold late afternoon (`Config.Lobby.Sky`: ClockTime 17.3, Brightness 1.5, heavy grey clouds
+  0.88, a grey haze, soft shadows, a cold grey-green sea, a drained cool `ColorCorrection` and a
+  `Bloom` that only lifts fire, Neon and lamps); the hangar desks still read clearly. ShadowMap with
   GlobalShadows (`lobby.project.json` sets `Lighting.Technology`), so the hangar under the
   deck is in shade; only solid opaque parts bigger than clutter cast shadows
   (`Build.part`). Four lights, Shadows off, Range <= 56 (docs/STYLES.md): three in the hangar,
@@ -72,9 +74,12 @@ match place.
 - **Four hangar desks** (`DeskService`, data `LobbyDesks`): Arms Room (cage, port side),
   Engineers (wire spools, starboard), Loadmaster (slung cases at the foot of the ramp), Fires
   (at the Plot door). Block crew figures in working dress, a counter, a sign, an F "Talk" prompt. The
-  line shows in `DeskDialogUI` with what the desk deals in. The Arms Room (the Quartermaster)
-  talks through its own counter (Arms Room counter below) and the Loadmaster through
-  `LoadmasterUI` (Loadmaster and Loadout below); Fires and the Engineers issue nothing yet.
+  **Every desk talks the same way** (dialog rewrite 2026-11-10, Nova and Tien: "too cryptic,
+  no personality"; lines and voices by the lore developer, `LobbyDesks` `talk`, voice sheets
+  in docs/lore/desk_crew.md): a greeting picked at random from four, then 1 their kit, 2 a
+  question, 3 leave (click or keys 1-3), plus their own bought / short / refused lines. The
+  Quartermaster talks through `ArmsRackUI`, the Loadmaster through `LoadmasterUI`, Fires and
+  the Engineers through `DeskDialogUI` (1 opens their `DeskShop`).
 - **The Plot** (`PlotService`, `ContainmentBoard`, rule `Rules/Containment`): the red-lit
   map room under the island with the chart table and the Containment Board on a lit perspex
   panel (five districts: percent and band word) and a plotter behind it. It rereads the board
@@ -191,7 +196,7 @@ The rack is where guns are **bought** (merits, onto the soldier's record; owner 
   call-in are on the record.
 - **Where:** guns and grenades on the Quartermaster's rack; call-ins at the desk on their row
   (`Desk`): Fires (Hammer, Anvil, Shrike), the Engineers (Doorman, Tripline, Concertina), the
-  Loadmaster (Speedball, Aid Bag, under "What do you kick?"). `DeskShop` is the panel: each
+  Loadmaster (Speedball, Aid Bag, under "What can you drop me?"). `DeskShop` is the panel: each
   call-in with what it is, ON YOUR RECORD or BUY · N MERITS (dim "(SHORT)"), the merits, a
   refusal note; Fires and the Engineers stay up while you stand at the desk.
 - **Server** (`RecordService`): loads the record on join (`SaveSlot`, DataStore
@@ -212,9 +217,8 @@ The rack is where guns are **bought** (merits, onto the soldier's record; owner 
   designer's call and the match would save it (the record is per UserId in the same
   experience). The match's B Arms Room still offers every gun.
 
-- **Talk** (F on the Quartermaster, `ArmsRackUI` instead of `DeskDialogUI` for a desk with a `rack`
-  in `LobbyDesks`): his line and three choices, "Any work going?" (his answer: work comes from
-  the Plot; no taskings yet), "Show me the rack." and "Carry on." Wording by the lore developer: BUY and a price in
+- **Talk** (F on the Quartermaster, `ArmsRackUI` for a desk with a `rack` in `LobbyDesks`): a
+  greeting, then 1 "Show me the guns." (the rack), 2 "How do I get merits?", 3 "That's all." Wording by the lore developer: BUY and a price in
   MERITS may show; never shop, store, wares, sell, lock or unlock.
 - **The rack** (`ArmsRack`, `FallowLayout.ArmsRack`): a board on the hangar's port wall behind
   the cage (the cage lost its back row of bars and the old RifleRack block). Every catalog item
@@ -258,13 +262,24 @@ The rack is where guns are **bought** (merits, onto the soldier's record; owner 
 
 Deck surface y 40, hangar floor y 20, sea y 0. Every position is in `FallowLayout`.
 
+## Music (2026-11-10)
+
+`LobbyMusic` (client) plays a shuffled playlist of four licensed tracks from Roblox's audio
+library (free for any experience, nothing uploaded): "A Light Dies Out On The Water", "Lost In
+Time" (ambient mix, APM), "Fading Hope", "Silhouette Dream" (ambience version, APM); about 10
+minutes before it repeats. Low in the mix (`Config.Lobby.Music.Volume` 0.22 on its own
+`Music` SoundGroup, so a volume setting can follow; OWNER.md: no harsh sound), 3 s between
+tracks, a 4 s fade in on arrival, a 2.5 s fade out when your Lantern lifts (the rotor takes
+over before the teleport's fade), back on a failed lift. Tracks were picked by name and mood,
+not by ear: swap them in `Config.Lobby.Music.Tracks`.
+
 ## Files
 
 | Place | File |
 |---|---|
 | Project | `lobby.project.json` (shares `src/shared`; `src/lobby/shared` as `ReplicatedStorage.Lobby`; maps the match's `src/server/PlayerSetup.luau` into the lobby server and `src/client/HudTheme.luau`, `PaletteController.luau`, `LoadoutMenu.luau` into the lobby client; sets `Lighting.Technology`) |
 | Server | `src/lobby/server/`: `Main.server`, `FallowLayout`, `Build`, `FallowBuilder`, `FallowArt`, `PikeBody`, `NpcBody`, `DeskService`, `ContainmentBoard`, `PlotService`, `LaunchService`, `LanternBird`, `ArmsRack`, `LoadmasterService` |
-| Client | `src/lobby/client/`: `Main.client`, `LaunchUI`, `DeskDialogUI`, `ArmsRackUI`, `LoadmasterUI`, `HoldStill`, `RadarSpin`, `LanternSpool` |
+| Client | `src/lobby/client/`: `Main.client`, `LaunchUI`, `DeskDialogUI`, `ArmsRackUI`, `LoadmasterUI`, `DeskShop`, `RecordClient`, `LobbyMusic`, `HoldStill`, `RadarSpin`, `LanternSpool` |
 | Art | `assets/3d/build/fallow.py` (12 `env_fallow_*` meshes), `lantern.py` (4 `veh_lantern_*`); `MeshAssets` entries; `Config.Lobby.Ship`, `Config.Lobby.Lantern`; attribute `LiftAt`; rule `Rules/ArmsStats` (+ spec), `Config.Lobby.Rack` |
 | Shared | `src/lobby/shared/LobbyDesks`; rules `src/shared/Rules/Manifest`, `Rules/Containment`, `Rules/Handoff` (main's, the teleport data both places share); `Config.Lobby`, `Config.Places`, `Config.Containment`; remotes `Launch` + `Messages.Launch`, `Loadout` (shared with the match); attribute `DeskId` |
 | Match side | `HandoffService` reads the teleport data and `RunManager.receive` applies the signed Loadout (2026-11-09; `JoinData` retired); `LoadoutMenu.mount` options (title, hint, confirm) |
@@ -298,8 +313,9 @@ Deck surface y 40, hangar floor y 20, sea y 0. Every position is in `FallowLayou
 Owner and Tien: the Loadmaster at the foot of the ramp is where a soldier equips; the menu is
 called **Loadout**. Lines by the lore developer (merits, the record, `LobbyDesks` `kit`).
 
-- **Talk** (F on the Loadmaster, `LoadmasterUI`): his line and 1 "Make up my Loadout." 2 "What
-  do you kick?" 3 "Carry on." (click or keys 1-3, Modal mouse, one dialog at a time).
+- **Talk** (F on the Loadmaster, `LoadmasterUI`): a greeting, then 1 "Set up my Loadout." 2
+  "What can you drop me?" (his supply shop) 3 "That's all." (click or keys 1-3, Modal mouse, one
+  dialog at a time).
 - **Loadout**: choice 1 opens the match's `LoadoutMenu` (mapped into the lobby project) with
   the lobby's words (`LoadoutMenu.mount` options: title LOADOUT, SIGN FOR IT): primary,
   sidearm, grenade, up to four call-ins. The soldier is held still (`HoldStill`, shared with

@@ -12,5 +12,6 @@ require(script.Parent.ArmsRackUI).init()
 require(script.Parent.LoadmasterUI).init()
 require(script.Parent.RadarSpin).init()
 require(script.Parent.LanternSpool).init()
+require(script.Parent.LobbyMusic).init()
 
 print("[Lobby] Client up")

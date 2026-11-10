@@ -1,53 +1,46 @@
 --!strict
--- The Fallow's hangar desks (docs/LORE.md > The Fallow): who stands at each and what they say
--- when a soldier talks to them. Read by the server (DeskService builds the desks) and the
--- client (DeskDialogUI shows the line). The Quartermaster sells kit onto a soldier's record
--- for merits; the Loadmaster makes up the Loadout. Buying waits for the save service (F9);
--- signing for a Loadout works now (prototype: everything in the catalog). Lines by the lore
--- developer, owner-approved 2026-11-09.
+-- The Carrier's hangar desks (docs/LORE.md > The Fallow, renamed the Carrier; voices in
+-- docs/lore/desk_crew.md): who stands at each and what they say. Every desk talks the same
+-- way: a greeting picked at random, then 1 their kit, 2 a question, 3 leave. Lines by the
+-- lore developer (2026-11-10, Nova and Tien: "too cryptic, no personality").
 
--- A desk with a rack (the Arms Room): talking gives choices instead of one line, and one of
--- them turns the camera to the guns on the wall behind the cage (ArmsRackUI). The card may
--- show BUY and a price in merits; never shop, store, wares, sell, lock or unlock.
-export type Rack = {
-	askWork: string, -- choice: side work ("taskings" in canon; the Plot hands work out)
-	showRack: string, -- choice: turn to the rack
-	leave: string, -- choice: walk away
-	workAnswer: string,
-	rackLine: string, -- said as the camera turns to the wall
-	header: string, -- the rack view's title
-	onIssue: string, -- on the soldier's record
-	notOnIssue: string,
-	notOnIssueWhy: string,
-	currency: string, -- price shown as "<n> MERITS" (buying waits for F9)
-	buy: string,
-	bookShut: string, -- BUY pressed before the save service exists
-	bought: string,
-	short: string,
+-- What the person behind a desk says (the same shape at all four desks).
+export type Talk = {
+	greetings: { string }, -- one picked at random each time you talk
+	open: string, -- choice 1: see / buy this desk's kit (the Loadmaster: the Loadout)
+	ask: string, -- choice 2
+	answer: string, -- their reply to choice 2 (the Loadmaster: shown with his supply panel)
+	leave: string, -- choice 3: walk away (closes the panel, no line)
+	openLine: string, -- said as their kit opens
+	bought: string, -- a BUY went through
+	short: string, -- a BUY refused: not enough merits
+	refused: string, -- a BUY refused for any other reason (save down, etc.)
 }
 
--- A desk with a kit (the Loadmaster): choices like the rack's; the first opens the Loadout
--- (LoadmasterUI, LoadoutMenu) and SIGN FOR IT sends it to LoadmasterService.
+-- The Arms Room's wall of guns (ArmsRackUI): labels only.
+export type Rack = {
+	header: string,
+	onIssue: string,
+	notOnIssue: string,
+	currency: string,
+	buy: string,
+}
+
+-- The Loadmaster's Loadout screen (LoadmasterUI, LoadoutMenu): labels and his answers.
 export type Kit = {
-	kitUp: string, -- choice 1: open the Loadout
-	ask: string, -- choice 2
-	leave: string, -- choice 3
-	askAnswer: string,
-	kitLine: string, -- shown under the Loadout as it opens
-	header: string, -- the Loadout's title
-	confirm: string, -- the sign button
-	confirmLine: string, -- said once the Loadout is signed
+	header: string,
+	confirm: string,
+	confirmLine: string, -- the Loadout was signed
 	reject: string, -- the rules refused it
-	notOnRecord: string, -- ownership refused it (after F9)
-	bookShut: string, -- unused while signing is open (prototype)
+	notOnRecord: string, -- something in it isn't bought
 }
 
 export type Desk = {
 	id: string,
 	title: string, -- the desk, as stencilled over it
 	who: string, -- the person behind it
-	line: string, -- what they say
 	issues: string, -- what the desk deals in
+	talk: Talk,
 	rack: Rack?,
 	kit: Kit?,
 }
@@ -57,58 +50,103 @@ local LobbyDesks: { Desk } = {
 		id = "arms_room",
 		title = "ARMS ROOM",
 		who = "The Quartermaster",
-		line = "Window team. You buy it here, you sign for it at the ramp. What do you need?",
-		issues = "Guns, sidearms, grenades, for merits",
+		issues = "Guns, sidearms and grenades",
+		talk = {
+			greetings = {
+				"Arms Room. Guns, sidearms and grenades. Pay in merits and it's yours for good.",
+				"Rifle and pistol come free. Anything better costs merits. Have a look.",
+				"Thirty years behind a cage like this. Guns don't change. Soldiers get younger.",
+				"Take your time. I'd rather you pick right than come back and complain.",
+			},
+			open = "Show me the guns.",
+			ask = "How do I get merits?",
+			answer = "You signed on with a thousand. Control's not paying for missions yet, so spend careful.",
+			leave = "That's all.",
+			openLine = "Pick one for a closer look. Buy it here, then sign for it with the Loadmaster.",
+			bought = "It's yours now, on your record for good. Loadmaster's at the ramp.",
+			short = "Not enough merits for that one. Price is the price.",
+			refused = "Can't sign that one over right now. Try me again in a minute.",
+		},
 		rack = {
-			askWork = "Any work going?",
-			showRack = "Show me the rack.",
-			leave = "Carry on.",
-			workAnswer = "Work comes down from the Plot, not this cage. No taskings yet.",
-			rackLine = "Pay in merits and it goes on your record. Kit up with the Loadmaster.",
 			header = "THE RACK",
 			onIssue = "ON YOUR RECORD",
 			notOnIssue = "NOT ON YOUR RECORD",
-			notOnIssueWhy = "Merit book not open",
 			currency = "MERITS",
 			buy = "BUY",
-			bookShut = "Book's shut till Control pays out. Look all you like.",
-			bought = "Signed. It's on your record. Loadmaster's at the ramp.",
-			short = "You're short. Bring me merits.",
 		},
 	},
 	{
 		id = "loadmaster",
 		title = "LOADMASTER",
 		who = "Lantern's crew chief",
-		line = "What's on you and what I kick, you sign for here. Then up the ramp.",
-		issues = "Your Loadout: guns, grenade, call-ins",
+		issues = "Your Loadout, plus ammo and medical drops",
+		talk = {
+			greetings = {
+				"Loadmaster. Pick what you carry, sign for it, then up the ramp to your bird.",
+				"You're Pike? Good. Get your kit signed. My bird doesn't wait on paperwork.",
+				"Whatever you sign for here is what you drop with. Choose like you mean it.",
+				"I tally every seat out and every seat back on my door. Come back, Pike.",
+			},
+			open = "Set up my Loadout.",
+			ask = "What can you drop me?",
+			answer = "Ammo and medical, kicked out of my door when you throw for it. Buy it here first.",
+			leave = "That's all.",
+			openLine = "Main gun, sidearm, grenade, four different call-ins. Dimmed ones you still have to buy.",
+			bought = "Bought. Throw for it out there and I'll kick it out the door.",
+			short = "You're short on merits. Can't kick what you haven't paid for.",
+			refused = "Couldn't sign that over. Give it a minute and try again.",
+		},
 		kit = {
-			kitUp = "Make up my Loadout.",
-			ask = "What do you kick?",
-			leave = "Carry on.",
-			askAnswer = "Four call-ins a soldier, one support weapon. You flare, my chief kicks it.",
-			kitLine = "Gun, sidearm, grenade, four call-ins. Only what's on your record.",
 			header = "LOADOUT",
 			confirm = "SIGN FOR IT",
-			confirmLine = "Signed. Your bird's up the ramp. Don't keep it waiting.",
-			reject = "That won't go. Four call-ins, all different, one support weapon.",
-			notOnRecord = "That's not on your record. Quartermaster first.",
-			bookShut = "Book's not open. You fly standard issue today.",
+			confirmLine = "Signed. That's what you fly with. Up the ramp, find a bird with a seat.",
+			reject = "That won't go. You need four call-ins, and no two the same.",
+			notOnRecord = "That's not yours yet. Buy it first: guns at the Arms Room, call-ins at their desk.",
 		},
 	},
 	{
 		id = "fires",
 		title = "FIRES",
 		who = "Fire support officer",
-		line = "Hammer, Anvil, Shrike. I put your callsign on the net. Mark it and they hear you.",
-		issues = "Fire missions",
+		issues = "Fire missions: Hammer, Anvil, Shrike",
+		talk = {
+			greetings = {
+				"Fires. I put you on the mortar, artillery and gunship nets. Throw the marker, they shoot.",
+				"Hammer, Anvil and Shrike are free. You're already cleared on all three nets.",
+				"The guns can't see you. They only see your marker. So throw it where you mean it.",
+				"Quiet on the net. It never stays quiet. What do you need?",
+			},
+			open = "Show me the fire missions.",
+			ask = "How do I call one in?",
+			answer = "Press its number and throw the marker. The guns fire where it lands. Simple.",
+			leave = "That's all.",
+			openLine = "Hammer: six mortar rounds. Anvil: one big shell. Shrike: a gun run along your throw.",
+			bought = "You're on that net now. Your callsign's in the book.",
+			short = "You're short on merits. Come back when you can cover it.",
+			refused = "The net's busy. Try that again in a minute.",
+		},
 	},
 	{
 		id = "engineers",
 		title = "ENGINEERS",
 		who = "Sapper sergeant",
-		line = "Wire, mines, the door charge. Mind the coils on your way past.",
-		issues = "Wire, mines and charges",
+		issues = "Sentry gun, mines and wire",
+		talk = {
+			greetings = {
+				"Engineers. Wire, mines and the Doorman gun. Things that hold ground when you can't.",
+				"Mind the coils on your way past. That wire bites, and it doesn't let go.",
+				"Nine fingers and counting. Ask me anything about mines.",
+				"Tripline comes free. The gun and the wire cost merits. Worth every one.",
+			},
+			open = "Show me the kit.",
+			ask = "Any advice?",
+			answer = "Lay wire across their path, not yours. Nothing climbs over it. Nothing.",
+			leave = "That's all.",
+			openLine = "Doorman's a gun that shoots on its own. Tripline's six mines. Concertina's the wire.",
+			bought = "It's yours. Set it, step back, let it work.",
+			short = "You're short. I'd do you a deal, but the Quartermaster counts my wire.",
+			refused = "Paperwork's jammed. Give it a minute.",
+		},
 	},
 }
 

@@ -161,10 +161,11 @@ local function openTalk(chosen: LobbyDesks.Desk, from: ProximityPrompt, line: st
 	prompt = from
 	mode = "talk"
 	talkTitle.Text = `{chosen.title}  {HudTheme.tint(chosen.who, HudTheme.Color.TextDim)}`
-	choices[1].Text = `1.  {kit.kitUp}`
-	choices[2].Text = `2.  {kit.ask}`
-	choices[3].Text = `3.  {kit.leave}`
-	showTalk(line or chosen.line)
+	local said = chosen.talk
+	choices[1].Text = `1.  {said.open}`
+	choices[2].Text = `2.  {said.ask}`
+	choices[3].Text = `3.  {said.leave}`
+	showTalk(line or said.greetings[math.random(1, #said.greetings)])
 	talk.Visible = true
 	choices[3].Modal = true -- frees the mouse even zoomed into first person
 	ContextActionService:BindAction(ACTION_CHOOSE, chooseAction, false, table.unpack(choiceKeyList))
@@ -225,7 +226,7 @@ local function openLoadout()
 	if signed then
 		handle.set(signed)
 	end
-	handle.status(kit.kitLine, nil)
+	handle.status((desk :: LobbyDesks.Desk).talk.openLine, nil)
 	local back = Instance.new("TextButton")
 	back.Name = "Back"
 	back.AnchorPoint = Vector2.new(1, 0)
@@ -258,15 +259,14 @@ function choose(index: number)
 	if mode ~= "talk" then
 		return
 	end
-	local kit = desk and desk.kit
 	if index == 1 then
 		openLoadout()
-	elseif index == 2 and kit then
-		showTalk(kit.askAnswer)
+	elseif index == 2 and desk then
+		showTalk(desk.talk.answer)
 		-- What Lantern kicks is sold here (the call-in rows' `Desk` = "loadmaster").
 		local sells = KitPrices.soldAt("loadmaster")
-		if #sells > 0 and desk then
-			DeskShop.show(desk.title, sells)
+		if #sells > 0 then
+			DeskShop.show(desk.title, sells, desk.talk)
 			talkCloseAt = math.huge -- stays up while you shop; walking off still closes it
 		end
 	elseif index == 3 then
