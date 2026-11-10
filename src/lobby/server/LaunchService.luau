@@ -211,7 +211,9 @@ local function lift(state: SpotState)
 				end)
 				if ok then
 					code = reserved
-					options.ReservedServerAccessCode = reserved
+					-- A documented TeleportOptions property the luau-lsp definitions do not list.
+					local reserve: any = options
+					reserve.ReservedServerAccessCode = reserved
 				else
 					lastError = tostring(reserved)
 					warn(`[LaunchService] spot {state.spot.index} reserve failed: {lastError}`)
