@@ -24,14 +24,30 @@ here and add the HISTORY row.
 
 ## Open concerns
 
-1. **`ArenaService` is 2,379 lines mixing Delta's layout data with build logic.** Two more
-   missions are next, and objective pools need per-mission site and landmark data. (F6)
-2. **Upgrades are wired in by name.** Field upgrades are checked with `hasUpgrade(...)` at 8
-   call sites across `ProjectileServer`, `LoadoutService`, `KitService` and `CallInService`.
-   Guns and call-ins will be added, swapped and cut (Nova's loadout screens), so each new item
-   would mean editing combat code. (F7)
-3. **Frame cost in co-op.** The server runs 18 separate `Heartbeat`/render connections and
-   the client 15. (F11, measure first)
+Re-checked 2026-11-10 (maintenance pass; numbers from `main` that day).
+
+1. **`ArenaService` (1,355 lines) still builds Delta's bespoke pieces**, with the layout tables
+   in `Missions/Delta.luau` (1,013). Two more missions are next. (F6, step 2)
+2. **Upgrades are wired in by name.** `hasUpgrade(...)` is called at 7 sites across
+   `ProjectileServer`, `KitService` and `CallInService`. Guns and call-ins will be added,
+   swapped and cut, so each new item means editing combat code. (F7)
+3. **Frame cost in co-op.** The server runs 19 separate per-frame connections and the client
+   16. (F11, measure first)
+4. **Remote names are plain strings.** `Remotes.get("Name")` is called 48 times; a misspelt
+   name waits forever for a remote that never appears. `tests/SourceReferences.spec.luau`
+   now fails CI on an undeclared or unused remote. Typed names (a frozen table like
+   `Attributes`) would make it a type error; do it when `Remotes.luau` is next changed.
+5. **Two systems with no callers.** `PlayerStatsService`: nothing calls `setBonus` since the
+   item economy went, so `MoveSpeedMult` is always 1 and `SprintController` reads a constant;
+   remove it with the attribute, or keep it only if a planned speed buff will use it.
+   `IncendiaryService`: nothing calls `spawnPool` / `spawnTrail` since the Fire Trail upgrade
+   was cut, but its Heartbeat runs every frame; keep it for the incendiary grenade (handoff
+   open work) and rename `Config.Upgrades.FireTrail` (its `PoolsPerDash` is unused) then.
+   `Config.Upgrades.CommandDetonation = {}` is an empty placeholder.
+6. **Four modules over 1,300 lines:** `Config` (1,517), `IndexService` (1,444), `MeshAssets`
+   (1,408), `EnemyService` (1,363). Split each when its next feature lands, not before:
+   `IndexService` into a generic boss frame and the Warden's kit before the second boss;
+   `Config` by domain with F10.
 
 Resolved 2026-11-08 by F1-F5: the hand-kept reset list, unchecked attribute and message
 strings, all-or-nothing boot, naming drift after the loadout rework, no tests or CI, every

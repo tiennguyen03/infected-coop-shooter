@@ -29,7 +29,7 @@ upgrades) → the Warden (boss) → extraction on Lantern → OPERATION COMPLETE
   or call-in's own Config row.
 - **Roblox:** the group Boomin Dev Studios (270506601) owns the game "Co-op Zombie Shooter"
   (place 87556879379942) and every sound and animation.
-- **Checks:** stylua, selene, rojo build, 58 Lune tests, luau-lsp, CI on every push.
+- **Checks:** stylua, selene, rojo build, 75 Lune tests (rules plus the source-wiring spec), luau-lsp, CI on every push.
 
 ## Who owns what
 
