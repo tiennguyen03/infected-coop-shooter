@@ -42,6 +42,8 @@ Claim work in the table below before starting it; delete the row when it ships.
 
 ## Open work, in priority order
 
+The plan beyond this table, in phases, with the owner's open decisions: [docs/ROADMAP.md](../docs/ROADMAP.md).
+
 | # | What | Owner | Notes |
 |---|---|---|---|
 | 1 | Lobby + loadout screen | Nova | `docs/MULTIPLAYER_READINESS.md` decision 7; items read their own definition rows |
