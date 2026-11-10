@@ -189,6 +189,8 @@ local function lift(state: SpotState)
 			state.manifest.aboard,
 			LoadmasterService.loadoutsFor(party)
 		)
+		local matchPlaceId = Config.Lobby.DevMatchPlaceIds[game.PlaceId]
+			or Config.Lobby.MatchPlaceId
 		local options = Instance.new("TeleportOptions")
 		-- A fresh private server of the match per launch. ShouldReserveServer is a documented
 		-- TeleportOptions property the luau-lsp definitions do not list yet, hence the cast.
@@ -210,7 +212,7 @@ local function lift(state: SpotState)
 				break
 			end
 			local ok, err = pcall(function()
-				TeleportService:TeleportAsync(Config.Lobby.MatchPlaceId, going, options)
+				TeleportService:TeleportAsync(matchPlaceId, going, options)
 			end)
 			if ok then
 				sent = true

@@ -233,7 +233,12 @@ Deck surface y 40, hangar floor y 20, sea y 0. Every position is in `FallowLayou
 3. Check: spawn in the hangar in the Pike body, talk to each desk (F), read the board in the
    Plot, climb the ramp to the spots, stand in a boarding box (panel + countdown; in Studio it ends with the
    "Teleports don't run in Studio" line).
-4. Launch for real: publish the place, join it from the Roblox app (with a friend for a
+4. Dev places (2026-11-09): `Lobby (Dev)` (125769854992316) launches into `Match (Dev)`
+   (70420018035843), not the real match (`Config.Lobby.DevMatchPlaceIds`). Publish this branch
+   into both (match: `rojo serve default.project.json`, lobby: the lobby project) and Tien's
+   match place is never touched. Both sit in the group experience, whose start place is the
+   real match, so the app cannot join `Lobby (Dev)` directly (see handoff).
+5. Launch for real: publish the place, join it from the Roblox app (with a friend for a
    two-person bird), board a spot. You should land in a match server together.
 
 ## Open (next steps, in order)

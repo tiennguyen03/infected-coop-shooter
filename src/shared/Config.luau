@@ -1402,6 +1402,12 @@ local Config = {
 	Lobby = {
 		-- The match place a squad launches into (the group experience's start place today).
 		MatchPlaceId = 87556879379942,
+		-- Dev pairs: a launch from one of these lobby places goes to its own match place instead
+		-- (Nova's test places in the group experience: Lobby (Dev) -> Match (Dev), 2026-11-09), so
+		-- testing never needs the real match place republished. Any other lobby uses MatchPlaceId.
+		DevMatchPlaceIds = {
+			[125769854992316] = 70420018035843,
+		} :: { [number]: number },
 		Launch = {
 			Spots = 4, -- numbered Lantern spots on the flight deck
 			Capacity = 4, -- soldiers per bird (one squad)

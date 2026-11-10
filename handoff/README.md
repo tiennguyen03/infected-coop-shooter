@@ -241,7 +241,9 @@ Read in this order:
   doc > Arms Room counter): the Quartermaster (renamed from the armorer): talk choices (click or 1-3, one dialog at a time), the rack behind the cage, hover, inspect card, arrows (rack not yet playtested). **Loadmaster Loadout prototype built 2026-11-09, lobby
   side playtested, match side needs a published launch** (sprint doc > Loadmaster and Loadout): talk, LOADOUT screen, SIGN FOR IT,
   `LoadmasterService`, teleport data (`Rules/LaunchData`), the match seeds the pick (`JoinData`);
-  the rack is for buying with merits once F9 exists. Next: re-check the loop, body, ship (gaps, bow patches, radar,
+  the rack is for buying with merits once F9 exists. Test launches go `Lobby (Dev)` ->
+  `Match (Dev)` (`Config.Lobby.DevMatchPlaceIds`); getting into `Lobby (Dev)` live is open
+  (not the experience's start place). Next: re-check the loop, body, ship (gaps, bow patches, radar,
   balcony) and the birds' spool and lift in the `Lobby (dev)` place, then a published launch
   test.
 - **Satisfying pass built 2026-11-09 (`docs/superpowers/plans/2026-11-09-satisfying-pass.md`).**
