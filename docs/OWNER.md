@@ -89,6 +89,9 @@ something; never delete one without the owner.
 
 - **Nova** (second developer) owns the lobby and the loadout screen; bugs in those files go
   to Nova. (2026-11-09)
-- **The Roblox group Boomin Dev Studios** (270506601) owns the game ("Co-op Zombie Shooter",
-  place 87556879379942) and every uploaded asset; upload with `groupId`. (2026-11-09)
+- **The Roblox group Boomin Dev Studios** (270506601) owns the game ("Co-op Zombie Shooter")
+  and every uploaded asset; upload with `groupId`. (2026-11-09)
+- **The game opens in the lobby** (the start place holds it); the match is Checkpoint Delta.
+  The real places are published from `main` only (`docs/STUDIO_MCP.md` > Places and
+  publishing). (2026-11-09)
 - Nothing goes to `main` without the owner; never print or commit keys or tokens.

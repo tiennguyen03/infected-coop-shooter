@@ -55,6 +55,10 @@ architecture > visual polish. Smooth on low-end devices is playability, not poli
 
 ## Commands (Rokit; `export PATH="$HOME/.rokit/bin:$PATH"` if a tool is missing)
 
+- Places: the start place holds the lobby (`lobby.project.json`), Checkpoint Delta the match
+  (`default.project.json`); never connect a project in the other kind of place; the real
+  places are published (File → Publish, not Save) from `main` only. `docs/STUDIO_MCP.md` >
+  Places and publishing.
 - Sync: `rojo serve default.project.json`. A running playtest never picks up synced code:
   Stop, then Play.
 - After every change, all clean: `stylua src tests && selene src && rojo build -o build.rbxlx

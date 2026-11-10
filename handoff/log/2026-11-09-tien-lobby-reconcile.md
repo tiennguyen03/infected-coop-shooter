@@ -12,4 +12,11 @@ loadout is covered), lint and types clean for match and lobby. Not verified: a r
 **Heads-up (Nova):** review the PR; the stale `125769854992316 -> 70420018035843` dev pair is
 removed (that place is now the real match). `.blend` taken from main: the next asset build
 puts the Fallow and Lantern back into it (their FBXs and uploaded ids are untouched).
-**Next:** Tien publishes both places and runs the live test; Nova's debrief panel.
+**Later the same session:** both places published by hand and the app opens in the lobby.
+Why it kept opening the old match: Save to Roblox is not Publish, and the docs told people to
+connect the match project in the start place. Written down in `docs/STUDIO_MCP.md` > Places
+and publishing (linked from AGENTS, onboarding, OWNER). The Arms Room and the lobby's rack now
+offer every gun with a row (`ArmsOrder` on the row), each on its own mesh.
+**Heads-up (Nova):** `ArmsRack.MESH` is gone (the rack reads the row's `Model`);
+`FallowLayout.ArmsRack` has seven long rows on a slightly taller board: check it by eye.
+**Next:** a look at the rack and the lobby body in Studio; the live test; Nova's debrief panel.

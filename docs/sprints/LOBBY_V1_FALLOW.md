@@ -184,9 +184,11 @@ service (F9).
   MERITS may show; never shop, store, wares, sell, lock or unlock.
 - **The rack** (`ArmsRack`, `FallowLayout.ArmsRack`): a board on the hangar's port wall behind
   the cage (the cage lost its back row of bars and the old RifleRack block). Every catalog item
-  hangs on two pegs in catalog order: the five long guns in a column, the pistol and the frag
-  beside them. Stand-in block silhouettes per id; the Service Rifle swaps to `wpn_rifle` once
-  loaded. A new gun model goes in by adding its mesh to `ArmsRack.MESH` (and `MeshAssets`).
+  hangs on two pegs in catalog order: the seven long guns in a column, the sidearms and the
+  frag beside them. Each gun hangs its own held mesh (its row's `Model`, the one the match puts
+  in the hands; 2026-11-09), with a block silhouette until it loads or when it has none (the
+  frag). A new gun needs no rack edit, only a row; an eighth long gun needs a row added
+  to `FallowLayout.ArmsRack.longRows`.
 - **Looking** (all local to the player, so four can look at once): the camera glides inside
   the cage to frame the whole board (movement off, the prompt off, the Quartermaster hidden for this
   player only). The gun under the cursor slides 0.6 off its pegs with a soft yellow rim (a
@@ -235,8 +237,10 @@ Deck surface y 40, hangar floor y 20, sea y 0. Every position is in `FallowLayou
 
 ## How to test it
 
-1. In Studio open the group experience Co-op Zombie Shooter, Asset Manager > Places >
-   right-click > **Add New Place**, name it `Lobby (dev)`, open it.
+1. In Studio open a lobby place: Nova's ZCS Dev (his test experience), or the start place
+   "Co-op Zombie Shooter" (the real lobby; publish there from `main` only). Never connect
+   this project in a match place (`docs/STUDIO_MCP.md` > Places and publishing). The old
+   `Lobby (dev)` place (125769854992316) is now the real match, Checkpoint Delta.
 2. `rojo serve lobby.project.json --port 34873` (a different port from the match's 34872),
    Rojo plugin > set the port > Connect, Play.
 3. Check: spawn in the hangar in the Pike body, talk to each desk (F), read the board in the

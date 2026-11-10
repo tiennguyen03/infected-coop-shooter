@@ -14,6 +14,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ArmsRoom = require(ReplicatedStorage.Shared.ArmsRoom)
 local Config = require(ReplicatedStorage.Shared.Config)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
+local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
 local Build = require(script.Parent.Build)
 local Layout = require(script.Parent.FallowLayout)
 
@@ -26,10 +27,14 @@ local GREY = Color3.fromRGB(75, 81, 89)
 local OLIVE = Color3.fromRGB(99, 110, 66)
 local WOOD = Color3.fromRGB(110, 90, 60)
 
--- Real gun meshes by weapon id (MeshAssets names). The rest use their silhouette.
-local MESH: { [string]: string } = {
-	service_rifle = "wpn_rifle",
-}
+-- Each gun hangs its own held mesh (its row's Model, the one the match puts in the hands);
+-- the silhouette shows until that mesh loads, or for good if it is not uploaded (grenades).
+local function meshFor(id: string): string?
+	if not WeaponDefinitions.exists(id) then
+		return nil
+	end
+	return WeaponDefinitions.get(id).Model
+end
 
 type Block = { size: Vector3, at: Vector3, color: Color3, ball: boolean? }
 
@@ -184,7 +189,7 @@ function ArmsRack.build(parent: Instance)
 				peg.CanQuery = false
 			end
 			model.Parent = folder
-			local meshName = MESH[id]
+			local meshName = meshFor(id)
 			if meshName and MeshAssets.isUploaded(meshName) then
 				useMesh(model, meshName, frame)
 			end

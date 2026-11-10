@@ -92,8 +92,9 @@ Numbers in `Config.Weapons.<Gun>`, rows in `WeaponDefinitions`. Semi guns fire o
   (100 x 60 is the M16's 270 x 20).
 - Bots fire the rifle slower (`Bots.FireCooldown` 0.30: three bots on sustained fire ~ one
   player), same magazine, infinite reserve.
-- The three sample guns (2026-11-09) are in the dev panel (F1 > WEAPONS); the Arms Room lists
-  them once the loadout work adds them. ADS move: revolver 0.85, sniper 0.4, Goose 0.4.
+- The three sample guns (2026-11-09) are in the Arms Room like every gun: its lists are every
+  row of the slot, ordered by the row's `ArmsOrder` (default 100; the first is the default
+  gun), so a new gun appears by having a row. ADS move: revolver 0.85, sniper 0.4, Goose 0.4.
   Revolver Walker 1 / 1, Brute 5 / 4; sniper every form 1, Brute 2 / 2.
 - Grenades: **Frag** (110 in 10 studs, 0.8 s fuse; one-shots a Hocker, not a Brute) is
   built. Later: **Incendiary** (3 fire pools, `IncendiaryService`) and **Stun** (0.4x slow

@@ -294,6 +294,7 @@ local Config = {
 			HeadshotMultiplier = 3.0, -- EnemyDefinitions may override per form
 			Kick = { Pitch = 0.9, Yaw = 0.3, Recover = 0.12 }, -- degrees up, +/- degrees, seconds
 			Model = "wpn_m16",
+			ArmsOrder = 1, -- Arms Room position in its slot (rack, menu); the first is the default
 		},
 		-- MP5: the best hip-fire; chews Runners, weak on Brutes (Walker 4 / 2, Brute 19 / 15).
 		Smg = {
@@ -314,6 +315,7 @@ local Config = {
 			HeadshotMultiplier = 3.0,
 			Kick = { Pitch = 0.5, Yaw = 0.2, Recover = 0.12 },
 			Model = "wpn_mp5",
+			ArmsOrder = 2,
 			Sound = "smg",
 		},
 		-- M249: a 100-round belt, no reload inside a hold; slow to aim on the move.
@@ -335,6 +337,7 @@ local Config = {
 			HeadshotMultiplier = 3.0,
 			Kick = { Pitch = 1.1, Yaw = 0.5, Recover = 0.12 },
 			Model = "wpn_m249",
+			ArmsOrder = 3,
 			Sound = "lmg",
 		},
 		-- Mossberg 590: point-blank, one decision per pull; one pull drops every form but the
@@ -359,6 +362,7 @@ local Config = {
 			HeadshotMultiplier = 1.5,
 			Kick = { Pitch = 4.0, Yaw = 0.8, Recover = 0.12 },
 			Model = "wpn_mossberg",
+			ArmsOrder = 4,
 			Sound = "shotgun",
 		},
 		-- M110: one-taps Walkers, hits two in a line, poor up close. Ammo reins it in
@@ -383,6 +387,7 @@ local Config = {
 			HeadshotMultiplier = 3.0,
 			Kick = { Pitch = 2.6, Yaw = 0.4, Recover = 0.12 },
 			Model = "wpn_m110",
+			ArmsOrder = 5,
 			Sound = "dmr",
 		},
 		-- M17: the sidearm, backup when the primary runs dry.
@@ -404,6 +409,7 @@ local Config = {
 			HeadshotMultiplier = 3.0,
 			Kick = { Pitch = 1.6, Yaw = 0.3, Recover = 0.12 },
 			Model = "wpn_m17",
+			ArmsOrder = 1,
 			Sound = "pistol",
 		},
 		-- Sample guns (2026-11-09, dev menu; the Arms Room lists them once Nova's loadout work
@@ -430,6 +436,7 @@ local Config = {
 			HeadshotMultiplier = 3.0,
 			Kick = { Pitch = 3.0, Yaw = 0.6, Recover = 0.18 },
 			Model = "wpn_revolver",
+			ArmsOrder = 2,
 			Sound = "revolver",
 		},
 		-- M2010 ESR: one round per form but the Brute (2), through three more in a line. One
@@ -454,6 +461,7 @@ local Config = {
 			HeadshotMultiplier = 3.0,
 			Kick = { Pitch = 5.0, Yaw = 0.8, Recover = 0.25 },
 			Model = "wpn_sniper",
+			ArmsOrder = 6,
 			Sound = "sniper",
 		},
 		-- M3 recoilless ("Goose", the squad's RPG): a visible rocket. A direct hit kills anything
@@ -480,6 +488,7 @@ local Config = {
 			ProjectileSpeed = 220, -- studs/s
 			Explosive = { Radius = 6, Damage = 120, ShakePower = 4 },
 			Model = "wpn_goose",
+			ArmsOrder = 7,
 			Sound = "goose",
 		},
 	},
