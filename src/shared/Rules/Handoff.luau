@@ -100,4 +100,78 @@ function Handoff.result(operation: string, missions: { MissionResult }, standDow
 	}
 end
 
+-- The lobby's side of the trip in: the teleport data for the soldiers aboard one Lantern, in
+-- boarding order (slot 1 first), at most four. `loadouts` by UserId is optional: a member
+-- without one gets the match's default (the lobby issues none yet).
+function Handoff.departure(
+	operation: string,
+	aboard: { number },
+	loadouts: { [number]: Loadout }?
+): { [string]: any }
+	local party: { [string]: any } = {}
+	for index, userId in aboard do
+		if index > 4 then
+			break
+		end
+		local member: { [string]: any } = { slot = index }
+		local loadout = loadouts and loadouts[userId]
+		if loadout then
+			member.loadout = loadout
+		end
+		party[tostring(userId)] = member
+	end
+	return { version = Handoff.VERSION, operation = operation, party = party }
+end
+
+-- A mission's outcome from how its run ended (RunStates result) and whether the Primary was
+-- done: extracted is a win, a wipe after the Primary partial, any other wipe a loss.
+function Handoff.outcome(runResult: string, primaryDone: boolean): string
+	if runResult == "Extracted" then
+		return "win"
+	end
+	return if primaryDone then "partial" else "loss"
+end
+
+-- The lobby's side of the trip home: the Result the match sent, or nil when the data is not
+-- one (no data, another version, a field of the wrong type, an unknown outcome).
+function Handoff.readResult(data: unknown): Result?
+	if typeof(data) ~= "table" then
+		return nil
+	end
+	local raw = data :: { [string]: unknown }
+	if raw.version ~= Handoff.VERSION or typeof(raw.operation) ~= "string" then
+		return nil
+	end
+	if typeof(raw.missions) ~= "table" or typeof(raw.standDown) ~= "boolean" then
+		return nil
+	end
+	local missions: { MissionResult } = {}
+	for _, entry in raw.missions :: { unknown } do
+		if typeof(entry) ~= "table" then
+			return nil
+		end
+		local mission = entry :: { [string]: unknown }
+		local outcome = mission.outcome
+		if
+			typeof(mission.id) ~= "string"
+			or typeof(outcome) ~= "string"
+			or not Handoff.OUTCOMES[outcome]
+			or typeof(mission.secondaries) ~= "number"
+		then
+			return nil
+		end
+		table.insert(missions, {
+			id = mission.id :: string,
+			outcome = outcome,
+			secondaries = mission.secondaries :: number,
+		})
+	end
+	return {
+		version = Handoff.VERSION,
+		operation = raw.operation :: string,
+		missions = missions,
+		standDown = raw.standDown :: boolean,
+	}
+end
+
 return Handoff
