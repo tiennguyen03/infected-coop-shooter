@@ -59,7 +59,9 @@ architecture > visual polish. Smooth on low-end devices is playability, not poli
   Stop, then Play.
 - After every change, all clean: `stylua src tests && selene src && rojo build -o build.rbxlx
   && lune run tests/run`, then `rojo sourcemap default.project.json -o sourcemap.json &&
-  luau-lsp analyze --sourcemap sourcemap.json --defs=globalTypes.d.luau src`. CI runs the same.
+  luau-lsp analyze --sourcemap sourcemap.json --defs=globalTypes.d.luau --ignore "src/lobby/**" src`,
+  plus the lobby place's build and types (top of `.github/workflows/ci.yml`). CI runs the same.
+- The lobby is its own Rojo project: `rojo serve lobby.project.json --port 34873`.
 
 ## Git and docs
 

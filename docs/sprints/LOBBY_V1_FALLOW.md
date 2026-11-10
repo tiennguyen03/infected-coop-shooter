@@ -230,8 +230,8 @@ Deck surface y 40, hangar floor y 20, sea y 0. Every position is in `FallowLayou
 | Server | `src/lobby/server/`: `Main.server`, `FallowLayout`, `Build`, `FallowBuilder`, `FallowArt`, `PikeBody`, `NpcBody`, `DeskService`, `ContainmentBoard`, `PlotService`, `LaunchService`, `LanternBird`, `ArmsRack`, `LoadmasterService` |
 | Client | `src/lobby/client/`: `Main.client`, `LaunchUI`, `DeskDialogUI`, `ArmsRackUI`, `LoadmasterUI`, `HoldStill`, `RadarSpin`, `LanternSpool` |
 | Art | `assets/3d/build/fallow.py` (12 `env_fallow_*` meshes), `lantern.py` (4 `veh_lantern_*`); `MeshAssets` entries; `Config.Lobby.Ship`, `Config.Lobby.Lantern`; attribute `LiftAt`; rule `Rules/ArmsStats` (+ spec), `Config.Lobby.Rack` |
-| Shared | `src/lobby/shared/LobbyDesks`; rules `src/shared/Rules/Manifest`, `Rules/Containment`, `Rules/LaunchData` (+ specs); `Config.Lobby` (incl. `DevMatchPlaceIds`), `Config.Containment`; remotes `Launch` + `Messages.Launch`, `Loadout` (shared with the match); attribute `DeskId` |
-| Match side | `src/server/JoinData.luau` (reads the teleport data), the first-pick seed in `LoadoutService.pickFor`; `LoadoutMenu.mount` options (title, hint, confirm) |
+| Shared | `src/lobby/shared/LobbyDesks`; rules `src/shared/Rules/Manifest`, `Rules/Containment`, `Rules/Handoff` (main's, the teleport data both places share); `Config.Lobby`, `Config.Places`, `Config.Containment`; remotes `Launch` + `Messages.Launch`, `Loadout` (shared with the match); attribute `DeskId` |
+| Match side | `HandoffService` reads the teleport data and `RunManager.receive` applies the signed Loadout (2026-11-09; `JoinData` retired); `LoadoutMenu.mount` options (title, hint, confirm) |
 
 ## How to test it
 
@@ -242,12 +242,10 @@ Deck surface y 40, hangar floor y 20, sea y 0. Every position is in `FallowLayou
 3. Check: spawn in the hangar in the Pike body, talk to each desk (F), read the board in the
    Plot, climb the ramp to the spots, stand in a boarding box (panel + countdown; in Studio it ends with the
    "Teleports don't run in Studio" line).
-4. Dev places (2026-11-09): `Lobby (Dev)` (125769854992316) launches into `Match (Dev)`
-   (70420018035843), not the real match (`Config.Lobby.DevMatchPlaceIds`). Publish this branch
-   into both (match: `rojo serve default.project.json`, lobby: the lobby project) and Tien's
-   match place is never touched. Both sit in the group experience, whose start place is the
-   real match, so the app cannot join `Lobby (Dev)` directly. Nova's own test experience
-   does: its start place ZCS Dev (83558708746036) launches into Match Dev (108949482095254).
+4. Test places: Nova's own test experience, start place ZCS Dev (83558708746036), launches
+   into Match Dev (108949482095254) and that match flies home to ZCS Dev (`Config.Places.Dev`).
+   The group experience opens on the lobby (87556879379942) and launches into Checkpoint
+   Delta (125769854992316): `docs/LOBBY_MATCH_HANDOFF.md`.
 5. Launch for real: publish the place, join it from the Roblox app (with a friend for a
    two-person bird), board a spot. You should land in a match server together.
 

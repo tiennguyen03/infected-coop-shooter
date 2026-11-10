@@ -4,9 +4,10 @@
 -- aboard (Rules/Manifest: boarding order, up to Config.Lobby.Launch.Capacity); the first
 -- aboard starts the countdown and may pick the squad size (LaunchUI); a full bird (all four,
 -- or the size picked) shortens it to Config.Lobby.Launch.FullCountdown. When it runs out, the server reserves
--- a private server of the match place and teleports everyone aboard together, with the spot
--- the party's UserIds and each soldier's signed Loadout (LoadmasterService) as teleport data
--- (Rules/LaunchData; the match re-checks the Loadouts and never trusts it for progress).
+-- one private server of the match place and teleports everyone aboard into it together, with
+-- the shared handoff as teleport data (Rules/Handoff.departure: boarding order, each soldier's
+-- signed Loadout from LoadmasterService, plus the spot; the match re-checks the Loadouts and
+-- never trusts it for progress).
 -- Teleports do not run in Studio: there the spot reports it and resets.
 
 local Players = game:GetService("Players")
@@ -17,7 +18,7 @@ local Workspace = game:GetService("Workspace")
 
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
-local LaunchData = require(ReplicatedStorage.Shared.Rules.LaunchData)
+local Handoff = require(ReplicatedStorage.Shared.Rules.Handoff)
 local Manifest = require(ReplicatedStorage.Shared.Rules.Manifest)
 local Messages = require(ReplicatedStorage.Shared.Messages)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
@@ -189,22 +190,35 @@ local function lift(state: SpotState)
 			"Teleports don't run in Studio. Publish the lobby and launch from the live game."
 		)
 	else
-		local data = LaunchData.encode(
-			state.spot.index,
+		local data = Handoff.departure(
+			Handoff.DEFAULT_OPERATION,
 			state.manifest.aboard,
 			LoadmasterService.loadoutsFor(party)
 		)
-		local matchPlaceId = Config.Lobby.DevMatchPlaceIds[game.PlaceId]
-			or Config.Lobby.MatchPlaceId
+		data.spot = state.spot.index -- extra for the match's logs; readJoin ignores it
+		local matchPlaceId = Config.Places.Dev[game.PlaceId] or Config.Places.Match
 		local options = Instance.new("TeleportOptions")
-		-- A fresh private server of the match per launch. ShouldReserveServer is a documented
-		-- TeleportOptions property the luau-lsp definitions do not list yet, hence the cast.
-		local reserve: any = options
-		reserve.ShouldReserveServer = true
 		options:SetTeleportData(data)
+		-- One private server per lift, reserved once and reused for every retry, so a retry
+		-- never splits the squad across two servers.
+		local code: string? = nil
 		local sent = false
 		local lastError = ""
 		for _ = 0, LAUNCH.Retries do
+			if not code then
+				local ok, reserved = pcall(function()
+					return TeleportService:ReserveServer(matchPlaceId)
+				end)
+				if ok then
+					code = reserved
+					options.ReservedServerAccessCode = reserved
+				else
+					lastError = tostring(reserved)
+					warn(`[LaunchService] spot {state.spot.index} reserve failed: {lastError}`)
+					task.wait(LAUNCH.RetryDelay)
+					continue
+				end
+			end
 			-- Only those still in the server go (a soldier who left mid-countdown is dropped).
 			local going: { Player } = {}
 			for _, player in party do

@@ -167,10 +167,17 @@ local Config = {
 	},
 
 	-- The experience's places (docs/LOBBY_MATCH_HANDOFF.md). Both the lobby and the match read
-	-- them here. Lobby 0 = not published yet: no trip home, READY restarts in the match.
+	-- them here. The lobby is the start place (2026-11-09: the places' contents were swapped).
+	-- Lobby 0 would mean no trip home: READY restarts in the match.
 	Places = {
-		Match = 87556879379942, -- "Co-op Zombie Shooter"
-		Lobby = 0,
+		Lobby = 87556879379942, -- "Co-op Zombie Shooter", the start place: the Fallow
+		Match = 125769854992316, -- "Checkpoint Delta"
+		-- Test pairs, lobby place -> match place: a launch from one of these lobbies goes to its
+		-- own match and that match flies home to it, so testing never needs the real places
+		-- republished (Nova's own test experience).
+		Dev = {
+			[83558708746036] = 108949482095254, -- ZCS Dev -> Match Dev
+		} :: { [number]: number },
 	},
 
 	-- The trip between the lobby and the match (HandoffService).
@@ -1538,15 +1545,7 @@ local Config = {
 
 	-- The lobby place: the Fallow (docs/sprints/LOBBY_V1_FALLOW.md, LORE.md > The Fallow).
 	Lobby = {
-		-- The match place a squad launches into (the group experience's start place today).
-		MatchPlaceId = 87556879379942,
-		-- Dev pairs: a launch from one of these lobby places goes to its own match place instead
-		-- (Nova's test places, 2026-11-09), so testing never needs the real match place
-		-- republished. Any other lobby uses MatchPlaceId.
-		DevMatchPlaceIds = {
-			[83558708746036] = 108949482095254, -- Nova's own test experience: ZCS Dev -> Match Dev
-			[125769854992316] = 70420018035843, -- the group experience: Lobby (Dev) -> Match (Dev)
-		} :: { [number]: number },
+		-- The match a squad launches into: Config.Places (Match, or a Dev pair's).
 		-- The Loadmaster keeps each soldier's signed Loadout between visits (LoadmasterService,
 		-- Rules/LoadoutSave). A stand-in for the F9 save service.
 		Save = {

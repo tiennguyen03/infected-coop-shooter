@@ -22,6 +22,13 @@ one file (`props.py`, `city.py`, `gore.py`, the Infected roster in `build_assets
 new bodies in live Blender first (below) so the owner can direct the shape before it is
 ported into a build file.
 
+**Roblox mirrors an imported mesh in X** about its bounds centre (found 2026-11-09 on the
+Fallow): the `Fallow` and `Vehicles` collections export pre-mirrored (`MIRROR_X_COLLECTIONS`;
+previews and offsets unchanged). An asymmetric mesh in another collection needs the same
+before upload. The lobby's art: `build/fallow.py` (12 `env_fallow_*`, the ship) and
+`build/lantern.py` (4 `veh_lantern_*`, the lift bird); ids in `ASSET_IDS.md`, budgets in
+`docs/STYLES.md`.
+
 ## Rebuild everything
 
 ```bash

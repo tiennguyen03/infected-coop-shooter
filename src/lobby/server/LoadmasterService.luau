@@ -1,7 +1,7 @@
 --!strict
 -- The Loadmaster's book (docs/sprints/LOBBY_V1_FALLOW.md > Loadmaster and Loadout): each
 -- soldier signs for a Loadout at his desk (LoadmasterUI, the Loadout remote) and it rides
--- the Lantern into the match as teleport data (LaunchService, Rules/LaunchData). The server
+-- the Lantern into the match as teleport data (LaunchService, Rules/Handoff). The server
 -- checks every request with the same rules and catalog the match uses (Rules/Loadout,
 -- ArmsRoom). Prototype: everything in the catalog may be signed for; what a soldier owns
 -- (merits, the record) waits for the save service (F9).
