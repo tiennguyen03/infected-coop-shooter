@@ -275,7 +275,8 @@ called **Loadout**. Lines by the lore developer (merits, the record, `LobbyDesks
   as `Loadout.Signed`, so the screen opens on it, and it rides the Lantern even without a visit
   to the desk), writes spaced 6 s and flushed on leave/shutdown (`Config.Lobby.Save`). A failed
   or Studio-blocked DataStore means the default Loadout and one log line; Studio needs Game
-  Settings > Security > Enable Studio Access to API Services to test it. A stand-in for F9. `LaunchService` sends them as teleport data (`Rules/LaunchData`:
+  Settings > Security > Enable Studio Access to API Services to test it. Verified live by Nova
+  2026-11-10 (a signed Loadout came back after leaving and rejoining). A stand-in for F9. `LaunchService` sends them as teleport data (`Rules/LaunchData`:
   spot, party, loadouts keyed by UserId string).
 - **Match** (`JoinData`, the one reader of teleport data): `LoadoutService` seeds a soldier's
   first pick from it, re-validated against the match catalog; no data or a bad Loadout falls

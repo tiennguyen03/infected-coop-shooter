@@ -244,7 +244,7 @@ Read in this order:
   the rack is for buying with merits once F9 exists. The first soldier on a Lantern spot
   picks the squad size (SOLO-FULL); once that many are aboard the bird lifts in 3 s. The
   rotor blur builds over the last 6 s (blades stay visible). Signed Loadouts are saved between
-  visits (DataStore `LoadmasterLoadouts`, a stand-in for F9; test live or with Studio API access). Test launches go `Lobby (Dev)` ->
+  visits (DataStore `LoadmasterLoadouts`, a stand-in for F9; verified live 2026-11-10). Test launches go `Lobby (Dev)` ->
   `Match (Dev)` (`Config.Lobby.DevMatchPlaceIds`); live tests run in Nova's own test experience
   (start place ZCS Dev 83558708746036 -> Match Dev 108949482095254). Next: re-check the loop, body, ship (gaps, bow patches, radar,
   balcony) and the birds' spool and lift in the `Lobby (dev)` place, then a published launch
