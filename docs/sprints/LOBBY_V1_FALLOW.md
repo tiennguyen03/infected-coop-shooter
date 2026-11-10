@@ -73,7 +73,7 @@ match place.
   every 60 s and wipes and rewrites a changed number. **The numbers are placeholders**
   (`Config.Containment.Districts`: Delta 25, the rest 0) until the save service.
 
-## Ship art (2026-11-09: built, not uploaded, not playtested)
+## Ship art (2026-11-09: built; uploaded and seen in a Studio playtest)
 
 The owner's "ship upgrade": the art director's build sheet for the exterior, blocked out live
 in Blender with the owner, then ported to `assets/3d/build/fallow.py`. Why v1 read as a barge:
@@ -119,7 +119,7 @@ unchanged.
   `fallow_built_quarter.png`, `fallow_built_portquarter.png`, `fallow_built_deck.png` (the
   built meshes assembled with the bays and radar), and one `env_fallow_*.png` per mesh.
 
-## Lantern (2026-11-09: built, not uploaded, not playtested)
+## Lantern (2026-11-09: built; uploaded and seen in a Studio playtest)
 
 The lift bird on each spot, from the lore developer's canon (docs/LORE.md > Lantern, owner
 approved) and the art director's sheet, in `assets/3d/build/lantern.py` (collection
@@ -148,8 +148,9 @@ open door facing the boarding box; no layout change.
   the lamp, spools the rotor to 40 rpm over the first two thirds of the countdown, swaps the
   blades for the blur discs for the last 3 s and lifts the bird 4 studs, nose 5 degrees down,
   over the last 1.5 s; cleared, everything returns. Tuning in `Config.Lobby.Lantern`.
-- **Until the upload** the v1 block bird stands on each spot (it lifts on the countdown too,
-  without a spinning rotor or lamp). The four meshes swap in together or not at all.
+- **Uploaded 2026-11-09** (ids in `assets/3d/ASSET_IDS.md`). If a mesh fails to load, the v1 block
+  bird stays on the spot (it lifts on the countdown too, without a spinning rotor or lamp). The
+  four meshes swap in together or not at all.
 - **Previews**: `lantern_before.png`, `lantern_built_door.png`, `lantern_built_profile.png`,
   `lantern_built_board.png` (from the boarding box), one `veh_lantern_*.png` per mesh.
 
@@ -237,10 +238,9 @@ Deck surface y 40, hangar floor y 20, sea y 0. Every position is in `FallowLayou
 - **Back to the Fallow at run end** (decision 7: once meta progression exists).
 - **Real board numbers** and **desk trades** wait for the save service (F9) and a name for
   the record currency (lore + systems designer).
-- **Ship and Lantern art: upload and playtest** (needs Roblox Studio with its MCP): upload the
-  12 `assets/3d/export/env_fallow_*.fbx` and the 4 `veh_lantern_*.fbx` as Models, read each
-  MeshId, paste them into their `MeshAssets` entries and record them in
-  `assets/3d/ASSET_IDS.md`, then check in the `Lobby (dev)` place: the hull hides its blocks
+- **Ship and Lantern art: full check** (uploaded and wired 2026-11-09; a first playtest showed
+  28 ship meshes placed and all four birds on their meshes with rotors and numbers). Still to
+  check in the `Lobby (dev)` place: the hull hides its blocks
   with no gaps, the bow patches lie flat, the radar turns, the balcony is walkable and walled,
   no water shows inside the bow; each bird shows its number, the crew chief stands in the door,
   and boarding a spot lights the lamp, spools, blurs and lifts it (and it settles back when the

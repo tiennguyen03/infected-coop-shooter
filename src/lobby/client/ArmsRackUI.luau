@@ -350,15 +350,12 @@ local function statRow(row: CardRow, order_: number)
 	frame.Parent = cardRows
 	local label = HudTheme.label(frame, { size = 15, text = row.label })
 	label.Position = UDim2.fromOffset(0, 0)
-	local value = HudTheme.label(
-		frame,
-		{
-			size = 15,
-			text = row.text,
-			color = HudTheme.Color.TextDim,
-			align = Enum.TextXAlignment.Right,
-		}
-	)
+	local value = HudTheme.label(frame, {
+		size = 15,
+		text = row.text,
+		color = HudTheme.Color.TextDim,
+		align = Enum.TextXAlignment.Right,
+	})
 	value.AnchorPoint = Vector2.new(1, 0)
 	value.Position = UDim2.fromScale(1, 0)
 	local fraction = row.fraction

@@ -110,17 +110,11 @@ end
 
 local function buildSilhouette(model: Model, id: string, frame: CFrame)
 	for index, block in SILHOUETTES[id] or SILHOUETTES.service_rifle do
-		local part = Build.part(
-			model,
-			"Piece",
-			block.size,
-			frame * CFrame.new(block.at),
-			block.color,
-			{
+		local part =
+			Build.part(model, "Piece", block.size, frame * CFrame.new(block.at), block.color, {
 				material = Enum.Material.SmoothPlastic,
 				shape = if block.ball then Enum.PartType.Ball else nil,
-			}
-		)
+			})
 		quiet(part)
 		if index == 1 then
 			model.PrimaryPart = part

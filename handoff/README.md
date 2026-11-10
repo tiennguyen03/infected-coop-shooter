@@ -234,13 +234,12 @@ Read in this order:
   default walking sound muted), a Terrain-water sea out to the haze and a Terrain coast (beach, hills)
   burning on the shore (fire and smoke particles), four Lantern spots that teleport a squad into a reserved match server, four
   hangar desks (lines only, no trades), the Plot's Containment Board on placeholder numbers.
-  **Ship art and Lantern built 2026-11-09, not uploaded** (sprint doc > Ship art, Lantern): 12
-  `env_fallow_*` and 4 `veh_lantern_*` meshes (`assets/3d/build/fallow.py`, `lantern.py`; FBX in
-  `assets/3d/export/`) that `FallowArt` / `LanternBird` lay over the blocks once their ids are
-  in `MeshAssets`; the walkable lift balcony, deck-edge lines, deck-end HRD and the bird's
+  **Ship art and Lantern uploaded 2026-11-09** (sprint doc > Ship art, Lantern; ids in
+  `assets/3d/ASSET_IDS.md`): 12 `env_fallow_*` and 4 `veh_lantern_*` meshes that `FallowArt` /
+  `LanternBird` lay over the blocks, seen placed in a Studio playtest; the walkable lift balcony, deck-edge lines, deck-end HRD and the bird's
   lift on countdown are live now. **Arms Room counter built 2026-11-09, not playtested** (sprint
-  doc > Arms Room counter): talk choices, the rack behind the cage, hover, inspect card, arrows. Next: upload the 16 FBX in Studio and paste the ids, then
-  re-check the loop, body, ship and birds in the `Lobby (dev)` place, then a published launch
+  doc > Arms Room counter): talk choices, the rack behind the cage, hover, inspect card, arrows. Next: re-check the loop, body, ship (gaps, bow patches, radar,
+  balcony) and the birds' spool and lift in the `Lobby (dev)` place, then a published launch
   test.
 - **Satisfying pass built 2026-11-09 (`docs/superpowers/plans/2026-11-09-satisfying-pass.md`).**
   Camera kick per gun, blast shake per grenade/call-in (`ShakePower`), limp bodies thrown by
