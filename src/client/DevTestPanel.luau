@@ -127,6 +127,7 @@ local function sections(): { Section }
 			title = "RUN",
 			actions = {
 				{ label = "Restart run", send = cmd("RestartRun"), hotkey = Enum.KeyCode.F5 },
+				{ label = "Go to the lobby (live)", send = cmd("ToLobby") },
 				{ label = "Hold zone now", send = cmd("ActivateObjective") },
 				{ label = "Complete hold", send = cmd("ForceObjectiveComplete") },
 				{ label = "Extract (win)", send = cmd("ForceMissionSuccess") },

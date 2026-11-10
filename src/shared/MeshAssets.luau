@@ -67,9 +67,8 @@ type MeshDef = {
 }
 
 -- `size` is the in-game size in studs (the mesh is scaled to it). Blender sizes are in
--- assets/3d/README.md; rifle is 0.65x and drone 0.8x of the Blender size.
+-- assets/3d/README.md; the rifle is 0.65x of the Blender size.
 local MESHES: { [string]: MeshDef } = {
-	pick_xp_orb = { meshId = "rbxassetid://95196197176639", size = Vector3.new(1, 1, 1) },
 	prop_ammo_crate = {
 		meshId = "rbxassetid://70908704628683",
 		size = Vector3.new(2.86, 1.68, 1.92),
@@ -77,11 +76,6 @@ local MESHES: { [string]: MeshDef } = {
 	prop_repulsor_mine = {
 		meshId = "rbxassetid://122106813224951",
 		size = Vector3.new(1.9, 0.97, 2),
-	},
-	prop_drone = { meshId = "rbxassetid://132929388031760", size = Vector3.new(1.94, 0.43, 1.94) },
-	prop_drone_beacon = {
-		meshId = "rbxassetid://117405323536844",
-		size = Vector3.new(1.56, 3.21, 1.36),
 	},
 	-- Held guns: designed around the grip (pivot), barrel along -Z; `offset` = bounds centre
 	-- from the grip, `muzzle` = barrel tip from the grip. A gun row names its mesh in
@@ -159,11 +153,6 @@ local MESHES: { [string]: MeshDef } = {
 		size = Vector3.new(0.14, 0.76, 0.67),
 		offset = Vector3.new(0, 0.067, -0.148),
 		muzzle = Vector3.new(0, 0.32, -0.485),
-	},
-	-- 0.7x of the Blender size (tail included in the length).
-	prop_plague_rat = {
-		meshId = "rbxassetid://102065990394982",
-		size = Vector3.new(0.47, 0.52, 1.88),
 	},
 	-- Environment (assets/3d Environment collection, built to the 5-stud character; sizes are
 	-- the Blender dims in Roblox axis order). `solid` = Box obstacle; see ArenaService.

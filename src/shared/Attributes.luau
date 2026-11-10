@@ -14,6 +14,15 @@ local Attributes = table.freeze({
 	ReadyCount = "ReadyCount",
 	ReadyNeeded = "ReadyNeeded",
 	ReadyUpEndsAt = "ReadyUpEndsAt",
+	-- workspace: the lobby trip (HandoffService, RunManager): staging waits for the squad the
+	-- lobby sent; at run end READY means "back to the Carrier" and the squad flies home
+	SquadExpected = "SquadExpected",
+	SquadArrived = "SquadArrived",
+	StagingEndsAt = "StagingEndsAt",
+	ReturnsHome = "ReturnsHome",
+	Homebound = "Homebound",
+	-- ServerStorage, Studio only: teleport data as JSON standing in for the lobby
+	MockTeleportData = "MockTeleportData",
 	ObjectiveActive = "ObjectiveActive",
 	ObjectiveCompleted = "ObjectiveCompleted",
 	ExtractionActive = "ExtractionActive",
