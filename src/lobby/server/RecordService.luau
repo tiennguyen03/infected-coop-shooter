@@ -6,17 +6,18 @@
 -- remote. Buying is checked here with Rules/Record against each gun's own Config price
 -- (WeaponDefinitions Price: 0 = issued free, nil = not for sale). The Loadmaster only signs
 -- for a Loadout whose guns are on the record (`allows`). Merits are only granted at the start
--- for now: earning them from runs is open (the match would save what a run pays).
+-- for now: earning them from runs is open (the match would save what a run pays). Grenades
+-- and call-ins are bought the same way (KitPrices: each item's own row; call-ins at the desk
+-- that sells them, DeskShop).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local ArmsRoom = require(ReplicatedStorage.Shared.ArmsRoom)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Messages = require(ReplicatedStorage.Shared.Messages)
 local Record = require(ReplicatedStorage.Shared.Rules.Record)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
-local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
+local KitPrices = require(ReplicatedStorage.Shared.KitPrices)
 local SaveSlot = require(script.Parent.SaveSlot)
 
 local RecordService = {}
@@ -28,19 +29,8 @@ local records: { [Player]: Record.Record } = {}
 local remote: RemoteEvent
 local slot: SaveSlot.Slot
 
--- The guns on sale (the catalog's primaries and sidearms) and their prices.
-local guns: { [string]: boolean } = {}
-do
-	local catalog = ArmsRoom.catalog()
-	for _, list in { catalog.primaries, catalog.secondaries } do
-		for _, id in list do
-			guns[id] = true
-		end
-	end
-end
-
 function RecordService.priceOf(id: string): number?
-	return if guns[id] then WeaponDefinitions.get(id).Price else nil
+	return KitPrices.of(id)
 end
 
 local function send(player: Player, record: Record.Record)

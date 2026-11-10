@@ -18,6 +18,8 @@ local Loadout = require(ReplicatedStorage.Shared.Rules.Loadout)
 local Messages = require(ReplicatedStorage.Shared.Messages)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local LobbyDesks = require(ReplicatedStorage.Lobby.LobbyDesks)
+local KitPrices = require(ReplicatedStorage.Shared.KitPrices)
+local DeskShop = require(script.Parent.DeskShop)
 local HoldStill = require(script.Parent.HoldStill)
 local HudTheme = require(script.Parent.HudTheme)
 local LoadoutMenu = require(script.Parent.LoadoutMenu)
@@ -142,6 +144,7 @@ end
 
 local function closeTalk()
 	ContextActionService:UnbindAction(ACTION_CHOOSE)
+	DeskShop.hide()
 	if mode == "talk" then
 		mode = "closed"
 		talk.Visible = false
@@ -260,6 +263,12 @@ function choose(index: number)
 		openLoadout()
 	elseif index == 2 and kit then
 		showTalk(kit.askAnswer)
+		-- What Lantern kicks is sold here (the call-in rows' `Desk` = "loadmaster").
+		local sells = KitPrices.soldAt("loadmaster")
+		if #sells > 0 and desk then
+			DeskShop.show(desk.title, sells)
+			talkCloseAt = math.huge -- stays up while you shop; walking off still closes it
+		end
 	elseif index == 3 then
 		closeTalk()
 	end

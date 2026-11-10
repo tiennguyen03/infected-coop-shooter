@@ -1,10 +1,11 @@
 --!strict
 -- A soldier's record (docs/LORE.md > The Fallow: "the kit signed to their name"): the merits
--- they hold and the guns bought onto it at the Quartermaster's rack (RecordService,
--- ArmsRackUI). Pure, unit-tested with Lune (tests/Record.spec.luau). Prices come from each
--- gun's own Config row through `priceOf` (0 = issued free and always on the record, nil = not
--- for sale). The saved form carries a version from day one; a missing, junk or other-version
--- save reads as a new record with the starting merits.
+-- they hold and the kit bought onto it: guns and grenades at the Quartermaster's rack,
+-- call-ins at the desk that issues them (RecordService, ArmsRackUI, DeskShop). Pure,
+-- unit-tested with Lune (tests/Record.spec.luau). Prices come from each item's own Config row
+-- through `priceOf` (KitPrices: 0 = issued free and always on the record, nil = not for sale).
+-- The saved form carries a version from day one; a missing, junk or other-version save reads
+-- as a new record with the starting merits.
 
 local Record = {}
 
@@ -12,7 +13,7 @@ Record.VERSION = 1
 
 export type Record = {
 	merits: number,
-	owned: { string }, -- bought guns (free ones are never listed)
+	owned: { string }, -- bought kit ids: guns, grenades, call-ins (free ones are never listed)
 }
 
 export type PriceOf = (id: string) -> number?
@@ -23,8 +24,7 @@ export type Saved = {
 	owned: { string },
 }
 
--- Only the guns are bought; grenades and call-ins come with the job.
-export type Loadout = { primary: string, secondary: string }
+export type Loadout = { primary: string, secondary: string, grenade: string, callIns: { string } }
 
 function Record.new(startMerits: number): Record
 	return { merits = startMerits, owned = {} }
@@ -55,9 +55,14 @@ function Record.buy(record: Record, id: string, priceOf: PriceOf): (Record, bool
 	return { merits = record.merits - price, owned = owned }, true, nil
 end
 
--- Whether every gun in `loadout` is on the record: (true) or (false, "not on record").
+-- Whether everything in `loadout` (both guns, the grenade, every call-in) is on the record:
+-- (true) or (false, "not on record").
 function Record.allows(record: Record, loadout: Loadout, priceOf: PriceOf): (boolean, string?)
-	for _, id in { loadout.primary, loadout.secondary } do
+	local ids = { loadout.primary, loadout.secondary, loadout.grenade }
+	for _, id in loadout.callIns do
+		table.insert(ids, id)
+	end
+	for _, id in ids do
 		if not Record.owns(record, id, priceOf) then
 			return false, "not on record"
 		end

@@ -1,16 +1,16 @@
 --!strict
 -- This soldier's record on the client (RecordService sends it on the `Record` remote): the
--- merits held and the guns bought, for the Quartermaster's rack (ArmsRackUI: price, BUY) and
--- the Loadmaster's Loadout (LoadmasterUI: guns not on the record are locked). Display only;
+-- merits held and the kit bought, for the Quartermaster's rack (ArmsRackUI: price, BUY), the
+-- desks that sell call-ins (DeskShop) and the Loadmaster's Loadout (LoadmasterUI: kit not on
+-- the record is locked). Display only;
 -- the server decides every buy and every signature.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local ArmsRoom = require(ReplicatedStorage.Shared.ArmsRoom)
 local Messages = require(ReplicatedStorage.Shared.Messages)
 local Record = require(ReplicatedStorage.Shared.Rules.Record)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
-local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
+local KitPrices = require(ReplicatedStorage.Shared.KitPrices)
 
 local RecordClient = {}
 
@@ -18,24 +18,14 @@ local record: Record.Record? = nil -- nil until the server has sent it
 local changed = Instance.new("BindableEvent")
 local refused = Instance.new("BindableEvent")
 
-local guns: { [string]: boolean } = {}
-do
-	local catalog = ArmsRoom.catalog()
-	for _, list in { catalog.primaries, catalog.secondaries } do
-		for _, id in list do
-			guns[id] = true
-		end
-	end
-end
-
 -- Fires () when the record arrives or changes.
 RecordClient.Changed = changed.Event
 -- Fires (gunId, reason) when the server refuses a buy.
 RecordClient.Refused = refused.Event
 
--- The gun's price, or nil when it is not for sale (grenades, anything off the catalog).
+-- The item's price (gun, grenade or call-in), or nil when it is not for sale.
 function RecordClient.priceOf(id: string): number?
-	return if guns[id] then WeaponDefinitions.get(id).Price else nil
+	return KitPrices.of(id)
 end
 
 function RecordClient.loaded(): boolean
@@ -46,11 +36,8 @@ function RecordClient.merits(): number
 	return if record then record.merits else 0
 end
 
--- On the record: bought, issued free, or not a gun at all (grenades are never locked).
+-- On the record: bought or issued free.
 function RecordClient.owns(id: string): boolean
-	if not guns[id] then
-		return true
-	end
 	return record ~= nil and Record.owns(record, id, RecordClient.priceOf)
 end
 

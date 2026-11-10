@@ -8,13 +8,23 @@ local PRICES: { [string]: number } = {
 	pistol = 0,
 	smg = 300,
 	dmr = 500,
+	frag = 0,
+	incendiary = 200,
+	hammer = 0,
+	tripline = 0,
+	doorman = 400,
 }
 local function priceOf(id: string): number?
 	return PRICES[id]
 end
 
-local function loadout(primary: string, secondary: string)
-	return { primary = primary, secondary = secondary, grenade = "frag", callIns = { "hammer" } }
+local function loadout(primary: string, secondary: string, grenade: string?, callIns: { string }?)
+	return {
+		primary = primary,
+		secondary = secondary,
+		grenade = grenade or "frag",
+		callIns = callIns or { "hammer", "tripline" },
+	}
 end
 
 return {
@@ -78,6 +88,38 @@ return {
 		expect.equal(reason, "not on record", "reason")
 		r = Record.buy(r, "smg", priceOf)
 		expect.equal(Record.allows(r, loadout("smg", "pistol"), priceOf), true, "after buying")
+	end,
+	["a Loadout is allowed only with its grenade and every call-in on the record"] = function()
+		local r = Record.new(1000)
+		local grenadeOk =
+			Record.allows(r, loadout("service_rifle", "pistol", "incendiary"), priceOf)
+		expect.equal(grenadeOk, false, "unbought grenade")
+		local callInOk = Record.allows(
+			r,
+			loadout("service_rifle", "pistol", nil, { "hammer", "doorman" }),
+			priceOf
+		)
+		expect.equal(callInOk, false, "unbought call-in")
+		r = Record.buy(r, "doorman", priceOf)
+		r = Record.buy(r, "incendiary", priceOf)
+		expect.equal(
+			Record.allows(
+				r,
+				loadout("service_rifle", "pistol", "incendiary", { "hammer", "doorman" }),
+				priceOf
+			),
+			true,
+			"after buying both"
+		)
+		expect.equal(r.merits, 400, "both paid for")
+	end,
+	["call-ins and grenades are bought like guns"] = function()
+		local r, ok = Record.buy(Record.new(500), "doorman", priceOf)
+		expect.equal(ok, true, "call-in bought")
+		expect.equal(r.merits, 100, "merits left")
+		local _, free, reason = Record.buy(r, "frag", priceOf)
+		expect.equal(free, false, "the free grenade")
+		expect.equal(reason, "owned", "issued free")
 	end,
 	["a saved record reads back the same"] = function()
 		local r = Record.buy(Record.new(1000), "smg", priceOf)

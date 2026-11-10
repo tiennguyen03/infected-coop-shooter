@@ -179,12 +179,21 @@ The owner's ask (after a GTA gun counter): give the Quartermaster a use as the p
 The rack is where guns are **bought** (merits, onto the soldier's record; owner and Tien,
 2026-11-09), not equipped: equipping is the Loadmaster's (below).
 
-**Buying at the Quartermaster (2026-11-10, Studio-verified):**
-- **The record** (`Rules/Record` + spec): merits and the guns bought. A new soldier starts with
-  `Config.Lobby.Save.StartMerits` (1000); prices sit on each gun's own row
-  (`Config.Weapons.<Gun>.Price` via `WeaponDefinitions`): Service Rifle and Pistol 0 (issued
-  free), SMG 300, Shotgun 400, DMR 500, LMG 600; a gun without a Price is not for sale.
-  Grenades and call-ins are not bought.
+**Buying on the Carrier (2026-11-10; guns Studio-verified, grenades and call-ins built):**
+- **The record** (`Rules/Record` + spec): merits and the kit bought: guns, grenades and
+  call-ins (Nova: merits, all three buyable). A new soldier starts with
+  `Config.Lobby.Save.StartMerits` (1000). Prices sit on each item's own row, read through
+  `KitPrices`: guns `Config.Weapons.<Gun>.Price` (Service Rifle and Pistol 0, issued free; SMG
+  300, Revolver 350, Shotgun 400, DMR 500, LMG 600, Sniper 700, Goose 900), grenades
+  `Config.Grenade.<Name>.Price` (Frag 0), call-ins `Config.CallIns.<Name>.Price` (Hammer,
+  Anvil, Shrike, Tripline 0; Concertina 250, Speedball 300, Aid Bag 300, Doorman 400). No
+  Price = not for sale. A Loadout is allowed only when both guns, the grenade and every
+  call-in are on the record.
+- **Where:** guns and grenades on the Quartermaster's rack; call-ins at the desk on their row
+  (`Desk`): Fires (Hammer, Anvil, Shrike), the Engineers (Doorman, Tripline, Concertina), the
+  Loadmaster (Speedball, Aid Bag, under "What do you kick?"). `DeskShop` is the panel: each
+  call-in with what it is, ON YOUR RECORD or BUY · N MERITS (dim "(SHORT)"), the merits, a
+  refusal note; Fires and the Engineers stay up while you stand at the desk.
 - **Server** (`RecordService`): loads the record on join (`SaveSlot`, DataStore
   `PikeRecords`, key `r_<UserId>`), sends it on the `Record` remote (`Messages.Record`), checks
   each BUY with the rule and saves. `SaveSlot` is the shared save helper (spaced writes, flush
@@ -194,10 +203,11 @@ The rack is where guns are **bought** (merits, onto the soldier's record; owner 
   YOUR RECORD, or NOT ON YOUR RECORD with the price and BUY · N MERITS (dim "(SHORT)" when
   short). He answers with the lore developer's lines ("Signed. It's on your record..." /
   "You're short. Bring me merits.").
-- **The Loadmaster** signs only for guns on the record: the Loadout locks the rest (dim, the
-  price in yellow, cannot be picked; `LoadoutMenu.mount` option `locked`, `handle.refresh`),
-  the server refuses a forged one ("not on record"), and a saved Loadout naming a gun no longer
-  on the record falls back to the default.
+- **The Loadmaster** signs only for kit on the record: the Loadout locks the rest (guns,
+  grenades, call-ins: dim, the price in yellow, cannot be picked, SIGN FOR IT greyed;
+  `LoadoutMenu.mount` option `locked`, `handle.refresh`), the server refuses a forged one ("not
+  on record"), and a saved Loadout naming anything no longer on the record falls back to the
+  default.
 - **Not built:** earning merits (only the starting grant): a run's pay is the systems
   designer's call and the match would save it (the record is per UserId in the same
   experience). The match's B Arms Room still offers every gun.

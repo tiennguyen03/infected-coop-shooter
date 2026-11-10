@@ -442,6 +442,7 @@ local Config = {
 			HeadshotMultiplier = 3.0,
 			Kick = { Pitch = 3.0, Yaw = 0.6, Recover = 0.18 },
 			Model = "wpn_revolver",
+			Price = 350, -- merits at the Quartermaster's rack (Rules/Record)
 			ArmsOrder = 2,
 			Sound = "revolver",
 		},
@@ -467,6 +468,7 @@ local Config = {
 			HeadshotMultiplier = 3.0,
 			Kick = { Pitch = 5.0, Yaw = 0.8, Recover = 0.25 },
 			Model = "wpn_sniper",
+			Price = 700, -- merits at the Quartermaster's rack (Rules/Record)
 			ArmsOrder = 6,
 			Sound = "sniper",
 		},
@@ -494,6 +496,7 @@ local Config = {
 			ProjectileSpeed = 220, -- studs/s
 			Explosive = { Radius = 6, Damage = 120, ShakePower = 4 },
 			Model = "wpn_goose",
+			Price = 900, -- merits at the Quartermaster's rack (Rules/Record)
 			ArmsOrder = 7,
 			Sound = "goose",
 		},
@@ -507,6 +510,7 @@ local Config = {
 		ThrowGap = 0.8, -- seconds between two throws
 		-- M67 frag: one-shots a Hocker, not a Brute. Thrown like the flare (ThrowUtil).
 		Frag = {
+			Price = 0, -- merits on the Carrier (Rules/Record, KitPrices); issued free
 			ThrowDistance = 35, -- studs
 			FuseTime = 0.8, -- seconds after it lands
 			Radius = 10, -- studs
@@ -812,6 +816,8 @@ local Config = {
 		-- Delay seconds after the throw, then one every ShellInterval, each Scatter studs off
 		-- the mark at most. Walk It In steps them Config.Upgrades.WalkingBarrage.Step apart.
 		Hammer = {
+			Price = 0, -- merits on the Carrier (Rules/Record, KitPrices); issued free
+			Desk = "fires", -- the Carrier desk that sells it (DeskShop)
 			Charges = 1,
 			Cooldown = 120,
 			ThrowDistance = 35,
@@ -826,6 +832,8 @@ local Config = {
 		},
 		-- Anvil (105 mm battery, AirStrikeService): one heavy shell Delay seconds after the throw.
 		Anvil = {
+			Price = 0, -- merits on the Carrier (Rules/Record, KitPrices); issued free
+			Desk = "fires", -- the Carrier desk that sells it (DeskShop)
 			Charges = 1,
 			Cooldown = 180,
 			ThrowDistance = 35,
@@ -842,6 +850,8 @@ local Config = {
 		-- Shrike (helicopter gun run, AirStrikeService): Delay seconds after the throw, Bursts
 		-- impacts centred on the mark, Step studs apart along the throw, BurstInterval apart.
 		Shrike = {
+			Price = 0, -- merits on the Carrier (Rules/Record, KitPrices); issued free
+			Desk = "fires", -- the Carrier desk that sells it (DeskShop)
 			Charges = 1,
 			Cooldown = 150,
 			ThrowDistance = 35,
@@ -865,6 +875,8 @@ local Config = {
 		-- Doorman (tripod sentry MG, SentryService): stands where it lands for Duration; every
 		-- FireInterval it shoots the nearest Infected in Range it can see.
 		Doorman = {
+			Price = 400, -- merits on the Carrier (Rules/Record, KitPrices)
+			Desk = "engineers", -- the Carrier desk that sells it (DeskShop)
 			Charges = 1,
 			Cooldown = 150,
 			ThrowDistance = 25,
@@ -878,6 +890,8 @@ local Config = {
 		-- Tripline (Mines): thrown; Mines land on an arc bulging away from the thrower and blow
 		-- when an Infected steps within TriggerRadius.
 		Tripline = {
+			Price = 0, -- merits on the Carrier (Rules/Record, KitPrices); issued free
+			Desk = "engineers", -- the Carrier desk that sells it (DeskShop)
 			Charges = 2,
 			Cooldown = 60,
 			ThrowDistance = 35,
@@ -896,6 +910,8 @@ local Config = {
 		-- centred where it lands, for Duration. Infected inside walk at SlowFactor and take
 		-- DamagePerSecond (dealt every TickInterval).
 		Concertina = {
+			Price = 250, -- merits on the Carrier (Rules/Record, KitPrices)
+			Desk = "engineers", -- the Carrier desk that sells it (DeskShop)
 			Charges = 2,
 			Cooldown = 90,
 			ThrowDistance = 30,
@@ -912,6 +928,8 @@ local Config = {
 		-- living player walking within Radius is re-armed (full magazine and reserve), Visits
 		-- times in all. A player re-arms again only after stepping out of the radius.
 		Speedball = {
+			Price = 300, -- merits on the Carrier (Rules/Record, KitPrices)
+			Desk = "loadmaster", -- the Carrier desk that sells it (DeskShop)
 			Charges = 1,
 			Cooldown = 180,
 			ThrowDistance = 25,
@@ -923,6 +941,8 @@ local Config = {
 		-- Aid Bag (medical drop, SupplyDropService): every soldier within Radius, once each:
 		-- full heal, stims refilled, +Plate shield (Config.Crates.ShieldCap still caps it).
 		AidBag = {
+			Price = 300, -- merits on the Carrier (Rules/Record, KitPrices)
+			Desk = "loadmaster", -- the Carrier desk that sells it (DeskShop)
 			Charges = 1,
 			Cooldown = 180,
 			ThrowDistance = 25,

@@ -18,3 +18,10 @@ in Match Dev a lobby Loadout (mock data) gives the M249 model in hand. Not live-
 (`WeaponDefinitions.Price`). `LoadoutMenu.mount` takes options (title, hint, confirm, locked).
 **Next:** live-check the hand-off and buying; earning merits from runs (systems designer, match
 side); the debrief panel (`DebriefUI`); the match's B Arms Room limited to the record.
+**Later the same day:** PR #11 (`claude/lobby-reconcile`) merged into `nova/lobby`: Tien's place
+ids (live: lobby 87556879379942, match 125769854992316; ZCS Dev pair kept), his hand-off and
+rack win; `Places` removed (his `HandoffService.lobbyPlaceId` does it). Buying now covers
+grenades and call-ins (merits, Nova's call; `docs/ROADMAP.md` still says Credits: Tien to
+confirm): `KitPrices`, `DeskShop`, a `Price` and `Desk` on each call-in row, `Price` on the
+sample guns and the frag. Not playtested yet: open ZCS Dev and check Fires, the Engineers,
+the Loadmaster's "What do you kick?" and the locked Loadout.

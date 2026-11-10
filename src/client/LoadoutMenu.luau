@@ -191,6 +191,10 @@ function LoadoutMenu.mount(
 		local ok = Loadout.validate(pick, catalog)
 			and not isLocked(pick.primary)
 			and not isLocked(pick.secondary)
+			and not isLocked(pick.grenade)
+		for _, id in pick.callIns do
+			ok = ok and not isLocked(id)
+		end
 		deploy.Active = ok
 		deploy.BackgroundTransparency = if ok then 0 else 0.5
 	end
