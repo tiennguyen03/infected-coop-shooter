@@ -6,6 +6,9 @@
 -- definition asks for one, leaves a puddle that ticks damage on anyone standing in it.
 -- Player damage from any Infected goes through `damagePlayer` (difficulty, then the
 -- Armour Plate shield soaks what it can: LoadoutService.absorb).
+-- Looks: with Config.Enemies.SpitFX.Enabled the server makes no parts at all; it tells every
+-- client what happened (Remotes EnemySpit) and each draws the glob, the splat and the pool
+-- itself (client SpitFX). Off, the server makes the old ball and disc.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -14,6 +17,8 @@ local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local EnemyDefinitions = require(ReplicatedStorage.Shared.EnemyDefinitions)
 local GroundUtil = require(ReplicatedStorage.Shared.GroundUtil)
+local Messages = require(ReplicatedStorage.Shared.Messages)
+local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local DifficultyService = require(script.Parent.DifficultyService)
 local LoadoutService = require(script.Parent.LoadoutService)
 local PauseService = require(script.Parent.PauseService)
@@ -27,7 +32,8 @@ local lastHurtVoiceAt: { [Humanoid]: number } = setmetatable({}, { __mode = "k" 
 export type Projectile = EnemyDefinitions.ProjectileSpec
 
 type Spit = {
-	part: BasePart,
+	id: number, -- names the spit to the clients drawing it
+	part: BasePart?, -- the plain ball; nil while clients draw it (SpitFX)
 	origin: Vector3,
 	velocity: Vector3,
 	launchedAt: number,
@@ -39,7 +45,8 @@ type Spit = {
 }
 
 type Puddle = {
-	part: BasePart,
+	part: BasePart?, -- the plain disc; nil while clients draw it (SpitFX)
+	center: Vector3,
 	radius: number,
 	damagePerSecond: number,
 	expiresAt: number,
@@ -52,6 +59,12 @@ local PUDDLE_HEIGHT = 0.2
 local EnemyProjectileService = {}
 
 local folder: Folder
+local spitRemote: RemoteEvent
+local nextSpitId = 0
+
+local function fxOn(): boolean
+	return Config.Enemies.SpitFX.Enabled
+end
 local spits: { Spit } = {}
 local puddles: { Puddle } = {}
 
@@ -125,45 +138,84 @@ local function splash(position: Vector3, radius: number, damage: number)
 	end
 end
 
-local function spawnPuddle(position: Vector3, spec: Projectile)
+-- Returns the ground CFrame the puddle lies on (nil: this projectile leaves none).
+local function spawnPuddle(position: Vector3, spec: Projectile): CFrame?
 	local puddleSpec = spec.Puddle
 	if not puddleSpec then
-		return
+		return nil
 	end
-	local part = Instance.new("Part")
-	part.Name = "CausticPuddle"
-	part.Shape = Enum.PartType.Cylinder
-	part.Size = Vector3.new(PUDDLE_HEIGHT, puddleSpec.Radius * 2, puddleSpec.Radius * 2)
-	part.CFrame = GroundUtil.GetGroundCFrame(position, PUDDLE_HEIGHT / 2)
-		* CFrame.Angles(0, 0, math.rad(90))
-	part.Anchored = true
-	part.CanCollide = false
-	part.CanQuery = false
-	part.CanTouch = false
-	part.CastShadow = false
-	part.Material = Enum.Material.Neon
-	part.Color = spec.Color
-	part.Transparency = 0.45
-	part.Parent = folder
-	-- Perf cap: the oldest puddle goes when a new one would exceed Config.Enemies.MaxPuddles.
+	local ground = GroundUtil.GetGroundCFrame(position, PUDDLE_HEIGHT / 2)
+	local part: BasePart? = nil
+	if not fxOn() then
+		local disc = Instance.new("Part")
+		disc.Name = "CausticPuddle"
+		disc.Shape = Enum.PartType.Cylinder
+		disc.Size = Vector3.new(PUDDLE_HEIGHT, puddleSpec.Radius * 2, puddleSpec.Radius * 2)
+		disc.CFrame = ground * CFrame.Angles(0, 0, math.rad(90))
+		disc.Anchored = true
+		disc.CanCollide = false
+		disc.CanQuery = false
+		disc.CanTouch = false
+		disc.CastShadow = false
+		disc.Material = Enum.Material.Neon
+		disc.Color = spec.Color
+		disc.Transparency = 0.45
+		disc.Parent = folder
+		part = disc
+	end
+	-- Perf cap: the oldest puddle goes when a new one would exceed Config.Enemies.MaxPuddles
+	-- (SpitFX drops its oldest pool by the same rule).
 	if #puddles >= Config.Enemies.MaxPuddles then
-		puddles[1].part:Destroy()
+		local oldest = puddles[1].part
+		if oldest then
+			oldest:Destroy()
+		end
 		table.remove(puddles, 1)
 	end
 	local puddle: Puddle = {
 		part = part,
+		center = ground.Position,
 		radius = puddleSpec.Radius,
 		damagePerSecond = puddleSpec.DamagePerSecond,
 		expiresAt = os.clock() + puddleSpec.Duration,
 		nextTickAt = os.clock() + PUDDLE_TICK,
 	}
 	table.insert(puddles, puddle)
+	return ground
 end
 
-local function impact(spit: Spit, position: Vector3)
-	splash(position, spit.spec.SplashRadius, spit.damage)
-	spawnPuddle(position, spit.spec)
-	spit.part:Destroy()
+local function removeSpit(spit: Spit)
+	if spit.part then
+		spit.part:Destroy()
+	end
+end
+
+local function impact(spit: Spit, position: Vector3, normal: Vector3)
+	local spec = spit.spec
+	splash(position, spec.SplashRadius, spit.damage)
+	local ground = spawnPuddle(position, spec)
+	removeSpit(spit)
+	if fxOn() then
+		local puddleSpec = spec.Puddle
+		spitRemote:FireAllClients(
+			Messages.EnemySpit.Impact,
+			spit.id,
+			position,
+			normal,
+			spec.SplashRadius,
+			ground,
+			puddleSpec and puddleSpec.Radius,
+			puddleSpec and puddleSpec.Duration
+		)
+	end
+end
+
+-- A spitter planted and began its windup: clients rear its head back and run bile from
+-- the mouth (SpitFX). The sac swell and the voice stay with EnemyService.
+function EnemyProjectileService.windup(model: Model, seconds: number)
+	if fxOn() then
+		spitRemote:FireAllClients(Messages.EnemySpit.Windup, model, seconds)
+	end
 end
 
 -- Launches a spit from `origin` to land at `targetPosition` (`targetVelocity` adds the
@@ -185,19 +237,32 @@ function EnemyProjectileService.fire(
 	local gravity = workspace.Gravity
 	local velocity = (landing - origin) / flightTime + Vector3.new(0, 0.5 * gravity * flightTime, 0)
 
-	local part = Instance.new("Part")
-	part.Name = "Spit"
-	part.Shape = Enum.PartType.Ball
-	part.Size = Vector3.new(spec.Size, spec.Size, spec.Size)
-	part.Position = origin
-	part.Anchored = true
-	part.CanCollide = false
-	part.CanQuery = false
-	part.CanTouch = false
-	part.CastShadow = false
-	part.Material = Enum.Material.Neon
-	part.Color = spec.Color
-	part.Parent = folder
+	nextSpitId += 1
+	local part: BasePart? = nil
+	if fxOn() then
+		spitRemote:FireAllClients(
+			Messages.EnemySpit.Launch,
+			nextSpitId,
+			origin,
+			velocity,
+			spec.Size
+		)
+	else
+		local ball = Instance.new("Part")
+		ball.Name = "Spit"
+		ball.Shape = Enum.PartType.Ball
+		ball.Size = Vector3.new(spec.Size, spec.Size, spec.Size)
+		ball.Position = origin
+		ball.Anchored = true
+		ball.CanCollide = false
+		ball.CanQuery = false
+		ball.CanTouch = false
+		ball.CastShadow = false
+		ball.Material = Enum.Material.Neon
+		ball.Color = spec.Color
+		ball.Parent = folder
+		part = ball
+	end
 
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Exclude
@@ -206,6 +271,7 @@ function EnemyProjectileService.fire(
 	params.CollisionGroup = "Enemy"
 
 	local spit: Spit = {
+		id = nextSpitId,
 		part = part,
 		origin = origin,
 		velocity = velocity,
@@ -230,13 +296,18 @@ local function stepSpits(now: number)
 			then workspace:Raycast(spit.lastPosition, delta, spit.params)
 			else nil
 		if hit then
-			impact(spit, hit.Position)
+			impact(spit, hit.Position, hit.Normal)
 			table.remove(spits, index)
 		elseif now >= spit.expiresAt or position.Y < workspace.FallenPartsDestroyHeight + 50 then
-			spit.part:Destroy()
+			removeSpit(spit)
+			if fxOn() then
+				spitRemote:FireAllClients(Messages.EnemySpit.Gone, spit.id)
+			end
 			table.remove(spits, index)
 		else
-			spit.part.Position = position
+			if spit.part then
+				spit.part.Position = position
+			end
 			spit.lastPosition = position
 		end
 	end
@@ -246,13 +317,15 @@ local function stepPuddles(now: number)
 	for index = #puddles, 1, -1 do
 		local puddle = puddles[index]
 		if now >= puddle.expiresAt then
-			puddle.part:Destroy()
+			if puddle.part then
+				puddle.part:Destroy()
+			end
 			table.remove(puddles, index)
 			continue
 		end
 		if now >= puddle.nextTickAt then
 			puddle.nextTickAt = now + PUDDLE_TICK
-			local center = puddle.part.Position
+			local center = puddle.center
 			for _, target in livePlayerHumanoids() do
 				local offset = target.root.Position - center
 				if
@@ -295,19 +368,23 @@ end
 -- Removes every spit and puddle (new run).
 function EnemyProjectileService.reset()
 	for _, spit in spits do
-		spit.part:Destroy()
+		removeSpit(spit)
 	end
 	table.clear(spits)
 	for _, puddle in puddles do
-		puddle.part:Destroy()
+		if puddle.part then
+			puddle.part:Destroy()
+		end
 	end
 	table.clear(puddles)
+	spitRemote:FireAllClients(Messages.EnemySpit.Reset)
 end
 
 function EnemyProjectileService.init()
 	Lifecycle.register("EnemyProjectileService", {
 		onRunStart = EnemyProjectileService.reset,
 	})
+	spitRemote = Remotes.get("EnemySpit")
 	folder = Instance.new("Folder")
 	folder.Name = "InfectedProjectiles"
 	folder.Parent = workspace

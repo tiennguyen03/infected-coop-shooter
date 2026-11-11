@@ -776,6 +776,7 @@ local function stepProjectileZombie(zombie: Zombie, now: number)
 			zombie.windupUntil = now + (behaviour.Windup or 0)
 			zombie.nextIdleVoiceAt = math.max(zombie.nextIdleVoiceAt, now + 3)
 			voice(zombie, "windup")
+			EnemyProjectileService.windup(zombie.model, behaviour.Windup or 0)
 			if zombie.attackTrack then
 				zombie.attackTrack:Play(0.1)
 			end

@@ -23,7 +23,8 @@ upgrades) → the Warden (boss) → extraction on Lantern → OPERATION COMPLETE
   Bag, Tripline; thrown ones are held to aim with an arc and a landing marker, the Shrike is a
   modelled attack helicopter), flare on 5, the Arms Room on B (stand-in until Nova's lobby screen).
 - **Infected:** Walker, Runner, Brute, Hocker (blocky, lore poses), dismemberment, the
-  Warden with plates.
+  Warden with plates. Spit (Hocker, Warden) is drawn on each client: `SpitFX`, not yet seen
+  in game (`handoff/log/2026-11-11-tien-hocker-spit.md`).
 - **Feel:** camera kick, blast shake, limp bodies thrown by the killing hit, hit flinch,
   low-health grey/heartbeat/muffle, reload clip. Every per-item feel value sits on the gun's
   or call-in's own Config row.
@@ -33,7 +34,7 @@ upgrades) → the Warden (boss) → extraction on Lantern → OPERATION COMPLETE
 - **Roblox:** the group Boomin Dev Studios (270506601) owns the game "Co-op Zombie Shooter" and
   every sound and animation. Its start place 87556879379942 holds the **lobby**; the match is
   "Checkpoint Delta" 125769854992316 (`Config.Places`).
-- **Checks:** stylua, selene, rojo build, 135 Lune tests (rules plus the source-wiring spec, which also reads the lobby's remotes), luau-lsp, CI on every push.
+- **Checks:** stylua, selene, rojo build, 142 Lune tests (rules plus the source-wiring spec, which also reads the lobby's remotes), luau-lsp, CI on every push.
 
 ## Who owns what
 
