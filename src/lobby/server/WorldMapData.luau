@@ -118,7 +118,7 @@ WorldMapData.Lines = {
 	{
 		kind = "pencil",
 		points = { 6.8, 0.4, 5.6, 1.2, 5.1, 1.6 },
-		label = "LANTERN",
+		label = "HELO",
 		labelAt = { 6.05, 0.72 },
 	},
 } :: { Line }

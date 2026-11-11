@@ -6,13 +6,16 @@
 
 local Messages = table.freeze({
 	-- Resupply: client -> server ("flare", target) | ("pick", crateId, cardId);
-	-- server -> client ("called", thrower) | ("cards", ...) | ("picked", crateId) | ("closed", crateId)
+	-- server -> client ("called", thrower) | ("cards", ...) | ("picked", crateId, cardId) |
+	-- ("refused", crateId, reason) | ("taken", crateId, names) | ("closed", crateId)
 	Resupply = table.freeze({
 		Flare = "flare",
 		Pick = "pick",
 		Called = "called",
 		Cards = "cards",
 		Picked = "picked",
+		Refused = "refused", -- (crateId, reason): Rules/Reward.checkPick's word
+		Taken = "taken", -- (crateId, names): the callsigns that have taken a card from the crate
 		Closed = "closed",
 	}),
 	-- UseAbility (client -> server) and AbilityUsed (server -> client): the soldier's kit
@@ -35,6 +38,13 @@ local Messages = table.freeze({
 		Started = "started",
 		Progress = "progress",
 		Completed = "completed",
+		-- The objective pools (Config.Objectives): (entries: { Rules/Objectives.Entry }) the
+		-- main objective and the side objectives, resent whenever one changes
+		Board = "board",
+		-- (name, why, place) the main objective's card at insert, before the squad moves
+		Brief = "brief",
+		-- client -> server: () send me the board (a client that just loaded)
+		Request = "request",
 	}),
 	ExtractionUpdate = table.freeze({
 		Available = "available",
@@ -76,11 +86,19 @@ local Messages = table.freeze({
 		Roll = "roll",
 		Slide = "slide",
 	}),
+	-- EnemySpit (server -> client): an Infected spit's look (EnemyProjectileService -> SpitFX)
+	EnemySpit = table.freeze({
+		Windup = "windup", -- (model, seconds) the spitter planted and is rearing back
+		Launch = "launch", -- (id, origin, velocity, size) a glob left the mouth
+		Impact = "impact", -- (id, position, normal, splashRadius, poolGround?, poolRadius?, poolSeconds?)
+		Gone = "gone", -- (id) the glob left the world without landing
+		Reset = "reset", -- () new run: clear everything
+	}),
 	-- Launch (lobby place, server -> client): your seat on a Lantern spot
 	-- Record (lobby place): the Quartermaster's rack (RecordService, Rules/Record)
 	Record = table.freeze({
 		Buy = "buy", -- client -> server: (gunId)
-		State = "state", -- server -> client: (merits, ownedIds) the soldier's record
+		State = "state", -- server -> client: (merits, ownedIds, tabs) the soldier's record
 		Refused = "refused", -- server -> client: (gunId, reason) "short" | "owned" | "unknown" | "loading"
 	}),
 	Launch = table.freeze({

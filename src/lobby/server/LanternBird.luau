@@ -214,8 +214,7 @@ local function dressMeshes(
 		"CrewChief",
 		(base * CFrame.new(2.6, 2.45, -1.2)).Position,
 		base:VectorToWorldSpace(Vector3.new(1, 0, 0)),
-		NpcBody.Aircrew,
-		{ "gloves", "harness" } -- visor down, tethered to the cabin, gloved (docs/LORE.md > Lantern)
+		NpcBody.Aircrew
 	)
 	for _, part in chief:GetDescendants() do
 		if part:IsA("BasePart") then

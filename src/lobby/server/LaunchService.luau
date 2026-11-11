@@ -93,7 +93,7 @@ local function buildSpot(parent: Instance, spot: Layout.Spot): Model
 		YELLOW,
 		{ material = Enum.Material.SmoothPlastic, transparency = 0.6, collide = false }
 	)
-	Build.sign(box, `LANTERN · SPOT {spot.index}`, "Stand here to board", 5)
+	Build.sign(box, `HELO · SPOT {spot.index}`, "Stand here to board", 5)
 	return bird
 end
 
@@ -244,7 +244,7 @@ local function lift(state: SpotState)
 			task.wait(LAUNCH.RetryDelay)
 		end
 		if not sent then
-			fail(party, "Lantern couldn't lift. Try again.")
+			fail(party, "The helicopter couldn't lift. Try again.")
 		end
 	end
 
@@ -302,7 +302,7 @@ function LaunchService.init()
 	-- arrives here; the soldier stays on the Fallow.
 	TeleportService.TeleportInitFailed:Connect(function(player: Player, _result, message: string)
 		warn(`[LaunchService] {player.Name} teleport failed: {message}`)
-		fail({ player }, "Lantern couldn't lift. Try again.")
+		fail({ player }, "The helicopter couldn't lift. Try again.")
 	end)
 	Players.PlayerRemoving:Connect(function(player)
 		for _, state in states do

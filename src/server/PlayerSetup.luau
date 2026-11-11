@@ -9,6 +9,7 @@ local StarterPlayer = game:GetService("StarterPlayer")
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
+local AvatarLook = require(ReplicatedStorage.Shared.AvatarLook)
 local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
 
 local PlayerSetup = {}
@@ -133,13 +134,6 @@ function PlayerSetup.attachRifle(character: Model, humanoid: Humanoid)
 		local muzzle =
 			riflePart("Muzzle", Vector3.new(0.2, 0.2, 0.14), CFrame.new(muzzleAt), Color3.new())
 		muzzle.Transparency = 1
-		-- The irons' sight line, for first person down the sights (FirstPersonView).
-		local sightAt = MeshAssets.getSight(model)
-		if sightAt then
-			local sight =
-				riflePart("Sight", Vector3.new(0.05, 0.05, 0.05), CFrame.new(sightAt), Color3.new())
-			sight.Transparency = 1
-		end
 	end
 	placeholder()
 	local player = Players:GetPlayerFromCharacter(character)
@@ -175,6 +169,30 @@ function PlayerSetup.attachRifle(character: Model, humanoid: Humanoid)
 	humanoid.Died:Connect(function()
 		tool:Destroy()
 	end)
+end
+
+-- The soldier's look as catalog items (Config.Player.Look), for AvatarLook; `player` (nil for a
+-- bot) wears their own face when Look.PlayerFace is on.
+function PlayerSetup.look(player: Player?): AvatarLook.Look
+	local look = Config.Player.Look
+	return {
+		items = look.Items,
+		skin = look.Skin,
+		shirt = look.Shirt,
+		trousers = look.Trousers,
+		faceOf = if player and look.PlayerFace then player.UserId else nil,
+	}
+end
+
+-- No floating health bar or name over a squad body (players and bots): squadmates' status
+-- is the squad panel (Config.SquadPanel, whose switches bring Roblox's own back).
+function PlayerSetup.hideOverhead(humanoid: Humanoid)
+	if not Config.SquadPanel.OverheadBars then
+		humanoid.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOff
+	end
+	if not Config.SquadPanel.OverheadNames then
+		humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+	end
 end
 
 -- The playable class body (assets/3d pc_<class>_*). One class for now.
@@ -246,6 +264,7 @@ local function onCharacterAdded(character: Model)
 	humanoid.MaxHealth = Config.Player.MaxHealth
 	humanoid.Health = Config.Player.MaxHealth
 	humanoid.WalkSpeed = Config.Player.WalkSpeed
+	PlayerSetup.hideOverhead(humanoid)
 	-- No jump: cover is vaulted or climbed instead (client MovementController).
 	humanoid.UseJumpPower = true
 	humanoid.JumpPower = 0
@@ -254,10 +273,13 @@ local function onCharacterAdded(character: Model)
 
 	character:WaitForChild("HumanoidRootPart")
 	character:WaitForChild("RightHand")
-	-- Swap the stock R15 limbs for the class body before the rifle welds to the hand.
+	-- The soldier's look: catalog items on the default R15 body (Config.Player.Look); else
+	-- swap the stock R15 limbs for the class body before the rifle welds to the hand.
 	-- Templates build asynchronously at boot; a character that beats them keeps the stock body.
 	-- A skinned StarterCharacter already is the body: only its gear goes on.
-	if character:FindFirstChild(SKIN_PART) then
+	if Config.Player.Look.Enabled then
+		AvatarLook.apply(humanoid, PlayerSetup.look(Players:GetPlayerFromCharacter(character)))
+	elseif character:FindFirstChild(SKIN_PART) then
 		attachGear(character)
 	elseif MeshAssets.waitFor(PLAYER_BODY .. "head", 10) then
 		MeshAssets.dressModel(character, PLAYER_BODY)
