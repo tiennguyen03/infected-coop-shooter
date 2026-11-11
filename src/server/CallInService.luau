@@ -3,11 +3,15 @@
 -- loadout, LoadoutService.getCallIn). Each slot holds Config.CallIns.<Key>.Charges
 -- charges that refill one at a time every Cooldown seconds; a Restock card fills them.
 -- Server-authoritative: the client sends the slot and where it aimed; this validates
--- (alive, not paused, a charge), clamps the throw with ThrowUtil like the flare, and hands
+-- (alive, not paused, a charge), waits out the throw clip's wind-up (ThrowWindUp; the charge
+-- is spent at the release), clamps the throw with ThrowUtil like the flare, and hands
 -- the effect to the owning service (AirStrikeService: Hammer, Anvil, Shrike; SentryService:
 -- Doorman; MineService: Tripline; ConcertinaService; SupplyDropService: Speedball, Aid Bag)
 -- with that call-in's upgrade flag. Published per player as
 -- CallIn<n>Charges and CallIn<n>ReadyAt (server time of the next charge; 0 when full).
+-- Arrivals (Rules/Arrival, Config.CallIns.Arrivals): every throw is told to every client
+-- once (remote CallInArrival) and CallInArrivalFX draws how that call-in comes in; an
+-- emplacement or a bundle is held back here for its row's Arrival.Time while it does.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -16,6 +20,7 @@ local RunService = game:GetService("RunService")
 local Messages = require(ReplicatedStorage.Shared.Messages)
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local CallInDefinitions = require(ReplicatedStorage.Shared.CallInDefinitions)
+local Arrival = require(ReplicatedStorage.Shared.Rules.Arrival)
 local CallInCharges = require(ReplicatedStorage.Shared.Rules.CallInCharges)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
@@ -27,6 +32,7 @@ local MineService = require(script.Parent.MineService)
 local PauseService = require(script.Parent.PauseService)
 local SentryService = require(script.Parent.SentryService)
 local SupplyDropService = require(script.Parent.SupplyDropService)
+local ThrowWindUp = require(script.Parent.ThrowWindUp)
 local Squad = require(script.Parent.Squad)
 local Lifecycle = require(script.Parent.Lifecycle)
 local WorldSounds = require(script.Parent.WorldSounds)
@@ -62,7 +68,26 @@ end
 
 local slots: { [Player]: { Slot } } = {}
 local usedRemote: RemoteEvent
+local arrivalRemote: RemoteEvent
 local lastStep = 0
+-- Bumped on a run start so kit still on its way down from the last run never lands in the next.
+local generation = 0
+
+-- Runs `deploy` once the kit has arrived, `seconds` of unpaused time from now (at once for
+-- 0). Dropped when the run restarted or the thrower left meanwhile.
+local function deployAfter(seconds: number, player: Player, deploy: () -> ())
+	if seconds <= 0 then
+		deploy()
+		return
+	end
+	local thisGeneration = generation
+	task.spawn(function()
+		PauseService.wait(seconds)
+		if thisGeneration == generation and player.Parent then
+			deploy()
+		end
+	end)
+end
 
 local function chargesFor(player: Player, slot: number): number
 	local definition = CallInDefinitions.get(LoadoutService.getCallIn(player, slot))
@@ -155,25 +180,50 @@ local function fire(
 	if definition.Kind == "throw" then
 		WorldSounds.at(landing, "callins", "callin_throw")
 	end
+	-- The arrival: the clients draw it, and anything that is not a fire mission (those keep
+	-- their own Delay) is on the ground and working `holdFor` seconds from now.
+	local arrivals = Config.CallIns.Arrivals
+	local arrival = Arrival.resolve(arrivals.Defaults :: any, cfg.Arrival)
+	local holdFor = Arrival.deployDelay(arrival, arrivals.Enabled)
+	local impacts: { Vector3 }? = nil
+	local fired = false
 	local id = definition.Id
 	if id == "hammer" then
 		local walking = LoadoutService.hasUpgrade(player, "walking_barrage")
 		local step = if walking then Config.Upgrades.WalkingBarrage.Step else 0
-		return AirStrikeService.fireMission(player, Config.CallIns.Hammer, landing, direction, step)
+		fired, impacts =
+			AirStrikeService.fireMission(player, Config.CallIns.Hammer, landing, direction, step)
 	elseif id == "anvil" then
-		return AirStrikeService.fireMission(player, Config.CallIns.Anvil, landing, direction, 0)
+		fired, impacts =
+			AirStrikeService.fireMission(player, Config.CallIns.Anvil, landing, direction, 0)
 	elseif id == "shrike" then
-		return AirStrikeService.gunRun(player, landing, direction)
+		fired, impacts = AirStrikeService.gunRun(player, landing, direction)
 	elseif id == "doorman" then
-		return SentryService.deploy(player, landing, direction)
+		fired = true
+		deployAfter(holdFor, player, function()
+			SentryService.deploy(player, landing, direction)
+		end)
 	elseif id == "tripline" then
-		return MineService.layArc(player, landing, direction)
+		fired = true
+		deployAfter(holdFor, player, function()
+			MineService.layArc(player, landing, direction)
+		end)
 	elseif id == "concertina" then
-		return ConcertinaService.lay(player, landing, direction)
+		fired = true
+		deployAfter(holdFor, player, function()
+			ConcertinaService.lay(player, landing, direction)
+		end)
 	elseif id == "speedball" or id == "aid_bag" then
-		return SupplyDropService.drop(id, landing, direction)
+		fired = true
+		local falls = not arrivals.Enabled
+		deployAfter(holdFor, player, function()
+			SupplyDropService.drop(id, landing, direction, falls)
+		end)
 	end
-	return false
+	if fired and arrivals.Enabled then
+		arrivalRemote:FireAllClients(id, player, landing, direction, impacts)
+	end
+	return fired
 end
 
 -- Dev tools (DevTestService FireCallIn): fires call-in `id` for `player` aimed at `point`
@@ -213,26 +263,43 @@ local function onCallIn(player: Player, slot: unknown, requested: unknown)
 		print(`[CallIn] {player.Name} blew {blown} mine(s) (Daisy Chain)`)
 		return
 	end
-	local state = get(player)[slotIndex]
-	-- CallInCharges.use is the gate: an empty slot refuses before anything is thrown.
-	local canUse = CallInCharges.use(state.charges, state.nextChargeAt, os.clock(), 0)
-	if not canUse then
-		return
-	end
 	local point = if typeof(requested) == "Vector3" then requested else nil
-	if not fire(player, definition, point) then
+	-- Fires it and spends the charge. CallInCharges.use is the gate: an empty slot, or one
+	-- that changed hands during the wind-up, refuses before anything is thrown.
+	local function use()
+		if LoadoutService.getCallIn(player, slotIndex) ~= definition.Id then
+			return
+		end
+		local state = get(player)[slotIndex]
+		if not CallInCharges.use(state.charges, state.nextChargeAt, os.clock(), 0) then
+			return
+		end
+		if not fire(player, definition, point) then
+			return
+		end
+		local _
+		_, state.charges, state.nextChargeAt = CallInCharges.use(
+			state.charges,
+			state.nextChargeAt,
+			os.clock(),
+			cooldownFor(player, slotIndex)
+		)
+		publish(player, slotIndex, state)
+		usedRemote:FireClient(player, Messages.Ability.CallIn, slotIndex, definition.Id)
+		print(`[CallIn] {player.Name} used {definition.Name} ({state.charges} left)`)
+	end
+	local state = get(player)[slotIndex]
+	if not CallInCharges.use(state.charges, state.nextChargeAt, os.clock(), 0) then
 		return
 	end
-	local _
-	_, state.charges, state.nextChargeAt = CallInCharges.use(
-		state.charges,
-		state.nextChargeAt,
-		os.clock(),
-		cooldownFor(player, slotIndex)
-	)
-	publish(player, slotIndex, state)
-	usedRemote:FireClient(player, Messages.Ability.CallIn, slotIndex, definition.Id)
-	print(`[CallIn] {player.Name} used {definition.Name} ({state.charges} left)`)
+	-- A thrown call-in leaves the hand at the throw clip's release (ThrowWindUp): the charge
+	-- is spent and the arrival starts there, so Arrival.Time and a fire mission's Delay count
+	-- from the release, as they did from the key.
+	if definition.Kind == "throw" then
+		ThrowWindUp.begin(player, use)
+	else
+		use()
+	end
 end
 
 local function step()
@@ -274,12 +341,16 @@ end
 
 function CallInService.init()
 	Lifecycle.register("CallInService", {
+		onRunStart = function()
+			generation += 1
+		end,
 		onPlayerReset = CallInService.resetPlayer,
 		onPlayerRemoving = function(player: Player)
 			slots[player] = nil
 		end,
 	})
 	usedRemote = Remotes.get("AbilityUsed")
+	arrivalRemote = Remotes.get("CallInArrival")
 	Remotes.get("CallIn").OnServerEvent:Connect(onCallIn)
 	-- A changed slot (dev panel, the Arms Room) starts full, or empty with its cooldown
 	-- running when the Arms Room changed it in a run.

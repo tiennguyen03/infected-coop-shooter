@@ -302,6 +302,10 @@ function LoadoutService.getGrenade(player: Player): string
 	return get(player).grenade
 end
 
+function LoadoutService.grenadesLeft(player: Player): number
+	return get(player).grenades
+end
+
 -- One grenade out of the pouch; false when none are left.
 function LoadoutService.useGrenade(player: Player): boolean
 	local state = get(player)
