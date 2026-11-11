@@ -381,7 +381,7 @@ local function onInputBegan(input: InputObject, gameProcessed: boolean)
 		return
 	end
 	local keys = Config.Camera.FirstPerson
-	if input.KeyCode == keys.Key or input.KeyCode == keys.GamepadKey then
+	if input.KeyCode == Config.Keys.Camera or input.KeyCode == keys.GamepadKey then
 		CameraController.setFirstPerson(not firstPerson)
 	end
 end

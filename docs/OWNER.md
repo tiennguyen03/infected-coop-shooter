@@ -82,10 +82,28 @@ something; never delete one without the owner.
 ## Rules already decided
 
 - Razor wire (Concertina) can never be vaulted. (2026-11-08)
-- Q dash and E breach are gone: Q swaps guns, G frag, V shove, E stim, 1-4 call-ins, 5 flare.
-  (2026-11-08)
-- Movement keys: roll and slide need too many key combos; the owner wants a Helldivers-like
-  answer, not decided yet. Do not change the bindings without them. (2026-11-08)
+- Q dash and E breach are gone (2026-11-08).
+- **The keyboard** (2026-11-11, "do it"; replaces the 2026-11-08 keys). Code: `Config.Keys`,
+  the only place a key is written; every hint reads it.
+
+  | Action | Key |
+  |---|---|
+  | Interact: revive (hold), crates, objective holds, anything walked up to and used | E |
+  | Stim | V |
+  | Shove | F |
+  | Crouch | C or LeftControl |
+  | Prone | Z |
+  | Resupply flare | X |
+  | First / third person | T |
+  | Sprint | Shift |
+  | Vault / climb | Space |
+  | Swap gun, grenade, reload | Q, G, R |
+  | Call-ins | 1-4 |
+  | Arms Room | B |
+  | Ping (not built) | middle mouse, kept free |
+
+- Roll and slide: on `main` sprint + LeftControl rolls and sprint + C slides; the owner's
+  answer (Shift twice rolls, holding C or LeftControl while sprinting slides) is PR #38.
 
 ## Team and accounts
 

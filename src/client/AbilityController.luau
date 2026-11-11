@@ -1,8 +1,9 @@
 --!strict
--- The soldier's keys (docs/PROGRESSION.md > Loadout): Q swaps long gun and sidearm, G throws
--- a grenade, V shoves, E uses a stim (KitService over UseAbility), 1-4 fire the call-ins
--- (CallIn remote) and 5 throws the Resupply flare. The server validates and performs them;
--- this controller forwards input and draws the aim: hold G or a thrown call-in's key and an
+-- The soldier's keys (Config.Keys; docs/PROGRESSION.md > Loadout): SwapGun swaps long gun
+-- and sidearm, Grenade throws one, Shove shoves, Stim uses a stim (KitService over
+-- UseAbility), CallIns fire the call-ins (CallIn remote) and Flare throws the Resupply flare.
+-- The server validates and performs them; this controller forwards input and draws the
+-- aim: hold the Grenade key or a thrown call-in's key and an
 -- arc from the hand plus that item's marker show where it will land (the aim point, clamped
 -- to throw range, dropped to the ground) and what it covers; release to throw it there. The
 -- flare throws at the crosshair at once (ThrowUtil, the server's maths).
@@ -25,13 +26,13 @@ local AnimationController = require(script.Parent.AnimationController)
 
 local GHOST_COLOR = Color3.fromRGB(255, 150, 60)
 
--- Keys 1-4 for the call-in slots (Config.CallIns.Slots).
-local CALL_IN_KEYS: { [Enum.KeyCode]: number } = {
-	[Enum.KeyCode.One] = 1,
-	[Enum.KeyCode.Two] = 2,
-	[Enum.KeyCode.Three] = 3,
-	[Enum.KeyCode.Four] = 4,
-}
+local Keys = Config.Keys
+
+-- The key for each call-in slot (Config.CallIns.Slots).
+local CALL_IN_KEYS: { [Enum.KeyCode]: number } = {}
+for slot, key in Keys.CallIns do
+	CALL_IN_KEYS[key] = slot
+end
 
 local AbilityController = {}
 
@@ -91,7 +92,7 @@ local function landingPoint(maxDistance: number): Vector3?
 end
 
 -- Aiming a throw (owner 2026-11-09: "hold and release with trajectory indicators so I
--- actually know where it lands"): hold G or a thrown call-in's key, and a dotted arc from the
+-- actually know where it lands"): hold the Grenade key or a thrown call-in's key, and a dotted arc from the
 -- hand plus the item's own marker (its Aim row: a ring, or a strip along or across the throw)
 -- follow the crosshair; release to throw there. Pressing another throw key switches to it.
 type AimShape =
@@ -214,21 +215,21 @@ local function stopAiming(): Aiming?
 	return state
 end
 
--- G held: the frag (if one is left).
+-- Grenade key held: the frag (if one is left).
 local function aimGrenade()
 	if ((Players.LocalPlayer:GetAttribute(Attributes.Grenades) :: number?) or 0) <= 0 then
 		return
 	end
 	local settings = fragSettings()
 	startAiming(
-		Enum.KeyCode.G,
+		Keys.Grenade,
 		nil,
 		settings.ThrowDistance,
 		{ Shape = "ring", Radius = settings.Radius }
 	)
 end
 
--- Keys 1-4: a thrown call-in is aimed while the key is held and thrown on release; a "self"
+-- A call-in key: a thrown call-in is aimed while the key is held and thrown on release; a "self"
 -- call-in fires at once.
 local function pressCallIn(key: Enum.KeyCode, slot: number)
 	local player = Players.LocalPlayer
@@ -293,15 +294,15 @@ function AbilityController.init()
 		local slot = CALL_IN_KEYS[key]
 		if slot and slot <= Config.CallIns.Slots then
 			pressCallIn(key, slot)
-		elseif key == Enum.KeyCode.Q then
+		elseif key == Keys.SwapGun then
 			useAbility:FireServer(Messages.Ability.Swap)
-		elseif key == Enum.KeyCode.G then
+		elseif key == Keys.Grenade then
 			aimGrenade()
-		elseif key == Enum.KeyCode.V then
+		elseif key == Keys.Shove then
 			useAbility:FireServer(Messages.Ability.Shove)
-		elseif key == Enum.KeyCode.E then
+		elseif key == Keys.Stim then
 			useAbility:FireServer(Messages.Ability.Stim)
-		elseif key == Enum.KeyCode.Five then
+		elseif key == Keys.Flare then
 			resupply:FireServer(
 				Messages.Resupply.Flare,
 				landingPoint(Config.Requisition.FlareThrowDistance)

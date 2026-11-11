@@ -1,5 +1,5 @@
 --!strict
--- Hold LeftShift to sprint. WalkSpeed is set locally; the character is
+-- Hold Config.Keys.Sprint (Shift) to sprint. WalkSpeed is set locally; the character is
 -- client-owned so this takes effect immediately without replication. Aiming down sights
 -- (WeaponController) overrides sprint and slows the walk by the gun's AdsMoveFactor;
 -- a stance (StanceController) scales the walk and may forbid sprinting.
@@ -81,13 +81,13 @@ end
 
 function SprintController.init()
 	UserInputService.InputBegan:Connect(function(input, gameProcessed)
-		if not gameProcessed and input.KeyCode == Enum.KeyCode.LeftShift then
+		if not gameProcessed and input.KeyCode == Config.Keys.Sprint then
 			setSprinting(true)
 		end
 	end)
 
 	UserInputService.InputEnded:Connect(function(input, _gameProcessed)
-		if input.KeyCode == Enum.KeyCode.LeftShift then
+		if input.KeyCode == Config.Keys.Sprint then
 			setSprinting(false)
 		end
 	end)
