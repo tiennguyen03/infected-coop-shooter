@@ -14,11 +14,18 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local ArmsRoom = require(Shared:WaitForChild("ArmsRoom"))
 local CallInDefinitions = require(Shared:WaitForChild("CallInDefinitions"))
+local Config = require(Shared:WaitForChild("Config"))
+local KeyBindings = require(Shared:WaitForChild("Rules"):WaitForChild("KeyBindings"))
 local Loadout = require(Shared:WaitForChild("Rules"):WaitForChild("Loadout"))
 local WeaponDefinitions = require(Shared:WaitForChild("WeaponDefinitions"))
 local HudTheme = require(script.Parent.HudTheme)
 
 local LoadoutMenu = {}
+
+local callInKeys = Config.Keys.CallIns
+local function keyLabel(key: Enum.KeyCode): string
+	return KeyBindings.label(key.Name)
+end
 
 local C = HudTheme.Color
 local WIDTH = 760
@@ -133,7 +140,8 @@ function LoadoutMenu.mount(
 	})
 	header.Position = UDim2.fromOffset(24, 16)
 	local hint = HudTheme.label(frame, {
-		text = opts.hint or "[B] CLOSE   ·   CHANGES AT INSERT, READY-UP, OR AT THE LZ WHEN CALM",
+		text = opts.hint
+			or `[{keyLabel(Config.Keys.Loadout)}] CLOSE   ·   CHANGES AT INSERT, READY-UP, OR AT THE LZ WHEN CALM`,
 		size = 12,
 		color = C.TextDim,
 	})
@@ -275,11 +283,19 @@ function LoadoutMenu.mount(
 		end)
 	end
 
-	local callIns = column(frame, 24 + 2 * (COLUMN + 16), top, `CALL-INS (KEYS 1-{catalog.slots})`)
+	local callIns = column(
+		frame,
+		24 + 2 * (COLUMN + 16),
+		top,
+		`CALL-INS (KEYS {keyLabel(callInKeys[1])}-{keyLabel(
+			callInKeys[catalog.slots] or callInKeys[#callInKeys]
+		)})`
+	)
 	for index, id in catalog.callIns do
 		addItem(callIns, index, callInEntry(id), function()
 			local slot = table.find(pick.callIns, id)
-			return slot ~= nil, if slot then `[{slot}]` else nil
+			local key = slot and callInKeys[slot]
+			return slot ~= nil, if key then `[{keyLabel(key)}]` else nil
 		end, function()
 			local slot = table.find(pick.callIns, id)
 			if slot then

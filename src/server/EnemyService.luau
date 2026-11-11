@@ -4,7 +4,8 @@
 -- throw range, plant, wind up and lob through EnemyProjectileService. A phase-based spawn
 -- director picks types by run time with fairness caps from Config.Spawning (count
 -- schedules and share caps keyed by type). Enemies pass through each other (Enemy collision
--- group) but still hit players and the world. Player damage: EnemyProjectileService.damagePlayer.
+-- group; EnemySpacing steers the chase so they rarely do) but still hit players and the
+-- world. Player damage: EnemyProjectileService.damagePlayer.
 -- Climbing: a melee form pressed against cover no taller than its
 -- EnemyDefinitions.ClimbHeight goes over it (Shared.Ledge; the root is anchored and driven
 -- along the ledge path for Config.Movement.Infected.Duration seconds while its climb clip
@@ -33,6 +34,7 @@ local RunStates = require(ReplicatedStorage.Shared.RunStates)
 local ArenaService = require(script.Parent.ArenaService)
 local DifficultyService = require(script.Parent.DifficultyService)
 local EnemyProjectileService = require(script.Parent.EnemyProjectileService)
+local EnemySpacing = require(script.Parent.EnemySpacing)
 local DamageService = require(script.Parent.DamageService)
 local PauseService = require(script.Parent.PauseService)
 local WorldSounds = require(script.Parent.WorldSounds)
@@ -50,7 +52,7 @@ local BACK_OFF_DISTANCE = 8 -- studs a projectile form retreats when a player ge
 -- cover; it sidesteps NUDGE_DISTANCE perpendicular to its target, alternating sides.
 local NUDGE_STUCK_DISTANCE = 1
 local NUDGE_DISTANCE = 8
-local SAC_OFFSET = CFrame.new(0, 0.95, -0.5) -- throat sac relative to UpperTorso (the rig faces -Z)
+local SAC_OFFSET = CFrame.new(0, 0.95, -0.5) -- throat sac from the UpperTorso limb centre (the rig faces -Z)
 local SAC_SIZE = 0.9
 -- Vocals: each form has a bank named after it (SoundBanks) with
 -- <form>_idle / _attack / _hurt / _death groups (the Hocker adds _windup and _spit); lines
@@ -446,7 +448,9 @@ local function spawnZombie(
 	-- EnemyService.slow restores this after a slow without corrupting it.
 	humanoid:SetAttribute(Attributes.BaseWalkSpeed, definition.WalkSpeed)
 	humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
-	if not definition.Boss then
+	humanoid.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOff
+	-- No floating health bars (owner 2026-11-11); Config.SquadPanel.OverheadBars restores it.
+	if Config.SquadPanel.OverheadBars and not definition.Boss then
 		attachHealthBar(humanoid, root, definition.Scale) -- a boss has the boss bar (BossBarUI)
 	end
 
@@ -475,11 +479,18 @@ local function spawnZombie(
 			local projectile = definition.Behaviour.Projectile
 			ball.Color = if projectile then projectile.Color else definition.Color
 			ball.Transparency = 0.15
-			ball.CFrame = torso.CFrame * SAC_OFFSET
+			-- The torso part is centred on its mesh bounds, which a hump or a soaked front
+			-- moves off the limb centre: take that shift out so the sac stays on the throat.
+			local bodySet = definition.BodySet or typeName
+			local sacOffset = if dressedTemplates[bodySet]
+				then SAC_OFFSET
+					- MeshAssets.infectedLimbOffset(bodySet, "upper_torso") * definition.Scale
+				else SAC_OFFSET -- the bare rig: the part is the limb
+			ball.CFrame = torso.CFrame * sacOffset
 			local weld = Instance.new("Weld")
 			weld.Part0 = torso
 			weld.Part1 = ball
-			weld.C0 = SAC_OFFSET
+			weld.C0 = sacOffset
 			weld.Parent = ball
 			ball.Parent = model
 			sac = ball
@@ -570,6 +581,7 @@ local function spawnZombie(
 		end)
 	end
 	table.insert(zombies, zombie)
+	EnemySpacing.add(root, humanoid, typeName)
 
 	humanoid.HealthChanged:Connect(function(newHealth)
 		-- One pain grunt per burst of hits, not one per bullet.
@@ -776,6 +788,7 @@ local function stepProjectileZombie(zombie: Zombie, now: number)
 			zombie.windupUntil = now + (behaviour.Windup or 0)
 			zombie.nextIdleVoiceAt = math.max(zombie.nextIdleVoiceAt, now + 3)
 			voice(zombie, "windup")
+			EnemyProjectileService.windup(zombie.model, behaviour.Windup or 0)
 			if zombie.attackTrack then
 				zombie.attackTrack:Play(0.1)
 			end
@@ -933,8 +946,12 @@ local function stepZombies()
 							continue
 						end
 					end
-					local stuck = (here - zombie.lastRepathPosition).Magnitude
-						< NUDGE_STUCK_DISTANCE
+					-- Spacing: a goal that keeps off the neighbours and on the attack ring;
+					-- a body the crowd is holding is not stuck (no nudge, no climb).
+					local spaced, waiting =
+						EnemySpacing.goal(zombie.root, here, goal, zombie.attackRange, now)
+					local stuck = not waiting
+						and (here - zombie.lastRepathPosition).Magnitude < NUDGE_STUCK_DISTANCE
 					if stuck and (goal - here).Magnitude > zombie.attackRange then
 						local toTarget = Vector3.new(goal.X - here.X, 0, goal.Z - here.Z)
 						if toTarget.Magnitude > 0.1 and tryClimb(zombie, toTarget, now) then
@@ -946,6 +963,8 @@ local function stepZombies()
 							zombie.nudgeSign = -zombie.nudgeSign
 							goal = here + side * NUDGE_DISTANCE
 						end
+					else
+						goal = spaced
 					end
 					zombie.lastRepathPosition = here
 					zombie.humanoid:MoveTo(goal)
@@ -1146,6 +1165,39 @@ function EnemyService.spawnMixedWave(count: number, center: Vector3)
 	end
 end
 
+-- An objective's own body (Confirm Casualties, Clear the Spitters): one `typeName` at
+-- `groundPosition`, handed back so the objective can outline it and count its death.
+function EnemyService.spawnAt(typeName: string, groundPosition: Vector3): (Model?, Humanoid?)
+	local zombie = spawnZombie(groundPosition, typeName)
+	if not zombie then
+		return nil, nil
+	end
+	return zombie.model, zombie.humanoid
+end
+
+-- A spot in a ring round `center` on open ground (an objective placing its own bodies).
+function EnemyService.groundNear(center: Vector3, minDistance: number, maxDistance: number): Vector3
+	return groundPositionNear(center, minDistance, maxDistance)
+end
+
+-- Silence the Alarm: a roaming spawn picked within `radius` of `position` happens only
+-- `factor` of the time (0..1). nil clears it; a fresh run clears it too.
+local quiet: { position: Vector3, radius: number, factor: number }? = nil
+function EnemyService.setQuiet(position: Vector3?, radius: number?, factor: number?)
+	if position then
+		quiet = { position = position, radius = radius or 0, factor = factor or 1 }
+	else
+		quiet = nil
+	end
+end
+
+local function quietSkips(position: Vector3): boolean
+	local zone = quiet
+	return zone ~= nil
+		and (position - zone.position).Magnitude <= zone.radius
+		and math.random() > zone.factor
+end
+
 -- Melee forms within `radius` of `position` walk to it for `duration` seconds (the
 -- Resupply flare, a Bait Charge). Lures stack; nil clears them all.
 function EnemyService.setLure(position: Vector3?, radius: number?, duration: number?)
@@ -1247,9 +1299,9 @@ local function spawnLoop()
 		if workspace:GetAttribute(Attributes.ObjectiveActive) == true then
 			interval *= Config.Difficulty.ObjectiveSpawnFactor
 		end
-		-- And during extraction.
+		-- And during extraction (harder again once a wave has hit the pad).
 		if workspace:GetAttribute(Attributes.ExtractionActive) == true then
-			interval *= Config.Extraction.SpawnFactor
+			interval *= (workspace:GetAttribute(Attributes.ExtractionSpawnFactor) :: number?) or Config.Extraction.SpawnFactor
 		end
 		-- And for a while after a Resupply pallet lands.
 		if workspace:GetAttribute(Attributes.ResupplyActive) == true then
@@ -1270,7 +1322,7 @@ local function spawnLoop()
 			and #zombies < maxAlive
 		then
 			local position = randomSpawnPosition()
-			if position then
+			if position and not quietSkips(position) then
 				spawnZombie(position, pickSpawnType())
 			end
 		end
@@ -1311,6 +1363,7 @@ end
 function EnemyService.reset()
 	table.clear(lures)
 	table.clear(slowGeneration)
+	quiet = nil
 	missionGeneration += 1
 	EnemyService.clearAll()
 end

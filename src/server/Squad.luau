@@ -7,9 +7,10 @@
 --
 -- State per member: Alive -> Downed (a lethal hit, decision #3) -> Alive (revived) or
 -- Dead (bled out, killed while out of revives). Downed bodies are not targets and take no
--- damage; a squadmate holds F (ProximityPrompt) for Config.Downed.ReviveHold to stand them
+-- damage; a squadmate holds Config.Keys.Interact (ProximityPrompt) for Config.Downed.ReviveHold to stand them
 -- up; bots revive with Squad.revive. Replicated as character attributes SquadState,
--- BleedOutAt (server time) and Reviver, mirrored on the Player for client UI. Spare
+-- BleedOutAt (server time) and Reviver, mirrored on the Player for client UI; the revive
+-- animation follows through Squad.onRevive (ReviveAnimService). Spare
 -- Tourniquet (the UpgradeKit attribute, loadout rework): a downed player stands up on their
 -- own Config.Upgrades.Tourniquet.Seconds after going down, once per run (SelfReviveAt).
 -- Also hands out landing pads (step 4). Requires only Players, Config and ArenaService, so
@@ -44,21 +45,35 @@ export type Member = {
 	padIndex: number?, -- landing pad slot, claimed on first spawn
 	state: MemberState,
 	bleedOutAt: number?, -- os.clock, Downed only
-	revivesUsed: number, -- this run; at Config.Downed.MaxRevives a lethal hit kills
+	revivesUsed: number, -- this mission; at Config.Downed.MaxRevives a lethal hit kills
 	prompt: ProximityPrompt?,
-	tourniquetUsed: boolean, -- the Spare Tourniquet self-revive, once per run
+	tourniquetUsed: boolean, -- the Spare Tourniquet self-revive, once per mission
 	selfReviveAt: number?, -- os.clock, Downed with the tourniquet only
+	entry: Instance, -- its ReplicatedStorage.SquadRoster entry (the squad panel reads it)
 }
 
 local Squad = {}
+
+-- The roster the clients read: bodies stream out, ReplicatedStorage does not. One entry per
+-- member carrying its state, health, shield and timers (Attributes > SquadRoster).
+local roster = Instance.new("Folder")
+roster.Name = Attributes.SquadRoster
+roster.Parent = ReplicatedStorage
 
 local members: { Member } = {}
 local byPlayer: { [Player]: Member } = {}
 local byHumanoid: { [Humanoid]: Member } = {}
 local stateListeners: { (member: Member, old: MemberState, new: MemberState) -> () } = {}
+export type ReviveEvent = "begin" | "cancel" | "complete"
+local reviveListeners: { (event: ReviveEvent, casualty: Member, reviver: Member?) -> () } = {}
 
 local function newMember(id: string, kind: MemberKind, owner: Player?, name: string): Member
+	local entry = Instance.new("Configuration")
+	entry.Name = id
+	entry:SetAttribute(Attributes.Callsign, name)
+	entry:SetAttribute(Attributes.SquadUserId, if owner then owner.UserId else 0)
 	return {
+		entry = entry,
 		id = id,
 		kind = kind,
 		owner = owner,
@@ -85,7 +100,9 @@ local function publish(member: Member)
 	if member.state == "Downed" and member.selfReviveAt then
 		selfReviveServer = workspace:GetServerTimeNow() + (member.selfReviveAt - os.clock())
 	end
-	for _, target in { member.character :: Instance?, member.owner :: Instance? } do
+	for _, target in
+		{ member.entry :: Instance?, member.character :: Instance?, member.owner :: Instance? }
+	do
 		if target then
 			target:SetAttribute(Attributes.SquadState, member.state)
 			target:SetAttribute(Attributes.BleedOutAt, bleedOutServer)
@@ -94,12 +111,38 @@ local function publish(member: Member)
 	end
 end
 
-local function setReviver(member: Member, name: string)
-	for _, target in { member.character :: Instance?, member.owner :: Instance? } do
+-- Who is reviving `member` ("" for nobody) and, on the roster, when that revive completes.
+local function setReviver(member: Member, name: string, seconds: number?)
+	for _, target in
+		{ member.entry :: Instance?, member.character :: Instance?, member.owner :: Instance? }
+	do
 		if target then
 			target:SetAttribute(Attributes.Reviver, name)
 		end
 	end
+	member.entry:SetAttribute(
+		Attributes.ReviveEndsAt,
+		if name ~= "" and seconds then workspace:GetServerTimeNow() + seconds else 0
+	)
+end
+
+-- A bot starts reviving `member` (BotService): the same attributes a player's hold writes.
+function Squad.setReviver(member: Member, by: Member, seconds: number)
+	if member.state == "Downed" then
+		setReviver(member, by.name, seconds)
+	end
+end
+
+-- `by` stopped reviving `member`; a revive someone else has since started stays.
+function Squad.clearReviver(member: Member, by: Member)
+	if member.entry:GetAttribute(Attributes.Reviver) == by.name then
+		setReviver(member, "")
+	end
+end
+
+-- A dead member rejoins in `seconds` (bots; a dead player stays out for the run).
+function Squad.setRespawnIn(member: Member, seconds: number)
+	member.entry:SetAttribute(Attributes.RespawnAt, workspace:GetServerTimeNow() + seconds)
 end
 
 local function clearPrompt(member: Member)
@@ -144,6 +187,18 @@ function Squad.onStateChanged(listener: (member: Member, old: MemberState, new: 
 	table.insert(stateListeners, listener)
 end
 
+-- The revive as it goes, for what shows it (ReviveAnimService): "begin" and "cancel" follow
+-- a player's hold on the prompt, "complete" is every revive (`reviver` nil: nobody did it).
+function Squad.onRevive(listener: (event: ReviveEvent, casualty: Member, reviver: Member?) -> ())
+	table.insert(reviveListeners, listener)
+end
+
+local function fireRevive(event: ReviveEvent, casualty: Member, reviver: Member?)
+	for _, listener in reviveListeners do
+		task.spawn(listener, event, casualty, reviver)
+	end
+end
+
 -- Points `member` at a (new) body; nil clears it. A new living body is Alive.
 function Squad.bindCharacter(member: Member, character: Model?)
 	if member.humanoid then
@@ -156,6 +211,19 @@ function Squad.bindCharacter(member: Member, character: Model?)
 	local humanoid = member.humanoid
 	if humanoid then
 		byHumanoid[humanoid] = member
+		-- Health on the roster, whole points only (regen ticks in fractions).
+		local function publishHealth()
+			if member.humanoid == humanoid then
+				member.entry:SetAttribute(Attributes.SquadHealth, math.ceil(humanoid.Health))
+				member.entry:SetAttribute(Attributes.SquadMaxHealth, humanoid.MaxHealth)
+			end
+		end
+		humanoid.HealthChanged:Connect(publishHealth)
+		humanoid:GetPropertyChangedSignal("MaxHealth"):Connect(publishHealth)
+		publishHealth()
+		if humanoid.Health > 0 then
+			member.entry:SetAttribute(Attributes.RespawnAt, 0)
+		end
 		humanoid.Died:Connect(function()
 			if member.humanoid == humanoid then
 				setState(member, "Dead")
@@ -170,6 +238,7 @@ end
 
 local function add(member: Member)
 	table.insert(members, member)
+	member.entry.Parent = roster
 end
 
 local function remove(member: Member)
@@ -178,6 +247,7 @@ local function remove(member: Member)
 		table.remove(members, index)
 	end
 	clearPrompt(member)
+	member.entry:Destroy()
 	if member.humanoid then
 		byHumanoid[member.humanoid] = nil
 	end
@@ -400,6 +470,7 @@ function Squad.revive(member: Member, by: Member?, free: boolean?)
 		regen.Enabled = true
 	end
 	setState(member, "Alive")
+	fireRevive("complete", member, by)
 	print(`[Squad] {member.name} revived by {by and by.name or "?"} ({member.revivesUsed} used)`)
 end
 
@@ -421,17 +492,19 @@ local function addPrompt(member: Member)
 	prompt.Name = "RevivePrompt"
 	prompt.ActionText = "Revive"
 	prompt.ObjectText = member.name
-	prompt.KeyboardKeyCode = Enum.KeyCode.F
+	prompt.KeyboardKeyCode = Config.Keys.Interact
 	prompt.GamepadKeyCode = Enum.KeyCode.ButtonX
 	prompt.HoldDuration = settings.ReviveHold
 	prompt.MaxActivationDistance = settings.ReviveRadius
 	prompt.RequiresLineOfSight = false
 	prompt.Style = Enum.ProximityPromptStyle.Default
 	prompt.PromptButtonHoldBegan:Connect(function(player)
-		setReviver(member, Squad.callsign(player))
+		setReviver(member, Squad.callsign(player), settings.ReviveHold)
+		fireRevive("begin", member, byPlayer[player])
 	end)
-	prompt.PromptButtonHoldEnded:Connect(function()
+	prompt.PromptButtonHoldEnded:Connect(function(player)
 		setReviver(member, "")
+		fireRevive("cancel", member, byPlayer[player])
 	end)
 	prompt.Triggered:Connect(function(player)
 		local reviver = byPlayer[player]
@@ -482,8 +555,9 @@ function Squad.down(member: Member)
 	print(`[Squad] {member.name} is down`)
 end
 
--- RunManager, on every run start: revives are counted per run.
-function Squad.resetRun()
+-- Revives and the tourniquet are counted per mission: every mission of an operation
+-- starts with the full budget (Lifecycle onMissionStart), and so does a fresh run.
+function Squad.resetMission()
 	for _, member in members do
 		member.revivesUsed = 0
 		member.tourniquetUsed = false
@@ -535,6 +609,12 @@ local function onPlayerAdded(player: Player)
 	player:SetAttribute(Attributes.Callsign, callsign)
 	byPlayer[player] = member
 	add(member)
+	-- The Armour Plate shield (LoadoutService writes it on the Player), on the roster too.
+	local function publishShield()
+		member.entry:SetAttribute(Attributes.Shield, player:GetAttribute(Attributes.Shield) or 0)
+	end
+	player:GetAttributeChangedSignal(Attributes.Shield):Connect(publishShield)
+	publishShield()
 	-- Every (re)spawn lands on the member's own pad around the LZ helipad.
 	local pad = ArenaService.getSpawnLocation(Squad.padFor(member))
 	if pad then
@@ -572,7 +652,8 @@ end
 
 function Squad.init()
 	Lifecycle.register("Squad", {
-		onRunStart = Squad.resetRun,
+		onRunStart = Squad.resetMission,
+		onMissionStart = Squad.resetMission,
 		onPlayerRemoving = function(player: Player)
 			local member = byPlayer[player]
 			if member then

@@ -123,6 +123,22 @@ Icons show on call-in and field-upgrade cards through `IconId` on each
 - No text, no letters, no logos. Stencil marks are abstract bars.
 - Readability test: shrink to 40 px. If you can't name the object, simplify.
 
+### Glyphs (2026-11-11)
+
+Marks that sit beside a number on the HUD, drawn at 16-20 px: `GLYPHS` in the generator, no
+plate and no ground shadow, a transparent canvas, one bold silhouette filling it, a dark
+backing (the silhouette grown by a 20 px round stroke, `#07090b` at 0.8) so it holds over a
+bright world, fixed materials. Two exist, for the wallet readout (`Config.Wallet`):
+
+- `merits`: a medal, a brass ribbon with a red centre stripe folding to a point and a faceted
+  brass star. Warm, upright, pointed.
+- `tabs`: a stamped steel tag on a ball chain, chamfered, tilted 18 degrees, a punched hole,
+  three stamped bars. Cool, wide, flat.
+
+`node assets/icons/build/icons.js merits tabs glyphs` renders them and
+`build/glyph_preview.png` (each at 160, 40, 20 and 16 px on a dark and a bright ground). The
+item icons need `ItemDefinitions` for their accent and are skipped while it is gone.
+
 ### Renderer constraints (resvg)
 
 - Supported: `rect`, `polygon`, `polyline`, `circle`, `ellipse`, `g transform`, `opacity`.
@@ -168,7 +184,7 @@ holds every rule below; every HUD script builds its ScreenGui through `HudTheme.
 UIScale) and its text through `HudTheme.label`.
 
 - **No panels behind HUD text.** Text is white (240,240,240) with a black stroke at 0.55.
-  Panels only on the notification cards, the results screen and the world cards.
+  Panels only on the notification cards, the results screen and the reward cards.
 - **Shapes:** hard-edged rectangles, no corner radius on bars or cards. Circles only for the
   ability icons and the boss emblem. A 45-degree square is the "upgraded" mark.
 - **Strokes:** 1 px. Bar outline white at 0.75; a "hot" outline (low health) is red.l at 0.
@@ -197,26 +213,44 @@ UIScale) and its text through `HudTheme.label`.
 | Element | Where | What |
 |---|---|---|
 | Health stack (`HealthBarUI`) | top left (16,12) | 400x16 red bar, white damage trail; shield 400x6 white bar under it with a "+N" tag; low health: red outline + red edge vignette pulsing; downed: dim fill, vignette held |
-| Abilities (`AbilityUI`) | top left (16,44) | seven 38 px circles G / V / E / 1-4 (frag, shove, stim, the call-ins): key letter, name under (PC); cooling: white fill rising, seconds; grenades, stims and call-in charges as yellow squares under the circle, the circle dims when empty; a diamond marks an upgrade in the slot |
-| Resupply (`ResupplyUI`) | top left (16,108) | 14 pt line + 240x4 bar with quarter ticks; ready: "RESUPPLY READY [5] FLARE" with the bar pulsing; inbound: "PALLET 0:14", bar drains |
+| Abilities (`AbilityUI`) | top left (16,44) | seven 38 px circles G / F / V / 1-4 (frag, shove, stim, the call-ins): key letter from `Config.Keys`, name under (PC); cooling: white fill rising, seconds; grenades, stims and call-in charges as yellow squares under the circle, the circle dims when empty; a diamond marks an upgrade in the slot |
+| Resupply (`ResupplyUI`) | top left (16,108) | 14 pt line + 240x4 bar with quarter ticks; ready: "RESUPPLY READY [X] FLARE" with the bar pulsing; inbound: "PALLET 0:14", bar drains |
+| Stamina (`StaminaUI`) | top left (16,38), under the shield bar | 300x4 yellow bar, no label: shorter and thinner than health; hidden until stamina is spent (0.18 s in), fades out 0.3 s once full for 2 s (`Config.Stamina.BarHideAfter`); winded: fill and outline red.l, pulsing twice a second (15 Hz) until sprint is back |
+| Squad panel (`SquadPanelUI`, `Config.SquadPanel`) | left edge (16,176) | one 190x32 row per other squad member (max 3, callsign order): name 14 in friendly blue (a player's display name, a bot's callsign), state 12 right-aligned, 190x6 health bar (red; red.l with a red outline under 30%), 190x3 white Armour Plate bar when plated; downed: "DOWN 23s" on a draining red.l bar, "REVIVING" on a filling blue bar; dead: dim, "DEAD 8s" while a bot's respawn runs; a red.l flash on a hit of 25% or a down. Repaints on attribute changes; a 0.25 s timer only while a countdown shows |
 | Run timer (`RunTimerUI`) | top centre (0,8) | 16 pt, no panel |
 | Ammo (`LoadoutUI`) | crosshair (+40,+40) | the gun in hand 12 pt above it with "[Q] PISTOL" dim (the other gun); magazine GothamBlack 26 + " / reserve" 16 dim; yellow low, "RELOADING" + bar, red "DRY [R]"; attribute-driven |
 | Arms Room (`LoadoutMenu`, hosted by `LoadoutUI` on B) | centre, 760 wide, DisplayOrder 110 (above the results) | menu style: (22,8,8) at 0.08 with a red.m 1 px box, "//ARMS ROOM" 30, a dim 12 pt rule line; columns PRIMARY / SIDEARM + GRENADE / CALL-INS of 26 px rows (name 14 bold left, designation 11 right), the pick in the cream fill with dark text, call-ins badged "[n]" by slot; the hovered item's line under the columns; cream DEPLOY LOADOUT bottom right, the server's refusal in red.l above it; height grows with the longest list |
-| Mission line (`MissionLine`, driven by `ObjectiveUI` / `ExtractionUI`) | lower centre (0.5, 0.8) | "SECURE the AREA" / "HOLD the LZ" / "WAITING FOR SQUAD n/m" / red "RETURN to the LZ", a second line, a 300x3 bar; extraction outranks the objective |
-| Subtitles (`BuffNoticeUI.subtitle`) | under the mission line | "CONTROL: radio line" (BuffNotice kind radio), the Warden's "HANDSET: ..." tells |
+| Reward cards (`RewardPanel`, opened by `ResupplyUI` on a crate's prompt) | centre, DisplayOrder 60 | up to three 300x400 cards 16 apart under "//RESUPPLY" 30 yellow, a 18 pt note and a dim "closes in 0:42"; a card: menu fill (22,8,8) at 0.08 with a red.m 1 px box and a 4 px bar in its kind's colour (supply yellow, field upgrade blue), "[1]" 16 yellow, kind tag 16 right, 88 px icon, name GothamBlack 28, one-line description Gotham 20, red.l "REPLACES ..." 16; hover or gamepad selection: cream 3 px box; taken: cream flash, x1.06, the others shrink and fade, gone in 0.45 s; footer 16: yellow squares + callsigns that have taken theirs, the refusal in red.l, "[E] CLOSE (or walk away)"; black layer behind at 0.8 transparency. On a short screen the panel is held at 0.7 scale or more (name 19 px, description 14 px on 844x390) |
+| Mission line (`MissionLine`, driven by `ObjectiveUI` / `ExtractionUI`) | lower centre (0.5, 0.8) | "MAIN OBJECTIVE  NAME" (name yellow), its reason on the second line the whole time, a dim 14 pt third line (what to do now, progress, timer, distance in metres), a 300x3 bar; "HOLD the LZ" / "WAITING FOR SQUAD n/m" / red "RETURN to the LZ"; extraction outranks the objective |
+| Objective list (`ObjectiveUI`) | top left (16,150) | one row per known objective: a needle that turns toward it (up = ahead), "MAIN OBJECTIVE / SIDE OBJECTIVE  NAME  140 m" 14 pt; a side objective adds its reason and its step, 12 pt; DONE yellow, FAILED red.l for 6 s; refreshed at 4 Hz |
+| Objective card (`ObjectiveUI`) | upper centre (0.5, 120) | at insert, 8 s, no panel: "MAIN OBJECTIVE" 14 dim, the name GothamBlack 36 yellow, the reason 18, "at <place>" 16 dim |
+| Subtitles (`BuffNoticeUI.subtitle`) | under the mission line | "CONTROL: radio line" (BuffNotice kind radio), the Warden's "WARDEN: ..." tells |
 | Notification cards (`BuffNoticeUI.card`) | top right (-16,12), y 120 during a boss | dark strip, red-outlined square, bold title; pickups, picks, the flare call, an upgrade landing; max 3 |
 | Boss bar (`BossBarUI`) | top right (-16,12) | name in red right-aligned, 380x16 faceted body bar ending in a round emblem (blue while stunned), six 56x6 plate bars with labels |
 | Downed / K.I.A. (`RunEndUI`) | centre (0.5, 0.22) | "DOWNED" 40 red + 360x4 bleed-out bar + line; "K.I.A." + line; no panel |
 | Results (`RunEndUI`) | full screen | menu style: dark red field, corner L-brackets, "//OPERATION COMPLETE" yellow or "//SQUAD WIPED" red, stats in a red-outlined box, cream READY |
+| Results (`RunEndUI`) wallet | under the "+N MERITS" line | dim 14 pt "ON YOUR RECORD" + the wallet readout; counts up from the balance before the pay; hidden until the match has read the record |
+| Wallet (`WalletReadout`; lobby `WalletUI`) | the Carrier: right end of Roblox's top bar (ScreenInsets TopbarSafeInsets, 16 px in), DisplayOrder 4, always on | medal glyph + merits in yellow, tag glyph + tabs in white, GothamBlack 20, no panel, no words; numbers by `Rules/Wallet` (exact under 10,000, then "12.4k", "1.2M", rounded down); a change counts to the new number over 0.6 s at 15 Hz while the number starts white and the glyph swells 35% and settles |
 | Crosshair / hit marker | centre | unchanged |
+| Binoculars (`BinocularController`, the Anvil) | full screen while they are up | black outside one pill-shaped glass (the one rounded shape besides the circles: it is a lens), a 1 px white reticle with range ticks, the call-in 14 dim above, the range GothamBlack 26 below with MARK SET yellow or the refusal red.l 14, keys 12 dim; the crosshair fades out; written only on change |
 
 - No always-on loadout strip: an upgrade shows as a card when it lands and as a diamond on
   its ability circle.
-- Not built yet: world markers (objective, LZ, pallet diamonds with distance) and a squad
-  roster; both need the server to publish positions and squad state.
-- Cards in the world (pallet billboards) keep their layout.
+- **Ally outline** (`AllyOutline`, `Config.AllyOutline`; owner 2026-11-11): every squadmate
+  (player or bot) wears a thin pale blue outline seen through walls, no fill; yellow while
+  downed, off when dead.
+- **No floating health bars or name tags** (owner 2026-11-11): none over the Infected,
+  players or bots, and Roblox's own top-right health bar is off. Squadmates are the squad
+  panel, the boss its top bar. `Config.SquadPanel.OverheadBars` / `OverheadNames` restore them.
+- World markers: each objective carries a BillboardGui ("MAIN OBJECTIVE" / "SIDE OBJECTIVE"
+  over its name, seen through walls from 1200 studs; `Objectives/Kit.marker`). Not built yet:
+  LZ and pallet diamonds with distance, and a squad roster.
+- Crates carry one label in the world (kind in yellow, "TAKEN n/m" under it) and a light
+  pillar on the upgrade and objective crates. The small card billboards are gone
+  (owner 2026-11-11: too small to read); they remain only behind `Requisition.Pick.WalkOver`.
 - UI stays **code-generated** (disk is the single source of truth). No hand edits in Studio.
-- Never block the centre of the screen except for the run-end screens.
+- Never block the centre of the screen except for the run-end screens and the reward cards,
+  which the player opens on purpose and can walk away from.
 
 ---
 
@@ -343,6 +377,8 @@ Lower is always acceptable. Add triangles only where the silhouette needs them.
   an `Atomic` Model so nothing half-streams.
 - Particles: palette-colored flat sprites, emit bursts (`Emit(n)`) not continuous rates;
   cap concurrent burst emitters (death bursts ≤ 1 per enemy, rate-limited at 40+ alive).
+  The kill burst is dark blood, `wound.m` fading to `wound.d` (`Config.HitMarker.KillBurst`);
+  never green.
 - Keep live Instance counts low: enemies ≤ 60, projectiles pooled, decals and debris despawn
   within 10 s.
 - Measure before and after with the MicroProfiler (MCP `capture_micro_profiler`) and the
@@ -385,8 +421,7 @@ Not built: Bloat, Shedder, Crawler, Kite, Growth, the other Index hosts, Kilo.
   jaw, a stepped notch down the chest, a `white.l` surgical mask, soaked shirt, knees bent
   18 deg. 1,524 / 2,008 / 2,172 / 1,484 tris (caps in `BODY_TRI_CAP`). Previews:
   `ref_inf_<form>.png`, `_side.png`, `_back.png`.
-- Hocker sac: `strain.m` SmoothPlastic, swells 1.8x over the 0.8 s windup; its spit is a
-  Neon ball of the same colour and the puddle a flat Neon disc at 0.45 transparency.
+- Hocker sac: `strain.m` SmoothPlastic, swells 1.8x over the 0.8 s windup. Its spit: §8.
 - Gore (owner: limbs come off when shot): a severed limb leaves a flat raw stump
   (`inf_gore_stump`: `flesh.d` rim, `wound` face, a `rebuilt.l` bone end) and hits throw
   small low-poly chunks; no blood spray, no pools, no interior detail. Stumps sit at the
@@ -410,6 +445,44 @@ switched off (`Config.Player.SkinnedBody = false`, see `assets/3d/README.md`).
 - Weapons: `gun` and `dark` materials, one accent facet (sight, mag tape) in the owning
   item's accent color.
 
+### Infected v2 (in the game since 2026-11-11)
+
+The remade Walker, Runner, Brute and Hocker (owner: "I like the new zombies"). The game wears
+them while `Config.Enemies.BodyVersion` is 2; 1 puts the bodies above back (both sets stay
+uploaded). Source: `assets/3d/build/infected_v2.py`. Pictures (first bodies next to v2, front
+and back): `assets/3d/build/previews/infected_v2_<form>.png` and `lineup_infected_v2.png`.
+
+Same rules: blocky R15 limb sets, palette swatches, no green skin, costumes from
+CHARACTERS.md. What changes is the read at distance: a few big shapes instead of many small
+ones. Each body gets one large open wound with pale bone in it, pustules big enough to break
+the outline, a face with dark sockets and an open jaw, and one bad side.
+
+- **Walker** (1,792 tris, cap 1,800): the left side is still a person (jacket, sleeve,
+  screening band, trouser, shoe). The right side is bare `pallor`: chest open over three
+  ribs, a clump of pustules on the dropped shoulder, a swollen arm hanging 0.2 lower, the
+  trouser leg torn off, a bare foot. Head `pallor.l`, tilted to the bad side, jaw hanging.
+- **Runner** (2,100, cap 2,200): three values instead of one dark red: `flesh` where light
+  lands, `wound` where it is deep, bone you can count (rib cage over a starved waist, bare
+  jaw open, brow, shoulder blade, spine). The black T-shirt is one rag and a strip.
+- **Brute** (2,088, cap 3,000): the shelf is one yoke: whole on the left with two broken bone
+  ends above the crown, broken short on the right under a tumour of four big pustules. The
+  chest is split top to bottom with ribs standing in it, on a `bruise.l` chest. The right
+  forearm and fist are a bone club with spurs; the left is the arm it had.
+- **Hocker** (1,632, cap 2,200): built round the neck. Swollen `flesh` glands and a ring of
+  pustules for the sac to sit in, the mouth a raw dark hole above it, the jacket front soaked
+  to the waist, a hump between the shoulders. Strain green only at the bottom of the throat
+  and on the sac.
+
+Sided limbs: Walker arms and legs, Brute arms (`infected_v2.SIDED`). Heads, torsos and the
+sided limbs are not symmetric, so every `inf_v2_*` FBX is exported mirrored in X
+(`assets/3d/README.md`); the bad side is the body's own right. The Hocker's sac is placed
+from the limb centre, not the mesh centre (the hump moves the torso's bounds). Hit boxes are
+the limb bounds, so they grew with the shapes: Walker head 1.38 x 1.92 x 1.40 (was 1.22 x
+1.60 x 1.48), Hocker head 1.84 x 1.56 x 1.90 (was 1.33 x 1.60 x 1.70), Brute upper torso
+3.29 x 3.40 x 1.91 (was 2.86 x 3.11 x 1.87), Brute right forearm 1.48 x 2.12 x 1.34 (was
+1.19 x 2.12 x 1.01). Not yet seen in game: which side the wounds land on, gore stumps on the
+new arms, how the clips move the longer right arm.
+
 ### The Carrier's sky (gloomy, 2026-11-10)
 
 Tien: gloomier. An overcast, cold late afternoon on a grey sea (`Config.Lobby.Sky`): ClockTime
@@ -419,7 +492,7 @@ top `rgb(196,206,220)`, Exposure -0.05, ShadowSoftness 0.75; Atmosphere Density 
 Color `rgb(112,118,126)`; ColorCorrection Contrast 0.08, Saturation -0.22, Tint
 `rgb(232,238,248)`; Bloom 0.4 / 22 / threshold 1.6 (fire, Neon and lamps only). Sea
 `rgb(38,58,64)`, reflectance 0.25, seabed `rgb(16,28,32)`. The orange coast fires and the
-Lantern lamps are the warm notes. The hangar desks must still read at a glance.
+Helicopter lamps are the warm notes. The hangar desks must still read at a glance.
 
 ### The Carrier's buying panels (2026-11-10)
 
@@ -471,9 +544,9 @@ accents. The v1 `BridgeWindows` Part (Glass, transparency 0.1) broke the no-tran
 the island mesh replaces it with opaque `glass` and FallowArt removes the Part. Budget: ~8,000
 tris for the whole ship with 18 instanced catwalk bays (cap 18,000).
 
-### Lantern, the lift bird (art pass 2026-11-09, uploaded 2026-11-09)
+### The helicopter (`Lantern` in code), the lift bird (art pass 2026-11-09, uploaded 2026-11-09)
 
-Canon: `docs/LORE.md` > Lantern; sheet and decisions: `docs/sprints/LOBBY_V1_FALLOW.md` >
+Canon: `docs/LORE.md` > The helicopter; sheet and decisions: `docs/sprints/LOBBY_V1_FALLOW.md` >
 Lantern; meshes in `assets/3d/build/lantern.py`. Vehicles take the prefix `veh_` (collection
 `Vehicles`). Read from 40 studs: the dark open door (the interior is `dark` / `dark_d` on
 purpose), the long thin boom with a fin taller than the rotor, the amber lamp. Shell Metal
@@ -483,6 +556,14 @@ stencil. 1,912 tris a bird with both rotors (vehicle cap 5,000). Light: one Poin
 transparency on geometry"**: the rotor blur discs (two flat cylinders a bird, fading
 in to 0.8 transparent over the last 6 s before lift while the blades fade to 0.6, never out;
 `Rules/RotorBlur`) are VFX, like the breach ghost.
+
+**The Doorman** (`assets/3d/build/doorman.py`, prefix `dep_`, collection `Deployables`): a
+belt-fed medium machine gun on a squat tripod, run by a sensor head. Read from 25 studs: the
+long barrel with its vented olive heat shield, the olive sensor box above the receiver (blue
+status light fore and aft), the brass belt out of the ammo can on the gun's left, tan sandbags
+on the aft legs. Three meshes so it can turn: base (still), cradle (yaws 1.9 up), gun (pitches
+at the trunnion 2.6 up, muzzle 3.52 ahead). 2,300 tris, counted against the vehicle class
+(cap 5,000; four at most in a match). 4.05 wide, 5.54 long, 3.5 tall. No collision.
 
 ~42k tris, no lights, no collision or queries. `SkyService.burn(part)` puts the same fire +
 smoke on a dressing piece (`burning = true` in `ArenaService.DRESSING`). Smoke is the stock
@@ -498,7 +579,12 @@ sprint that blend four directions, shouldered aim while the trigger is held, a s
 per shot, a flinch on damage, a fall on death. Upper-body clips (aim, fire, hit, reload,
 throw) leave the legs to the locomotion clip. Each Infected type has its own gait, attack,
 flinch and death; locomotion rate scales with ground speed so feet do not slide
-(`Config.Animations.MoveClipSpeed`). The grenade ghost (hold G) is a Neon ring in the accent
+(`Config.Animations.MoveClipSpeed`). The revive (`Config.ReviveAnimation`) reuses three
+clips, the crouch idle as the kneel, the last frame of the knockdown as the casualty on
+their back, the get-up, and solves the reviver's arms onto the casualty's chest in code
+(two-bone IK over the clip, per client), because no clip can reach a chest that lies
+somewhere different every time; a soft gear rustle from the `player_gear` bank while they
+work. Its poses were set from the clip numbers and have not been tuned by eye yet. The grenade ghost (hold G) is a Neon ring in the accent
 orange (`rgb(255,150,60)`) plus a ball at the landing point.
 
 ---
@@ -509,9 +595,23 @@ orange (`rgb(255,150,60)`) plus a ball at the landing point.
   `Config.Weapon.TracerDuration` (0.06 s), client-side only. Headshot numbers are white and
   a third larger than hit numbers.
 - Objective / extraction zones: flat ring + low translucent cylinder in `objective yellow`.
-- Strike warning: flat disc in `warning orange`, blast = expanding faceted sphere,
-  no stock fire textures.
+- Strike warning: each call-in's own mark in its accent colour (Hammer a diamond per round,
+  Anvil a closing dashed ring, Shrike a ladder of rungs), blast = expanding faceted sphere
+  in the row's `Flash` colour, no stock fire textures. Smoke and dust are bursts of the
+  built-in smoke sprite tinted from the palette. The whole table:
+  [PROGRESSION.md > Call-in arrivals](PROGRESSION.md#call-in-arrivals).
 - Fire ground: faceted orange/yellow triangles on the floor, flicker by scale not by light.
+- Infected spit (owner 2026-11-11: "just a yellow circle"; `SpitFX`, client only, colours and
+  numbers in `Config.Enemies.SpitFX`, curves in `Rules/SpitShape`): bile and pus, never green
+  or bright yellow, no Neon. Tell: the head goes back 16 deg over the windup and snaps forward
+  on the spit, bile dripping from the mouth. In flight: an amber-brown ellipsoid stretched
+  along its path and wobbling, a dark red clot dragging behind, a tapering strand, drops
+  falling off. Impact: a burst of drops off the surface and a blotch with an uneven edge
+  (2.5 s); on the ground the pool is a core disc of exactly the damage radius over a dark red
+  rim, bubbling toward the edge, fading over its last second. A splashed player's screen
+  edges smear with bile for 0.8 s. Budget: bodies pooled and reused, nine burst-only
+  emitters in all whatever the number of spitters, drool and drips capped at 40 drops/s
+  together, 6 blotches, pools at `MaxPuddles`. `Enabled = false` is the old Neon ball and disc.
 - First person (`CameraController`, `Config.Camera.FirstPerson`; Nova 2026-11-10): T or the
   right stick click toggles it, the wheel in past `MinDistance` enters and back out leaves.
   The eye sits on the Head (0.45 forward, 0.1 up), so crouch and prone carry it; yaw, pitch,
@@ -519,15 +619,33 @@ orange (`rgb(255,150,60)`) plus a ball at the landing point.
   client only (others always see it); `FirstPersonView` shows a viewmodel instead: a copy of
   the held gun with gloved hands and Pike-grey forearms. The right hand holds it where the
   body's hand holds the real gun, the left on the handguard (under the grip for a sidearm).
-  It points where the camera looks, low right at the hip (`GunHip`); down the sights the gun's
-  sight line (MeshAssets `sight`, a Sight part in the Tool: the rear peep or notch, level with
-  the front post or bead; for a scope a point on its axis) runs through the eye, the rear sight
-  `SightEye` ahead (a gun without one sits by its size, `SightDrop`), where the crosshair fades out so the
-  iron sights or scope aim. Its own animation, timed to the body's events: the reload (from
+  It points where the camera looks; at the hip the grip sits where that kind of gun is carried
+  (`Config.Weapon.Sights.Hold`: a long gun low right, a sidearm nearer the middle, the Goose on
+  the shoulder). **Sights (2026-11-11, `Rules/Sight`, not yet seen in game):** every gun row
+  carries `Sight`: its mesh's `Rear` and `Front` sight points (peep centre or notch top and the
+  post's tip; a scope's eyepiece and objective), and optionally `Kind`, `Hold`, `EyeRelief`,
+  `Zoom`. The points are written on the gun's design; Roblox shows an uploaded mesh mirrored
+  left-right about its bounds centre, so `WeaponDefinitions` moves them (and `getMuzzle` the
+  barrel tip) to where they show, x = 2 * offset.X - x (`MeshAssets.shownPoint`; measured
+  2026-11-11: without it the M249, MP5 and M16 put the eye beside the sights). Down the sights the eye sits on the line through the two, the eye relief behind the
+  rear sight (0.35 studs with a cheek on the stock, 1.0 for a sidearm at arm's length, 0.3
+  behind a scope), looking at the front one, so the post is centred in the peep on the screen's
+  centre, where the round goes; the crosshair fades out. The view narrows by the gun's own
+  `Zoom` (FOV = 2 atan(tan 35 / zoom)): M17 and revolver 1.15, Mossberg 1.2, MP5 1.25, M16 and
+  M249 1.35 (FOV 55), Goose 3, M110 3.5, M2010 6. A scope (`Kind = "scope"`: M2010, M110, the
+  Goose) comes to the eye over `ScopeTime`, the lens blinks black, the gun is hidden and
+  `ScopeView` draws the picture: a round lens 0.4 of the screen's height in radius, black
+  around it, a soft shadow inside the rim, a fine crosshair with range marks, three heavy
+  posts and a red centre dot; the HUD stays above it. A reload or a Q swap lowers the gun
+  out of the sights. `tests/Sight.spec.luau` fails any gun row whose sight is missing, off its
+  mesh, not along the bore or with the eye in the wrong place. Third person keeps the shared
+  `Weapon.ADS` view. Its own animation, timed to the body's events: the reload (from
   `ReloadUntil`: the gun cants, the left hand takes the magazine down out of view and seats a
-  fresh one), a kick per shot (`KickBack`, `KickPitch`), sway behind camera turns (`Sway`) and a
-  walking bob (`Bob`). Built at full size and shrunk toward the eye (`Scale` 0.4) so walls and
-  squadmates close by do not cut into it. In first person shots leave from its barrel (the
+  fresh one), a kick per shot (`KickBack`, `KickPitch`; less down the sights), sway behind
+  camera turns (`Sway`), a walking bob (`Bob`) and a dip during a swap (`SwapDip`). Built at
+  full size and shrunk toward the eye (`Scale` 0.4, a little more when a close rear sight
+  would fall inside the camera's near plane) so walls and squadmates close by do not cut into
+  it. In first person shots leave from its barrel (the
   hit ray, the tracer and a scaled flash), so they run down the sight line; squadmates see
   that tracer start by the head. The body's clips are not reused: made for the body seen from
   behind, their hands do not meet the gun from the eye.

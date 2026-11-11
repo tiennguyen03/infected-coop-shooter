@@ -26,6 +26,7 @@ local ObjectiveService = require(script.Parent.ObjectiveService)
 local PauseService = require(script.Parent.PauseService)
 local HandoffService = require(script.Parent.HandoffService)
 local LoadoutService = require(script.Parent.LoadoutService)
+local MeritService = require(script.Parent.MeritService)
 local Missions = require(script.Parent.Missions)
 local Squad = require(script.Parent.Squad)
 local Lifecycle = require(script.Parent.Lifecycle)
@@ -84,6 +85,8 @@ local function beginRun()
 	workspace:SetAttribute(Attributes.StagingEndsAt, 0)
 	setState("Insert", "")
 	BotService.startRun()
+	-- The mission's objectives are drawn and read out while the squad lands.
+	ObjectiveService.brief(HandoffService.objective())
 	task.delay(Config.Run.InsertSeconds, function()
 		if generation ~= runGeneration or RunStates.current() ~= "Insert" then
 			return
@@ -104,6 +107,15 @@ function RunManager.endRun(result: RunStates.RunResult)
 	PauseService.setPaused(true)
 	EnemyService.clearAll()
 	clearReady()
+	-- Merits for the mission (MeritService): every player here, whatever state they are in.
+	-- No mission tracks Secondaries yet, so they pay 0. Paying never stops the run from ending.
+	local paid, payError = pcall(function(): string?
+		MeritService.pay(Handoff.outcome(result, primaryDone), 0)
+		return nil
+	end)
+	if not paid then
+		warn(`[RunManager] merits were not paid: {payError}`)
+	end
 	setState("Ended", result)
 	-- A squad from the lobby goes home: READY now means "back to the Carrier", and the bird
 	-- lifts on its own after Config.Handoff.ReturnAfterSeconds.
@@ -132,21 +144,23 @@ function RunManager.goHome()
 		{
 			id = Missions.current().Id,
 			outcome = Handoff.outcome(runResult, primaryDone),
-			secondaries = 0,
+			secondaries = ObjectiveService.sidesDone(),
 		},
 	}, runResult == "Extracted")
 	print("[RunManager] going home:", result.missions[1].outcome, "standDown", result.standDown)
 	task.spawn(function()
+		MeritService.settle() -- the lobby reads the record on landing: let the pay be saved first
 		if HandoffService.sendHome(result) then
 			return
 		end
 		workspace:SetAttribute(Attributes.Homebound, false)
 		workspace:SetAttribute(Attributes.ReturnsHome, false)
 		clearReady()
-		Remotes.get("BuffNotice"):FireAllClients(
-			"Control: Lantern can't lift. Stay on the pad, Pike.",
-			Messages.Notice.Radio
-		)
+		Remotes.get("BuffNotice")
+			:FireAllClients(
+				"Control: Helo can't lift. Stay on the pad, Pike.",
+				Messages.Notice.Radio
+			)
 	end)
 end
 

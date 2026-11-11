@@ -131,7 +131,7 @@ def build_palette_material(img):
 
 # ------------------------------------------------------------------ bmesh helpers
 # Static set pieces get the z-fight pass in Builder.finish; bodies and limbs do not.
-ZFIGHT_COLLECTIONS = {"Environment", "Props", "Pickups", "Weapons", "City", "Fallow", "Vehicles"}
+ZFIGHT_COLLECTIONS = {"Environment", "Props", "Pickups", "Weapons", "City", "Fallow", "Vehicles", "Deployables"}
 ZFIGHT_SKIP = {"prop_plague_rat"}  # a creature: its overlaps are sub-stud and its size is tuned
 
 
@@ -1378,6 +1378,19 @@ import lantern  # noqa: E402
 
 lantern.register(sys.modules[__name__])
 
+# The remade common Infected (owner adopted them 2026-11-11) live in infected_v2.py
+# (`inf_v2_*`); the bodies above stay built as the fallback set (Config.Enemies.BodyVersion).
+# Its side-by-side previews: `blender --background --python infected_v2.py`.
+import infected_v2  # noqa: E402
+
+infected_v2.register(sys.modules[__name__])
+
+# The Doorman, the tripod sentry gun (base, cradle, gun + preview figures) lives in doorman.py
+# (2026-11-11).
+import doorman  # noqa: E402
+
+doorman.register(sys.modules[__name__])
+
 
 # ------------------------------------------------------------------ The Chosen (player bodies)
 # Same limb-swap build as the Infected: one mesh per R15 limb inside the stock limb box.
@@ -1844,7 +1857,15 @@ def get_collection(name):
 # port face over the HRD patch. Near-symmetric meshes hide it; the ship and Lantern do not,
 # so their export is pre-mirrored about the same centre. Previews and the printed `offset`
 # (the bounds centre, unchanged by this mirror) stay in design coordinates.
-MIRROR_X_COLLECTIONS = {"Fallow", "Vehicles"}
+MIRROR_X_COLLECTIONS = {"Fallow", "Vehicles", "Deployables"}
+# The same for single sets inside a collection that is otherwise left alone: the remade
+# Infected have one bad side (heads, torsos, the `_l` / `_r` limbs), the older bodies were
+# uploaded as they are.
+MIRROR_X_PREFIXES = ("inf_v2_",)
+
+
+def exports_mirrored(name, obj):
+    return obj.users_collection[0].name in MIRROR_X_COLLECTIONS or name.startswith(MIRROR_X_PREFIXES)
 
 
 class mirrored_x:
@@ -2186,7 +2207,7 @@ def main():
     argv = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
     only = None
     if "--only" in argv:
-        only = [a for a in argv[argv.index("--only") + 1 :] if a != "--force"]
+        only = [a for a in argv[argv.index("--only") + 1 :] if not a.startswith("--")]
     force = "--force" in argv
     prints = {} if force else load_fingerprints()
     changed = []
@@ -2226,7 +2247,7 @@ def main():
             changed.append(name)
             prints[name] = fp
         if not name.startswith("ref_") and not same:
-            if obj.users_collection[0].name in MIRROR_X_COLLECTIONS:
+            if exports_mirrored(name, obj):
                 with mirrored_x(obj):
                     export_fbx(obj, fbx)
             else:
@@ -2251,6 +2272,9 @@ def main():
             frame_and_render(scene, cam, objs, os.path.join(PREVIEWS, name + "_back.png"), direction=(-0.5, 1.2, 0.5))
         if ref is not None:
             ref.location = (0, 0, 0)
+
+    if any(n in changed for n in (*doorman.PIECES, *doorman.FIGURES)):
+        doorman.render_previews(sys.modules[__name__], scene, cam, built, PREVIEWS)
 
     # skinned bodies: mesh + armature, exported together; previews in rest pose with the
     # rigid gear sitting on its limbs, then bent (PROOF_POSE) with the gear following the bones

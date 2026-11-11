@@ -12,7 +12,7 @@ Code identifiers (`Stage*`, `Operation*`) keep their names.
 ## The run in one paragraph
 
 Harlan Control inserts Pike (four anonymous soldiers, Pike One to Four; bots fill empty
-seats) by helo ("Lantern") into a district of the Harlan corridor before its scheduled fire
+seats) by helicopter ("Helo" on the radio) into a district of the Harlan corridor before its scheduled fire
 mission, **the Burn**. Each district is one **mission**: a **Primary** objective from the
 mission's pool and two optional **Secondaries**. The squad explores, loots abandoned
 **stores**, earns **Resupply** pallets and **field upgrades** while the difficulty clock
@@ -26,11 +26,11 @@ Every mission brought home raises that district's **containment %** on the share
 
 | Step | What happens | Today |
 |---|---|---|
-| Insert | Lantern lands at the pad; squad spawns; Control reads the Primary, Secondaries and the Burn timer (14:00) | spawn at four pads round the LZ (`Config.Run`) |
+| Insert | The helicopter lands at the pad; squad spawns; Control reads the main objective and the Burn timer (14:00) | spawn at four pads round the LZ (`Config.Run`); the main objective's card (name, why, where) and Control's brief; no Burn timer |
 | Explore | Loot stores, earn Resupply, find field upgrades; clock runs (`Config.Difficulty`) | Resupply and the loadout built; no stores |
-| Primary | One from the mission's pool, at one of its three sites or a named landmark; the squad starts it | hold zone appears at one spot after 180 s (`Config.Objective`) |
+| Primary | One main objective from the mission's pool, at one of its sites; the squad starts it by reaching it. Side objectives are found on the ground | built on Delta: five main and four side objectives (Objective pools below); `Config.Objectives.Enabled = false` puts back the single hold zone after 180 s |
 | Index | Completing the Primary calls the boss from its canon entry | the Warden on Delta |
-| Call the bird | Green smoke at a pad; Lantern inbound 90 s; squad holds the LZ; anyone outside is left (Dead for the mission) | 30 s hold, every living player on the pad, run ends |
+| Call the bird | Green smoke at a pad; Helo inbound 90 s; squad holds the LZ; anyone outside is left (Dead for the mission) | 30 s hold, every living player on the pad, run ends |
 | Next mission | Dead players respawn at the next pad; clock, Resupply pool and drop counter carry over | not built |
 | Stand Down | After Kestrel: board = run ends, scored; or a **Second Pass** (same corridor, higher clock floor, later forms, containment gains doubled) | not built |
 
@@ -50,8 +50,27 @@ Every player is a Pike soldier; no classes, no hero kit. A soldier carries a pri
 sidearm, a grenade type and four call-ins (keys 1-4), picked in the **Arms Room** (B).
 Q swaps long gun and sidearm (`Weapon.SwapTime` 0.5 s; no shot, no reload; a reload in
 progress is dropped; each gun keeps its own magazine). G throws a grenade (3 carried; a
-pallet refills). V shoves (15 dmg, 0.8 s stagger, 6-stud push, 1 s cooldown). E uses a stim
-(2 carried, heals 60 over 1 s; Medkit refills). 5 throws the Resupply flare (always carried).
+pallet refills). F shoves (15 dmg, 0.8 s stagger, 6-stud push, 1 s cooldown). V uses a stim
+(2 carried, heals 60 over 1 s; Medkit refills). X throws the Resupply flare (always carried).
+E is interact (hold it beside a downed squadmate to revive). C or LeftControl crouches, Z goes
+prone, Shift sprints, Space vaults and climbs, T switches first and third person. Every key
+is a row of `Config.Keys` and every hint reads it (the table: [OWNER.md](OWNER.md) > Rules
+already decided).
+
+**Stamina** (owner 2026-11-11; `Config.Stamina`, `Rules/Stamina`, client-owned like sprint):
+100, sprinting drains 12/s (~8 s from full), back at 22/s after 1 s without spending (empty to
+full ~5.5 s). A roll costs 20, a slide 10 (any stamina left is enough; it floors at zero);
+vault, climb and shove are free. At zero the soldier is **winded**: no sprint, roll or slide
+until 25 (~2.1 s), then a held Shift sprints again. Downed or knocked down nothing drains; a
+respawn or a new run refills it. Bots have none.
+
+**Keys:** Shift twice rolls; holding C or Ctrl while sprinting slides until the key is let go.
+**Slides keep momentum** (owner 2026-11-11; `Config.Movement.Slide`, `Rules/Slide`): a slide
+starts at the speed going in + 6 (at least 24, at most 40 studs/s), loses 17/s to friction and
+gains 60/s x the slope's sine from the floor under it: flat from a sprint is the old ~0.95 s,
+about 16 degrees downhill holds its speed, steeper gains up to 40, uphill dies in about half the
+time. It ends at 14 studs/s (or after 6 s); speed still above the walk or sprint speed bleeds
+off at 40/s instead of snapping. One stamina cost on entry, however long the hill.
 Every gun is hitscan at its real-world rate (the Goose fires a rocket); the server owns every
 magazine (`LoadoutService`). A shotgun's pellets are drawn by the client and checked by the
 server against its cone (`Rules/Spread`), so the pellets you see are the ones that hit. Each
@@ -63,35 +82,98 @@ clips in the `guns` sound bank (`Sound`) and, for a launcher, `Explosive` +
 lands"): G and every thrown call-in (CallInDefinitions Kind "throw") are held to aim and
 thrown on release. A dotted arc from the hand and the item's own marker on the ground
 (`Config.CallIns.<Name>.Aim`: a ring of Radius, or a strip of Length x Width along the throw,
-`Across` for the wire) follow the crosshair. The flare (5) and the "self" call-ins still
+`Across` for the wire) follow the crosshair. The flare (X) and the "self" call-ins still
 fire on the press. `AbilityController`.
+
+**Throwing** (owner 2026-11-11: things "activate before the actual animation plays"): the
+grenade, every thrown call-in and the flare leave the hand at the throw clip's release, not
+when the key comes up.
+- **Timing:** `Config.Animations.Throws` has a row per throw clip (`Start`, `Release`,
+  `Speed`, over `Default`); `Rules/ThrowTiming` turns it into the wind-up. `grenade_throw`
+  is 2.77 s with the release at 2.0 s (the hand's fastest frame in the retargeted clip); it
+  plays from 1.3 s at 1.4x, so the wind-up is 0.5 s. A new throw clip gets its own row.
+- **Client:** the clip starts the moment the key comes up (`AnimationController.playThrow`)
+  and replicates to the squad; a second throw waits for the first to leave the hand.
+- **Server:** `ThrowWindUp.begin` holds the real throw back for the wind-up (less up to
+  `ThrowMaxLag` 0.1 s of the thrower's ping), one throw at a time per soldier. The grenade,
+  the charge or the pool is spent **at the release**: downed, knocked down or dead during the
+  wind-up throws nothing and costs nothing.
+- **From the hand:** the grenade and the flare fly from the thrower's `RightHand` to the mark
+  (remote `Thrown`, drawn by `ThrowFX`; `Grenade.Flight` and `Requisition.FlareFlight`,
+  0.45 s) and the real one appears where it lands; the frag's 0.8 s fuse still starts on
+  landing. A call-in's marker starts at the hand too (`CallInArrivalFX`).
+- **With arrivals:** a call-in's `Arrival.Time` and a fire mission's `Delay` count from the
+  release, so key to effect is the 0.5 s wind-up plus what it was.
+- **Not there:** no prop in the hand during the wind-up (no model exists); bots throw
+  nothing yet; dev `FireCallIn` skips the wind-up.
+
+### Downed and revive
+
+The rules (bleed-out, hold E for `Config.Downed.ReviveHold`, radius, max revives) are in
+[MULTIPLAYER_READINESS.md](MULTIPLAYER_READINESS.md) decision 3 and `Config.Downed`. What a
+revive looks like (owner 2026-11-11: "the revive is just us standing there";
+`Config.ReviveAnimation`, `Enabled = false` turns it off):
+
+- **Reviver:** slides to a kneel point at the casualty's side (the nearer side of the chest;
+  the other side when that one is walled off or taken; where they stand when neither will
+  do or it is over `MaxNudge` away), drops to a knee facing them, slings the rifle across
+  the back and presses a dressing into the chest with both hands. Letting go stands them up
+  at once. When the revive lands a hand takes the casualty's arm and pulls them up.
+- **Casualty:** rolls from all fours onto their back while someone is on them, head rocking
+  with each press; drops back to the crawl when the reviver lets go; gets up with the
+  get-up clip when revived (the Spare Tourniquet and dev revives too).
+- Nobody is rooted (the rules did not change): a reviver who walks, or a casualty who
+  crawls, breaks the pose until they are still again. A bot stands still for
+  `BotHoldSeconds` into its pull-up or get-up.
+- Players, bots and any mix of the two use the same code: `ReviveAnimService` (roles and
+  the kneel point, server), `Shared.ReviveAnimation` (clips by the body's owner, arms on
+  every client), `Rules/ReviveAnim` (kneel point and phases, tested).
 
 ### Guns
 
 Numbers in `Config.Weapons.<Gun>`, rows in `WeaponDefinitions`. Semi guns fire once per click.
 
-| Gun (real) | Role | Mode, rpm (`FireCooldown`) | Dmg | Mag + reserve | Reload | Hip / ADS | Bloom per shot / max | Range | Pierce |
+| Gun (real) | Role | Mode, rpm (`FireCooldown`) | Dmg | Mag + reserve at insert / re-armed | Reload | Hip / ADS | Bloom per shot / max | Range | Pierce |
 |---|---|---|---|---|---|---|---|---|---|
-| **M16A4 Service Rifle** (baseline) | all-rounder, 3-5 round bursts | auto, 750 (0.08) | 20 | 30 + 240 | 2.2 | 1.5 / 0.3 | 0.3 / 3.5 | 400 | 0 |
-| **MP5 SMG** | best hip-fire; chews Runners, weak on Brutes | auto, 800 (0.075) | 14 | 30 + 210 | 1.8 | 0.9 / 0.6 | 0.15 / 2.0 | 150 | 0 |
-| **M249 LMG** | 100-round belt, no reload in a hold; slow to aim moving | auto, 800 (0.075) | 20 | 100 + 300 | 5.5 | 3.0 / 0.5 | 0.15 / 2.5 | 400 | 0 |
-| **Mossberg 590 Shotgun** | point-blank, one decision per pull | pump, 80 (0.75) | 11 x 8 pellets | 8 + 40 | 3.5 | 5.0 / 3.5 | 0 | 45 | 0 |
-| **M110 DMR** | one-taps Walkers, hits two in a line; poor up close | semi, 300 (0.2) | 60 | 20 + 80 | 2.6 | 4.0 / 0.1 | 1.2 / 3.0 (recovery 8) | 600 | 1 |
-| **M17 Pistol** (sidearm) | backup when the primary runs dry | semi, 400 (0.15) | 25 | 17 + 68 | 1.5 | 1.2 / 0.5 | 0.6 / 2.5 | 120 | 0 |
-| **S&W 686 Revolver** (sidearm, sample) | panic button: one round per Walker, staggers a Brute | semi, 150 (0.4) | 55 | 6 + 30 | 2.8 | 1.8 / 0.4 | 1.5 / 3.5 (recovery 10) | 150 | 0 |
-| **M2010 ESR Sniper** (sample) | one round per kill, Brute in 2, through four in a line; useless from the hip | bolt, 48 (1.25) | 140 | 5 + 30 | 3.2 | 6.0 / 0.05 | 0 | 800 | 3 |
-| **Goose, M3 recoilless** (sample "RPG", primary slot; later the call-in) | a visible rocket at 220 studs/s: 400 to the Infected struck, then the frag's blast 120 in 6 studs, no friendly fire | single, reload 6 s | 400 + blast | 1 + 1 | 6.0 | 2.0 / 0.25 | 0 | 300 | 0 |
+| **M16A4 Service Rifle** (baseline) | all-rounder, 3-5 round bursts | auto, 750 (0.08) | 20 | 30 + 120 / 240 | 2.2 | 1.5 / 0.3 | 0.3 / 3.5 | 400 | 0 |
+| **MP5 SMG** | best hip-fire; chews Runners, weak on Brutes | auto, 800 (0.075) | 14 | 30 + 120 / 210 | 1.8 | 0.9 / 0.6 | 0.15 / 2.0 | 150 | 0 |
+| **M249 LMG** | 100-round belt, no reload in a hold; slow to aim moving | auto, 800 (0.075) | 20 | 100 + 150 / 300 | 5.5 | 3.0 / 0.5 | 0.15 / 2.5 | 400 | 0 |
+| **Mossberg 590 Shotgun** | point-blank, one decision per pull | pump, 80 (0.75) | 11 x 8 pellets | 8 + 20 / 40 | 3.5 | 5.0 / 3.5 | 0 | 45 | 0 |
+| **M110 DMR** | one-taps Walkers, hits two in a line; poor up close | semi, 300 (0.2) | 60 | 20 + 40 / 80 | 2.6 | 4.0 / 0.1 | 1.2 / 3.0 (recovery 8) | 600 | 1 |
+| **M17 Pistol** (sidearm) | backup when the primary runs dry | semi, 400 (0.15) | 25 | 17 + 34 / 68 | 1.5 | 1.2 / 0.5 | 0.6 / 2.5 | 120 | 0 |
+| **S&W 686 Revolver** (sidearm, sample) | panic button: one round per Walker, staggers a Brute | semi, 150 (0.4) | 55 | 6 + 18 / 30 | 2.8 | 1.8 / 0.4 | 1.5 / 3.5 (recovery 10) | 150 | 0 |
+| **M2010 ESR Sniper** (sample) | one round per kill, Brute in 2, through four in a line; useless from the hip | bolt, 48 (1.25) | 140 | 5 + 15 / 30 | 3.2 | 6.0 / 0.05 | 0 | 800 | 3 |
+| **Goose, M3 recoilless** (sample "RPG", primary slot; later the call-in) | a visible rocket at 220 studs/s: 400 to the Infected struck, then the frag's blast 120 in 6 studs, no friendly fire | single, reload 6 s | 400 + blast | 1 + 1 / 1 | 6.0 | 2.0 / 0.25 | 0 | 300 | 0 |
 
 - ADS move factor: rifle 0.6, SMG 0.85, LMG 0.35, shotgun 0.7, DMR 0.5, pistol 0.9. ADS
-  pulls the camera to 5 studs over the shoulder at FOV 55 (`Weapon.ADS`); the client sends
+  pulls the camera to 5 studs over the shoulder at FOV 55 (`Weapon.ADS`); in first person each
+  gun aims through its own sights at its own zoom, the M2010 (6x), M110 (3.5x) and Goose (3x)
+  through a scope picture (`Weapons.<id>.Sight`; docs/STYLES.md > First person); the client sends
   an `aiming` flag with each shot and the server picks the cone.
 - Headshot x3.0 (per gun, `HeadshotMultiplier`); the Brute overrides to 1.25 (plated skull).
   Tracers are client-drawn.
 - Rounds to kill body / head: rifle Walker 3 / 1, Brute 13 / 11; SMG 4 / 2, 19 / 15; DMR
   1 / 1, 5 / 4; shotgun one pull for every form but the Brute (3). Ammo reins in the DMR
   (100 x 60 is the M16's 270 x 20).
+- A soldier lands with about half the reserve (`ReserveStart` on the gun's row,
+  2026-11-10; was the full `ReserveMax`), so the first pallet is wanted; a pallet or the
+  Index kill fills it to `ReserveMax`. The Goose keeps its one spare round.
 - Bots fire the rifle slower (`Bots.FireCooldown` 0.30: three bots on sustained fire ~ one
   player), same magazine, infinite reserve.
+- Bots walk (2026-11-11): straight to the formation slot when it is close and in sight, else
+  along a path, sprinting when far. They teleport only when far from the leader and stalled
+  (or out of the world), to a spot no living player faces. Rules in `Rules/BotBrain`,
+  numbers in `Config.Bots`.
+- Bots use a soldier's kit through the players' server paths (no kill credit): a stim at
+  40% health; a frag (3 carried) at 4+ Infected with no squad member near the blast; one
+  fire mission each (Hammer, Anvil, Hammer by slot) at 8+ Infected or a Brute / boss, 180 s
+  per bot, 45 s between any two, announced on the radio subtitle. A Restock card taken by
+  any player refills their frags and stims; an Aid Bag refills a treated bot's stims.
+- Bots in a boss fight (`Config.Bots.Boss`, switch `Enabled`): while the boss is within 60
+  studs of the leader they leave formation for posts 32 studs from the boss, 40 degrees
+  apart on the leader's side, and back off as he comes; they run 5 studs clear of a
+  telegraphed disc or line, step out of caustic puddles, stim at 60% health, and revive only
+  when the boss is 26+ studs from the downed body.
 - The three sample guns (2026-11-09) are in the Arms Room like every gun: its lists are every
   row of the slot, ordered by the row's `ArmsOrder` (default 100; the first is the default
   gun), so a new gun appears by having a row. ADS move: revolver 0.85, sniper 0.4, Goose 0.4.
@@ -133,7 +215,7 @@ Module boundary, so the lobby can host it:
 ### Call-ins
 
 `CallInDefinitions`, numbers in `Config.CallIns`; no friendly fire. Four slots, keys 1-4;
-each holds charges that refill one at a time. Lantern's crew kicks support weapons and supply
+each holds charges that refill one at a time. The helicopter crew kicks support weapons and supply
 out of the door; fire missions are someone on the net. HUD names and radio: [LORE.md](LORE.md)
 > The Arms Room. Call-ins must be things a real army fields (OWNER.md).
 
@@ -144,7 +226,7 @@ out of the door; fire missions are someone on the net. HUD names and radio: [LOR
 | Support | **Thumper** (M32) | 6-round drum, 0.5 s apart, 70 in 7 studs, 24 rounds | 1 / 180 | no |
 | Support | **Kettle** (M9 projector) | 15-stud cone, 10 per 0.1 s, fire pools, 20 s of fuel | 1 / 180 | no |
 | Fire mission | **Hammer** (81 mm mortar) | 6 shells 1 s apart, 80 in 12 studs, scatter 4 | 1 / 120 | yes |
-| Fire mission | **Anvil** (105 mm battery) | one shell after 5 s, 500 in 20 studs, shake felt map-wide | 1 / 180 | yes |
+| Fire mission | **Anvil** (105 mm battery) | marked through binoculars on any ground in the line of sight, up to 400 studs; one shell 5 s later, 500 in 20 studs, shake felt map-wide | 1 / 180 | yes |
 | Fire mission | **Shrike** (helicopter gun run) | 10 bursts stepping 4 studs along the throw, 120 in 5 studs each, 4 s delay | 1 / 150 | yes |
 | Emplacement | **Doorman** (tripod sentry MG) | 45 s, 20 dmg every 0.15 s, range 70, one per player | 1 / 150 | yes |
 | Emplacement | **Tripline** (AP mines) | 6 mines on an arc, 80 in 10 studs, 90 s, 12 per player | 2 / 60 | yes |
@@ -152,14 +234,84 @@ out of the door; fire missions are someone on the net. HUD names and radio: [LOR
 | Supply | **Speedball** (ammo bundle) | 4 re-arms (a player again only after stepping out), no lure wave | 1 / 180 | yes |
 | Supply | **Aid Bag** (medical drop) | every soldier within 6 studs: full heal, stims refilled, +25 plate; once each | 1 / 180 | yes |
 
-Every built call-in is thrown (`Kind "throw"`, `ThrowUtil` clamp). Services:
+Every built call-in is thrown (`Kind "throw"`, `ThrowUtil` clamp) except the Anvil, which is
+marked through binoculars (below). Services:
 `AirStrikeService` (Hammer, Anvil share `fireMission`, patterns from `Rules/StrikePattern`;
 Shrike's `gunRun` under a Part gunship at 45 studs), `SentryService` (Doorman: a ray from the
-muzzle to the nearest visible Infected), `MineService` (Tripline), `ConcertinaService`,
-`SupplyDropService` (Speedball, Aid Bag fall 50 studs and land quiet). The support weapons
+gun's pivot to the nearest visible Infected; its body is `Config.CallIns.Doorman.Model`, 2 =
+the modelled gun whose pivot is 2.6 up, 1 = the Part tripod at 3.2), `MineService` (Tripline), `ConcertinaService`,
+`SupplyDropService` (Speedball, Aid Bag land quiet). The support weapons
 need the support-weapon carry and the explosive projectile hook (ARCHITECTURE F7). Dev:
 `SetCallIn <slot> <id>`, `FireCallIn <id>` (20 studs ahead, no slot or charge).
 Retired 2026-11-08: Magpie (drones) and Pen Coil (shock pulse), too sci-fi; see HISTORY.md.
+
+### Binoculars
+
+Owner: "the anvil should be like binoculars and can be called anywhere within your line of
+sight". A call-in whose row says `AimMode = "Binoculars"` (default `"Throw"`; only the Anvil
+today) is not thrown.
+
+- **Use:** the slot key raises the binoculars (0.4 s): the eye goes to the head, the view
+  narrows to 16 degrees behind a black mask with a reticle, the gun is put away. A ring on the
+  ground (the blast) and a post show where the round will land: the first surface under the
+  crosshair, or the foot of a wall or a body. The readout gives the range in metres and
+  MARK SET, OUT OF RANGE, NO LINE OF SIGHT or NO GROUND. Left click (gamepad R2) fires the
+  mission; right click (gamepad B), the slot key again or any other kit key lowers them.
+  Then the Anvil's own delay and arrival run on the mark; nothing is thrown (its
+  `Arrival.Throw` is 0).
+- **Server:** the client says when they go up and come down (`CallInSpot`) and sends the
+  mark over `CallIn`. `CallInService` takes it only from binoculars that have been up for the
+  raise, and measures it again from the soldier's own head (`SpotUtil`, `Rules/Spotting`):
+  within `MaxRange`, on ground, nothing but the Infected and the squad in the way, with a few
+  studs of slack. A refused mark spends no charge. There is no minimum range (`MinRange` 0:
+  no friendly fire today).
+- **What the squad sees:** the body carries the `Spotting` attribute while they are up;
+  every client's `BinocularPose` raises its arms and a pair of binoculars to its eyes and
+  hides its gun. **Placeholder:** the arms are posed in code over the playing clip and the
+  binoculars are Parts; a real raise / hold / lower clip and a modelled prop are still to make.
+- **Values:** `Config.CallIns.Binoculars` (range, view, raise and lower times, the server's
+  slack, the pose angles, the keys), overridden by a row's own `Binoculars` block (the Anvil:
+  `MaxRange = 400`).
+- **Bots** carry no call-ins yet; `CallInService.spotFor(character, id, point)` is their way
+  in (raise, check from the head, fire; no view).
+
+### Call-in arrivals
+
+Owner: "Hammer and Anvil look like the same thing". Each call-in now comes in its own way
+between the throw and the effect: its own shape on the ground, its own timing, colour and
+sound. All of them start the same: the thrown marker (or the kit itself) flies the aim arc
+for 0.45 s and lands (not the Anvil: it is marked through binoculars, so its ring and smoke
+start on the mark at once).
+
+| Call-in | Style | On the ground | In the air | Sound | When it lands |
+|---|---|---|---|---|---|
+| **Hammer** | `mortar` | red smoke; a small diamond where each round will fall, bright in its last second | a thin round dropping near straight down (84 degrees), seen 0.3 s | tubes thump far behind the thrower 2.4 s ahead of each round; a short high whistle | quick pale-yellow flash, low pale dust, a sharp crack |
+| **Anvil** | `shell` | dark red smoke; one dashed ring that starts 2.2 blast radii out and closes on the blast's edge, pulsing faster | one heavy round on a flatter line (60 degrees) from behind the spotter with a smoke trail, seen 0.7 s | a long low falling whistle from 1.5 s out | slow deep-orange flash, a 34-stud column of dark earth, 4 s of smoke, burnt ground for 10 s, a deeper boom |
+| **Shrike** | `gunrun` | orange smoke; a ladder of rungs across the lane, lit one after another the way the gunship flies, each gone as the bursts pass | the gunship (server) and a rake of extra tracers from its gun | the cannon from the air, every second burst | dust spurts walking the lane |
+| **Doorman** | `case` | blue smoke | an olive case under a cross-shaped cargo chute, swaying, 1.5 s | a thud, then a clank | the chute folds beside it; the gun stands at 2.2 s |
+| **Tripline** | `scatter` | no smoke (nothing comes from the air) | six charges hop out of the satchel to their places | the arming click | a blink at each mine as it arms, 0.95 s |
+| **Concertina** | `unroll` | no smoke | the coil splits into two drums that roll out to the ends paying out a strand, with dust | three rattles | the wire stands at 1.05 s |
+| **Speedball** | `tumble` | yellow smoke | the bundle tumbles down from 50 studs with no chute in 0.75 s | the landing thump | one bounce, dust, ready at 1.5 s |
+| **Aid Bag** | `streamer` | pink smoke | the bag comes down steadily from 38 studs under a 9-stud red and white streamer | the landing thump | the streamer falls across the ground; ready at 1.8 s |
+
+- **Where the values live:** each call-in's row has an `Arrival` block (`Style` plus any
+  value it changes) over `Config.CallIns.Arrivals.Defaults`; `Rules/Arrival` merges them and
+  holds the curves (the fall, the drift, the hop, the round's line, the gunship's pass). A row
+  without one arrives as a plain thrown marker. No system lists call-in names.
+- **Who does what:** `CallInService` tells every client once per throw (remote
+  `CallInArrival`: id, thrower, point, direction, and a fire mission's impact points) and
+  holds an emplacement or a bundle back for its `Arrival.Time`; `CallInArrivalFX` (client)
+  draws the rest from Parts, Beams, Trails and particle bursts, on the same clock (it holds
+  while paused). Damage, the blast flash that shakes the camera, the blast sound (its clip,
+  pitch and flash colour from the row) and the gunship stay on the server.
+- **Timing that changed:** Doorman works 2.2 s after the throw, Tripline 0.95 s, Concertina
+  1.05 s (all three were instant); Speedball 1.5 s and Aid Bag 1.8 s (were 0.9 s). Fire
+  missions keep their `Delay`.
+- **Budget:** at most 8 arrivals drawn at once per client (`MaxActive`); the biggest (Anvil)
+  is 22 Parts; smoke and dust are bursts of 2 to 20 particles, no lights.
+- **Switch:** `Config.CallIns.Arrivals.Enabled = false` puts back the flat red discs, the
+  stock blast, the one shared whistle and the instant kit.
+- **Needs an in-game look (none of it has been seen running):** `handoff/log/2026-11-10-tien-callin-arrivals.md`.
 
 ### Pallets (Resupply)
 
@@ -167,15 +319,30 @@ Retired 2026-11-08: Magpie (drones) and Pen Coil (shock pulse), too sci-fi; see 
   distance (Walker 10, Runner 12, Hocker 18, Brute 35) and by the Primary
   (`Objective.SupplyReward` 500).
 - When the pool covers the cost (`Requisition.BaseCost` 300, x1.15 per drop, cap 1000, +40%
-  per extra player) any living player throws the red flare (key 5, 35 studs). For 20 s the
+  per extra player) any living player throws the red flare (key X, 35 studs). For 20 s the
   Infected inside 120 studs walk to the flare; then the pallet lands loud (`Lure.Wave` 10, +3
   per extra player; spawn interval x0.7 for 30 s).
 - **The pallet is the ammo box:** every living player within `RearmRadius` 6 is re-armed
   once (both guns full, grenades back).
-- Three cards, the same for everyone (`Crates.SupplyCards`): **Medkit** (full heal, stims
-  back), **Restock** (every call-in slot full, grenades and stims too), **Armour Plate** (+50
-  shield soaked before health, cap 100). One pick per player per pallet; cards vanish at
-  60 s. No rarity, no upgrades from pallets.
+- Three cards, the same for everyone (`Crates.SupplyCards`; what each gives is its row in
+  `Crates.Cards`, and the card text is built from the row): **Medkit** (full heal, stims
+  back), **Restock** (every call-in slot full, grenades and stims too), **Armour Plate** (+75
+  armour soaked before health, cap 100; was 50, which a full heal always beat). One pick
+  per player per pallet; the pallet closes at 90 s. No rarity, no upgrades from pallets.
+- **Taking a card** (owner 2026-11-11: never by walking over it; `Requisition.Pick`,
+  `Rules/Reward`, `RewardPanel`): every crate has a label and, when it is worth a walk, a
+  light pillar. Within 9 studs hold **E** 0.3 s (gamepad X, tap on touch) and
+  a panel of up to three big cards opens at screen centre: key, kind, icon, name, one plain
+  line with its numbers, and "REPLACES ..." when a field upgrade would push one out. Pick
+  with a click or tap, keys 1-3, or the gamepad; the card flashes, a line under the mission
+  line names what was taken and the squad gets "<callsign> took <card>". E again, Backspace,
+  gamepad B, a click beside the cards or walking 12 studs off closes it without a pick, and
+  the crate can be opened again. The game does not pause and the player can be hit. The
+  server checks the crate, the offer, one pick per player, reach and "not down". The panel
+  and the crate's label show who has taken theirs. `Pick.WalkOver = true` restores the old
+  world cards.
+- **Bots** take no panel: one within 14 studs of a pallet takes the supply card covering
+  what it misses most (today that is health: a Medkit below 75%), once per pallet.
 - Playtest targets per drop: 5-7 drops per 12 min solo, picks within 20 s, at most one death
   per three drops, consecutive drops 60+ studs apart, pool minus cost at throw not always ~0
   (else there is no "when" decision). Fixes if missed: an overflow bonus (throw at 1.5x cost
@@ -187,9 +354,20 @@ Retired 2026-11-08: Magpie (drones) and Pen Coil (shock pulse), too sci-fi; see 
 `UpgradeDefinitions`, flags on `LoadoutService`, numbers in `Config.Upgrades`. Slots: Grenade,
 Weapon, Kit and one per carried call-in (`CallIn1`-`CallIn4`; the upgrade moves with its
 call-in); a new pick in a filled slot replaces it. Each changes how a tool works, never a
-percentage, and must stay legible next to the flat curve. Sources: the Primary's site crate
-(lands when the hold zone appears; shows 3 you can still take) and the Index pallet; later
-Stores and Secondary crates (3-5 per mission).
+percentage, and must stay legible next to the flat curve. Sources: the Primary's two site crates
+(a FIELD UPGRADE crate when the hold zone appears; the **OBJECTIVE REWARD** crate when the
+hold ends, `Objective.CompleteCrate`, 10 studs beside the first), so both picks are made
+before the Index arrives; later Stores and Secondary crates (3-5 per mission). Each offers
+3 the player does not hold, ones for an empty slot before ones that would replace a pick
+(`Rules/Reward.upgradeOffer`); a short offer is filled with supply cards. Until 2026-11-10
+the second set came on the Index pallet, with only the extraction left to use it.
+
+**The Main objective's reward** (2026-11-11; `Crates.Kinds.objective`): as the crate lands
+every living soldier is restocked without picking anything (`Squad`: full health, ammo,
+every call-in charge, grenades, stims, +50 armour), then each player picks one field
+upgrade from it (open for 180 s). The 500 into the Resupply pool is unchanged. Crate kinds
+(label, life, pillar, squad share) are rows in `Crates.Kinds`; `RequisitionService.dropCrate`
+takes the kind.
 
 | Slot | Lore name | Effect |
 |---|---|---|
@@ -197,7 +375,7 @@ Stores and Secondary crates (3-5 per mission).
 | Weapon | Through-and-Through | a round carries into the next Infected (any gun) |
 | Weapon | Hollow Point | the hit Infected stops for 0.6 s (any gun) |
 | Kit | Last Stand | fire from the ground while downed (hip, spread x2) |
-| Kit | Spare Tourniquet | stand up on your own 4 s after going down, once per mission, no revive spent |
+| Kit | Spare Tourniquet | stand up on your own 4 s after going down, once per mission (as the two revives are: `Squad.resetMission`), no revive spent |
 | Hammer | Walk It In | the shells step 8 studs along the throw |
 | Tripline | Daisy Chain | press the key again to blow every armed mine (no charge) |
 
@@ -216,7 +394,8 @@ interval x0.8, +3 alive and +1 heavy per extra living player, hard cap 44).
 - **Stores** (not built): free crates at the position's abandoned stock. Hold E 3 s to open,
   which is loud. Count per Containment band below; places in LEVELS.md.
 - **Priority pallet** (built with the Warden, `IndexService.endFight`): an Index kill drops a
-  pallet at the corpse: re-arm, full heal, three upgrade cards each.
+  quiet pallet at the corpse: re-arm, full heal, the three supply cards
+  (`Index.Warden.Drop.Cards`; `"upgrade"` puts the field upgrades back there).
 
 ## Operation: the Burn, extraction, scoring (not built)
 
@@ -224,9 +403,15 @@ interval x0.8, +3 alive and +1 heavy per extra living player, hard cap 44).
   the one resource more-not-tougher does not hand out). Only the Burn counts down on the HUD;
   run time stays a plain readout. At 0:00 the incendiaries land: burning dressing, no more
   pallets, spawn interval x0.5, more alive and +2 Brute/Hocker caps (`Config.Overrun`,
-  reserved), Lantern takes 120 s instead of 90. The run goes on; extracting after the Burn
+  reserved), the helicopter takes 120 s instead of 90. The run goes on; extracting after the Burn
   scores Partial. Calling the bird freezes the timer.
-- **Extraction.** A 90 s hold; on call Walker 10 Runner 4 (+3 Walkers per extra player), a
+- **Extraction today** (`Config.Extraction`, 2026-11-10): a 60 s hold (was 30). On the
+  call Walker 12, Runner 4, Brute 1 round the pad and spawn interval x0.8; when the hold
+  reaches 30 s a second wave of 12 phase-weighted Infected (+3 per extra player) rings the
+  pad, Control calls it on the radio and the spawn interval goes to x0.6 (`Waves` rows:
+  `At`, `Count`, `PerExtraPlayer`, `SpawnFactor`; `Rules/ExtractionWaves`). A wave is tied
+  to the hold's progress, so it never lands while the squad is off the pad.
+- **Extraction, designed.** A 90 s hold; on call Walker 10 Runner 4 (+3 Walkers per extra player), a
   second phase-weighted wave of 12 at 45 s, spawn interval x0.6. Progress accrues only while
   every living player is on the pad (MULTIPLAYER_READINESS #3). Secondaries do not shorten it.
   Alternate pads come from "Light the Pad".
@@ -257,37 +442,103 @@ stopped exporting hosts, not zero Infected.
 Build cost per band: a PointLight toggle, `burning` flags, a fog tweak, a spawn table keyed by
 band, one ambient swap, one extra helipad. Nothing new to model.
 
-## Objective pools (not built; today: one hold zone)
+## Objective pools (first slice built on Delta, 2026-11-11)
 
-Completing the Primary calls the Index. Each objective is one rule (pillar 3), built from hold
-zone, kill count, interact-with-prop, carry, destroy, survive, reach. Props and points per map:
-LEVELS.md.
+Each drop draws one **main objective** and two **side objectives** from the map's own pool
+(`ObjectiveService`; rows, pools and sites in `src/shared/ObjectiveDefinitions.luau`, read as
+`Config.Objectives.Rows` / `.Maps`; one module per objective in `src/server/Objectives/`).
 
-### Primaries
+- **Two kinds.** A **shared** objective can appear on any map that lists it and gives it
+  sites. A **signature** objective belongs to one map, is built round that map's landmarks and
+  story, and is never offered elsewhere. Every map has at least one signature main objective.
+- **Adding** an objective is a row plus its module; adding a map is one pool row (`Main` and
+  `Side` with weights, `Sites` per objective). Nothing else lists objectives.
+  `tests/ObjectiveDefinitions.spec.luau` fails CI when a pool names a missing objective, a map
+  has no signature main objective, or a listed objective lacks a site or a site field it needs.
+- **Known before the drop, found on the ground.** The main objective is drawn at insert (never
+  the same twice in a row on a server; the lobby may name one in the launch data, `objective`
+  in `Rules/Handoff`) and shown on a card with its reason and place. The squad starts it by
+  reaching it. A side objective shows only when a squad member comes within
+  `RevealRadius` (80) of it or Control calls it out (`RevealAfter` 90 s, the second at 180 s).
+- **Each has a reason** the player reads: `Brief` (Control at insert or on finding it), `Why`
+  (on the HUD the whole time, 8 words at most), `Done` (Control, what changed). The reward is
+  the consequence. Plain words only (OWNER.md).
+- **The frame**, once at insert: "Clear this checkpoint so the helicopter can land and we can
+  hold the district." Finishing the main objective pays 500 Resupply, drops the field-upgrade
+  crate and wakes the Warden: "That woke the Gate sergeant. He still guards this post. The
+  Warden is coming up the road." Side objectives are optional; failing one costs nothing.
+- **Bots** follow their leader as always, so they stand in a hold with them and shoot marked
+  Infected; they never press E and never carry.
+- Dev: `SetMainObjective <id> [site]`, `SetSideObjective <id> [site]`, `RedrawObjectives`,
+  `ListObjectives` (docs/STUDIO_MCP.md).
 
-| Name | Radio brief | Player rule | Missions | Showcases |
-|---|---|---|---|---|
-| Secure the Site | "Re-establish the perimeter at [site]. Hold until Control confirms." | 45 s accumulated inside the zone (today's hold) | all, at the three sites | the mission's pressure mix |
-| Sanitize | "Control wants fire at the pens, not confirmation. Three sites." | hold E at 3 marked props in any order; each ignites and spawns a wave | Delta Pens tents; Mile 14 sealed buses; Kestrel Ward bed rows | Runner; Shedder/Crawler flushed by fire |
-| Recover the Record | "Recover Delta's screening record. Control needs to know who went north." | pick up at A, carry to B; carrier cannot sprint; dropped when downed | Delta Ridge → comm tower; Mile 14 toll log → Overpass; Kestrel manifest → roof | Runner, Hocker |
-| Restore Comms | "Get the mast up. Control is blind north of the gate." | hold E 10 s (interruptible) at the high prop, then survive 60 s there | Delta comm tower; Mile 14 water tower; Kestrel roof | Hocker shelling high ground |
-| Confirm Casualties | "Control is tracking six heavy hosts in the Depot. Put them down." | kill N marked (outlined) spawns at a landmark | Delta Brutes in the Depot; Mile 14 Hockers on the deck; Kestrel Bloats in the Ward | Brute / Hocker / Bloat |
-| Open the Route | "The Gate is chained from outside. Open it; the next mission walks through here." | destroy 3 shootable props, then one player reaches the point beyond | Delta the Gate (Warden walks through); Mile 14 the lead bus (the Bloat is inside) | the boss entry |
-| Evacuate the Holdouts | "Transponder in the Ward. Alive inside. Get them to the LZ." | 2-3 survivors follow the nearest player; must reach the pad alive | Kestrel, Mile 14 Rest Stop. Never Delta ("CLEARED 0") | Runner, Hocker puddles |
+### Shared
 
-### Secondaries (two offered per mission)
+| Id | Role | Rule | Reward beyond the main objective's |
+|---|---|---|---|
+| `secure_site` Secure the Site | main | 45 s accumulated in the zone | |
+| `restore_comms` Restore Comms | main | hold E 10 s on the radio set (letting go starts over), then 60 s accumulated within 20 studs; a wave with 2 Hockers when it comes on | |
+| `confirm_casualties` Confirm Casualties | main | kill 3 outlined heavy Infected (+1 per extra player) that stand at the site when the squad arrives | |
+| `recover_record` Recover the Record | main | hold E to pick up, carry to the drop point; the carrier cannot sprint; dropped when downed; players only | |
+| `lights_on` Lights On | side | hold E 8 s at a generator | the 5 nearest lamp posts light; 300 Resupply |
+| `misdrop` Misdrop | side | reach the pallet within 4 min of learning of it | the pallet: a supply crate |
+| `clear_spitters` Clear the Spitters | side | kill 3 outlined Hockers (+1 per extra player) within 2 min of reaching them | 600 Resupply |
+| Light the Pad, Sample Run, Headcount, Recover Logs | side | designed, not built: hold E at a marked pad (extraction can be called there); bag a marked heavy and carry it to the LZ; visit the story spots; pick up a recorder | |
 
-| Name | Radio brief | Player rule | Missions | Effect beyond the crate |
-|---|---|---|---|---|
-| Silence the Alarm | "Something's still running the alarm at the Gate. It's drawing them." | hold E on the looping sound source | Delta siren; Mile 14 bus horn; Kestrel PA | spawn rate drops in its radius |
-| Lights On | "Depot generator's intact. Get the lights on." | hold E 8 s at a generator | Delta Depot; Mile 14 Toll Plaza; Kestrel Field | the district's lamps light (preview of Held) |
-| Light the Pad | "There's a second pad on the Depot apron. Mark it." | hold E at a marked pad | Delta Depot; Mile 14 Rest Stop; Kestrel Triage Lot | extraction can be called there |
-| Sample Run | "Control wants tissue from a heavy host. Bag one." | kill the marked Brute/Bloat, hold E on the corpse, carry (no sprint) to the LZ | all | the next pallet shows 3 field-upgrade cards |
-| Headcount | "Control has 212 names from the Delta roster. Confirm what's left." | reach and interact at the mission's 3 story spots | all | lore delivery, moves the player (pillar 1) |
-| Clear the Spitters | "Hockers on the Overpass are shelling the toll lane." | kill N of one form before a short timer | Mile 14, Delta late | Resupply burst |
-| Misdrop | "Lantern put a pallet in the Suburb. It's yours if you get there first." | reach a crate in an outer district within 4 min | all | the crate is the reward |
-| Sealed Bus | "Bus 7 reads NEG on the manifest. Confirm it." | hold E on a chained bus; Runner burst; kill all | Delta Gate, Mile 14 the Jam | dark beat (it was never NEG) |
-| Recover Logs | "Toll booth recorder is still live. Pull it." | walk-in pickup at one story spot | all | codex entry |
+### Checkpoint Delta (sites: LEVELS.md A5, A7)
+
+| Objective | Kind | Where | State |
+|---|---|---|---|
+| Sanitize the Pens (`sanitize`) | signature main | the three screening tents at the Pens: hold E 3 s at each fuel can, any order; each fire flushes 4 Runners and 3 Walkers | built |
+| Open the Gate | signature main | break the 3 locks on the Gate, then reach the point beyond; the Warden walks in through it | designed, not built (needs shootable props) |
+| Secure the Site | shared main | the Screening Compound, the Pens, the Overlook | built |
+| Restore Comms | shared main | the comm tower (Compound upper tier) | built |
+| Confirm Casualties | shared main | Brutes at the Depot's aisle ends | built |
+| Recover the Record | shared main | the Ridge to the comm tower | built |
+| Silence the Alarm (`silence_alarm`) | signature side | the Gate siren: hold E 4 s on its switch; roaming spawns within 140 studs happen 40% as often; 150 Resupply | built |
+| Sealed Bus | signature side | Bus 7 on the Gate bus line: hold E, a Runner burst, kill all | designed, not built |
+| Lights On | shared side | the Depot generator | built |
+| Misdrop | shared side | the Suburb, the Barracks, the Depot mound | built |
+| Clear the Spitters | shared side | the highway west of the pad, the bus line | built |
+
+Never on Delta: Evacuate ("CLEARED 0").
+
+### Mile 14 (designed, not built)
+
+| Objective | Kind | Idea |
+|---|---|---|
+| Open the Route | signature main | the lead bus blocks the road; destroy 3 props, reach the point beyond (the Bloat is inside) |
+| Burn the Buses | signature main | the sealed buses of the Jam: fire at three, each flushes what is inside |
+| Recover the Record, Restore Comms, Confirm Casualties, Secure the Site | shared main | the toll log to the Overpass; the water tower; Hockers on the deck; its three sites |
+| Kill the Horn | signature side | a bus horn drawing them (its Silence the Alarm) |
+| Sealed Bus (the Jam), toll booth recorder | signature side | |
+| Lights On, Misdrop, Clear the Spitters | shared side | Toll Plaza generator; outer areas; Hockers on the Overpass |
+
+### Aid Station Kestrel (designed, not built)
+
+| Objective | Kind | Idea |
+|---|---|---|
+| Evacuate the Holdouts | signature main | a transponder in the Ward: 2-3 survivors follow the nearest player to the pad alive |
+| Clear the Ward | signature main | the Ward's bed rows: burn three, each flushes a wave |
+| Recover the Record, Restore Comms, Confirm Casualties, Secure the Site | shared main | the manifest to the roof; the roof mast; Bloats in the Ward; its three sites |
+| Kill the PA | signature side | the PA loop drawing them |
+| Lights On, Misdrop, Light the Pad | shared side | the Field generator; outer areas; the Triage Lot |
+
+### The words (built objectives; source: `ObjectiveDefinitions`)
+
+`{place}` is the drawn site, `{to}` where a carried item goes.
+
+| Objective | Brief (Control) | Why (HUD) | Done (Control) |
+|---|---|---|---|
+| Secure the Site | We lost the perimeter at {place}. Take it back and hold it so the helicopter can land. | Control needs the perimeter back to land | Perimeter is ours again. The helicopter has a way in. |
+| Sanitize the Pens | The checkpoint's screening tents at the Pens are full of people who never got cleared. They will get up. Burn all three before the airstrike. | Bodies in the screening tents will get up | The tents are burning. Nobody in the Pens is getting back up. |
+| Restore Comms | We are blind past the Gate and can't call the helicopter in. Get the radio mast at {place} working, then hold it. | No mast, no way to call the helicopter | Signal is back. We can see past the Gate and call the helicopter. |
+| Confirm Casualties | Heavy Infected are massing in {place}. Left alone they overrun the landing pad. Put them down. | The heavies will overrun the landing pad | The heavies are down. The landing pad is safe from that side. |
+| Recover the Record | The checkpoint's screening record is at {place}. We need to know who got through. Carry it to {to}. | Control must know who got through the checkpoint | Record sent. Now we know who got through before it fell. |
+| Silence the Alarm | The Gate siren has been running since the checkpoint fell, and it is drawing every Infected in the district. Shut it off. | The Gate siren is drawing Infected to you | Siren is off. Fewer of them will come to the Gate now. |
+| Lights On | You are fighting blind and the helicopter needs light to find you. The generator at {place} still works. Start it. | The helicopter needs light to find you | Lights are on. The helicopter can see you, so supplies come sooner. |
+| Misdrop | The helicopter put a supply pallet down in the wrong place: {place}. Get to it before the Infected swarm it. | Your supplies landed in the wrong place | Pallet is yours. Take what you need. (Late: "Too late. The Infected swarmed the pallet. It is gone.") |
+| Clear the Spitters | Spitters at {place} are shelling the landing pad, so the helicopter can't drop supplies. Kill them fast. | Spitters are shelling the helicopter's landing pad | Spitters are down. The supply drop we were holding is yours. (Late: "Out of time. The Spitters dug in. No supply drop.") |
 
 ## Missions
 
@@ -305,8 +556,7 @@ Mile 14, dawn at Kestrel. The burning skyline is the districts that already got 
 - **Sites:** Screening Compound (high, climbable from every side, tower blocks lines); the
   Pens (low and flat, hesco lanes funnel the Infected into three mouths); the Overlook
   (tallest and narrow, Hockers below shell the summit).
-- **Primaries:** Secure, Sanitize (Pens tents), Recover the Record, Restore Comms, Confirm
-  Casualties (Brutes, Depot), Open the Route (the Gate). Not Evacuate.
+- **Objectives:** Objective pools > Checkpoint Delta.
 - **Index:** the Warden walks out of the Gate and up the main road, seen coming the whole way.
 - **Story spots:** burning Ridge barracks whiteboard "SCREENED 212 / CLEARED 0"; a Gate bus
   chained shut from outside, "NEG" sprayed then crossed out.
@@ -383,11 +633,11 @@ Patient reuse the frame. Index hosts never dismember: their plates are the mecha
   Radio lines: LORE.md.
 - **Body.** 7,000 hp at scale 1.9, +33% per extra living player (the one exception to "more
   Infected, not tougher": one body cannot be more bodies). Headshot x2 once the helmet is off.
-- **Plates** (one rule): helmet 300, chest 500, back 400 (the flank), shoulders 300 each,
+- **Plates** (one rule): helmet 300, chest 400 (was 500 until 2026-11-10), back 400 (the flank), shoulders 300 each,
   shield 600. A round into a plate does 25% to the plate and nothing to the body; a round into
   a limb whose plate is gone does 150%. At half a plate cracks (yellow pip); at zero it flies
   off, he staggers 1.5 s. HUD order: HELM, CHEST, BACK, L SHLD, R SHLD, SHIELD.
-- **Attacks**, each announced by the handset's words on the boss bar. Where you stand picks
+- **Attacks**, each announced by his words ("WARDEN: ...") on the boss bar. Where you stand picks
   his move: **Bash** (0-15 studs, 70° arc, 40, 0.9 s windup; roll through it); **Shield
   Sweep** (17 studs, 180°, 25 and a shove; get behind him); **Overhead Slam** (17 x 6 line at
   a body that stopped moving in reach, 60, 1.3 s; step aside); **Ground Pound** (23-stud ring
@@ -428,7 +678,8 @@ lore-accurate poses, no zombie green (OWNER.md); build sheets in [CHARACTERS.md]
 
 Enemy behaviour is data-driven (`EnemyDefinitions`: `Behaviour` melee | projectile,
 `StandOff`, `Windup`, `Projectile` + `Puddle`, `BodySet`, `HeadshotMultiplier`; caps keyed by
-type; `EnemyProjectileService` owns lobs and puddles). Still to add as forms need them:
+type; `EnemyProjectileService` owns lobs and puddles and makes no parts: clients draw the
+spit, docs/STYLES.md §8). Still to add as forms need them:
 `onDeath` (cloud | split), `mover` (none | flyer).
 
 ## Hit feedback on the Infected (owner: it must feel satisfying)
@@ -454,10 +705,8 @@ Done: data-driven enemies, Resupply and the loadout, ADS and headshots, the run 
 (`Lobby → Insert → Explore → Primary → Index → Extract → Ended`, Co-op Sprint A), bots, the
 Warden. Next, each one playtest-verified feature:
 
-1. **Objective pools.** `ObjectiveService` draws a Primary and two Secondaries from the
-   mission's pool, places them at sites/landmarks, shows markers; the 180 s delay goes. First
-   four Primaries: Secure, Sanitize, Confirm Casualties, Open the Route. First three
-   Secondaries: Silence the Alarm, Light the Pad, Misdrop. Needs the mission data split (F6).
+1. **Objective pools.** First slice built 2026-11-11, unplayed (Objective pools above). Left on
+   Delta: Open the Gate, Sealed Bus, Light the Pad, Sample Run, Headcount, Recover Logs.
 2. **Operation.** `RunManager` adds next mission / Stand Down / Second Pass with mission
    index and pass count; `OperationService` owns the Burn and overrun; extraction becomes the
    called 90 s hold with waves.
@@ -474,6 +723,6 @@ Not scheduled:
 - **Meta between runs:** the Containment Board plus unlocks (call-ins, field upgrades, guns;
   launch target 5 primaries + 3 sidearms, 4 throwables, 2 heavy call-ins, 2 specials; +3-4
   guns per drop). Today every call-in is unlocked from run 1.
-- **Bots:** call-ins and vaulting.
+- **Bots:** vaulting, the other call-ins (Shrike, emplacements, supply), a voiced radio line.
 - **Sound:** Control's voiced radio lines, the Burn, pickup one-shots
   (`assets/audio/README.md`).
