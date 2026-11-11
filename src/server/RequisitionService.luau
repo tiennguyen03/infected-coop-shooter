@@ -341,7 +341,7 @@ local function releaseFlare(player: Player, target: unknown)
 	print(`[Requisition] {player.Name} threw the flare; pallet in {cfg.DropDelay}s (drop {drops})`)
 end
 
--- Key 5: the wind-up starts; the flare leaves the hand, and the pool pays, at the release.
+-- The flare key: the wind-up starts; the flare leaves the hand, and the pool pays, at the release.
 local function onFlare(player: Player, target: unknown)
 	if canThrowFlare(player) then
 		ThrowWindUp.begin(player, function()

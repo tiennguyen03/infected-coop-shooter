@@ -21,7 +21,7 @@ upgrades) → the Warden (boss) → extraction on Lantern → OPERATION COMPLETE
   and own shot and reload sounds; Q swap, G frag (hold to aim, release to throw), V shove,
   E stim, four call-ins on 1-4 (Hammer, Anvil, Shrike, Doorman, Concertina, Speedball, Aid
   Bag, Tripline; thrown ones are held to aim with an arc and a landing marker, every throw leaves the
-  hand at the throw clip's release 0.5 s after the key, the Shrike is a modelled attack helicopter), flare on 5, the Arms Room on B (stand-in until Nova's lobby screen).
+  hand at the throw clip's release 0.5 s after the key, the Shrike is a modelled attack helicopter), flare on X, the Arms Room on B (stand-in until Nova's lobby screen).
 - **Infected:** Walker, Runner, Brute, Hocker (blocky, lore poses), dismemberment, the
   Warden with plates.
 - **Feel:** camera kick, blast shake, limp bodies thrown by the killing hit, hit flinch,

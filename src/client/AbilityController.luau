@@ -296,7 +296,7 @@ local function release(key: Enum.KeyCode)
 	end
 end
 
--- Key 5: the flare goes at the crosshair at once. The clip plays when the squad can pay for
+-- The flare key: the flare goes at the crosshair at once. The clip plays when the squad can pay for
 -- a pallet and none is inbound (the server's own gates, RequisitionService).
 local function throwFlare()
 	local pool = (workspace:GetAttribute(Attributes.ResupplyPool) :: number?) or 0
