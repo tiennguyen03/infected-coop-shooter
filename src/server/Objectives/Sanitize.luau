@@ -1,6 +1,6 @@
 --!strict
 -- Sanitize the Pens (Checkpoint Delta's signature main objective): a fuel can at each of
--- the three screening tents; hold F at one to burn it, in any order. Each fire flushes a
+-- the three screening tents; hold E at one to burn it, in any order. Each fire flushes a
 -- wave out of the tents. The fires burn for the rest of the mission. Bots guard the player
 -- at each can; only a player lights one.
 
@@ -76,7 +76,7 @@ function Sanitize.new(context: Types.Context): Types.Objective
 		end,
 		progress = function(): Types.Progress
 			return {
-				step = "Hold F at each fuel can to burn the tents",
+				step = `Hold {Kit.InteractLabel} at each fuel can to burn the tents`,
 				done = burnt,
 				total = total,
 				unit = "count",

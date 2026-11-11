@@ -1,5 +1,5 @@
 --!strict
--- Restore Comms (shared main objective): hold F on the radio set at the mast for row.Hold
+-- Restore Comms (shared main objective): hold E on the radio set at the mast for row.Hold
 -- seconds (letting go starts over), then hold the mast: row.Seconds add up while a living
 -- squad member (player or bot) is within row.Radius of it. A wave lands when the set comes
 -- on. Bots stand with their leader, so they count while the leader stays.
@@ -62,7 +62,7 @@ function RestoreComms.new(context: Types.Context): Types.Objective
 		progress = function(): Types.Progress
 			if not live then
 				return {
-					step = `Hold F on the radio set for {row.Hold or 10}s`,
+					step = `Hold {Kit.InteractLabel} on the radio set for {row.Hold or 10}s`,
 					done = 0,
 					total = 0,
 					unit = "",

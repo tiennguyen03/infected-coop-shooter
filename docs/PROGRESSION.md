@@ -295,7 +295,7 @@ Each drop draws one **main objective** and two **side objectives** from the map'
   crate and wakes the Warden: "That woke the Gate sergeant. He still guards this post. The
   Warden is coming up the road." Side objectives are optional; failing one costs nothing.
 - **Bots** follow their leader as always, so they stand in a hold with them and shoot marked
-  Infected; they never press F and never carry.
+  Infected; they never press E and never carry.
 - Dev: `SetMainObjective <id> [site]`, `SetSideObjective <id> [site]`, `RedrawObjectives`,
   `ListObjectives` (docs/STUDIO_MCP.md).
 
@@ -304,26 +304,26 @@ Each drop draws one **main objective** and two **side objectives** from the map'
 | Id | Role | Rule | Reward beyond the main objective's |
 |---|---|---|---|
 | `secure_site` Secure the Site | main | 45 s accumulated in the zone | |
-| `restore_comms` Restore Comms | main | hold F 10 s on the radio set (letting go starts over), then 60 s accumulated within 20 studs; a wave with 2 Hockers when it comes on | |
+| `restore_comms` Restore Comms | main | hold E 10 s on the radio set (letting go starts over), then 60 s accumulated within 20 studs; a wave with 2 Hockers when it comes on | |
 | `confirm_casualties` Confirm Casualties | main | kill 3 outlined heavy Infected (+1 per extra player) that stand at the site when the squad arrives | |
-| `recover_record` Recover the Record | main | hold F to pick up, carry to the drop point; the carrier cannot sprint; dropped when downed; players only | |
-| `lights_on` Lights On | side | hold F 8 s at a generator | the 5 nearest lamp posts light; 300 Resupply |
+| `recover_record` Recover the Record | main | hold E to pick up, carry to the drop point; the carrier cannot sprint; dropped when downed; players only | |
+| `lights_on` Lights On | side | hold E 8 s at a generator | the 5 nearest lamp posts light; 300 Resupply |
 | `misdrop` Misdrop | side | reach the pallet within 4 min of learning of it | the pallet: a supply crate |
 | `clear_spitters` Clear the Spitters | side | kill 3 outlined Hockers (+1 per extra player) within 2 min of reaching them | 600 Resupply |
-| Light the Pad, Sample Run, Headcount, Recover Logs | side | designed, not built: hold F at a marked pad (extraction can be called there); bag a marked heavy and carry it to the LZ; visit the story spots; pick up a recorder | |
+| Light the Pad, Sample Run, Headcount, Recover Logs | side | designed, not built: hold E at a marked pad (extraction can be called there); bag a marked heavy and carry it to the LZ; visit the story spots; pick up a recorder | |
 
 ### Checkpoint Delta (sites: LEVELS.md A5, A7)
 
 | Objective | Kind | Where | State |
 |---|---|---|---|
-| Sanitize the Pens (`sanitize`) | signature main | the three screening tents at the Pens: hold F 3 s at each fuel can, any order; each fire flushes 4 Runners and 3 Walkers | built |
+| Sanitize the Pens (`sanitize`) | signature main | the three screening tents at the Pens: hold E 3 s at each fuel can, any order; each fire flushes 4 Runners and 3 Walkers | built |
 | Open the Gate | signature main | break the 3 locks on the Gate, then reach the point beyond; the Warden walks in through it | designed, not built (needs shootable props) |
 | Secure the Site | shared main | the Screening Compound, the Pens, the Overlook | built |
 | Restore Comms | shared main | the comm tower (Compound upper tier) | built |
 | Confirm Casualties | shared main | Brutes at the Depot's aisle ends | built |
 | Recover the Record | shared main | the Ridge to the comm tower | built |
-| Silence the Alarm (`silence_alarm`) | signature side | the Gate siren: hold F 4 s on its switch; roaming spawns within 140 studs happen 40% as often; 150 Resupply | built |
-| Sealed Bus | signature side | Bus 7 on the Gate bus line: hold F, a Runner burst, kill all | designed, not built |
+| Silence the Alarm (`silence_alarm`) | signature side | the Gate siren: hold E 4 s on its switch; roaming spawns within 140 studs happen 40% as often; 150 Resupply | built |
+| Sealed Bus | signature side | Bus 7 on the Gate bus line: hold E, a Runner burst, kill all | designed, not built |
 | Lights On | shared side | the Depot generator | built |
 | Misdrop | shared side | the Suburb, the Barracks, the Depot mound | built |
 | Clear the Spitters | shared side | the highway west of the pad, the bus line | built |

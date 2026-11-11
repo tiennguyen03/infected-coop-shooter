@@ -1,5 +1,5 @@
 --!strict
--- Recover the Record (shared main objective): a ledger at the site; a player holds F to
+-- Recover the Record (shared main objective): a ledger at the site; a player holds E to
 -- pick it up and carries it on their back to the site's `To` point. The carrier cannot
 -- sprint (the Carrying attribute, read by SprintController). Downed, dead or gone, the
 -- carrier drops it where they stood and anyone can pick it up again. Carrying is for
@@ -158,7 +158,7 @@ function RecoverRecord.new(context: Types.Context): Types.Objective
 			local player = carrier
 			local step = if player
 				then `{Squad.callsign(player)} has the record: carry it to {toName} (no sprint)`
-				else "Hold F to pick up the screening record"
+				else `Hold {Kit.InteractLabel} to pick up the screening record`
 			return { step = step, done = 0, total = 0, unit = "" }
 		end,
 		position = function()

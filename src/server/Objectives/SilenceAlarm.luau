@@ -1,6 +1,6 @@
 --!strict
 -- Silence the Alarm (Checkpoint Delta's signature side objective): the Gate's siren loops
--- until a player holds F on its switch box. Once it is off, roaming Infected appear near the
+-- until a player holds E on its switch box. Once it is off, roaming Infected appear near the
 -- Gate far less often (EnemyService.setQuiet) for the rest of the mission. Bots guard the
 -- player at the box.
 
@@ -53,7 +53,12 @@ function SilenceAlarm.new(context: Types.Context): Types.Objective
 		begin = function() end,
 		step = function() end,
 		progress = function(): Types.Progress
-			return { step = "Hold F on the siren switch", done = 0, total = 0, unit = "" }
+			return {
+				step = `Hold {Kit.InteractLabel} on the siren switch`,
+				done = 0,
+				total = 0,
+				unit = "",
+			}
 		end,
 		position = function()
 			return context.position

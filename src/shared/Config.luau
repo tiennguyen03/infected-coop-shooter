@@ -1024,6 +1024,8 @@ local Config = {
 	-- its AppearDelay at its ZonePosition; no side objectives).
 	Objectives = {
 		Enabled = true,
+		-- Every objective prompt and "Hold E ..." step line (owner 2026-11-11: E interacts).
+		InteractKey = Enum.KeyCode.E, -- becomes Config.Keys.Interact once claude/keybinds merges
 		SideCount = 2,
 		GraceSeconds = 0, -- after the squad lands, before reaching the main objective starts it
 		SiteCrateOffset = 6, -- studs from the main objective to the field-upgrade crate it brings

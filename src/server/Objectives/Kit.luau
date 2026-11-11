@@ -1,5 +1,5 @@
 --!strict
--- What the objective modules share: code-built props, the world marker, the hold-F prompt,
+-- What the objective modules share: code-built props, the world marker, the hold-E prompt,
 -- the hold zone, squad distance checks and marked (outlined) Infected. No new meshes: every
 -- prop here is a plain Part placed from the site's coordinates (docs/LEVELS.md).
 
@@ -18,6 +18,9 @@ local Kit = {}
 Kit.Yellow = Color3.fromRGB(230, 189, 96) -- places and objectives (STYLES palette)
 Kit.Red = Color3.fromRGB(232, 90, 90) -- enemies and alerts
 Kit.White = Color3.fromRGB(240, 240, 240)
+-- The interact key of every objective prompt, and how a step line names it.
+Kit.InteractKey = Config.Objectives.InteractKey
+Kit.InteractLabel = Kit.InteractKey.Name
 
 function Kit.v3(vec: ObjectiveDefinitions.Vec): Vector3
 	return Vector3.new(vec[1], vec[2], vec[3])
@@ -84,7 +87,7 @@ function Kit.marker(
 	return marker
 end
 
--- A hold-F prompt on `part` (F is the interact key: MULTIPLAYER_READINESS decision 8).
+-- A hold-to-interact prompt on `part` (Kit.InteractKey: MULTIPLAYER_READINESS decision 8).
 -- `onTriggered` runs with the living player who finished the hold; letting go starts over.
 function Kit.prompt(
 	part: BasePart,
@@ -97,7 +100,7 @@ function Kit.prompt(
 	prompt.Name = "ObjectivePrompt"
 	prompt.ActionText = action
 	prompt.ObjectText = object
-	prompt.KeyboardKeyCode = Enum.KeyCode.F
+	prompt.KeyboardKeyCode = Kit.InteractKey
 	prompt.GamepadKeyCode = Enum.KeyCode.ButtonX
 	prompt.HoldDuration = hold
 	prompt.MaxActivationDistance = 10

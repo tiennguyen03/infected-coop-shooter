@@ -1,5 +1,5 @@
 --!strict
--- Lights On (shared side objective): hold F at the generator; the nearest lamp posts light
+-- Lights On (shared side objective): hold E at the generator; the nearest lamp posts light
 -- for the rest of the mission (row.MaxLamps within row.Radius, no shadows: STYLES light
 -- budget). Bots guard the player at the generator.
 
@@ -64,7 +64,7 @@ function LightsOn.new(context: Types.Context): Types.Objective
 		step = function() end,
 		progress = function(): Types.Progress
 			return {
-				step = `Hold F at the generator for {row.Hold or 8}s`,
+				step = `Hold {Kit.InteractLabel} at the generator for {row.Hold or 8}s`,
 				done = 0,
 				total = 0,
 				unit = "",

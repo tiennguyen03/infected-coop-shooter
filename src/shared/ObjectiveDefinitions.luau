@@ -126,7 +126,7 @@ local ROWS: { [string]: Row } = {
 		Done = "Record sent. Now we know who got through before it fell.",
 		Needs = { "To", "ToName" },
 		StartRadius = 40,
-		Hold = 1, -- seconds of F to pick it up
+		Hold = 1, -- seconds of the interact key to pick it up
 		DeliverRadius = 9,
 	},
 
