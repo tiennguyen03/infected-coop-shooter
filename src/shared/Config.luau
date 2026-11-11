@@ -214,6 +214,18 @@ local Config = {
 		ReceiptsKept = 50, -- Robux receipts remembered per record, so one never pays twice
 	},
 
+	-- The wallet readout (owner 2026-11-11; shared WalletReadout): merits and tabs as a mark and
+	-- a number each, in the Carrier's top bar and on the match's results screen. The marks are
+	-- the icon generator's glyphs (assets/icons/build/icons.js, ids in assets/icons/ASSET_IDS.md).
+	Wallet = {
+		-- The decals' thumbnails: their image ids are not resolved yet (ASSET_IDS.md).
+		MeritsIcon = "rbxthumb://type=Asset&id=117675850420015&w=150&h=150", -- the medal
+		TabsIcon = "rbxthumb://type=Asset&id=107657168929182&w=150&h=150", -- the steel tag
+		Size = 20, -- px at 1080p: the mark and its number
+		CountSeconds = 0.6, -- a changed balance counts to the new one over this long
+		PulseScale = 0.35, -- the mark swells by this much as a change lands, then settles
+	},
+
 	Run = {
 		InsertSeconds = 3, -- Insert -> Explore: the squad lands before the first wave
 		-- A squad from the lobby: the run starts when everyone the lobby sent has a body, or

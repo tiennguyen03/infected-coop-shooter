@@ -109,7 +109,11 @@ tracks Secondaries yet, so they pay 0.
   credit, write in one step) and leaves a save it cannot read alone (`Record.canUpdate`). A
   player is in the lobby or in a match, never both, so the two never write one record at once.
 - **Shown:** one line on the results screen, "+120 MERITS" (player attribute `MeritsEarned`;
-  "MERITS NOT SAVED" when the save failed). The result table above is unchanged.
+  "MERITS NOT SAVED" when the save failed). The result table above is unchanged. Under it,
+  "ON YOUR RECORD" and the wallet (medal + merits, tag + tabs; shared `WalletReadout`),
+  counting up from the balance before the pay: player attributes `MeritsHeld` / `TabsHeld`,
+  the record `UpdateAsync` returned, or a `GetAsync` read when nothing was paid. Hidden when
+  the record could not be read (Studio without API access).
 - **Trip home:** `goHome` waits for the saves first (`MeritService.settle`, at most
   `Config.Merits.SettleSeconds`), so the lobby reads the paid record on landing.
 - **Studio:** DataStores fail without API access; it is logged once and the run end carries on.

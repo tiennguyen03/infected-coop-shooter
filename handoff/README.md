@@ -6,7 +6,7 @@ last one. **End of a session:** edit this page in place (never append history he
 one note to `handoff/log/` (format in `handoff/log/README.md`). History lives in
 `docs/HISTORY.md`; this page is only "now".
 
-Last updated: 2026-11-10 by Tien + Claude.
+Last updated: 2026-11-11 by Tien + Claude.
 
 ## The game today (on `main`)
 
@@ -33,11 +33,14 @@ upgrades) → the Warden (boss) → extraction on Lantern → OPERATION COMPLETE
 - **Economy:** merits (soft) are paid when a mission ends (Win 120, Partial 60, Loss 0) onto
   the record the Carrier's desks spend from; tabs (hard, Robux or events, never power) are a
   balance on the same record with nothing to buy yet (`docs/OWNER.md`, `docs/ROADMAP.md` >
-  Progression).
+  Progression). Both show as the wallet readout (a medal and a steel tag, a number each): in
+  the Carrier's top bar and on the results screen (`WalletReadout`; not seen in game yet, and
+  the two glyphs show as decal thumbnails until their image ids are resolved:
+  `assets/icons/ASSET_IDS.md`).
 - **Roblox:** the group Boomin Dev Studios (270506601) owns the game "Co-op Zombie Shooter" and
   every sound and animation. Its start place 87556879379942 holds the **lobby**; the match is
   "Checkpoint Delta" 125769854992316 (`Config.Places`).
-- **Checks:** stylua, selene, rojo build, 157 Lune tests (rules plus the source-wiring spec, which also reads the lobby's remotes), luau-lsp, CI on every push.
+- **Checks:** stylua, selene, rojo build, 165 Lune tests (rules plus the source-wiring spec, which also reads the lobby's remotes), luau-lsp, CI on every push.
 
 ## Who owns what
 

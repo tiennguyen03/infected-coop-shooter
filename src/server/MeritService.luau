@@ -9,7 +9,8 @@
 -- RunManager is the only caller: `pay` at run end, `settle` before the trip home.
 --
 -- The amount is shown on the results screen through the player attribute MeritsEarned
--- (-1 when the save failed). A failed save, or Studio without API access, is logged and the
+-- (-1 when the save failed), and the wallet under it through MeritsHeld and TabsHeld: the
+-- record as it was saved, or as it was read when nothing was paid. A failed save, or Studio without API access, is logged and the
 -- run end carries on.
 
 local DataStoreService = game:GetService("DataStoreService")
@@ -47,10 +48,34 @@ local function recordStore(): DataStore?
 	return store
 end
 
--- Adds `amount` merits to the saved record of `userId` (yields). True once it is saved;
--- false when the store is unavailable, every try failed, or the save is one this code cannot
--- read (left untouched).
-local function credit(userId: number, amount: number): boolean
+-- The record of `userId` as it is saved (yields), for the wallet on the results screen when
+-- nothing was paid; nil when it cannot be read. One try: it is only shown.
+local function held(userId: number): Record.Record?
+	local data = recordStore()
+	if not data then
+		return nil
+	end
+	local ok, saved = pcall(function()
+		return data:GetAsync(Record.key(userId))
+	end)
+	if not ok or not Record.canUpdate(saved) then
+		return nil
+	end
+	return Record.decode(saved, SAVE.StartMerits)
+end
+
+-- The wallet the results screen shows (RunEndUI): what the record holds now.
+local function publish(player: Player, record: Record.Record)
+	if player.Parent then
+		player:SetAttribute(Attributes.MeritsHeld, record.merits)
+		player:SetAttribute(Attributes.TabsHeld, record.tabs)
+	end
+end
+
+-- Adds `amount` merits to the saved record of `userId` (yields). The record once it is
+-- saved; nil when the store is unavailable, every try failed, or the save is one this code
+-- cannot read (left untouched).
+local function credit(userId: number, amount: number): Record.Record?
 	local lastError = "the saved record is not one this server can read"
 	for try = 0, PAY.Retries do
 		local data = recordStore()
@@ -69,7 +94,7 @@ local function credit(userId: number, amount: number): boolean
 		end)
 		if ok then
 			if result ~= nil then
-				return true
+				return Record.decode(result, SAVE.StartMerits)
 			end
 			break
 		end
@@ -86,7 +111,7 @@ local function credit(userId: number, amount: number): boolean
 		warned = true
 		warn(`[MeritService] merits not saved (logged once): {lastError}`)
 	end
-	return false
+	return nil
 end
 
 -- Pays every player here for the mission that just ended. Does not yield: the amount is on
@@ -97,15 +122,23 @@ function MeritService.pay(outcome: string, secondaries: number)
 	print(`[MeritService] {outcome}: {amount} merits each to {#players} player(s)`)
 	for _, player in players do
 		player:SetAttribute(Attributes.MeritsEarned, amount)
+		local userId = player.UserId
 		if amount <= 0 then
+			-- Nothing to save: the record is only read, for the wallet on the results screen.
+			task.spawn(function()
+				local ok, record = pcall(held, userId)
+				if ok and record then
+					publish(player, record)
+				end
+			end)
 			continue
 		end
 		pending += 1
-		local userId = player.UserId
 		task.spawn(function()
 			local ok, saved = pcall(credit, userId, amount)
 			pending -= 1
 			if ok and saved then
+				publish(player, saved)
 				return
 			end
 			if not ok then
@@ -131,6 +164,8 @@ function MeritService.init()
 	Lifecycle.register("MeritService", {
 		onPlayerReset = function(player: Player)
 			player:SetAttribute(Attributes.MeritsEarned, nil)
+			player:SetAttribute(Attributes.MeritsHeld, nil)
+			player:SetAttribute(Attributes.TabsHeld, nil)
 		end,
 	})
 	game:BindToClose(MeritService.settle)
