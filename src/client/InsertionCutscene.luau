@@ -34,7 +34,8 @@ local BOT_TAG = "SquadBot"
 
 type Shot = { from: Vector3, look: Vector3, fov: number }
 type Jumper = {
-	source: Model, -- the real body on the pad
+	member: Instance?, -- its SquadRoster entry
+	source: Model?, -- the real body on the pad (nil until a bot's is built)
 	model: Model, -- its stand-in
 	root: BasePart,
 	seat: CFrame, -- the seated root, in the helicopter's frame
@@ -45,6 +46,8 @@ type Jumper = {
 	from: CFrame?, -- the door, in the world, once it steps off
 	land: CFrame?, -- where the real body stands
 	landed: boolean,
+	waiting: boolean, -- landed before its real body was built: stands there until it is
+	idle: AnimationTrack?,
 }
 
 local playing = false
@@ -231,8 +234,13 @@ local function standIn(source: Model, seat: CFrame, starts: number): Jumper?
 	end
 	local model = copy :: Model
 	model.Name = source.Name .. "_Ride"
+	-- A clone keeps its source's tags: a bot's stand-in would count as a squad body (and be
+	-- hidden with them) unless they go.
+	for _, tag in model:GetTags() do
+		model:RemoveTag(tag)
+	end
 	for _, thing in model:GetDescendants() do
-		if thing:IsA("LuaSourceContainer") or thing:IsA("ForceField") then
+		if thing:IsA("LuaSourceContainer") or thing:IsA("ForceField") or thing:IsA("Highlight") then
 			thing:Destroy()
 		elseif thing:IsA("BasePart") then
 			thing.CanCollide = false
@@ -259,10 +267,12 @@ local function standIn(source: Model, seat: CFrame, starts: number): Jumper?
 	end
 	local sit = animator and loadTrack(animator, CUT.Animations.Sit, true)
 	local fall = animator and loadTrack(animator, CUT.Animations.Fall, true)
+	local idle = animator and loadTrack(animator, CUT.Animations.Idle, true)
 	if sit then
 		sit:Play(0)
 	end
 	return {
+		member = nil,
 		source = source,
 		model = model,
 		root = root,
@@ -274,7 +284,59 @@ local function standIn(source: Model, seat: CFrame, starts: number): Jumper?
 		from = nil,
 		land = nil,
 		landed = false,
+		waiting = false,
+		idle = idle,
 	}
+end
+
+-- A roster entry's body: the player's character, or the bot named by its callsign.
+local function bodyOf(member: Instance): Model?
+	local userId = member:GetAttribute(Attributes.SquadUserId)
+	if typeof(userId) == "number" and userId > 0 then
+		local player = Players:GetPlayerByUserId(userId)
+		return player and player.Character
+	end
+	local callsign = member:GetAttribute(Attributes.Callsign)
+	for _, bot in CollectionService:GetTagged(BOT_TAG) do
+		if bot:IsA("Model") and bot.Name == callsign then
+			return bot
+		end
+	end
+	return nil
+end
+
+-- The squad, in roster order (players first, then the bots); empty without a roster.
+local function rosterMembers(): { Instance }
+	local roster = ReplicatedStorage:FindFirstChild(Attributes.SquadRoster)
+	local list = if roster then roster:GetChildren() else {}
+	-- Players first (they take the seats nearest the door's middle), then the bots by slot.
+	local function rank(member: Instance): number
+		local userId = member:GetAttribute(Attributes.SquadUserId)
+		return if typeof(userId) == "number" and userId > 0 then 0 else 1
+	end
+	table.sort(list, function(a, b)
+		if rank(a) ~= rank(b) then
+			return rank(a) < rank(b)
+		end
+		return a.Name < b.Name
+	end)
+	return list
+end
+
+-- The squad's landing pads (Config.Run.SpawnPads round the LZ; ArenaService.getSpawnPad's
+-- standing CFrames), for a stand-in whose bot has no body yet.
+local function padFrames(): { CFrame }
+	local lz = Config.Extraction.ZonePosition
+	local list = {}
+	for _, offset in Config.Run.SpawnPads do
+		local position = Vector3.new(lz.X + offset.X, 3.5, lz.Z + offset.Z)
+		local toward = Vector3.new(-position.X, 0, -position.Z)
+		if toward.Magnitude < 0.01 then
+			toward = Vector3.new(0, 0, -1)
+		end
+		table.insert(list, CFrame.lookAlong(position, toward.Unit))
+	end
+	return list
 end
 
 local function play()
@@ -412,26 +474,49 @@ local function play()
 			task.wait()
 		end
 	end
-	-- The squad aboard: a seat for each body there is, in order, and for any that appears
-	-- later (the bots are dressed while the cutscene starts) as long as its jump is still ahead.
+	-- The squad aboard: one seat per roster entry, filled at once. A bot's body is built while
+	-- the cutscene plays (its outfit loads), so until it exists its stand-in is a copy of this
+	-- soldier's (the same uniform), and lands on a free pad; it waits there for the real body.
 	local jumpers: { Jumper } = {}
 	local stood: { [Model]: boolean } = {}
-	local seated: { [Model]: boolean } = {}
+	local seated: { [Instance]: boolean } = {}
+	local seatedBody: { [Model]: boolean } = {}
 	local function seatSquad(now: number)
-		for _, model in squadModels() do
+		local members = rosterMembers()
+		local entries: { { member: Instance?, body: Model? } } = {}
+		if #members > 0 then
+			for _, member in members do
+				if not seated[member] then
+					table.insert(entries, { member = member, body = bodyOf(member) })
+				end
+			end
+		else
+			for _, model in squadModels() do
+				if not seatedBody[model] then
+					table.insert(entries, { member = nil, body = model })
+				end
+			end
+		end
+		for _, entry in entries do
 			local index = #jumpers + 1
 			local seatAt = CUT.Seats[index]
 			if not seatAt then
 				return
 			end
-			if not seated[model] then
-				local starts = tDrop + CUT.JumpStart + (index - 1) * CUT.JumpStagger
-				if now < starts - CUT.StepSeconds then
-					local jumper = standIn(model, CFrame.lookAlong(seatAt, Vector3.xAxis), starts)
-					if jumper then
-						seated[model] = true
-						table.insert(jumpers, jumper)
+			local starts = tDrop + CUT.JumpStart + (index - 1) * CUT.JumpStagger
+			local look = entry.body or player.Character
+			if look and now < starts - CUT.StepSeconds then
+				local jumper = standIn(look, CFrame.lookAlong(seatAt, Vector3.xAxis), starts)
+				if jumper then
+					jumper.member = entry.member
+					jumper.source = entry.body
+					if entry.member then
+						seated[entry.member :: Instance] = true
 					end
+					if entry.body then
+						seatedBody[entry.body :: Model] = true
+					end
+					table.insert(jumpers, jumper)
 				end
 			end
 		end
@@ -464,10 +549,38 @@ local function play()
 		end
 		if not j.from then
 			j.from = door
-			local real = j.source:FindFirstChild("HumanoidRootPart")
-			j.land = if real and real:IsA("BasePart")
-				then real.CFrame
-				else CFrame.lookAlong(pad + UP * j.height, facing)
+			local source = j.source
+			local real = source and source:FindFirstChild("HumanoidRootPart")
+			if real and real:IsA("BasePart") then
+				j.land = real.CFrame
+			else
+				-- No body yet: the free pad nearest its seat order, away from every body there.
+				local taken: { Vector3 } = {}
+				for _, model in squadModels() do
+					local root = model:FindFirstChild("HumanoidRootPart")
+					if root and root:IsA("BasePart") then
+						table.insert(taken, root.Position)
+					end
+				end
+				for _, other in jumpers do
+					if other ~= j and other.land then
+						table.insert(taken, (other.land :: CFrame).Position)
+					end
+				end
+				for _, padFrame in padFrames() do
+					local free = true
+					for _, at in taken do
+						if (at - padFrame.Position).Magnitude < 3 then
+							free = false
+						end
+					end
+					if free then
+						j.land = padFrame
+						break
+					end
+				end
+				j.land = j.land or CFrame.lookAlong(pad + UP * 3.5, facing)
+			end
 			if j.fall then
 				j.fall:Play(0.1)
 			end
@@ -490,10 +603,32 @@ local function play()
 		rotor:Stop()
 		lantern:Destroy()
 		dustPart:Destroy()
+		-- A stand-in whose bot is still being built keeps its place a little longer.
+		local waiting: { Jumper } = {}
 		for _, j in jumpers do
-			if j.model.Parent then
+			if j.waiting and not j.source and j.model.Parent then
+				table.insert(waiting, j)
+			elseif j.model.Parent then
 				j.model:Destroy()
 			end
+		end
+		if #waiting > 0 then
+			task.spawn(function()
+				local deadline = os.clock() + 15
+				while #waiting > 0 and os.clock() < deadline do
+					for i = #waiting, 1, -1 do
+						local j = waiting[i]
+						if j.member and bodyOf(j.member :: Instance) then
+							j.model:Destroy()
+							table.remove(waiting, i)
+						end
+					end
+					task.wait(0.1)
+				end
+				for _, j in waiting do
+					j.model:Destroy()
+				end
+			end)
 		end
 		for _, model in squadModels() do
 			setHidden(model, false)
@@ -542,18 +677,38 @@ local function play()
 		if t < tDrop then
 			seatSquad(t)
 		end
-		-- The squad: stand-ins ride and jump; each real body shows when its stand-in lands.
+		-- The squad: stand-ins ride and jump; each real body shows when its stand-in lands (a
+		-- bot built late swaps in when it appears).
 		for _, j in jumpers do
+			if not j.source and j.member then
+				local built = bodyOf(j.member :: Instance)
+				if built then
+					j.source = built
+					seatedBody[built] = true
+				end
+			end
 			if not j.landed then
 				local at = jumperAt(j, t, frame)
 				if at then
 					j.root.CFrame = at
 				else
 					j.landed = true
-					stood[j.source] = true
-					j.model:Destroy()
-					setHidden(j.source, false)
+					j.root.CFrame = j.land :: CFrame
+					if j.fall then
+						j.fall:Stop(0.1)
+					end
+					j.waiting = true
+					if j.idle then
+						j.idle:Play(0.2)
+					end
 				end
+			end
+			local source = j.source
+			if j.waiting and source then
+				j.waiting = false
+				stood[source] = true
+				j.model:Destroy()
+				setHidden(source, false)
 			end
 		end
 		local everyoneDown = t > tDepart - 0.2

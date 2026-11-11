@@ -64,13 +64,15 @@ local Config = {
 		-- Seated roots: the stock sit puts the feet 2.32 below the root and the thighs 1.5 below
 		-- (measured on an R15 rig, 2026-11-11), so a root 2.32 over the cabin floor rests the
 		-- feet on it and the bench top sits 1.5 under the root.
+		-- Along the door opening (about Z -3 to +5.6 on the first look's screenshot): the seats
+		-- at Z -4.4 and below were behind the cabin wall aft of the door.
 		Seats = {
-			Vector3.new(-2.1, 4.77, 1.6),
-			Vector3.new(-2.1, 4.77, -0.4),
-			Vector3.new(-2.1, 4.77, -2.4),
-			Vector3.new(-2.1, 4.77, -4.4),
+			Vector3.new(-2.1, 4.77, 4.2),
+			Vector3.new(-2.1, 4.77, 2.2),
+			Vector3.new(-2.1, 4.77, 0.2),
+			Vector3.new(-2.1, 4.77, -1.8),
 		},
-		Bench = { Size = Vector3.new(1.4, 0.4, 8.6), At = Vector3.new(-2.5, 3.07, -1.4) },
+		Bench = { Size = Vector3.new(1.4, 0.4, 8.6), At = Vector3.new(-2.5, 3.07, 1.2) },
 		DoorX = 3.6, -- the door sill, where a jumper steps off
 		DeckY = 2.45, -- the cabin floor above the frame's origin (the lobby's crew chief stands on it)
 		JumpStart = 0.3, -- seconds into the hover before the first jump
@@ -81,6 +83,7 @@ local Config = {
 		Animations = {
 			Sit = "rbxassetid://2506281703", -- Roblox's stock R15 sit
 			Fall = "rbxassetid://507767968", -- Roblox's stock R15 fall
+			Idle = "rbxassetid://507766388", -- Roblox's stock R15 idle (a stand-in waiting on its pad)
 		},
 		Letterbox = 0.11, -- share of the screen height each bar covers
 		Fov = 50,

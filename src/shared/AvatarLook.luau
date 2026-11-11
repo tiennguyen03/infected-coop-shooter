@@ -69,6 +69,14 @@ local function kindOf(id: number): number
 	return kind
 end
 
+-- Looks up the kinds of `items` ahead of time (a bot's rig is built at the run's start, while
+-- the insertion cutscene plays: the less it waits, the sooner it stands on its pad).
+function AvatarLook.prefetch(items: { number })
+	for _, id in items do
+		task.spawn(kindOf, id)
+	end
+end
+
 -- The look as a HumanoidDescription (yields while item kinds are looked up).
 function AvatarLook.describe(look: Look): HumanoidDescription
 	local description = Instance.new("HumanoidDescription")
