@@ -123,6 +123,22 @@ Icons show on call-in and field-upgrade cards through `IconId` on each
 - No text, no letters, no logos. Stencil marks are abstract bars.
 - Readability test: shrink to 40 px. If you can't name the object, simplify.
 
+### Glyphs (2026-11-11)
+
+Marks that sit beside a number on the HUD, drawn at 16-20 px: `GLYPHS` in the generator, no
+plate and no ground shadow, a transparent canvas, one bold silhouette filling it, a dark
+backing (the silhouette grown by a 20 px round stroke, `#07090b` at 0.8) so it holds over a
+bright world, fixed materials. Two exist, for the wallet readout (`Config.Wallet`):
+
+- `merits`: a medal, a brass ribbon with a red centre stripe folding to a point and a faceted
+  brass star. Warm, upright, pointed.
+- `tabs`: a stamped steel tag on a ball chain, chamfered, tilted 18 degrees, a punched hole,
+  three stamped bars. Cool, wide, flat.
+
+`node assets/icons/build/icons.js merits tabs glyphs` renders them and
+`build/glyph_preview.png` (each at 160, 40, 20 and 16 px on a dark and a bright ground). The
+item icons need `ItemDefinitions` for their accent and are skipped while it is gone.
+
 ### Renderer constraints (resvg)
 
 - Supported: `rect`, `polygon`, `polyline`, `circle`, `ellipse`, `g transform`, `opacity`.
@@ -209,6 +225,8 @@ UIScale) and its text through `HudTheme.label`.
 | Boss bar (`BossBarUI`) | top right (-16,12) | name in red right-aligned, 380x16 faceted body bar ending in a round emblem (blue while stunned), six 56x6 plate bars with labels |
 | Downed / K.I.A. (`RunEndUI`) | centre (0.5, 0.22) | "DOWNED" 40 red + 360x4 bleed-out bar + line; "K.I.A." + line; no panel |
 | Results (`RunEndUI`) | full screen | menu style: dark red field, corner L-brackets, "//OPERATION COMPLETE" yellow or "//SQUAD WIPED" red, stats in a red-outlined box, cream READY |
+| Results (`RunEndUI`) wallet | under the "+N MERITS" line | dim 14 pt "ON YOUR RECORD" + the wallet readout; counts up from the balance before the pay; hidden until the match has read the record |
+| Wallet (`WalletReadout`; lobby `WalletUI`) | the Carrier: right end of Roblox's top bar (ScreenInsets TopbarSafeInsets, 16 px in), DisplayOrder 4, always on | medal glyph + merits in yellow, tag glyph + tabs in white, GothamBlack 20, no panel, no words; numbers by `Rules/Wallet` (exact under 10,000, then "12.4k", "1.2M", rounded down); a change counts to the new number over 0.6 s at 15 Hz while the number starts white and the glyph swells 35% and settles |
 | Crosshair / hit marker | centre | unchanged |
 | Binoculars (`BinocularController`, the Anvil) | full screen while they are up | black outside one pill-shaped glass (the one rounded shape besides the circles: it is a lens), a 1 px white reticle with range ticks, the call-in 14 dim above, the range GothamBlack 26 below with MARK SET yellow or the refusal red.l 14, keys 12 dim; the crosshair fades out; written only on change |
 

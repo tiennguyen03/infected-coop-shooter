@@ -48,7 +48,10 @@ upgrades) → the Warden (boss) → extraction by helicopter → OPERATION COMPL
 - **Economy:** merits (soft) are paid when a mission ends (Win 120, Partial 60, Loss 0) onto
   the record the Carrier's desks spend from; tabs (hard, Robux or events, never power) are a
   balance on the same record with nothing to buy yet (`docs/OWNER.md`, `docs/ROADMAP.md` >
-  Progression).
+  Progression). Both show as the wallet readout (a medal and a steel tag, a number each): in
+  the Carrier's top bar and on the results screen (`WalletReadout`; not seen in game yet, and
+  the two glyphs show as decal thumbnails until their image ids are resolved:
+  `assets/icons/ASSET_IDS.md`).
 - **Names (owner, 2026-11-11; Nova, this touches lobby text):** players read "the Carrier",
   "the helicopter" / "Helo" (signs `HELO · SPOT n`, the map's pencil track, the Loadmaster is
   the "Helicopter crew chief") and "Warden"; never "Fallow", "Lantern" or "Handset" in a
@@ -56,7 +59,7 @@ upgrades) → the Warden (boss) → extraction by helicopter → OPERATION COMPL
 - **Roblox:** the group Boomin Dev Studios (270506601) owns the game "Co-op Zombie Shooter" and
   every sound and animation. Its start place 87556879379942 holds the **lobby**; the match is
   "Checkpoint Delta" 125769854992316 (`Config.Places`).
-- **Checks:** stylua, selene, rojo build, 280 Lune tests (rules plus the source-wiring spec, which also reads the lobby's remotes), luau-lsp, CI on every push.
+- **Checks:** stylua, selene, rojo build, 288 Lune tests (rules plus the source-wiring spec, which also reads the lobby's remotes), luau-lsp, CI on every push.
 
 ## Who owns what
 
