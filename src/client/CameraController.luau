@@ -16,6 +16,9 @@
 -- shoulder; this soldier's own body is hidden on this client, and FirstPersonView shows its
 -- arms and gun playing the body's clips. Down the sights in first person the crosshair fades
 -- out so the iron sights or scope do the aiming.
+--
+-- Binoculars (setScope, BinocularController): the same eye on the Head with a much narrower
+-- view, from either camera mode; the gun's view model is put away while they are up.
 
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
@@ -29,6 +32,8 @@ local WeaponDefinitions =
 	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("WeaponDefinitions"))
 local Feel =
 	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Rules"):WaitForChild("Feel"))
+local Spotting =
+	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Rules"):WaitForChild("Spotting"))
 local FirstPersonView = require(script.Parent.FirstPersonView)
 
 local HIP_FOV = 70
@@ -60,6 +65,14 @@ local shakeAmplitude = 0
 local lastFocus: Vector3? = nil
 local firstPerson = false
 local hiddenParts: { BasePart } = {} -- this soldier's parts hidden in first person
+-- Binoculars (BinocularController, setScope): the eye goes to the Head and the view narrows
+-- to scopeFov over scopeRaise seconds, and back over scopeLower.
+local scoped = false
+local scopeFov = HIP_FOV
+local scopeRaise = 0.3
+local scopeLower = 0.3
+local scopeBlend = 0 -- 0 = no glass, 1 = through it
+local eyeScoped = false -- scopeBlend > 0: the eye is on the Head whatever the camera mode
 
 -- Fraction left after `dt` of an exponential ease that is ~95% done after `over` seconds.
 local function decayFactor(dt: number, over: number): number
@@ -125,7 +138,7 @@ local function refreshHidden()
 	end
 	table.clear(hiddenParts)
 	local character = Players.LocalPlayer.Character
-	if not (firstPerson and character) then
+	if not ((firstPerson or eyeScoped) and character) then
 		return
 	end
 	for _, part in character:GetDescendants() do
@@ -150,6 +163,22 @@ function CameraController.isFirstPerson(): boolean
 	return firstPerson
 end
 
+-- Binoculars up (`fov` degrees through the glass, reached over `raise` seconds) or down
+-- (nil; back over `lower`). The eye rides the Head while any of the glass is in the view.
+function CameraController.setScope(fov: number?, raise: number?, lower: number?)
+	scoped = fov ~= nil
+	if fov then
+		scopeFov = fov
+	end
+	scopeRaise = raise or scopeRaise
+	scopeLower = lower or scopeLower
+end
+
+-- How far into the glass the view is (0 none, 1 through it).
+function CameraController.scopeBlend(): number
+	return scopeBlend
+end
+
 local function applyCharacterSettings(character: Model)
 	local humanoid = character:WaitForChild("Humanoid") :: Humanoid
 	-- We rotate the character to the camera yaw ourselves each frame.
@@ -169,7 +198,7 @@ local function applyCharacterSettings(character: Model)
 	-- A new body: hide it again if we are in first person, and anything added to it later.
 	task.defer(refreshHidden)
 	character.DescendantAdded:Connect(function(thing)
-		if firstPerson and thing:IsA("BasePart") then
+		if (firstPerson or eyeScoped) and thing:IsA("BasePart") then
 			task.defer(refreshHidden)
 		end
 	end)
@@ -262,7 +291,15 @@ local function onRenderStep(deltaTime: number)
 	adsBlend += math.clamp(target - adsBlend, -rate, rate)
 	local shoulder = Config.Camera.ShoulderOffset:Lerp(ads.ShoulderOffset, adsBlend)
 	local reach = distance + (ads.CameraDistance - distance) * adsBlend
-	camera.FieldOfView = HIP_FOV + (ads.FOV - HIP_FOV) * adsBlend
+	-- Binoculars: the glass narrows the view further, and the eye sits on the Head while any
+	-- of it is in the way.
+	scopeBlend = Spotting.blend(scopeBlend, scoped, deltaTime, scopeRaise, scopeLower)
+	if eyeScoped ~= (scopeBlend > 0) then
+		eyeScoped = scopeBlend > 0
+		refreshHidden()
+	end
+	camera.FieldOfView =
+		Spotting.fov(HIP_FOV + (ads.FOV - HIP_FOV) * adsBlend, scopeFov, scopeBlend)
 	local ring = crosshairRing
 	if ring then
 		local size = CROSSHAIR_HIP + (CROSSHAIR_ADS - CROSSHAIR_HIP) * adsBlend
@@ -282,7 +319,8 @@ local function onRenderStep(deltaTime: number)
 		size += bloomValue * CROSSHAIR_PER_BLOOM
 		ring.Size = UDim2.fromOffset(size, size)
 		-- Down the sights in first person the sights aim: the crosshair fades out.
-		local fade = if firstPerson then adsBlend else 0
+		-- Through binoculars their own reticle does.
+		local fade = math.max(if firstPerson then adsBlend else 0, scopeBlend)
 		local stroke = ring:FindFirstChildOfClass("UIStroke")
 		if stroke then
 			stroke.Transparency = 0.35 + 0.65 * fade
@@ -325,7 +363,7 @@ local function onRenderStep(deltaTime: number)
 		+ rotation:VectorToWorldSpace(Vector3.new(shoulder.X, shoulder.Y, 0))
 	lastFocus = focus
 	local head = character and character:FindFirstChild("Head")
-	if firstPerson and head and head:IsA("BasePart") then
+	if (firstPerson or eyeScoped) and head and head:IsA("BasePart") then
 		-- The eye on the head (it follows crouch, prone and the body's bob), just ahead of its
 		-- centre; the sights only narrow the view. The body is re-hidden each frame because
 		-- Roblox's camera scripts reset LocalTransparencyModifier.
@@ -339,7 +377,11 @@ local function onRenderStep(deltaTime: number)
 		for _, part in hiddenParts do
 			part.LocalTransparencyModifier = 1
 		end
-		FirstPersonView.update(character, camera.CFrame, adsBlend, deltaTime)
+		if eyeScoped then
+			FirstPersonView.hide() -- the gun is slung while the binoculars are up
+		else
+			FirstPersonView.update(character, camera.CFrame, adsBlend, deltaTime)
+		end
 	else
 		camera.CFrame = CFrame.new(focus) * rotation * CFrame.new(0, 0, reach)
 		FirstPersonView.hide()

@@ -5,7 +5,9 @@
 -- this controller forwards input and draws the aim: hold G or a thrown call-in's key and an
 -- arc from the hand plus that item's marker show where it will land (the aim point, clamped
 -- to throw range, dropped to the ground) and what it covers; release to throw it there. The
--- flare throws at the crosshair at once (ThrowUtil, the server's maths).
+-- flare throws at the crosshair at once (ThrowUtil, the server's maths). A call-in whose row
+-- says AimMode "Binoculars" (the Anvil) is not thrown: its key raises the binoculars
+-- (BinocularController), and any other kit key lowers them.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -21,7 +23,9 @@ local Remotes = require(Shared:WaitForChild("Remotes"))
 local ThrowUtil = require(Shared:WaitForChild("ThrowUtil"))
 local UpgradeDefinitions = require(Shared:WaitForChild("UpgradeDefinitions"))
 local WeaponDefinitions = require(Shared:WaitForChild("WeaponDefinitions"))
+local Spotting = require(Shared:WaitForChild("Rules"):WaitForChild("Spotting"))
 local AnimationController = require(script.Parent.AnimationController)
+local BinocularController = require(script.Parent.BinocularController)
 
 local GHOST_COLOR = Color3.fromRGB(255, 150, 60)
 
@@ -236,9 +240,20 @@ local function pressCallIn(key: Enum.KeyCode, slot: number)
 	local definition =
 		CallInDefinitions.get(player:GetAttribute(Attributes.callIn(slot)) :: string?)
 	if not definition then
+		BinocularController.cancel()
 		return
 	end
 	local charges = (player:GetAttribute(Attributes.callInCharges(slot)) :: number?) or 0
+	local cfg = (Config.CallIns :: { [string]: any })[definition.ConfigKey]
+	-- Marked through binoculars, not thrown: the key raises them, or lowers them again.
+	if Spotting.mode(cfg) == "Binoculars" then
+		if charges > 0 or BinocularController.isUp() then
+			stopAiming()
+			BinocularController.press(slot)
+		end
+		return
+	end
+	BinocularController.cancel()
 	-- Daisy Chain: the Tripline key still goes out on an empty slot (the server blows the
 	-- armed mines without a charge).
 	local daisyChain = definition.Id == "tripline"
@@ -251,7 +266,6 @@ local function pressCallIn(key: Enum.KeyCode, slot: number)
 		Remotes.get("CallIn"):FireServer(slot, nil)
 		return
 	end
-	local cfg = (Config.CallIns :: { [string]: any })[definition.ConfigKey]
 	startAiming(
 		key,
 		slot,
@@ -294,7 +308,19 @@ function AbilityController.init()
 		local slot = CALL_IN_KEYS[key]
 		if slot and slot <= Config.CallIns.Slots then
 			pressCallIn(key, slot)
-		elseif key == Enum.KeyCode.Q then
+			return
+		end
+		-- Any other kit key takes the hands off the binoculars.
+		if
+			key == Enum.KeyCode.Q
+			or key == Enum.KeyCode.G
+			or key == Enum.KeyCode.V
+			or key == Enum.KeyCode.E
+			or key == Enum.KeyCode.Five
+		then
+			BinocularController.cancel()
+		end
+		if key == Enum.KeyCode.Q then
 			useAbility:FireServer(Messages.Ability.Swap)
 		elseif key == Enum.KeyCode.G then
 			aimGrenade()

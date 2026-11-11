@@ -4,7 +4,8 @@
 --     the first Delay seconds after the throw, then ShellInterval apart. Walk It In
 --     (walking_barrage): each shell lands Config.Upgrades.WalkingBarrage.Step further along
 --     the throw.
---   Anvil (105 mm, Config.CallIns.Anvil): the same path, one heavy shell.
+--   Anvil (105 mm, Config.CallIns.Anvil): the same path, one heavy shell, on a point marked
+--     through binoculars (CallInService, Rules/Spotting) instead of a thrown marker.
 --   Shrike (helicopter gun run, Config.CallIns.Shrike): after Delay a gunship passes along
 --     the throw; Bursts impacts centred on the mark, Step studs apart, BurstInterval apart.
 -- Every impact is a BlastRadius area hit on the Infected only (DamageService.dealDamage; no
@@ -124,7 +125,7 @@ local function flash(
 end
 
 -- Area damage on the Infected around `center` (the one place a fire mission hurts).
-local function hurtAround(player: Player, center: Vector3, shell: Shell)
+local function hurtAround(player: Player?, center: Vector3, shell: Shell)
 	for _, root in enemyRootsNear(center, shell.BlastRadius) do
 		local model = root.Parent :: Model
 		local humanoid = model:FindFirstChildOfClass("Humanoid")
@@ -137,7 +138,7 @@ local function hurtAround(player: Player, center: Vector3, shell: Shell)
 	end
 end
 
-local function detonate(player: Player, center: Vector3, shell: Shell, arrival: Arrival.Resolved)
+local function detonate(player: Player?, center: Vector3, shell: Shell, arrival: Arrival.Resolved)
 	if not arrivalsOn() then
 		-- The old look: a stock Explosion for the fireball only, zeroed radius/pressure so it
 		-- can't hurt anyone; damage is applied manually below.
@@ -191,8 +192,9 @@ export type MissionConfig = {
 -- CallInService (Hammer, Anvil): shells from `cfg` land around `point`; `direction` is the
 -- flat throw direction, `step` how far each shell walks along it (Walk It In; 0 otherwise).
 -- Returns true and where each shell will land, in order (for the clients' arrival).
+-- `player` gets the kills; nil (a bot's mission) credits nobody.
 function AirStrikeService.fireMission(
-	player: Player,
+	player: Player?,
 	cfg: MissionConfig,
 	point: Vector3,
 	direction: Vector3,
