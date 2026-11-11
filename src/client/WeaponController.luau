@@ -23,6 +23,7 @@ local WeaponDefinitions =
 local SoundFX = require(script.Parent.SoundFX)
 local AnimationController = require(script.Parent.AnimationController)
 local CameraController = require(script.Parent.CameraController)
+local FirstPersonView = require(script.Parent.FirstPersonView)
 local SprintController = require(script.Parent.SprintController)
 
 local WeaponController = {}
@@ -185,10 +186,13 @@ local function tryFire()
 		return
 	end
 
-	-- Fire from the rifle muzzle when present (falls back to chest height).
+	-- Fire from the rifle muzzle when present (falls back to chest height); in first person from
+	-- the barrel of the gun on screen (FirstPersonView), which sits by the eye, so the shot
+	-- runs down the sight line.
 	local rifle = character and character:FindFirstChild("Rifle")
 	local muzzle = rifle and rifle:FindFirstChild("Muzzle") :: BasePart?
-	local origin = if muzzle then muzzle.Position else root.Position + Vector3.new(0, 1, 0)
+	local shown = if CameraController.isFirstPerson() then FirstPersonView.muzzle() else nil
+	local origin = shown or if muzzle then muzzle.Position else root.Position + Vector3.new(0, 1, 0)
 	local direction = aimPoint - origin
 	if direction.Magnitude < 0.001 then
 		return
@@ -232,8 +236,10 @@ local function tryFire()
 	SoundFX.gunshot(weapon.Sound)
 	local flash = Instance.new("Part")
 	flash.Shape = Enum.PartType.Ball
-	flash.Size = Vector3.new(0.7, 0.7, 0.7)
-	flash.Position = origin + direction.Unit * 1.5
+	-- In first person the flash shrinks with the gun on screen (Config.Camera.FirstPerson.Scale).
+	local flashScale = if shown then Config.Camera.FirstPerson.Scale else 1
+	flash.Size = Vector3.new(0.7, 0.7, 0.7) * flashScale
+	flash.Position = origin + direction.Unit * 1.5 * flashScale
 	flash.Anchored = true
 	flash.CanCollide = false
 	flash.CanQuery = false

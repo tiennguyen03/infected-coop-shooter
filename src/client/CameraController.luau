@@ -13,8 +13,9 @@
 --
 -- First person (Config.Camera.FirstPerson): T toggles it, or the wheel past the closest zoom.
 -- The same yaw, pitch, kick, shake and sights, the eye on the Head instead of behind the
--- shoulder; this soldier's own body is hidden on this client, and a local copy of the held
--- gun (the Rifle tool's mesh) hangs off the camera, moving to the centre down the sights.
+-- shoulder; this soldier's own body is hidden on this client, and FirstPersonView shows its
+-- arms and gun playing the body's clips. Down the sights in first person the crosshair fades
+-- out so the iron sights or scope do the aiming.
 
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
@@ -28,6 +29,7 @@ local WeaponDefinitions =
 	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("WeaponDefinitions"))
 local Feel =
 	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Rules"):WaitForChild("Feel"))
+local FirstPersonView = require(script.Parent.FirstPersonView)
 
 local HIP_FOV = 70
 local CROSSHAIR_HIP = 22 -- ring diameter in pixels at the hip
@@ -42,6 +44,7 @@ local distance: number = Config.Camera.Distance
 local aiming = false
 local adsBlend = 0 -- 0 = hip, 1 = sights; eased each frame
 local crosshairRing: Frame? = nil
+local crosshairDot: Frame? = nil
 local bloomShotAt: number? = nil -- when the Bloom attribute last changed (a shot)
 local cursorHolders: { [string]: boolean } = {}
 local pivotHeight: number = Config.Camera.PivotHeight.stand
@@ -57,8 +60,6 @@ local shakeAmplitude = 0
 local lastFocus: Vector3? = nil
 local firstPerson = false
 local hiddenParts: { BasePart } = {} -- this soldier's parts hidden in first person
-local viewGun: BasePart? = nil -- the camera's copy of the held gun
-local viewGunSource: BasePart? = nil -- the held gun part it copies
 
 -- Fraction left after `dt` of an exponential ease that is ~95% done after `over` seconds.
 local function decayFactor(dt: number, over: number): number
@@ -118,50 +119,6 @@ function CameraController.setBodyYawLocked(locked: boolean)
 	bodyYawLocked = locked
 end
 
--- The held gun's visible part: the biggest visible part of the character's Tool (the gun
--- mesh, or the block rifle's body).
-local function heldGun(character: Model): BasePart?
-	local tool = character:FindFirstChildOfClass("Tool")
-	local best: BasePart? = nil
-	if tool then
-		for _, part in tool:GetDescendants() do
-			if
-				part:IsA("BasePart")
-				and part.Transparency < 1
-				and (not best or part.Size.Magnitude > best.Size.Magnitude)
-			then
-				best = part
-			end
-		end
-	end
-	return best
-end
-
--- Keeps the camera's gun a copy of the one in hand (swaps, respawns), or drops it.
-local function updateViewGun(character: Model?)
-	local source = if firstPerson and character then heldGun(character) else nil
-	if source == viewGunSource and (viewGun == nil) == (source == nil) then
-		return
-	end
-	if viewGun then
-		viewGun:Destroy()
-		viewGun = nil
-	end
-	viewGunSource = source
-	if source then
-		local copy = source:Clone()
-		copy:ClearAllChildren()
-		copy.Anchored = true
-		copy.CanCollide = false
-		copy.CanQuery = false -- the aim ray must pass through it
-		copy.CanTouch = false
-		copy.CastShadow = false
-		copy.LocalTransparencyModifier = 0
-		copy.Parent = workspace.CurrentCamera
-		viewGun = copy
-	end
-end
-
 local function refreshHidden()
 	for _, part in hiddenParts do
 		part.LocalTransparencyModifier = 0
@@ -184,7 +141,9 @@ function CameraController.setFirstPerson(on: boolean)
 	end
 	firstPerson = on
 	refreshHidden()
-	updateViewGun(Players.LocalPlayer.Character)
+	if not on then
+		FirstPersonView.hide()
+	end
 end
 
 function CameraController.isFirstPerson(): boolean
@@ -236,6 +195,7 @@ local function createCrosshair()
 	corner.Parent = dot
 
 	dot.Parent = gui
+	crosshairDot = dot
 
 	-- Spread ring: wide at the hip, closes into the dot while aiming down sights.
 	local ring = Instance.new("Frame")
@@ -321,6 +281,16 @@ local function onRenderStep(deltaTime: number)
 		end
 		size += bloomValue * CROSSHAIR_PER_BLOOM
 		ring.Size = UDim2.fromOffset(size, size)
+		-- Down the sights in first person the sights aim: the crosshair fades out.
+		local fade = if firstPerson then adsBlend else 0
+		local stroke = ring:FindFirstChildOfClass("UIStroke")
+		if stroke then
+			stroke.Transparency = 0.35 + 0.65 * fade
+		end
+		local dot = crosshairDot
+		if dot then
+			dot.BackgroundTransparency = 0.2 + 0.8 * fade
+		end
 	end
 
 	local pivotRate = deltaTime
@@ -369,14 +339,10 @@ local function onRenderStep(deltaTime: number)
 		for _, part in hiddenParts do
 			part.LocalTransparencyModifier = 1
 		end
-		updateViewGun(character)
-		local gun = viewGun
-		if gun then
-			-- A held gun's mesh runs along its Z with the muzzle to -Z: the camera's forward.
-			gun.CFrame = camera.CFrame * eye.GunHip:Lerp(eye.GunAds, adsBlend)
-		end
+		FirstPersonView.update(character, camera.CFrame, adsBlend, deltaTime)
 	else
 		camera.CFrame = CFrame.new(focus) * rotation * CFrame.new(0, 0, reach)
+		FirstPersonView.hide()
 	end
 
 	-- Character faces the aim direction while alive.

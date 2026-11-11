@@ -219,15 +219,22 @@ local Config = {
 		-- First person (Nova, 2026-11-10: "a first person toggle for players in the match"):
 		-- T (or the right stick click) toggles it; the wheel past MinDistance goes in, the
 		-- wheel back out leaves it. The eye rides the Head, a little forward of its centre;
-		-- the soldier's own body is hidden on this client, and a copy of the held gun hangs
-		-- off the camera (the third-person pose holds it below the eye, out of view).
+		-- the soldier's own body is hidden on this client, and FirstPersonView shows the held
+		-- gun with gloved hands and sleeves, its own reload, kick, sway and bob.
+		-- The crosshair fades out down the sights so the iron sights or scope do the aiming.
 		FirstPerson = {
 			Key = Enum.KeyCode.T,
 			GamepadKey = Enum.KeyCode.ButtonR3,
 			EyeForward = 0.45, -- studs ahead of the head's centre
 			EyeUp = 0.1,
-			GunHip = CFrame.new(1.1, -1.05, -2.2), -- the gun's centre from the eye, at the hip
-			GunAds = CFrame.new(0, -0.56, -1.9), -- and down the sights (centred under the dot)
+			GunHip = CFrame.new(0.9, -0.95, -2.6), -- the gun's centre from the eye, at the hip
+			GunAds = CFrame.new(0, 0, -2.1), -- down the sights: centred, this far ahead
+			SightDrop = 0.42, -- down the sights the gun's centre sits this share of its height low
+			Sway = 0.6, -- how much of a camera turn the gun lags behind (eases back)
+			Bob = 0.06, -- studs the gun bobs at a full walk (none down the sights)
+			KickBack = 0.18, -- studs a shot pushes the gun back
+			KickPitch = 4, -- degrees a shot tips the muzzle up
+			Scale = 0.4, -- the viewmodel shrunk toward the eye (same look, nothing cuts into it)
 		},
 		-- Per-shot kick (CameraController): each gun's Weapons.<id>.Kick pushes the view up by
 		-- Pitch degrees plus a random +/- Yaw, eased back over Recover seconds (never a

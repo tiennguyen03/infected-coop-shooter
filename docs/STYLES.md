@@ -515,10 +515,20 @@ orange (`rgb(255,150,60)`) plus a ball at the landing point.
 - First person (`CameraController`, `Config.Camera.FirstPerson`; Nova 2026-11-10): T or the
   right stick click toggles it, the wheel in past `MinDistance` enters and back out leaves.
   The eye sits on the Head (0.45 forward, 0.1 up), so crouch and prone carry it; yaw, pitch,
-  kick, shake and the sights work as in third person (the sights only narrow the FOV). The
-  soldier's own body is hidden on their client only, and a local copy of the held gun (the
-  biggest visible part of the Tool) hangs off the camera at `GunHip`, easing to `GunAds` down
-  the sights; it follows swaps and never blocks the aim ray. Others always see the body.
+  kick, shake and the sights work as in third person. The soldier's own body is hidden on their
+  client only (others always see it); `FirstPersonView` shows a viewmodel instead: a copy of
+  the held gun with gloved hands and Pike-grey forearms. The right hand holds it where the
+  body's hand holds the real gun, the left on the handguard (under the grip for a sidearm).
+  It points where the camera looks, low right at the hip (`GunHip`), centred with its top on
+  the eye line down the sights (`GunAds`, `SightDrop`), where the crosshair fades out so the
+  iron sights or scope aim. Its own animation, timed to the body's events: the reload (from
+  `ReloadUntil`: the gun cants, the left hand takes the magazine down out of view and seats a
+  fresh one), a kick per shot (`KickBack`, `KickPitch`), sway behind camera turns (`Sway`) and a
+  walking bob (`Bob`). Built at full size and shrunk toward the eye (`Scale` 0.4) so walls and
+  squadmates close by do not cut into it. In first person shots leave from its barrel (the
+  hit ray, the tracer and a scaled flash), so they run down the sight line; squadmates see
+  that tracer start by the head. The body's clips are not reused: made for the body seen from
+  behind, their hands do not meet the gun from the eye.
 - Camera kick (`CameraController`): every own shot pushes the view up
   `Config.Weapons.<id>.Kick.Pitch` degrees plus a random +/- `Yaw`, eased back over `Recover`
   (0.12 s, ~95% gone) on top of the aim, so the aim never drifts. M16A4 0.9 / 0.3, MP5
