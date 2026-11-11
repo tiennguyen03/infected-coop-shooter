@@ -24,9 +24,29 @@ local Config = {
 		Reload = Enum.KeyCode.R,
 		CallIns = { Enum.KeyCode.One, Enum.KeyCode.Two, Enum.KeyCode.Three, Enum.KeyCode.Four },
 		Loadout = Enum.KeyCode.B, -- the Arms Room menu
+		NightVision = Enum.KeyCode.N, -- the helmet's night vision goggles, on and off
 		-- Roll and slide have no key of their own (owner 2026-11-11): Sprint twice rolls, and
 		-- holding a Crouch key while sprinting slides (MovementController; StanceController
 		-- does not crouch then).
+	},
+
+	-- Night vision (Nova, 2026-11-11: the goggles on the soldier's FAST helmet, for a night-time
+	-- area): Keys.NightVision or GamepadKey flips them down and up (client NightVision). The view
+	-- goes green and bright: Lighting exposure raised, a green colour correction with no colour
+	-- of its own, bloom on lights, a slight flicker, the screen edges dark. Local to the player.
+	NightVision = {
+		Enabled = true,
+		GamepadKey = Enum.KeyCode.DPadUp,
+		FlipSeconds = 0.18, -- the blink as the tubes come down or go up
+		Exposure = 2.2, -- added to Lighting.ExposureCompensation (stops)
+		Tint = Color3.fromRGB(120, 255, 150),
+		Brightness = 0.08,
+		Contrast = 0.3,
+		Saturation = -1, -- the tubes see no colour; the tint is the phosphor's
+		Flicker = 0.025, -- random brightness wobble per frame
+		Bloom = { Intensity = 0.7, Size = 24, Threshold = 0.8 },
+		Vignette = 0.22, -- share of the screen each dark edge covers
+		Click = { Bank = "ui_radio", Group = "ui_click", Volume = 0.35, Pitch = 0.8 },
 	},
 
 	Player = {
