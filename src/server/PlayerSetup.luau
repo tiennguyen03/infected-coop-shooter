@@ -177,6 +177,17 @@ function PlayerSetup.attachRifle(character: Model, humanoid: Humanoid)
 	end)
 end
 
+-- No floating health bar or name over a squad body (players and bots): squadmates' status
+-- is the squad panel (Config.SquadPanel, whose switches bring Roblox's own back).
+function PlayerSetup.hideOverhead(humanoid: Humanoid)
+	if not Config.SquadPanel.OverheadBars then
+		humanoid.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOff
+	end
+	if not Config.SquadPanel.OverheadNames then
+		humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+	end
+end
+
 -- The playable class body (assets/3d pc_<class>_*). One class for now.
 local PLAYER_BODY = "pc_assault_"
 PlayerSetup.BODY = PLAYER_BODY
@@ -246,6 +257,7 @@ local function onCharacterAdded(character: Model)
 	humanoid.MaxHealth = Config.Player.MaxHealth
 	humanoid.Health = Config.Player.MaxHealth
 	humanoid.WalkSpeed = Config.Player.WalkSpeed
+	PlayerSetup.hideOverhead(humanoid)
 	-- No jump: cover is vaulted or climbed instead (client MovementController).
 	humanoid.UseJumpPower = true
 	humanoid.JumpPower = 0
