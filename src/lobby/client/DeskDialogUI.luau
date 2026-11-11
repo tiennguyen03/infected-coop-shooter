@@ -231,9 +231,10 @@ function DeskDialogUI.init()
 		local character = Players.LocalPlayer.Character
 		local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
 		local anchor = openPrompt and openPrompt.Parent
-		if root and anchor and anchor:IsA("BasePart") then
+		if root and anchor and anchor:IsA("BasePart") and openPrompt then
+			-- Each desk's own reach (the watch officer's spans her map table).
 			tooFar = (root.Position - anchor.Position).Magnitude
-				> Config.Lobby.DeskPromptDistance * 1.5
+				> openPrompt.MaxActivationDistance * 1.5
 		end
 		if tooFar or os.clock() >= closeAt then
 			close()

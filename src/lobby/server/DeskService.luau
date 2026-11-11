@@ -131,7 +131,7 @@ function DeskService.init()
 		prompt.ObjectText = desk.title
 		prompt.KeyboardKeyCode = Enum.KeyCode.F
 		prompt.HoldDuration = 0
-		prompt.MaxActivationDistance = Config.Lobby.DeskPromptDistance
+		prompt.MaxActivationDistance = place.reach or Config.Lobby.DeskPromptDistance
 		prompt.RequiresLineOfSight = false
 		prompt:SetAttribute(Attributes.DeskId, desk.id)
 		prompt.Parent = torso

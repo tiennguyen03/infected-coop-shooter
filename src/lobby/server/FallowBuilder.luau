@@ -422,6 +422,25 @@ local function buildPlot(ship: Folder)
 		{ material = Enum.Material.Neon, collide = false }
 	)
 	pointLight(lamp, PLOT_RED, 30, 2)
+	-- A white light set in the deckhead over the map, so the paper reads in the red room (flush,
+	-- above the camera of the officer's "Show me the map.").
+	local table_ = Layout.ChartTable.Position
+	local panel = Build.part(
+		ship,
+		"MapLamp",
+		Vector3.new(3, 0.2, 3),
+		CFrame.new(table_.X, top - 0.1, table_.Z),
+		LAMP_HOUSING,
+		{ material = Enum.Material.Neon, collide = false }
+	)
+	panel.CanQuery = false
+	local light = Instance.new("SpotLight")
+	light.Face = Enum.NormalId.Bottom
+	light.Angle = 60
+	light.Range = 22
+	light.Brightness = 2
+	light.Color = Color3.fromRGB(255, 232, 196)
+	light.Parent = panel
 end
 
 local function buildLane(ship: Folder)

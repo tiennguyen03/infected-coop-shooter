@@ -28,14 +28,16 @@ FallowLayout.Well = { x0 = -30, x1 = -10, z0 = 20, z1 = 80 }
 FallowLayout.Island = { x0 = 22, x1 = 34, z0 = -10, z1 = 50, top = 80 }
 
 -- The Plot: Control's map room under the island, on the hangar deck. The door is in its
--- west wall; the board stands across the room in front of the hull.
-FallowLayout.Plot = { x0 = 14, x1 = 33, z0 = -10, z1 = 30, doorZ0 = 6, doorZ1 = 14 }
+-- west wall; the board stands across the room in front of the hull. Its west wall moved out
+-- from X 14 (Nova, 2026-11-10: "way too cramped", the player should stand in front of the map):
+-- the map table sits mid-room with open floor between it and the door.
+FallowLayout.Plot = { x0 = 4, x1 = 33, z0 = -10, z1 = 30, doorZ0 = 6, doorZ1 = 14 }
 FallowLayout.Board = {
 	cframe = CFrame.new(29.5, FallowLayout.HangarY + 7, 10), -- centre of the panel
 	size = Vector3.new(0.4, 10, 32), -- the lettering faces -X (Left)
 	plotter = Vector3.new(31.5, FallowLayout.HangarY, 4),
 }
-FallowLayout.ChartTable = CFrame.new(21, FallowLayout.HangarY, 0)
+FallowLayout.ChartTable = CFrame.new(19, FallowLayout.HangarY, 0) -- the paper map (WorldMap)
 
 -- The screening lane on the starboard quarter, where a recovered team walks off its bird
 -- (scenery for now: nobody spawns there).
@@ -49,11 +51,11 @@ FallowLayout.Crew = {
 	deckhand = { Vector3.new(-28, D, -160), Vector3.new(-28, D, -100), Vector3.new(-28, D, -30) },
 	mechanic = { Vector3.new(14, H, 35), Vector3.new(14, H, 95) }, -- the hangar's starboard side
 	runner = {
-		Vector3.new(11, H, 10),
-		Vector3.new(3, H, 12),
-		Vector3.new(2, H, 40),
+		Vector3.new(2, H, 10),
+		Vector3.new(-4, H, 12),
+		Vector3.new(-4, H, 40),
 		Vector3.new(-6, H, 78),
-	}, -- Plot door to the ramp
+	}, -- Plot door to the ramp, outside the Fires counter
 	medic = { Vector3.new(24, D, -166), Vector3.new(24, D, -142) }, -- up and down the screening lane
 	sentry = { Vector3.new(32, D, -170), Vector3.new(32, D, -136) }, -- the deck edge over the lane
 } :: { [string]: { Vector3 } }
@@ -85,6 +87,7 @@ export type DeskPlace = {
 	feet: Vector3, -- where the person stands
 	facing: Vector3, -- the way they face (flat)
 	counter: boolean?, -- false: no stock counter, the sign floats over them
+	reach: number?, -- studs a soldier can talk from (default Config.Lobby.DeskPromptDistance)
 }
 
 -- Hangar desks (LobbyDesks), between the spawn and the ramp's foot: the Arms Room cage on the
@@ -110,14 +113,15 @@ FallowLayout.Desks = {
 	},
 	{
 		id = "fires",
-		feet = Vector3.new(10, FallowLayout.HangarY, 18),
+		feet = Vector3.new(1, FallowLayout.HangarY, 18),
 		facing = Vector3.new(-1, 0, 0),
 	},
 	-- Control's watch officer at the map table in the Plot, between the table and the board,
 	-- facing the door (owner 2026-11-10: someone real in the Plot).
 	{
 		id = "plot",
-		feet = Vector3.new(27.6, FallowLayout.HangarY, -2),
+		feet = Vector3.new(26.8, FallowLayout.HangarY, -3),
+		reach = 18, -- across the map table, from anywhere you stand to read it
 		facing = Vector3.new(-1, 0, 0),
 		counter = false,
 	},

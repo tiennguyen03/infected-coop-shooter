@@ -91,7 +91,13 @@ match place.
   Corridor on a 10 x 7 grid at 1.4 studs a unit (`Config.Lobby.WorldMap`) - five districts
   with borders, the river and dam, Route 9, County Road 40, the coast road, the rail line, the
   grease-pencil quarantine line, burned towns, forests, the Carrier offshore with Lantern's
-  pencilled track, a title, a legend and a red Plot stamp; about 150 flat parts, built once. **The numbers are placeholders**
+  pencilled track, a title, a legend and a red Plot stamp; about 150 flat parts, built once.
+  **Roomier** (Nova 2026-11-10: "way too cramped", stand in front of the map): the west wall
+  moved out from X 14 to X 4, the table sits at X 19 with about eight studs of floor between it
+  and the door, so you read the map the right way up from its west side; the officer stands
+  across it (26.8, -3) and her prompt reaches 18 studs (`DeskPlace.reach`) to cover the table.
+  A white light set flush in the deckhead over the table lights the paper (a hanging lamp
+  blocked the map view). Fires moved out to (1, 18), beside the door. **The numbers are placeholders**
   (`Config.Containment.Districts`: Delta 25, the rest 0) until the save service.
 
 - **The walking crew** (2026-11-10, Nova: "give the fallow some life"; roles and lines by the
@@ -287,7 +293,7 @@ The rack is where guns are **bought** (merits, onto the soldier's record; owner 
      80  ┌ramp foot (hangar)┐ well X -30..-10
      20  └ramp top (deck)───┘ comes up facing aft
      50..-10                        ┌island┐ X 22..34 (deck); Plot under it (hangar,
-                                    └──────┘  X 14..33, Z -10..30), Fires (10, 18) at its door
+                                    └──────┘  X 4..33, Z -10..30), Fires (1, 18) at its door
     -15  spot 4 (helo X -12, box X 1)
     -60  spot 3
    -100  ── hangar bulkhead (aft) ──
