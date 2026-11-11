@@ -52,8 +52,19 @@ Q swaps long gun and sidearm (`Weapon.SwapTime` 0.5 s; no shot, no reload; a rel
 progress is dropped; each gun keeps its own magazine). G throws a grenade (3 carried; a
 pallet refills). V shoves (15 dmg, 0.8 s stagger, 6-stud push, 1 s cooldown). E uses a stim
 (2 carried, heals 60 over 1 s; Medkit refills). 5 throws the Resupply flare (always carried).
-Every gun is hitscan at its real-world rate; the server owns every magazine
-(`LoadoutService`). Bots carry the service rifle.
+Every gun is hitscan at its real-world rate (the Goose fires a rocket); the server owns every
+magazine (`LoadoutService`). A shotgun's pellets are drawn by the client and checked by the
+server against its cone (`Rules/Spread`), so the pellets you see are the ones that hit. Each
+gun row may name its held mesh (`Model`; every gun has one, `assets/3d/build/guns.py`), its
+clips in the `guns` sound bank (`Sound`) and, for a launcher, `Explosive` +
+`ProjectileSpeed`. Bots carry the service rifle.
+
+**Aiming throws** (owner 2026-11-09: "hold and release ... so I actually know where it
+lands"): G and every thrown call-in (CallInDefinitions Kind "throw") are held to aim and
+thrown on release. A dotted arc from the hand and the item's own marker on the ground
+(`Config.CallIns.<Name>.Aim`: a ring of Radius, or a strip of Length x Width along the throw,
+`Across` for the wire) follow the crosshair. The flare (5) and the "self" call-ins still
+fire on the press. `AbilityController`.
 
 ### Guns
 
@@ -67,6 +78,9 @@ Numbers in `Config.Weapons.<Gun>`, rows in `WeaponDefinitions`. Semi guns fire o
 | **Mossberg 590 Shotgun** | point-blank, one decision per pull | pump, 80 (0.75) | 11 x 8 pellets | 8 + 40 | 3.5 | 5.0 / 3.5 | 0 | 45 | 0 |
 | **M110 DMR** | one-taps Walkers, hits two in a line; poor up close | semi, 300 (0.2) | 60 | 20 + 80 | 2.6 | 4.0 / 0.1 | 1.2 / 3.0 (recovery 8) | 600 | 1 |
 | **M17 Pistol** (sidearm) | backup when the primary runs dry | semi, 400 (0.15) | 25 | 17 + 68 | 1.5 | 1.2 / 0.5 | 0.6 / 2.5 | 120 | 0 |
+| **S&W 686 Revolver** (sidearm, sample) | panic button: one round per Walker, staggers a Brute | semi, 150 (0.4) | 55 | 6 + 30 | 2.8 | 1.8 / 0.4 | 1.5 / 3.5 (recovery 10) | 150 | 0 |
+| **M2010 ESR Sniper** (sample) | one round per kill, Brute in 2, through four in a line; useless from the hip | bolt, 48 (1.25) | 140 | 5 + 30 | 3.2 | 6.0 / 0.05 | 0 | 800 | 3 |
+| **Goose, M3 recoilless** (sample "RPG", primary slot; later the call-in) | a visible rocket at 220 studs/s: 400 to the Infected struck, then the frag's blast 120 in 6 studs, no friendly fire | single, reload 6 s | 400 + blast | 1 + 1 | 6.0 | 2.0 / 0.25 | 0 | 300 | 0 |
 
 - ADS move factor: rifle 0.6, SMG 0.85, LMG 0.35, shotgun 0.7, DMR 0.5, pistol 0.9. ADS
   pulls the camera to 5 studs over the shoulder at FOV 55 (`Weapon.ADS`); the client sends
@@ -78,8 +92,10 @@ Numbers in `Config.Weapons.<Gun>`, rows in `WeaponDefinitions`. Semi guns fire o
   (100 x 60 is the M16's 270 x 20).
 - Bots fire the rifle slower (`Bots.FireCooldown` 0.30: three bots on sustained fire ~ one
   player), same magazine, infinite reserve.
-- Later: the .357 revolver (55 dmg, 6 + 30, 150 rpm). Every gun wears the rifle mesh until
-  the gun meshes exist.
+- The three sample guns (2026-11-09) are in the Arms Room like every gun: its lists are every
+  row of the slot, ordered by the row's `ArmsOrder` (default 100; the first is the default
+  gun), so a new gun appears by having a row. ADS move: revolver 0.85, sniper 0.4, Goose 0.4.
+  Revolver Walker 1 / 1, Brute 5 / 4; sniper every form 1, Brute 2 / 2.
 - Grenades: **Frag** (110 in 10 studs, 0.8 s fuse; one-shots a Hocker, not a Brute) is
   built. Later: **Incendiary** (3 fire pools, `IncendiaryService`) and **Stun** (0.4x slow
   3 s in 14 studs, `ShockCoilService.stunArea`).
@@ -109,8 +125,10 @@ Module boundary, so the lobby can host it:
 - Remote `Loadout`: `Messages.Loadout.Request` `{primary, secondary, grenade, callIns}` and
   `Messages.Loadout.Result` `(ok, reason)`. The server publishes `Primary`, `Secondary`,
   `Weapon`, `Grenade`, `Grenades`, `Stims`, `SwapUntil`, `CallIn1`-`CallIn4`.
-- The lobby (ARCHITECTURE F10) validates with the same Rules module, saves through F9 and
-  passes the table in teleport data.
+- The lobby (`nova/lobby`, docs/sprints/LOBBY_V1_FALLOW.md > Loadmaster and Loadout): the
+  Loadmaster hosts the same menu as the **Loadout** (owner's name, 2026-11-09; `mount` options
+  title / hint / confirm), `LoadmasterService` validates with the same Rules module, keeps
+  each soldier's Loadout in a DataStore (a stand-in for F9) and passes it in teleport data.
 
 ### Call-ins
 

@@ -75,11 +75,6 @@ function SprintController.setOverrideSpeed(speed: number?)
 	applySpeed()
 end
 
--- Shift is down (whether or not sprint is currently allowed).
-function SprintController.isSprintHeld(): boolean
-	return isSprinting
-end
-
 function SprintController.isSprinting(): boolean
 	return isSprinting and sprintAllowed and not isAiming
 end

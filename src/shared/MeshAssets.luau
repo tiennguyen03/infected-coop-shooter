@@ -31,6 +31,9 @@ local PALETTE_TEXTURE = "rbxassetid://121741835746247" -- palette v3 (vehicle gl
 -- What a palette mesh shows if its texture has not loaded (the client retries it:
 -- PaletteController): a neutral mid grey, never the black a leftover BodyColors gave.
 local PALETTE_FALLBACK = Color3.fromRGB(118, 122, 128)
+-- The crew body is worn untextured and recoloured per limb (NpcBody).
+local CREW_SURFACE =
+	{ material = Enum.Material.SmoothPlastic, color = Color3.fromRGB(200, 200, 200) }
 
 -- `solid` = a static obstacle: CanCollide + CastShadow on (buildings, barriers).
 -- `offset` = the mesh's bounds centre relative to its design origin (Infected limbs are
@@ -56,16 +59,22 @@ type MeshDef = {
 	colliders: { Collider }?, -- composite collision; the mesh itself stops colliding
 	shell: { Collider }?, -- sealed cheaper set, chosen per placement (ArenaService `shell`)
 	castShadow: boolean?, -- override: small cover never casts (default = solid)
+	render: Enum.RenderFidelity?, -- default Automatic; huge pieces always near (the Fallow) use Precise
 	seeThrough: boolean?, -- fences and wire: solid to walk into, bullets and sight pass
+	-- A held gun (wpn_*): the barrel tip relative to the grip (Roblox axes, barrel along -Z);
+	-- PlayerSetup puts the Muzzle there. `offset` is the bounds centre from the grip.
+	muzzle: Vector3?,
+	-- A held gun with modelled irons: the sight line's point at the rear sight, from the grip
+	-- (Roblox axes). PlayerSetup puts a Sight part there; first person looks through it.
+	sight: Vector3?,
 	-- The earlier upload that stands in while meshId is "" (see the header). At upload:
 	-- paste the new meshId and delete the fallback.
 	fallback: { meshId: string, size: Vector3, fidelity: Enum.CollisionFidelity? }?,
 }
 
 -- `size` is the in-game size in studs (the mesh is scaled to it). Blender sizes are in
--- assets/3d/README.md; rifle is 0.65x and drone 0.8x of the Blender size.
+-- assets/3d/README.md; the rifle is 0.65x of the Blender size.
 local MESHES: { [string]: MeshDef } = {
-	pick_xp_orb = { meshId = "rbxassetid://95196197176639", size = Vector3.new(1, 1, 1) },
 	prop_ammo_crate = {
 		meshId = "rbxassetid://70908704628683",
 		size = Vector3.new(2.86, 1.68, 1.92),
@@ -74,16 +83,93 @@ local MESHES: { [string]: MeshDef } = {
 		meshId = "rbxassetid://122106813224951",
 		size = Vector3.new(1.9, 0.97, 2),
 	},
-	prop_drone = { meshId = "rbxassetid://132929388031760", size = Vector3.new(1.94, 0.43, 1.94) },
-	prop_drone_beacon = {
-		meshId = "rbxassetid://117405323536844",
-		size = Vector3.new(1.56, 3.21, 1.36),
+	-- Held guns: designed around the grip (pivot), barrel along -Z; `offset` = bounds centre
+	-- from the grip, `muzzle` = barrel tip from the grip. A gun row names its mesh in
+	-- Config.Weapons.<id>.Model (default wpn_rifle).
+	wpn_rifle = {
+		meshId = "rbxassetid://86613539481097",
+		size = Vector3.new(0.195, 0.84, 2.9),
+		offset = Vector3.new(0, 0.185, -0.54),
+		muzzle = Vector3.new(0, 0.42, -1.95),
 	},
-	wpn_rifle = { meshId = "rbxassetid://86613539481097", size = Vector3.new(0.195, 0.84, 2.9) },
-	-- 0.7x of the Blender size (tail included in the length).
-	prop_plague_rat = {
-		meshId = "rbxassetid://102065990394982",
-		size = Vector3.new(0.47, 0.52, 1.88),
+	-- The Shrike gunship (assets/3d/build/aircraft.py, in-game size): the hull, origin at the
+	-- fuselage centre (`offset` = bounds centre from it), and the main rotor, origin at the hub.
+	veh_shrike_hull = {
+		meshId = "rbxassetid://137109529997310",
+		size = Vector3.new(8.4, 8.62, 29.75),
+		offset = Vector3.new(0, 0.712, 3.425),
+	},
+	veh_shrike_rotor = {
+		meshId = "rbxassetid://137738331555839",
+		size = Vector3.new(18.96, 0.35, 18.89),
+		offset = Vector3.new(0, 0, -0.035),
+	},
+	-- Sample guns (assets/3d/build/guns.py, built at in-game size, 2026-11-09).
+	wpn_revolver = {
+		meshId = "rbxassetid://83543461161868",
+		size = Vector3.new(0.25, 0.75, 1),
+		offset = Vector3.new(0, 0.088, -0.258),
+		muzzle = Vector3.new(0, 0.34, -0.76),
+		sight = Vector3.new(0, 0.45, -0.02),
+	},
+	wpn_sniper = {
+		meshId = "rbxassetid://71899784449648",
+		size = Vector3.new(0.47, 1.07, 3.65),
+		offset = Vector3.new(0.112, 0.246, -0.795),
+		muzzle = Vector3.new(0, 0.34, -2.62),
+		sight = Vector3.new(0, 0.62, -0.62),
+	},
+	wpn_goose = {
+		meshId = "rbxassetid://91078392816733",
+		size = Vector3.new(0.62, 0.94, 3.03),
+		offset = Vector3.new(-0.073, 0.202, -0.078),
+		muzzle = Vector3.new(0, 0.42, -1.58),
+		sight = Vector3.new(-0.3, 0.54, -1.08),
+	},
+	-- The six original guns (guns.py, 2026-11-09); until then they all wore wpn_rifle. The five
+	-- long guns rebuilt 2026-11-10 (Nova: "clean up the guns"): tapered stocks, curved magazines.
+	-- M4 irons (2026-11-10, Nova): a flip-up peep on the rail and the triangle front sight.
+	wpn_m16 = {
+		meshId = "rbxassetid://109914446546047",
+		size = Vector3.new(0.25, 1.16, 3.08),
+		offset = Vector3.new(0.012, 0.083, -0.48),
+		muzzle = Vector3.new(0, 0.36, -2.02),
+		sight = Vector3.new(0, 0.615, 0.04),
+	},
+	wpn_mp5 = {
+		meshId = "rbxassetid://97053083297242",
+		size = Vector3.new(0.24, 0.97, 2.2),
+		offset = Vector3.new(-0.02, 0.161, -0.39),
+		muzzle = Vector3.new(0, 0.32, -1.49),
+		sight = Vector3.new(0, 0.585, 0.05),
+	},
+	wpn_m249 = {
+		meshId = "rbxassetid://126749782608669",
+		size = Vector3.new(0.32, 0.98, 2.94),
+		offset = Vector3.new(-0.043, 0.223, -0.42),
+		muzzle = Vector3.new(0, 0.38, -1.89),
+		sight = Vector3.new(0, 0.68, 0.03),
+	},
+	wpn_mossberg = {
+		meshId = "rbxassetid://74477534761633",
+		size = Vector3.new(0.26, 0.8, 2.86),
+		offset = Vector3.new(-0.025, 0.132, -0.388),
+		muzzle = Vector3.new(0, 0.42, -1.8),
+		sight = Vector3.new(0, 0.5, 0.1),
+	},
+	wpn_m110 = {
+		meshId = "rbxassetid://87592748941938",
+		size = Vector3.new(0.23, 1.11, 3.27),
+		offset = Vector3.new(0, 0.204, -0.833),
+		muzzle = Vector3.new(0, 0.4, -2.45),
+		sight = Vector3.new(0, 0.64, -0.68),
+	},
+	wpn_m17 = {
+		meshId = "rbxassetid://113489832840781",
+		size = Vector3.new(0.14, 0.76, 0.67),
+		offset = Vector3.new(0, 0.07, -0.148),
+		muzzle = Vector3.new(0, 0.32, -0.485),
+		sight = Vector3.new(0, 0.45, 0.11),
 	},
 	-- Environment (assets/3d Environment collection, built to the 5-stud character; sizes are
 	-- the Blender dims in Roblox axis order). `solid` = Box obstacle; see ArenaService.
@@ -660,6 +746,62 @@ local MESHES: { [string]: MeshDef } = {
 		size = Vector3.new(1.010, 0.310, 1.000),
 		offset = Vector3.new(0.000, 0.000, 0.000),
 	},
+	-- The Carrier's crew body (assets/3d/build/crew.py; lobby NPCs, NpcBody): untextured,
+	-- every limb coloured per figure (shirt, trousers, skin or gloves, boots).
+	npc_crew_head = {
+		meshId = "rbxassetid://131227012252937",
+		size = Vector3.new(1.260, 1.180, 1.220),
+		offset = Vector3.new(0.000, 0.000, -0.052),
+		surface = CREW_SURFACE,
+	},
+	npc_crew_upper_torso = {
+		meshId = "rbxassetid://85978695721727",
+		size = Vector3.new(1.940, 1.700, 1.100),
+		offset = Vector3.new(0.000, 0.000, -0.050),
+		surface = CREW_SURFACE,
+	},
+	npc_crew_lower_torso = {
+		meshId = "rbxassetid://80351304652292",
+		size = Vector3.new(1.990, 0.400, 1.000),
+		offset = Vector3.new(0.000, 0.000, 0.000),
+		surface = CREW_SURFACE,
+	},
+	npc_crew_upper_arm = {
+		meshId = "rbxassetid://110314480935040",
+		size = Vector3.new(1.040, 1.440, 1.040),
+		offset = Vector3.new(0.000, -0.098, 0.000),
+		surface = CREW_SURFACE,
+	},
+	npc_crew_lower_arm = {
+		meshId = "rbxassetid://106413045096439",
+		size = Vector3.new(1.000, 1.120, 1.000),
+		offset = Vector3.new(0.000, 0.000, 0.000),
+		surface = CREW_SURFACE,
+	},
+	npc_crew_hand = {
+		meshId = "rbxassetid://108782428124781",
+		size = Vector3.new(0.820, 0.320, 0.860),
+		offset = Vector3.new(0.000, 0.000, 0.000),
+		surface = CREW_SURFACE,
+	},
+	npc_crew_upper_leg = {
+		meshId = "rbxassetid://101791646143939",
+		size = Vector3.new(0.990, 1.590, 1.040),
+		offset = Vector3.new(0.000, -0.115, -0.032),
+		surface = CREW_SURFACE,
+	},
+	npc_crew_lower_leg = {
+		meshId = "rbxassetid://107324902853571",
+		size = Vector3.new(0.990, 1.300, 0.970),
+		offset = Vector3.new(0.000, 0.000, 0.000),
+		surface = CREW_SURFACE,
+	},
+	npc_crew_foot = {
+		meshId = "rbxassetid://76812379013675",
+		size = Vector3.new(1.010, 0.710, 1.000),
+		offset = Vector3.new(0.000, 0.198, 0.000),
+		surface = CREW_SURFACE,
+	},
 	-- Skinned Weller gear (Config.Player.SkinnedGear): rigid helmet and Pike carrier built
 	-- at the head / upper torso origin, welded onto the skinned body by PlayerSetup.
 	pc_assault_gear_helmet = {
@@ -896,6 +1038,121 @@ local MESHES: { [string]: MeshDef } = {
 		size = Vector3.new(1.010, 0.310, 1.000),
 		offset = Vector3.new(0.000, 0.000, 0.000),
 	},
+	-- The Fallow, the lobby ship (assets/3d/build/fallow.py; FallowArt places them). Built in
+	-- ship coordinates: `offset` is the mesh centre on the ship (radar: from its turning axis;
+	-- catwalk bays: from the hull face at deck height). Shells draw as Metal (`surface`),
+	-- trims use the palette. Look only: every collider stays a Part in FallowBuilder.
+	env_fallow_bow = {
+		meshId = "rbxassetid://79486262325305",
+		size = Vector3.new(84.00, 46.00, 67.00),
+		offset = Vector3.new(0.000, 15.000, 173.500),
+		surface = { material = Enum.Material.Metal, color = Color3.fromRGB(100, 106, 112) },
+		render = Enum.RenderFidelity.Precise,
+		castShadow = true,
+	},
+	env_fallow_bow_trim = {
+		meshId = "rbxassetid://132397837700021",
+		size = Vector3.new(108.38, 28.06, 40.35),
+		offset = Vector3.new(0.000, 31.081, 167.025),
+		castShadow = false,
+	},
+	env_fallow_mid_port = {
+		meshId = "rbxassetid://122409690040918",
+		size = Vector3.new(1.40, 47.60, 240.00),
+		offset = Vector3.new(-35.000, 15.800, 20.000),
+		surface = { material = Enum.Material.Metal, color = Color3.fromRGB(100, 106, 112) },
+		render = Enum.RenderFidelity.Precise,
+		castShadow = true,
+	},
+	env_fallow_mid_stbd = {
+		meshId = "rbxassetid://88469209943203",
+		size = Vector3.new(6.70, 47.60, 240.00),
+		offset = Vector3.new(37.650, 15.800, 20.000),
+		surface = { material = Enum.Material.Metal, color = Color3.fromRGB(100, 106, 112) },
+		render = Enum.RenderFidelity.Precise,
+		castShadow = true,
+	},
+	env_fallow_mid_trim = {
+		meshId = "rbxassetid://89298549327422",
+		size = Vector3.new(98.19, 47.71, 240.00),
+		offset = Vector3.new(4.095, 22.856, 20.000),
+		castShadow = false,
+	},
+	env_fallow_stern = {
+		meshId = "rbxassetid://82182009942595",
+		size = Vector3.new(82.00, 47.60, 80.60),
+		offset = Vector3.new(-1.000, 15.800, -140.300),
+		surface = { material = Enum.Material.Metal, color = Color3.fromRGB(100, 106, 112) },
+		render = Enum.RenderFidelity.Precise,
+		castShadow = true,
+	},
+	env_fallow_stern_trim = {
+		meshId = "rbxassetid://73421811886287",
+		size = Vector3.new(93.39, 46.11, 83.60),
+		offset = Vector3.new(-7.495, 22.056, -141.800),
+		castShadow = false,
+	},
+	env_fallow_island = {
+		meshId = "rbxassetid://130312060133465",
+		size = Vector3.new(23.50, 45.98, 60.00),
+		offset = Vector3.new(32.250, 63.010, 20.000),
+		surface = { material = Enum.Material.Metal, color = Color3.fromRGB(116, 122, 128) },
+		render = Enum.RenderFidelity.Precise,
+		castShadow = true,
+	},
+	env_fallow_island_trim = {
+		meshId = "rbxassetid://77115099660902",
+		size = Vector3.new(22.60, 75.90, 58.50),
+		offset = Vector3.new(31.600, 78.050, 18.950),
+		castShadow = false,
+	},
+	env_fallow_radar = {
+		meshId = "rbxassetid://122770221853253",
+		size = Vector3.new(7.30, 7.20, 2.12),
+		offset = Vector3.new(0.000, 3.599, -0.122),
+		castShadow = false,
+	},
+	env_fallow_catwalk = {
+		meshId = "rbxassetid://84242427975777",
+		size = Vector3.new(6.05, 4.35, 23.25),
+		offset = Vector3.new(3.625, -1.725, 0.000),
+		castShadow = false,
+	},
+	env_fallow_catwalk_rafts = {
+		meshId = "rbxassetid://108793529856112",
+		size = Vector3.new(6.05, 4.35, 23.25),
+		offset = Vector3.new(3.625, -1.725, 0.000),
+		castShadow = false,
+	},
+	-- Lantern, the lift bird (assets/3d/build/lantern.py; LanternBird places them). Body and
+	-- trim offsets are in the helo frame (origin at the mast foot on the deck); the rotors'
+	-- from their hubs. Look only: the colliders are Parts.
+	veh_lantern_body = {
+		meshId = "rbxassetid://96644034649925",
+		size = Vector3.new(7.50, 11.50, 41.11),
+		offset = Vector3.new(0.000, 7.551, -7.553),
+		surface = { material = Enum.Material.Metal, color = Color3.fromRGB(104, 110, 80) },
+		render = Enum.RenderFidelity.Precise,
+		castShadow = true,
+	},
+	veh_lantern_trim = {
+		meshId = "rbxassetid://120258286814432",
+		size = Vector3.new(7.94, 11.65, 30.05),
+		offset = Vector3.new(0.080, 5.825, -1.975),
+		castShadow = false,
+	},
+	veh_lantern_rotor = {
+		meshId = "rbxassetid://72210514497412",
+		size = Vector3.new(38.01, 1.14, 38.01),
+		offset = Vector3.new(0.000, -0.320, 0.000),
+		castShadow = true,
+	},
+	veh_lantern_tail_rotor = {
+		meshId = "rbxassetid://130131221968255",
+		size = Vector3.new(0.40, 5.20, 0.60),
+		offset = Vector3.new(0.000, 0.000, 0.000),
+		castShadow = false,
+	},
 }
 
 -- Swap in each pending entry's `fallback` (header): the earlier mesh at its own size, plain
@@ -934,7 +1191,7 @@ local function buildTemplate(folder: Folder, name: string, def: MeshDef)
 		return InsertService:CreateMeshPartAsync(
 			def.meshId,
 			def.fidelity or Enum.CollisionFidelity.Box,
-			Enum.RenderFidelity.Automatic
+			def.render or Enum.RenderFidelity.Automatic
 		)
 	end)
 	if not ok or typeof(result) ~= "Instance" then
@@ -985,6 +1242,17 @@ function MeshAssets.getOffset(name: string): Vector3
 		return Vector3.zero
 	end
 	return def.offset or Vector3.new(0, def.size.Y / 2, 0)
+end
+
+-- A held gun's barrel tip relative to its grip (nil for a mesh that is not a gun).
+function MeshAssets.getMuzzle(name: string): Vector3?
+	local def = MESHES[name]
+	return def and def.muzzle
+end
+
+function MeshAssets.getSight(name: string): Vector3?
+	local def = MESHES[name]
+	return def and def.sight
 end
 
 -- Builds the composite colliders of a placed piece as invisible anchored Parts parented to
@@ -1061,6 +1329,11 @@ local LIMB_OF_PART: { [string]: string } = {
 	LeftFoot = "foot",
 	RightFoot = "foot",
 }
+
+-- The limb an R15 part wears ("LeftUpperArm" -> "upper_arm"), nil for anything else.
+function MeshAssets.limbOf(partName: string): string?
+	return LIMB_OF_PART[partName]
+end
 
 -- True once every limb template of a set (`inf_walker_`, `pc_assault_`...) is built.
 -- The mesh a limb part wears from `prefix`: a side-specific `_l` / `_r` entry when the set

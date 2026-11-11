@@ -22,6 +22,13 @@ one file (`props.py`, `city.py`, `gore.py`, the Infected roster in `build_assets
 new bodies in live Blender first (below) so the owner can direct the shape before it is
 ported into a build file.
 
+**Roblox mirrors an imported mesh in X** about its bounds centre (found 2026-11-09 on the
+Fallow): the `Fallow` and `Vehicles` collections export pre-mirrored (`MIRROR_X_COLLECTIONS`;
+previews and offsets unchanged). An asymmetric mesh in another collection needs the same
+before upload. The lobby's art: `build/fallow.py` (12 `env_fallow_*`, the ship) and
+`build/lantern.py` (4 `veh_lantern_*`, the lift bird); ids in `ASSET_IDS.md`, budgets in
+`docs/STYLES.md`.
+
 ## Rebuild everything
 
 ```bash
@@ -38,7 +45,11 @@ Outputs:
 - `build/previews/<asset>.png` + `lineup_chars.png` + `lineup_env.png` (the environment next
   to the 5-stud figure) — Workbench renders to check the look
 
-Add `-- --only <name> [<name>...]` to build a subset. `--only` saves `arena_survivor.blend`
+Only what changed is written: every mesh's fingerprint (vertices, faces, UVs) is kept in
+`export/fingerprints.json`, and an asset whose fingerprint and files are unchanged is not
+exported or re-rendered; the lineups and the `.blend` are rewritten only when something
+changed (an FBX carries its export time, so a blind re-export dirtied ~180 files per build).
+Add `-- --force` to rebuild everything. Add `-- --only <name> [<name>...]` to build a subset. `--only` saves `arena_survivor.blend`
 and the lineups with only those assets; run a full build afterwards.
 
 ## Current assets
@@ -47,7 +58,10 @@ and the lineups with only those assets; run a full build afterwards.
 |---|---|---|---|
 | prop_ammo_crate | 108 | bottom center | resupply pallet / requisition crate |
 | prop_repulsor_mine | 168 | bottom center | MineService |
-| wpn_rifle | 188 | grip | PlayerSetup welds it to the hand |
+| wpn_rifle | 188 | grip | PlayerSetup welds it to the hand; now only the fallback for a gun whose mesh is not uploaded |
+| veh_shrike_hull / veh_shrike_rotor | 920 / 124 | fuselage centre / hub | the Shrike gunship (`build/aircraft.py`, in-game size, nose toward -Z): AirStrikeService flies the hull along the gun run and spins the rotor at `Config.CallIns.Shrike.RotorHub` (`RotorSpin`), tracers from `GunMuzzle`; falls back to a plain hull Part while the meshes are missing |
+| wpn_m16 / wpn_mp5 / wpn_m249 / wpn_mossberg / wpn_m110 / wpn_m17 | 260 / 216 / 248 / 328 / 376 / 156 | grip | the six original guns (`build/guns.py`), same convention as the sample guns below |
+| wpn_revolver / wpn_sniper / wpn_goose | 248 / 540 / 396 | grip | the sample guns (`build/guns.py`, built at in-game size, not 0.65x); MeshAssets carries each `offset` (bounds centre from the grip) and `muzzle`; a gun row names its mesh in `Config.Weapons.<id>.Model` |
 | env_barrier_jersey | 72 | bottom | 6 x 2.75 x 2 concrete traffic barrier |
 | env_sandbag_bunker | 552 | bottom | 12 x 10 U-emplacement, COVER_H (4) walls; colliders: 3 walls, open top and +Z |
 | env_guard_tower | 564 | bottom | 10 x 10 timber tower, deck at 14, 27 overall, rail gate on the ladder (+Y) side; colliders: legs, deck, rails + TrussPart ladder |
@@ -66,6 +80,8 @@ and the lineups with only those assets; run a full build afterwards.
 | env_lamp_post | 76 | bottom | 13-stud street light (Hull collision) |
 | env_bus | 712 | bottom | 42-stud transit bus, 12.5 tall (Hocker-proof cover) |
 | env_city_* (+ `_lit`) | 960-1,870 a tower | bottom (`_lit`: the tower origin) | the skyline (`city.py`, [STYLES.md](../../docs/STYLES.md) §7) |
+| veh_lantern_body / _trim / _rotor / _tail_rotor | 240 / 1,436 / 172 / 64 | helo frame (body, trim: origin at the mast foot on the deck); hubs (rotors) | Lantern, the lift bird (`build/lantern.py`, collection `Vehicles`): shell, trim (interior, door, tally, tide line), four-blade main rotor, tail rotor. Uploaded 2026-11-09 (ids in `ASSET_IDS.md`) |
+| env_fallow_* (12) | 3,302 unique; ~8,000 placed | ship (no shift: `offset` is the position on the ship) | the Fallow, the lobby ship (`build/fallow.py`, collection `Fallow`): hull shells bow / mid_port / mid_stbd / stern + their trims, island + trim, radar (pivot on its axis), catwalk / catwalk_rafts bays (pivot at the hull face, instanced 18x). Uploaded 2026-11-09 (ids in `ASSET_IDS.md`) |
 | prop_cot | 108 | bottom | field cot 6.5 x 2.1 x 3 |
 | prop_generator | 172 | bottom | towed generator 8 x 5.2 x 4.5 |
 | prop_light_tower | 260 | bottom | mast light tower 4.7 x 18 x 3.9 |
@@ -90,7 +106,7 @@ and the lineups with only those assets; run a full build afterwards.
 | pc_assault_* | ~650 per body | center | the Pike soldier's 15 R15 limb MeshParts (`PlayerSetup` -> `MeshAssets.dressModel`); tapered forearms and shins with joint caps (`PC_TAPER`) |
 | pc_assault_skinned, pc_assault_gear_helmet / _carrier | 944 (+ gear 228) | HRP centre | switched off (below); still registered in `MeshAssets` |
 | ref_inf_* / ref_pc_* | — | bottom | assembled preview figures, never exported |
-| Unused in game | | | `prop_drone`, `prop_drone_beacon`, `pick_xp_orb`, `prop_plague_rat` (retired features; still built and registered in `MeshAssets`, no service clones them); `pc_k9/epi/recon/engineer_*` (built, never uploaded) |
+| Unused in game | | | `prop_drone`, `prop_drone_beacon`, `pick_xp_orb`, `prop_plague_rat` (retired features; still built, no longer registered in `MeshAssets` since 2026-11-09, so no server loads them); `pc_k9/epi/recon/engineer_*` (built, never uploaded) |
 
 All far under the budgets in `docs/STYLES.md` §6. Dressing positions live in
 `ArenaService.DRESSING` / `PROPS` (x/z of the bounds centre + yaw; ground height is found by
@@ -229,7 +245,8 @@ mission data the tables move to Luau and this script reads them, as `delta_map.p
 Checkpoint Delta is built from plain Parts by `src/server/ArenaService.luau` (exact
 collision, built-in materials, streaming, the building kit); nothing of the map is imported
 as a mesh. `delta_map.py` is the way to **see** the layout while placing things: it reads
-the layout tables straight out of `ArenaService.luau` (`HILLS`, `DRESSING`, `PROPS`,
+the layout tables straight out of `src/server/Missions/Delta.luau` (Delta's mission data
+file since the mission data split; `HILLS`, `DRESSING`, `PROPS`,
 `RAMPS`, `PATCHES`, `BUILDINGS`, plus the loops that add the Gate line, the Pens ring and the
 perch containers), rebuilds the same ground in a fresh Blender scene and stands the real
 environment meshes (`export/*.fbx`) on it at the height the game's raycast would find. Every
@@ -245,12 +262,12 @@ depot,barracks,scrapyard,oblique}.png` (top-down Workbench renders). Open the `.
 live Blender (`bpy.ops.wm.open_mainfile`) and the MCP `look` tool frames any object
 (`target=["HelipadLZ"]`, `["Overlook"]`, a building name).
 
-The loop: edit the numbers in `ArenaService.luau` -> rebuild the view -> look -> playtest.
+The loop: edit the numbers in `Missions/Delta.luau` -> rebuild the view -> look -> playtest.
 Or move a piece in the Blender viewport, then in the live Blender run
 `exec(open("assets/3d/build/delta_map.py").read()); write_back()`: every static entry's
 object carries `arena_table` / `arena_index`, and the moved ones have their `x` / `z` /
 `yaw` rewritten in place in the Luau. Entries the Luau generates in loops are `arena_locked`
-(edit the loop). `ArenaService.luau` stays the single source of truth.
+(edit the loop). `Missions/Delta.luau` stays the single source of truth.
 
 ## Style rules
 

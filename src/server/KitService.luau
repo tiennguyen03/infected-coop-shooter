@@ -29,7 +29,15 @@ local WorldSounds = require(script.Parent.WorldSounds)
 local ENEMY_TAG = "Enemy"
 local FRAG_COLOR = Color3.fromRGB(255, 120, 60)
 
-type FragSettings = { ThrowDistance: number, FuseTime: number, Radius: number, Damage: number }
+type FragSettings = {
+	ThrowDistance: number,
+	FuseTime: number,
+	Radius: number,
+	Damage: number,
+	ShakePower: number?,
+}
+-- What a blast needs: the frag's settings, or a launcher row's Explosive.
+type BlastSettings = { Radius: number, Damage: number, ShakePower: number? }
 
 local KitService = {}
 
@@ -77,7 +85,10 @@ end
 -- G: grenade (the frag; the old breach charge's throw and blast)
 ----------------------------------------------------------------------
 
-local function blast(player: Player, center: Vector3, settings: FragSettings)
+-- The frag's blast, shared by anything that explodes on a soldier's behalf (the Goose's
+-- rocket): a flash, the screen shake, `Damage` to every Infected within `Radius`. No friendly
+-- fire (the call-ins' rule).
+function KitService.blast(player: Player, center: Vector3, settings: BlastSettings)
 	local boom = Instance.new("Explosion")
 	boom.Position = center
 	boom.BlastRadius = 0
@@ -97,7 +108,7 @@ local function blast(player: Player, center: Vector3, settings: FragSettings)
 	-- Tagged for the client screen shake (CameraController).
 	flash:SetAttribute(
 		Attributes.BlastPower,
-		(settings :: any).ShakePower or Config.Camera.Shake.DefaultPower
+		settings.ShakePower or Config.Camera.Shake.DefaultPower
 	)
 	CollectionService:AddTag(flash, Attributes.BlastTag)
 	flash.Parent = effectsFolder
@@ -188,7 +199,7 @@ local function throwGrenade(player: Player, requested: Vector3?)
 		grenade:Destroy()
 		ring:Destroy()
 		WorldSounds.at(center, "player_gear", "breach")
-		blast(player, center, settings)
+		KitService.blast(player, center, settings)
 	end)
 end
 

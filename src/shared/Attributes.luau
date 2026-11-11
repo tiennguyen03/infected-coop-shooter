@@ -14,6 +14,15 @@ local Attributes = table.freeze({
 	ReadyCount = "ReadyCount",
 	ReadyNeeded = "ReadyNeeded",
 	ReadyUpEndsAt = "ReadyUpEndsAt",
+	-- workspace: the lobby trip (HandoffService, RunManager): staging waits for the squad the
+	-- lobby sent; at run end READY means "back to the Carrier" and the squad flies home
+	SquadExpected = "SquadExpected",
+	SquadArrived = "SquadArrived",
+	StagingEndsAt = "StagingEndsAt",
+	ReturnsHome = "ReturnsHome",
+	Homebound = "Homebound",
+	-- ServerStorage, Studio only: teleport data as JSON standing in for the lobby
+	MockTeleportData = "MockTeleportData",
 	ObjectiveActive = "ObjectiveActive",
 	ObjectiveCompleted = "ObjectiveCompleted",
 	ExtractionActive = "ExtractionActive",
@@ -23,6 +32,9 @@ local Attributes = table.freeze({
 	ResupplyPool = "ResupplyPool",
 	ResupplyDropIn = "ResupplyDropIn",
 	DevSpawnsOff = "DevSpawnsOff",
+	-- lobby: a Lantern bird model's lift time (server time, workspace:GetServerTimeNow()) while
+	-- its spot counts down; nil otherwise (LaunchService writes, LanternSpool reads)
+	LiftAt = "LiftAt",
 	-- workspace: the Warden's telegraphed danger shape, read by the bots
 	BossDanger = "BossDanger",
 	BossDangerKind = "BossDangerKind",
@@ -82,6 +94,25 @@ local Attributes = table.freeze({
 	BlastTag = "Blast",
 	BlastPower = "BlastPower",
 	BlastGlobal = "BlastGlobal",
+
+	-- Lobby place: a desk's ProximityPrompt carries its desk id (LobbyDesks), read by the
+	-- client's DeskDialogUI.
+	DeskId = "DeskId",
+	-- Lobby place: a walking crew member (CrewService) carries the tag CrewTag (a tag, kept
+	-- here so writer and reader share one spelling), its LobbyCrew id and its route
+	-- ("x,y,z;x,y,z"), read by the client's CrewWalk.
+	CrewTag = "Crew",
+	CrewId = "CrewId",
+	CrewRoute = "CrewRoute",
+	-- Lobby place: true on a crew figure (NpcBody) once its body is dressed and its joints
+	-- rebuilt, so a client's animations bind to the final rig.
+	CrewReady = "CrewReady",
+	-- Lobby place: an Arms Room piece (ArmsRack) and its display's back carry which display
+	-- they are on ("wall" or "cabinet") and the way they face (Vector3); a piece also its
+	-- length and height (Vector2, studs). Read by the client's ArmsRackUI to frame them.
+	RackDisplay = "RackDisplay",
+	RackFace = "RackFace",
+	RackSpan = "RackSpan",
 
 	-- Names built from a slot or a clip, so they stay in one place too.
 	-- Player: the upgrade in a field-upgrade slot (UpgradeDefinitions.SLOTS).

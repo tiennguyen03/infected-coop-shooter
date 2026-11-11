@@ -47,6 +47,7 @@ local BOOT: { ModuleScript } = {
 	Server.ExtractionService,
 	Server.IndexService,
 	Server.BotService,
+	Server.HandoffService,
 	Server.RunManager,
 	Server.DevTestService,
 }

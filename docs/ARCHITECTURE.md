@@ -24,14 +24,30 @@ here and add the HISTORY row.
 
 ## Open concerns
 
-1. **`ArenaService` is 2,379 lines mixing Delta's layout data with build logic.** Two more
-   missions are next, and objective pools need per-mission site and landmark data. (F6)
-2. **Upgrades are wired in by name.** Field upgrades are checked with `hasUpgrade(...)` at 8
-   call sites across `ProjectileServer`, `LoadoutService`, `KitService` and `CallInService`.
-   Guns and call-ins will be added, swapped and cut (Nova's loadout screens), so each new item
-   would mean editing combat code. (F7)
-3. **Frame cost in co-op.** The server runs 18 separate `Heartbeat`/render connections and
-   the client 15. (F11, measure first)
+Re-checked 2026-11-10 (maintenance pass; numbers from `main` that day).
+
+1. **`ArenaService` (1,355 lines) still builds Delta's bespoke pieces**, with the layout tables
+   in `Missions/Delta.luau` (1,013). Two more missions are next. (F6, step 2)
+2. **Upgrades are wired in by name.** `hasUpgrade(...)` is called at 7 sites across
+   `ProjectileServer`, `KitService` and `CallInService`. Guns and call-ins will be added,
+   swapped and cut, so each new item means editing combat code. (F7)
+3. **Frame cost in co-op.** The server runs 19 separate per-frame connections and the client
+   16. (F11, measure first)
+4. **Remote names are plain strings.** `Remotes.get("Name")` is called 48 times; a misspelt
+   name waits forever for a remote that never appears. `tests/SourceReferences.spec.luau`
+   now fails CI on an undeclared or unused remote. Typed names (a frozen table like
+   `Attributes`) would make it a type error; do it when `Remotes.luau` is next changed.
+5. **Two systems with no callers.** `PlayerStatsService`: nothing calls `setBonus` since the
+   item economy went, so `MoveSpeedMult` is always 1 and `SprintController` reads a constant;
+   remove it with the attribute, or keep it only if a planned speed buff will use it.
+   `IncendiaryService`: nothing calls `spawnPool` / `spawnTrail` since the Fire Trail upgrade
+   was cut, but its Heartbeat runs every frame; keep it for the incendiary grenade (handoff
+   open work) and rename `Config.Upgrades.FireTrail` (its `PoolsPerDash` is unused) then.
+   `Config.Upgrades.CommandDetonation = {}` is an empty placeholder.
+6. **Four modules over 1,300 lines:** `Config` (1,517), `IndexService` (1,444), `MeshAssets`
+   (1,408), `EnemyService` (1,363). Split each when its next feature lands, not before:
+   `IndexService` into a generic boss frame and the Warden's kit before the second boss;
+   `Config` by domain with F10.
 
 Resolved 2026-11-08 by F1-F5: the hand-kept reset list, unchecked attribute and message
 strings, all-or-nothing boot, naming drift after the loadout rework, no tests or CI, every
@@ -53,10 +69,10 @@ hit broadcast to every client.
 
 | # | Item | Before | Notes |
 |---|---|---|---|
-| F6 | **Mission data split** (concern 1): a generic builder plus one data file per mission (`StageDefinitions`, PROGRESSION build order). | objective pools (next on the roadmap) | pools place objectives at each mission's three sites and named landmarks |
+| F6 | **Mission data split** (concern 1): a generic builder plus one data file per mission (`StageDefinitions`, PROGRESSION build order). | objective pools (next on the roadmap) | **Step 1 done 2026-11-09:** Delta's layout tables moved to `src/server/Missions/Delta.luau` (shapes in `Missions/MissionTypes`, registry `Missions`, order in `Config.Operation.Missions`); ArenaService builds `Missions.current()`. **Next:** Delta's bespoke builders and its Config positions (LZ, spawn pads, objective zone, Warden entry, sky) into the mission file, then a clearable mission model for the transition |
 | F7 | **Weapon and upgrade hooks** (concern 2): each definition carries its behaviour (`onFire`, `onHit`, `onKill`, ...); combat code calls them generically. Also the support-weapon carry and the explosive projectile hook. | the support-weapon call-ins or the next new gun | |
 | F9 | **Save service**: one server module for per-player data (ProfileStore or similar: session locking, no data loss on crash), a version number in the save format from day one. | unlocks or the Containment Board | the board itself is below |
-| F10 | **Lobby place** ([MULTIPLAYER_READINESS.md](MULTIPLAYER_READINESS.md) decision 7) and split `Config` by domain so the lobby loads no match-only tuning. | after F9 | Nova is building the lobby; flow below |
+| F10 | **Lobby place** ([MULTIPLAYER_READINESS.md](MULTIPLAYER_READINESS.md) decision 7) and split `Config` by domain so the lobby loads no match-only tuning. | after F9 | lobby v1 built (Nova, `src/lobby/`) and the start place; teleports in and home per `docs/LOBBY_MATCH_HANDOFF.md`; it saves each signed Loadout (`LoadmasterService`, DataStore `LoadmasterLoadouts`, versioned) as a stand-in F9 should absorb; the `Config` split not started |
 | F11 | **One frame scheduler**: merge the per-system `Heartbeat` connections into one ordered step (concern 3). | when the MicroProfiler shows script time is the problem | measure first |
 
 Retired 2026-11-08: F8 (class interface for the Chosen); the class system is gone, see

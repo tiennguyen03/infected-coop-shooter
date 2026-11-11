@@ -26,6 +26,7 @@ local Magazine = require(ReplicatedStorage.Shared.Rules.Magazine)
 local Messages = require(ReplicatedStorage.Shared.Messages)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local RunStates = require(ReplicatedStorage.Shared.RunStates)
+local SoundBanks = require(ReplicatedStorage.Shared.SoundBanks)
 local UpgradeDefinitions = require(ReplicatedStorage.Shared.UpgradeDefinitions)
 local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
 local DamageService = require(script.Parent.DamageService)
@@ -76,6 +77,8 @@ end
 local function pickFor(player: Player): Loadout.Loadout
 	local pick = picks[player]
 	if not pick then
+		-- The default; the Loadout signed for at the lobby's Loadmaster replaces it on arrival
+		-- (RunManager.receive -> LoadoutService.apply, read by HandoffService).
 		pick = ArmsRoom.default()
 		picks[player] = pick
 	end
@@ -237,7 +240,12 @@ function LoadoutService.startReload(player: Player): boolean
 	state.reloadUntil = os.clock() + weapon.ReloadTime
 	publishAmmo(player, state)
 	if member.root then
-		WorldSounds.on(member.root, "player_gear", "reload", "Gear")
+		local own = if weapon.Sound then weapon.Sound .. "_reload" else nil
+		if own and SoundBanks.hasGroup(SoundBanks.GUN_BANK, own) then
+			WorldSounds.on(member.root, SoundBanks.GUN_BANK, own, "Gear")
+		else
+			WorldSounds.on(member.root, "player_gear", "reload", "Gear")
+		end
 	end
 	return true
 end

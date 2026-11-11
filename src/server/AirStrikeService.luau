@@ -13,11 +13,13 @@
 
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local GroundUtil = require(ReplicatedStorage.Shared.GroundUtil)
+local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
 local StrikePattern = require(ReplicatedStorage.Shared.Rules.StrikePattern)
 local DamageService = require(script.Parent.DamageService)
 local GoreService = require(script.Parent.GoreService)
@@ -220,46 +222,85 @@ function AirStrikeService.fireMission(
 	return true
 end
 
--- The gunship's pass over the run: a dark hull flying along the throw at PassHeight with
--- the rotor loop on it (look only).
-local function gunshipPass(first: Vector3, last: Vector3, flat: Vector3, seconds: number): BasePart
+-- The gunship's pass over the run (look only): the Shrike flies along the throw at
+-- PassHeight with the rotor loop on it, its main rotor turning. The modelled helicopter
+-- (MeshAssets veh_shrike_hull / _rotor, aircraft.py) when it loaded, else a plain hull.
+-- Returns where its gun is right now (nil once it has gone).
+local function gunshipPass(
+	first: Vector3,
+	last: Vector3,
+	flat: Vector3,
+	seconds: number
+): () -> Vector3?
 	local cfg = Config.CallIns.Shrike
 	local height = Vector3.new(0, cfg.PassHeight, 0)
 	local lead = flat * 60
-	local hull = Instance.new("Part")
-	hull.Name = "ShrikeGunship"
-	hull.Size = Vector3.new(5, 3, 14)
-	hull.Anchored = true
-	hull.CanCollide = false
-	hull.CanQuery = false
-	hull.CanTouch = false
-	hull.Material = Enum.Material.SmoothPlastic
-	hull.Color = GUNSHIP_COLOR
 	local from = first + height - lead
-	hull.CFrame = CFrame.lookAt(from, from + flat)
-	hull.Parent = effectFolder
-	local rotor = Instance.new("Part")
-	rotor.Name = "Rotor"
-	rotor.Size = Vector3.new(18, 0.2, 1)
-	rotor.Anchored = true
-	rotor.CanCollide = false
-	rotor.CanQuery = false
-	rotor.CanTouch = false
-	rotor.Transparency = 0.5
-	rotor.Color = GUNSHIP_COLOR
-	rotor.CFrame = hull.CFrame * CFrame.new(0, 1.8, 0)
-	rotor.Parent = hull
-	WorldSounds.loopOn(hull, "ambience", "lantern_rotor")
 	local to = last + height + lead
-	local travel = TweenInfo.new(seconds, Enum.EasingStyle.Linear)
-	TweenService:Create(hull, travel, { CFrame = CFrame.lookAt(to, to + flat) }):Play()
-	TweenService
-		:Create(rotor, travel, { CFrame = CFrame.lookAt(to, to + flat) * CFrame.new(0, 1.8, 0) })
-		:Play()
-	task.delay(seconds + 0.1, function()
-		hull:Destroy()
+	local mesh = MeshAssets.clone("veh_shrike_hull")
+	local rotor: BasePart? = if mesh then MeshAssets.clone("veh_shrike_rotor") else nil
+	local hullOffset = if mesh then MeshAssets.getOffset("veh_shrike_hull") else Vector3.zero
+	local rotorOffset = MeshAssets.getOffset("veh_shrike_rotor")
+	local body: BasePart
+	if mesh then
+		body = mesh
+	else
+		local box = Instance.new("Part")
+		box.Size = Vector3.new(5, 3, 14)
+		box.Material = Enum.Material.SmoothPlastic
+		box.Color = GUNSHIP_COLOR
+		body = box
+	end
+	local parts: { BasePart } = { body }
+	if rotor then
+		table.insert(parts, rotor)
+	end
+	for _, part in parts do
+		part.Anchored = true
+		part.CanCollide = false
+		part.CanQuery = false
+		part.CanTouch = false
+	end
+	body.Name = "ShrikeGunship"
+	body.Parent = effectFolder
+	if rotor then
+		rotor.Name = "Rotor"
+		rotor.CastShadow = false
+		rotor.Parent = body
+	end
+	WorldSounds.loopOn(body, "ambience", "lantern_rotor")
+
+	local started = os.clock()
+	local origin = CFrame.lookAt(from, from + flat)
+	local function place(t: number)
+		local at = from:Lerp(to, t)
+		origin = CFrame.lookAt(at, at + flat)
+		body.CFrame = origin * CFrame.new(hullOffset)
+		if rotor then
+			local spin = math.rad((os.clock() - started) * cfg.RotorSpin)
+			rotor.CFrame = origin
+				* CFrame.new(cfg.RotorHub)
+				* CFrame.Angles(0, spin, 0)
+				* CFrame.new(rotorOffset)
+		end
+	end
+	place(0)
+	local flight: RBXScriptConnection
+	flight = RunService.Heartbeat:Connect(function()
+		local t = (os.clock() - started) / seconds
+		if t >= 1 or not body.Parent then
+			flight:Disconnect()
+			body:Destroy()
+			return
+		end
+		place(t)
 	end)
-	return hull
+	return function(): Vector3?
+		if not body.Parent then
+			return nil
+		end
+		return (origin * CFrame.new(cfg.GunMuzzle)).Position
+	end
 end
 
 local function tracer(from: Vector3, to: Vector3)
@@ -315,7 +356,7 @@ function AirStrikeService.gunRun(player: Player, point: Vector3, direction: Vect
 		if thisGeneration ~= generation then
 			return
 		end
-		local hull = gunshipPass(impacts[1], impacts[#impacts], flat, approach * 2 + runTime)
+		local gunAt = gunshipPass(impacts[1], impacts[#impacts], flat, approach * 2 + runTime)
 		waitUnpaused(approach)
 		if strip.Parent then
 			strip:Destroy()
@@ -324,7 +365,7 @@ function AirStrikeService.gunRun(player: Player, point: Vector3, direction: Vect
 			if thisGeneration ~= generation then
 				return
 			end
-			local muzzle = if hull.Parent then hull.Position else impact + Vector3.new(0, 40, 0)
+			local muzzle = gunAt() or impact + Vector3.new(0, 40, 0)
 			tracer(muzzle, impact)
 			local power = shakeOf(cfg)
 			flash(impact + Vector3.new(0, 1, 0), cfg.BlastRadius, SHRIKE_COLOR, 0.25, power)

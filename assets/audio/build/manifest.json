@@ -453,5 +453,120 @@
     "prompt": "civil defence siren wailing, slow rise and fall, distant, outdoor",
     "seconds": 6.0,
     "seed": 484
+  },
+  "revolver_shot_1": {
+    "prompt": ".357 magnum revolver single gunshot, heavy deep boom, close, outdoor, full low end, not piercing",
+    "seconds": 1.2,
+    "seed": 501
+  },
+  "revolver_shot_2": {
+    "prompt": "magnum revolver gunshot, heavy thump and crack, close, outdoor, warm, not piercing",
+    "seconds": 1.2,
+    "seed": 502
+  },
+  "revolver_reload_1": {
+    "prompt": "revolver reload, cylinder swings open, spent brass casings rattle out, speedloader clicks in, cylinder snaps shut, close, dry",
+    "seconds": 2.6,
+    "seed": 503
+  },
+  "sniper_shot_1": {
+    "prompt": "high caliber bolt action sniper rifle gunshot, deep heavy boom with rolling outdoor echo, close, not piercing",
+    "seconds": 2.0,
+    "seed": 511
+  },
+  "sniper_shot_2": {
+    "prompt": "magnum sniper rifle shot, big deep report rolling across open ground, close, warm low end",
+    "seconds": 2.0,
+    "seed": 512
+  },
+  "sniper_reload_1": {
+    "prompt": "bolt action rifle reload, bolt pulled back, magazine dropped out, fresh magazine clicked in, bolt pushed forward and locked, close, dry",
+    "seconds": 3.0,
+    "seed": 513
+  },
+  "goose_shot_1": {
+    "prompt": "shoulder fired recoilless rifle launching a rocket, deep boom and loud backblast whoosh, rocket motor hiss flying away, outdoor",
+    "seconds": 2.5,
+    "seed": 521
+  },
+  "goose_reload_1": {
+    "prompt": "heavy steel breech swung open, large rocket round slid into a tube, breech latched shut with a heavy clunk, close, dry",
+    "seconds": 3.5,
+    "seed": 522
+  },
+  "smg_shot_1": {
+    "prompt": "9mm submachine gun single shot, light snappy pop, close, outdoor, not piercing",
+    "seconds": 0.8,
+    "seed": 531
+  },
+  "smg_shot_2": {
+    "prompt": "compact 9mm smg gunshot, short tight pop, close, outdoor, warm",
+    "seconds": 0.8,
+    "seed": 532
+  },
+  "smg_reload_1": {
+    "prompt": "submachine gun reload, curved magazine pulled out, new magazine clicked in, cocking handle slapped forward, close, dry",
+    "seconds": 2.0,
+    "seed": 533
+  },
+  "lmg_shot_1": {
+    "prompt": "belt fed light machine gun single gunshot, heavy thump with metallic clank of the link, close, outdoor, not piercing",
+    "seconds": 0.9,
+    "seed": 541
+  },
+  "lmg_shot_2": {
+    "prompt": "light machine gun gunshot, deep punchy report, close, outdoor, warm low end",
+    "seconds": 0.9,
+    "seed": 542
+  },
+  "lmg_reload_1": {
+    "prompt": "machine gun reload, feed tray cover opened, ammunition belt laid in with rattling links, cover slammed shut, charging handle pulled, close",
+    "seconds": 4.0,
+    "seed": 543
+  },
+  "shotgun_shot_1": {
+    "prompt": "12 gauge pump shotgun blast, big deep boom, then the pump action racked back and forward, close, outdoor, not piercing",
+    "seconds": 1.6,
+    "seed": 551
+  },
+  "shotgun_shot_2": {
+    "prompt": "pump action shotgun firing, heavy wide boom, shell ejected with a pump rack, close, outdoor, warm",
+    "seconds": 1.6,
+    "seed": 552
+  },
+  "shotgun_reload_1": {
+    "prompt": "shotgun shells pushed one by one into a tube magazine, several clicks, then the pump racked, close, dry",
+    "seconds": 3.2,
+    "seed": 553
+  },
+  "dmr_shot_1": {
+    "prompt": "7.62 semi automatic marksman rifle gunshot, heavy crack and boom, close, outdoor, not piercing",
+    "seconds": 1.4,
+    "seed": 561
+  },
+  "dmr_shot_2": {
+    "prompt": "battle rifle single shot, deep powerful report with short echo, close, outdoor, warm",
+    "seconds": 1.4,
+    "seed": 562
+  },
+  "dmr_reload_1": {
+    "prompt": "rifle reload, heavy steel magazine dropped, new magazine seated with a click, bolt release slapped, close, dry",
+    "seconds": 2.4,
+    "seed": 563
+  },
+  "pistol_shot_1": {
+    "prompt": "9mm handgun single gunshot, sharp pop, close, outdoor, not piercing",
+    "seconds": 0.8,
+    "seed": 571
+  },
+  "pistol_shot_2": {
+    "prompt": "pistol gunshot, compact snap with a little body, close, outdoor, warm",
+    "seconds": 0.8,
+    "seed": 572
+  },
+  "pistol_reload_1": {
+    "prompt": "pistol reload, magazine dropped, fresh magazine slapped into the grip, slide released forward, close, dry",
+    "seconds": 1.4,
+    "seed": 573
   }
 }

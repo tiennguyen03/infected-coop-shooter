@@ -22,6 +22,7 @@ local UpgradeDefinitions = require(ReplicatedStorage.Shared.UpgradeDefinitions)
 local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
 local CallInService = require(script.Parent.CallInService)
 local EnemyService = require(script.Parent.EnemyService)
+local HandoffService = require(script.Parent.HandoffService)
 local IndexService = require(script.Parent.IndexService)
 local LoadoutService = require(script.Parent.LoadoutService)
 local PlayerStatsService = require(script.Parent.PlayerStatsService)
@@ -427,6 +428,19 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 	end,
 	RestartRun = function(player)
 		DevTestService.restartRun(player)
+	end,
+	-- Flies the caller to this match's lobby (HandoffService.lobbyPlaceId: Config.Places), for
+	-- a tester who joined the match place directly. Teleports never run in Studio.
+	ToLobby = function(player)
+		local lobby = HandoffService.lobbyPlaceId()
+		if lobby == 0 or RunService:IsStudio() then
+			warn("[DevTest] ToLobby: no lobby place (Config.Places) or this is Studio")
+			return
+		end
+		local ok, err = pcall(function()
+			game:GetService("TeleportService"):TeleportAsync(lobby, { player })
+		end)
+		print(`[DevTest] ToLobby {player.Name}: {if ok then "sent" else err}`)
 	end,
 	-- Freezes / unfreezes the field (the threat clock, cooldowns and timers stop).
 	TogglePause = function()

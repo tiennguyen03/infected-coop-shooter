@@ -1,0 +1,785 @@
+--!strict
+-- Builds the Fallow (docs/LORE.md > The Fallow): a reactivated helicopter carrier holding
+-- station off the Harlan coast on a clear afternoon. Hull, flight deck with the open well and
+-- its ramp, the island (hull number painted out, HARLAN sprayed over it), the hangar deck, the
+-- Plot's walls and chart table, the screening lane where soldiers arrive, the sea, the coast
+-- with the Burn's smoke along it, and the sky (Config.Lobby.Sky). Desks (DeskService), the
+-- board (PlotService) and the birds on their spots (LaunchService) build their own pieces
+-- from FallowLayout. These blocks carry all collision; FallowArt lays the ship's meshes over
+-- them once uploaded (assets/3d/build/fallow.py) and builds the lift balcony.
+-- docs/STYLES.md: ShadowMap with GlobalShadows (lobby.project.json sets Technology), only
+-- large pieces cast shadows, four lights (three in the hangar, one in the Plot), Shadows off,
+-- Range <= 56. No two faces share a plane (they flicker): surface pieces sit on, not in.
+
+local Lighting = game:GetService("Lighting")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+
+local Config = require(ReplicatedStorage.Shared.Config)
+local Build = require(script.Parent.Build)
+local FallowArt = require(script.Parent.FallowArt)
+local Layout = require(script.Parent.FallowLayout)
+local WorldMap = require(script.Parent.WorldMap)
+
+local FallowBuilder = {}
+
+local HULL = Color3.fromRGB(70, 74, 78)
+local DECK = Color3.fromRGB(50, 52, 55)
+local ISLAND = Color3.fromRGB(86, 90, 94)
+local HANGAR_FLOOR = Color3.fromRGB(64, 66, 68)
+local HANGAR_WALL = Color3.fromRGB(96, 100, 102)
+local PLOT_WALL = Color3.fromRGB(40, 40, 42)
+local PAINT = Color3.fromRGB(214, 214, 208)
+local YELLOW = Color3.fromRGB(230, 189, 96)
+local CONCRETE = Color3.fromRGB(122, 120, 114)
+local SMOKE = Color3.fromRGB(56, 52, 52)
+local SMOKE_LIT = Color3.fromRGB(110, 44, 30) -- the smoke's base, lit red by the fire under it
+local BURN = Color3.fromRGB(235, 74, 26)
+local FLOOD = Color3.fromRGB(255, 226, 190)
+local LAMP_HOUSING = Color3.fromRGB(200, 198, 186)
+local PLOT_RED = Color3.fromRGB(255, 60, 50)
+
+local BOW = 30 -- the flight deck runs this far past the hull's square end, over a raked bow
+local FLOOR = 0.2 -- the hangar floor plate's thickness, on top of the hull block
+
+local W = Layout.HalfWidth
+local L = Layout.HalfLength
+local DECK_Y = Layout.DeckY
+local DECK_BOTTOM = DECK_Y - Layout.DeckThickness
+local HANGAR_Y = Layout.HangarY
+local HULL_TOP = HANGAR_Y - FLOOR
+
+local function pointLight(parent: BasePart, color: Color3, range: number, brightness: number)
+	local light = Instance.new("PointLight")
+	light.Color = color
+	light.Range = range
+	light.Brightness = brightness
+	light.Shadows = false
+	light.Parent = parent
+end
+
+local function clearTemplate()
+	-- A new place starts with a Baseplate and a SpawnLocation; the ship replaces both.
+	for _, child in Workspace:GetChildren() do
+		if child:IsA("SpawnLocation") or child.Name == "Baseplate" then
+			child:Destroy()
+		end
+	end
+end
+
+local function buildHull(ship: Folder)
+	-- Below the hangar floor, and the closed spaces fore and aft of the hangar.
+	-- The hull block stops a floor plate below the hangar surface; the plate (HangarFloor)
+	-- and everything standing on the hangar deck start at HULL_TOP, so no face is shared.
+	Build.box(ship, "Hull", Vector3.new(-W, -10, -L), Vector3.new(W, HULL_TOP, L), HULL)
+	Build.box(
+		ship,
+		"AftSpaces",
+		Vector3.new(-W, HULL_TOP, -L),
+		Vector3.new(W, DECK_BOTTOM, Layout.HangarAft),
+		HULL
+	)
+	Build.box(
+		ship,
+		"ForeSpaces",
+		Vector3.new(-W, HULL_TOP, Layout.HangarFore),
+		Vector3.new(W, DECK_BOTTOM, L),
+		HULL
+	)
+
+	-- The raked bow under the deck overhang.
+	local bow = Build.part(
+		ship,
+		"Bow",
+		Vector3.new(W * 2 - 0.4, DECK_BOTTOM + 10, BOW),
+		CFrame.new(0, (DECK_BOTTOM - 10) / 2, L + BOW / 2) * CFrame.Angles(math.pi, 0, 0),
+		HULL,
+		{ wedge = true }
+	)
+	bow.Name = "Bow"
+
+	-- Hangar sides: starboard solid, port open to the sea between Z -40 and 0 (a side lift).
+	Build.box(
+		ship,
+		"HangarStarboard",
+		Vector3.new(W - 2, HULL_TOP, Layout.HangarAft),
+		Vector3.new(W, DECK_BOTTOM, Layout.HangarFore),
+		HANGAR_WALL
+	)
+	Build.box(
+		ship,
+		"HangarPortAft",
+		Vector3.new(-W, HULL_TOP, Layout.HangarAft),
+		Vector3.new(-W + 2, DECK_BOTTOM, -40),
+		HANGAR_WALL
+	)
+	Build.box(
+		ship,
+		"HangarPortFore",
+		Vector3.new(-W, HULL_TOP, 0),
+		Vector3.new(-W + 2, DECK_BOTTOM, Layout.HangarFore),
+		HANGAR_WALL
+	)
+	-- The opening's walls are the balcony's (FallowArt: the lift lowered to hangar level).
+	Build.box(
+		ship,
+		"SideLiftEdge",
+		Vector3.new(-W, HULL_TOP, -40),
+		Vector3.new(-W + 2, HANGAR_Y, 0),
+		YELLOW,
+		{
+			material = Enum.Material.SmoothPlastic,
+		}
+	)
+	-- The hangar floor plate on the hull block.
+	Build.box(
+		ship,
+		"HangarFloor",
+		Vector3.new(-W + 2, HULL_TOP, Layout.HangarAft),
+		Vector3.new(W - 2, HANGAR_Y, Layout.HangarFore),
+		HANGAR_FLOOR,
+		{ material = Enum.Material.DiamondPlate }
+	)
+end
+
+local function buildDeck(ship: Folder)
+	local well = Layout.Well
+	local function slab(name: string, x0: number, x1: number, z0: number, z1: number)
+		Build.box(
+			ship,
+			name,
+			Vector3.new(x0, DECK_BOTTOM, z0),
+			Vector3.new(x1, DECK_Y, z1),
+			DECK,
+			{ material = Enum.Material.Asphalt }
+		)
+	end
+	-- Four slabs around the open well.
+	slab("DeckAft", -W, W, -L, well.z0)
+	slab("DeckWellPort", -W, well.x0, well.z0, well.z1)
+	slab("DeckWellStarboard", well.x1, W, well.z0, well.z1)
+	slab("DeckFore", -W, W, well.z1, L + BOW)
+
+	-- The ramp from the hangar floor (foot at well.z1) up aft to the deck (well.z0), with
+	-- rails. A WedgePart rises toward +Z, so it is turned half round.
+	local rise = DECK_Y - HANGAR_Y
+	local run = well.z1 - well.z0
+	Build.part(
+		ship,
+		"Ramp",
+		Vector3.new(well.x1 - well.x0, rise, run),
+		CFrame.new((well.x0 + well.x1) / 2, HANGAR_Y + rise / 2, (well.z0 + well.z1) / 2)
+			* CFrame.Angles(0, math.pi, 0),
+		HANGAR_FLOOR,
+		{ wedge = true, material = Enum.Material.DiamondPlate }
+	)
+	local slope = math.atan2(rise, run)
+	local railLength = math.sqrt(rise * rise + run * run)
+	for _, x in { well.x0 + 0.3, well.x1 - 0.3 } do
+		Build.part(
+			ship,
+			"RampRail",
+			Vector3.new(0.4, 3, railLength),
+			CFrame.new(x, HANGAR_Y + rise / 2 + 1.5, (well.z0 + well.z1) / 2)
+				* CFrame.Angles(slope, 0, 0),
+			YELLOW,
+			{ material = Enum.Material.SmoothPlastic }
+		)
+	end
+	-- The well's open edges on the deck: the fore edge drops to the ramp's foot.
+	Build.box(
+		ship,
+		"WellRail",
+		Vector3.new(well.x0, DECK_Y, well.z1),
+		Vector3.new(well.x1, DECK_Y + 3, well.z1 + 0.4),
+		YELLOW,
+		{ material = Enum.Material.SmoothPlastic }
+	)
+	for _, x in { well.x0, well.x1 } do
+		Build.box(
+			ship,
+			"WellRail",
+			Vector3.new(x - 0.2, DECK_Y, well.z0),
+			Vector3.new(x + 0.2, DECK_Y + 3, well.z1),
+			YELLOW,
+			{ material = Enum.Material.SmoothPlastic }
+		)
+	end
+
+	-- Markings: the centre line down the spots (broken where a spot circle is painted, so
+	-- two coats never share a plane), and the deck-edge safety rail.
+	local lineX = Layout.Spots[1].helo.X
+	for z = -L + 6, well.z0 - 6, 12 do
+		local onSpot = false
+		for _, spot in Layout.Spots do
+			if z + 6 > spot.helo.Z - 15 and z < spot.helo.Z + 15 then
+				onSpot = true
+			end
+		end
+		if onSpot then
+			continue
+		end
+		Build.box(
+			ship,
+			"CentreLine",
+			Vector3.new(lineX - 0.3, DECK_Y, z),
+			Vector3.new(lineX + 0.3, DECK_Y + 0.05, z + 6),
+			PAINT,
+			{ material = Enum.Material.SmoothPlastic, collide = false }
+		)
+	end
+	for _, x in { -W + 0.2, W - 0.2 } do
+		Build.part(
+			ship,
+			"EdgeRail",
+			Vector3.new(0.3, 1.2, L * 2 + BOW),
+			CFrame.new(x, DECK_Y + 0.6, BOW / 2),
+			Color3.fromRGB(150, 150, 150),
+			{ collide = false }
+		)
+	end
+	-- Invisible walls keep soldiers aboard.
+	local top = DECK_Y + 14
+	Build.barrier(ship, Vector3.new(-W - 1, DECK_Y, -L - 1), Vector3.new(-W, top, L + BOW + 1))
+	Build.barrier(ship, Vector3.new(W, DECK_Y, -L - 1), Vector3.new(W + 1, top, L + BOW + 1))
+	Build.barrier(ship, Vector3.new(-W, DECK_Y, -L - 1), Vector3.new(W, top, -L))
+	Build.barrier(ship, Vector3.new(-W, DECK_Y, L + BOW), Vector3.new(W, top, L + BOW + 1))
+
+	-- Floodlight poles along the port edge, over the aft spots (unlit by day; a night cycle
+	-- lights them later).
+	for _, z in { -125, -25 } do
+		Build.box(
+			ship,
+			"FloodPole",
+			Vector3.new(-W + 0.5, DECK_Y, z - 0.5),
+			Vector3.new(-W + 1.5, DECK_Y + 12, z + 0.5),
+			HULL
+		)
+		Build.part(
+			ship,
+			"FloodLamp",
+			Vector3.new(1.4, 1, 1.4),
+			CFrame.new(-W + 1, DECK_Y + 12.5, z) * CFrame.Angles(0, 0, math.rad(-35)),
+			LAMP_HOUSING,
+			{ collide = false }
+		)
+	end
+end
+
+local function buildIsland(ship: Folder)
+	local island = Layout.Island
+	local block = Build.box(
+		ship,
+		"Island",
+		Vector3.new(island.x0, DECK_Y, island.z0),
+		Vector3.new(island.x1, island.top, island.z1),
+		ISLAND
+	)
+	block.Name = "Island"
+	local midZ = (island.z0 + island.z1) / 2
+	local length = island.z1 - island.z0
+	-- Bridge windows.
+	Build.part(
+		ship,
+		"BridgeWindows",
+		Vector3.new(0.2, 4, length - 4),
+		CFrame.new(island.x0 - 0.1, island.top - 7, midZ),
+		Color3.fromRGB(20, 26, 30),
+		{ material = Enum.Material.Glass, transparency = 0.1 }
+	)
+	-- The old hull number painted out, HARLAN sprayed over the patch (Task Force Harlan, LORE.md).
+	local patch = Build.part(
+		ship,
+		"PaintedOut",
+		Vector3.new(0.2, 12, 28),
+		CFrame.new(island.x0 - 0.12, DECK_Y + 11, midZ), -- on the island's base level (FallowArt)
+		Color3.fromRGB(78, 82, 86)
+	)
+	Build.text(
+		patch,
+		Enum.NormalId.Left,
+		"HARLAN",
+		{ size = 220, color = Color3.fromRGB(226, 224, 216), font = Enum.Font.PermanentMarker }
+	)
+	-- A door at deck level.
+	Build.part(
+		ship,
+		"IslandDoor",
+		Vector3.new(0.2, 7, 4),
+		CFrame.new(island.x0 - 0.1, DECK_Y + 3.5, island.z0 + 6),
+		Color3.fromRGB(44, 46, 48)
+	)
+	-- Mast and yard.
+	Build.part(
+		ship,
+		"Mast",
+		Vector3.new(1.5, 22, 1.5),
+		CFrame.new((island.x0 + island.x1) / 2, island.top + 11, midZ),
+		HULL
+	)
+	Build.part(
+		ship,
+		"Yard",
+		Vector3.new(10, 0.6, 0.6),
+		CFrame.new((island.x0 + island.x1) / 2, island.top + 16, midZ),
+		HULL
+	)
+	-- Three floodlights on the island face, over the forward spots (unlit by day).
+	for _, z in { island.z0 + 6, midZ, island.z1 - 6 } do
+		Build.part(
+			ship,
+			"FloodLamp",
+			Vector3.new(1, 1.4, 1.4),
+			CFrame.new(island.x0 - 0.7, island.top - 2, z) * CFrame.Angles(0, 0, math.rad(35)),
+			LAMP_HOUSING,
+			{ collide = false }
+		)
+	end
+end
+
+local function buildHangar(ship: Folder)
+	-- Three working lights under the deck: over the desks by the spawn, at the ramp's foot,
+	-- and at the Plot door.
+	for _, position in
+		{
+			Vector3.new(0, DECK_BOTTOM - 1, 106),
+			Vector3.new(-8, DECK_BOTTOM - 1, 62),
+			Vector3.new(0, DECK_BOTTOM - 1, 10),
+		}
+	do
+		local fixture = Build.part(
+			ship,
+			"HangarLight",
+			Vector3.new(4, 0.6, 1.2),
+			CFrame.new(position),
+			FLOOD,
+			{ material = Enum.Material.Neon, collide = false }
+		)
+		pointLight(fixture, FLOOD, 50, 1.2)
+	end
+	-- Hangar bay stencils on the bulkheads.
+	local aft = Build.box(
+		ship,
+		"BayStencil",
+		Vector3.new(-12, HANGAR_Y + 8, Layout.HangarAft),
+		Vector3.new(12, HANGAR_Y + 14, Layout.HangarAft + 0.1),
+		HANGAR_WALL,
+		{ collide = false }
+	)
+	Build.text(aft, Enum.NormalId.Back, "HANGAR BAY 1", { size = 90, color = YELLOW })
+end
+
+local function buildPlot(ship: Folder)
+	local plot = Layout.Plot
+	local top = DECK_BOTTOM
+	local x0, x1 = plot.x0, plot.x0 + 1
+	Build.box(
+		ship,
+		"PlotWall",
+		Vector3.new(x0, HANGAR_Y, plot.z0),
+		Vector3.new(x1, top, plot.doorZ0),
+		PLOT_WALL
+	)
+	Build.box(
+		ship,
+		"PlotWall",
+		Vector3.new(x0, HANGAR_Y, plot.doorZ1),
+		Vector3.new(x1, top, plot.z1),
+		PLOT_WALL
+	)
+	local lintel = Build.box(
+		ship,
+		"PlotLintel",
+		Vector3.new(x0, HANGAR_Y + 10, plot.doorZ0),
+		Vector3.new(x1, top, plot.doorZ1),
+		PLOT_WALL
+	)
+	Build.text(lintel, Enum.NormalId.Left, "THE PLOT", { size = 70, color = PAINT })
+	Build.box(
+		ship,
+		"PlotWall",
+		Vector3.new(x1, HANGAR_Y, plot.z0),
+		Vector3.new(plot.x1, top, plot.z0 + 1),
+		PLOT_WALL
+	)
+	Build.box(
+		ship,
+		"PlotWall",
+		Vector3.new(x1, HANGAR_Y, plot.z1 - 1),
+		Vector3.new(plot.x1, top, plot.z1),
+		PLOT_WALL
+	)
+
+	-- The chart table: the Harlan Corridor on paper (WorldMap, the lore's world map).
+	WorldMap.build(ship)
+	-- One red working light.
+	local lamp = Build.part(
+		ship,
+		"PlotLamp",
+		Vector3.new(2, 0.4, 2),
+		CFrame.new((plot.x0 + plot.x1) / 2, top - 0.5, (plot.z0 + plot.z1) / 2),
+		PLOT_RED,
+		{ material = Enum.Material.Neon, collide = false }
+	)
+	pointLight(lamp, PLOT_RED, 30, 2)
+	-- A white light set in the deckhead over the map, so the paper reads in the red room (flush,
+	-- above the camera of the officer's "Show me the map.").
+	local table_ = Layout.ChartTable.Position
+	local panel = Build.part(
+		ship,
+		"MapLamp",
+		Vector3.new(3, 0.2, 3),
+		CFrame.new(table_.X, top - 0.1, table_.Z),
+		LAMP_HOUSING,
+		{ material = Enum.Material.Neon, collide = false }
+	)
+	panel.CanQuery = false
+	local light = Instance.new("SpotLight")
+	light.Face = Enum.NormalId.Bottom
+	light.Angle = 60
+	light.Range = 22
+	light.Brightness = 2
+	light.Color = Color3.fromRGB(255, 232, 196)
+	light.Parent = panel
+end
+
+local function buildLane(ship: Folder)
+	local lane = Layout.Lane
+	for _, x in { lane.x0, lane.x1 } do
+		Build.box(
+			ship,
+			"LaneBarrier",
+			Vector3.new(x - 0.6, DECK_Y, lane.z0),
+			Vector3.new(x + 0.6, DECK_Y + 2.5, lane.z1),
+			CONCRETE,
+			{ material = Enum.Material.Concrete }
+		)
+	end
+	-- The screening arch halfway down the lane: hose, hands, eyes, band.
+	local archZ = (lane.z0 + lane.z1) / 2
+	for _, x in { lane.x0 + 1, lane.x1 - 1 } do
+		Build.part(
+			ship,
+			"ArchPost",
+			Vector3.new(0.8, 9, 0.8),
+			CFrame.new(x, DECK_Y + 4.5, archZ),
+			HULL
+		)
+	end
+	local beam = Build.part(
+		ship,
+		"ArchSign",
+		Vector3.new(lane.x1 - lane.x0, 2, 0.4),
+		CFrame.new((lane.x0 + lane.x1) / 2, DECK_Y + 9, archZ),
+		Color3.fromRGB(40, 42, 44)
+	)
+	Build.text(beam, Enum.NormalId.Front, "SCREENING", { size = 80, color = YELLOW })
+	Build.part(
+		ship,
+		"HoseReel",
+		Vector3.new(1.4, 2.4, 2.4),
+		CFrame.new(lane.x0 + 1.6, DECK_Y + 1.2, archZ - 3),
+		Color3.fromRGB(150, 40, 36),
+		{ shape = Enum.PartType.Cylinder }
+	)
+end
+
+-- Where soldiers spawn: the fore end of the hangar, facing the desks and the ramp.
+local function buildSpawn(ship: Folder)
+	local spawn = Instance.new("SpawnLocation")
+	spawn.Name = "HangarSpawn"
+	spawn.Anchored = true
+	spawn.Size = Vector3.new(6, 0.4, 6)
+	spawn.CFrame = Layout.Spawn
+	spawn.Transparency = 1
+	spawn.CanCollide = false
+	spawn.CanTouch = false
+	spawn.Neutral = true
+	spawn.Duration = 0
+	spawn.Parent = ship
+end
+
+-- The sea: a shallow sheet of Terrain water (the engine animates the waves) from far astern
+-- to the coast and far to each side (Config.Lobby.Sky.Water.Extent: the haze hides the edge),
+-- over a layer of dark Terrain mud that gives it depth. Filled in tiles on the 4-stud voxel
+-- grid. Terrain is cleared first: disk is the source of truth.
+local SEA_TILE = 512
+local SEA_X = Config.Lobby.Sky.Water.Extent -- the water spans -SEA_X..SEA_X
+local SEA_AFT = -Config.Lobby.Sky.Water.Extent -- and from here to the coast
+local SEABED = 4 -- studs of mud under the water
+
+local function buildSea()
+	local sky = Config.Lobby.Sky
+	local water = sky.Water
+	local terrain = Workspace.Terrain
+	terrain:Clear()
+	terrain:SetMaterialColor(Enum.Material.Mud, sky.Seabed)
+	for x = -SEA_X, SEA_X - SEA_TILE, SEA_TILE do
+		local z = SEA_AFT
+		while z < Layout.CoastZ do
+			-- The last row stops at the coast.
+			local length = math.min(SEA_TILE, Layout.CoastZ - z)
+			local middle = Vector3.new(x + SEA_TILE / 2, 0, z + length / 2)
+			terrain:FillBlock(
+				CFrame.new(middle - Vector3.new(0, water.Depth / 2, 0)),
+				Vector3.new(SEA_TILE, water.Depth, length),
+				Enum.Material.Water
+			)
+			terrain:FillBlock(
+				CFrame.new(middle - Vector3.new(0, water.Depth + SEABED / 2, 0)),
+				Vector3.new(SEA_TILE, SEABED, length),
+				Enum.Material.Mud
+			)
+			z += length
+		end
+	end
+	-- No water inside the hull: it showed through at the waterline. The carve stays inside the
+	-- hull's sides (inset a stud), stepping in with the bow's taper (fallow.py BOW: waterline
+	-- half-beam 34.5 at Z 140, 28 at 165, 16 at 185, 1.5 at 196); a carve wider than the hull
+	-- would leave a hole in the sea beside it.
+	for _, step in { { -L + 1, 140, W - 1 }, { 140, 165, 27 }, { 165, 185, 15 }, { 185, 192, 6 } } do
+		local z0, z1, half = step[1], step[2], step[3]
+		terrain:FillBlock(
+			CFrame.new(0, -water.Depth / 2, (z0 + z1) / 2),
+			Vector3.new(half * 2, water.Depth, z1 - z0),
+			Enum.Material.Air
+		)
+	end
+	terrain.WaterWaveSize = water.WaveSize
+	terrain.WaterWaveSpeed = water.WaveSpeed
+	terrain.WaterColor = water.Color
+	terrain.WaterReflectance = water.Reflectance
+	terrain.WaterTransparency = water.Transparency
+end
+
+-- Fire and smoke for one burn site, after the match's burning skyline (SkyService: stock
+-- fire_main / smoke_main, a light westerly drift), scaled up to read across the water.
+local FIRE_COLOR = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 196, 110)),
+	ColorSequenceKeypoint.new(0.3, BURN),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(110, 18, 8)),
+})
+
+local function burnSite(emitterPart: BasePart)
+	local burn = Config.Lobby.Sky.Burn
+	local fire = Instance.new("ParticleEmitter")
+	fire.Name = "Fire"
+	fire.Texture = "rbxasset://textures/particles/fire_main.dds"
+	fire.Color = FIRE_COLOR
+	fire.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, burn.FireSize * 0.6),
+		NumberSequenceKeypoint.new(0.3, burn.FireSize),
+		NumberSequenceKeypoint.new(1, burn.FireSize * 0.3),
+	})
+	fire.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.15),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+	fire.Lifetime = NumberRange.new(1, 1.8)
+	fire.Rate = burn.FireRate
+	fire.Speed = NumberRange.new(burn.FireSize * 0.6, burn.FireSize * 1.1)
+	fire.SpreadAngle = Vector2.new(14, 14)
+	fire.LightEmission = 1
+	fire.LightInfluence = 0
+	fire.EmissionDirection = Enum.NormalId.Top
+	fire.Parent = emitterPart
+
+	local smoke = Instance.new("ParticleEmitter")
+	smoke.Name = "Smoke"
+	smoke.Texture = "rbxasset://textures/particles/smoke_main.dds"
+	smoke.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, SMOKE_LIT),
+		ColorSequenceKeypoint.new(0.35, SMOKE),
+		ColorSequenceKeypoint.new(1, SMOKE),
+	})
+	smoke.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, burn.SmokeSize),
+		NumberSequenceKeypoint.new(1, burn.SmokeSize * 3.2),
+	})
+	smoke.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.3),
+		NumberSequenceKeypoint.new(0.6, 0.65),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+	smoke.Lifetime = NumberRange.new(14, 22)
+	smoke.Rate = burn.SmokeRate
+	smoke.Speed = NumberRange.new(burn.SmokeSize * 0.5, burn.SmokeSize * 0.7)
+	smoke.SpreadAngle = Vector2.new(6, 6)
+	smoke.Acceleration = Vector3.new(burn.SmokeSize * 0.12, 0, 0) -- a light westerly wind
+	smoke.Rotation = NumberRange.new(-30, 30)
+	smoke.RotSpeed = NumberRange.new(-4, 4)
+	smoke.LightInfluence = 0.8
+	smoke.EmissionDirection = Enum.NormalId.Top
+	smoke.Parent = emitterPart
+end
+
+-- The coast to the north, in Terrain so it meets the water at a real shoreline: a sand
+-- beach sloping down under the water, a grass shelf behind it, a row of grass and rock hills
+-- (placed from Config.Lobby.Sky.Coast.Seed, so every server builds the same coast), rock
+-- outcrops at the waterline, and the Burn on the shore (fire with its smoke over it).
+-- Terrain fills after the sea, so land replaces water where they overlap.
+local BEACH = 60 -- studs of beach slope out from the shoreline into the water
+local LAND_TOP = 8 -- the grass shelf's surface (the water is at 0)
+local LAND_DEPTH = 800 -- how far inland the shelf runs (past it the haze hides the edge)
+
+local function buildCoast(ship: Folder)
+	local coast = Config.Lobby.Sky.Coast
+	local terrain = Workspace.Terrain
+	terrain:SetMaterialColor(Enum.Material.Sand, coast.Sand)
+	terrain:SetMaterialColor(Enum.Material.Grass, coast.Grass)
+	terrain:SetMaterialColor(Enum.Material.Rock, coast.Rock)
+	terrain:SetMaterialColor(Enum.Material.Ground, coast.Ground)
+	terrain:SetMaterialColor(Enum.Material.Basalt, Color3.fromRGB(34, 30, 28)) -- scorched ground
+	terrain:SetMaterialColor(Enum.Material.CrackedLava, Config.Lobby.Sky.Burn.Ember) -- embers
+
+	local shore = Layout.CoastZ
+	local bottom = -Config.Lobby.Sky.Water.Depth
+	local width = SEA_X * 2
+	-- The beach: a wedge rising from the seabed toward the land (a wedge climbs toward +Z).
+	terrain:FillWedge(
+		CFrame.new(0, (bottom + LAND_TOP) / 2, shore - BEACH / 2),
+		Vector3.new(width, LAND_TOP - bottom, BEACH),
+		Enum.Material.Sand
+	)
+	-- The shelf behind it.
+	terrain:FillBlock(
+		CFrame.new(0, (bottom + LAND_TOP) / 2, shore + LAND_DEPTH / 2),
+		Vector3.new(width, LAND_TOP - bottom, LAND_DEPTH),
+		Enum.Material.Grass
+	)
+
+	local random = Random.new(coast.Seed)
+	-- Hills along the coast, evenly spread with some jitter; mostly grass, some bare rock.
+	local spacing = width / coast.Hills
+	for index = 1, coast.Hills do
+		local radius = random:NextNumber(45, 110)
+		local x = -SEA_X + (index - 0.5) * spacing + random:NextNumber(-spacing, spacing) * 0.3
+		-- The front of every hill stays behind the fires on the shore.
+		local z = shore + 60 + radius + random:NextNumber(0, 120)
+		local y = random:NextNumber(-radius * 0.55, -radius * 0.2) + LAND_TOP
+		local material = if random:NextNumber() < 0.3
+			then Enum.Material.Rock
+			else Enum.Material.Grass
+		terrain:FillBall(Vector3.new(x, y, z), radius, material)
+	end
+	-- Rock outcrops breaking the beach at the waterline.
+	for _ = 1, coast.Outcrops do
+		local x = random:NextNumber(-SEA_X + 60, SEA_X - 60)
+		terrain:FillBall(
+			Vector3.new(x, random:NextNumber(-4, 2), shore - random:NextNumber(10, 30)),
+			random:NextNumber(8, 18),
+			Enum.Material.Rock
+		)
+	end
+
+	-- Each site sits on the ground the terrain actually built there: the grass shelf's surface
+	-- settles about 2 studs above LAND_TOP (voxel rounding; measured 10), and a raycast this
+	-- soon after the fill still reads the old height, so the floor is LAND_TOP + 2.
+	local function groundAt(x: number, z: number): number
+		local hit = Workspace:Raycast(Vector3.new(x, 200, z), Vector3.new(0, -400, 0))
+		return math.max(if hit then hit.Position.Y else LAND_TOP, LAND_TOP + 2)
+	end
+	local emberRandom = Random.new(Config.Lobby.Sky.Coast.Seed + 7)
+	for _, x in Layout.BurnSites do
+		local ground = groundAt(x, shore + 20)
+		local site = Build.part(
+			ship,
+			"BurnSite",
+			Vector3.new(Config.Lobby.Sky.Burn.Width, 1, 24),
+			CFrame.new(x, ground + 0.6, shore + 20),
+			BURN,
+			{ transparency = 1, collide = false, shadow = false }
+		)
+		burnSite(site)
+		-- The burnt ground: painted into the terrain so it blends like real scorched earth, a
+		-- scatter of Basalt blobs with glowing CrackedLava embers inside them (sizes and places
+		-- from the coast seed, so every server builds the same); the Bloom lifts the lava.
+		local depth = Config.Lobby.Sky.Burn.EmberDepth
+		local burnWidth = Config.Lobby.Sky.Burn.Width
+		local centreZ = shore + 20 + depth / 2
+		for _ = 1, Config.Lobby.Sky.Burn.EmberPatches do
+			local cx = x + emberRandom:NextNumber(-burnWidth / 2, burnWidth / 2)
+			local cz = centreZ + emberRandom:NextNumber(-depth / 2, depth / 2)
+			local radius = emberRandom:NextNumber(10, 26)
+			local disc = CFrame.new(cx, LAND_TOP, cz)
+			terrain:FillCylinder(disc, 4, radius, Enum.Material.Basalt)
+			terrain:FillCylinder(
+				disc * CFrame.new(emberRandom:NextNumber(-3, 3), 1.2, emberRandom:NextNumber(-3, 3)),
+				4.4, -- a little proud of the scorch, so the lava reads at the surface
+				radius * emberRandom:NextNumber(0.35, 0.6),
+				Enum.Material.CrackedLava
+			)
+		end
+	end
+end
+
+local function buildWorld(ship: Folder)
+	local sky = Config.Lobby.Sky
+	buildSea()
+	buildCoast(ship)
+
+	-- An overcast late afternoon (Config.Lobby.Sky). Templates arrive with their own effects; the
+	-- Fallow's sky replaces them so the place looks the same however it was created.
+	for _, child in Lighting:GetChildren() do
+		if
+			child:IsA("Atmosphere")
+			or child:IsA("Sky")
+			or child:IsA("PostEffect")
+			or child:IsA("Clouds")
+		then
+			child:Destroy()
+		end
+	end
+	Lighting.ClockTime = sky.ClockTime
+	Lighting.GeographicLatitude = sky.GeographicLatitude
+	Lighting.Brightness = sky.Brightness
+	Lighting.Ambient = sky.Ambient
+	Lighting.OutdoorAmbient = sky.OutdoorAmbient
+	Lighting.ColorShift_Top = sky.ColorShiftTop
+	Lighting.ExposureCompensation = sky.ExposureCompensation
+	Lighting.GlobalShadows = true
+	Lighting.ShadowSoftness = sky.ShadowSoftness
+	Lighting.EnvironmentDiffuseScale = sky.EnvironmentDiffuseScale
+	Lighting.EnvironmentSpecularScale = sky.EnvironmentSpecularScale
+	local atmosphere = Instance.new("Atmosphere")
+	atmosphere.Density = sky.Atmosphere.Density
+	atmosphere.Offset = sky.Atmosphere.Offset
+	atmosphere.Color = sky.Atmosphere.Color
+	atmosphere.Decay = sky.Atmosphere.Decay
+	atmosphere.Glare = sky.Atmosphere.Glare
+	atmosphere.Haze = sky.Atmosphere.Haze
+	atmosphere.Parent = Lighting
+	local grade = Instance.new("ColorCorrectionEffect")
+	grade.Brightness = sky.ColorCorrection.Brightness
+	grade.Contrast = sky.ColorCorrection.Contrast
+	grade.Saturation = sky.ColorCorrection.Saturation
+	grade.TintColor = sky.ColorCorrection.Tint
+	grade.Parent = Lighting
+	local bloom = Instance.new("BloomEffect")
+	bloom.Intensity = sky.Bloom.Intensity
+	bloom.Size = sky.Bloom.Size
+	bloom.Threshold = sky.Bloom.Threshold
+	bloom.Parent = Lighting
+	-- Engine clouds live under Terrain.
+	local clouds = Workspace.Terrain:FindFirstChildOfClass("Clouds") or Instance.new("Clouds")
+	clouds.Cover = sky.Clouds.Cover
+	clouds.Density = sky.Clouds.Density
+	clouds.Color = sky.Clouds.Color
+	clouds.Parent = Workspace.Terrain
+end
+
+function FallowBuilder.init()
+	clearTemplate()
+	local ship = Build.folder(Workspace, "Fallow")
+	buildHull(ship)
+	buildDeck(ship)
+	buildIsland(ship)
+	buildHangar(ship)
+	buildPlot(ship)
+	buildLane(ship)
+	buildSpawn(ship)
+	buildWorld(ship)
+	FallowArt.build(ship)
+end
+
+return FallowBuilder

@@ -112,11 +112,6 @@ function DamageService.dealDamage(
 	end
 end
 
--- Credit a kill without dealing damage (kept for sources that bypass TakeDamage).
-function DamageService.recordDamager(player: Player, humanoid: Humanoid)
-	lastDamager[humanoid] = player
-end
-
 -- EnemyService, on every death: the kill stat and the kill listeners for the credited player.
 function DamageService.onEnemyKilled(humanoid: Humanoid)
 	local killer = lastDamager[humanoid]

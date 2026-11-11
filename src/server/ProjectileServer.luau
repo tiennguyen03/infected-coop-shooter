@@ -15,13 +15,17 @@ local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local EnemyDefinitions = require(ReplicatedStorage.Shared.EnemyDefinitions)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
+local Spread = require(ReplicatedStorage.Shared.Rules.Spread)
+local ShotCone = require(ReplicatedStorage.Shared.ShotCone)
 local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
 local EnemyService = require(script.Parent.EnemyService)
+local KitService = require(script.Parent.KitService)
 local DamageService = require(script.Parent.DamageService)
 local LoadoutService = require(script.Parent.LoadoutService)
 local PauseService = require(script.Parent.PauseService)
 local Squad = require(script.Parent.Squad)
 local Lifecycle = require(script.Parent.Lifecycle)
+local WorldSounds = require(script.Parent.WorldSounds)
 
 local ENEMY_TAG = "Enemy"
 -- How far a reported fire origin may be from the character before the
@@ -49,6 +53,9 @@ type Projectile = {
 	speed: number,
 	expiresAt: number,
 	raycastParams: RaycastParams,
+	-- A rocket: called where it hits (or where it runs out of flight) instead of the direct
+	-- damage; `humanoid` is the Infected it struck, if any.
+	onImpact: ((position: Vector3, humanoid: Humanoid?) -> ())?,
 }
 
 export type FireOptions = {
@@ -60,6 +67,8 @@ export type FireOptions = {
 	size: Vector3?,
 	color: Color3?,
 	exclude: { Instance }?, -- extra raycast exclusions beyond projectiles
+	lifetime: number?, -- seconds before it despawns (default Config.Weapon.ProjectileLifetime)
+	onImpact: ((position: Vector3, humanoid: Humanoid?) -> ())?,
 }
 
 local ProjectileServer = {}
@@ -115,8 +124,9 @@ function ProjectileServer.fire(options: FireOptions)
 		owner = options.owner,
 		damage = options.damage,
 		speed = options.speed or Config.Weapon.ProjectileSpeed,
-		expiresAt = os.clock() + Config.Weapon.ProjectileLifetime,
+		expiresAt = os.clock() + (options.lifetime or Config.Weapon.ProjectileLifetime),
 		raycastParams = params,
+		onImpact = options.onImpact,
 	})
 end
 
@@ -135,7 +145,12 @@ local function stepProjectiles(deltaTime: number)
 	for index = #activeProjectiles, 1, -1 do
 		local projectile = activeProjectiles[index]
 		if os.clock() >= projectile.expiresAt then
+			local onImpact = projectile.onImpact
+			local at = projectile.part.Position
 			removeProjectile(index)
+			if onImpact then
+				onImpact(at, nil)
+			end
 			continue
 		end
 
@@ -143,6 +158,15 @@ local function stepProjectiles(deltaTime: number)
 		local result = workspace:Raycast(projectile.part.Position, step, projectile.raycastParams)
 		if result then
 			local humanoid = findEnemyHumanoid(result.Instance)
+			local onImpact = projectile.onImpact
+			if onImpact then
+				removeProjectile(index)
+				onImpact(
+					result.Position,
+					if humanoid and humanoid.Health > 0 then humanoid else nil
+				)
+				continue
+			end
 			if humanoid and humanoid.Health > 0 then
 				DamageService.dealDamage(
 					projectile.owner,
@@ -162,20 +186,7 @@ end
 -- A random direction inside the cone of `halfAngleDegrees` around `direction` (uniform
 -- over the cone's disc, so shots do not bunch at the centre).
 local function applySpread(direction: Vector3, halfAngleDegrees: number): Vector3
-	if halfAngleDegrees <= 0 then
-		return direction
-	end
-	local angle = math.rad(halfAngleDegrees) * math.sqrt(math.random())
-	local roll = math.random() * math.pi * 2
-	local frame = CFrame.lookAt(Vector3.zero, direction)
-	local offset = frame:VectorToWorldSpace(
-		Vector3.new(
-			math.cos(roll) * math.sin(angle),
-			math.sin(roll) * math.sin(angle),
-			-math.cos(angle)
-		)
-	)
-	return offset.Unit
+	return ShotCone.random(direction, halfAngleDegrees)
 end
 
 -- The damage multiplier for a hit on `part` of an Infected: a Head hit is a headshot,
@@ -278,12 +289,55 @@ local function fireHitscan(
 	end
 	for _, other in Players:GetPlayers() do
 		if other ~= player then
-			tracerRemote:FireClient(other, origin, endPoint)
+			tracerRemote:FireClient(other, origin, endPoint, weapon.Sound)
 		end
 	end
 end
 
-local function onFireRequest(player: Player, origin: unknown, direction: unknown, aiming: unknown)
+-- A launcher's round (Config.Weapons.<id>.Explosive): a visible rocket at the gun's
+-- ProjectileSpeed. A direct hit deals the gun's Damage to that Infected, then the blast
+-- (KitService.blast, the frag's) hits everything in Radius. Other clients hear the launch.
+local function fireRocket(
+	player: Player,
+	origin: Vector3,
+	direction: Vector3,
+	weapon: WeaponDefinitions.WeaponDefinition,
+	explosive: WeaponDefinitions.Explosive,
+	exclude: { Instance }
+)
+	local speed = weapon.ProjectileSpeed or Config.Weapon.ProjectileSpeed
+	ProjectileServer.fire({
+		owner = player,
+		origin = origin,
+		direction = direction,
+		damage = weapon.Damage,
+		speed = speed,
+		size = Config.Weapon.RocketSize,
+		color = Config.Weapon.RocketColor,
+		exclude = exclude,
+		lifetime = weapon.Range / speed,
+		onImpact = function(position: Vector3, humanoid: Humanoid?)
+			if humanoid then
+				DamageService.dealDamage(player, humanoid, weapon.Damage, position, "breach")
+			end
+			WorldSounds.at(position, "player_gear", "breach")
+			KitService.blast(player, position, explosive)
+		end,
+	})
+	for _, other in Players:GetPlayers() do
+		if other ~= player then
+			tracerRemote:FireClient(other, origin, origin, weapon.Sound)
+		end
+	end
+end
+
+local function onFireRequest(
+	player: Player,
+	origin: unknown,
+	direction: unknown,
+	aiming: unknown,
+	pellets: unknown
+)
 	if typeof(origin) ~= "Vector3" or typeof(direction) ~= "Vector3" then
 		return
 	end
@@ -353,8 +407,25 @@ local function onFireRequest(player: Player, origin: unknown, direction: unknown
 		pierce += Config.Upgrades.ThroughAndThrough.Pierce
 	end
 	local stagger = LoadoutService.hasUpgrade(player, "hollow_point")
-	for _ = 1, weapon.Pellets or 1 do
+	local explosive = weapon.Explosive
+	if explosive then
+		fireRocket(player, origin, applySpread(direction.Unit, spread), weapon, explosive, exclude)
+		return
+	end
+	-- A shotgun's pellets: the ones the client drew (so the tracers it shows are the hits),
+	-- each checked against this cone; any missing or outside it is rolled here instead.
+	local count = weapon.Pellets or 1
+	local sent = if count > 1 and typeof(pellets) == "table" then pellets :: { unknown } else nil
+	for index = 1, count do
 		local aim = applySpread(direction.Unit, spread)
+		local claimed = sent and sent[index]
+		if typeof(claimed) == "Vector3" and claimed.Magnitude > 0.5 then
+			local unit = claimed.Unit
+			local off = ShotCone.angleDegrees(direction.Unit, unit)
+			if Spread.allowed(off, spread, Config.Weapon.PelletTolerance) then
+				aim = unit
+			end
+		end
 		fireHitscan(player, origin, aim, baseDamage, weapon, pierce, stagger, exclude)
 	end
 end

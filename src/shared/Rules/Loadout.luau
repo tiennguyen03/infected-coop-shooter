@@ -2,7 +2,8 @@
 -- The Arms Room rules (docs/PROGRESSION.md > Loadout): pure, unit-tested with Lune
 -- (tests/Loadout.spec.luau). A loadout is one primary, one secondary, one grenade and one
 -- call-in per slot, all different. The catalog (what is on offer) is passed in, so the
--- same rules serve the in-run menu (LoadoutService.apply) and, later, the lobby (F10).
+-- same rules serve the in-run menu (LoadoutService.apply) and the lobby's Loadmaster
+-- (LoadmasterService), and re-check a Loadout arriving as teleport data (HandoffService).
 
 local Loadout = {}
 

@@ -1,0 +1,21 @@
+# Line endings: every text file is LF in the repo and in every working copy, on every OS.
+# StyLua writes LF; without this, git on Windows (core.autocrlf true) checks files out as
+# CRLF and every formatted file shows as modified.
+* text=auto eol=lf
+
+# Windows-only scripts keep CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary assets: never touched as text.
+*.blend binary
+*.blend1 binary
+*.fbx binary
+*.png binary
+*.jpg binary
+*.wav binary
+*.ogg binary
+*.mp3 binary
+*.rbxl binary
+*.rbxm binary

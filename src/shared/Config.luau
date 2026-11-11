@@ -159,8 +159,39 @@ local Config = {
 	},
 
 	-- Run flow (RunManager, Shared.RunStates). Co-op Sprint A.
+	-- The operation: its missions in play order, each one data file in src/server/Missions
+	-- (docs/LOBBY_MATCH_HANDOFF.md, docs/ARCHITECTURE.md F6). One mission until Mile 14 is
+	-- built in game; the mission-to-mission transition walks this list.
+	Operation = {
+		Missions = { "delta" },
+	},
+
+	-- The experience's places (docs/LOBBY_MATCH_HANDOFF.md). Both the lobby and the match read
+	-- them here. The lobby is the start place (2026-11-09: the places' contents were swapped).
+	-- Lobby 0 would mean no trip home: READY restarts in the match.
+	Places = {
+		Lobby = 87556879379942, -- "Co-op Zombie Shooter", the start place: the Fallow
+		Match = 125769854992316, -- "Checkpoint Delta"
+		-- Test pairs, lobby place -> match place: a launch from one of these lobbies goes to its
+		-- own match and that match flies home to it, so testing never needs the real places
+		-- republished (Nova's own test experience).
+		Dev = {
+			[83558708746036] = 108949482095254, -- ZCS Dev -> Match Dev
+		} :: { [number]: number },
+	},
+
+	-- The trip between the lobby and the match (HandoffService).
+	Handoff = {
+		ReturnAfterSeconds = 60, -- after a run ends, the squad flies home this long after the results screen opens
+		Retries = 2, -- teleport retries before giving up
+		RetryDelay = 2, -- seconds between them
+	},
+
 	Run = {
 		InsertSeconds = 3, -- Insert -> Explore: the squad lands before the first wave
+		-- A squad from the lobby: the run starts when everyone the lobby sent has a body, or
+		-- this long after the first one arrived (bots fill the seats of anyone missing).
+		StagingSeconds = 30,
 		-- After a run ends, the first READY opens this countdown; the next run starts when it
 		-- runs out or every player is ready (solo: at once). Decision #4.
 		ReadyUpSeconds = 10,
@@ -185,6 +216,27 @@ local Config = {
 		-- Pivot height above the root part per stance (stand is roughly head height).
 		PivotHeight = { stand = 2, crouch = 0.6, prone = -1.2 },
 		PivotEaseTime = 0.25,
+		-- First person (Nova, 2026-11-10: "a first person toggle for players in the match"):
+		-- T (or the right stick click) toggles it; the wheel past MinDistance goes in, the
+		-- wheel back out leaves it. The eye rides the Head, a little forward of its centre;
+		-- the soldier's own body is hidden on this client, and FirstPersonView shows the held
+		-- gun with gloved hands and sleeves, its own reload, kick, sway and bob.
+		-- The crosshair fades out down the sights so the iron sights or scope do the aiming.
+		FirstPerson = {
+			Key = Enum.KeyCode.T,
+			GamepadKey = Enum.KeyCode.ButtonR3,
+			EyeForward = 0.45, -- studs ahead of the head's centre
+			EyeUp = 0.1,
+			GunHip = CFrame.new(0.9, -0.95, -2.6), -- the gun's centre from the eye, at the hip
+			GunAds = CFrame.new(0, 0, -2.1), -- down the sights: centred, this far ahead
+			SightEye = 1.2, -- down the sights: the rear sight this far ahead of the eye (full size)
+			SightDrop = 0.55, -- a gun without modelled irons: its centre this share of its height low
+			Sway = 0.6, -- how much of a camera turn the gun lags behind (eases back)
+			Bob = 0.06, -- studs the gun bobs at a full walk (none down the sights)
+			KickBack = 0.18, -- studs a shot pushes the gun back
+			KickPitch = 4, -- degrees a shot tips the muzzle up
+			Scale = 0.4, -- the viewmodel shrunk toward the eye (same look, nothing cuts into it)
+		},
 		-- Per-shot kick (CameraController): each gun's Weapons.<id>.Kick pushes the view up by
 		-- Pitch degrees plus a random +/- Yaw, eased back over Recover seconds (never a
 		-- permanent aim change). Aiming down sights scales it by AdsScale.
@@ -218,6 +270,12 @@ local Config = {
 		ProjectileSpeed = 180, -- studs per second
 		ProjectileLifetime = 3, -- seconds before despawn
 		ProjectileSize = Vector3.new(0.4, 0.4, 1.4),
+		-- Degrees a shotgun pellet the client drew may sit outside the server's cone (aim and
+		-- bloom drift between the two) before the server rolls its own.
+		PelletTolerance = 0.75,
+		-- A launcher's rocket (a gun row with Explosive): bigger and smoky orange.
+		RocketSize = Vector3.new(0.7, 0.7, 2.4),
+		RocketColor = Color3.fromRGB(255, 140, 50),
 		MaxAimDistance = 1000, -- how far the aim raycast reaches
 		-- Aiming down sights (hold RMB): the camera; spread and walk factor are per gun.
 		ADS = {
@@ -256,6 +314,9 @@ local Config = {
 			Range = 400,
 			HeadshotMultiplier = 3.0, -- EnemyDefinitions may override per form
 			Kick = { Pitch = 0.9, Yaw = 0.3, Recover = 0.12 }, -- degrees up, +/- degrees, seconds
+			Model = "wpn_m16",
+			Price = 0, -- merits at the Quartermaster's rack (Rules/Record); issued free
+			ArmsOrder = 1, -- Arms Room position in its slot (rack, menu); the first is the default
 		},
 		-- MP5: the best hip-fire; chews Runners, weak on Brutes (Walker 4 / 2, Brute 19 / 15).
 		Smg = {
@@ -275,6 +336,10 @@ local Config = {
 			Range = 150,
 			HeadshotMultiplier = 3.0,
 			Kick = { Pitch = 0.5, Yaw = 0.2, Recover = 0.12 },
+			Model = "wpn_mp5",
+			Price = 300, -- merits at the Quartermaster's rack (Rules/Record)
+			ArmsOrder = 2,
+			Sound = "smg",
 		},
 		-- M249: a 100-round belt, no reload inside a hold; slow to aim on the move.
 		Lmg = {
@@ -294,6 +359,10 @@ local Config = {
 			Range = 400,
 			HeadshotMultiplier = 3.0,
 			Kick = { Pitch = 1.1, Yaw = 0.5, Recover = 0.12 },
+			Model = "wpn_m249",
+			Price = 600, -- merits at the Quartermaster's rack (Rules/Record)
+			ArmsOrder = 3,
+			Sound = "lmg",
 		},
 		-- Mossberg 590: point-blank, one decision per pull; one pull drops every form but the
 		-- Brute (3).
@@ -316,6 +385,10 @@ local Config = {
 			Range = 45,
 			HeadshotMultiplier = 1.5,
 			Kick = { Pitch = 4.0, Yaw = 0.8, Recover = 0.12 },
+			Model = "wpn_mossberg",
+			Price = 400, -- merits at the Quartermaster's rack (Rules/Record)
+			ArmsOrder = 4,
+			Sound = "shotgun",
 		},
 		-- M110: one-taps Walkers, hits two in a line, poor up close. Ammo reins it in
 		-- (100 x 60 is the M16's 270 x 20).
@@ -338,6 +411,10 @@ local Config = {
 			Range = 600,
 			HeadshotMultiplier = 3.0,
 			Kick = { Pitch = 2.6, Yaw = 0.4, Recover = 0.12 },
+			Model = "wpn_m110",
+			Price = 500, -- merits at the Quartermaster's rack (Rules/Record)
+			ArmsOrder = 5,
+			Sound = "dmr",
 		},
 		-- M17: the sidearm, backup when the primary runs dry.
 		Pistol = {
@@ -357,6 +434,92 @@ local Config = {
 			Range = 120,
 			HeadshotMultiplier = 3.0,
 			Kick = { Pitch = 1.6, Yaw = 0.3, Recover = 0.12 },
+			Model = "wpn_m17",
+			Price = 0, -- merits at the Quartermaster's rack (Rules/Record); issued free
+			ArmsOrder = 1,
+			Sound = "pistol",
+		},
+		-- Sample guns (2026-11-09, dev menu; the Arms Room lists them once Nova's loadout work
+		-- does). Each wears its own Blender mesh (`Model`, MeshAssets wpn_*) and plays its own
+		-- clips from the `guns` sound bank (`Sound`: <Sound>_shot, <Sound>_reload).
+		-- S&W 686 .357: one round per Walker or Runner, staggers a Brute; six shots and a slow
+		-- reload rein it in (Walker 1 / 1, Brute 5 / 4).
+		Revolver = {
+			Heavy = true, -- staggers a Brute (Config.Enemies.Flinch)
+			FireMode = "semi", -- double action
+			Damage = 55,
+			FireCooldown = 0.4, -- 150 rpm
+			MagazineSize = 6,
+			ReloadTime = 2.8, -- speedloader
+			ReserveStart = 30,
+			ReserveMax = 30,
+			HipSpread = 1.8,
+			AdsSpread = 0.4,
+			BloomPerShot = 1.5,
+			BloomMax = 3.5,
+			BloomRecovery = 10,
+			AdsMoveFactor = 0.85,
+			Range = 150,
+			HeadshotMultiplier = 3.0,
+			Kick = { Pitch = 3.0, Yaw = 0.6, Recover = 0.18 },
+			Model = "wpn_revolver",
+			Price = 350, -- merits at the Quartermaster's rack (Rules/Record)
+			ArmsOrder = 2,
+			Sound = "revolver",
+		},
+		-- M2010 ESR: one round per form but the Brute (2), through three more in a line. One
+		-- decision per bolt; useless from the hip (Walker 1 / 1, Brute 2 / 2).
+		Sniper = {
+			Heavy = true,
+			FireMode = "semi", -- bolt action
+			Damage = 140,
+			Pierce = 3,
+			FireCooldown = 1.25, -- 48 rpm (bolt cycle)
+			MagazineSize = 5,
+			ReloadTime = 3.2,
+			ReserveStart = 30,
+			ReserveMax = 30,
+			HipSpread = 6.0,
+			AdsSpread = 0.05,
+			BloomPerShot = 0, -- the bolt cycle outlasts any bloom
+			BloomMax = 0,
+			BloomRecovery = 12,
+			AdsMoveFactor = 0.4,
+			Range = 800,
+			HeadshotMultiplier = 3.0,
+			Kick = { Pitch = 5.0, Yaw = 0.8, Recover = 0.25 },
+			Model = "wpn_sniper",
+			Price = 700, -- merits at the Quartermaster's rack (Rules/Record)
+			ArmsOrder = 6,
+			Sound = "sniper",
+		},
+		-- M3 recoilless ("Goose", the squad's RPG): a visible rocket. A direct hit kills anything
+		-- but the Warden; the blast (the frag's, no friendly fire) drops every form but the Brute
+		-- in 6 studs. Two rounds: a Brute answer, not a call-in (Hammer 6 x 80, Anvil 500).
+		Goose = {
+			Heavy = true,
+			FireMode = "semi",
+			Damage = 400, -- the Infected struck directly; the blast hits everyone else in Radius
+			FireCooldown = 1.0, -- one round loaded: ReloadTime is the real rate
+			MagazineSize = 1,
+			ReloadTime = 6.0, -- breech open, round in, close
+			ReserveStart = 1,
+			ReserveMax = 1,
+			HipSpread = 2.0,
+			AdsSpread = 0.25,
+			BloomPerShot = 0,
+			BloomMax = 0,
+			BloomRecovery = 12,
+			AdsMoveFactor = 0.4,
+			Range = 300, -- the rocket's reach: about 1.4 s of flight
+			HeadshotMultiplier = 1.0,
+			Kick = { Pitch = 7.0, Yaw = 1.2, Recover = 0.35 },
+			ProjectileSpeed = 220, -- studs/s
+			Explosive = { Radius = 6, Damage = 120, ShakePower = 4 },
+			Model = "wpn_goose",
+			Price = 900, -- merits at the Quartermaster's rack (Rules/Record)
+			ArmsOrder = 7,
+			Sound = "goose",
 		},
 	},
 
@@ -368,6 +531,7 @@ local Config = {
 		ThrowGap = 0.8, -- seconds between two throws
 		-- M67 frag: one-shots a Hocker, not a Brute. Thrown like the flare (ThrowUtil).
 		Frag = {
+			Price = 0, -- merits on the Carrier (Rules/Record, KitPrices); issued free
 			ThrowDistance = 35, -- studs
 			FuseTime = 0.8, -- seconds after it lands
 			Radius = 10, -- studs
@@ -663,11 +827,18 @@ local Config = {
 	-- Call-ins (CallInDefinitions; Slots slots on keys 1-4). Charges refill one at a time every
 	-- Cooldown seconds; a Restock card fills them. No friendly fire: only the Infected are hurt.
 	CallIns = {
+		-- A thrown call-in (CallInDefinitions Kind "throw") is held to aim and thrown on release
+		-- (AbilityController): an arc from the hand and its row's `Aim` marker on the ground show
+		-- where it lands and what it covers. Aim.Shape "ring" (Radius) or "strip" (Length along
+		-- the throw, Width; Across = true lays it across). A row without Aim shows a small ring.
+		AimArc = { Beads = 18, Rise = 0.3, MinRise = 3 }, -- the arc: beads, apex height per stud of reach
 		Slots = 4, -- call-in slots per soldier (keys 1-4; the flare is key 5)
 		-- Hammer (81 mm mortar section, AirStrikeService): marks a point; the first shell lands
 		-- Delay seconds after the throw, then one every ShellInterval, each Scatter studs off
 		-- the mark at most. Walk It In steps them Config.Upgrades.WalkingBarrage.Step apart.
 		Hammer = {
+			Price = 0, -- merits on the Carrier (Rules/Record, KitPrices); issued free
+			Desk = "fires", -- the Carrier desk that sells it (DeskShop)
 			Charges = 1,
 			Cooldown = 120,
 			ThrowDistance = 35,
@@ -678,9 +849,12 @@ local Config = {
 			ShakePower = 3.5,
 			BlastDamage = 80,
 			Scatter = 4,
+			Aim = { Shape = "ring", Radius = 16 }, -- Scatter + BlastRadius: where shells can land
 		},
 		-- Anvil (105 mm battery, AirStrikeService): one heavy shell Delay seconds after the throw.
 		Anvil = {
+			Price = 0, -- merits on the Carrier (Rules/Record, KitPrices); issued free
+			Desk = "fires", -- the Carrier desk that sells it (DeskShop)
 			Charges = 1,
 			Cooldown = 180,
 			ThrowDistance = 35,
@@ -692,10 +866,13 @@ local Config = {
 			ShakeGlobal = 1.0, -- felt anywhere on the map
 			BlastDamage = 500,
 			Scatter = 0,
+			Aim = { Shape = "ring", Radius = 20 }, -- the blast
 		},
 		-- Shrike (helicopter gun run, AirStrikeService): Delay seconds after the throw, Bursts
 		-- impacts centred on the mark, Step studs apart along the throw, BurstInterval apart.
 		Shrike = {
+			Price = 0, -- merits on the Carrier (Rules/Record, KitPrices); issued free
+			Desk = "fires", -- the Carrier desk that sells it (DeskShop)
 			Charges = 1,
 			Cooldown = 150,
 			ThrowDistance = 35,
@@ -707,10 +884,20 @@ local Config = {
 			ShakePower = 2,
 			BlastDamage = 120,
 			PassHeight = 45, -- the helicopter's flight height over the mark (look only)
+			-- The gunship (aircraft.py, MeshAssets veh_shrike_*): offsets from the hull's origin
+			-- (Roblox axes, nose toward -Z) to the rotor hub and the chin gun's muzzle; the rotor
+			-- turns RotorSpin degrees per second. The pass falls back to a plain hull Part
+			-- while the meshes are missing.
+			RotorHub = Vector3.new(0, 3.35, -1.5),
+			GunMuzzle = Vector3.new(0, -1.75, -11.4),
+			RotorSpin = 1440,
+			Aim = { Shape = "strip", Length = 46, Width = 10 }, -- the run: Step x (Bursts - 1) + 2 x BlastRadius
 		},
 		-- Doorman (tripod sentry MG, SentryService): stands where it lands for Duration; every
 		-- FireInterval it shoots the nearest Infected in Range it can see.
 		Doorman = {
+			Price = 400, -- merits on the Carrier (Rules/Record, KitPrices)
+			Desk = "engineers", -- the Carrier desk that sells it (DeskShop)
 			Charges = 1,
 			Cooldown = 150,
 			ThrowDistance = 25,
@@ -719,10 +906,13 @@ local Config = {
 			FireInterval = 0.15,
 			Range = 70,
 			MaxPerPlayer = 1, -- a second Doorman replaces the first
+			Aim = { Shape = "ring", Radius = 2 }, -- where the tripod stands
 		},
 		-- Tripline (Mines): thrown; Mines land on an arc bulging away from the thrower and blow
 		-- when an Infected steps within TriggerRadius.
 		Tripline = {
+			Price = 0, -- merits on the Carrier (Rules/Record, KitPrices); issued free
+			Desk = "engineers", -- the Carrier desk that sells it (DeskShop)
 			Charges = 2,
 			Cooldown = 60,
 			ThrowDistance = 35,
@@ -735,11 +925,14 @@ local Config = {
 			Damage = 80,
 			Lifetime = 90,
 			MaxMines = 12, -- per player; the oldest goes first
+			Aim = { Shape = "ring", Radius = 8 }, -- ArcRadius: the mines' arc
 		},
 		-- Concertina (wire, ConcertinaService): a Length x Width strip laid across the throw,
 		-- centred where it lands, for Duration. Infected inside walk at SlowFactor and take
 		-- DamagePerSecond (dealt every TickInterval).
 		Concertina = {
+			Price = 250, -- merits on the Carrier (Rules/Record, KitPrices)
+			Desk = "engineers", -- the Carrier desk that sells it (DeskShop)
 			Charges = 2,
 			Cooldown = 90,
 			ThrowDistance = 30,
@@ -750,27 +943,34 @@ local Config = {
 			DamagePerSecond = 5,
 			TickInterval = 0.5,
 			MaxPerPlayer = 4, -- the oldest strip goes first
+			Aim = { Shape = "strip", Length = 16, Width = 3, Across = true }, -- the wire, laid across the throw
 		},
 		-- Speedball (ammo bundle, SupplyDropService): drops where it lands, no lure wave; each
 		-- living player walking within Radius is re-armed (full magazine and reserve), Visits
 		-- times in all. A player re-arms again only after stepping out of the radius.
 		Speedball = {
+			Price = 300, -- merits on the Carrier (Rules/Record, KitPrices)
+			Desk = "loadmaster", -- the Carrier desk that sells it (DeskShop)
 			Charges = 1,
 			Cooldown = 180,
 			ThrowDistance = 25,
 			Visits = 4,
 			Radius = 6,
 			Lifetime = 90,
+			Aim = { Shape = "ring", Radius = 6 }, -- the re-arm radius
 		},
 		-- Aid Bag (medical drop, SupplyDropService): every soldier within Radius, once each:
 		-- full heal, stims refilled, +Plate shield (Config.Crates.ShieldCap still caps it).
 		AidBag = {
+			Price = 300, -- merits on the Carrier (Rules/Record, KitPrices)
+			Desk = "loadmaster", -- the Carrier desk that sells it (DeskShop)
 			Charges = 1,
 			Cooldown = 180,
 			ThrowDistance = 25,
 			Radius = 6,
 			Plate = 25,
 			Lifetime = 60,
+			Aim = { Shape = "ring", Radius = 6 }, -- the heal radius
 		},
 		-- Shared by the supply drops: the bundle falls this far, this fast.
 		Drop = { Height = 50, FallTime = 0.9 },
@@ -1372,6 +1572,211 @@ local Config = {
 				LastPlate = "Last plate. He's just a man again. Put him down.",
 				RiotCall = "...all posts, Gate. Crowd at the wire. Send the reserve...",
 				Kill = "Index down. Control copies. Gate's yours, Pike. Pallet inbound.",
+			},
+		},
+	},
+
+	-- The Containment Board (docs/PROGRESSION.md > The Containment Board). Read by the
+	-- lobby's Plot today; the shared DataStore behind it waits for the save service (F9).
+	Containment = {
+		-- Band minimums in percent (Rules/Containment).
+		Bands = {
+			{ name = "Lost", min = 0 },
+			{ name = "Contested", min = 25 },
+			{ name = "Held", min = 50 },
+			{ name = "Contained", min = 75 },
+			{ name = "Secured", min = 100 },
+		},
+		-- Board order and the placeholder percent each district shows until F9 lands
+		-- (Delta starts at 25, everything else at 0).
+		Districts = {
+			{ name = "DELTA", percent = 25 },
+			{ name = "MILE 14", percent = 0 },
+			{ name = "KESTREL", percent = 0 },
+			{ name = "THE YARD", percent = 0 },
+			{ name = "RESERVOIR", percent = 0 },
+		},
+		RefreshSeconds = 60, -- the Plot rereads the board this often
+	},
+
+	-- The lobby place: the Fallow (docs/sprints/LOBBY_V1_FALLOW.md, LORE.md > The Fallow).
+	Lobby = {
+		-- The match a squad launches into: Config.Places (Match, or a Dev pair's).
+		-- Music on the Carrier (LobbyMusic): licensed tracks from Roblox's audio library, free for
+		-- any experience, picked for an overcast, waiting-to-go-in mood (Nova, 2026-11-10). Low in
+		-- the mix (OWNER.md: no harsh sound); fades out as your Lantern lifts.
+		Music = {
+			Tracks = {
+				"rbxassetid://115363600284265", -- A Light Dies Out On The Water (173 s)
+				"rbxassetid://134330051136419", -- Lost In Time, ambient mix (APM, 120 s)
+				"rbxassetid://106618631548737", -- Fading Hope (115 s)
+				"rbxassetid://134520859422418", -- Silhouette Dream, ambience version (APM, 197 s)
+			},
+			Volume = 0.22, -- the Music SoundGroup's volume once faded in
+			FadeInSeconds = 4,
+			FadeOutSeconds = 2.5, -- as the Lantern lifts
+			GapSeconds = 3, -- silence between tracks
+		},
+		-- The walking crew (LobbyCrew, CrewWalk): pace, stride and when they speak.
+		Crew = {
+			WalkSpeed = 5, -- studs a second (a soldier walks 16)
+			Pause = 4, -- seconds standing at each end of the route
+			BubbleDistance = 12, -- studs: a soldier this close hears a line
+			BubbleSeconds = 4,
+			BubbleCooldown = 14, -- seconds before the same one speaks again
+			-- Roblox's stock R15 clips for the crew (NpcBody, CrewWalk): not ours, free to use.
+			Animations = {
+				Idle = "rbxassetid://507766388",
+				Walk = "rbxassetid://507777826",
+			},
+			WalkClipSpeed = 0.45, -- the stock walk's playback rate at WalkSpeed (it is cut for 16)
+		},
+		-- The Plot's paper map (WorldMap, WorldMapData; canon docs/lore/world_map.md).
+		WorldMap = {
+			StudsPerUnit = 1.4, -- the 10 x 7 map grid at 1.4 studs a unit: a 14 x 9.8 sheet
+			TableHeight = 3.4, -- studs from the hangar floor to the sheet
+		},
+		-- What the lobby keeps per soldier between visits (SaveSlot; a stand-in for the F9 save
+		-- service): the Loadmaster's signed Loadout (LoadmasterService, Rules/LoadoutSave) and the
+		-- record, merits and guns bought (RecordService, Rules/Record). Gun prices sit on each
+		-- gun's own row (Config.Weapons.<Gun>.Price).
+		Save = {
+			Store = "LoadmasterLoadouts", -- DataStore name; keys are "u_<UserId>"
+			RecordStore = "PikeRecords", -- DataStore name; keys are "r_<UserId>"
+			StartMerits = 1000, -- a new soldier's merits (earning them from runs is not built yet)
+			MinWriteGap = 6, -- seconds between saves per soldier; the newest pick wins
+			Retries = 2, -- extra attempts after a failed DataStore call
+			RetryDelay = 1,
+		},
+		Launch = {
+			Spots = 4, -- numbered Lantern spots on the flight deck
+			Capacity = 4, -- soldiers per bird (one squad)
+			Countdown = 20, -- seconds from the first soldier aboard to lift
+			FullCountdown = 3, -- seconds to lift once the bird is full (all 4, or the squad size picked)
+			BoardHalfSize = 6, -- the boarding box beside each bird's door, half-extent in studs
+			BoardHeight = 8, -- studs above the deck a soldier still counts as on the box
+			ScanInterval = 0.25, -- seconds between manifest checks
+			Retries = 2, -- extra teleport attempts after a failure
+			RetryDelay = 2,
+			Cooldown = 6, -- seconds a spot rests after a lift or a failed one
+		},
+		-- Lantern, the lift bird on each spot (LanternBird, LanternSpool; docs/LORE.md > Lantern).
+		Lantern = {
+			BirdNumbers = { 22, 24, 21, 23 }, -- stencilled number per spot: a bird and a spot are not tied
+			RotorRpm = 40, -- main rotor speed at the end of the spool
+			SpoolShare = 2 / 3, -- the rotor reaches RotorRpm this far into the countdown
+			TailRatio = 4.6, -- tail rotor turns this many times per main rotor turn
+			-- The blur builds over the last seconds (Rules/RotorBlur, eased): the blades fade only part
+			-- way while the disc thickens, so the rotor reads as fast, never as gone (owner, 2026-11-10).
+			BlurStart = 6, -- seconds before lift the blur begins
+			BlurFull = 1.5, -- seconds before lift it is complete
+			BladeFade = 0.6, -- the blades' transparency when complete (still seen)
+			BlurTransparency = 0.8, -- the disc's transparency when complete
+			LiftSeconds = 1.5, -- the bird rises and dips its nose over the last seconds
+			Rise = 4, -- studs
+			Dip = 5, -- degrees nose down
+			LampColor = Color3.fromRGB(255, 176, 64),
+			LampRange = 12, -- STYLES light budget: Shadows off, Range <= 56
+			LampBrightness = 1,
+		},
+		-- The Fallow's meshes (FallowArt; docs/sprints/LOBBY_V1_FALLOW.md > Ship art).
+		Ship = {
+			TemplateWait = 30, -- seconds FallowArt waits for an uploaded mesh before keeping the blocks
+			RadarRpm = 6, -- the air-search radar on the mast turns (client only)
+		},
+		-- The Arms Room (ArmsRack, ArmsRackUI): the camera on its displays and the gun card.
+		Rack = {
+			CameraSeconds = 0.6, -- the camera's glide between views
+			SlideSeconds = 0.15, -- a gun sliding off its pegs
+			SlideOut = 0.6, -- studs a hovered or framed gun comes forward
+			GlowFill = 0.85, -- hover highlight transparency (a soft rim, not a lit display)
+			GlowOutline = 0.3,
+			RackFov = 50, -- field of view on the whole rack
+			MaxRackDistance = 18, -- the wall's overview stands back over the counter
+			InspectFov = 40,
+			MinInspectDistance = 2.2,
+			InspectHeightShare = 0.4, -- a framed piece is at most this share of the screen's height
+			Margin = 0.08, -- air round what the camera frames, a share of its size
+			PlayFov = 70, -- restored when you step away
+		},
+		DeskPromptDistance = 10, -- studs a soldier can talk to a desk from
+		DialogSeconds = 8, -- a desk's line stays up this long
+		-- The Fallow's sky: a clear afternoon at sea (owner and Nova, 2026-11-09). One table
+		-- so a day/night cycle can later drive these values instead of FallowBuilder.
+		-- Gloomy (Tien, 2026-11-10): an overcast, cold late afternoon on a grey sea, the sun low
+		-- and hidden, the coast fires glowing through a grey haze. Still readable: the hangar desks
+		-- and the deck markings must read at a glance (the match was once "too gloomy").
+		Sky = {
+			ClockTime = 17.3,
+			GeographicLatitude = 30,
+			Brightness = 1.5,
+			Ambient = Color3.fromRGB(88, 94, 104),
+			OutdoorAmbient = Color3.fromRGB(118, 126, 138),
+			ColorShiftTop = Color3.fromRGB(196, 206, 220),
+			ExposureCompensation = -0.05,
+			ShadowSoftness = 0.75, -- overcast: soft, faint shadows
+			EnvironmentDiffuseScale = 0.8,
+			EnvironmentSpecularScale = 0.2,
+			Atmosphere = {
+				Density = 0.36,
+				Offset = 0.12,
+				Color = Color3.fromRGB(148, 156, 166),
+				Decay = Color3.fromRGB(78, 86, 98),
+				Glare = 0,
+				Haze = 2.2,
+			},
+			Clouds = { Cover = 0.88, Density = 0.8, Color = Color3.fromRGB(112, 118, 126) },
+			-- Colour grade: a little drained and cold. Bloom only lifts fire, Neon and lamps (the
+			-- threshold keeps geometry out of it, STYLES "Bloom only on Neon and fire").
+			ColorCorrection = {
+				Brightness = 0,
+				Contrast = 0.08,
+				Saturation = -0.22,
+				Tint = Color3.fromRGB(232, 238, 248),
+			},
+			Bloom = { Intensity = 0.4, Size = 22, Threshold = 1.6 },
+			-- The sea: a shallow sheet of Terrain water (engine waves) over a dark seabed
+			-- part that gives it depth. Low tide (Nova): small, slow waves.
+			Water = {
+				WaveSize = 0.12, -- 0..1
+				WaveSpeed = 8,
+				Color = Color3.fromRGB(38, 58, 64), -- a cold grey-green sea under the overcast
+				Reflectance = 0.25, -- 0..1, how much sky it mirrors
+				Transparency = 0.3, -- 0..1
+				Depth = 8, -- studs of water below y 0 (keep a multiple of 4: the voxel size)
+				-- How far the sea runs to each side and astern (Nova: at 1000 the edge of the
+				-- world showed). Out here the haze hides the edge. A multiple of 512.
+				Extent = 2560,
+			},
+			-- The seabed under the water: a layer of tinted Terrain mud (gives the water its
+			-- depth; a part could not cover the whole sea).
+			Seabed = Color3.fromRGB(16, 28, 32),
+			-- The coast is Terrain (a sand beach into the water, grass land, rock and grass
+			-- hills); these tint the engine materials toward the game's muted palette.
+			Coast = {
+				Seed = 1985, -- the hills are placed from this seed, the same every server
+				Hills = 40, -- along the whole coast (Water.Extent each side)
+				Outcrops = 24, -- rock outcrops at the waterline
+				Sand = Color3.fromRGB(176, 162, 128),
+				Grass = Color3.fromRGB(88, 98, 68),
+				Rock = Color3.fromRGB(102, 100, 94),
+				Ground = Color3.fromRGB(94, 88, 76),
+			},
+			-- The Burn on the coast (docs/STYLES.md: the match's skyline fire and smoke, scaled
+			-- for distance). Four sites, one fire and one smoke emitter each: 8 emitters.
+			-- Nova: bigger fires (was FireSize 18, SmokeSize 34, a 90-stud line); 2026-11-10: bigger
+			-- and redder again, "the world is really burning and the Carrier is all we have left":
+			-- six sites (FallowLayout.BurnSites, 12 emitters), each on scorched terrain with glowing
+			-- CrackedLava embers the Bloom lifts along the shore (no extra particles or lights).
+			Burn = {
+				FireSize = 64,
+				FireRate = 30,
+				SmokeSize = 110,
+				SmokeRate = 5,
+				Width = 220, -- studs of shoreline each site burns along
+				Ember = Color3.fromRGB(255, 62, 24), -- the CrackedLava terrain colour (the embers)
+				EmberDepth = 40, -- studs inland the burnt ground runs
+				EmberPatches = 9, -- scorched Basalt blobs per site, each with a CrackedLava heart
 			},
 		},
 	},

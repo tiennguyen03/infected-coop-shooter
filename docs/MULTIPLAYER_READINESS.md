@@ -85,7 +85,8 @@ Planned shape | Fix when`.
    lobby and loadout screens. Rules that keep this cheap:
    - **The match server never assumes who is coming.** The expected party, each member's
      loadout and the squad's operation choice arrive as teleport data
-     (`player:GetJoinData().TeleportData`), read in one place (`RunManager`), with a
+     (`player:GetJoinData().TeleportData`), read in one place (`HandoffService`, called only by
+     `RunManager`; built 2026-11-09, `docs/LOBBY_MATCH_HANDOFF.md`), with a
      Studio/solo fallback to the defaults. Late joiners and missing players are normal.
    - **`Lobby` state in the match = staging, not the menu.** It waits for the party to load
      (or a timeout), then the ready-up/Insert flow runs.
@@ -94,7 +95,9 @@ Planned shape | Fix when`.
    - **Persistent progress (unlocks, Containment Board) is saved by the server that earns
      it** (DataStore, keyed by UserId), never trusted from teleport data.
    - **Disk layout:** a second Rojo project (`lobby.project.json`) sharing `src/shared`, with
-     its own `src/lobby/` client and server.
+     its own `src/lobby/` client and server. v1 built 2026-11-09 (Nova; boarding a Lantern
+     spot launches: `docs/sprints/LOBBY_V1_FALLOW.md`); it is the start place and sends
+     `Rules/Handoff` (`docs/LOBBY_MATCH_HANDOFF.md`).
    Server flow and scaling: [ARCHITECTURE.md](ARCHITECTURE.md) > Sessions.
 8. **Keys (2026-11-07, updated 2026-11-08).** F = interact (revive, pickups, prompts); 1-4
    call-ins, 5 the Resupply flare. Movement chords are undecided; do not change them without

@@ -12,15 +12,52 @@ luau-lsp 1.68.0, lune 0.11.1. Binaries in `~/.rokit/bin` — add to PATH if a to
 export PATH="$HOME/.rokit/bin:$PATH"
 ```
 
-Sync to Studio (keep this running in a terminal tab):
+Sync to Studio (keep this running in a terminal tab). **Match work:**
 
 ```bash
 rojo serve default.project.json
 ```
 
-Then in Roblox Studio open the test place ("Co-op Zombie Shooter", place id
-87556879379942, owned by the group Boomin Dev Studios), Rojo plugin → Connect (localhost:34872). After any `default.project.json`
-change, restart `rojo serve` and reconnect.
+then open **Checkpoint Delta** (125769854992316) in Studio, Rojo plugin → Connect
+(localhost:34872). **Lobby work:** `rojo serve lobby.project.json --port 34873` into a lobby
+place (Nova: ZCS Dev). Which project goes into which place: [Places and publishing](#places-and-publishing)
+below; get it wrong and Rojo overwrites that place's Studio copy with the other game. After
+any `*.project.json` change, restart `rojo serve` and reconnect.
+
+## Places and publishing
+
+The game is **one experience, "Co-op Zombie Shooter"** (group Boomin Dev Studios, universe
+10775557234), with two places. Ids live in `Config.Places`.
+
+| Place | Holds | Rojo project | Who |
+|---|---|---|---|
+| Co-op Zombie Shooter, 87556879379942 (**start place**: where the app drops you) | the lobby (the Carrier) | `lobby.project.json` | published from `main` only |
+| Checkpoint Delta, 125769854992316 | the match | `default.project.json` | Tien's day-to-day match work |
+| Nova's own experience: ZCS Dev 83558708746036 -> Match Dev 108949482095254 | test copies of both | both | Nova (`Config.Places.Dev`: launches and the trip home stay inside it) |
+
+Rules (from the 2026-11-09 mix-up, when the app kept opening the old match):
+1. **A project only connects to its own kind of place.** `default.project.json` never in the
+   start place; `lobby.project.json` never in Checkpoint Delta. Rojo makes the open place
+   whatever the project says.
+2. **Git is the source of truth.** Places are only where code is published; no hand edits
+   in Studio.
+3. **The real places are published from `main`** (after the PR merges), from a folder on
+   `main`: `rojo build lobby.project.json -o lobby.rbxlx` and `rojo build -o match.rbxlx`,
+   open each file, then publish it to its place. Build in your usual folder: a fresh
+   clone or worktree has no `src/shared/AnimationClips/*.json` (git-ignored Mixamo tables),
+   and its build comes out without them.
+4. **Save is not publish.** "Save to Roblox (As)" only stores a version; players get the
+   version from **File → Publish to Roblox** (Alt+P). A window opened from Creator Hub is
+   already linked to its place, so Publish asks nothing. A local file asks: Boomin Dev Studios
+   → the Co-op Zombie Shooter tile → the place → Overwrite.
+5. **Check it went out:** Studio MCP `manage_experience` (`action = "get"`, `universe_id`
+   10775557234, `place_id`) shows the place's `updated_at`; it moves on every publish.
+6. **Old servers keep old code.** After a publish, close the app, wait a minute and rejoin;
+   if it still shows the old build: Creator Hub → the game's ⋯ → Shut Down All Servers.
+7. **The start place can't be changed** in Roblox. To move what players land on, publish the
+   other content into the start place (that is how the lobby got there on 2026-11-09).
+8. Teleports don't run in Studio. A real lobby -> match -> lobby trip needs both places
+   published from the same commit (`docs/LOBBY_MATCH_HANDOFF.md` > The live test).
 
 Static checks after every change:
 
@@ -110,7 +147,8 @@ Hard-won gotchas:
   scripted `MoveTo` route does not work while the control module runs.
 
 - **Gotchas found 2026-11-09.** (13) Group-owned sounds and animations only play in a place
-  the group owns (Co-op Zombie Shooter, 87556879379942); a personal copy plays them silent.
+  the group owns (any place in Co-op Zombie Shooter, or a place in a group experience); a
+  personal copy plays them silent.
   `game.CreatorType` / `CreatorId` in an `execute_luau` on `edit` tells you who owns the open
   place. (14) A ragdolled body's parts are server-owned and in the `Gore` collision group;
   test kills with `Humanoid.Health = 0` on the server (no push) or real `FireWeapon` shots

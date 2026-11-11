@@ -9,7 +9,7 @@ built-in `rbxasset://` fallback per sound until the id loads.
 |---|---|---|---|
 | rifle_shot | 95252334560110 | 2026-11-06 | `SoundFX` `shoot` |
 | bank `player_steps` | 100789185448666 | 2026-11-07 | `SoundBanks.IDS` (`FootstepController`) |
-| bank `player_hits` | 91277491081004 | 2026-11-07 | `SoundBanks.IDS` (`DamageNumberUI`, `EnemyProjectileService`) |
+| bank `player_hits` | 91277491081004 | 2026-11-07 | `SoundBanks.IDS` (`HitMarkerUI`, `EnemyProjectileService`) |
 | bank `walker` | 78379861633223 | 2026-11-07 | `SoundBanks.IDS` (`EnemyService` → `WorldSounds`) |
 | bank `runner` | 77436367980865 | 2026-11-07 | `SoundBanks.IDS` (`EnemyService` → `WorldSounds`) |
 | bank `brute` | 109978857666947 | 2026-11-07 | `SoundBanks.IDS` (`EnemyService` → `WorldSounds`) |
@@ -20,3 +20,4 @@ built-in `rbxasset://` fallback per sound until the id loads.
 | bank `ui_radio` | 71130678294211 | 2026-11-08 | `SoundBanks.IDS` (radio squelch, objective complete, card pick, KIA, click) |
 | bank `ambience` | 98770253514208 | 2026-11-08 | `SoundBanks.IDS` (Lantern rotor, city and wind beds, the Gate siren) |
 | heartbeat (`build/heartbeat.py`) | 117572779728629 | 2026-11-09 | `Config.Audio.LowHealth.HeartbeatId` (`LowHealthFX`) |
+| bank `guns` | 138267385221045 | 2026-11-09 | `SoundBanks.IDS` (each gun row's `Sound`: smg, lmg, shotgun, dmr, pistol, revolver, sniper, goose shot + reload; the M16 keeps the shared rifle shot; `SoundFX.gunshot`, `LoadoutService.startReload`). Replaces the first upload 97998220606581 (three guns) |
