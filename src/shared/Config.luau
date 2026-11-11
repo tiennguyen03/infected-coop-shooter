@@ -91,6 +91,48 @@ local Config = {
 		SkipKeys = { Enum.KeyCode.Space, Enum.KeyCode.ButtonA },
 	},
 
+	-- What the Infected notice (Nova, 2026-11-11, the night map: "we go in quiet ... if we mess
+	-- up and it goes loud then its gonna be rough"; Shared.Rules.Awareness, EnemyService). On a
+	-- mission listed in Missions every Infected is Sleeping, Idle, Wandering, Alerted or in
+	-- Chase; elsewhere they all chase as before. Noise: a gun's own Noise (Config.Weapons
+	-- rows), Explosion for a blast, Footsteps for a soldier running; inside half a noise's
+	-- reach a body comes for the noise-maker, inside all of it goes to look.
+	Awareness = {
+		Missions = { mile14 = true } :: { [string]: boolean },
+		Night = { mile14 = true } :: { [string]: boolean }, -- sight shortened (Sight.Night)
+		Hearing = { Sleeping = 0.35, Idle = 1, Wandering = 1, Alerted = 1.2 }, -- share of a noise's reach heard
+		Sight = {
+			Range = { Sleeping = 0, Idle = 45, Wandering = 55, Alerted = 70, Chase = 90 },
+			HalfAngle = 60, -- degrees either side of the facing
+			Night = 0.55,
+			Crouch = 0.6,
+			Prone = 0.35,
+			NoticeSeconds = 2.5, -- seen at the edge of the range this long = Chase (quicker closer)
+			Instant = 5, -- studs: seen this close is noticed at once
+		},
+		Touch = 3.5, -- studs: a soldier this close wakes even a sleeper
+		SightInterval = 0.35, -- seconds between a body's looks (raycasts)
+		Pace = { Sleeping = 0, Idle = 0, Wandering = 0.3, Alerted = 0.6, Chase = 1 }, -- of the form's WalkSpeed
+		WanderRadius = 28, -- studs from its post a wanderer strays
+		WanderPause = { 3, 9 }, -- seconds stood between wanders
+		SearchSeconds = 12, -- an Alerted body looks round the spot this long, then wanders
+		SearchRadius = 12,
+		LoseSeconds = 8, -- a chase with nobody in sight this long becomes a search of the last spot
+		Scream = 30, -- studs: a body that starts a chase alerts the others this close
+		DefaultNoise = 110, -- a gun row with no Noise
+		Explosion = 260, -- a blast (frag, the Goose's rocket, anything through KitService.blast)
+		Footsteps = { Speed = 19, Reach = 16, Every = 0.5 }, -- a soldier moving faster than Speed
+		-- The sleepers and wanderers placed at the start (until the map places its own): spread
+		-- over open ground at least MinDistance from the LZ.
+		Population = {
+			Count = 70,
+			MinDistance = 70,
+			Sleeping = 0.55, -- shares; the rest stand Idle
+			Wandering = 0.25,
+			Types = { Walker = 10, Runner = 2, Hocker = 1 } :: { [string]: number },
+		},
+	},
+
 	-- Night vision (Nova, 2026-11-11: the goggles on the soldier's FAST helmet, for a night-time
 	-- area): Keys.NightVision or GamepadKey flips them down and up (client NightVision). The view
 	-- goes green and bright: Lighting exposure raised, a green colour correction with no colour
@@ -724,6 +766,7 @@ local Config = {
 		-- makes a held trigger spray at range, so 3-5 round bursts are the skill. Re-armed:
 		-- 30 + 240 = 9 mags, the Warden fight never runs it dry at the pallet costs below.
 		ServiceRifle = {
+			Noise = 110, -- studs a shot carries (Config.Awareness; inside half it brings a chase)
 			FireMode = "auto",
 			Damage = 20,
 			FireCooldown = 0.08, -- 750 rpm
@@ -748,6 +791,7 @@ local Config = {
 		},
 		-- MP5: the best hip-fire; chews Runners, weak on Brutes (Walker 4 / 2, Brute 19 / 15).
 		Smg = {
+			Noise = 70, -- studs a shot carries (Config.Awareness; inside half it brings a chase)
 			FireMode = "auto",
 			Damage = 14,
 			FireCooldown = 0.075, -- 800 rpm
@@ -777,6 +821,7 @@ local Config = {
 		},
 		-- M249: a 100-round belt, no reload inside a hold; slow to aim on the move.
 		Lmg = {
+			Noise = 140, -- studs a shot carries (Config.Awareness; inside half it brings a chase)
 			FireMode = "auto",
 			Damage = 20,
 			FireCooldown = 0.075, -- 800 rpm
@@ -803,6 +848,7 @@ local Config = {
 		-- Mossberg 590: point-blank, one decision per pull; one pull drops every form but the
 		-- Brute (3).
 		Shotgun = {
+			Noise = 120, -- studs a shot carries (Config.Awareness; inside half it brings a chase)
 			Heavy = true, -- staggers a Brute (Config.Enemies.Flinch)
 			FireMode = "semi", -- pump
 			Damage = 11, -- per pellet
@@ -835,6 +881,7 @@ local Config = {
 		-- M110: one-taps Walkers, hits two in a line, poor up close. Ammo reins it in
 		-- (100 x 60 is the M16's 270 x 20).
 		Dmr = {
+			Noise = 130, -- studs a shot carries (Config.Awareness; inside half it brings a chase)
 			Heavy = true, -- staggers a Brute (Config.Enemies.Flinch)
 			FireMode = "semi",
 			Damage = 60,
@@ -867,6 +914,7 @@ local Config = {
 		},
 		-- M17: the sidearm, backup when the primary runs dry.
 		Pistol = {
+			Noise = 45, -- studs a shot carries (Config.Awareness; inside half it brings a chase)
 			FireMode = "semi",
 			Damage = 25,
 			FireCooldown = 0.15, -- 400 rpm
@@ -901,6 +949,7 @@ local Config = {
 		-- S&W 686 .357: one round per Walker or Runner, staggers a Brute; six shots and a slow
 		-- reload rein it in (Walker 1 / 1, Brute 5 / 4).
 		Revolver = {
+			Noise = 75, -- studs a shot carries (Config.Awareness; inside half it brings a chase)
 			Heavy = true, -- staggers a Brute (Config.Enemies.Flinch)
 			FireMode = "semi", -- double action
 			Damage = 55,
@@ -936,6 +985,7 @@ local Config = {
 		-- M2010 ESR: one round per form but the Brute (2), through three more in a line. One
 		-- decision per bolt; useless from the hip (Walker 1 / 1, Brute 2 / 2).
 		Sniper = {
+			Noise = 200, -- studs a shot carries (Config.Awareness; inside half it brings a chase)
 			Heavy = true,
 			FireMode = "semi", -- bolt action
 			Damage = 140,
@@ -970,6 +1020,7 @@ local Config = {
 		-- but the Warden; the blast (the frag's, no friendly fire) drops every form but the Brute
 		-- in 6 studs. Two rounds: a Brute answer, not a call-in (Hammer 6 x 80, Anvil 500).
 		Goose = {
+			Noise = 300, -- the loudest gun: half the map hears it (Config.Awareness), the blast adds its own
 			Heavy = true,
 			FireMode = "semi",
 			Damage = 400, -- the Infected struck directly; the blast hits everyone else in Radius

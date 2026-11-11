@@ -58,6 +58,7 @@ export type WeaponDefinition = {
 	Explosive: Explosive?, -- a launcher: the round is a visible rocket that blows at impact
 	ProjectileSpeed: number?, -- studs/s of that rocket (Explosive only)
 	ArmsOrder: number, -- its place in the Arms Room within its slot (lower first; default 100)
+	Noise: number, -- studs a shot carries to the Infected (Config.Awareness; default DefaultNoise)
 	-- Its sights in first person (Rules/Sight): the two points on the mesh the eye lines up,
 	-- irons or a scope, the eye relief, the zoom and the hip hold, defaults filled in.
 	Sight: Sight.Resolved,
@@ -107,6 +108,7 @@ type Tuning = {
 	Explosive: Explosive?,
 	ProjectileSpeed: number?,
 	ArmsOrder: number?,
+	Noise: number?,
 	Sight: Sight.Raw?,
 }
 
@@ -156,6 +158,7 @@ local function row(
 		Explosive = tuning.Explosive,
 		ProjectileSpeed = tuning.ProjectileSpeed,
 		ArmsOrder = tuning.ArmsOrder or DEFAULT_ARMS_ORDER,
+		Noise = tuning.Noise or Config.Awareness.DefaultNoise,
 		Sight = shown(
 			tuning.Model or DEFAULT_MODEL,
 			Sight.resolve(tuning.Sight or DEFAULT_SIGHT, Config.Weapon.Sights)

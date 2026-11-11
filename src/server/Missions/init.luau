@@ -5,6 +5,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local MissionTypes = require(script.MissionTypes)
 
@@ -18,7 +19,12 @@ for _, child in script:GetChildren() do
 	end
 end
 
-local currentId: string = Config.Operation.Missions[1]
+-- A place built for one mission says so on its Workspace (its Rojo project sets
+-- Attributes.Mission: the Mile 14 place); otherwise the operation's first.
+local tagged = workspace:GetAttribute(Attributes.Mission)
+local currentId: string = if typeof(tagged) == "string" and byId[tagged]
+	then tagged
+	else Config.Operation.Missions[1]
 
 -- The mission with `id`, or nil.
 function Missions.get(id: string): MissionTypes.Mission?

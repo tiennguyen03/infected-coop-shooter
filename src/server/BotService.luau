@@ -42,6 +42,7 @@ local KitService = require(script.Parent.KitService)
 local PauseService = require(script.Parent.PauseService)
 local PlayerSetup = require(script.Parent.PlayerSetup)
 local ProjectileServer = require(script.Parent.ProjectileServer)
+local EnemyService = require(script.Parent.EnemyService)
 local ReviveAnimService = require(script.Parent.ReviveAnimService)
 local Squad = require(script.Parent.Squad)
 local SupplyDropService = require(script.Parent.SupplyDropService)
@@ -399,6 +400,7 @@ local function shoot(bot: Bot, origin: Vector3, aim: Vector3, params: RaycastPar
 		end
 	end
 	tracerRemote:FireAllClients(origin, endPoint)
+	EnemyService.noise(origin, WeaponDefinitions.get(WeaponDefinitions.DEFAULT).Noise)
 	local fire = bot.tracks.fire
 	if fire then
 		fire:Play(0.05)

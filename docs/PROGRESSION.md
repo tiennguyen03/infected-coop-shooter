@@ -564,6 +564,34 @@ Mile 14, dawn at Kestrel. The burning skyline is the districts that already got 
   smoke, siren silent. Contained: all lamps, Depot pad permanent, intact humvee with
   headlights at the Gate, wind instead of siren.
 
+### Awareness (the quiet missions)
+
+Nova, 2026-11-11: Mile 14 is played quiet: "we go in quiet, do what we have to, if we mess up
+and it goes loud then its gonna be rough". On a mission in `Config.Awareness.Missions` (Mile
+14) every Infected is in one of five states (`Shared.Rules.Awareness`, `EnemyService`):
+
+| State | Does | Notices |
+|---|---|---|
+| Sleeping | slumped, still | only noise close by (a third of its reach) or a soldier touching it |
+| Idle | stands | a cone in front of its head, and noise |
+| Wandering | shuffles round its post at 0.3 speed | further, and noise |
+| Alerted | walks to what it heard or glimpsed at 0.6 speed, searches 12 s, then wanders there | further still |
+| Chase | the old straight chase | loses the soldier after 8 s out of sight: searches the last spot |
+
+- **Noise:** every shot carries its gun's `Noise` (studs): inside half a body comes for it
+  (Chase), inside all of it goes to look (Alerted). Pistol 45, MP5 70, revolver 75, M16 110,
+  Mossberg 120, M110 130, M249 140, M2010 200, the Goose 300 (the loudest; its blast adds
+  `Explosion` 260 where it lands). Bots' shots too. A soldier running makes footsteps (16).
+- **Sight:** a cone 60 degrees either side, 45 to 90 studs by state, about half at night,
+  0.6 against a crouched soldier and 0.35 against a prone one. Seen builds notice (2.5 s at
+  the edge, faster close in, at once inside 5 studs): any notice sends it to look, full notice
+  is a Chase. A hit is always a Chase. A body that starts a Chase wakes the ones within 30 to
+  look.
+- **Spawning:** the start places `Population.Count` (70) round the map, more than 70 studs
+  from the LZ: about half asleep, a quarter wandering, the rest standing. No roaming spawns
+  while it is quiet; an objective's or a pallet's waves still come chasing. Going loud (the
+  horn, spawns) and the suppressor are next (steps 2 and 4 of the plan).
+
 ### Mile 14 (not built)
 
 - **Was:** the evacuation convoy out of Harlan, stalled where the highway crosses the county

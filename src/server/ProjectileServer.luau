@@ -384,6 +384,7 @@ local function onFireRequest(
 
 	local previousShot = lastFireTime[player]
 	lastFireTime[player] = now
+	EnemyService.noise(root.Position, weapon.Noise) -- the Infected hear it (Config.Awareness)
 	local exclude = excludeList(character)
 	-- The client says whether it is aiming down sights; that only tightens the cone (the
 	-- speed penalty is client-owned movement either way), so trusting it costs nothing.
