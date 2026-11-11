@@ -7,7 +7,7 @@
 --
 -- State per member: Alive -> Downed (a lethal hit, decision #3) -> Alive (revived) or
 -- Dead (bled out, killed while out of revives). Downed bodies are not targets and take no
--- damage; a squadmate holds F (ProximityPrompt) for Config.Downed.ReviveHold to stand them
+-- damage; a squadmate holds Config.Keys.Interact (ProximityPrompt) for Config.Downed.ReviveHold to stand them
 -- up; bots revive with Squad.revive. Replicated as character attributes SquadState,
 -- BleedOutAt (server time) and Reviver, mirrored on the Player for client UI; the revive
 -- animation follows through Squad.onRevive (ReviveAnimService). Spare
@@ -492,7 +492,7 @@ local function addPrompt(member: Member)
 	prompt.Name = "RevivePrompt"
 	prompt.ActionText = "Revive"
 	prompt.ObjectText = member.name
-	prompt.KeyboardKeyCode = Enum.KeyCode.F
+	prompt.KeyboardKeyCode = Config.Keys.Interact
 	prompt.GamepadKeyCode = Enum.KeyCode.ButtonX
 	prompt.HoldDuration = settings.ReviveHold
 	prompt.MaxActivationDistance = settings.ReviveRadius

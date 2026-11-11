@@ -1,7 +1,8 @@
 --!strict
 -- The soldier's kit beside the guns (docs/PROGRESSION.md > Loadout; replaced the Assault
 -- class's dash, breach charge and Combat Momentum): Q swaps long gun and sidearm
--- (LoadoutService.swap), G throws a grenade, V shoves, E uses a stim. The UseAbility remote
+-- (LoadoutService.swap), G throws a grenade, F shoves, V uses a stim (Config.Keys; the client
+-- sends the kind, never the key). The UseAbility remote
 -- carries the kind (Messages.Ability); everything is server-validated (standing, not paused,
 -- a grenade or stim left, the shove's cooldown) and the counts live on LoadoutService.
 -- Bait Charge (lure_charge upgrade): a frag lures the Infected around it until it blows.
@@ -243,7 +244,7 @@ local function throwGrenade(player: Player, requested: Vector3?)
 end
 
 ----------------------------------------------------------------------
--- V: shove
+-- Shove
 ----------------------------------------------------------------------
 
 local function shove(player: Player)
@@ -299,7 +300,7 @@ local function shove(player: Player)
 end
 
 ----------------------------------------------------------------------
--- E: stim
+-- Stim
 ----------------------------------------------------------------------
 
 -- The dose itself, for a player (stim, after its checks) or a bot (BotService; it counts

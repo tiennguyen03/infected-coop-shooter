@@ -50,8 +50,12 @@ Every player is a Pike soldier; no classes, no hero kit. A soldier carries a pri
 sidearm, a grenade type and four call-ins (keys 1-4), picked in the **Arms Room** (B).
 Q swaps long gun and sidearm (`Weapon.SwapTime` 0.5 s; no shot, no reload; a reload in
 progress is dropped; each gun keeps its own magazine). G throws a grenade (3 carried; a
-pallet refills). V shoves (15 dmg, 0.8 s stagger, 6-stud push, 1 s cooldown). E uses a stim
-(2 carried, heals 60 over 1 s; Medkit refills). 5 throws the Resupply flare (always carried).
+pallet refills). F shoves (15 dmg, 0.8 s stagger, 6-stud push, 1 s cooldown). V uses a stim
+(2 carried, heals 60 over 1 s; Medkit refills). X throws the Resupply flare (always carried).
+E is interact (hold it beside a downed squadmate to revive). C or LeftControl crouches, Z goes
+prone, Shift sprints, Space vaults and climbs, T switches first and third person. Every key
+is a row of `Config.Keys` and every hint reads it (the table: [OWNER.md](OWNER.md) > Rules
+already decided).
 
 **Stamina** (owner 2026-11-11; `Config.Stamina`, `Rules/Stamina`, client-owned like sprint):
 100, sprinting drains 12/s (~8 s from full), back at 22/s after 1 s without spending (empty to
@@ -78,7 +82,7 @@ clips in the `guns` sound bank (`Sound`) and, for a launcher, `Explosive` +
 lands"): G and every thrown call-in (CallInDefinitions Kind "throw") are held to aim and
 thrown on release. A dotted arc from the hand and the item's own marker on the ground
 (`Config.CallIns.<Name>.Aim`: a ring of Radius, or a strip of Length x Width along the throw,
-`Across` for the wire) follow the crosshair. The flare (5) and the "self" call-ins still
+`Across` for the wire) follow the crosshair. The flare (X) and the "self" call-ins still
 fire on the press. `AbilityController`.
 
 **Throwing** (owner 2026-11-11: things "activate before the actual animation plays"): the
@@ -315,7 +319,7 @@ start on the mark at once).
   distance (Walker 10, Runner 12, Hocker 18, Brute 35) and by the Primary
   (`Objective.SupplyReward` 500).
 - When the pool covers the cost (`Requisition.BaseCost` 300, x1.15 per drop, cap 1000, +40%
-  per extra player) any living player throws the red flare (key 5, 35 studs). For 20 s the
+  per extra player) any living player throws the red flare (key X, 35 studs). For 20 s the
   Infected inside 120 studs walk to the flare; then the pallet lands loud (`Lure.Wave` 10, +3
   per extra player; spawn interval x0.7 for 30 s).
 - **The pallet is the ammo box:** every living player within `RearmRadius` 6 is re-armed

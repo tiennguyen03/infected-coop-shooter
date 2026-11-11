@@ -1,5 +1,5 @@
 --!strict
--- Vault and climb in place of the stock jump. Space, with cover in front
+-- Vault and climb in place of the stock jump. Space (Config.Keys.Vault), with cover in front
 -- (Shared.Ledge), carries the body over thin low cover (jersey, hesco: the vault clip) or
 -- onto taller cover (bunker, humvee, container: the climb clip); sprinting into low cover
 -- vaults by itself. T-walls and buses are too tall and stay walls. During a move the root
@@ -8,9 +8,9 @@
 -- (StanceController). Space with nothing in front stands a crouched or prone body up; it
 -- never jumps (PlayerSetup zeroes JumpPower as well).
 --
--- Roll and slide: Shift twice quickly rolls; while sprinting, holding C or LeftControl
--- slides along the direction of travel until the key is let go (StanceController leaves
--- those keys alone while sprinting). Both
+-- Roll and slide (keys: Config.Keys): Sprint twice quickly rolls; while sprinting, holding a
+-- Crouch key (C or LeftControl) slides along the direction of travel until the key is let
+-- go (StanceController leaves those keys alone while sprinting). Both
 -- lock the heading, drive the humanoid along that direction at a speed this module owns
 -- (SprintController.setOverrideSpeed) and hand the exit speed back to MomentumController.
 -- The roll reports itself to the server (CoverMove) for its melee immunity window. Each
@@ -261,7 +261,7 @@ local function stepDash(current: Dash, dt: number)
 	current.humanoid:Move(current.direction, false)
 end
 
--- A roll (Shift twice) or a slide (sprint + hold C or LeftControl). Returns true when it started.
+-- A roll (Sprint twice) or a slide (sprint + hold a Crouch key). Returns true when it started.
 function MovementController.tryDash(kind: "roll" | "slide"): boolean
 	if move or dash or workspace:GetAttribute(Attributes.GamePaused) == true then
 		return false
@@ -386,7 +386,7 @@ function MovementController.init()
 		onSpace,
 		false,
 		Enum.ContextActionPriority.High.Value,
-		Enum.KeyCode.Space,
+		Config.Keys.Vault,
 		Enum.KeyCode.ButtonA
 	)
 	Players.LocalPlayer.CharacterAdded:Connect(function()
@@ -398,15 +398,15 @@ function MovementController.init()
 		CameraController.setBodyYawLocked(false)
 		MomentumController.resume(Vector3.zero)
 	end)
-	-- Shift twice quickly rolls (the first press is the sprint). While sprinting, holding C
-	-- or LeftControl slides for as long as the key is down (StanceController skips those
+	-- Sprint twice quickly rolls (the first press is the sprint). While sprinting, holding a
+	-- Crouch key slides for as long as the key is down (StanceController skips those
 	-- keys while sprinting); letting go ends the slide once it is MinHold old.
 	local lastShiftAt = -math.huge
 	UserInputService.InputBegan:Connect(function(input, gameProcessed)
 		if gameProcessed then
 			return
 		end
-		if input.KeyCode == Enum.KeyCode.LeftShift then
+		if input.KeyCode == Config.Keys.Sprint then
 			local now = os.clock()
 			if now - lastShiftAt <= Config.Movement.Roll.DoubleTap then
 				lastShiftAt = -math.huge
@@ -414,7 +414,7 @@ function MovementController.init()
 			else
 				lastShiftAt = now
 			end
-		elseif input.KeyCode == Enum.KeyCode.C or input.KeyCode == Enum.KeyCode.LeftControl then
+		elseif table.find(Config.Keys.Crouch, input.KeyCode) then
 			if SprintController.isSprinting() and MovementController.tryDash("slide") then
 				slideKey = input.KeyCode
 			end

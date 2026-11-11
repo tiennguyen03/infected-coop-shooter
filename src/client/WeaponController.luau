@@ -322,7 +322,7 @@ function WeaponController.init()
 		elseif input.UserInputType == Enum.UserInputType.MouseButton2 then
 			aimButton = true
 			setAiming(true)
-		elseif input.KeyCode == Enum.KeyCode.R then
+		elseif input.KeyCode == Config.Keys.Reload then
 			WeaponController.requestReload()
 		end
 	end)

@@ -1,8 +1,8 @@
 --!strict
--- Stances (owner 2026-11-11): C or LeftControl toggles crouch (while sprinting either key
--- slides instead, MovementController), Z toggles prone, either from the
--- other stance switches straight across; Shift (sprint), Space (vault/climb, which also
--- stands a crouched body with nothing in front) and a respawn stand the body up. Speed
+-- Stances (keys: Config.Keys): Crouch (C or Ctrl) toggles crouch (while sprinting either key
+-- slides instead, MovementController), Prone (Z) toggles prone,
+-- either from the other stance switches straight across; Sprint, Vault (which also stands
+-- a crouched body with nothing in front) and a respawn stand the body up. Speed
 -- factors and transition times are Config.Player.Stances; the camera pivot drops with the
 -- stance (CameraController) and the body plays the stance's clips (AnimationController).
 -- Movement stays client-owned like sprint; the server hears each change on the Stance
@@ -120,9 +120,10 @@ function StanceController.init()
 		if gameProcessed or workspace:GetAttribute(Attributes.GamePaused) == true then
 			return
 		end
-		-- While sprinting these keys slide instead (MovementController).
-		-- Both become Config.Keys.Crouch once claude/keybinds merges.
-		local lowKey = input.KeyCode == Enum.KeyCode.LeftControl or input.KeyCode == Enum.KeyCode.C
+		local keys = Config.Keys
+		local key = input.KeyCode
+		-- While sprinting the Crouch keys slide instead (MovementController).
+		local lowKey = table.find(keys.Crouch, key) ~= nil
 		if lowKey and SprintController.isSprinting() then
 			return
 		end
@@ -132,9 +133,9 @@ function StanceController.init()
 		end
 		if lowKey then
 			toggle("crouch")
-		elseif input.KeyCode == Enum.KeyCode.Z then -- becomes Config.Keys.Prone once claude/keybinds merges
+		elseif key == keys.Prone then
 			toggle("prone")
-		elseif input.KeyCode == Enum.KeyCode.LeftShift then
+		elseif key == keys.Sprint then
 			StanceController.setStance("stand")
 		end
 	end)

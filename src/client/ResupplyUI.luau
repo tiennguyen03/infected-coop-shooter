@@ -1,5 +1,5 @@
 --!strict
--- Resupply on the client: the HUD meter top left under the abilities (pool / cost, "[5] FLARE" when it
+-- Resupply on the client: the HUD meter top left under the abilities (pool / cost, "[X] FLARE" (Config.Keys.Flare) when it
 -- covers the cost, the drop countdown while a pallet is inbound; a short pulse when a kill
 -- feeds the pool) and the crate's cards. When a crate lands the server sends this player
 -- their own card ids (supply cards on a pallet, field upgrades on an upgrade or objective
@@ -18,6 +18,9 @@ local TweenService = game:GetService("TweenService")
 local Messages = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Messages"))
 local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attributes"))
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
+local KeyBindings = require(
+	ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Rules"):WaitForChild("KeyBindings")
+)
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
 local Reward =
 	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Rules"):WaitForChild("Reward"))
@@ -27,6 +30,8 @@ local HudTheme = require(script.Parent.HudTheme)
 local BuffNoticeUI = require(script.Parent.BuffNoticeUI)
 local CameraController = require(script.Parent.CameraController)
 local RewardPanel = require(script.Parent.RewardPanel)
+
+local FLARE_HINT = `[{KeyBindings.label(Config.Keys.Flare.Name)}] FLARE`
 
 local C = HudTheme.Color
 
@@ -115,7 +120,7 @@ local function updateMeter()
 		-- Ready: the bar pulses so the eye finds it without a pop-up.
 		local pulse = 0.5 + 0.5 * math.sin(now * 4)
 		fill.BackgroundColor3 = C.Yellow:Lerp(C.White, pulse)
-		setText(`RESUPPLY READY  {HudTheme.tint("[5] FLARE", C.Yellow)}`, C.Text)
+		setText(`RESUPPLY READY  {HudTheme.tint(FLARE_HINT, C.Yellow)}`, C.Text)
 	else
 		-- A kill just fed the pool: a brief brighten.
 		local gain = math.clamp((gainPulseUntil - now) / GAIN_PULSE_SECONDS, 0, 1)
