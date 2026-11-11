@@ -72,12 +72,12 @@ local puddles: { Puddle } = {}
 -- BotService: a bot steps out of it.
 function EnemyProjectileService.puddleAt(position: Vector3): (Vector3?, number?)
 	for _, puddle in puddles do
-		local offset = position - puddle.part.Position
+		local offset = position - puddle.center
 		if
 			Vector3.new(offset.X, 0, offset.Z).Magnitude <= puddle.radius
 			and math.abs(offset.Y) < 6
 		then
-			return puddle.part.Position, puddle.radius
+			return puddle.center, puddle.radius
 		end
 	end
 	return nil, nil
