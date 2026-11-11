@@ -1599,12 +1599,16 @@ local Config = {
 		-- The walking crew (LobbyCrew, CrewWalk): pace, stride and when they speak.
 		Crew = {
 			WalkSpeed = 5, -- studs a second (a soldier walks 16)
-			Stride = 2.4, -- studs per step
-			SwingDegrees = 22, -- leg and arm swing
 			Pause = 4, -- seconds standing at each end of the route
 			BubbleDistance = 12, -- studs: a soldier this close hears a line
 			BubbleSeconds = 4,
 			BubbleCooldown = 14, -- seconds before the same one speaks again
+			-- Roblox's stock R15 clips for the crew (NpcBody, CrewWalk): not ours, free to use.
+			Animations = {
+				Idle = "rbxassetid://507766388",
+				Walk = "rbxassetid://507777826",
+			},
+			WalkClipSpeed = 0.45, -- the stock walk's playback rate at WalkSpeed (it is cut for 16)
 		},
 		-- The Plot's paper map (WorldMap, WorldMapData; canon docs/lore/world_map.md).
 		WorldMap = {

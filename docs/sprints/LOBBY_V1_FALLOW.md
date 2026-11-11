@@ -73,7 +73,7 @@ match place.
   first aboard).
 - **Four hangar desks** (`DeskService`, data `LobbyDesks`): Arms Room (the port fore corner),
   Engineers (wire spools, starboard), Loadmaster (slung cases at the foot of the ramp), Fires
-  (at the Plot door). Block crew figures in working dress, a counter, a sign, an F "Talk" prompt. The
+  (at the Plot door). R15 crew figures in working dress, a counter, a sign, an F "Talk" prompt. The
   **Every desk talks the same way** (dialog rewrite 2026-11-10, Nova and Tien: "too cryptic,
   no personality"; lines and voices by the lore developer, `LobbyDesks` `talk`, voice sheets
   in docs/lore/desk_crew.md): a greeting picked at random from four, then 1 their kit, 2 a
@@ -106,19 +106,33 @@ match place.
   plane director (yellow), deck hand (blue), hangar mechanic (green), Plot runner, screening
   medic (white smock), lane sentry - walk there and back along `FallowLayout.Crew`, pausing
   at each end. `CrewService` places NpcBody figures once (tag `Crew`, route as an attribute);
-  each client walks its own copy (`CrewWalk`: one `BulkMoveTo` a frame, a leg and arm swing,
-  nothing replicates) and shows a line over a head when a soldier comes within
-  `Config.Lobby.Crew.BubbleDistance` (lines in `LobbyCrew`). No prompts, no Humanoids, no collision. Routes
+  each client walks its own copy (`CrewWalk`: one `BulkMoveTo` a frame on the anchored roots,
+  the stock R15 walk and idle played locally once the body is dressed (`CrewReady`), nothing
+  replicates) and shows a line over a head when a soldier comes within
+  `Config.Lobby.Crew.BubbleDistance` (lines in `LobbyCrew`). No prompts, no collision. Routes
   checked clear of walls and desks in a playtest.
+- **R15 crew** (2026-11-10, Nova: "all the npcs to have r15 models like the player instead of
+  just being regular blocks"): every desk figure, walker and Lantern's crew chief is a real R15
+  rig (`Players:CreateHumanoidModelFromDescription`, one cached rig cloned) wearing the crew
+  body (`npc_crew_` limbs, `assets/3d/build/crew.py`: the player's limb boxes, tapered forearms
+  and shins, elbow and knee caps, in plain working dress: collar, placket, breast pockets,
+  boots). The body is worn untextured and coloured per figure (shirt, trousers, skin, gloves,
+  boots), so one 9-mesh upload dresses everyone; skin and hair are picked from the name. A face
+  (eyes, brows, mouth), hair, a belt, the cap or flight helmet and the kit are small welded
+  parts. The root is anchored; desk figures breathe with the stock R15 idle (server), walkers
+  are walked by each client. No Humanoid name or health shows; nothing collides. Without the
+  meshes a figure keeps the stock R15 body in its colours.
 - **Kit on the bodies** (2026-11-10, Nova: "personality"; details by the lore developer,
   docs/lore/desk_crew.md, ship_company.md, docs/CHARACTERS.md): `NpcBody.build` takes a kit
-  list of named block accessories (`KIT` in NpcBody). The Quartermaster: glasses on a cord, a
+  list of named block accessories (`KIT` in NpcBody). The Quartermaster: reading glasses (two
+  lenses on a thin frame; the old solid bar read as a unibrow and the cord hung in the air), a
   clipboard, keys. The Loadmaster: flight helmet pushed up with the visor raised, harness and
   tether, a grease pencil. Fires: a headset round her neck, a notebook. The Engineers: belt
   gloves, red wire cutters, a wire coil. The watch officer: one-cup headset, a steel mug, a
   rank tab. Lantern's crew chief: gloves and harness. The walking crew: ear defenders, a
   chock and chain, a rag, a clipboard, a mask and blue gloves, a helmet with a slung rifle and
-  a white MP brassard. Kit on an arm (`RightArm_...`) swings with it. Every Pike on the ship
+  a white MP brassard. Each piece is welded to one R15 limb, in that limb's own space, so it
+  moves with the animation. Every Pike on the ship
   (`PikeBody`) wears the white screening band with its yellow stripe on the left wrist, a
   green chemlight on the left shoulder strap and the tourniquet high on the right arm; the
   match body (PlayerSetup, Tien's) does not yet.

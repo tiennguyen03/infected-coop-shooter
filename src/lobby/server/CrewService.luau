@@ -74,7 +74,8 @@ function CrewService.init()
 			route[1],
 			route[2] - route[1],
 			DRESS[crew.id] or NpcBody.Ship,
-			KIT[crew.id]
+			KIT[crew.id],
+			false -- each client walks and animates them (CrewWalk)
 		)
 		-- Walkers never block or shove a soldier (they move on each client, not in physics).
 		for _, part in model:GetDescendants() do

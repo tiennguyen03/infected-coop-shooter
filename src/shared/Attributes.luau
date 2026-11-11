@@ -104,6 +104,9 @@ local Attributes = table.freeze({
 	CrewTag = "Crew",
 	CrewId = "CrewId",
 	CrewRoute = "CrewRoute",
+	-- Lobby place: true on a crew figure (NpcBody) once its body is dressed and its joints
+	-- rebuilt, so a client's animations bind to the final rig.
+	CrewReady = "CrewReady",
 	-- Lobby place: an Arms Room piece (ArmsRack) and its display's back carry which display
 	-- they are on ("wall" or "cabinet") and the way they face (Vector3); a piece also its
 	-- length and height (Vector2, studs). Read by the client's ArmsRackUI to frame them.

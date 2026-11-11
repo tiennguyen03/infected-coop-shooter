@@ -1,8 +1,9 @@
 --!strict
 -- Walks the Carrier's crew (CrewService places them, tagged) back and forth along their
--- routes on this client only, with a plain leg and arm swing, a pause at each end, and a
--- line over their head when you come close (LobbyCrew). One BulkMoveTo a frame for all of
--- them; nothing replicates (the server never moves them again).
+-- routes on this client only, with the stock R15 walk and idle (their joints swing the
+-- limbs; only the anchored root moves), a pause at each end, and a line over their head when
+-- you come close (LobbyCrew). One BulkMoveTo a frame for all the roots; nothing replicates
+-- (the server never moves them again).
 
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
@@ -17,20 +18,19 @@ local LobbyCrew = require(ReplicatedStorage.Lobby.LobbyCrew)
 local CrewWalk = {}
 
 local CREW = Config.Lobby.Crew
-local SWINGS = { LeftLeg = 1, RightLeg = -1, LeftArm = -1, RightArm = 1 }
-local HIP_Y, SHOULDER_Y = 2.2, 4.2 -- above the feet: where legs and arms pivot
 
 type Walker = {
 	model: Model,
+	root: BasePart,
+	height: number, -- the root's centre above the feet
 	route: { Vector3 },
 	leg: number, -- heading from route[leg] to route[leg + dir]
 	dir: number,
 	along: number, -- studs walked along the current leg
 	waitUntil: number,
-	parts: { BasePart },
-	rest: { CFrame }, -- each part relative to the feet, facing -Z
-	swing: { number }, -- each part's swing sign (0: none)
-	pivotY: { number },
+	walk: AnimationTrack?,
+	idle: AnimationTrack?,
+	walking: boolean,
 	bubble: TextLabel,
 	hideAt: number,
 	nextLine: number,
@@ -87,8 +87,10 @@ local function add(model: Model)
 		return
 	end
 	local route = decode(routeText)
-	local head = model:FindFirstChild("Head")
-	if #route < 2 or not (head and head:IsA("BasePart")) then
+	local head = model:WaitForChild("Head", 10)
+	local root = model:WaitForChild("HumanoidRootPart", 10)
+	local humanoid = model:FindFirstChildOfClass("Humanoid")
+	if #route < 2 or not (head and head:IsA("BasePart") and root and root:IsA("BasePart")) then
 		return
 	end
 	local lines = {}
@@ -97,40 +99,56 @@ local function add(model: Model)
 			lines = crew.lines
 		end
 	end
-	-- Each part's place relative to the feet, read from how the server stood them up.
-	local feet = CFrame.lookAt(route[1], route[1] + (route[2] - route[1]) * Vector3.new(1, 0, 1))
-	local walker: Walker = {
+	table.insert(walkers, {
 		model = model,
+		root = root,
+		height = (if humanoid then humanoid.HipHeight else 2.19) + root.Size.Y / 2,
 		route = route,
 		leg = 1,
 		dir = 1,
 		along = 0,
 		waitUntil = os.clock() + random:NextNumber(0, CREW.Pause),
-		parts = {},
-		rest = {},
-		swing = {},
-		pivotY = {},
+		walk = nil,
+		idle = nil,
+		walking = false,
 		bubble = bubbleOn(head),
 		hideAt = 0,
 		nextLine = 0,
 		lines = lines,
-	}
-	for _, part in model:GetDescendants() do
-		if part:IsA("BasePart") then
-			table.insert(walker.parts, part)
-			table.insert(walker.rest, feet:ToObjectSpace(part.CFrame))
-			-- A limb, or kit on it ("RightArm_Clipboard"), swings with that limb.
-			local limb = string.match(part.Name, "^(%a+)") or part.Name
-			table.insert(walker.swing, SWINGS[limb] or 0)
-			table.insert(walker.pivotY, if string.find(limb, "Leg") then HIP_Y else SHOULDER_Y)
-		end
+	})
+end
+
+-- The walk and idle clips, loaded on this client once the body is dressed (dressing rebuilds
+-- the joints the clips drive).
+local function tracks(w: Walker): boolean
+	if w.walk then
+		return true
 	end
-	table.insert(walkers, walker)
+	if not w.model:GetAttribute(Attributes.CrewReady) then
+		return false
+	end
+	local humanoid = w.model:FindFirstChildOfClass("Humanoid")
+	local animator = humanoid and humanoid:FindFirstChildOfClass("Animator")
+	if not animator then
+		return false
+	end
+	local function load(id: string): AnimationTrack
+		local animation = Instance.new("Animation")
+		animation.AnimationId = id
+		local track = animator:LoadAnimation(animation)
+		track.Looped = true
+		return track
+	end
+	w.walk = load(CREW.Animations.Walk)
+	w.idle = load(CREW.Animations.Idle);
+	(w.idle :: AnimationTrack):Play()
+	w.walking = false
+	return true
 end
 
 -- Where the walker is now and which way it faces; advances it by dt. Returns the feet and
--- the stride phase (0 when standing).
-local function step(w: Walker, dt: number, now: number): (CFrame, number)
+-- whether it is walking.
+local function step(w: Walker, dt: number, now: number): (CFrame, boolean)
 	local from = w.route[w.leg]
 	local to = w.route[w.leg + w.dir]
 	local legLength = (to - from).Magnitude
@@ -156,7 +174,7 @@ local function step(w: Walker, dt: number, now: number): (CFrame, number)
 	local feet = if flat.Magnitude > 0.01
 		then CFrame.lookAt(position, position + flat)
 		else CFrame.new(position)
-	return feet, if walking then w.along / CREW.Stride * math.pi else 0
+	return feet, walking
 end
 
 local function frame(dt: number)
@@ -172,18 +190,19 @@ local function frame(dt: number)
 			table.remove(walkers, i)
 			continue
 		end
-		local feet, phase = step(w, dt, now)
-		local angle = math.sin(phase) * math.rad(CREW.SwingDegrees)
-		for j, part in w.parts do
-			local rest = w.rest[j]
-			local sign = w.swing[j]
-			if sign ~= 0 and angle ~= 0 then
-				-- Swing about the hip or shoulder, front to back.
-				local pivot = CFrame.new(0, w.pivotY[j], rest.Position.Z)
-				rest = pivot * CFrame.Angles(angle * sign, 0, 0) * pivot:Inverse() * rest
+		local feet, walking = step(w, dt, now)
+		table.insert(parts, w.root)
+		table.insert(cframes, feet + Vector3.new(0, w.height, 0))
+		if tracks(w) and walking ~= w.walking then
+			w.walking = walking
+			local walk, idle = w.walk :: AnimationTrack, w.idle :: AnimationTrack
+			if walking then
+				walk:Play(0.25, 1, CREW.WalkClipSpeed)
+				idle:Stop(0.25)
+			else
+				idle:Play(0.25)
+				walk:Stop(0.25)
 			end
-			table.insert(parts, part)
-			table.insert(cframes, feet * rest)
 		end
 		-- A line when a soldier walks close, then quiet for a while.
 		if
