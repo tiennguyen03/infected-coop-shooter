@@ -550,6 +550,14 @@ transparency on geometry"**: the rotor blur discs (two flat cylinders a bird, fa
 in to 0.8 transparent over the last 6 s before lift while the blades fade to 0.6, never out;
 `Rules/RotorBlur`) are VFX, like the breach ghost.
 
+**The Doorman** (`assets/3d/build/doorman.py`, prefix `dep_`, collection `Deployables`): a
+belt-fed medium machine gun on a squat tripod, run by a sensor head. Read from 25 studs: the
+long barrel with its vented olive heat shield, the olive sensor box above the receiver (blue
+status light fore and aft), the brass belt out of the ammo can on the gun's left, tan sandbags
+on the aft legs. Three meshes so it can turn: base (still), cradle (yaws 1.9 up), gun (pitches
+at the trunnion 2.6 up, muzzle 3.52 ahead). 2,300 tris, counted against the vehicle class
+(cap 5,000; four at most in a match). 4.05 wide, 5.54 long, 3.5 tall. No collision.
+
 ~42k tris, no lights, no collision or queries. `SkyService.burn(part)` puts the same fire +
 smoke on a dressing piece (`burning = true` in `ArenaService.DRESSING`). Smoke is the stock
 `smoke_main` particle at rate 5, 14-22 s life, a light westerly drift; fire is `fire_main`,

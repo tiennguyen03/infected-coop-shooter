@@ -17,7 +17,7 @@ upgrades) → the Warden (boss) → extraction by helicopter → OPERATION COMPL
 - **Squad:** anonymous soldiers Pike One to Four; bots Pike Two to Four in solo; downed and
   revive (hold E). Bots walk and path to the leader (teleport only when stuck) and use stims,
   frags and one fire mission each (not yet seen in a playtest).
-No floating health bars or name tags; squadmates' health, armour, DOWN /
+  No floating health bars or name tags; squadmates' health, armour, DOWN /
   REVIVING / DEAD on a panel on the left edge (`SquadPanelUI`, `Config.SquadPanel`).
 - **Kit:** six real guns (M16A4, MP5, M249, Mossberg 590, M110, M17) plus three samples in the
   dev panel (S&W 686 revolver, M2010 sniper, the Goose rocket), each with its own Blender model
@@ -26,7 +26,8 @@ No floating health bars or name tags; squadmates' health, armour, DOWN /
   Bag, Tripline; thrown ones are held to aim with an arc and a landing marker, every throw leaves the
   hand at the throw clip's release 0.5 s after the key, the Anvil is
   marked through binoculars anywhere in the line of sight (arms and prop are stand-ins), the Shrike is a
-  modelled attack helicopter), flare on X, the Arms Room on B (stand-in until Nova's lobby screen).
+  modelled attack helicopter, the Doorman a modelled tripod gun not yet seen in game:
+  `Config.CallIns.Doorman.Model = 1` puts the old one back), flare on X, the Arms Room on B (stand-in until Nova's lobby screen).
 - **Movement:** sprint on a stamina bar (8 s; a roll costs 20, a slide 10; winded at zero),
   slides that keep momentum and run on downhill (`docs/PROGRESSION.md` > The soldier). Built
   2026-11-11 on static checks and specs only: **not yet played**, the numbers want tuning.

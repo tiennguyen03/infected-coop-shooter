@@ -131,7 +131,7 @@ def build_palette_material(img):
 
 # ------------------------------------------------------------------ bmesh helpers
 # Static set pieces get the z-fight pass in Builder.finish; bodies and limbs do not.
-ZFIGHT_COLLECTIONS = {"Environment", "Props", "Pickups", "Weapons", "City", "Fallow", "Vehicles"}
+ZFIGHT_COLLECTIONS = {"Environment", "Props", "Pickups", "Weapons", "City", "Fallow", "Vehicles", "Deployables"}
 ZFIGHT_SKIP = {"prop_plague_rat"}  # a creature: its overlaps are sub-stud and its size is tuned
 
 
@@ -1385,6 +1385,12 @@ import infected_v2  # noqa: E402
 
 infected_v2.register(sys.modules[__name__])
 
+# The Doorman, the tripod sentry gun (base, cradle, gun + preview figures) lives in doorman.py
+# (2026-11-11).
+import doorman  # noqa: E402
+
+doorman.register(sys.modules[__name__])
+
 
 # ------------------------------------------------------------------ The Chosen (player bodies)
 # Same limb-swap build as the Infected: one mesh per R15 limb inside the stock limb box.
@@ -1851,7 +1857,7 @@ def get_collection(name):
 # port face over the HRD patch. Near-symmetric meshes hide it; the ship and Lantern do not,
 # so their export is pre-mirrored about the same centre. Previews and the printed `offset`
 # (the bounds centre, unchanged by this mirror) stay in design coordinates.
-MIRROR_X_COLLECTIONS = {"Fallow", "Vehicles"}
+MIRROR_X_COLLECTIONS = {"Fallow", "Vehicles", "Deployables"}
 # The same for single sets inside a collection that is otherwise left alone: the remade
 # Infected have one bad side (heads, torsos, the `_l` / `_r` limbs), the older bodies were
 # uploaded as they are.
@@ -2266,6 +2272,9 @@ def main():
             frame_and_render(scene, cam, objs, os.path.join(PREVIEWS, name + "_back.png"), direction=(-0.5, 1.2, 0.5))
         if ref is not None:
             ref.location = (0, 0, 0)
+
+    if any(n in changed for n in (*doorman.PIECES, *doorman.FIGURES)):
+        doorman.render_previews(sys.modules[__name__], scene, cam, built, PREVIEWS)
 
     # skinned bodies: mesh + armature, exported together; previews in rest pose with the
     # rigid gear sitting on its limbs, then bent (PROOF_POSE) with the gear following the bones

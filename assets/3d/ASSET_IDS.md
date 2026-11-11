@@ -96,6 +96,9 @@ Lobby meshes (12 `env_fallow_*`, 4 `veh_lantern_*`) uploaded 2026-11-09 to the g
 | veh_lantern_trim | 120258286814432 | 120432139146773 | 7.94 x 11.65 x 30.05 | Lantern (`LanternBird`); offset in MeshAssets |
 | veh_lantern_rotor | 72210514497412 | 112438582167862 | 38.01 x 1.14 x 38.01 | Lantern (`LanternBird`); offset in MeshAssets |
 | veh_lantern_tail_rotor | 130131221968255 | 134128773314348 | 0.40 x 5.20 x 0.60 | Lantern (`LanternBird`); offset in MeshAssets |
+| dep_doorman_base | 88745683715018 | 105696327827016 | 4.05 x 1.93 x 4.13 | the Doorman's tripod (`doorman.py`, `SentryService`, `Config.CallIns.Doorman.Model = 2`); origin on the ground, offset in MeshAssets; exported pre-mirrored in X |
+| dep_doorman_cradle | 70576240552981 | 127041957980191 | 1.36 x 0.96 x 1.09 | its yoke; origin on the traverse axis 1.9 up; yaws |
+| dep_doorman_gun | 75248273049381 | 86670337644554 | 1.95 x 1.53 x 5.54 | its gun, ammo can and sensor head; origin at the trunnion 2.6 up; pitches; muzzle 3.52 ahead |
 | inf_gore_chunk_a | 114738807263836 | 112453961195196 | 0.29, 0.32, 0.30 | GoreFX chunk |
 | inf_gore_chunk_b | 101420964172693 | 102105594077537 | 0.36, 0.26, 0.27 | GoreFX chunk |
 | inf_gore_chunk_c | 120197171903263 | 119620354840068 | 0.34, 0.18, 0.17 | GoreFX chunk (bone shard) |
