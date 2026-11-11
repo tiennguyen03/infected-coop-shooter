@@ -874,8 +874,11 @@ local function tryThrow(bot: Bot, model: Model, root: BasePart, now: number, par
 		return
 	end
 	local reach = frag.ThrowDistance + frag.Radius
+	-- A mission marked through binoculars (the Anvil) has no ThrowDistance: the bot marks
+	-- within its own sight range.
+	local missionReach = if mission then mission.ThrowDistance or settings.Range else 0
 	if missionReady then
-		reach = math.max(reach, mission.ThrowDistance + mission.BlastRadius)
+		reach = math.max(reach, missionReach + mission.BlastRadius)
 	end
 	local enemies, friends = scan(root.Position, reach)
 	local self: BotBrain.Point = { x = root.Position.X, z = root.Position.Z }
@@ -886,7 +889,7 @@ local function tryThrow(bot: Bot, model: Model, root: BasePart, now: number, par
 			Radius = mission.BlastRadius,
 			MinCluster = callIn.MinCluster,
 			MinDistance = safe,
-			MaxDistance = mission.ThrowDistance,
+			MaxDistance = missionReach,
 			SafeRadius = safe,
 			HeavyCounts = true,
 		})
