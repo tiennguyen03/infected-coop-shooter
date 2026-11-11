@@ -104,7 +104,7 @@ local function flash(
 end
 
 -- Area damage on the Infected around `center` (the one place a fire mission hurts).
-local function hurtAround(player: Player, center: Vector3, shell: Shell)
+local function hurtAround(player: Player?, center: Vector3, shell: Shell)
 	for _, root in enemyRootsNear(center, shell.BlastRadius) do
 		local model = root.Parent :: Model
 		local humanoid = model:FindFirstChildOfClass("Humanoid")
@@ -117,7 +117,7 @@ local function hurtAround(player: Player, center: Vector3, shell: Shell)
 	end
 end
 
-local function detonate(player: Player, center: Vector3, shell: Shell)
+local function detonate(player: Player?, center: Vector3, shell: Shell)
 	-- Stock Explosion for the flash and boom only: zeroed radius/pressure so it can't hurt
 	-- anyone; damage is applied manually below.
 	local boom = Instance.new("Explosion")
@@ -177,7 +177,7 @@ export type MissionConfig = {
 -- CallInService (Hammer, Anvil): shells from `cfg` land around `point`; `direction` is the
 -- flat throw direction, `step` how far each shell walks along it (Walk It In; 0 otherwise).
 function AirStrikeService.fireMission(
-	player: Player,
+	player: Player?, -- nil for a bot (no kill credit)
 	cfg: MissionConfig,
 	point: Vector3,
 	direction: Vector3,

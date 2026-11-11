@@ -100,7 +100,7 @@ local Config = {
 	-- Bot squadmates (BotService): generic Pike soldiers fill the squad in solo, one
 	-- fewer per real player. Server-side bodies on the Squad roster: the Infected target
 	-- them, they follow the nearest player in formation and shoot the nearest Infected they
-	-- can see. Downed/revive and call-ins come with Sprint A step 6 and the loadout rework.
+	-- can see, revive, stim, throw frags and call fire missions.
 	Bots = {
 		Count = 3, -- bots when one player is on; squad size caps at 4
 		-- The squad's radio callsigns (Squad): players take the lowest free one as they join
@@ -118,11 +118,90 @@ local Config = {
 		},
 		FollowSlack = 4, -- closer than this to the slot: stand
 		RunBeyond = 16, -- further than this: run
-		TeleportBeyond = 80, -- further than this (stuck, fell behind): reappear in the slot
-		-- Stuck on a doorway or a stair: moved less than StuckDistance toward a
-		-- far slot for StuckSeconds -> reappear in the slot at floor level.
-		StuckSeconds = 3,
-		StuckDistance = 1,
+		CatchUpBeyond = 45, -- further than this: sprint flat out to catch up
+		CatchUpSpeed = 30,
+		-- A bot walks to its slot. In a straight line while the slot is within DirectWithin,
+		-- on its level (DirectMaxRise) and in sight; otherwise along a PathfindingService path
+		-- (doors, stairs, ramps), asked for again no sooner than PathInterval after the last
+		-- and only once the slot has moved PathRegoal; one request per PathStagger across all
+		-- bots.
+		DirectWithin = 16,
+		DirectMaxRise = 4,
+		DirectGiveUp = 1.5, -- seconds stalled on the straight line (low cover) before it paths
+		NearLeader = 8, -- the slot is out of reach but the leader is this close: stand
+		PathInterval = 1,
+		PathRegoal = 6,
+		PathStagger = 0.3,
+		PathAgentRadius = 1.5, -- fits a 4-wide door
+		PathAgentHeight = 5,
+		PathWaypointSpacing = 4,
+		PathWaypointReach = 3, -- studs: the next waypoint counts as reached
+		-- The last resort (Rules/BotBrain.shouldTeleport): further than TeleportMinDistance
+		-- from the leader and moved less than StuckDistance for StuckSeconds
+		-- (NoPathStuckSeconds once PathFailLimit paths in a row were not found), or FallBelow
+		-- studs under the leader (out of the world). It reappears in the first formation slot
+		-- (or TeleportBehind studs behind the leader) no living player is facing
+		-- (TeleportViewDot: the cosine of the half view angle), then not again for
+		-- TeleportCooldown.
+		TeleportMinDistance = 30,
+		StuckSeconds = 6,
+		NoPathStuckSeconds = 3,
+		StuckDistance = 3,
+		PathFailLimit = 3,
+		FallBelow = 80,
+		TeleportBehind = 18,
+		TeleportViewDot = 0.3,
+		TeleportCooldown = 10,
+		-- Consumables: a bot carries a soldier's stims and frags (Config.Stim.Carried,
+		-- Config.Grenade.Carried) per run; a Restock card taken by any player refills them.
+		-- It looks for a throw every ScanInterval while it has a target, over the nearest
+		-- ScanMax Infected.
+		ScanInterval = 1,
+		ScanMax = 30,
+		StimBelow = 0.4, -- share of health at or under which it stims
+		StimCooldown = 8,
+		Grenade = {
+			MinCluster = 4, -- Infected inside the frag's Radius
+			FriendMargin = 4, -- studs past the Radius kept clear of every squad member
+			Cooldown = 12, -- seconds between two throws by one bot
+		},
+		-- Boss fights (the Warden; any Infected whose EnemyDefinitions row is a Boss). While
+		-- the boss is within Engage of a bot's leader the bot leaves its formation slot for a
+		-- post StandOff from the boss on the leader's side, the slots SpreadDegrees apart
+		-- (Rules/BotBrain.standOff), and backs off as he comes. StandOff is past every close
+		-- attack (the Pound reaches 12 x ScaleReach 1.9 = 23 studs) and inside the rifle's
+		-- Range. Enabled = false: slots, StimBelow and ReviveSafeRadius only, as before.
+		Boss = {
+			Enabled = true,
+			Engage = 60,
+			StandOff = 32,
+			SpreadDegrees = 40, -- 22 studs between neighbours at StandOff; a charge is 19 wide
+			Slack = 5, -- closer than this to the post: stand
+			StimBelow = 0.6, -- stims earlier than StimBelow while the boss is engaged
+			ReviveClear = 26, -- no revive while the boss is this close to the downed body
+			PuddleMargin = 3, -- steps this far past the edge of a caustic puddle it stands in
+			ScanInterval = 0.5, -- seconds between looks for a boss on the field
+			-- A telegraphed disc or line (IndexService danger attributes): the bot runs
+			-- DodgeMargin past its edge at DodgeSpeed. These two apply with Enabled off too.
+			DodgeMargin = 5,
+			DodgeSpeed = 30,
+		},
+		-- Fire missions: each bot carries one (Kit, by bot slot; CallInDefinitions ids with a
+		-- ring Aim), thrown at MinCluster Infected inside its BlastRadius or at a heavy (an
+		-- Infected with MaxHealth of HeavyHealth or more: a Brute, a boss). Never with a squad
+		-- member inside its Aim radius + FriendMargin. One per bot every Cooldown, none in the
+		-- first FirstDelay of a run, and SquadGap between any two bots' missions. Radio is the
+		-- subtitle: callsign, then the call-in's name. Placeholder line (lore developer).
+		CallIn = {
+			Kit = { "hammer", "anvil", "hammer" },
+			MinCluster = 8,
+			HeavyHealth = 250,
+			FriendMargin = 6,
+			Cooldown = 180,
+			FirstDelay = 45,
+			SquadGap = 45,
+			Radio = "%s: %s on the way. Stay clear of the mark.",
+		},
 		-- A bot fires the service rifle (same Damage, magazine and reload as the player:
 		-- WeaponDefinitions) slower than the player, so three bots on sustained fire (3 x ~67
 		-- DPS burst) roughly equal one player; its reserve is infinite. Fallback 0.35 if they

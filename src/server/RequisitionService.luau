@@ -24,6 +24,7 @@ local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local ThrowUtil = require(ReplicatedStorage.Shared.ThrowUtil)
 local UpgradeDefinitions = require(ReplicatedStorage.Shared.UpgradeDefinitions)
+local BotService = require(script.Parent.BotService)
 local CallInService = require(script.Parent.CallInService)
 local EnemyService = require(script.Parent.EnemyService)
 local LoadoutService = require(script.Parent.LoadoutService)
@@ -346,6 +347,7 @@ local function applyCard(player: Player, cardId: string): string?
 		CallInService.refill(player)
 		LoadoutService.refillGrenades(player)
 		LoadoutService.refillStims(player)
+		BotService.restock() -- the pallet restocks the bots' frags and stims too
 	elseif cardId == "armour_plate" then
 		LoadoutService.addShield(player, Config.Crates.ArmourPlate)
 	else

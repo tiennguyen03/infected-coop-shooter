@@ -46,6 +46,12 @@ local folder: Folder
 local noticeRemote: RemoteEvent
 local drops: { Drop } = {}
 local lastStep = 0
+local aidListeners: { (member: Squad.Member) -> () } = {}
+
+-- Runs for every squad member an Aid Bag treats (BotService: a bot's stims back).
+function SupplyDropService.onAidBag(listener: (member: Squad.Member) -> ())
+	table.insert(aidListeners, listener)
+end
 
 local function remove(index: number)
 	drops[index].part:Destroy()
@@ -220,6 +226,9 @@ local function stepAidBag(drop: Drop)
 		end
 		drop.served[member.id] = true
 		humanoid.Health = humanoid.MaxHealth
+		for _, listener in aidListeners do
+			listener(member)
+		end
 		local owner = member.owner
 		if owner then
 			if typeof(refillStims) == "function" then
