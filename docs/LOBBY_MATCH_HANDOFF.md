@@ -99,7 +99,9 @@ run earned; the lobby reads progress from the DataStore, never from this table.
 
 ## The match side, built (2026-11-09, plan by the architect agent)
 
-- **Shared rule** `Rules/Handoff`: `departure(operation, aboardUserIds, loadouts?)` builds the
+- **Shared rule** `Rules/Handoff`: `departure(operation, aboardUserIds, loadouts?, objective?)` (the optional `objective` is a
+  main objective id the squad picked; nothing in the lobby sets it yet, and the match plays it
+  only if that map's pool offers it, else it draws) builds the
   lobby's teleport data (slots in boarding order, at most 4, a loadout only when given);
   `readJoin` reads it in the match; `outcome(runResult, primaryDone)` (extracted = win, a wipe
   after the Primary = partial, else loss); `result(...)` builds the trip home and

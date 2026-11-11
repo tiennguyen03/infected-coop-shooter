@@ -39,6 +39,7 @@ local function applySpeed()
 		local base = if isSprinting
 				and sprintAllowed
 				and not isAiming
+				and Players.LocalPlayer:GetAttribute(Attributes.Carrying) ~= true
 			then Config.Player.SprintSpeed
 			else Config.Player.WalkSpeed
 		local mult = (Players.LocalPlayer:GetAttribute(Attributes.MoveSpeedMult) :: number?) or 1
@@ -76,7 +77,10 @@ function SprintController.setOverrideSpeed(speed: number?)
 end
 
 function SprintController.isSprinting(): boolean
-	return isSprinting and sprintAllowed and not isAiming
+	return isSprinting
+		and sprintAllowed
+		and not isAiming
+		and Players.LocalPlayer:GetAttribute(Attributes.Carrying) ~= true
 end
 
 function SprintController.init()
@@ -112,6 +116,8 @@ function SprintController.init()
 	-- Items/buffs can change the multiplier mid-run; reapply immediately.
 	Players.LocalPlayer:GetAttributeChangedSignal(Attributes.MoveSpeedMult):Connect(applySpeed)
 	Players.LocalPlayer:GetAttributeChangedSignal(Attributes.Weapon):Connect(applySpeed)
+	-- Carrying an objective item (the screening record): the carrier walks.
+	Players.LocalPlayer:GetAttributeChangedSignal(Attributes.Carrying):Connect(applySpeed)
 end
 
 return SprintController

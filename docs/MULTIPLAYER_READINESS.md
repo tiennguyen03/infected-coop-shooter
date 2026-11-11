@@ -37,6 +37,11 @@ mine, sentry and wire caps, every `PlayerRemoving` handler, kill credit via
   or extraction completes; start and restart use the ready-up (decision 4) and reset every
   player. Run-end screens follow `RunState` / `RunResult`, not respawn.
 - **Hold:** any living member (player or bot) in the zone runs it; the HUD shows `n / living`.
+- **Objectives:** drawn once per run for the whole squad (`ObjectiveService`; state per run,
+  never per player). A living member (player or bot) reaching one starts or reveals it; a
+  hold-F prompt takes any living player; only a player carries an item (`Carrying` on that
+  player: no sprint), and it drops where they went down for anyone to take. Marked Infected
+  scale with living players, not bots. The board goes to every client and to one that loads late.
 - **Extraction:** runs only while every living player is on the pad (downed players and bots
   do not hold it up); otherwise "WAITING FOR SQUAD (n / m)". One helper, `Squad.zoneCount`.
 - **Hits:** `DamageDealt` goes to the attacking player only; a bot's hit to nobody; kills to
@@ -67,7 +72,8 @@ Planned shape | Fix when`.
    target, not a snack); the pressure is the timer and the teammate having to stop shooting.
    A teammate holds F next to them to revive (bots revive on their own). Timer out = *Dead*,
    spectate; the dead respawn when the next mission starts. Until missions chain, dead =
-   spectate to run end. Numbers in `Config.Downed` (max revives per run included).
+   spectate to run end. Numbers in `Config.Downed` (max revives per mission included: `Squad` resets the count on
+   the Lifecycle `onMissionStart` hook as well as on a fresh run).
 4. **Run ownership: anyone can request, short ready-up timer.** The first request opens a
    countdown; the run starts when it expires or everyone readies. Restart works the same way.
 5. **Items are per owner.** Inventories stay per player. A world pickup that a player's own

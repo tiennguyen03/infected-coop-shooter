@@ -35,6 +35,13 @@ local Messages = table.freeze({
 		Started = "started",
 		Progress = "progress",
 		Completed = "completed",
+		-- The objective pools (Config.Objectives): (entries: { Rules/Objectives.Entry }) the
+		-- main objective and the side objectives, resent whenever one changes
+		Board = "board",
+		-- (name, why, place) the main objective's card at insert, before the squad moves
+		Brief = "brief",
+		-- client -> server: () send me the board (a client that just loaded)
+		Request = "request",
 	}),
 	ExtractionUpdate = table.freeze({
 		Available = "available",

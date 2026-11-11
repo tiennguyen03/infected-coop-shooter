@@ -26,6 +26,8 @@ local Attributes = table.freeze({
 	ObjectiveActive = "ObjectiveActive",
 	ObjectiveCompleted = "ObjectiveCompleted",
 	ExtractionActive = "ExtractionActive",
+	-- spawn interval multiplier while extracting (ExtractionService writes, EnemyService reads)
+	ExtractionSpawnFactor = "ExtractionSpawnFactor",
 	IndexActive = "IndexActive",
 	ResupplyActive = "ResupplyActive",
 	ResupplyCost = "ResupplyCost",
@@ -56,6 +58,8 @@ local Attributes = table.freeze({
 	ReloadUntil = "ReloadUntil",
 	Shield = "Shield",
 	Kills = "Kills",
+	-- true while this player carries an objective item (Objectives/RecoverRecord): no sprint
+	Carrying = "Carrying",
 	Callsign = "Callsign", -- "Pike One" ... (Squad): the name the HUD and the radio use
 	MoveSpeedMult = "MoveSpeedMult",
 	Ready = "Ready",

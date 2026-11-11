@@ -8,7 +8,7 @@
 -- living player who walks within RearmRadius is re-armed once (full magazine + reserve).
 -- Its three cards are the supply cards (Medkit / Restock / Armour Plate; one pick per
 -- player per pallet). An upgrade crate (`dropCrate(..., "upgrade")`, the Primary's site
--- crate) shows each player field upgrades instead. Server-authoritative: the client only
+-- crates) shows each player field upgrades instead. Server-authoritative: the client only
 -- asks to throw and asks to pick; both are validated here.
 
 local Players = game:GetService("Players")
@@ -176,12 +176,14 @@ end
 
 -- Drops a crate of `kind` on `position` (ground-snapped), cards facing `facing`. `loud`
 -- lands it like a pallet: a ring wave and extra pressure for a while. The part falls in
--- from the sky; the cards show once it lands.
+-- from the sky; the cards show once it lands. `landed`: it is already on the ground (a
+-- Misdrop pallet the squad reached), so no fall.
 function RequisitionService.dropCrate(
 	position: Vector3,
 	facing: Vector3,
 	kind: CrateKind,
-	loud: boolean
+	loud: boolean,
+	landed: boolean?
 )
 	local cfg = Config.Requisition
 	local ground = GroundUtil.GetGroundPosition(position, 0)
@@ -223,12 +225,16 @@ function RequisitionService.dropCrate(
 		TweenInfo.new(CRATE_DROP_TIME, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
 		{ CFrame = rest }
 	)
-	fall:Play()
-	fall.Completed:Wait()
-	if not part.Parent then
-		return
+	if landed then
+		part.CFrame = rest
+	else
+		fall:Play()
+		fall.Completed:Wait()
+		if not part.Parent then
+			return
+		end
+		WorldSounds.at(ground, "callins", "pallet_land")
 	end
-	WorldSounds.at(ground, "callins", "pallet_land")
 
 	local living = livingPlayers()
 	if loud then

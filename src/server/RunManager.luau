@@ -84,6 +84,8 @@ local function beginRun()
 	workspace:SetAttribute(Attributes.StagingEndsAt, 0)
 	setState("Insert", "")
 	BotService.startRun()
+	-- The mission's objectives are drawn and read out while the squad lands.
+	ObjectiveService.brief(HandoffService.objective())
 	task.delay(Config.Run.InsertSeconds, function()
 		if generation ~= runGeneration or RunStates.current() ~= "Insert" then
 			return
@@ -132,7 +134,7 @@ function RunManager.goHome()
 		{
 			id = Missions.current().Id,
 			outcome = Handoff.outcome(runResult, primaryDone),
-			secondaries = 0,
+			secondaries = ObjectiveService.sidesDone(),
 		},
 	}, runResult == "Extracted")
 	print("[RunManager] going home:", result.missions[1].outcome, "standDown", result.standDown)
