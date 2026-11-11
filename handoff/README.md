@@ -15,7 +15,7 @@ Resupply flare and pallet cards → Hold Position at the objective site (1 of 3 
 upgrades) → the Warden (boss) → extraction on Lantern → OPERATION COMPLETE → ready up.
 
 - **Squad:** anonymous soldiers Pike One to Four; bots Pike Two to Four in solo; downed and
-  revive (hold F). Bots walk and path to the leader (teleport only when stuck) and use stims,
+  revive (hold E). Bots walk and path to the leader (teleport only when stuck) and use stims,
   frags and one fire mission each (not yet seen in a playtest).
 - **Kit:** six real guns (M16A4, MP5, M249, Mossberg 590, M110, M17) plus three samples in the
   dev panel (S&W 686 revolver, M2010 sniper, the Goose rocket), each with its own Blender model
