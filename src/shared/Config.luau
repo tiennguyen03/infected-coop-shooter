@@ -3,11 +3,35 @@
 -- balance changes never require touching system code.
 
 local Config = {
+	-- The keyboard (owner 2026-11-11, docs/OWNER.md). Every binding and every on-screen key
+	-- hint reads this table (Rules/KeyBindings.label turns a key into its hint), so a hint
+	-- cannot disagree with its key. One key, one action: tests/KeyBindings.spec.luau, which
+	-- also lists the overlaps that are meant. Middle mouse stays free for a ping button.
+	Keys = {
+		Interact = Enum.KeyCode.E, -- hold to revive, and anything else walked up to and used
+		Stim = Enum.KeyCode.V,
+		Shove = Enum.KeyCode.F,
+		Crouch = { Enum.KeyCode.C, Enum.KeyCode.LeftControl }, -- either key
+		Prone = Enum.KeyCode.Z,
+		Flare = Enum.KeyCode.X, -- the Resupply flare
+		Camera = Enum.KeyCode.T, -- first / third person
+		Sprint = Enum.KeyCode.LeftShift,
+		Vault = Enum.KeyCode.Space, -- vault, climb, stand up
+		SwapGun = Enum.KeyCode.Q,
+		Grenade = Enum.KeyCode.G,
+		Reload = Enum.KeyCode.R,
+		CallIns = { Enum.KeyCode.One, Enum.KeyCode.Two, Enum.KeyCode.Three, Enum.KeyCode.Four },
+		Loadout = Enum.KeyCode.B, -- the Arms Room menu
+		-- Only while sprinting, when Crouch does not listen (StanceController).
+		Roll = Enum.KeyCode.LeftControl,
+		Slide = Enum.KeyCode.C,
+	},
+
 	Player = {
 		MaxHealth = 100,
 		WalkSpeed = 16,
 		SprintSpeed = 24,
-		-- Stances: LeftControl toggles crouch, C toggles prone; sprint, a vault
+		-- Stances: Keys.Crouch toggles crouch, Keys.Prone toggles prone; sprint, a vault
 		-- or a climb stands the body up. Speeds are factors of WalkSpeed (no sprint while low).
 		Stances = {
 			CrouchSpeedFactor = 0.5,
@@ -65,10 +89,10 @@ local Config = {
 			Acceleration = 60, -- 0 -> walk (16) in ~0.27 s, 0 -> sprint (24) in 0.4 s
 			Deceleration = 75, -- walk -> stop in ~0.2 s; a full reversal ~0.45 s
 		},
-		-- Sprint + LeftControl: a short roll along the move direction. Infected melee skips
+		-- Sprint + Keys.Roll: a short roll along the move direction. Infected melee skips
 		-- the body for the roll (CoverMoveService, same window as a vault).
 		Roll = { Duration = 0.8, Speed = 25, Cooldown = 1 },
-		-- Sprint + C: a longer slide that bleeds speed from StartSpeed to EndSpeed. No
+		-- Sprint + Keys.Slide: a longer slide that bleeds speed from StartSpeed to EndSpeed. No
 		-- immunity; it covers ground, the roll dodges.
 		Slide = { Duration = 0.95, StartSpeed = 30, EndSpeed = 14, Cooldown = 1.2 },
 		AutoVaultSprinting = true, -- sprinting into cover vaults without pressing Space
@@ -139,11 +163,11 @@ local Config = {
 	},
 
 	-- Downed / revive (decision #3, Squad). A lethal hit downs a member instead of killing:
-	-- prone, no moving or firing, not a target, takes no damage. A squadmate holds F next
+	-- prone, no moving or firing, not a target, takes no damage. A squadmate holds Keys.Interact next
 	-- to them (bots revive on their own) to stand them up; the timer running out kills.
 	Downed = {
 		BleedOutSeconds = 30,
-		ReviveHold = 3, -- seconds of holding F
+		ReviveHold = 3, -- seconds of holding Keys.Interact
 		ReviveRadius = 8, -- studs
 		ReviveHealthFraction = 0.5,
 		DownedHealth = 1,
@@ -217,13 +241,12 @@ local Config = {
 		PivotHeight = { stand = 2, crouch = 0.6, prone = -1.2 },
 		PivotEaseTime = 0.25,
 		-- First person (Nova, 2026-11-10: "a first person toggle for players in the match"):
-		-- T (or the right stick click) toggles it; the wheel past MinDistance goes in, the
+		-- Keys.Camera (or the right stick click) toggles it; the wheel past MinDistance goes in, the
 		-- wheel back out leaves it. The eye rides the Head, a little forward of its centre;
 		-- the soldier's own body is hidden on this client, and FirstPersonView shows the held
 		-- gun with gloved hands and sleeves, its own reload, kick, sway and bob.
 		-- The crosshair fades out down the sights so the iron sights or scope do the aiming.
 		FirstPerson = {
-			Key = Enum.KeyCode.T,
 			GamepadKey = Enum.KeyCode.ButtonR3,
 			EyeForward = 0.45, -- studs ahead of the head's centre
 			EyeUp = 0.1,
@@ -523,8 +546,8 @@ local Config = {
 		},
 	},
 
-	-- The soldier's kit beside the guns (KitService; docs/PROGRESSION.md > Loadout). G throws a
-	-- grenade (Carried; a pallet re-arm refills them), V shoves, E uses a stim (a Medkit card
+	-- The soldier's kit beside the guns (KitService; docs/PROGRESSION.md > Loadout). Keys.Grenade throws a
+	-- grenade (Carried; a pallet re-arm refills them), Keys.Shove shoves, Keys.Stim uses a stim (a Medkit card
 	-- refills them). A Restock card refills grenades and stims with the call-ins.
 	Grenade = {
 		Carried = 3,

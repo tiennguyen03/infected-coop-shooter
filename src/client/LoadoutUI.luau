@@ -1,14 +1,14 @@
 --!strict
 -- Loadout HUD (HUD language: HudTheme). Reads the LocalPlayer attributes LoadoutService
 -- publishes:
---   * the ammo counter beside the crosshair: the gun's name small above it with "[Q]" and
+--   * the ammo counter beside the crosshair: the gun's name small above it with "[Q]" (Config.Keys.SwapGun) and
 --     the other gun dim, the magazine large, " / reserve" small and dim, a thin white tick
 --     at its left; yellow when the magazine is low, "RELOADING" over a thin bar while
---     ReloadUntil is ahead of server time, red "DRY [R]" on empty. It is attribute-driven
+--     ReloadUntil is ahead of server time, red "DRY [R]" (Keys.Reload) on empty. It is attribute-driven
 --     and only ticks every frame while a reload runs;
 --   * a field upgrade landing in a slot shows as a notification card (BuffNoticeUI) with
 --     the upgrade's lore name and slot; the ability circle carries the mark (AbilityUI);
---   * the Arms Room host: B opens and closes the menu (LoadoutMenu, UI only), DEPLOY sends
+--   * the Arms Room host: Keys.Loadout (B) opens and closes the menu (LoadoutMenu, UI only), DEPLOY sends
 --     the pick over the Loadout remote and the server's answer shows on the menu.
 
 local Players = game:GetService("Players")
@@ -19,6 +19,7 @@ local UserInputService = game:GetService("UserInputService")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Attributes = require(Shared:WaitForChild("Attributes"))
 local Config = require(Shared:WaitForChild("Config"))
+local KeyBindings = require(Shared:WaitForChild("Rules"):WaitForChild("KeyBindings"))
 local Messages = require(Shared:WaitForChild("Messages"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 local UpgradeDefinitions = require(Shared:WaitForChild("UpgradeDefinitions"))
@@ -29,6 +30,9 @@ local HudTheme = require(script.Parent.HudTheme)
 local LoadoutMenu = require(script.Parent.LoadoutMenu)
 
 local LoadoutUI = {}
+
+local SWAP_KEY = KeyBindings.label(Config.Keys.SwapGun.Name)
+local RELOAD_KEY = KeyBindings.label(Config.Keys.Reload.Name)
 
 local C = HudTheme.Color
 local LOW_MAG_FRACTION = 0.25
@@ -87,7 +91,10 @@ local function updateGun()
 	local other = if inHand == secondary then primary else secondary
 	local weapon = WeaponDefinitions.get(inHand)
 	local otherText = if other
-		then HudTheme.tint(`  [Q] {string.upper(WeaponDefinitions.get(other).Name)}`, C.TextDim)
+		then HudTheme.tint(
+			`  [{SWAP_KEY}] {string.upper(WeaponDefinitions.get(other).Name)}`,
+			C.TextDim
+		)
 		else ""
 	gunLabel.Text = `{string.upper(weapon.Name)}{otherText}`
 end
@@ -119,7 +126,7 @@ local function updateAmmo()
 	local dim = HudTheme.hex(C.TextDim)
 	local reserveText = `<font size="16" color="{dim}" face="Gotham"> / {reserve}</font>`
 	if mag <= 0 then
-		ammoLabel.Text = (if reserve > 0 then "DRY [R]" else "DRY") .. reserveText
+		ammoLabel.Text = (if reserve > 0 then `DRY [{RELOAD_KEY}]` else "DRY") .. reserveText
 		ammoLabel.TextColor3 = C.RedLight
 	else
 		ammoLabel.Text = `{mag}{reserveText}`
@@ -239,7 +246,7 @@ function LoadoutUI.init()
 		end
 	end)
 	UserInputService.InputBegan:Connect(function(input, gameProcessed)
-		if gameProcessed or input.KeyCode ~= Enum.KeyCode.B then
+		if gameProcessed or input.KeyCode ~= Config.Keys.Loadout then
 			return
 		end
 		if menu then

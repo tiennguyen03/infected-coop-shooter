@@ -129,7 +129,7 @@ function DeskService.init()
 		local prompt = Instance.new("ProximityPrompt")
 		prompt.ActionText = "Talk"
 		prompt.ObjectText = desk.title
-		prompt.KeyboardKeyCode = Enum.KeyCode.F
+		prompt.KeyboardKeyCode = Config.Keys.Interact
 		prompt.HoldDuration = 0
 		prompt.MaxActivationDistance = place.reach or Config.Lobby.DeskPromptDistance
 		prompt.RequiresLineOfSight = false

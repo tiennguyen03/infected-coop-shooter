@@ -8,6 +8,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local KeyBindings = require(ReplicatedStorage.Shared.Rules.KeyBindings)
 
 export type WeaponSlot = "primary" | "secondary"
 export type FireMode = "auto" | "semi"
@@ -224,7 +225,7 @@ local GRENADES: { [string]: GrenadeDefinition } = {
 		Id = "frag",
 		Name = "Frag",
 		Designation = "M67",
-		Description = "Hold G to aim, release to throw. Kills a Hocker, not a Brute.",
+		Description = `Hold {KeyBindings.label(Config.Keys.Grenade.Name)} to aim, release to throw. Kills a Hocker, not a Brute.`,
 		ConfigKey = "Frag",
 	},
 }

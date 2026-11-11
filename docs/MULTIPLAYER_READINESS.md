@@ -65,7 +65,7 @@ Planned shape | Fix when`.
 3. **Death: downed, revivable, respawn at the start of the next mission.** At 0 HP a member
    is *Downed*: bleed-out timer, the Infected ignore them and they take no damage (a rescue
    target, not a snack); the pressure is the timer and the teammate having to stop shooting.
-   A teammate holds F next to them to revive (bots revive on their own). Timer out = *Dead*,
+   A teammate holds E next to them to revive (bots revive on their own). Timer out = *Dead*,
    spectate; the dead respawn when the next mission starts. Until missions chain, dead =
    spectate to run end. Numbers in `Config.Downed` (max revives per run included).
 4. **Run ownership: anyone can request, short ready-up timer.** The first request opens a
@@ -99,9 +99,9 @@ Planned shape | Fix when`.
      spot launches: `docs/sprints/LOBBY_V1_FALLOW.md`); it is the start place and sends
      `Rules/Handoff` (`docs/LOBBY_MATCH_HANDOFF.md`).
    Server flow and scaling: [ARCHITECTURE.md](ARCHITECTURE.md) > Sessions.
-8. **Keys (2026-11-07, updated 2026-11-08).** F = interact (revive, pickups, prompts); 1-4
-   call-ins, 5 the Resupply flare. Movement chords are undecided; do not change them without
-   the owner ([OWNER.md](OWNER.md)).
+8. **Keys (2026-11-11).** E = interact (revive, pickups, prompts); the full table is in
+   [OWNER.md](OWNER.md) > Rules already decided, the code in `Config.Keys`. A new key goes
+   there, never into a controller (`tests/SourceReferences.spec.luau` fails otherwise).
 
 Verification for co-op work: the `multiplayer_playtest` Studio MCP tool (2+ clients);
 single-player must keep working throughout.
