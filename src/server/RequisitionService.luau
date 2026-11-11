@@ -8,7 +8,7 @@
 -- living player who walks within RearmRadius is re-armed once (full magazine + reserve).
 -- Its three cards are the supply cards (Medkit / Restock / Armour Plate; one pick per
 -- player per pallet). An upgrade crate (`dropCrate(..., "upgrade")`, the Primary's site
--- crate) shows each player field upgrades instead. Server-authoritative: the client only
+-- crates) shows each player field upgrades instead. Server-authoritative: the client only
 -- asks to throw and asks to pick; both are validated here.
 
 local Players = game:GetService("Players")

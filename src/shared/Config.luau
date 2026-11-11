@@ -154,7 +154,7 @@ local Config = {
 		ReviveRadius = 8, -- studs
 		ReviveHealthFraction = 0.5,
 		DownedHealth = 1,
-		MaxRevives = 2, -- per run; the next lethal hit after that kills outright
+		MaxRevives = 2, -- per mission; the next lethal hit after that kills outright
 		CrawlSpeed = 3, -- studs/s: a downed body crawls on hands and knees toward cover or help
 	},
 	-- Knocked down (the Warden's Pound and Stomp; Squad.knock): KnockedUntil on the
@@ -297,20 +297,21 @@ local Config = {
 	-- table and the reasoning). Real-world fire rates: FireCooldown = 60 / rpm. Spreads are
 	-- half-angles in degrees: hip, ADS, then BloomPerShot per round up to BloomMax on top,
 	-- recovering at BloomRecovery degrees per second. AdsMoveFactor scales the walk while
-	-- aiming (sprint is off). Reserve is rounds beyond the loaded magazine; a pallet fills it
-	-- to ReserveMax. Pellets: rounds per trigger pull (Damage is per pellet). Pierce: Infected
+	-- aiming (sprint is off). Reserve is rounds beyond the loaded magazine: a soldier lands
+	-- with ReserveStart (about half, so the first pallet matters) and a pallet fills it to
+	-- ReserveMax. Pellets: rounds per trigger pull (Damage is per pellet). Pierce: Infected
 	-- a round passes through after the first. FireMode "semi": one round per click.
 	Weapons = {
 		-- M16A4, the baseline: Walker 3 body / 1 head, Brute 13 / 11; burst DPS 250. Bloom
-		-- makes a held trigger spray at range, so 3-5 round bursts are the skill. 30 + 240 =
-		-- 9 mags: the Warden fight never runs it dry at the pallet costs below.
+		-- makes a held trigger spray at range, so 3-5 round bursts are the skill. Re-armed:
+		-- 30 + 240 = 9 mags, the Warden fight never runs it dry at the pallet costs below.
 		ServiceRifle = {
 			FireMode = "auto",
 			Damage = 20,
 			FireCooldown = 0.08, -- 750 rpm
 			MagazineSize = 30,
 			ReloadTime = 2.2,
-			ReserveStart = 240,
+			ReserveStart = 120,
 			ReserveMax = 240,
 			HipSpread = 1.5, -- about a stud off at 40 studs
 			AdsSpread = 0.3,
@@ -332,7 +333,7 @@ local Config = {
 			FireCooldown = 0.075, -- 800 rpm
 			MagazineSize = 30,
 			ReloadTime = 1.8,
-			ReserveStart = 210,
+			ReserveStart = 120,
 			ReserveMax = 210,
 			HipSpread = 0.9,
 			AdsSpread = 0.6,
@@ -355,7 +356,7 @@ local Config = {
 			FireCooldown = 0.075, -- 800 rpm
 			MagazineSize = 100,
 			ReloadTime = 5.5,
-			ReserveStart = 300,
+			ReserveStart = 150,
 			ReserveMax = 300,
 			HipSpread = 3.0,
 			AdsSpread = 0.5,
@@ -381,7 +382,7 @@ local Config = {
 			FireCooldown = 0.75, -- 80 rpm
 			MagazineSize = 8,
 			ReloadTime = 3.5,
-			ReserveStart = 40,
+			ReserveStart = 20,
 			ReserveMax = 40,
 			HipSpread = 5.0,
 			AdsSpread = 3.5,
@@ -407,7 +408,7 @@ local Config = {
 			FireCooldown = 0.2, -- 300 rpm
 			MagazineSize = 20,
 			ReloadTime = 2.6,
-			ReserveStart = 80,
+			ReserveStart = 40,
 			ReserveMax = 80,
 			HipSpread = 4.0,
 			AdsSpread = 0.1,
@@ -430,7 +431,7 @@ local Config = {
 			FireCooldown = 0.15, -- 400 rpm
 			MagazineSize = 17,
 			ReloadTime = 1.5,
-			ReserveStart = 68,
+			ReserveStart = 34,
 			ReserveMax = 68,
 			HipSpread = 1.2,
 			AdsSpread = 0.5,
@@ -458,7 +459,7 @@ local Config = {
 			FireCooldown = 0.4, -- 150 rpm
 			MagazineSize = 6,
 			ReloadTime = 2.8, -- speedloader
-			ReserveStart = 30,
+			ReserveStart = 18,
 			ReserveMax = 30,
 			HipSpread = 1.8,
 			AdsSpread = 0.4,
@@ -484,7 +485,7 @@ local Config = {
 			FireCooldown = 1.25, -- 48 rpm (bolt cycle)
 			MagazineSize = 5,
 			ReloadTime = 3.2,
-			ReserveStart = 30,
+			ReserveStart = 15,
 			ReserveMax = 30,
 			HipSpread = 6.0,
 			AdsSpread = 0.05,
@@ -1003,27 +1004,38 @@ local Config = {
 	},
 
 	-- Hold Position objective V1. Pays SupplyReward into the Resupply pool on completion and
-	-- drops an upgrade crate at the site when it activates (field upgrade source).
+	-- drops an upgrade crate at the site when it activates (field upgrade source), and a
+	-- second one when the hold ends: picked before the Index arrives, not after it falls.
 	Objective = {
 		AppearDelay = 180, -- seconds after server start before the zone appears
 		RequiredSeconds = 45, -- total accumulated seconds inside the zone
 		PressureWave = { Walker = 8, Runner = 4 }, -- spawned around the zone on appear
 		PressureBruteAfter = 0, -- also +1 Brute if the run is older than this (seconds)
 		SupplyReward = 500,
+		CompleteCrate = "upgrade", -- the crate the hold's end drops; "" for none
+		CompleteCrateOffset = 10, -- studs from the site crate, toward the nearest soldier
 		ZoneSize = Vector3.new(46, 1, 46), -- Sprint 13 tune: bigger, room to kite while holding
 		ZonePosition = Vector3.new(50, 8.5, 50), -- on the Compound's lower tier (ArenaService HILLS)
 		SyncInterval = 0.1, -- seconds between progress updates to the UI
 	},
 
-	-- Extraction phase (Sprint 12): starts when the objective completes. The helipad in the
-	-- south-west corner, ~226 studs from the objective hill.
+	-- Extraction phase (Sprint 12): starts when the Index falls. The helipad in the
+	-- south-west corner, ~226 studs from the objective hill. PressureWave lands on the call;
+	-- each Waves row lands when the hold's progress reaches At (Rules/ExtractionWaves).
 	Extraction = {
-		HoldDuration = 30, -- accumulated seconds inside the zone to win
+		HoldDuration = 60, -- accumulated seconds inside the zone to win
 		ZoneSize = Vector3.new(28, 1, 28),
 		ZonePosition = Vector3.new(-90, 0.6, -90),
 		SyncInterval = 0.1,
 		PressureWave = { Walker = 12, Runner = 4, Brute = 1 },
 		SpawnFactor = 0.8, -- spawn interval multiplier while extracting (+20%)
+		-- Count: phase-weighted Infected (Spawning.Phases) in a ring round the pad, plus
+		-- PerExtraPlayer per living player beyond the first. SpawnFactor replaces the one
+		-- above from that wave on.
+		Waves = {
+			{ At = 30, Count = 12, PerExtraPlayer = 3, SpawnFactor = 0.6 },
+		},
+		WaveRadio = "Second wave closing on the pad. Hold it, Pike.", -- shown as "CONTROL: ..."
 	},
 
 	-- Flat threat curve (the spine): no per-minute health or damage growth. The
@@ -1420,7 +1432,7 @@ local Config = {
 			-- Flank: full damage even while he guards (the back).
 			Plates = {
 				Helmet = { Limb = "Head", Mesh = "inf_warden_plate_helmet", Health = 300 },
-				Chest = { Limb = "UpperTorso", Mesh = "inf_warden_plate_chest", Health = 500 },
+				Chest = { Limb = "UpperTorso", Mesh = "inf_warden_plate_chest", Health = 400 },
 				Back = {
 					Limb = "UpperTorso",
 					Mesh = "inf_warden_plate_back",
@@ -1575,9 +1587,10 @@ local Config = {
 			},
 			-- The field while he is up: fewer ambient spawns, a smaller horde, no Brutes.
 			Pressure = { SpawnFactor = 1.5, MaxAliveReduction = 8, Caps = { Brute = 0 } },
-			-- The priority pallet on death: an upgrade crate (Crates.CardsPerPlayer cards each),
-			-- a full heal and a re-arm; his SupplyValue goes to the Resupply pool like any kill.
-			Drop = { Offset = 6 },
+			-- The priority pallet on death: a full heal, a re-arm and a quiet pallet with the
+			-- supply cards (Cards; "upgrade" puts the field upgrades back here, as before
+			-- Objective.CompleteCrate took them). His SupplyValue goes to the Resupply pool.
+			Drop = { Offset = 6, Cards = "supply" },
 			-- Radio lines (lore developer), shown as notices. Insert and wipe lines
 			-- belong to RunManager flows later.
 			Radio = {

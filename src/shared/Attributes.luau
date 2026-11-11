@@ -26,6 +26,8 @@ local Attributes = table.freeze({
 	ObjectiveActive = "ObjectiveActive",
 	ObjectiveCompleted = "ObjectiveCompleted",
 	ExtractionActive = "ExtractionActive",
+	-- spawn interval multiplier while extracting (ExtractionService writes, EnemyService reads)
+	ExtractionSpawnFactor = "ExtractionSpawnFactor",
 	IndexActive = "IndexActive",
 	ResupplyActive = "ResupplyActive",
 	ResupplyCost = "ResupplyCost",

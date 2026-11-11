@@ -28,7 +28,7 @@
 -- also draws its ring (BossUpdate "zone") and every ground / line attack marks the danger
 -- on workspace attributes so bots step out of it (BotService). Phases by body health: the
 -- Riot Call at 60% and 25% (EnemyService.spawnWave round him). On death: the priority
--- pallet (RequisitionService "upgrade" crate), a full heal and re-arm for the squad.
+-- pallet (RequisitionService crate, Drop.Cards), a full heal and re-arm for the squad.
 -- docs/PROGRESSION.md "Index kit: the Warden"; docs/sprints/SPRINT_19_WARDEN.md.
 
 local Debris = game:GetService("Debris")
@@ -1163,9 +1163,15 @@ local function endFight(current: Fight, defeated: boolean)
 		local root = current.handle.root
 		local facing = flat(root.CFrame.LookVector)
 		local drop = cfg().Drop
-		-- The priority pallet: the Index's upgrade cards, a full heal and a re-arm.
+		-- The priority pallet: a full heal, a re-arm and the cards Drop.Cards names (supply;
+		-- the field upgrades land when the hold ends, ObjectiveService).
 		local ground = GroundUtil.GetGroundPosition(root.Position + facing * drop.Offset, 0)
-		RequisitionService.dropCrate(ground, facing, "upgrade", false)
+		RequisitionService.dropCrate(
+			ground,
+			facing,
+			(drop.Cards :: any) :: RequisitionService.CrateKind,
+			false
+		)
 		for _, member in Squad.living() do
 			if member.humanoid then
 				member.humanoid.Health = member.humanoid.MaxHealth
