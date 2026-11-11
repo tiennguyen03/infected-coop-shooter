@@ -33,7 +33,7 @@ upgrades) → the Warden (boss) → extraction on Lantern → OPERATION COMPLETE
 - **Roblox:** the group Boomin Dev Studios (270506601) owns the game "Co-op Zombie Shooter" and
   every sound and animation. Its start place 87556879379942 holds the **lobby**; the match is
   "Checkpoint Delta" 125769854992316 (`Config.Places`).
-- **Checks:** stylua, selene, rojo build, 58 Lune tests, luau-lsp, CI on every push.
+- **Checks:** stylua, selene, rojo build, 135 Lune tests (rules plus the source-wiring spec, which also reads the lobby's remotes), luau-lsp, CI on every push.
 
 ## Who owns what
 

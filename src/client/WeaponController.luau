@@ -65,10 +65,6 @@ local function drawTracer(origin: Vector3, endPoint: Vector3)
 	end)
 end
 
-function WeaponController.isAiming(): boolean
-	return isAiming
-end
-
 local function setAiming(on: boolean)
 	if isAiming == on then
 		return

@@ -1295,7 +1295,7 @@ local function step()
 	end
 end
 
-local function spawn(groundPosition: Vector3, walk: boolean): boolean
+local function spawnWarden(groundPosition: Vector3, walk: boolean): boolean
 	if fight then
 		return false
 	end
@@ -1370,7 +1370,7 @@ end
 function IndexService.start(): boolean
 	local settings = cfg()
 	radio("PrimaryComplete")
-	local ok = spawn(GroundUtil.GetGroundPosition(settings.SpawnPosition, 0), true)
+	local ok = spawnWarden(GroundUtil.GetGroundPosition(settings.SpawnPosition, 0), true)
 	if ok then
 		task.delay(settings.GateOpenDelay, function()
 			if fight then
@@ -1383,7 +1383,7 @@ end
 
 -- Dev: the Warden at `position`, hunting at once (no walk in).
 function IndexService.spawnAt(position: Vector3): boolean
-	return spawn(GroundUtil.GetGroundPosition(position, 0), false)
+	return spawnWarden(GroundUtil.GetGroundPosition(position, 0), false)
 end
 
 function IndexService.isActive(): boolean
