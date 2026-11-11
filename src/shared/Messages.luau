@@ -80,7 +80,7 @@ local Messages = table.freeze({
 	-- Record (lobby place): the Quartermaster's rack (RecordService, Rules/Record)
 	Record = table.freeze({
 		Buy = "buy", -- client -> server: (gunId)
-		State = "state", -- server -> client: (merits, ownedIds) the soldier's record
+		State = "state", -- server -> client: (merits, ownedIds, tabs) the soldier's record
 		Refused = "refused", -- server -> client: (gunId, reason) "short" | "owned" | "unknown" | "loading"
 	}),
 	Launch = table.freeze({
