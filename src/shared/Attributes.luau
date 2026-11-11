@@ -78,6 +78,16 @@ local Attributes = table.freeze({
 	BleedOutAt = "BleedOutAt",
 	SelfReviveAt = "SelfReviveAt",
 	Reviver = "Reviver",
+	-- ReplicatedStorage.SquadRoster (the folder's name, kept here so writer and reader share
+	-- one spelling): one entry per squad member, player or bot, always replicated (bodies
+	-- stream out). Squad writes SquadState, BleedOutAt, Reviver, Callsign and Shield there
+	-- too, plus these; the client's SquadPanelUI reads them. Times are server time, 0 = none.
+	SquadRoster = "SquadRoster",
+	SquadUserId = "SquadUserId", -- the player's UserId, 0 for a bot
+	SquadHealth = "SquadHealth",
+	SquadMaxHealth = "SquadMaxHealth",
+	ReviveEndsAt = "ReviveEndsAt", -- when the revive in progress completes
+	RespawnAt = "RespawnAt", -- when a dead bot rejoins
 	KnockedUntil = "KnockedUntil",
 	KnockGraceUntil = "KnockGraceUntil",
 	CoverMoveUntil = "CoverMoveUntil",

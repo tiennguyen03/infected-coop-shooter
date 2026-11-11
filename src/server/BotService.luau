@@ -190,6 +190,14 @@ local function loadTracks(bot: Bot, humanoid: Humanoid)
 	end
 end
 
+-- Drops the revive this bot was holding (the squad panel's revive bar follows the Reviver).
+local function stopReviving(bot: Bot)
+	if bot.reviveProgress > 0 and bot.reviving then
+		Squad.clearReviver(bot.reviving, bot.member)
+	end
+	bot.reviveProgress = 0
+end
+
 local function spawnBot(bot: Bot, position: Vector3)
 	if bot.spawning then
 		return
@@ -220,6 +228,7 @@ local function spawnBot(bot: Bot, position: Vector3)
 		animateScript:Destroy() -- a LocalScript: never runs on a server rig; we drive the clips
 	end
 	humanoid.DisplayName = bot.member.name
+	PlayerSetup.hideOverhead(humanoid)
 	humanoid.MaxHealth = Config.Bots.MaxHealth
 	humanoid.Health = Config.Bots.MaxHealth
 	humanoid.WalkSpeed = Config.Bots.WalkSpeed
@@ -255,7 +264,9 @@ local function spawnBot(bot: Bot, position: Vector3)
 			return
 		end
 		stopTracks(bot)
+		stopReviving(bot)
 		bot.respawnAt = os.clock() + Config.Bots.RespawnSeconds
+		Squad.setRespawnIn(bot.member, Config.Bots.RespawnSeconds)
 		task.delay(4, function()
 			if bot.model == rig then
 				despawn(bot)
@@ -477,8 +488,8 @@ local function holdDowned(bot: Bot, humanoid: Humanoid, root: BasePart)
 	humanoid.WalkSpeed = 0
 	humanoid:MoveTo(root.Position)
 	humanoid.AutoRotate = false
+	stopReviving(bot)
 	bot.reviving = nil
-	bot.reviveProgress = 0
 	local tracks = bot.tracks
 	for _, track in { tracks.idle, tracks.walk, tracks.run } do
 		if track and track.IsPlaying then
@@ -496,6 +507,7 @@ local function tryRevive(bot: Bot, humanoid: Humanoid, root: BasePart, boss: Bas
 	local settings = Config.Bots
 	local target = bot.reviving
 	if not target or target.state ~= "Downed" then
+		stopReviving(bot)
 		target = nil
 		local best = settings.ReviveSearch
 		for _, member in Squad.downed() do
@@ -508,7 +520,6 @@ local function tryRevive(bot: Bot, humanoid: Humanoid, root: BasePart, boss: Bas
 			end
 		end
 		bot.reviving = target
-		bot.reviveProgress = 0
 	end
 	local downedRoot = target and target.root
 	if not target or not downedRoot then
@@ -523,17 +534,20 @@ local function tryRevive(bot: Bot, humanoid: Humanoid, root: BasePart, boss: Bas
 		}
 	)
 	if not safe then
-		bot.reviveProgress = 0
+		stopReviving(bot)
 		return false -- too hot (an Infected, or the boss on top of them): fight first
 	end
 	local distance = (downedRoot.Position - root.Position).Magnitude
 	if distance > Config.Downed.ReviveRadius - 2 then
 		humanoid.WalkSpeed = settings.RunSpeed
 		humanoid:MoveTo(downedRoot.Position)
-		bot.reviveProgress = 0
+		stopReviving(bot)
 		return true
 	end
 	humanoid:MoveTo(root.Position)
+	if bot.reviveProgress == 0 then
+		Squad.setReviver(target, bot.member, Config.Downed.ReviveHold)
+	end
 	bot.reviveProgress += settings.ThinkInterval
 	if bot.reviveProgress >= Config.Downed.ReviveHold then
 		Squad.revive(target, bot.member)

@@ -287,6 +287,25 @@ local Config = {
 		GetUp = 1.0,
 		Grace = 1.0, -- after standing: no second knockdown (its damage still lands)
 	},
+	-- Squad status panel (client SquadPanelUI, Rules/SquadPanel; owner 2026-11-11: no
+	-- floating health bars, squadmates' status in a side panel). One row per other squad
+	-- member on the left edge under the top-left HUD. Offsets are 1080p pixels (HudTheme).
+	SquadPanel = {
+		Enabled = true,
+		-- true restores the old floating bars: the billboard over a hurt Infected and
+		-- Roblox's own bar over squadmates. Names: Roblox's name tag over squadmates.
+		OverheadBars = false,
+		OverheadNames = false,
+		Top = 176, -- under the health stack, the ability circles and the resupply line
+		Width = 190,
+		RowHeight = 32,
+		RowGap = 8,
+		MaxRows = 3,
+		LowFraction = 0.3, -- under this share of health the row turns red
+		BigHitFraction = 0.25, -- losing this share of max health in one hit flashes the row
+		FlashSeconds = 0.45,
+		TickSeconds = 0.25, -- countdown refresh, only while someone is down or dead
+	},
 
 	-- Run flow (RunManager, Shared.RunStates). Co-op Sprint A.
 	-- The operation: its missions in play order, each one data file in src/server/Missions

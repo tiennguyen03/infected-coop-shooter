@@ -448,7 +448,9 @@ local function spawnZombie(
 	-- EnemyService.slow restores this after a slow without corrupting it.
 	humanoid:SetAttribute(Attributes.BaseWalkSpeed, definition.WalkSpeed)
 	humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
-	if not definition.Boss then
+	humanoid.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOff
+	-- No floating health bars (owner 2026-11-11); Config.SquadPanel.OverheadBars restores it.
+	if Config.SquadPanel.OverheadBars and not definition.Boss then
 		attachHealthBar(humanoid, root, definition.Scale) -- a boss has the boss bar (BossBarUI)
 	end
 
