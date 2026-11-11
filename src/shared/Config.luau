@@ -108,6 +108,17 @@ local Config = {
 		Bloom = { Intensity = 0.7, Size = 24, Threshold = 0.8 },
 		Vignette = 0.22, -- share of the screen each dark edge covers
 		Click = { Bank = "ui_radio", Group = "ui_click", Volume = 0.35, Pitch = 0.8 },
+		-- The goggles on the helmet (Nova, 2026-11-11: "i want the goggle to visually flip
+		-- down"). A catalog mesh cannot be split, so the goggles are their own accessory
+		-- (Player.Look.Items) on the plain helmet's mount, turned about a hinge on the mount
+		-- (Shared.Goggles): modelled lowered over the eyes, they rest raised (folded up against
+		-- the mount) and flip down while that soldier's night vision is on, seen by everyone.
+		Goggles = {
+			MeshId = "rbxassetid://78470053593247", -- the goggles accessory's mesh (how they are found)
+			Pivot = Vector3.new(0, 0.5, -0.76), -- the hinge in the head's space, on the helmet mount
+			RaisedAngle = 100, -- degrees up from lowered when stowed
+			FlipSeconds = 0.35,
+		},
 	},
 
 	Player = {
@@ -127,7 +138,8 @@ local Config = {
 			Items = {
 				135730034330771,
 				74956577347922,
-				92700467676199,
+				127266797794601, -- a black FAST helmet with an NVG mount, no goggles
+				132746703033226, -- PVS-31 goggles on that mount (NightVision.Goggles hinges them)
 			},
 			Skin = Color3.fromRGB(176, 140, 112),
 			Shirt = Color3.fromRGB(86, 92, 66), -- under the clothing

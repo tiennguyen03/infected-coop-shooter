@@ -5,7 +5,11 @@
 -- dark reads, a green colour correction that takes the colour out, bloom on anything lit, a
 -- small flicker and dark screen edges. Everything here is local to the player; it turns off on
 -- respawn and on death. Config.NightVision holds every value.
+-- The goggles on every soldier's helmet (Shared.Goggles) flip down while that soldier's night
+-- vision is on: this client's own at once, everyone else's from their character's NightVision
+-- attribute (the server sets it from the NightVision remote this sends).
 
+local CollectionService = game:GetService("CollectionService")
 local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -13,7 +17,10 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
+local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
+local Goggles = require(ReplicatedStorage.Shared.Goggles)
+local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local SoundFX = require(script.Parent.SoundFX)
 
 local NightVision = {}
@@ -27,6 +34,7 @@ local bloom: BloomEffect
 local edges: ScreenGui
 local blink: Frame
 local random = Random.new()
+local goggles: { [Instance]: number } = {} -- every goggles accessory -> how raised (0 down, 1 up)
 
 -- The dark screen edges: four gradient strips (no image needed).
 local function buildOverlay(): (ScreenGui, Frame)
@@ -85,6 +93,7 @@ local function set(state: boolean, instant: boolean?)
 		return
 	end
 	on = state
+	Remotes.get("NightVision"):FireServer(state)
 	if instant then
 		apply(state)
 		return
@@ -156,6 +165,43 @@ function NightVision.init()
 			color.Brightness = NV.Brightness + random:NextNumber(-NV.Flicker, NV.Flicker)
 		end
 	end)
+	-- Every soldier's goggles: down while that soldier's night vision is on, eased between.
+	local function wantRaised(accessory: Instance): number
+		local character = accessory.Parent
+		if not character then
+			return 1
+		end
+		local down = if character == player.Character
+			then on
+			else character:GetAttribute(Attributes.NightVision) == true
+		return if down then 0 else 1
+	end
+	local function track(accessory: Instance)
+		local raised = wantRaised(accessory)
+		goggles[accessory] = raised
+		Goggles.pose(accessory, raised)
+	end
+	CollectionService:GetInstanceAddedSignal(Goggles.TAG):Connect(track)
+	CollectionService:GetInstanceRemovedSignal(Goggles.TAG):Connect(function(accessory)
+		goggles[accessory] = nil
+	end)
+	for _, accessory in CollectionService:GetTagged(Goggles.TAG) do
+		track(accessory)
+	end
+	RunService.Heartbeat:Connect(function(deltaTime: number)
+		local step = deltaTime / NV.Goggles.FlipSeconds
+		for accessory, raised in goggles do
+			local target = wantRaised(accessory)
+			if raised ~= target then
+				raised = if target > raised
+					then math.min(target, raised + step)
+					else math.max(target, raised - step)
+				goggles[accessory] = raised
+				Goggles.pose(accessory, raised * raised * (3 - 2 * raised))
+			end
+		end
+	end)
+
 	local function watch(character: Model)
 		set(false, true)
 		local humanoid = character:WaitForChild("Humanoid", 10)
