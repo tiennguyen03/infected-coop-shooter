@@ -199,6 +199,7 @@ UIScale) and its text through `HudTheme.label`.
 | Health stack (`HealthBarUI`) | top left (16,12) | 400x16 red bar, white damage trail; shield 400x6 white bar under it with a "+N" tag; low health: red outline + red edge vignette pulsing; downed: dim fill, vignette held |
 | Abilities (`AbilityUI`) | top left (16,44) | seven 38 px circles G / V / E / 1-4 (frag, shove, stim, the call-ins): key letter, name under (PC); cooling: white fill rising, seconds; grenades, stims and call-in charges as yellow squares under the circle, the circle dims when empty; a diamond marks an upgrade in the slot |
 | Resupply (`ResupplyUI`) | top left (16,108) | 14 pt line + 240x4 bar with quarter ticks; ready: "RESUPPLY READY [5] FLARE" with the bar pulsing; inbound: "PALLET 0:14", bar drains |
+| Squad panel (`SquadPanelUI`, `Config.SquadPanel`) | left edge (16,176) | one 190x32 row per other squad member (max 3, callsign order): name 14 in friendly blue (a player's display name, a bot's callsign), state 12 right-aligned, 190x6 health bar (red; red.l with a red outline under 30%), 190x3 white Armour Plate bar when plated; downed: "DOWN 23s" on a draining red.l bar, "REVIVING" on a filling blue bar; dead: dim, "DEAD 8s" while a bot's respawn runs; a red.l flash on a hit of 25% or a down. Repaints on attribute changes; a 0.25 s timer only while a countdown shows |
 | Run timer (`RunTimerUI`) | top centre (0,8) | 16 pt, no panel |
 | Ammo (`LoadoutUI`) | crosshair (+40,+40) | the gun in hand 12 pt above it with "[Q] PISTOL" dim (the other gun); magazine GothamBlack 26 + " / reserve" 16 dim; yellow low, "RELOADING" + bar, red "DRY [R]"; attribute-driven |
 | Arms Room (`LoadoutMenu`, hosted by `LoadoutUI` on B) | centre, 760 wide, DisplayOrder 110 (above the results) | menu style: (22,8,8) at 0.08 with a red.m 1 px box, "//ARMS ROOM" 30, a dim 12 pt rule line; columns PRIMARY / SIDEARM + GRENADE / CALL-INS of 26 px rows (name 14 bold left, designation 11 right), the pick in the cream fill with dark text, call-ins badged "[n]" by slot; the hovered item's line under the columns; cream DEPLOY LOADOUT bottom right, the server's refusal in red.l above it; height grows with the longest list |
@@ -212,8 +213,11 @@ UIScale) and its text through `HudTheme.label`.
 
 - No always-on loadout strip: an upgrade shows as a card when it lands and as a diamond on
   its ability circle.
-- Not built yet: world markers (objective, LZ, pallet diamonds with distance) and a squad
-  roster; both need the server to publish positions and squad state.
+- **No floating health bars or name tags** (owner 2026-11-11): none over the Infected,
+  players or bots, and Roblox's own top-right health bar is off. Squadmates are the squad
+  panel, the boss its top bar. `Config.SquadPanel.OverheadBars` / `OverheadNames` restore them.
+- Not built yet: world markers (objective, LZ, pallet diamonds with distance); they need the
+  server to publish positions.
 - Cards in the world (pallet billboards) keep their layout.
 - UI stays **code-generated** (disk is the single source of truth). No hand edits in Studio.
 - Never block the centre of the screen except for the run-end screens.

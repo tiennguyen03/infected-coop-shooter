@@ -78,6 +78,9 @@ something; never delete one without the owner.
   regenerate before re-enabling. Every boss gets its own sound bank; every speaker a sound
   profile so its clips match. (2026-11-08)
 - **UI direction:** Prototype 2's HUD, adapted to a squad shooter. (2026-11-08)
+- **No floating health bars,** over the Infected, players or bots. Squadmates' status is a
+  panel on the side of the HUD; the player's own health stays in the HUD and the boss keeps
+  its bar at the top of the screen. (2026-11-11)
 
 ## Rules already decided
 
