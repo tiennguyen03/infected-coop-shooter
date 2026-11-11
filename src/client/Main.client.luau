@@ -28,6 +28,7 @@ require(script.Parent.ExtractionUI).init()
 require(script.Parent.BossBarUI).init()
 require(script.Parent.AbilityController).init()
 require(script.Parent.AbilityUI).init()
+require(script.Parent.AllyOutline).init()
 require(script.Parent.DevTestPanel).init()
 
 print("[Client] All controllers initialized")

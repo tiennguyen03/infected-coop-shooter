@@ -138,6 +138,16 @@ local Config = {
 		ReviveSafeRadius = 12, -- ...unless an Infected is this close to the downed body
 	},
 
+	-- The outline every squadmate (player or bot) wears, seen through walls (AllyOutline,
+	-- owner 2026-11-11). A thin line, no fill; it changes colour while they are downed.
+	AllyOutline = {
+		Enabled = true,
+		Color = Color3.fromRGB(150, 205, 235), -- pale blue: reads as "friend", unlike any Infected colour
+		DownedColor = Color3.fromRGB(230, 189, 96), -- the HUD yellow: needs a revive
+		Transparency = 0.45, -- of the line (0 = solid): kept light on purpose
+		DownedTransparency = 0.1,
+	},
+
 	-- Downed / revive (decision #3, Squad). A lethal hit downs a member instead of killing:
 	-- prone, no moving or firing, not a target, takes no damage. A squadmate holds F next
 	-- to them (bots revive on their own) to stand them up; the timer running out kills.
