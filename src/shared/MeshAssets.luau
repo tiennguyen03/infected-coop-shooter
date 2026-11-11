@@ -1428,10 +1428,20 @@ function MeshAssets.getOffset(name: string): Vector3
 	return def.offset or Vector3.new(0, def.size.Y / 2, 0)
 end
 
--- A held gun's barrel tip relative to its grip (nil for a mesh that is not a gun).
+-- Where a point measured on a mesh's design (from its origin, Roblox axes) shows in game.
+-- Roblox mirrors an uploaded mesh left-right about its bounds centre (build_assets.py,
+-- MIRROR_X_*); the guns are uploaded unmirrored, so a point at design x shows at
+-- 2 * offset.X - x. Measured 2026-11-11 on the uploaded M249, MP5, M16, Mossberg: their
+-- front posts sit at 2 * offset.X, not on x = 0 (the eye missed the sights sideways).
+function MeshAssets.shownPoint(name: string, point: Vector3): Vector3
+	return Vector3.new(2 * MeshAssets.getOffset(name).X - point.X, point.Y, point.Z)
+end
+
+-- A held gun's barrel tip relative to its grip (nil for a mesh that is not a gun), where
+-- it shows (shownPoint).
 function MeshAssets.getMuzzle(name: string): Vector3?
 	local def = MESHES[name]
-	return def and def.muzzle
+	return if def and def.muzzle then MeshAssets.shownPoint(name, def.muzzle) else nil
 end
 
 -- Builds the composite colliders of a placed piece as invisible anchored Parts parented to
