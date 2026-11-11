@@ -117,10 +117,13 @@ Hard-won gotchas:
   module copy — calling service functions from eval hits nil remotes. Drive the real game by
   firing the `DevCommand` RemoteEvent from `client-1`; use eval only to read Instance/
   attribute state. Stateless modules (GroundUtil) are fine in eval.
-- **Dev tools v2 (2026-11-07).** In game, F1 opens the dev panel (cursor freed; grouped
-  Player / Run / Infected / Squad / Teleport / Checks) with a live info line (fps, RunState,
-  Infected, GOD, SPAWNS OFF). Hotkeys with the panel closed: F2 god, F3 clear Infected, F4
-  10 Walkers, F5 restart, F6 fill Resupply, F7 spawning on/off. Teleports run client-side.
+- **Dev tools v3 (2026-11-11).** In game, F1 opens the dev panel (cursor freed): tabs RUN /
+  PLAYER / INFECTED / GUNS / CALL-INS / UPGRADES / TELEPORT. A call-in is one row (slot 1-4,
+  FIRE), an Infected form one row (1 / 5 / 10 / 25); god mode, spawning stopped and pause
+  light up while on; a line under the title repeats the last command. Live info line (fps,
+  RunState, Infected, GOD, SPAWNS OFF, PAUSED). Hotkeys with the panel closed: F2 god, F3
+  clear Infected, F4 10 Walkers, F5 restart, F6 fill Resupply, F7 spawning on/off, F8 refill
+  ammo, F9 Warden here. Teleports run client-side.
 - DevCommand commands (fire from `client-1`): God (toggle; player attribute DevGod skips
   enemy damage), Heal (also revives), DownPlayer(botName?), RevivePlayer(botName?),
   KillPlayer, DownBot, KillBots, SetBots(n), ToggleSpawns (workspace DevSpawnsOff),

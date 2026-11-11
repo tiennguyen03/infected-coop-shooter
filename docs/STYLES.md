@@ -212,6 +212,9 @@ UIScale) and its text through `HudTheme.label`.
 
 - No always-on loadout strip: an upgrade shows as a card when it lands and as a diamond on
   its ability circle.
+- **Ally outline** (`AllyOutline`, `Config.AllyOutline`; owner 2026-11-11): every squadmate
+  (player or bot) wears a thin pale blue outline seen through walls, no fill; yellow while
+  downed, off when dead.
 - Not built yet: world markers (objective, LZ, pallet diamonds with distance) and a squad
   roster; both need the server to publish positions and squad state.
 - Cards in the world (pallet billboards) keep their layout.
