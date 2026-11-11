@@ -300,6 +300,15 @@ function GunsmithUI.open(
 		close()
 	end)
 
+	-- Above the cover: a host whose ScreenGui sorts by Global ZIndex (the Loadmaster's) would
+	-- otherwise draw the cover over the panel and give it every click (Nova: "really dark and
+	-- none of the buttons worked").
+	for _, child in cover:GetDescendants() do
+		if child:IsA("GuiObject") then
+			child.ZIndex += cover.ZIndex
+		end
+	end
+
 	return close
 end
 

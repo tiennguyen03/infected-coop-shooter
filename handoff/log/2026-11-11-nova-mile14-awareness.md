@@ -34,6 +34,11 @@ on Backspace / Escape (Nova opened my test copy, which had neither). Mile 14 Dev
 its StarterPlayerScripts held a saved `RbxCharacterSounds`, and Roblox never inserted
 PlayerModule / PlayerScriptsLoader there; removed, `CharacterAutoLoads` matched to Match Dev,
 saved and reopened by Nova: moves now. A place copied this way needs the same check.
+**The EDIT screen, checked through the Loadmaster** (Nova: "make sure that the attachment edit
+screen works"): the real cause of the dark, dead screen was ZIndex: the Loadmaster's ScreenGui
+is Global, the cover (20) sat over the panel (1). Everything in the cover is now lifted above
+it. Played: prompt, "Set up my Loadout", EDIT on the Service Rifle, SUPPRESSOR selected (the can
+on the gun in the viewport), DONE, signed: `Fitted` = `service_rifle.Barrel=suppressor`.
 **Next (the plan's steps):** 2 the suppressor (per gun row, Arms Room pick, muzzle model, quiet
 shot sound); 3 the map proper (the Overpass, night sky, living trees, sleepers placed in buses
 and booths); 4 going loud (the horn, spawns, Kill the Horn) and quiet objectives with a reward;
