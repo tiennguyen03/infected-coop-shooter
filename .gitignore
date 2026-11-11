@@ -6,6 +6,7 @@
 
 # Generated tooling files
 sourcemap.json
+*.sourcemap.json
 globalTypes.d.luau
 roblox.yml
 

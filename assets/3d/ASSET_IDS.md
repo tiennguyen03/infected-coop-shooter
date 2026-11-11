@@ -17,18 +17,20 @@ them.
 | pick_xp_orb | 95196197176639 | 134499655967097 | 1.0 x 1.0 x 1.0 | unused in game (XP orbs retired) |
 | prop_ammo_crate | 70908704628683 | 111854712064143 | 2.86 x 1.68 x 1.92 | pivot bottom: place at ground + 0.84 |
 | prop_repulsor_mine | 122106813224951 | 102515645095030 | 1.9 x 0.97 x 2.0 | pivot bottom: place at ground + 0.485 |
+Lobby meshes (12 `env_fallow_*`, 4 `veh_lantern_*`) uploaded 2026-11-09 to the group (270506601); MeshIds read in Studio through the built-in Studio MCP; rows at the end of the table. Re-uploaded the same day pre-mirrored in X (`build_assets.MIRROR_X_COLLECTIONS`: Roblox showed the first upload mirrored left-right); the rows carry the v2 ids.
+
 | prop_drone | 132929388031760 | 93513427419630 | 1.94 x 0.43 x 1.94 | unused in game (drones retired) |
 | prop_drone_beacon | 117405323536844 | 71937735064271 | 1.56 x 3.21 x 1.36 | unused in game |
 | wpn_rifle | 86613539481097 | 77112302177721 | 0.195 x 0.84 x 2.9 | 0.65x of the Blender size; grip offset handled in PlayerSetup |
-| wpn_revolver | 133525801275343 | 110455613061010 | 0.25 x 0.76 x 1.0 | S&W 686 sample gun (guns.py, in-game size); offset/muzzle in MeshAssets |
-| wpn_sniper | 86507403821540 | 138249511970708 | 0.46 x 1.07 x 3.65 | M2010 ESR sample gun |
-| wpn_goose | 82637563176152 | 80902890703049 | 0.6 x 0.94 x 3.03 | M3 recoilless ("Goose") sample launcher |
-| wpn_m16 | 74091027600803 | 104945563283109 | 0.27 x 1.02 x 3.09 | M16A4 (guns.py, in-game size) |
-| wpn_mp5 | 84221584333359 | 112693756802429 | 0.23 x 0.87 x 2.19 | MP5A3 (guns.py, in-game size) |
-| wpn_m249 | 106050421873423 | 129764792627355 | 0.32 x 0.95 x 2.89 | M249 SAW (guns.py, in-game size) |
-| wpn_mossberg | 101866256014088 | 103329258934721 | 0.26 x 0.77 x 2.82 | Mossberg 590 (guns.py, in-game size) |
-| wpn_m110 | 124848490890431 | 88359560754649 | 0.23 x 1.03 x 3.25 | M110 SASS (guns.py, in-game size) |
-| wpn_m17 | 104797900074658 | 80875013937947 | 0.14 x 0.76 x 0.67 | M17 (guns.py, in-game size) |
+| wpn_revolver | 83543461161868 | 114514019723570 | 0.25 x 0.75 x 1.00 | S&W 686 sample gun (guns.py, in-game size); offset/muzzle in MeshAssets |
+| wpn_sniper | 71899784449648 | 91471123884683 | 0.47 x 1.07 x 3.65 | M2010 ESR sample gun |
+| wpn_goose | 91078392816733 | 84200379350190 | 0.62 x 0.94 x 3.03 | M3 recoilless ("Goose") sample launcher |
+| wpn_m16 | 109914446546047 | 104914746717908 | 0.25 x 1.16 x 3.08 | M16A4 (guns.py, in-game size) |
+| wpn_mp5 | 97053083297242 | 111456075554250 | 0.24 x 0.97 x 2.20 | MP5A3 (guns.py, in-game size) |
+| wpn_m249 | 126749782608669 | 100923087686046 | 0.32 x 0.98 x 2.94 | M249 SAW (guns.py, in-game size) |
+| wpn_mossberg | 74477534761633 | 95743569516175 | 0.26 x 0.80 x 2.86 | Mossberg 590 (guns.py, in-game size) |
+| wpn_m110 | 87592748941938 | 87838172578916 | 0.23 x 1.11 x 3.27 | M110 SASS (guns.py, in-game size) |
+| wpn_m17 | 113489832840781 | 133642910354030 | 0.14 x 0.76 x 0.67 | M17 (guns.py, in-game size) |
 | veh_shrike_hull | 137109529997310 | 107275791771348 | 8.4 x 8.62 x 29.75 | the Shrike gunship (aircraft.py); offset from the fuselage centre in MeshAssets |
 | veh_shrike_rotor | 137738331555839 | 103052309432570 | 18.96 x 0.35 x 18.89 | its main rotor, origin at the hub; spun by AirStrikeService |
 | prop_plague_rat | 102065990394982 | 135041557109073 | 0.47 x 0.52 x 1.88 | unused in game (plague rat retired) |
@@ -78,6 +80,22 @@ them.
 | env_dead_tree | 103119294791056 | 130464254006022 | 4.97 x 13.98 x 7.09 | Hull |
 | env_lamp_post | 132474171948585 | 84369687950095 | 4.9 x 13 x 1.2 | Hull; arm along +X |
 | inf_gore_stump | 85306816428466 | 84507882691071 | 0.42, 0.24, 0.44 | GoreService stump, offset 0.014, 0.070, 0 |
+| env_fallow_bow | 79486262325305 | 104622065954343 | 84.00 x 46.00 x 67.00 | the Fallow (`FallowArt`); offset in MeshAssets |
+| env_fallow_bow_trim | 132397837700021 | 97023816902354 | 108.38 x 28.06 x 40.35 | the Fallow (`FallowArt`); offset in MeshAssets |
+| env_fallow_mid_port | 122409690040918 | 88646751785808 | 1.40 x 47.60 x 240.00 | the Fallow (`FallowArt`); offset in MeshAssets |
+| env_fallow_mid_stbd | 88469209943203 | 83063655665064 | 6.70 x 47.60 x 240.00 | the Fallow (`FallowArt`); offset in MeshAssets |
+| env_fallow_mid_trim | 89298549327422 | 137758694973401 | 98.19 x 47.71 x 240.00 | the Fallow (`FallowArt`); offset in MeshAssets |
+| env_fallow_stern | 82182009942595 | 93667458396006 | 82.00 x 47.60 x 80.60 | the Fallow (`FallowArt`); offset in MeshAssets |
+| env_fallow_stern_trim | 73421811886287 | 128754286386619 | 93.39 x 46.11 x 83.60 | the Fallow (`FallowArt`); offset in MeshAssets |
+| env_fallow_island | 130312060133465 | 107187435436606 | 23.50 x 45.98 x 60.00 | the Fallow (`FallowArt`); offset in MeshAssets |
+| env_fallow_island_trim | 77115099660902 | 82654754437766 | 22.60 x 75.90 x 58.50 | the Fallow (`FallowArt`); offset in MeshAssets |
+| env_fallow_radar | 122770221853253 | 132374836460710 | 7.30 x 7.20 x 2.12 | the Fallow (`FallowArt`); offset in MeshAssets |
+| env_fallow_catwalk | 84242427975777 | 70496787014665 | 6.05 x 4.35 x 23.25 | the Fallow (`FallowArt`); offset in MeshAssets |
+| env_fallow_catwalk_rafts | 108793529856112 | 83467676322971 | 6.05 x 4.35 x 23.25 | the Fallow (`FallowArt`); offset in MeshAssets |
+| veh_lantern_body | 96644034649925 | 115134036147611 | 7.50 x 11.50 x 41.11 | Lantern (`LanternBird`); offset in MeshAssets |
+| veh_lantern_trim | 120258286814432 | 120432139146773 | 7.94 x 11.65 x 30.05 | Lantern (`LanternBird`); offset in MeshAssets |
+| veh_lantern_rotor | 72210514497412 | 112438582167862 | 38.01 x 1.14 x 38.01 | Lantern (`LanternBird`); offset in MeshAssets |
+| veh_lantern_tail_rotor | 130131221968255 | 134128773314348 | 0.40 x 5.20 x 0.60 | Lantern (`LanternBird`); offset in MeshAssets |
 | inf_gore_chunk_a | 114738807263836 | 112453961195196 | 0.29, 0.32, 0.30 | GoreFX chunk |
 | inf_gore_chunk_b | 101420964172693 | 102105594077537 | 0.36, 0.26, 0.27 | GoreFX chunk |
 | inf_gore_chunk_c | 120197171903263 | 119620354840068 | 0.34, 0.18, 0.17 | GoreFX chunk (bone shard) |
@@ -148,6 +166,15 @@ them.
 | pc_assault_upper_leg | 96325067678523 | 114031815727891 | 1.08, 1.59, 1.09 | offset 0.043, -0.115, -0.058 |
 | pc_assault_lower_leg | 131875477288797 | 108866156558305 | 1.01, 1.30, 0.99 | offset 0.000, 0.000, 0.000 |
 | pc_assault_foot | 79144855233866 | 112575972731289 | 1.01, 0.31, 1.00 | offset 0.000, 0.000, 0.000 |
+| npc_crew_head | 131227012252937 | 131903886009421 | 1.26, 1.18, 1.22 | offset 0.000, 0.000, -0.052 (untextured, coloured per figure) |
+| npc_crew_upper_torso | 85978695721727 | 126103295936800 | 1.94, 1.70, 1.10 | offset 0.000, 0.000, -0.050 (untextured, coloured per figure) |
+| npc_crew_lower_torso | 80351304652292 | 112058906942275 | 1.99, 0.40, 1.00 | offset 0.000, 0.000, 0.000 (untextured, coloured per figure) |
+| npc_crew_upper_arm | 110314480935040 | 82793731849114 | 1.04, 1.44, 1.04 | offset 0.000, -0.098, 0.000 (untextured, coloured per figure) |
+| npc_crew_lower_arm | 106413045096439 | 136351375059306 | 1.00, 1.12, 1.00 | offset 0.000, 0.000, 0.000 (untextured, coloured per figure) |
+| npc_crew_hand | 108782428124781 | 113774630304168 | 0.82, 0.32, 0.86 | offset 0.000, 0.000, 0.000 (untextured, coloured per figure) |
+| npc_crew_upper_leg | 101791646143939 | 81438170916012 | 0.99, 1.59, 1.04 | offset 0.000, -0.115, -0.032 (untextured, coloured per figure) |
+| npc_crew_lower_leg | 107324902853571 | 131632832203669 | 0.99, 1.30, 0.97 | offset 0.000, 0.000, 0.000 (untextured, coloured per figure) |
+| npc_crew_foot | 76812379013675 | 96007982604042 | 1.01, 0.71, 1.00 | offset 0.000, 0.198, 0.000 (untextured, coloured per figure) |
 | pc_assault_skinned (skin) | 106205735830249 | 87236345847400 | 3.98, 5.45, 1.26 | switched off (`Config.Player.SkinnedBody`); `MeshAssets.SKINNED_BODIES.body` loads the model id |
 | pc_assault_skinned_parts (hidden rig) | 15 meshes | 89768415142935 | R15 boxes | switched off; `SKINNED_BODIES.parts` |
 | pc_assault_gear_helmet | 106002887456604 | 115206275662165 | 1.34, 1.11, 1.54 | rigid gear for the skinned body, on Head, offset 0.000, 0.095, -0.060 |

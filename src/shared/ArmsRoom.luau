@@ -1,7 +1,7 @@
 --!strict
 -- What the Arms Room offers (docs/PROGRESSION.md > Loadout): the catalog the pure rules
 -- (Rules/Loadout) validate against, built from the definition modules. Shared so the menu
--- (LoadoutMenu) and the server (LoadoutService.apply) agree, and so a lobby can use it later.
+-- (LoadoutMenu) and the server (LoadoutService.apply) agree; the lobby's Loadmaster uses it too.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 

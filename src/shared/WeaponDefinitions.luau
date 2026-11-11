@@ -41,9 +41,11 @@ export type WeaponDefinition = {
 	Heavy: boolean, -- staggers a Brute (Config.Enemies.Flinch)
 	ReloadClip: string?, -- its own reload clip; nil = Config.Animations.Assault.reload
 	Model: string, -- the held mesh (MeshAssets wpn_*); default wpn_rifle
+	Price: number?, -- merits at the lobby's Quartermaster (Rules/Record): 0 = issued free, nil = not for sale
 	Sound: string?, -- its clips in the `guns` bank: <Sound>_shot, <Sound>_reload; nil = the shared rifle shot and gear reload
 	Explosive: Explosive?, -- a launcher: the round is a visible rocket that blows at impact
 	ProjectileSpeed: number?, -- studs/s of that rocket (Explosive only)
+	ArmsOrder: number, -- its place in the Arms Room within its slot (lower first; default 100)
 }
 
 -- A launcher's blast at the impact point (the frag's blast, KitService.blast). SelfDamage is
@@ -85,11 +87,14 @@ type Tuning = {
 	Heavy: boolean?,
 	ReloadClip: string?,
 	Model: string?,
+	Price: number?,
 	Sound: string?,
 	Explosive: Explosive?,
 	ProjectileSpeed: number?,
+	ArmsOrder: number?,
 }
 
+local DEFAULT_ARMS_ORDER = 100
 local DEFAULT_MODEL = "wpn_rifle"
 
 local function row(
@@ -127,9 +132,11 @@ local function row(
 		Heavy = tuning.Heavy == true,
 		ReloadClip = tuning.ReloadClip,
 		Model = tuning.Model or DEFAULT_MODEL,
+		Price = tuning.Price,
 		Sound = tuning.Sound,
 		Explosive = tuning.Explosive,
 		ProjectileSpeed = tuning.ProjectileSpeed,
+		ArmsOrder = tuning.ArmsOrder or DEFAULT_ARMS_ORDER,
 	}
 end
 
@@ -185,7 +192,7 @@ local ROWS: { [string]: WeaponDefinition } = {
 		"M17",
 		"The sidearm. Q to draw it when the long gun runs dry.",
 		W.Pistol
-	), -- Sample guns (dev menu; not in the Arms Room lists below until the loadout work adds them).
+	), -- Sample guns (2026-11-09), in the Arms Room like the rest.
 	revolver = row(
 		"revolver",
 		"secondary",
@@ -227,9 +234,26 @@ WeaponDefinitions.DEFAULT_SECONDARY = "pistol"
 WeaponDefinitions.DEFAULT_GRENADE = "frag"
 WeaponDefinitions.Rows = ROWS
 WeaponDefinitions.Grenades = GRENADES
--- Arms Room order (the first of each list is the default).
-WeaponDefinitions.PRIMARIES = { "service_rifle", "smg", "lmg", "shotgun", "dmr" }
-WeaponDefinitions.SECONDARIES = { "pistol" }
+-- The Arms Room lists, built from the rows: every gun of the slot, by its ArmsOrder (then id).
+-- The first of each is the default. A new gun appears by having a row.
+local function slotList(slot: WeaponSlot): { string }
+	local ids = {}
+	for id, weapon in ROWS do
+		if weapon.Slot == slot then
+			table.insert(ids, id)
+		end
+	end
+	table.sort(ids, function(a, b)
+		local oa, ob = ROWS[a].ArmsOrder, ROWS[b].ArmsOrder
+		if oa ~= ob then
+			return oa < ob
+		end
+		return a < b
+	end)
+	return ids
+end
+WeaponDefinitions.PRIMARIES = slotList("primary")
+WeaponDefinitions.SECONDARIES = slotList("secondary")
 WeaponDefinitions.GRENADES = { "frag" }
 
 -- Every gun id, sorted (the dev panel lists them all, Arms Room or not).

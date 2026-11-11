@@ -10,6 +10,12 @@
 -- FOV so the sights feel steady. The pivot drops with the stance (StanceController) and the
 -- body's yaw can be locked while a vault/climb carries it (MovementController). No
 -- wall-occlusion handling yet - the arena is open ground.
+--
+-- First person (Config.Camera.FirstPerson): T toggles it, or the wheel past the closest zoom.
+-- The same yaw, pitch, kick, shake and sights, the eye on the Head instead of behind the
+-- shoulder; this soldier's own body is hidden on this client, and FirstPersonView shows its
+-- arms and gun playing the body's clips. Down the sights in first person the crosshair fades
+-- out so the iron sights or scope do the aiming.
 
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
@@ -23,6 +29,7 @@ local WeaponDefinitions =
 	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("WeaponDefinitions"))
 local Feel =
 	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Rules"):WaitForChild("Feel"))
+local FirstPersonView = require(script.Parent.FirstPersonView)
 
 local HIP_FOV = 70
 local CROSSHAIR_HIP = 22 -- ring diameter in pixels at the hip
@@ -37,6 +44,7 @@ local distance: number = Config.Camera.Distance
 local aiming = false
 local adsBlend = 0 -- 0 = hip, 1 = sights; eased each frame
 local crosshairRing: Frame? = nil
+local crosshairDot: Frame? = nil
 local bloomShotAt: number? = nil -- when the Bloom attribute last changed (a shot)
 local cursorHolders: { [string]: boolean } = {}
 local pivotHeight: number = Config.Camera.PivotHeight.stand
@@ -50,6 +58,8 @@ local kickRecover = 0.12
 -- Blast shake (Config.Camera.Shake): amplitude in degrees, decaying each frame.
 local shakeAmplitude = 0
 local lastFocus: Vector3? = nil
+local firstPerson = false
+local hiddenParts: { BasePart } = {} -- this soldier's parts hidden in first person
 
 -- Fraction left after `dt` of an exponential ease that is ~95% done after `over` seconds.
 local function decayFactor(dt: number, over: number): number
@@ -109,6 +119,37 @@ function CameraController.setBodyYawLocked(locked: boolean)
 	bodyYawLocked = locked
 end
 
+local function refreshHidden()
+	for _, part in hiddenParts do
+		part.LocalTransparencyModifier = 0
+	end
+	table.clear(hiddenParts)
+	local character = Players.LocalPlayer.Character
+	if not (firstPerson and character) then
+		return
+	end
+	for _, part in character:GetDescendants() do
+		if part:IsA("BasePart") then
+			table.insert(hiddenParts, part)
+		end
+	end
+end
+
+function CameraController.setFirstPerson(on: boolean)
+	if firstPerson == on then
+		return
+	end
+	firstPerson = on
+	refreshHidden()
+	if not on then
+		FirstPersonView.hide()
+	end
+end
+
+function CameraController.isFirstPerson(): boolean
+	return firstPerson
+end
+
 local function applyCharacterSettings(character: Model)
 	local humanoid = character:WaitForChild("Humanoid") :: Humanoid
 	-- We rotate the character to the camera yaw ourselves each frame.
@@ -125,6 +166,13 @@ local function applyCharacterSettings(character: Model)
 	kickPitch = 0
 	kickYaw = 0
 	shakeAmplitude = 0
+	-- A new body: hide it again if we are in first person, and anything added to it later.
+	task.defer(refreshHidden)
+	character.DescendantAdded:Connect(function(thing)
+		if firstPerson and thing:IsA("BasePart") then
+			task.defer(refreshHidden)
+		end
+	end)
 end
 
 local function createCrosshair()
@@ -147,6 +195,7 @@ local function createCrosshair()
 	corner.Parent = dot
 
 	dot.Parent = gui
+	crosshairDot = dot
 
 	-- Spread ring: wide at the hip, closes into the dot while aiming down sights.
 	local ring = Instance.new("Frame")
@@ -232,6 +281,16 @@ local function onRenderStep(deltaTime: number)
 		end
 		size += bloomValue * CROSSHAIR_PER_BLOOM
 		ring.Size = UDim2.fromOffset(size, size)
+		-- Down the sights in first person the sights aim: the crosshair fades out.
+		local fade = if firstPerson then adsBlend else 0
+		local stroke = ring:FindFirstChildOfClass("UIStroke")
+		if stroke then
+			stroke.Transparency = 0.35 + 0.65 * fade
+		end
+		local dot = crosshairDot
+		if dot then
+			dot.BackgroundTransparency = 0.2 + 0.8 * fade
+		end
 	end
 
 	local pivotRate = deltaTime
@@ -265,7 +324,26 @@ local function onRenderStep(deltaTime: number)
 		+ Vector3.new(0, pivotHeight + rootDrop, 0)
 		+ rotation:VectorToWorldSpace(Vector3.new(shoulder.X, shoulder.Y, 0))
 	lastFocus = focus
-	camera.CFrame = CFrame.new(focus) * rotation * CFrame.new(0, 0, reach)
+	local head = character and character:FindFirstChild("Head")
+	if firstPerson and head and head:IsA("BasePart") then
+		-- The eye on the head (it follows crouch, prone and the body's bob), just ahead of its
+		-- centre; the sights only narrow the view. The body is re-hidden each frame because
+		-- Roblox's camera scripts reset LocalTransparencyModifier.
+		local eye = Config.Camera.FirstPerson
+		local flatYaw = CFrame.fromEulerAnglesYXZ(0, yaw, 0)
+		local at = head.Position
+			+ Vector3.new(0, eye.EyeUp, 0)
+			+ flatYaw:VectorToWorldSpace(Vector3.new(0, 0, -eye.EyeForward))
+		lastFocus = at
+		camera.CFrame = CFrame.new(at) * rotation
+		for _, part in hiddenParts do
+			part.LocalTransparencyModifier = 1
+		end
+		FirstPersonView.update(character, camera.CFrame, adsBlend, deltaTime)
+	else
+		camera.CFrame = CFrame.new(focus) * rotation * CFrame.new(0, 0, reach)
+		FirstPersonView.hide()
+	end
 
 	-- Character faces the aim direction while alive.
 	if humanoid and humanoid.Health > 0 and not bodyYawLocked then
@@ -278,11 +356,33 @@ local function onInputChanged(input: InputObject, gameProcessed: boolean)
 		return
 	end
 	if input.UserInputType == Enum.UserInputType.MouseWheel then
+		local scroll = input.Position.Z
+		if firstPerson then
+			if scroll < 0 then -- wheel back: out to the closest third-person zoom
+				CameraController.setFirstPerson(false)
+				distance = Config.Camera.MinDistance
+			end
+			return
+		end
+		if scroll > 0 and distance <= Config.Camera.MinDistance then
+			CameraController.setFirstPerson(true) -- wheel in past the closest zoom
+			return
+		end
 		distance = math.clamp(
-			distance - input.Position.Z * 1.5,
+			distance - scroll * 1.5,
 			Config.Camera.MinDistance,
 			Config.Camera.MaxDistance
 		)
+	end
+end
+
+local function onInputBegan(input: InputObject, gameProcessed: boolean)
+	if gameProcessed then
+		return
+	end
+	local keys = Config.Camera.FirstPerson
+	if input.KeyCode == keys.Key or input.KeyCode == keys.GamepadKey then
+		CameraController.setFirstPerson(not firstPerson)
 	end
 end
 
@@ -305,6 +405,7 @@ function CameraController.init()
 	end
 
 	UserInputService.InputChanged:Connect(onInputChanged)
+	UserInputService.InputBegan:Connect(onInputBegan)
 
 	-- After the default camera update so our settings win each frame.
 	RunService:BindToRenderStep("OTSCamera", Enum.RenderPriority.Camera.Value + 1, onRenderStep)

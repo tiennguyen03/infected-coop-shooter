@@ -288,5 +288,9 @@ fatigues, black Pike carrier (PIKE tab, three mag pouches, radio, one tourniquet
 gloves, knee pads and boots. The only per-player detail is the seat square (One
 `friendly blue`, Two `tan.l`, Three `white.l`, Four `warning orange`) on the left shoulder
 and the back panel. The support weapon from a call-in is carried on the back, where the
-squad can see it. Bots are Pike Two, Three and Four by seat. Retired sheets (Weller, Cole,
+squad can see it. Bots are Pike Two, Three and Four by seat. Added 2026-11-10 (same on
+every body): the Carrier's screening band on the left wrist (white paper, one yellow stripe;
+the Walker's Delta band is white with red: the soldiers wear what the corridor wore) and a
+chemlight taped to the left shoulder strap. Ship and desk crew bodies:
+[lore/desk_crew.md](lore/desk_crew.md) > Bodies. Retired sheets (Weller, Cole,
 Kilo, Reyes, Cross, Kane) are in [lore/retired_chosen.md](lore/retired_chosen.md).

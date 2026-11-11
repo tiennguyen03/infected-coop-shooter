@@ -1,5 +1,6 @@
 --!strict
--- The Arms Room (docs/PROGRESSION.md > Loadout): UI only, so a lobby can host it later.
+-- The Loadout menu (docs/PROGRESSION.md > Loadout; titled "Arms Room" in the match): UI only,
+-- hosted by the match (LoadoutUI) and the lobby's Loadmaster (LoadmasterUI, via `options`).
 -- `mount(parent, onConfirm)` builds the panel in the menu style (HudTheme: near-black red
 -- field, "//" header, cream selection) inside `parent` and returns a handle. The soldier
 -- picks one primary, one sidearm, one grenade and up to Config.CallIns.Slots different
@@ -25,10 +26,21 @@ local WIDTH = 760
 local COLUMN = 230
 local ROW = 30
 
+-- What a host may change; left out, the match's Arms Room text is used.
+export type Options = {
+	title: string?, -- the header, after the "//"
+	hint: string?,
+	confirm: string?, -- the confirm button
+	-- A gun the soldier may not carry: returns the badge shown in its place (e.g. its price),
+	-- or nil when it may be picked. Locked items cannot be picked and keep confirm greyed.
+	locked: ((id: string) -> string?)?,
+}
+
 export type Handle = {
 	frame: Frame,
 	set: (loadout: Loadout.Loadout) -> (),
 	status: (text: string, good: boolean?) -> (),
+	refresh: () -> (), -- repaint after what `locked` answers has changed
 	destroy: () -> (),
 }
 
@@ -91,7 +103,12 @@ local function column(parent: Instance, x: number, y: number, header: string): F
 	return frame
 end
 
-function LoadoutMenu.mount(parent: Instance, onConfirm: (loadout: Loadout.Loadout) -> ()): Handle
+function LoadoutMenu.mount(
+	parent: Instance,
+	onConfirm: (loadout: Loadout.Loadout) -> (),
+	options: Options?
+): Handle
+	local opts: Options = options or {}
 	local catalog = ArmsRoom.catalog()
 	local pick = Loadout.default(catalog)
 	-- Tall enough for the longest list (the call-ins grow with the roster).
@@ -109,14 +126,14 @@ function LoadoutMenu.mount(parent: Instance, onConfirm: (loadout: Loadout.Loadou
 	stroke.Parent = frame
 
 	local header = HudTheme.label(frame, {
-		text = "//ARMS ROOM",
+		text = `//{opts.title or "ARMS ROOM"}`,
 		font = HudTheme.Font.Headline,
 		size = 30,
 		color = C.Text,
 	})
 	header.Position = UDim2.fromOffset(24, 16)
 	local hint = HudTheme.label(frame, {
-		text = "[B] CLOSE   ·   CHANGES AT INSERT, READY-UP, OR AT THE LZ WHEN CALM",
+		text = opts.hint or "[B] CLOSE   ·   CHANGES AT INSERT, READY-UP, OR AT THE LZ WHEN CALM",
 		size = 12,
 		color = C.TextDim,
 	})
@@ -138,7 +155,7 @@ function LoadoutMenu.mount(parent: Instance, onConfirm: (loadout: Loadout.Loadou
 	deploy.Size = UDim2.fromOffset(220, 44)
 	deploy.BackgroundColor3 = C.MenuSelect
 	deploy.BorderSizePixel = 0
-	deploy.Text = "DEPLOY LOADOUT"
+	deploy.Text = opts.confirm or "DEPLOY LOADOUT"
 	deploy.TextColor3 = C.MenuSelectText
 	deploy.TextSize = 18
 	deploy.Font = HudTheme.Font.Headline
@@ -162,11 +179,22 @@ function LoadoutMenu.mount(parent: Instance, onConfirm: (loadout: Loadout.Loadou
 		end
 	end
 
+	local function isLocked(id: string): string?
+		local locked = opts.locked
+		return if locked then locked(id) else nil
+	end
+
 	local function repaint()
 		for _, paint in painters do
 			paint()
 		end
 		local ok = Loadout.validate(pick, catalog)
+			and not isLocked(pick.primary)
+			and not isLocked(pick.secondary)
+			and not isLocked(pick.grenade)
+		for _, id in pick.callIns do
+			ok = ok and not isLocked(id)
+		end
 		deploy.Active = ok
 		deploy.BackgroundTransparency = if ok then 0 else 0.5
 	end
@@ -191,17 +219,31 @@ function LoadoutMenu.mount(parent: Instance, onConfirm: (loadout: Loadout.Loadou
 		sub.Name = "Sub"
 		sub.AnchorPoint = Vector2.new(1, 0)
 		sub.Position = UDim2.new(1, -10, 0, 7)
-		item.MouseEnter:Connect(function()
-			describe.Text = `{entry.title}  ·  {entry.description}`
-		end)
+		local function describeIt()
+			local lock = isLocked(entry.id)
+			describe.Text = if lock
+				then `{entry.title}  ·  NOT ON YOUR RECORD ({lock}): buy it at the Quartermaster`
+				else `{entry.title}  ·  {entry.description}`
+		end
+		item.MouseEnter:Connect(describeIt)
 		item.Activated:Connect(function()
-			onPick()
-			describe.Text = `{entry.title}  ·  {entry.description}`
+			if not isLocked(entry.id) then
+				onPick()
+			end
+			describeIt()
 			repaint()
 		end)
 		table.insert(painters, function()
 			local selected, badge = isSelected()
+			local lock = isLocked(entry.id)
 			paintItem(item, entry, selected, badge)
+			if lock then
+				item.BackgroundTransparency = 0.7
+				sub.Text = lock
+				sub.TextColor3 = C.Yellow
+			else
+				sub.Text = entry.subtitle
+			end
 		end)
 	end
 
@@ -272,6 +314,7 @@ function LoadoutMenu.mount(parent: Instance, onConfirm: (loadout: Loadout.Loadou
 			}
 			repaint()
 		end,
+		refresh = repaint,
 		status = function(text: string, good: boolean?)
 			statusLabel.Text = text
 			statusLabel.TextColor3 = if good == true

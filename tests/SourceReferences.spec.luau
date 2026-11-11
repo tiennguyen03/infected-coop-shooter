@@ -29,6 +29,10 @@ local files: { File } = {}
 for _, root in { "src/server", "src/client", "src/shared" } do
 	walk(root, files)
 end
+-- The lobby place's own code: only for the remote check (its requires of match modules
+-- go through lobby.project.json mappings, which are not siblings on disk).
+local withLobby: { File } = table.clone(files)
+walk("src/lobby", withLobby)
 
 local function exists(path: string): boolean
 	return fs.isFile(`{path}.luau`) or fs.isDir(path)
@@ -59,7 +63,7 @@ return {
 		local declared = declaredRemotes()
 		local used: { [string]: boolean } = {}
 		local problems = {}
-		for _, file in files do
+		for _, file in withLobby do
 			for name in string.gmatch(file.text, 'Remotes%.get%("(%w+)"%)') do
 				used[name] = true
 				if not declared[name] then

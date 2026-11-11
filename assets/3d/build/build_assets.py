@@ -131,7 +131,7 @@ def build_palette_material(img):
 
 # ------------------------------------------------------------------ bmesh helpers
 # Static set pieces get the z-fight pass in Builder.finish; bodies and limbs do not.
-ZFIGHT_COLLECTIONS = {"Environment", "Props", "Pickups", "Weapons", "City"}
+ZFIGHT_COLLECTIONS = {"Environment", "Props", "Pickups", "Weapons", "City", "Fallow", "Vehicles"}
 ZFIGHT_SKIP = {"prop_plague_rat"}  # a creature: its overlaps are sub-stud and its size is tuned
 
 
@@ -258,9 +258,10 @@ class Builder:
         self._xform(verts, size=size, rot=rot, loc=loc)
         return self._paint(verts, swatch)
 
-    def cyl(self, r, depth, loc=(0, 0, 0), segs=8, r2=None, rot=None, swatch="gun"):
+    def cyl(self, r, depth, loc=(0, 0, 0), segs=8, r2=None, rot=None, swatch="gun", cap=True):
+        # cap=False leaves the ends open (a scope tube you look through).
         verts = bmesh.ops.create_cone(
-            self.bm, cap_ends=True, cap_tris=False, segments=segs, radius1=r, radius2=r if r2 is None else r2, depth=depth
+            self.bm, cap_ends=cap, cap_tris=False, segments=segs, radius1=r, radius2=r if r2 is None else r2, depth=depth
         )["verts"]
         self._xform(verts, rot=rot, loc=loc)
         return self._paint(verts, swatch)
@@ -1367,6 +1368,16 @@ import gore  # noqa: E402
 
 gore.register(sys.modules[__name__])
 
+# The lobby ship, the Fallow (hull, island, catwalks, radar) lives in fallow.py (2026-11-09).
+import fallow  # noqa: E402
+
+fallow.register(sys.modules[__name__])
+
+# Lantern, the lift bird (body, trim, main and tail rotor) lives in lantern.py (2026-11-09).
+import lantern  # noqa: E402
+
+lantern.register(sys.modules[__name__])
+
 
 # ------------------------------------------------------------------ The Chosen (player bodies)
 # Same limb-swap build as the Infected: one mesh per R15 limb inside the stock limb box.
@@ -1803,6 +1814,12 @@ def weller_skinned(b):
 
 _register_chosen()
 
+# The Carrier's crew body (lobby NPCs, worn untextured and coloured per figure) lives in
+# crew.py (2026-11-10).
+import crew  # noqa: E402
+
+crew.register(sys.modules[__name__])
+
 
 # ------------------------------------------------------------------ scene plumbing
 def reset_scene():
@@ -1820,6 +1837,36 @@ def get_collection(name):
         col = bpy.data.collections.new(name)
         bpy.context.scene.collection.children.link(col)
     return col
+
+
+# Roblox shows an imported mesh mirrored left-right (X) about its bounds centre: seen
+# 2026-11-09 on the Fallow, whose island raft rack (built at starboard x 41) rendered on the
+# port face over the HRD patch. Near-symmetric meshes hide it; the ship and Lantern do not,
+# so their export is pre-mirrored about the same centre. Previews and the printed `offset`
+# (the bounds centre, unchanged by this mirror) stay in design coordinates.
+MIRROR_X_COLLECTIONS = {"Fallow", "Vehicles"}
+
+
+class mirrored_x:
+    """Mirrors the object's mesh in X about its bounds centre for the duration of a `with`."""
+
+    def __init__(self, obj):
+        self.me = obj.data
+        xs = [v[0] for v in obj.bound_box]
+        cx = (min(xs) + max(xs)) / 2
+        self.m = Matrix.Translation((2 * cx, 0, 0)) @ Matrix.Scale(-1, 4, (1, 0, 0))
+
+    def _flip(self):
+        self.me.transform(self.m)
+        self.me.flip_normals()  # a reflection turns the winding inside out
+        self.me.update()
+
+    def __enter__(self):
+        self._flip()
+
+    def __exit__(self, *exc):
+        self._flip()
+        return False
 
 
 # ------------------------------------------------------------------ unchanged assets stay put
@@ -2179,7 +2226,11 @@ def main():
             changed.append(name)
             prints[name] = fp
         if not name.startswith("ref_") and not same:
-            export_fbx(obj, fbx)
+            if obj.users_collection[0].name in MIRROR_X_COLLECTIONS:
+                with mirrored_x(obj):
+                    export_fbx(obj, fbx)
+            else:
+                export_fbx(obj, fbx)
         d = obj.dimensions
         print(f"dims {name}: roblox Size = Vector3.new({d.x:.2f}, {d.z:.2f}, {d.y:.2f})")
         # Bounds centre relative to the design origin, Roblox axis order: the `offset` of

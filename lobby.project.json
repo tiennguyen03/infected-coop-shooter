@@ -1,0 +1,53 @@
+{
+  "name": "infected-coop-shooter-lobby",
+  "tree": {
+    "$className": "DataModel",
+    "Lighting": {
+      "$properties": {
+        "Technology": "ShadowMap"
+      }
+    },
+    "Workspace": {
+      "$properties": {
+        "StreamingEnabled": false,
+        "FallenPartsDestroyHeight": -40
+      }
+    },
+    "ReplicatedStorage": {
+      "Shared": {
+        "$path": "src/shared"
+      },
+      "Lobby": {
+        "$path": "src/lobby/shared"
+      }
+    },
+    "ServerScriptService": {
+      "Server": {
+        "$path": "src/lobby/server",
+        "PlayerSetup": {
+          "$path": "src/server/PlayerSetup.luau"
+        }
+      }
+    },
+    "StarterPlayer": {
+      "$properties": {
+        "EnableMouseLockOption": false,
+        "CameraMaxZoomDistance": 24
+      },
+      "StarterPlayerScripts": {
+        "Client": {
+          "$path": "src/lobby/client",
+          "HudTheme": {
+            "$path": "src/client/HudTheme.luau"
+          },
+          "PaletteController": {
+            "$path": "src/client/PaletteController.luau"
+          },
+          "LoadoutMenu": {
+            "$path": "src/client/LoadoutMenu.luau"
+          }
+        }
+      }
+    }
+  }
+}

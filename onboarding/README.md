@@ -29,7 +29,7 @@ single-player with bots, but every system is written for four.
 - [ ] Add the friend as a collaborator on GitHub:
       `gh api -X PUT repos/tiennguyen03/infected-coop-shooter/collaborators/<their-username>`
       (or Settings → Collaborators on https://github.com/tiennguyen03/infected-coop-shooter).
-- [ ] Give the friend Studio access to the test place **Co-op Zombie Shooter** (place id 87556879379942, owned by the group Boomin Dev Studios):
+- [ ] Give the friend Studio access to the experience **Co-op Zombie Shooter** (owned by the group Boomin Dev Studios; its places in `docs/STUDIO_MCP.md` > Places and publishing):
       Being in the group with an edit role is enough. See "Asset permissions" below.
 - [x] Asset ownership: done 2026-11-09. The group **Boomin Dev Studios** (id 270506601) owns
       the game and every sound and animation. Add the friend to the group with a role that
@@ -73,8 +73,10 @@ stylua src tests && selene src && rojo build -o build.rbxlx && lune run tests/ru
 rojo serve default.project.json            # leave running
 ```
 
-In Studio: open your own saved copy of **Co-op Zombie Shooter** (or a new Baseplate for code-only work), Plugins → Rojo →
-**Connect**, press **Play**. F1 opens the dev panel (god mode, spawn Infected, skip ahead).
+In Studio: open a **match** place (Checkpoint Delta, or your own test place; never the start
+place "Co-op Zombie Shooter", which holds the lobby), Plugins → Rojo → **Connect**, press
+**Play**. Which project goes in which place, and how publishing works:
+`docs/STUDIO_MCP.md` > Places and publishing. F1 opens the dev panel (god mode, spawn Infected, skip ahead).
 
 A running playtest never picks up synced code: **Stop → Play** after every change.
 

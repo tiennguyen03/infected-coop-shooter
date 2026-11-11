@@ -21,11 +21,13 @@ local REMOTE_NAMES = {
 	"ExtractionUpdate", -- server -> client: (kind: "available"|"progress"|"waiting"|"returning"|"complete"|"hide", progress, playersIn?, playersLiving?)
 	"UseAbility", -- client -> server: (kind: "swap"|"grenade"|"shove"|"stim", target: Vector3?) the soldier's kit (KitService)
 	"AbilityUsed", -- server -> client: (kind: string, cooldown: number) for the UI countdown | ("callin", slot, id)
-	"Loadout", -- client -> server: ("request", {primary, secondary, grenade, callIns}); server -> client: ("result", ok: boolean, reason: string?) the Arms Room
+	"Loadout", -- client -> server: ("request", {primary, secondary, grenade, callIns}); server -> client: ("result", ok: boolean, reason: string?) the Arms Room | ("signed", loadout) the lobby's saved Loadout
 	"CoverMove", -- client -> server: (kind: "vault"|"climb"|"roll"|"slide") the body started going over cover, rolling or sliding
 	"BossUpdate", -- server -> client: ("show", name, plateNames) | ("state", body, plates, phase) | ("tell", kind) | ("hide"); client -> server: () resend the state
 	"Impact", -- server -> client: ("knockdown", seconds) the body is knocked down (Squad.knock) | ("push", velocity: Vector3) a shove the client applies to its root
 	"Stance", -- client -> server: (stance: "stand"|"crouch"|"prone"); server -> client: ("prone") stand-up refused under a ceiling
+	"Record", -- lobby place, client -> server: ("buy", gunId); server -> client: ("state", merits, ownedIds) | ("refused", gunId, reason)
+	"Launch", -- lobby place, server -> client: ("manifest", spot, names, secondsLeft, squad, isLead) | ("lifting", spot) | ("failed", reason) | ("cleared"); client -> server: ("squad", size)
 }
 
 if RunService:IsServer() and not ReplicatedStorage:FindFirstChild("Remotes") then
