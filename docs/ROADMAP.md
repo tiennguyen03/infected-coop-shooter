@@ -28,7 +28,7 @@ names; modular per-item rows).
 ```
  LOBBY (the Carrier)           MATCH (one server, one operation, ~40 min)          LOBBY
  kit sheet (B / any desk) ─►  Delta ─ ride ─► Mile 14 ─ ride ─► Kestrel ─► STAND DOWN ─► debrief
- board a Lantern, READY       each ride: tally + CONTINUE / STAND DOWN vote,        Credits paid,
+ board a helo, READY          each ride: tally + CONTINUE / STAND DOWN vote,        Credits paid,
  fade to black + rotor        change loadout, the dead come back                    Service Record,
                               Stand Down after any mission = the 20-30 min session  the board moves
 ```

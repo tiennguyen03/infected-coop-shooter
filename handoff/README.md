@@ -6,13 +6,13 @@ last one. **End of a session:** edit this page in place (never append history he
 one note to `handoff/log/` (format in `handoff/log/README.md`). History lives in
 `docs/HISTORY.md`; this page is only "now".
 
-Last updated: 2026-11-09 by Tien + Claude.
+Last updated: 2026-11-11 by Tien + Claude.
 
 ## The game today (on `main`)
 
 The full loop works in solo with bots: drop on Checkpoint Delta → fight the Infected →
 Resupply flare and pallet cards → Hold Position at the objective site (1 of 3 field
-upgrades) → the Warden (boss) → extraction on Lantern → OPERATION COMPLETE → ready up.
+upgrades) → the Warden (boss) → extraction by helicopter → OPERATION COMPLETE → ready up.
 
 - **Squad:** anonymous soldiers Pike One to Four; bots Pike Two to Four in solo; downed and
   revive (hold F).
@@ -28,8 +28,12 @@ upgrades) → the Warden (boss) → extraction on Lantern → OPERATION COMPLETE
   low-health grey/heartbeat/muffle, reload clip. Every per-item feel value sits on the gun's
   or call-in's own Config row.
 - **Lobby (Nova):** the Carrier (still "the Fallow" in code), `lobby.project.json` +
-  `src/lobby/`: hangar desks, the Loadmaster's saved Loadout, Lantern spots that lift a squad
+  `src/lobby/`: hangar desks, the Loadmaster's saved Loadout, helicopter spots that lift a squad
   into one reserved match server (`docs/sprints/LOBBY_V1_FALLOW.md`).
+- **Names (owner, 2026-11-11; Nova, this touches lobby text):** players read "the Carrier",
+  "the helicopter" / "Helo" (signs `HELO · SPOT n`, the map's pencil track, the Loadmaster is
+  the "Helicopter crew chief") and "Warden"; never "Fallow", "Lantern" or "Handset" in a
+  string. Files, Config keys and sound keys keep the old words (`docs/LORE.md` > Naming).
 - **Roblox:** the group Boomin Dev Studios (270506601) owns the game "Co-op Zombie Shooter" and
   every sound and animation. Its start place 87556879379942 holds the **lobby**; the match is
   "Checkpoint Delta" 125769854992316 (`Config.Places`).
