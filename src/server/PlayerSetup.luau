@@ -133,13 +133,6 @@ function PlayerSetup.attachRifle(character: Model, humanoid: Humanoid)
 		local muzzle =
 			riflePart("Muzzle", Vector3.new(0.2, 0.2, 0.14), CFrame.new(muzzleAt), Color3.new())
 		muzzle.Transparency = 1
-		-- The irons' sight line, for first person down the sights (FirstPersonView).
-		local sightAt = MeshAssets.getSight(model)
-		if sightAt then
-			local sight =
-				riflePart("Sight", Vector3.new(0.05, 0.05, 0.05), CFrame.new(sightAt), Color3.new())
-			sight.Transparency = 1
-		end
 	end
 	placeholder()
 	local player = Players:GetPlayerFromCharacter(character)

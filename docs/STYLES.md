@@ -519,15 +519,30 @@ orange (`rgb(255,150,60)`) plus a ball at the landing point.
   client only (others always see it); `FirstPersonView` shows a viewmodel instead: a copy of
   the held gun with gloved hands and Pike-grey forearms. The right hand holds it where the
   body's hand holds the real gun, the left on the handguard (under the grip for a sidearm).
-  It points where the camera looks, low right at the hip (`GunHip`); down the sights the gun's
-  sight line (MeshAssets `sight`, a Sight part in the Tool: the rear peep or notch, level with
-  the front post or bead; for a scope a point on its axis) runs through the eye, the rear sight
-  `SightEye` ahead (a gun without one sits by its size, `SightDrop`), where the crosshair fades out so the
-  iron sights or scope aim. Its own animation, timed to the body's events: the reload (from
+  It points where the camera looks; at the hip the grip sits where that kind of gun is carried
+  (`Config.Weapon.Sights.Hold`: a long gun low right, a sidearm nearer the middle, the Goose on
+  the shoulder). **Sights (2026-11-11, `Rules/Sight`, not yet seen in game):** every gun row
+  carries `Sight`: its mesh's `Rear` and `Front` sight points (peep centre or notch top and the
+  post's tip; a scope's eyepiece and objective), and optionally `Kind`, `Hold`, `EyeRelief`,
+  `Zoom`. Down the sights the eye sits on the line through the two, the eye relief behind the
+  rear sight (0.35 studs with a cheek on the stock, 1.0 for a sidearm at arm's length, 0.3
+  behind a scope), looking at the front one, so the post is centred in the peep on the screen's
+  centre, where the round goes; the crosshair fades out. The view narrows by the gun's own
+  `Zoom` (FOV = 2 atan(tan 35 / zoom)): M17 and revolver 1.15, Mossberg 1.2, MP5 1.25, M16 and
+  M249 1.35 (FOV 55), Goose 3, M110 3.5, M2010 6. A scope (`Kind = "scope"`: M2010, M110, the
+  Goose) comes to the eye over `ScopeTime`, the lens blinks black, the gun is hidden and
+  `ScopeView` draws the picture: a round lens 0.4 of the screen's height in radius, black
+  around it, a soft shadow inside the rim, a fine crosshair with range marks, three heavy
+  posts and a red centre dot; the HUD stays above it. A reload or a Q swap lowers the gun
+  out of the sights. `tests/Sight.spec.luau` fails any gun row whose sight is missing, off its
+  mesh, not along the bore or with the eye in the wrong place. Third person keeps the shared
+  `Weapon.ADS` view. Its own animation, timed to the body's events: the reload (from
   `ReloadUntil`: the gun cants, the left hand takes the magazine down out of view and seats a
-  fresh one), a kick per shot (`KickBack`, `KickPitch`), sway behind camera turns (`Sway`) and a
-  walking bob (`Bob`). Built at full size and shrunk toward the eye (`Scale` 0.4) so walls and
-  squadmates close by do not cut into it. In first person shots leave from its barrel (the
+  fresh one), a kick per shot (`KickBack`, `KickPitch`; less down the sights), sway behind
+  camera turns (`Sway`), a walking bob (`Bob`) and a dip during a swap (`SwapDip`). Built at
+  full size and shrunk toward the eye (`Scale` 0.4, a little more when a close rear sight
+  would fall inside the camera's near plane) so walls and squadmates close by do not cut into
+  it. In first person shots leave from its barrel (the
   hit ray, the tracer and a scaled flash), so they run down the sight line; squadmates see
   that tracer start by the head. The body's clips are not reused: made for the body seen from
   behind, their hands do not meet the gun from the eye.

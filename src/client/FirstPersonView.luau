@@ -4,17 +4,25 @@
 -- games do: the body's clips are made for the body seen from behind and their hands do not
 -- meet the gun from the eye. A local copy of the held gun, two gloved hands and two Pike-grey
 -- forearms, parented to the camera, animated here from the same events the body uses:
---   * the gun points where the camera looks: low and right at the hip, centred with its top on
---     the eye line down the sights (Config.Camera.FirstPerson);
+--   * the gun points where the camera looks. At the hip its grip sits where its kind of gun is
+--     carried (Config.Weapon.Sights.Hold: a long gun low right, a sidearm nearer the middle,
+--     a launcher on the shoulder). Down the sights the eye goes on the gun's own sight line
+--     (the row's Sight, Rules/Sight): its eye relief behind the rear sight, looking at the
+--     front one, so the post sits centred in the peep or notch on the screen's centre. Down a
+--     scope the gun comes to the eye the same way and is then hidden: ScopeView draws the
+--     picture (CameraController);
 --   * the right hand holds it exactly as the body's right hand holds the real gun; the left
 --     hand on the handguard (under the grip for a sidearm); the forearms run back to elbows
 --     below the view;
 --   * a reload (ReloadUntil, timed to the server's reload): the gun tilts, the left hand pulls
 --     the magazine down and out of view, comes back with a fresh one, seats it, and returns;
 --   * each shot (LastShotAt) kicks the gun back and up; turning the camera makes the gun lag a
---     touch behind; walking bobs it.
+--     touch behind; walking bobs it (kick and lag are smaller down the sights, so they stay
+--     lined up); a Q swap (SwapUntil) dips it out of view and back.
 -- The whole viewmodel is built at full size in the camera's space and then shrunk toward the
--- eye by Scale: it looks the same, but a wall or a squadmate a stud away no longer cuts into it.
+-- eye by Scale: it looks the same, but a wall or a squadmate a stud away no longer cuts into
+-- it. A rear sight close to the eye would fall inside the camera's near plane at that scale,
+-- so the scale grows just enough to keep it in view (Rules/Sight.viewScale).
 -- Shots in first person leave from its barrel (FirstPersonView.muzzle, WeaponController).
 -- Others never see it: they see the real body, which this client hides in first person.
 
@@ -24,14 +32,17 @@ local Workspace = game:GetService("Workspace")
 
 local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attributes"))
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
+local Sight =
+	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Rules"):WaitForChild("Sight"))
 
 local FirstPersonView = {}
 
 local VIEW = Config.Camera.FirstPerson
 local SLEEVE = Color3.fromRGB(99, 109, 119) -- the Pike fatigues (palette "gun")
 local GLOVE = Color3.fromRGB(48, 53, 59) -- palette "dark"
-local SIDEARM_LENGTH = 1.6 -- a held gun shorter than this is gripped two-handed at the grip
-local S = VIEW.Scale
+local HOLD = Config.Weapon.Sights.Hold :: { [string]: Vector3 }
+local HAND = Vector3.new(0.42, 0.34, 0.5)
+local SLEEVE_WIDTH = 0.46
 
 type View = {
 	character: Model,
@@ -40,8 +51,9 @@ type View = {
 	gunSource: BasePart?,
 	full: Vector3, -- the held gun's real size
 	muzzle: Vector3, -- its barrel tip, in its own space at full size
-	sight: Vector3?, -- its irons' sight line at the rear sight, likewise (nil: not modelled)
+	origin: CFrame, -- the grip (the Tool's Handle, the mesh's design origin) in the gun's space
 	grip: CFrame, -- the right hand in the gun's space
+	scale: number, -- the viewmodel's size on screen (VIEW.Scale, or more for a close sight)
 	hands: { BasePart }, -- left, right
 	arms: { BasePart }, -- left, right
 }
@@ -49,6 +61,9 @@ type View = {
 local view: View? = nil
 local reloadFrom = 0 -- server time the current reload began
 local reloadUntil = 0
+local swapFrom = 0 -- server time the current Q swap began
+local swapUntil = 0
+local concealed = false -- the viewmodel is hidden behind the scope picture
 local kick = 0 -- 0..1, eases back after each shot
 local lastCamera: CFrame? = nil
 local sway = Vector2.zero -- radians the gun lags behind the camera (yaw, pitch)
@@ -108,11 +123,17 @@ local function build(character: Model): View
 	local model = Instance.new("Model")
 	model.Name = "FirstPersonArms"
 	local hands, arms = {}, {}
+	local s = VIEW.Scale
 	for _, side in { "Left", "Right" } do
-		table.insert(hands, block(model, side .. "Glove", Vector3.new(0.42, 0.34, 0.5) * S, GLOVE))
+		table.insert(hands, block(model, side .. "Glove", HAND * s, GLOVE))
 		table.insert(
 			arms,
-			block(model, side .. "Sleeve", Vector3.new(0.46 * S, 0.46 * S, 1), SLEEVE)
+			block(
+				model,
+				side .. "Sleeve",
+				Vector3.new(SLEEVE_WIDTH * s, SLEEVE_WIDTH * s, 1),
+				SLEEVE
+			)
 		)
 	end
 	model.Parent = Workspace.CurrentCamera
@@ -123,8 +144,9 @@ local function build(character: Model): View
 		gunSource = nil,
 		full = Vector3.one,
 		muzzle = Vector3.zero,
-		sight = nil,
+		origin = CFrame.new(),
 		grip = CFrame.new(0, -0.3, 0.4),
+		scale = s,
 		hands = hands,
 		arms = arms,
 	}
@@ -150,7 +172,7 @@ local function fitGun(current: View)
 	copy:ClearAllChildren()
 	quiet(copy)
 	current.full = source.Size
-	copy.Size = source.Size * S
+	copy.Size = source.Size * current.scale
 	copy.Parent = current.model
 	current.gun = copy
 	-- The barrel tip: the tool's Muzzle part (PlayerSetup), else the gun's front end.
@@ -159,12 +181,29 @@ local function fitGun(current: View)
 	current.muzzle = if muzzle and muzzle:IsA("BasePart")
 		then source.CFrame:PointToObjectSpace(muzzle.Position)
 		else Vector3.new(0, 0, -source.Size.Z / 2)
-	-- The irons (PlayerSetup's Sight part, from MeshAssets `sight`).
-	local sight = tool and tool:FindFirstChild("Sight", true)
-	current.sight = if sight and sight:IsA("BasePart")
-		then source.CFrame:PointToObjectSpace(sight.Position)
-		else nil
+	-- The grip: the Tool's Handle, the origin the row's sight points are measured from.
+	local handle = tool and tool:FindFirstChild("Handle")
+	current.origin = if handle and handle:IsA("BasePart")
+		then source.CFrame:ToObjectSpace(handle.CFrame)
+		else CFrame.new()
 	current.grip = source.CFrame:ToObjectSpace(realHand.CFrame)
+end
+
+-- Resizes the viewmodel to `scale` (the gun copy, the gloves, the sleeves' width).
+local function rescale(current: View, scale: number)
+	if math.abs(scale - current.scale) < 1e-3 then
+		return
+	end
+	current.scale = scale
+	if current.gun then
+		current.gun.Size = current.full * scale
+	end
+	for _, hand in current.hands do
+		hand.Size = HAND * scale
+	end
+	for _, arm in current.arms do
+		arm.Size = Vector3.new(SLEEVE_WIDTH * scale, SLEEVE_WIDTH * scale, arm.Size.Z)
+	end
 end
 
 -- Smooth 0..1 between a and b.
@@ -204,9 +243,18 @@ local function reach(arm: BasePart, elbow: Vector3, wrist: Vector3)
 	arm.CFrame = CFrame.lookAt((elbow + wrist) / 2, wrist)
 end
 
--- Shows the arms and gun for `character` at `camera` (nil: none); `ads` 0 at the hip to 1
--- down the sights. Call each frame after the camera is placed.
-function FirstPersonView.update(character: Model?, camera: CFrame?, ads: number, dt: number)
+-- Shows the arms and gun for `character` at `camera` (nil: none), aimed by the gun's `sight`;
+-- `ads` 0 at the hip to 1 down the sights; `hidden`: the scope picture is up, draw nothing
+-- (the barrel still moves, shots leave from it). Call each frame after the camera is placed.
+function FirstPersonView.update(
+	character: Model?,
+	camera: CFrame?,
+	sight: Sight.Resolved,
+	ads: number,
+	hidden: boolean,
+	dt: number
+)
+	concealed = hidden
 	if not (character and camera) then
 		destroy()
 		lastCamera = nil
@@ -230,12 +278,24 @@ function FirstPersonView.update(character: Model?, camera: CFrame?, ads: number,
 		end
 		return
 	end
+	local modifier = if hidden then 1 else 0
 	for _, part in active.model:GetChildren() do
 		if part:IsA("BasePart") then
-			part.LocalTransparencyModifier = 0
+			part.LocalTransparencyModifier = modifier
 		end
 	end
 	local size = active.full
+	-- Irons close to the eye must clear the near plane (a scope is hidden when it gets there).
+	local lens = Workspace.CurrentCamera
+	local near = if lens then math.abs(lens.NearPlaneZ) else 0.1
+	local clearance = sight.EyeRelief - VIEW.KickBack * VIEW.AdsKick
+	rescale(
+		active,
+		if sight.Kind == "scope"
+			then VIEW.Scale
+			else Sight.viewScale(VIEW.Scale, near, clearance, VIEW.NearMargin)
+	)
+	local S = active.scale
 	-- Camera space at full size -> the world, shrunk toward the eye.
 	local function world(at: CFrame): CFrame
 		return camera * CFrame.new(at.Position * S) * at.Rotation
@@ -246,7 +306,8 @@ function FirstPersonView.update(character: Model?, camera: CFrame?, ads: number,
 	lastCamera = camera
 	if previous then
 		local turn = previous:ToObjectSpace(camera)
-		sway = (sway + Vector2.new(turn.LookVector.X, turn.LookVector.Y) * VIEW.Sway)
+		local lag = VIEW.Sway * (1 - (1 - VIEW.AdsSway) * ads)
+		sway = (sway + Vector2.new(turn.LookVector.X, turn.LookVector.Y) * lag)
 			* math.exp(-dt / 0.12)
 	end
 	local swayLimit = math.rad(6)
@@ -273,25 +334,32 @@ function FirstPersonView.update(character: Model?, camera: CFrame?, ads: number,
 		else 1
 	local reloadGun, magHand, toMag = reloadPose(reloadT, size)
 
-	-- The gun: pointing along the camera, its centre low right at the hip, under the eye down
-	-- the sights; then sway, bob, kick and the reload's tilt.
-	local hip = VIEW.GunHip.Position
-	-- Down the sights: the irons' sight line through the eye (the rear sight SightEye ahead,
-	-- the front post on the screen's centre); a gun without modelled irons sits by its size.
-	local sight = active.sight
-	local sights = if sight
-		then Vector3.new(0, 0, -VIEW.SightEye) - sight
-		else Vector3.new(0, -size.Y * VIEW.SightDrop, VIEW.GunAds.Position.Z)
-	local place = hip:Lerp(sights, ads) + bob + Vector3.new(0, 0, kick * VIEW.KickBack)
-	local gunCFrame = CFrame.new(place)
-		* CFrame.Angles(sway.Y + kick * math.rad(VIEW.KickPitch), sway.X, 0)
-		* reloadGun
+	-- A Q swap: the gun dips out of view and comes back up as the other one.
+	local dip = if now < swapUntil and swapUntil > swapFrom
+		then math.sin(math.pi * (now - swapFrom) / (swapUntil - swapFrom))
+		else 0
+
+	-- The grip in the camera's space. At the hip: where this kind of gun is carried, pointing
+	-- along the camera. Down the sights: the camera is the eye on the gun's sight line (the
+	-- relief behind the rear sight, looking at the front one), so the gun is that turned inside
+	-- out. Then bob, kick and the swap's dip move it; sway and the kick's tip turn it about
+	-- the hand.
+	local hip = CFrame.new(HOLD[sight.Hold] or HOLD.long)
+	local eye = Sight.eye(sight.Rear, sight.Front, sight.EyeRelief)
+	local sights = CFrame.lookAt(eye, sight.Front):Inverse()
+	local kickBack = kick * VIEW.KickBack * (1 - (1 - VIEW.AdsKick) * ads)
+	local moved = bob + Vector3.new(0, -dip * VIEW.SwapDip, kickBack)
+	local gripCFrame = CFrame.new(moved)
+		* hip:Lerp(sights, ads)
+		* CFrame.Angles(sway.Y + kick * math.rad(VIEW.KickPitch) - dip * math.rad(20), sway.X, 0)
+	-- The gun's own part (its bounds centre) from the grip, then the reload's tilt.
+	local gunCFrame = gripCFrame * active.origin:Inverse() * reloadGun
 	gun.CFrame = world(gunCFrame)
 	muzzleAt = world(gunCFrame * CFrame.new(active.muzzle)).Position
 
 	-- Hands: the right on the grip; the left on the handguard (under the grip for a sidearm),
 	-- or off to the magazine during a reload.
-	local long = math.max(size.X, size.Y, size.Z) >= SIDEARM_LENGTH
+	local long = sight.Hold ~= "sidearm"
 	local right = gunCFrame * active.grip
 	local guard = if long
 		then gunCFrame * CFrame.new(0, -size.Y * 0.32, -size.Z * 0.22)
@@ -312,9 +380,21 @@ function FirstPersonView.muzzle(): Vector3?
 	return muzzleAt
 end
 
+-- The viewmodel's size on screen against the real gun (WeaponController scales the flash).
+function FirstPersonView.scale(): number
+	local current = view
+	return if current then current.scale else VIEW.Scale
+end
+
+-- True while the scope picture stands in for the gun (no flash ball across the lens).
+function FirstPersonView.isHidden(): boolean
+	return concealed
+end
+
 function FirstPersonView.hide()
 	destroy()
 	lastCamera = nil
+	concealed = false
 end
 
 -- Shots and reloads come in as the body's do (WeaponController stamps LastShotAt; the server
@@ -331,6 +411,15 @@ function FirstPersonView.init()
 			reloadFrom, reloadUntil = now, untilAt
 		else
 			reloadUntil = 0 -- cancelled (a swap)
+		end
+	end)
+	player:GetAttributeChangedSignal(Attributes.SwapUntil):Connect(function()
+		local untilAt = player:GetAttribute(Attributes.SwapUntil)
+		local now = Workspace:GetServerTimeNow()
+		if typeof(untilAt) == "number" and untilAt > now then
+			swapFrom, swapUntil = now, untilAt
+		else
+			swapUntil = 0
 		end
 	end)
 end
