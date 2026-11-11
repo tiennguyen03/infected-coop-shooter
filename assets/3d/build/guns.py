@@ -28,6 +28,94 @@ MUZZLE = {
     "wpn_m17": (0.0, -0.485, 0.32),
 }
 
+# The iron sights' line, Blender (x, y, z) from the grip: the centre of the rear aperture (the
+# front post's tip sits at the same height). MeshAssets takes it in Roblox order (x, z, y) as
+# `sight`; first person looks through it down the sights.
+SIGHT = {
+    "wpn_m16": (0.0, 0.04, 0.615),
+    "wpn_m17": (0.0, 0.11, 0.45),  # the rear sight's tops, level with the front post's
+    "wpn_revolver": (0.0, -0.02, 0.45),
+    "wpn_mp5": (0.0, 0.05, 0.585),
+    "wpn_m249": (0.0, 0.03, 0.68),
+    "wpn_mossberg": (0.0, 0.1, 0.5),  # along the receiver's top channel to the bead
+    # Scopes: on the tube's axis, 0.85 ahead of the eyepiece, so first person (which puts the
+    # eye Config.Camera.FirstPerson.SightEye behind this point) ends just behind it.
+    "wpn_m110": (0.0, 0.17 - 0.85, 0.64),
+    "wpn_sniper": (0.0, 0.23 - 0.85, 0.62),
+    "wpn_goose": (-0.3, -0.23 - 0.85, 0.54),
+}
+
+
+def ring(b, x, y, z, r, t, swatch="dark"):
+    # A thin ring round the Y axis (eight flat segments): a scope bezel, a front sight hood.
+    for i in range(8):
+        a = 2 * math.pi * i / 8
+        b.box((t, 0.02, 0.83 * r + t), (x + r * math.cos(a), y, z + r * math.sin(a)),
+              rot=(0, -math.degrees(a), 0), swatch=swatch)
+
+
+def look_through_scope(b, x, z, y_obj, y_tube0, y_tube1, y_eye, r_tube, r_obj, r_eye):
+    # A riflescope you can look through: open tube and bells (no lens to block the view), a
+    # bezel at the eyepiece, the objective's rim, and a crosshair reticle inside the objective.
+    def tube(r, y0, y1, r2=None):
+        b.cyl(r, y1 - y0, (x, (y0 + y1) / 2, z), segs=12, r2=r2, rot=(90, 0, 0), swatch="dark", cap=False)
+    tube(r_obj, y_obj, y_tube0, r_tube)  # objective bell
+    tube(r_tube, y_tube0, y_tube1)  # main tube
+    tube(r_tube, y_tube1, y_eye, r_eye)  # eyepiece
+    ring(b, x, y_eye, z, r_eye, 0.025)  # eyepiece bezel
+    ring(b, x, y_obj, z, r_obj, 0.02)  # objective rim
+    yr = y_obj + 0.06
+    b.box((0.006, 0.006, 2 * r_obj), (x, yr, z), swatch="dark_d")  # reticle, vertical
+    b.box((2 * r_obj, 0.006, 0.006), (x, yr, z), swatch="dark_d")  # and horizontal
+    b.box((0.014, 0.008, 0.014), (x, yr, z), swatch="red")  # a red centre dot
+
+
+def peep(b, y, h, top, w=0.072, hole=0.026, swatch="dark"):
+    # An aperture leaf: a square frame round a small peep centred on the sight line h,
+    # standing from its base at top.
+    b.box((w, 0.018, h - hole / 2 - top), (0, y, (top + h - hole / 2) / 2), swatch=swatch)
+    b.box((w, 0.018, 0.02), (0, y, h + hole / 2 + 0.01), swatch=swatch)
+    for x in (-1, 1):
+        b.box(((w - hole) / 2, 0.018, hole), (x * (hole / 2 + (w - hole) / 4), y, h), swatch=swatch)
+SIGHT_H = 0.615  # the M16's sight line above the grip
+
+
+def m4_rear_sight(b, y=0.04, base_z=0.51):
+    # A flip-up rear sight on the flat-top rail (the M4's backup irons): a clamp on the rail, two
+    # protective ears, and between them the aperture leaf, a square frame round a small peep
+    # whose centre is the sight line; a windage knob on the right.
+    h = SIGHT_H
+    b.box((0.1, 0.14, 0.035), (0, y, base_z + 0.0175), swatch="dark")  # rail clamp
+    b.box((0.12, 0.05, 0.03), (0, y + 0.05, base_z + 0.015), swatch="dark_d")  # clamp bar
+    for x in (-0.046, 0.046):
+        b.box((0.02, 0.11, 0.12), (x, y, base_z + 0.035 + 0.06), swatch="dark")  # ears
+    top = base_z + 0.035
+    hole = 0.026  # the peep
+    b.box((0.072, 0.018, h - hole / 2 - top), (0, y, (top + h - hole / 2) / 2), swatch="dark")  # leaf below
+    b.box((0.072, 0.018, 0.02), (0, y, h + hole / 2 + 0.01), swatch="dark")  # leaf above
+    for x in (-1, 1):
+        b.box((0.023, 0.018, hole), (x * (hole / 2 + 0.0115), y, h), swatch="dark")  # leaf sides
+    b.cyl(0.022, 0.03, (0.07, y, base_z + 0.06), segs=8, rot=(0, 90, 0), swatch="gun_d")  # windage
+
+
+def m4_front_sight(b, y=-1.4, barrel_z=0.36):
+    # The A2 "triangle" front sight base on the barrel: a collar round the barrel with the
+    # bayonet lug under it, the triangle rising to a crossbar, two protective wings, and the
+    # square post between them, its tip on the sight line.
+    h = SIGHT_H
+    b.box((0.12, 0.11, 0.11), (0, y, barrel_z), swatch="dark")  # collar on the barrel
+    b.box((0.04, 0.06, 0.07), (0, y + 0.01, barrel_z - 0.09), swatch="dark")  # bayonet lug
+    # The triangle: flat on the collar, its back face upright (+Y, toward the shooter), sloping
+    # down to the muzzle as on a real AR.
+    rise = 0.13
+    b.wedge((0.15, 0.07, rise), (0, y + 0.01, barrel_z + 0.055 + rise / 2), rot=(0, 0, -90), swatch="dark")
+    bar_z = barrel_z + 0.055 + rise  # top of the triangle
+    back = y + 0.055  # the wings and post stand over the upright back face
+    b.box((0.11, 0.06, 0.03), (0, back, bar_z + 0.015), swatch="dark")  # crossbar
+    for x in (-0.046, 0.046):
+        b.box((0.018, 0.06, h + 0.035 - bar_z), (x, back, (bar_z + h + 0.035) / 2), swatch="dark")  # wings
+    b.box((0.022, 0.022, h - bar_z), (0, back, (bar_z + h) / 2), swatch="dark_d")  # post
+
 
 def grip(b, size=(0.16, 0.24, 0.46), loc=(0, 0.02, -0.02), swatch="dark"):
     # A pistol grip raked back like the rifle's (18 degrees).
@@ -47,8 +135,13 @@ def revolver(b):
     b.box((0.1, 0.44, 0.11), (0, -0.54, 0.34), swatch="gun_l")  # barrel
     b.box((0.09, 0.44, 0.08), (0, -0.54, 0.25), swatch="white_d")  # full underlug
     b.box((0.06, 0.44, 0.03), (0, -0.54, 0.41), swatch="gun")  # top rib
-    b.box((0.03, 0.05, 0.07), (0, -0.72, 0.44), swatch="red")  # red ramp front sight
-    b.box((0.08, 0.05, 0.05), (0, -0.02, 0.4), swatch="dark")  # rear sight
+    # Irons: a square-notch rear sight on the topstrap, a ramp front blade on the rib with the
+    # red insert facing the shooter; the blade's top level with the rear's tops (SIGHT).
+    b.box((0.08, 0.06, 0.03), (0, -0.02, 0.385), swatch="dark")  # rear sight base
+    for x in (-0.026, 0.026):
+        b.box((0.026, 0.05, 0.05), (x, -0.02, 0.425), swatch="dark")  # either side of the notch
+    b.wedge((0.07, 0.022, 0.025), (0, -0.72, 0.4375), rot=(0, 0, -90), swatch="gun_l")  # ramp
+    b.box((0.024, 0.012, 0.02), (0, -0.689, 0.438), swatch="red")  # red insert
     b.box((0.05, 0.08, 0.1), (0, 0.1, 0.4), rot=(-30, 0, 0), swatch="gun_d")  # hammer spur
     b.box((0.03, 0.2, 0.03), (0, -0.14, 0.12), swatch="gun")  # trigger guard bottom
     b.box((0.03, 0.03, 0.12), (0, -0.23, 0.17), swatch="gun")  # guard front
@@ -78,10 +171,7 @@ def sniper(b):
     b.box((0.12, 0.12, 0.14), (0, 0.84, 0.06), swatch=blk)  # monopod nub
     b.cyl(0.035, 0.24, (0.16, 0.02, 0.38), segs=6, rot=(0, 90, 0), swatch=blk)  # bolt handle
     b.ico(0.065, (0.29, 0.04, 0.36), subdiv=1, swatch=blk)  # bolt knob
-    b.cyl(0.07, 0.9, (0, -0.35, 0.62), segs=8, rot=(90, 0, 0), swatch=blk)  # scope tube
-    b.cyl(0.11, 0.22, (0, -0.86, 0.62), segs=8, rot=(90, 0, 0), swatch=blk)  # objective bell
-    b.cyl(0.09, 0.18, (0, 0.14, 0.62), segs=8, rot=(90, 0, 0), swatch=blk)  # eyepiece
-    b.cyl(0.08, 0.02, (0, -0.98, 0.62), segs=8, rot=(90, 0, 0), swatch="glass_l")  # objective lens
+    look_through_scope(b, 0, 0.62, -0.97, -0.75, 0.05, 0.23, 0.07, 0.11, 0.09)  # the scope
     b.cyl(0.05, 0.1, (0, -0.35, 0.73), segs=6, swatch="dark_d")  # elevation turret
     b.cyl(0.05, 0.1, (0.11, -0.35, 0.62), segs=6, rot=(0, 90, 0), swatch="dark_d")  # windage turret
     for y in (-0.6, -0.1):
@@ -108,8 +198,8 @@ def goose(b):
     b.box((0.14, 0.18, 0.4), (0, -0.78, 0.1), swatch="dark")  # front grip
     b.box((0.16, 0.5, 0.14), (0, 0.6, 0.18), swatch="dark")  # shoulder rest
     b.box((0.2, 0.12, 0.3), (0, 0.86, 0.14), swatch="dark_l")  # its pad
-    b.box((0.12, 0.34, 0.2), (-0.3, -0.4, tube_z + 0.12), swatch="dark")  # sight on the left
-    b.box((0.1, 0.06, 0.14), (-0.3, -0.58, tube_z + 0.12), swatch="glass_l")  # sight lens
+    # The 3x telescopic sight on the left, looked through (a short open tube, reticle inside).
+    look_through_scope(b, -0.3, tube_z + 0.12, -0.6, -0.56, -0.28, -0.23, 0.06, 0.07, 0.065)
     b.box((0.16, 0.1, 0.06), (-0.2, -0.4, tube_z + 0.04), swatch="dark_d")  # sight mount
     b.box((0.06, 0.16, 0.16), (0.2, 0.95, tube_z), swatch="dark_d")  # venturi lock lever
     b.box((0.4, 0.06, 0.04), (0, 0.2, tube_z + 0.21), swatch="dark_d")  # carry sling bar
@@ -153,8 +243,10 @@ def tapered_stock(b, y0, y1, ztop, h_front, h_back, w, swatch="dark", pad="dark_
 
 
 def m16(b):
-    # M16A4: black, fixed A2 stock, flat-top upper with a round ribbed handguard, the triangle
-    # front sight, a curved 30-round magazine. 3.1 long.
+    # M16A4: black, fixed A2 stock, flat-top upper with a round ribbed handguard, M4-style iron
+    # sights (a flip-up peep on the rail, the triangle front sight with its post between two
+    # wings; Nova 2026-11-10: "should look like a real m4's iron sights"), a curved 30-round
+    # magazine. 3.1 long.
     grip(b, (0.15, 0.24, 0.44), (0, 0.02, -0.02))
     b.box((0.17, 0.6, 0.18), (0, -0.2, 0.2), swatch="dark")  # lower receiver
     b.box((0.19, 0.24, 0.16), (0, -0.42, 0.07), swatch="dark")  # flared magwell
@@ -163,7 +255,7 @@ def m16(b):
     b.box((0.09, 0.72, 0.05), (0, -0.22, 0.485), swatch="gun_d")  # flat-top rail
     for i in range(7):
         b.box((0.11, 0.03, 0.02), (0, 0.1 - i * 0.1, 0.515), swatch="dark_d")  # rail slots
-    b.box((0.06, 0.12, 0.12), (0, 0.05, 0.57), swatch="dark")  # rear sight
+    m4_rear_sight(b)
     b.box((0.12, 0.06, 0.04), (0, 0.12, 0.46), swatch="gun_d")  # charging handle
     b.box((0.02, 0.2, 0.1), (0.09, -0.2, 0.37), swatch="gun")  # ejection port cover
     b.cyl(0.03, 0.08, (0.1, -0.02, 0.36), segs=6, rot=(0, 90, 0), swatch="gun_d")  # forward assist
@@ -171,8 +263,7 @@ def m16(b):
     b.cyl(0.11, 0.72, (0, -0.97, 0.36), segs=8, rot=(90, 0, 0), swatch="dark")  # round handguard
     for i in range(6):
         b.cyl(0.115, 0.03, (0, -0.7 - i * 0.11, 0.36), segs=8, rot=(90, 0, 0), swatch="dark_d")  # ribs
-    b.box((0.1, 0.1, 0.12), (0, -1.38, 0.38), swatch="dark")  # front sight base
-    b.box((0.05, 0.07, 0.22), (0, -1.38, 0.52), rot=(-12, 0, 0), swatch="dark")  # sight post
+    m4_front_sight(b)
     b.cyl(0.03, 0.66, (0, -1.65, 0.36), segs=8, rot=(90, 0, 0), swatch="gun_d")  # barrel
     b.cyl(0.045, 0.12, (0, -1.96, 0.36), segs=8, rot=(90, 0, 0), swatch="dark")  # flash hider
     tapered_stock(b, 0.18, 1.0, 0.44, 0.18, 0.4, 0.15)
@@ -185,9 +276,17 @@ def mp5(b):
     grip(b, (0.14, 0.22, 0.42), (0, 0.02, -0.02))
     b.box((0.15, 0.9, 0.2), (0, -0.35, 0.33), swatch="dark")  # receiver
     b.cyl(0.075, 1.0, (0, -0.37, 0.45), segs=8, rot=(90, 0, 0), swatch="dark")  # cocking tube
-    b.cyl(0.06, 0.1, (0, 0.05, 0.56), segs=8, rot=(0, 90, 0), swatch="dark_d")  # drum rear sight
-    b.box((0.05, 0.08, 0.06), (0, 0.05, 0.5), swatch="dark")  # its post
-    b.box((0.1, 0.06, 0.14), (0, -0.85, 0.54), swatch="dark")  # front sight hood
+    # HK irons: the rotary drum rear (a disc turning on the bore's axis, its peep on top,
+    # guarded by two ears) and the hooded front post; post tip level with the peep (SIGHT).
+    h = SIGHT["wpn_mp5"][2]
+    b.box((0.09, 0.08, 0.04), (0, 0.05, 0.54), swatch="dark")  # drum housing on the tube
+    b.cyl(0.05, 0.05, (0, 0.05, 0.53), segs=10, rot=(90, 0, 0), swatch="dark_d")  # the drum
+    peep(b, 0.05, h, 0.56, w=0.06, hole=0.022)
+    for x in (-0.042, 0.042):
+        b.box((0.016, 0.08, 0.08), (x, 0.05, 0.6), swatch="dark")  # ears
+    b.box((0.08, 0.07, 0.05), (0, -0.85, 0.52), swatch="dark")  # front sight base on the tube
+    ring(b, 0, -0.85, h, 0.05, 0.014)  # the hood
+    b.box((0.016, 0.02, h - 0.545), (0, -0.85, (0.545 + h) / 2), swatch="dark_d")  # the post
     b.box((0.13, 0.22, 0.12), (0, -0.42, 0.18), swatch="dark")  # magwell
     curved_mag(b, (-0.42, 0.13), (0.11, 0.17, 0.14), (12, 24, 36))
     b.cyl(0.1, 0.42, (0, -0.98, 0.3), segs=8, r2=0.085, rot=(90, 0, 0), swatch="dark")  # handguard
@@ -213,15 +312,25 @@ def m249(b):
     b.box((0.06, 0.12, 0.18), (-0.15, -0.36, 0.24), swatch="brass")  # belt into the feed
     for i in range(3):
         b.box((0.07, 0.035, 0.05), (-0.15, -0.32 - i * 0.04, 0.34), swatch="brass")  # rounds
-    b.box((0.04, 0.4, 0.04), (0, -0.92, 0.66), swatch="gun_d")  # carry handle
+    # The carrying handle sits on the left of the barrel, clear of the sight line.
+    b.box((0.04, 0.4, 0.04), (-0.12, -0.92, 0.6), swatch="gun_d")  # carry handle
     for y in (-0.75, -1.08):
-        b.box((0.04, 0.04, 0.16), (0, y, 0.58), swatch="gun_d")
+        b.box((0.04, 0.04, 0.12), (-0.1, y, 0.54), swatch="gun_d")
+    # Irons: a folding leaf rear sight on the feed cover's back, a front post between two ears
+    # near the muzzle; post tip level with the peep (SIGHT).
+    h = SIGHT["wpn_m249"][2]
+    b.box((0.12, 0.08, 0.03), (0, 0.03, 0.61), swatch="dark")  # rear sight base
+    peep(b, 0.03, h, 0.625)
+    b.cyl(0.02, 0.03, (0.07, 0.03, 0.64), segs=8, rot=(0, 90, 0), swatch="gun_d")  # elevation knob
     b.box((0.13, 0.5, 0.1), (0, -1.0, 0.48), swatch="gun_d")  # heat shield
     for i in range(4):
         b.box((0.135, 0.05, 0.02), (0, -0.82 - i * 0.12, 0.535), swatch="dark_d")  # its vents
     b.cyl(0.045, 1.1, (0, -1.2, 0.38), segs=8, rot=(90, 0, 0), swatch="gun_d")  # barrel
     b.cyl(0.06, 0.14, (0, -1.82, 0.38), segs=8, rot=(90, 0, 0), swatch="dark")  # flash hider
-    b.box((0.05, 0.05, 0.16), (0, -1.68, 0.5), swatch="dark")  # front sight
+    b.box((0.08, 0.06, 0.14), (0, -1.68, 0.49), swatch="dark")  # front sight block
+    for x in (-0.04, 0.04):
+        b.box((0.016, 0.05, h + 0.025 - 0.56), (x, -1.68, (0.56 + h + 0.025) / 2), swatch="dark")  # ears
+    b.box((0.02, 0.02, h - 0.56), (0, -1.68, (0.56 + h) / 2), swatch="dark_d")  # the post
     for x in (-0.08, 0.08):
         b.box((0.04, 0.6, 0.04), (x, -1.2, 0.26), swatch="gun_d")  # bipod, folded
     # Skeleton stock: a top tube, a strut sloping down to the butt, the pad.
@@ -244,7 +353,12 @@ def mossberg(b):
     for y in (-0.7, -0.78, -0.86, -0.94, -1.02):
         b.cyl(0.105, 0.03, (0, y, 0.3), segs=8, rot=(90, 0, 0), swatch="dark_d")  # grooves
     b.box((0.1, 0.05, 0.18), (0, -1.7, 0.36), swatch="dark")  # barrel clamp
-    b.ico(0.025, (0, -1.79, 0.48), subdiv=0, swatch="brass")  # bead sight
+    # A brass bead on a short base at the muzzle, sighted down the grooved channel along the
+    # receiver's top (the 590's sights; SIGHT is the channel's line, level with the bead).
+    b.box((0.03, 0.05, 0.03), (0, -1.79, 0.475), swatch="dark")  # bead base
+    b.ico(0.03, (0, -1.79, 0.5), subdiv=1, swatch="brass")  # the bead
+    for x in (-0.035, 0.035):
+        b.box((0.02, 0.5, 0.025), (x, -0.2, 0.4825), swatch="dark_d")  # channel ridges
     b.box((0.03, 0.32, 0.16), (-0.1, -0.22, 0.34), swatch="dark_d")  # side saddle
     for i in range(4):
         y = -0.33 + i * 0.075
@@ -270,10 +384,7 @@ def m110(b):
     b.cyl(0.07, 0.03, (0, -2.45, 0.4), segs=8, rot=(90, 0, 0), swatch="dark_d")  # its end cap
     b.cyl(0.055, 0.4, (0, 0.36, 0.4), segs=8, rot=(90, 0, 0), swatch="dark")  # buffer tube
     tapered_stock(b, 0.3, 0.74, 0.47, 0.14, 0.3, 0.15, swatch="tan", pad="dark")  # crane stock
-    b.cyl(0.065, 0.7, (0, -0.3, 0.64), segs=8, rot=(90, 0, 0), swatch="dark")  # scope tube
-    b.cyl(0.095, 0.18, (0, -0.7, 0.64), segs=8, rot=(90, 0, 0), swatch="dark")  # objective
-    b.cyl(0.085, 0.14, (0, 0.1, 0.64), segs=8, rot=(90, 0, 0), swatch="dark")  # eyepiece
-    b.cyl(0.07, 0.02, (0, -0.8, 0.64), segs=8, rot=(90, 0, 0), swatch="glass_l")  # lens
+    look_through_scope(b, 0, 0.64, -0.79, -0.61, 0.03, 0.17, 0.065, 0.095, 0.085)  # the scope
     b.cyl(0.04, 0.08, (0, -0.3, 0.72), segs=6, swatch="dark_d")  # turret
     for y in (-0.5, -0.1):
         b.box((0.14, 0.08, 0.14), (0, y, 0.54), swatch="gun_d")  # rings
@@ -281,7 +392,8 @@ def m110(b):
 
 
 def m17(b):
-    # M17 (P320): coyote tan frame and grip, black slide with rear serrations, white front dot.
+    # M17 (P320): coyote tan frame and grip, black slide with rear serrations, notch-and-post
+    # irons with a white front dot.
     # 0.7 long: a touch over scale so it reads in the hand.
     tan = "tan"
     b.box((0.14, 0.2, 0.4), (0, 0.04, -0.06), rot=(15, 0, 0), swatch=tan)  # grip
@@ -291,8 +403,13 @@ def m17(b):
     for y in (0.06, 0.1, 0.14):
         b.box((0.135, 0.02, 0.12), (0, y, 0.32), swatch="dark_d")  # serrations
     b.box((0.06, 0.02, 0.06), (0, -0.475, 0.32), swatch="dark_d")  # the muzzle
-    b.box((0.03, 0.03, 0.04), (0, -0.43, 0.415), swatch="white_l")  # front dot
-    b.box((0.1, 0.04, 0.05), (0, 0.11, 0.42), swatch="dark_d")  # rear sight
+    # Irons: a square-notch rear sight and a front post with a white dot facing the shooter; the
+    # post's top is level with the rear sight's tops (the sight line, SIGHT).
+    b.box((0.1, 0.04, 0.02), (0, 0.11, 0.405), swatch="dark_d")  # rear sight base
+    for x in (-0.0325, 0.0325):
+        b.box((0.035, 0.04, 0.035), (x, 0.11, 0.4325), swatch="dark_d")  # either side of the notch
+    b.box((0.03, 0.03, 0.055), (0, -0.43, 0.4225), swatch="dark_d")  # front post
+    b.box((0.016, 0.006, 0.016), (0, -0.4135, 0.435), swatch="white_l")  # its dot
     b.box((0.03, 0.18, 0.03), (0, -0.1, 0.06), swatch=tan)  # trigger guard
     b.box((0.03, 0.03, 0.12), (0, -0.19, 0.11), swatch=tan)
     b.box((0.03, 0.04, 0.1), (0, -0.08, 0.13), rot=(15, 0, 0), swatch="dark")  # trigger

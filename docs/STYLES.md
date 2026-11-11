@@ -519,8 +519,10 @@ orange (`rgb(255,150,60)`) plus a ball at the landing point.
   client only (others always see it); `FirstPersonView` shows a viewmodel instead: a copy of
   the held gun with gloved hands and Pike-grey forearms. The right hand holds it where the
   body's hand holds the real gun, the left on the handguard (under the grip for a sidearm).
-  It points where the camera looks, low right at the hip (`GunHip`), centred with its top on
-  the eye line down the sights (`GunAds`, `SightDrop`), where the crosshair fades out so the
+  It points where the camera looks, low right at the hip (`GunHip`); down the sights the gun's
+  sight line (MeshAssets `sight`, a Sight part in the Tool: the rear peep or notch, level with
+  the front post or bead; for a scope a point on its axis) runs through the eye, the rear sight
+  `SightEye` ahead (a gun without one sits by its size, `SightDrop`), where the crosshair fades out so the
   iron sights or scope aim. Its own animation, timed to the body's events: the reload (from
   `ReloadUntil`: the gun cants, the left hand takes the magazine down out of view and seats a
   fresh one), a kick per shot (`KickBack`, `KickPitch`), sway behind camera turns (`Sway`) and a

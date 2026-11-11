@@ -258,9 +258,10 @@ class Builder:
         self._xform(verts, size=size, rot=rot, loc=loc)
         return self._paint(verts, swatch)
 
-    def cyl(self, r, depth, loc=(0, 0, 0), segs=8, r2=None, rot=None, swatch="gun"):
+    def cyl(self, r, depth, loc=(0, 0, 0), segs=8, r2=None, rot=None, swatch="gun", cap=True):
+        # cap=False leaves the ends open (a scope tube you look through).
         verts = bmesh.ops.create_cone(
-            self.bm, cap_ends=True, cap_tris=False, segments=segs, radius1=r, radius2=r if r2 is None else r2, depth=depth
+            self.bm, cap_ends=cap, cap_tris=False, segments=segs, radius1=r, radius2=r if r2 is None else r2, depth=depth
         )["verts"]
         self._xform(verts, rot=rot, loc=loc)
         return self._paint(verts, swatch)

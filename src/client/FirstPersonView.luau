@@ -40,6 +40,7 @@ type View = {
 	gunSource: BasePart?,
 	full: Vector3, -- the held gun's real size
 	muzzle: Vector3, -- its barrel tip, in its own space at full size
+	sight: Vector3?, -- its irons' sight line at the rear sight, likewise (nil: not modelled)
 	grip: CFrame, -- the right hand in the gun's space
 	hands: { BasePart }, -- left, right
 	arms: { BasePart }, -- left, right
@@ -122,6 +123,7 @@ local function build(character: Model): View
 		gunSource = nil,
 		full = Vector3.one,
 		muzzle = Vector3.zero,
+		sight = nil,
 		grip = CFrame.new(0, -0.3, 0.4),
 		hands = hands,
 		arms = arms,
@@ -157,6 +159,11 @@ local function fitGun(current: View)
 	current.muzzle = if muzzle and muzzle:IsA("BasePart")
 		then source.CFrame:PointToObjectSpace(muzzle.Position)
 		else Vector3.new(0, 0, -source.Size.Z / 2)
+	-- The irons (PlayerSetup's Sight part, from MeshAssets `sight`).
+	local sight = tool and tool:FindFirstChild("Sight", true)
+	current.sight = if sight and sight:IsA("BasePart")
+		then source.CFrame:PointToObjectSpace(sight.Position)
+		else nil
 	current.grip = source.CFrame:ToObjectSpace(realHand.CFrame)
 end
 
@@ -269,7 +276,12 @@ function FirstPersonView.update(character: Model?, camera: CFrame?, ads: number,
 	-- The gun: pointing along the camera, its centre low right at the hip, under the eye down
 	-- the sights; then sway, bob, kick and the reload's tilt.
 	local hip = VIEW.GunHip.Position
-	local sights = Vector3.new(0, -size.Y * VIEW.SightDrop, VIEW.GunAds.Position.Z)
+	-- Down the sights: the irons' sight line through the eye (the rear sight SightEye ahead,
+	-- the front post on the screen's centre); a gun without modelled irons sits by its size.
+	local sight = active.sight
+	local sights = if sight
+		then Vector3.new(0, 0, -VIEW.SightEye) - sight
+		else Vector3.new(0, -size.Y * VIEW.SightDrop, VIEW.GunAds.Position.Z)
 	local place = hip:Lerp(sights, ads) + bob + Vector3.new(0, 0, kick * VIEW.KickBack)
 	local gunCFrame = CFrame.new(place)
 		* CFrame.Angles(sway.Y + kick * math.rad(VIEW.KickPitch), sway.X, 0)
