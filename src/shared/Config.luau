@@ -285,6 +285,58 @@ local Config = {
 		MaxRevives = 2, -- per mission; the next lethal hit after that kills outright
 		CrawlSpeed = 3, -- studs/s: a downed body crawls on hands and knees toward cover or help
 	},
+	-- The revive animation (ReviveAnimService, Shared.ReviveAnimation, Rules/ReviveAnim;
+	-- docs/PROGRESSION.md > Downed and revive). Looks only: the hold, the radius and what
+	-- interrupts a revive stay in Downed above. The kneel and the lying body are existing
+	-- clips; the arms are solved onto the casualty's chest each frame on every client.
+	ReviveAnimation = {
+		Enabled = true, -- false: the reviver stands and holds the interact key, the body crawls (as before)
+		KneelSeconds = 0.3, -- down onto the knee
+		StandSeconds = 0.3, -- back up when the hold is let go
+		LieSeconds = 0.35, -- the casualty rolls from all fours onto their back
+		FinishSeconds = 0.9, -- the pull-up once the revive lands
+		PullShare = 0.6, -- share of FinishSeconds the reviver's hand stays on the casualty
+		RecoverSeconds = 1.0, -- the casualty's get-up clip is fitted to this
+		BotHoldSeconds = 0.6, -- a bot stands still this long into its pull-up or get-up
+		MoveBreakSpeed = 2, -- studs/s: walking (or crawling) faster than this breaks the pose...
+		MoveResumeSpeed = 0.5, -- ...until the body is slower than this again
+		-- The kneel point (Rules/ReviveAnim.kneelPoints), in the lying casualty's root space,
+		-- flat: the chest of the lying pose and the direction from feet to head.
+		Chest = { X = 0.9, Z = 0.7 },
+		BodyAxis = { X = 0.86, Z = 0.51 },
+		KneelDistance = 1.9, -- studs from the chest to the reviver's root
+		KneelTurn = 30, -- degrees the reviver turns left of the chest: the kneel clip's shoulders face right
+		MaxNudge = 8, -- studs (the prompt reaches 8): further than this from both kneel points, the reviver kneels where they stand
+		NudgeSeconds = 0.25, -- the slide to the kneel point...
+		NudgeSpeed = 14, -- ...never faster than this, studs/s
+		GroundTolerance = 1.5, -- studs the floor at a kneel point may differ from the floor underfoot
+		-- The treat: both hands press a dressing into the chest.
+		PressRate = 1.5, -- presses per second
+		PressDepth = 0.22, -- studs the hands travel
+		PressLean = 7, -- degrees the upper body leans into each press
+		HandGap = 0.16, -- studs each hand sits to its side of the chest's centre
+		HandLift = 0.12, -- studs the palms sit above the chest surface
+		HandLength = 0.3, -- studs from the wrist to the palm
+		BlendSeconds = 0.25, -- the arms ease onto the chest and off it
+		ReachSlack = 1.15, -- a chest further than the arm's length times this is out of reach...
+		-- ...and the hands work at this point in front of the knee instead (root space).
+		FallbackTarget = Vector3.new(0.6, -2.0, -1.6),
+		ElbowOut = Vector3.new(1, 0.8, 0.4), -- which way the right elbow points (root space; the left is mirrored)
+		-- The rifle rides across the back while both hands work (each client moves its own
+		-- copy of the grip weld; the shot origin is not touched on the server). false: the
+		-- rifle stays in the right hand and only the left hand treats.
+		SlingRifle = true,
+		Sling = {
+			Position = Vector3.new(0.35, -0.3, 0.65), -- the grip, in the upper torso's space
+			Barrel = Vector3.new(-0.45, 0.9, 0), -- where the muzzle points: up past the left shoulder
+		},
+		-- The casualty: the last frame of the knockdown clip, held. That frame sits low on a
+		-- standing root, so the body is raised to rest on the floor.
+		CasualtyLift = 1.0, -- studs
+		CasualtyNod = 5, -- degrees the head rocks with each press
+		-- A soft cloth-and-gear rustle from the reviver while they work.
+		Sound = { Bank = "player_gear", Group = "roll", Interval = 1.3, Volume = 0.22 },
+	},
 	-- Knocked down (the Warden's Pound and Stomp; Squad.knock): KnockedUntil on the
 	-- character. No moving, firing, abilities or reloading; still a target for the Infected.
 	-- Seconds per attack live on the attack; the get-up is the last GetUp seconds of it.

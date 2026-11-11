@@ -90,6 +90,11 @@ local Attributes = table.freeze({
 	SquadMaxHealth = "SquadMaxHealth",
 	ReviveEndsAt = "ReviveEndsAt", -- when the revive in progress completes
 	RespawnAt = "RespawnAt", -- when a dead bot rejoins
+	-- The revive animation (ReviveAnimService): "" | "treat" | "finish" on the reviver,
+	-- "treated" | "recover" on the casualty; where the reviver kneels and what they face.
+	ReviveRole = "ReviveRole",
+	ReviveKneel = "ReviveKneel", -- CFrame: the kneel point and heading
+	ReviveChest = "ReviveChest", -- Vector3: the casualty's chest, to face again after a step
 	KnockedUntil = "KnockedUntil",
 	KnockGraceUntil = "KnockGraceUntil",
 	CoverMoveUntil = "CoverMoveUntil",

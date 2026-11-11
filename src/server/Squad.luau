@@ -9,7 +9,8 @@
 -- Dead (bled out, killed while out of revives). Downed bodies are not targets and take no
 -- damage; a squadmate holds F (ProximityPrompt) for Config.Downed.ReviveHold to stand them
 -- up; bots revive with Squad.revive. Replicated as character attributes SquadState,
--- BleedOutAt (server time) and Reviver, mirrored on the Player for client UI. Spare
+-- BleedOutAt (server time) and Reviver, mirrored on the Player for client UI; the revive
+-- animation follows through Squad.onRevive (ReviveAnimService). Spare
 -- Tourniquet (the UpgradeKit attribute, loadout rework): a downed player stands up on their
 -- own Config.Upgrades.Tourniquet.Seconds after going down, once per run (SelfReviveAt).
 -- Also hands out landing pads (step 4). Requires only Players, Config and ArenaService, so
@@ -63,6 +64,8 @@ local members: { Member } = {}
 local byPlayer: { [Player]: Member } = {}
 local byHumanoid: { [Humanoid]: Member } = {}
 local stateListeners: { (member: Member, old: MemberState, new: MemberState) -> () } = {}
+export type ReviveEvent = "begin" | "cancel" | "complete"
+local reviveListeners: { (event: ReviveEvent, casualty: Member, reviver: Member?) -> () } = {}
 
 local function newMember(id: string, kind: MemberKind, owner: Player?, name: string): Member
 	local entry = Instance.new("Configuration")
@@ -182,6 +185,18 @@ end
 -- Listeners run on every state change (RunManager's wipe check, BotService).
 function Squad.onStateChanged(listener: (member: Member, old: MemberState, new: MemberState) -> ())
 	table.insert(stateListeners, listener)
+end
+
+-- The revive as it goes, for what shows it (ReviveAnimService): "begin" and "cancel" follow
+-- a player's hold on the prompt, "complete" is every revive (`reviver` nil: nobody did it).
+function Squad.onRevive(listener: (event: ReviveEvent, casualty: Member, reviver: Member?) -> ())
+	table.insert(reviveListeners, listener)
+end
+
+local function fireRevive(event: ReviveEvent, casualty: Member, reviver: Member?)
+	for _, listener in reviveListeners do
+		task.spawn(listener, event, casualty, reviver)
+	end
 end
 
 -- Points `member` at a (new) body; nil clears it. A new living body is Alive.
@@ -455,6 +470,7 @@ function Squad.revive(member: Member, by: Member?, free: boolean?)
 		regen.Enabled = true
 	end
 	setState(member, "Alive")
+	fireRevive("complete", member, by)
 	print(`[Squad] {member.name} revived by {by and by.name or "?"} ({member.revivesUsed} used)`)
 end
 
@@ -484,9 +500,11 @@ local function addPrompt(member: Member)
 	prompt.Style = Enum.ProximityPromptStyle.Default
 	prompt.PromptButtonHoldBegan:Connect(function(player)
 		setReviver(member, Squad.callsign(player), settings.ReviveHold)
+		fireRevive("begin", member, byPlayer[player])
 	end)
-	prompt.PromptButtonHoldEnded:Connect(function()
+	prompt.PromptButtonHoldEnded:Connect(function(player)
 		setReviver(member, "")
+		fireRevive("cancel", member, byPlayer[player])
 	end)
 	prompt.Triggered:Connect(function(player)
 		local reviver = byPlayer[player]
