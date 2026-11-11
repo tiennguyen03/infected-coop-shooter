@@ -13,7 +13,7 @@ Files: `Rules/Stamina`, `Rules/Slide` (+ specs), `SprintController` (owns stamin
 played at all** (the owner's Studio was in use).
 **Heads-up:** `Config.Movement.Slide` lost `Duration` / `StartSpeed` / `EndSpeed` (now
 `EntryBoost`, `Friction`, `SlopeAccel`, ...). `SprintController.isSprinting()` is false while
-winded, so Ctrl / C crouch and go prone then. Stamina is client-trusted, like sprint. Shove
+winded, so the crouch and prone keys work as usual then. Stamina is client-trusted, like sprint. Shove
 is free: its cooldown is the server's, so a client-side cost could charge for a refused shove.
 Touch has no sprint button, so the bar never shows there.
 **Next:** play it: sprint length and the winded wait, bar size and its spot 1 px above the
