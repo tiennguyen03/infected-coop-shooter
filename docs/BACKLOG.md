@@ -27,9 +27,20 @@ published from `main`.
 | #25 | Throws leave the hand when the animation releases | half-second wind-up feel; no object in the hand yet |
 | #27 | Hocker spit: head rears, bile glob, splat, pool | drops look like drops; pool visible on dark ground |
 | #28 | Anvil aimed through binoculars, anywhere you can see | the arm pose and prop are placeholders |
+| #30 | Plain names: "Warden" on his lines, "Helo" / "the helicopter" | read the radio lines |
+| #31 | Lobby soldier uses the in-game animations and carries your rifle | needs the lobby place; also check in-game walking still looks right |
+| #32 | Merits and tabs counter with icons | lobby top bar; end-of-run screen |
+| #33 | No floating health bars; squad panel on the left | do you want names back over teammates |
+| #34 | New Doorman turret model | ammo can on its left, sensor on its right; does it look dark |
+| #35 | First-person views fixed; real sniper scope | press F10 for the sight tour |
+| #36 | Rewards picked from a big panel; better objective reward | crate next to a downed teammate; is the Warden too easy after the restock |
+| #37 | Objectives: 5 main, 4 side, each with a reason | dev menu, RUN tab; props may float or sink |
+| #38 | Roll is Shift twice; slide is holding C or Ctrl | accidental rolls when re-sprinting |
+| #39 | Revive animation: kneel, treat, pull up | hands on the chest; the casualty not in the floor |
 
-Merge order when you are happy: #18 before #25 and #28; #16 before the merits/tabs counter;
-#17 is replaced by #24.
+Merge order when you are happy: #18 before #25 and #28; #16 before #32; #15 before #36 and
+#37; #21 before #38; #17 is replaced by #24. Several of these touch the same files; Claude
+joins them at merge time (already done once in the test mix).
 
 ## 2. Look at the pictures (Blender proposals, not in game)
 
@@ -42,44 +53,52 @@ Merge order when you are happy: #18 before #25 and #28; #16 before the merits/ta
 
 | What | Notes |
 |---|---|
-| Doorman turret: new 3D model | Blender; switch on its Config row to flip back |
-| Bots survive the Warden; Aid Bag refills bot stims | added to PR #22 |
-| Plain names: the Carrier, the helicopter, "Warden" on his lines | player-facing text only |
-| Lobby soldier matches the in-game soldier | animations, outfit, rifle |
-| Merits and tabs counter with icons | lobby corner and the end-of-run screen; on top of #16 |
+| New key layout: E interact, V stim, F shove, C/Ctrl crouch, Z prone, X flare | one table for all keys; follow-ups on the open PRs |
+| Checkpoint Delta revamp in Blender (proposal, pictures first) | layers along the highway, multi-storey buildings, consistent vehicles; Desktop `Delta_v2` when done |
 
 ## 4. Your call
 
 | # | Question | My pick |
 |---|---|---|
-| 1 | Where does difficulty ramp too fast: waves before the Warden, the Warden, or extraction? | tell me which; the systems designer retunes that part |
-| 2 | Tab packs: sizes and Robux prices (placeholders 100 / 550 / 1200) | decide with Nova |
-| 3 | What tabs buy (you said guns and upgrades, balanced) | list it when you know |
-| 4 | Shedder and Kite: another Blender pass before they go in game? | yes |
-| 5 | Mile 14: v1, v2, or v2's skyline on v1's smaller frame? | look at the pictures first |
-| 6 | Bloat's wound shows fat, not bone; Crawler's raw ring is at the rear | keep both |
-| 7 | Should a refused Anvil mark show a message; should controller and phone get call-in buttons? | yes to both, later |
-| 8 | Generator to 4.8, light-tower collision as two boxes, roll/slide keys | older calls still open |
+| 1 | Where does difficulty ramp too fast: waves before the Warden, the Warden, or extraction? | tell me which; that part gets retuned |
+| 2 | Is this what Delta is? "The army checkpoint on the highway out of the city, where evacuees were screened. It was overrun from the inside. Take it back so the helicopter can land." | yes |
+| 3 | Other made-up words players see: Index, NCOIC, the Primary, the Burn, THE PLOT, FIRES, Containment Board, LZ, "nets" | change all nine to plain words |
+| 4 | Sniper: should right-click scope in from third person too? | yes |
+| 5 | Names over teammates' heads: gone with the bars. Bring names back? | decide after seeing the outline and panel |
+| 6 | Reward key is the interact key, same as revive. Keep one key for both? | yes unless the prompts fight |
+| 7 | Full squad restock right before the Warden: too generous? | keep, judge by playing |
+| 8 | Doorman: add a smooth turn and a muzzle flash? | yes |
+| 9 | Tab packs: sizes and Robux prices (placeholders 100 / 550 / 1200) | decide with Nova |
+| 10 | Shedder and Kite: another Blender pass before they go in game? | yes |
+| 11 | Mile 14: v1, v2, or v2's skyline on v1's smaller frame? | look at the pictures first |
+| 12 | Generator to 4.8, light-tower collision as two boxes | older calls still open |
+
+Decided 2026-11-11 (no longer open): game picks the main objective for now, lobby choice
+later; two side objectives per run; tabs will buy guns and upgrades; keep HARLAN; yellow
+stamina bar; shove is free; the Open Cloud key stays.
 
 ## 5. Only you can do
 
 - Delete the broken place "Stage 1 (tmp)": create.roblox.com, Co-op Zombie Shooter, Places, ⋯, Remove.
-- Rotate the group Open Cloud key (create.roblox.com, Open Cloud, API Keys): make a new one, delete the old.
 - Do not press Publish in a Studio window connected to the test mix. Publish only from `main`.
 - Archive the old CZS and "Shooterr" experiences.
 
-## 6. Later (not started)
+## 6. Later (not started), in the order I would do them
 
-- A held grenade / marker model so something is in the hand during the throw.
-- Throw animation and grenade flight for bots.
-- Secondary guns earn merits (they pay 0 today because use is not tracked).
-- Gore stumps sit off the Runner's and Brute's arms.
-- Support weapons (Gun, Thumper, Kettle), incendiary and stun grenades.
-- Objective pools on Delta; Mile 14 in game with its boss.
-- Warden follow-ups: fight length 100-120 s, Gate dressing, insert/wipe radio lines; his gas canister throw timing.
-- Radio lines for bots (lore writer, plain names).
-- Lobby: debrief panel.
-- Performance measurements on a low-end device and with 2 clients.
-- Phone: a sprint button (the stamina bar never shows without one).
+1. Phone and controller: sprint button, call-ins, the Anvil, crate and objective prompts.
+2. A ping button (middle mouse): mark a spot or an enemy for the squad.
+3. Difficulty levels chosen in the lobby (more Infected, more side objectives, more merits).
+4. Bloat and Crawler in the game.
+5. A real four-player test with Nova and two friends.
+6. Choosing the mission in the lobby (after Mile 14 is in the game).
+7. Delta's second signature objective, Open the Gate (needs props that take gunfire).
+8. Checkpoint Delta v2 and Mile 14 into the game once the pictures are approved.
+
+Smaller: a held grenade / marker model; throw animation for bots; revolver model (lower
+hammer); secondary guns earn merits; gore stumps off the Runner's and Brute's arms; proper
+image ids for the merits and tabs icons; remove the lobby panels' duplicate merits text;
+support weapons and incendiary / stun grenades; Warden follow-ups (fight length, his gas
+canister throw timing); bot radio lines; lobby debrief panel; a relaxed rifle pose and a jump
+clip for the lobby; performance measurements on a low-end device and with two clients.
 
 The longer plan in phases: [ROADMAP.md](ROADMAP.md). What shipped: [HISTORY.md](HISTORY.md).
