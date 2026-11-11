@@ -28,6 +28,7 @@ local Animations = require(ReplicatedStorage.Shared.Animations)
 local BotBrain = require(ReplicatedStorage.Shared.Rules.BotBrain)
 local CallInDefinitions = require(ReplicatedStorage.Shared.CallInDefinitions)
 local Config = require(ReplicatedStorage.Shared.Config)
+local EnemyDefinitions = require(ReplicatedStorage.Shared.EnemyDefinitions)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
 local Messages = require(ReplicatedStorage.Shared.Messages)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
@@ -35,11 +36,13 @@ local RunStates = require(ReplicatedStorage.Shared.RunStates)
 local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
 local CallInService = require(script.Parent.CallInService)
 local DamageService = require(script.Parent.DamageService)
+local EnemyProjectileService = require(script.Parent.EnemyProjectileService)
 local KitService = require(script.Parent.KitService)
 local PauseService = require(script.Parent.PauseService)
 local PlayerSetup = require(script.Parent.PlayerSetup)
 local ProjectileServer = require(script.Parent.ProjectileServer)
 local Squad = require(script.Parent.Squad)
+local SupplyDropService = require(script.Parent.SupplyDropService)
 
 local ENEMY_TAG = "Enemy"
 local MAX_SQUAD = 4
@@ -424,6 +427,39 @@ local function tryRespawn(bot: Bot, now: number)
 	end
 end
 
+-- The boss on the field (an Infected whose EnemyDefinitions row is a Boss), looked for
+-- again every Config.Bots.Boss.ScanInterval; nil when there is none alive.
+local bossRoot: BasePart? = nil
+local nextBossScanAt = 0
+local function liveBoss(): BasePart?
+	local now = os.clock()
+	if now >= nextBossScanAt then
+		nextBossScanAt = now + Config.Bots.Boss.ScanInterval
+		bossRoot = nil
+		for _, tagged in CollectionService:GetTagged(ENEMY_TAG) do
+			local typeName = tagged:GetAttribute(Attributes.EnemyType)
+			local definition = if typeof(typeName) == "string"
+				then (EnemyDefinitions :: { [string]: any })[typeName]
+				else nil
+			local humanoid = tagged:FindFirstChildOfClass("Humanoid")
+			local root = tagged:FindFirstChild("HumanoidRootPart")
+			if
+				definition
+				and definition.Boss
+				and humanoid
+				and humanoid.Health > 0
+				and root
+				and root:IsA("BasePart")
+			then
+				bossRoot = root
+				break
+			end
+		end
+	end
+	local found = bossRoot
+	return if found and found.Parent then found else nil
+end
+
 local function nearestInfectedDistance(position: Vector3): number
 	local best = math.huge
 	for _, tagged in CollectionService:GetTagged(ENEMY_TAG) do
@@ -456,7 +492,7 @@ local function holdDowned(bot: Bot, humanoid: Humanoid, root: BasePart)
 end
 
 -- Revive the nearest downed squadmate when it is safe enough. Returns true while busy.
-local function tryRevive(bot: Bot, humanoid: Humanoid, root: BasePart): boolean
+local function tryRevive(bot: Bot, humanoid: Humanoid, root: BasePart, boss: BasePart?): boolean
 	local settings = Config.Bots
 	local target = bot.reviving
 	if not target or target.state ~= "Downed" then
@@ -478,9 +514,17 @@ local function tryRevive(bot: Bot, humanoid: Humanoid, root: BasePart): boolean
 	if not target or not downedRoot then
 		return false
 	end
-	if nearestInfectedDistance(downedRoot.Position) < settings.ReviveSafeRadius then
+	local safe = BotBrain.reviveSafe(
+		nearestInfectedDistance(downedRoot.Position),
+		if boss then (boss.Position - downedRoot.Position).Magnitude else nil,
+		{
+			ReviveSafeRadius = settings.ReviveSafeRadius,
+			BossReviveClear = settings.Boss.ReviveClear,
+		}
+	)
+	if not safe then
 		bot.reviveProgress = 0
-		return false -- too hot: fight first
+		return false -- too hot (an Infected, or the boss on top of them): fight first
 	end
 	local distance = (downedRoot.Position - root.Position).Magnitude
 	if distance > Config.Downed.ReviveRadius - 2 then
@@ -639,13 +683,15 @@ local function follow(
 	root: BasePart,
 	leader: BasePart,
 	now: number,
-	params: RaycastParams
+	params: RaycastParams,
+	post: Vector3?, -- stand here instead of the slot (a boss stand-off, out of a puddle)
+	slack: number -- closer than this to the slot or the post: stand
 )
 	local settings = Config.Bots
 	local here = root.Position
-	local slot = slotPosition(bot, leader)
+	local slot = post or slotPosition(bot, leader)
 	local toSlot = flatDistance(slot, here)
-	if toSlot > settings.FollowSlack then
+	if toSlot > slack then
 		bot.stuckMark, bot.stuckSince = BotBrain.stall(
 			bot.stuckMark,
 			bot.stuckSince,
@@ -658,7 +704,8 @@ local function follow(
 	end
 	local stuck = BotBrain.shouldTeleport({
 		distance = (leader.Position - here).Magnitude,
-		stalledFor = if bot.stuckSince then now - bot.stuckSince else 0,
+		-- On a post the bot is away from its leader on purpose: only a fall teleports it.
+		stalledFor = if bot.stuckSince and not post then now - bot.stuckSince else 0,
 		pathFails = bot.pathFails,
 		fellOut = here.Y < leader.Position.Y - settings.FallBelow,
 		sinceTeleport = now - bot.teleportedAt,
@@ -667,17 +714,17 @@ local function follow(
 		teleport(bot, humanoid, root, leader, now)
 		return
 	end
-	if toSlot <= settings.FollowSlack then
+	if toSlot <= slack then
 		clearPath(bot)
 		humanoid:MoveTo(here)
 		return
 	end
 	humanoid.WalkSpeed = if toSlot > settings.CatchUpBeyond
 		then settings.CatchUpSpeed
-		elseif toSlot > settings.RunBeyond then settings.RunSpeed
+		elseif post or toSlot > settings.RunBeyond then settings.RunSpeed
 		else settings.WalkSpeed
 
-	local level = math.abs(leader.Position.Y - here.Y) <= settings.DirectMaxRise
+	local level = post ~= nil or math.abs(leader.Position.Y - here.Y) <= settings.DirectMaxRise
 	local stalledFor = now - (bot.stuckSince or now)
 	if toSlot <= settings.DirectWithin and level and stalledFor < settings.DirectGiveUp then
 		local toward = Vector3.new(slot.X - here.X, 0, slot.Z - here.Z)
@@ -689,8 +736,8 @@ local function follow(
 	end
 	-- The slot is out of reach (inside a wall, past low cover) but the leader is right
 	-- here: close enough.
-	local goal = leader.Position
-	if (goal - here).Magnitude <= settings.NearLeader then
+	local goal = post or leader.Position
+	if not post and (goal - here).Magnitude <= settings.NearLeader then
 		clearPath(bot)
 		clearStall(bot)
 		humanoid:MoveTo(here)
@@ -726,14 +773,14 @@ end
 -- server path (KitService, CallInService) with no owner.
 ----------------------------------------------------------------------
 
-local function tryStim(bot: Bot, humanoid: Humanoid, now: number)
+local function tryStim(bot: Bot, humanoid: Humanoid, now: number, below: number)
 	local use = BotBrain.shouldStim({
 		health = humanoid.Health,
 		maxHealth = humanoid.MaxHealth,
 		stims = bot.stims,
 		standing = Squad.canAct(bot.member),
 		sinceStim = now - bot.stimAt,
-	}, Config.Bots)
+	}, { StimBelow = below, StimCooldown = Config.Bots.StimCooldown })
 	if use then
 		bot.stims -= 1
 		bot.stimAt = now
@@ -888,7 +935,7 @@ local function dodgeDanger(humanoid: Humanoid, root: BasePart, now: number): boo
 	end
 	local offset = Vector3.new(root.Position.X - center.X, 0, root.Position.Z - center.Z)
 	local kind = workspace:GetAttribute(Attributes.BossDangerKind)
-	local margin = 3
+	local margin = Config.Bots.Boss.DodgeMargin
 	if kind == "line" then
 		local direction = workspace:GetAttribute(Attributes.BossDangerDir) :: Vector3?
 		local length = (workspace:GetAttribute(Attributes.BossDangerLength) :: number?) or 0
@@ -906,7 +953,7 @@ local function dodgeDanger(humanoid: Humanoid, root: BasePart, now: number): boo
 		local out = if side.Magnitude > 0.1
 			then side.Unit
 			else Vector3.new(-direction.Z, 0, direction.X)
-		humanoid.WalkSpeed = Config.Bots.RunSpeed
+		humanoid.WalkSpeed = Config.Bots.Boss.DodgeSpeed
 		humanoid:MoveTo(root.Position + out * (radius + margin + 2 - side.Magnitude))
 		return true
 	end
@@ -914,7 +961,7 @@ local function dodgeDanger(humanoid: Humanoid, root: BasePart, now: number): boo
 		return false
 	end
 	local out = if offset.Magnitude > 0.1 then offset.Unit else Vector3.xAxis
-	humanoid.WalkSpeed = Config.Bots.RunSpeed
+	humanoid.WalkSpeed = Config.Bots.Boss.DodgeSpeed
 	humanoid:MoveTo(center + out * (radius + margin + 2))
 	return true
 end
@@ -968,9 +1015,19 @@ local function think(bot: Bot, now: number, params: RaycastParams)
 		return
 	end
 	bot.knocked = false
+	local settings = Config.Bots
+	local leader = leaderRoot(root.Position)
+	-- A boss fight (Config.Bots.Boss): the boss is within Engage of the bot's leader.
+	local boss = if settings.Boss.Enabled then liveBoss() else nil
+	if
+		boss
+		and not (leader and flatDistance(boss.Position, leader.Position) <= settings.Boss.Engage)
+	then
+		boss = nil
+	end
 	local kitFree = RunStates.isLive() and not PauseService.isPaused()
 	if kitFree then
-		tryStim(bot, humanoid, now)
+		tryStim(bot, humanoid, now, if boss then settings.Boss.StimBelow else settings.StimBelow)
 	end
 	-- The Warden's ground attacks (IndexService danger attributes): step out of the ring or
 	-- the line while he winds up, nothing else.
@@ -982,7 +1039,7 @@ local function think(bot: Bot, now: number, params: RaycastParams)
 		)
 		return
 	end
-	if tryRevive(bot, humanoid, root) then
+	if tryRevive(bot, humanoid, root, boss) then
 		breakFollow(bot)
 		humanoid.AutoRotate = true
 		local velocity = root.AssemblyLinearVelocity
@@ -990,9 +1047,43 @@ local function think(bot: Bot, now: number, params: RaycastParams)
 		return
 	end
 
-	local leader = leaderRoot(root.Position)
 	if leader then
-		follow(bot, humanoid, root, leader, now, params)
+		-- Where to stand: out of a caustic puddle first, then the boss stand-off ring
+		-- (BotBrain.standOff: spread, out of his reach), else the formation slot.
+		local here: BotBrain.Point = { x = root.Position.X, z = root.Position.Z }
+		local post: BotBrain.Point? = nil
+		local slack = settings.FollowSlack
+		if settings.Boss.Enabled then
+			local center, radius = EnemyProjectileService.puddleAt(root.Position)
+			if center and radius then
+				post = BotBrain.stepOut(
+					here,
+					{ x = center.X, z = center.Z },
+					radius,
+					settings.Boss.PuddleMargin
+				)
+				slack = 1
+			end
+		end
+		if not post and boss then
+			post = BotBrain.standOff(
+				{ x = boss.Position.X, z = boss.Position.Z },
+				{ x = leader.Position.X, z = leader.Position.Z },
+				bot.slot,
+				settings.Boss
+			)
+			slack = settings.Boss.Slack
+		end
+		follow(
+			bot,
+			humanoid,
+			root,
+			leader,
+			now,
+			params,
+			if post then Vector3.new(post.x, root.Position.Y, post.z) else nil,
+			slack
+		)
 	end
 
 	-- Fight: face and shoot the nearest visible Infected while the field is live.
@@ -1161,6 +1252,14 @@ function BotService.init()
 	folder.Parent = workspace
 	tracerRemote = Remotes.get("ShotTracer")
 	noticeRemote = Remotes.get("BuffNotice")
+	-- An Aid Bag refills a treated bot's stims, as it does a player's.
+	SupplyDropService.onAidBag(function(member)
+		for _, bot in bots do
+			if bot.member == member then
+				bot.stims = Config.Stim.Carried
+			end
+		end
+	end)
 	RunService.Heartbeat:Connect(step)
 	-- A real player joining takes a bot's place.
 	Players.PlayerAdded:Connect(function()

@@ -158,4 +158,57 @@ function BotBrain.teleportSpot(spots: { Point }, viewers: { Viewer }, viewDot: n
 	return 1
 end
 
+-- Boss fights: where bot `slot` stands. On a ring StandOff from the boss, on the leader's
+-- side of it, the slots fanned SpreadDegrees apart either side of the boss-to-leader line
+-- (slot 1 left, 2 right, 3 further left, ...) so one swing, charge or pound cannot catch
+-- them all.
+function BotBrain.standOff(
+	boss: Point,
+	leader: Point,
+	slot: number,
+	settings: { StandOff: number, SpreadDegrees: number }
+): Point
+	local dx, dz = leader.x - boss.x, leader.z - boss.z
+	local length = math.sqrt(dx * dx + dz * dz)
+	if length < 0.01 then
+		dx, dz, length = 0, 1, 1
+	end
+	dx, dz = dx / length, dz / length
+	local side = if slot % 2 == 1 then -1 else 1
+	local angle = math.rad(settings.SpreadDegrees) * math.ceil(slot / 2) * side
+	local cos, sin = math.cos(angle), math.sin(angle)
+	return {
+		x = boss.x + (dx * cos - dz * sin) * settings.StandOff,
+		z = boss.z + (dx * sin + dz * cos) * settings.StandOff,
+	}
+end
+
+-- Whether a downed body is safe to revive: no Infected within ReviveSafeRadius of it and
+-- no boss within BossReviveClear (`bossDistance` nil when there is none).
+function BotBrain.reviveSafe(
+	infectedDistance: number,
+	bossDistance: number?,
+	settings: { ReviveSafeRadius: number, BossReviveClear: number }
+): boolean
+	if infectedDistance < settings.ReviveSafeRadius then
+		return false
+	end
+	return bossDistance == nil or bossDistance >= settings.BossReviveClear
+end
+
+-- A body inside a disc (a caustic puddle) of `radius` round `center`: the point `margin`
+-- past its edge, straight out. Nil when it already stands outside.
+function BotBrain.stepOut(here: Point, center: Point, radius: number, margin: number): Point?
+	local dx, dz = here.x - center.x, here.z - center.z
+	local length = math.sqrt(dx * dx + dz * dz)
+	if length > radius then
+		return nil
+	end
+	if length < 0.01 then
+		dx, dz, length = 1, 0, 1
+	end
+	local reach = radius + margin
+	return { x = center.x + dx / length * reach, z = center.z + dz / length * reach }
+end
+
 return BotBrain

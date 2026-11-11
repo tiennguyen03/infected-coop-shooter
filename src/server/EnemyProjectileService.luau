@@ -55,6 +55,21 @@ local folder: Folder
 local spits: { Spit } = {}
 local puddles: { Puddle } = {}
 
+-- The caustic puddle `position` stands in, as (centre, radius); nil when it is in none.
+-- BotService: a bot steps out of it.
+function EnemyProjectileService.puddleAt(position: Vector3): (Vector3?, number?)
+	for _, puddle in puddles do
+		local offset = position - puddle.part.Position
+		if
+			Vector3.new(offset.X, 0, offset.Z).Magnitude <= puddle.radius
+			and math.abs(offset.Y) < 6
+		then
+			return puddle.part.Position, puddle.radius
+		end
+	end
+	return nil, nil
+end
+
 -- The one entry point for Infected damage to a player: difficulty scaling, then the
 -- player's Armour Plate shield takes the hit before health. `kind` "melee" is a limb or a
 -- claw: a body inside its roll / vault / climb window (CoverMoveService, CoverMoveUntil)

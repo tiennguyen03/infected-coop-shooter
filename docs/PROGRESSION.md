@@ -100,7 +100,12 @@ Numbers in `Config.Weapons.<Gun>`, rows in `WeaponDefinitions`. Semi guns fire o
   40% health; a frag (3 carried) at 4+ Infected with no squad member near the blast; one
   fire mission each (Hammer, Anvil, Hammer by slot) at 8+ Infected or a Brute / boss, 180 s
   per bot, 45 s between any two, announced on the radio subtitle. A Restock card taken by
-  any player refills their frags and stims.
+  any player refills their frags and stims; an Aid Bag refills a treated bot's stims.
+- Bots in a boss fight (`Config.Bots.Boss`, switch `Enabled`): while the boss is within 60
+  studs of the leader they leave formation for posts 32 studs from the boss, 40 degrees
+  apart on the leader's side, and back off as he comes; they run 5 studs clear of a
+  telegraphed disc or line, step out of caustic puddles, stim at 60% health, and revive only
+  when the boss is 26+ studs from the downed body.
 - The three sample guns (2026-11-09) are in the Arms Room like every gun: its lists are every
   row of the slot, ordered by the row's `ArmsOrder` (default 100; the first is the default
   gun), so a new gun appears by having a row. ADS move: revolver 0.85, sniper 0.4, Goose 0.4.

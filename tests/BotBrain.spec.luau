@@ -139,4 +139,48 @@ return {
 		}
 		expect.equal(BotBrain.teleportSpot({ at(0, -10), at(0, -40) }, viewers, 0.3), 2)
 	end,
+
+	["a stand-off spot is StandOff from the boss, on the leader's side"] = function()
+		local ring = { StandOff = 30, SpreadDegrees = 40 }
+		for slot = 1, 3 do
+			local spot = BotBrain.standOff(at(0, 0), at(0, 10), slot, ring)
+			expect.near(math.sqrt(spot.x * spot.x + spot.z * spot.z), 30, 0.01, `radius {slot}`)
+			expect.equal(spot.z > 0, true, `leader's side {slot}`)
+		end
+	end,
+	["the three slots spread round the ring, further apart than a charge is wide"] = function()
+		local ring = { StandOff = 30, SpreadDegrees = 40 }
+		local spots = {}
+		for slot = 1, 3 do
+			spots[slot] = BotBrain.standOff(at(0, 0), at(0, 10), slot, ring)
+		end
+		for a = 1, 3 do
+			for b = a + 1, 3 do
+				local dx, dz = spots[a].x - spots[b].x, spots[a].z - spots[b].z
+				expect.equal(math.sqrt(dx * dx + dz * dz) > 19, true, `{a}-{b}`)
+			end
+		end
+		expect.equal(spots[1].x * spots[2].x < 0, true, "either side of the leader's line")
+	end,
+	["a leader standing on the boss still gives a spot on the ring"] = function()
+		local spot = BotBrain.standOff(at(5, 5), at(5, 5), 1, { StandOff = 30, SpreadDegrees = 40 })
+		local dx, dz = spot.x - 5, spot.z - 5
+		expect.near(math.sqrt(dx * dx + dz * dz), 30, 0.01)
+	end,
+
+	["a revive waits while an Infected or the boss is on the downed body"] = function()
+		local rule = { ReviveSafeRadius = 12, BossReviveClear = 26 }
+		expect.equal(BotBrain.reviveSafe(40, nil, rule), true, "clear")
+		expect.equal(BotBrain.reviveSafe(11, nil, rule), false, "Infected close")
+		expect.equal(BotBrain.reviveSafe(40, 25, rule), false, "boss on top")
+		expect.equal(BotBrain.reviveSafe(40, 27, rule), true, "boss away")
+	end,
+
+	["a body inside a puddle steps out past its edge the short way"] = function()
+		local out = BotBrain.stepOut(at(3, 0), at(0, 0), 9, 3) :: BotBrain.Point
+		expect.near(out.x, 12, 0.01, "x")
+		expect.near(out.z, 0, 0.01, "z")
+		expect.equal(BotBrain.stepOut(at(13, 0), at(0, 0), 9, 3), nil, "outside")
+		expect.equal(BotBrain.stepOut(at(0, 0), at(0, 0), 9, 3) ~= nil, true, "dead centre")
+	end,
 }

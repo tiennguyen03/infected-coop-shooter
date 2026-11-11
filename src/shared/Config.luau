@@ -165,6 +165,27 @@ local Config = {
 			FriendMargin = 4, -- studs past the Radius kept clear of every squad member
 			Cooldown = 12, -- seconds between two throws by one bot
 		},
+		-- Boss fights (the Warden; any Infected whose EnemyDefinitions row is a Boss). While
+		-- the boss is within Engage of a bot's leader the bot leaves its formation slot for a
+		-- post StandOff from the boss on the leader's side, the slots SpreadDegrees apart
+		-- (Rules/BotBrain.standOff), and backs off as he comes. StandOff is past every close
+		-- attack (the Pound reaches 12 x ScaleReach 1.9 = 23 studs) and inside the rifle's
+		-- Range. Enabled = false: slots, StimBelow and ReviveSafeRadius only, as before.
+		Boss = {
+			Enabled = true,
+			Engage = 60,
+			StandOff = 32,
+			SpreadDegrees = 40, -- 22 studs between neighbours at StandOff; a charge is 19 wide
+			Slack = 5, -- closer than this to the post: stand
+			StimBelow = 0.6, -- stims earlier than StimBelow while the boss is engaged
+			ReviveClear = 26, -- no revive while the boss is this close to the downed body
+			PuddleMargin = 3, -- steps this far past the edge of a caustic puddle it stands in
+			ScanInterval = 0.5, -- seconds between looks for a boss on the field
+			-- A telegraphed disc or line (IndexService danger attributes): the bot runs
+			-- DodgeMargin past its edge at DodgeSpeed. These two apply with Enabled off too.
+			DodgeMargin = 5,
+			DodgeSpeed = 30,
+		},
 		-- Fire missions: each bot carries one (Kit, by bot slot; CallInDefinitions ids with a
 		-- ring Aim), thrown at MinCluster Infected inside its BlastRadius or at a heavy (an
 		-- Infected with MaxHealth of HeavyHealth or more: a Brute, a boss). Never with a squad
