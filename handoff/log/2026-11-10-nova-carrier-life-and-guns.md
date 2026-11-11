@@ -18,5 +18,8 @@ muzzles unchanged), `ASSET_IDS.md`, `Attributes` (`CrewTag`, `CrewId`, `CrewRout
 `Config.Lobby.Crew` and `.WorldMap`. A full asset build also re-exported the ship and Lantern;
 those exports were reverted (unchanged source), only their fingerprints were added.
 `docs/ROADMAP.md` still says HRD and Credits (Tien's file: HARLAN and merits now).
-**Next:** Nova playtests, then push. The Pike kit on the match body (PlayerSetup) if Tien
+**Still needs work (Nova):** some models are not finished: the NPC and walker bodies and their
+kit are placeholder blocks (the art director's NPC sheet should replace them), the revolver,
+M2010, Goose and M17 were not reworked, and the rebuilt guns are unseen in a hand in the match.
+**Next:** the model pass above. The Pike kit on the match body (PlayerSetup) if Tien
 wants it; earning merits from runs.
