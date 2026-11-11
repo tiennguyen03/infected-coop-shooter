@@ -445,6 +445,34 @@ or the wounds and the club's spurs land on the wrong side. To adopt a form:
 `MeshAssets` at them. Not checked in game: gore stumps on the new arms, hitboxes, how the
 clips move the longer right arm.
 
+### Infected roster (proposal, 2026-11-11; not in the game)
+
+Bloat, Shedder, Crawler, Kite and Growth in the v2 look, for later stages. Source:
+`assets/3d/build/infected_roster.py`; pictures `previews/infected_v2_<form>.png` (front, bad
+side, back, beside the 5-stud figure) and `lineup_infected_roster.png` (all nine to scale).
+Sheets: CHARACTERS.md A. Tris are whole bodies.
+
+- **Bloat** (1,866, cap 2,400; scale 1.1): a faceted ball across both torso meshes, `flesh`
+  with a `pallor.l` front and `strain.d` veins from the navel; tan shirt on the left and
+  back; right side split in a long tear, pustules on the shoulder; arms out 42 degrees, bite
+  bandage on the left forearm, knees bowed. The navel sphere is an attached Part.
+- **Shedder** (2,332, cap 2,800; scale 1.15): a stack of tapered blocks, a `strain.d` seam
+  between each, the gown soaked in a band at every seam; neck 0.5 longer; bare spine at the
+  back; two small arms on the ribs; cut cuffs. The right forearm hangs out of its seam.
+- **Crawler** (536, cap 700; scale 0.45): one torso block carried flat between two long bone
+  arms, elbows above its back; knob head; legs are knots; raw ring at the rear.
+- **Kite** (600, cap 600; 4 parts): bone wedge, open keel, 3-stud ribbed wings (the right
+  one torn), a tail strip with hi-vis.
+- **Growth** (1,200, cap 1,200; mat, host, sac x3, root x2): an 8-stud terraced mat, the host
+  bent double in hi-vis with his ribs standing out of his back, three sacs behind him.
+
+Where this differs from the sheets (the v2 look wins): eyes are milky, not green; skin is
+`flesh` / `pallor`, not `rebuilt.l` and `white.d` (Bloat) or `infected skin`; trousers are
+`concrete.d`, not `asphalt`; the Bloat's width is in the mesh, not BodyWidthScale; the
+Bloat's wound has no bone (fat); the Crawler's raw ring is at the rear, not the top of the
+torso. Sided limbs (`infected_roster.SIDED`): Bloat arms and legs, Shedder and Crawler arms.
+Not checked: anything in game (clips on the hung-off arms, hitboxes, the Crawler's hip height).
+
 ### The Carrier's sky (gloomy, 2026-11-10)
 
 Tien: gloomier. An overcast, cold late afternoon on a grey sea (`Config.Lobby.Sky`): ClockTime

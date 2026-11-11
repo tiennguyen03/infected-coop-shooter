@@ -1386,6 +1386,13 @@ if "--infected-v2" in sys.argv:
 
     infected_v2.register(sys.modules[__name__])
 
+# Proposal (2026-11-11): Bloat, Shedder, Crawler, Kite and Growth in the same look
+# (infected_roster.py). Later-stage forms; built only with `-- --infected-roster`.
+if "--infected-roster" in sys.argv:
+    import infected_roster  # noqa: E402
+
+    infected_roster.register(sys.modules[__name__])
+
 
 # ------------------------------------------------------------------ The Chosen (player bodies)
 # Same limb-swap build as the Infected: one mesh per R15 limb inside the stock limb box.

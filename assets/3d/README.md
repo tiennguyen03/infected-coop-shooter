@@ -17,7 +17,9 @@ One Blender project holds every asset: **`arena_survivor.blend`**. Collections i
 Brute and Hocker (`inf_v2_<form>_<limb>`, [STYLES.md](../../docs/STYLES.md) §7 "Infected
 v2"). `blender --background --python assets/3d/build/infected_v2.py` renders current next to
 v2 into `build/previews/infected_v2_<form>.png` and `lineup_infected_v2.png` and writes
-nothing else; `build_assets.py -- --infected-v2` adds the limb meshes to a build.
+nothing else; `build_assets.py -- --infected-v2` adds the limb meshes to a build. `build/infected_roster.py`
+is the same for Bloat, Shedder, Crawler, Kite and Growth (`-- --infected-roster`; previews plus
+`lineup_infected_roster.png`).
 
 The `.blend` is **generated** by `build/build_assets.py`. Every asset is described in code
 (boxes, cylinders, icospheres painted with palette swatches), so edits made by hand in Blender
