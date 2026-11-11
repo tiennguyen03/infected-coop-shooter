@@ -82,10 +82,12 @@ local Config = {
 			Acceleration = 60, -- 0 -> walk (16) in ~0.27 s, 0 -> sprint (24) in 0.4 s
 			Deceleration = 75, -- walk -> stop in ~0.2 s; a full reversal ~0.45 s
 		},
-		-- Sprint + LeftControl: a short roll along the move direction. Infected melee skips
+		-- Shift twice: a short roll along the move direction. Infected melee skips
 		-- the body for the roll (CoverMoveService, same window as a vault).
-		Roll = { Duration = 0.8, Speed = 25, Cooldown = 1 },
-		-- Sprint + C: a slide that keeps the body's momentum (Rules/Slide). It starts at the
+		-- Shift twice within DoubleTap seconds rolls (the first press is the sprint).
+		Roll = { Duration = 0.8, Speed = 25, Cooldown = 1, DoubleTap = 0.3 },
+		-- Sprint + hold C or LeftControl: a slide that lasts while the key is down (never
+		-- shorter than MinHold) and keeps the body's momentum (Rules/Slide). It starts at the
 		-- speed going in plus EntryBoost, loses Friction per second, and the floor adds
 		-- SlopeAccel x the slope's sine: flat from a sprint is 30 -> 14 in ~0.95 s, a 16
 		-- degree downhill holds its speed, steeper gains up to MaxSpeed, uphill dies in
@@ -101,6 +103,7 @@ local Config = {
 			MaxSpeed = 40,
 			MinSpeed = 14,
 			MaxDuration = 6, -- seconds; the longest hill ends here
+			MinHold = 0.35, -- seconds; a tap still slides this long
 			ExitDecel = 40, -- studs/s per second back down to the walk or sprint speed
 			FloorProbe = 6, -- studs under the root that count as the floor
 			ClipDuration = 0.95,
@@ -1000,8 +1003,8 @@ local Config = {
 				exit = "prone_exit",
 			},
 			vault = "vault_low", -- over jersey / hesco
-			roll = "sprint_roll", -- sprint + LeftControl
-			slide = "running_slide", -- sprint + C
+			roll = "sprint_roll", -- Shift twice
+			slide = "running_slide", -- sprint + hold C or LeftControl
 			climb = "climb_ledge", -- onto bunker / humvee / container
 			downed = "downed_crawl", -- downed (Squad): on all fours, crawling
 		},

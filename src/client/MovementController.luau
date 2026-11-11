@@ -8,8 +8,9 @@
 -- (StanceController). Space with nothing in front stands a crouched or prone body up; it
 -- never jumps (PlayerSetup zeroes JumpPower as well).
 --
--- Roll and slide: while sprinting, LeftControl rolls and C slides along the
--- direction of travel (StanceController leaves those keys alone while sprinting). Both
+-- Roll and slide: Shift twice quickly rolls; while sprinting, holding C or LeftControl
+-- slides along the direction of travel until the key is let go (StanceController leaves
+-- those keys alone while sprinting). Both
 -- lock the heading, drive the humanoid along that direction at a speed this module owns
 -- (SprintController.setOverrideSpeed) and hand the exit speed back to MomentumController.
 -- The roll reports itself to the server (CoverMove) for its melee immunity window. Each
@@ -64,6 +65,7 @@ type Dash = {
 	speed: number, -- studs/s now
 	params: RaycastParams, -- for the slide's floor ray
 	clip: "playing" | "held" | "done", -- the slide clip: holds its pose on a long slide
+	held: boolean, -- a slide: lasts while its key is down (slideKey)
 }
 
 local move: Move? = nil
@@ -71,6 +73,7 @@ local dash: Dash? = nil
 local coast: number? = nil -- studs/s still carried out of a roll or slide, bleeding off
 local nextAutoCheck = 0
 local readyAt = { roll = 0, slide = 0 }
+local slideKey: Enum.KeyCode? = nil -- the key holding the current slide down; nil once let go
 
 local function character(): (Model?, Humanoid?, BasePart?)
 	local model = Players.LocalPlayer.Character
@@ -231,7 +234,9 @@ local function stepDash(current: Dash, dt: number)
 		local settings = Config.Movement.Slide
 		local slope = floorSlope(current)
 		current.speed = Slide.step(current.speed, slope, dt, settings)
-		if Slide.isOver(current.speed, elapsed, settings) then
+		-- A held slide: letting the key go gets the body up (never before MinHold).
+		local letGo = current.held and slideKey == nil and elapsed >= settings.MinHold
+		if letGo or Slide.isOver(current.speed, elapsed, settings) then
 			endDash(current)
 			return
 		end
@@ -256,7 +261,7 @@ local function stepDash(current: Dash, dt: number)
 	current.humanoid:Move(current.direction, false)
 end
 
--- Sprint + LeftControl (roll) or sprint + C (slide). Returns true when it started.
+-- A roll (Shift twice) or a slide (sprint + hold C or LeftControl). Returns true when it started.
 function MovementController.tryDash(kind: "roll" | "slide"): boolean
 	if move or dash or workspace:GetAttribute(Attributes.GamePaused) == true then
 		return false
@@ -313,6 +318,7 @@ function MovementController.tryDash(kind: "roll" | "slide"): boolean
 		speed = startSpeed,
 		params = rayParams(model),
 		clip = if isRoll then "done" else "playing",
+		held = not isRoll,
 	}
 	return true
 end
@@ -392,16 +398,31 @@ function MovementController.init()
 		CameraController.setBodyYawLocked(false)
 		MomentumController.resume(Vector3.zero)
 	end)
-	-- Sprint + LeftControl rolls, sprint + C slides (StanceController skips these while
-	-- sprinting). Shift is read from the key itself: sprint may be blocked (ADS) mid-press.
+	-- Shift twice quickly rolls (the first press is the sprint). While sprinting, holding C
+	-- or LeftControl slides for as long as the key is down (StanceController skips those
+	-- keys while sprinting); letting go ends the slide once it is MinHold old.
+	local lastShiftAt = -math.huge
 	UserInputService.InputBegan:Connect(function(input, gameProcessed)
-		if gameProcessed or not SprintController.isSprinting() then
+		if gameProcessed then
 			return
 		end
-		if input.KeyCode == Enum.KeyCode.LeftControl then
-			MovementController.tryDash("roll")
-		elseif input.KeyCode == Enum.KeyCode.C then
-			MovementController.tryDash("slide")
+		if input.KeyCode == Enum.KeyCode.LeftShift then
+			local now = os.clock()
+			if now - lastShiftAt <= Config.Movement.Roll.DoubleTap then
+				lastShiftAt = -math.huge
+				MovementController.tryDash("roll")
+			else
+				lastShiftAt = now
+			end
+		elseif input.KeyCode == Enum.KeyCode.C or input.KeyCode == Enum.KeyCode.LeftControl then
+			if SprintController.isSprinting() and MovementController.tryDash("slide") then
+				slideKey = input.KeyCode
+			end
+		end
+	end)
+	UserInputService.InputEnded:Connect(function(input)
+		if slideKey and input.KeyCode == slideKey then
+			slideKey = nil
 		end
 	end)
 	RunService.Heartbeat:Connect(step)
