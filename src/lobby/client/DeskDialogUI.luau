@@ -107,7 +107,11 @@ function DeskDialogUI.init()
 	HudTheme.parent(gui)
 
 	-- The Plot's map view: the camera looks down on the paper map (WorldMap's sheet) from the
-	-- door side while the watch officer talks; leaving gives the camera back.
+	-- door side while the watch officer talks; leaving gives the camera back. The talk panel
+	-- moves to the left edge and the map to the right of the screen, so neither covers the
+	-- other (Nova, 2026-11-10: the dialog was in the way of the map).
+	local PANEL_ANCHOR, PANEL_AT = panel.AnchorPoint, panel.Position
+	local MAP_SHIFT = 5 -- studs the camera slides left so the map sits right of the panel
 	local viewing = false
 	local function viewMap()
 		local sheet = Workspace:FindFirstChild("WorldMapSheet", true)
@@ -119,6 +123,9 @@ function DeskDialogUI.init()
 		HoldStill.set(true)
 		camera.CameraType = Enum.CameraType.Scriptable
 		local goal = CFrame.lookAt(sheet.Position + Vector3.new(-4.5, 12.5, 0), sheet.Position)
+		goal -= goal.RightVector * MAP_SHIFT
+		panel.AnchorPoint = Vector2.new(0, 0.5)
+		panel.Position = UDim2.new(0, HudTheme.Margin * 2, 0.5, 0)
 		TweenService:Create(camera, TweenInfo.new(0.8, Enum.EasingStyle.Sine), { CFrame = goal })
 			:Play()
 	end
@@ -127,6 +134,8 @@ function DeskDialogUI.init()
 			return
 		end
 		viewing = false
+		panel.AnchorPoint = PANEL_ANCHOR
+		panel.Position = PANEL_AT
 		local camera = Workspace.CurrentCamera
 		if camera then
 			camera.CameraType = Enum.CameraType.Custom

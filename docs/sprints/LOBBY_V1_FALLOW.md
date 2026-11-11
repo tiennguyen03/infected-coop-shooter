@@ -97,7 +97,8 @@ match place.
   and the door, so you read the map the right way up from its west side; the officer stands
   across it (26.8, -3) and her prompt reaches 18 studs (`DeskPlace.reach`) to cover the table.
   A white light set flush in the deckhead over the table lights the paper (a hanging lamp
-  blocked the map view). Fires moved out to (1, 18), beside the door. **The numbers are placeholders**
+  blocked the map view). While the map is up the talk panel moves to the left edge and the
+  map to the right of the screen (the panel covered the map). Fires moved out to (1, 18), beside the door. **The numbers are placeholders**
   (`Config.Containment.Districts`: Delta 25, the rest 0) until the save service.
 
 - **The walking crew** (2026-11-10, Nova: "give the fallow some life"; roles and lines by the
