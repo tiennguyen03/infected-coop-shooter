@@ -95,6 +95,13 @@ local Config = {
 			headshot = Color3.fromRGB(255, 214, 90),
 			kill = Color3.fromRGB(235, 60, 50),
 		},
+		-- The burst everyone sees where an Infected dies: dark blood, STYLES `wound` mid
+		-- fading to `wound` dark. Never green (owner).
+		KillBurst = {
+			Color = Color3.fromRGB(142, 38, 48),
+			ColorEnd = Color3.fromRGB(86, 22, 32),
+			Count = 14,
+		},
 	},
 
 	-- Bot squadmates (BotService): generic Pike soldiers fill the squad in solo, one
@@ -1168,6 +1175,17 @@ local Config = {
 			lantern_rotor = true,
 			amb_siren = true,
 		} :: { [string]: boolean },
+		-- Kill confirm (client HitMarkerUI): a soft 2D tick for the player who landed the
+		-- kill, on top of the red kill marker. The radio keypad click pitched up, so it does
+		-- not read as a menu click or as the wet hit sound.
+		KillConfirm = {
+			Bank = "ui_radio",
+			Group = "ui_click",
+			Volume = 0.3,
+			Pitch = 1.4, -- PlaybackSpeed
+			PitchVary = 0.05, -- random +/- per tick
+			MinGap = 0.07, -- seconds; kills closer together than this share one tick
+		},
 		-- The ragged breathing loop below this health fraction (client, LowHealthSound).
 		LowHealthFraction = 0.3,
 		-- Low-health feedback (client, LowHealthFX): below Start (a health fraction) the screen

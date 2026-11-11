@@ -139,15 +139,16 @@ function SoundFX.gunshot(sound: string?, position: Vector3?, volume: number?)
 end
 
 -- A random variant of a bank group, 2D (the radio squelch, a menu click). Silent while the
--- bank is not uploaded.
-function SoundFX.ui(bank: string, group: string)
+-- bank is not uploaded. `volume` replaces the group's Config volume, `speed` the pitch.
+function SoundFX.ui(bank: string, group: string, volume: number?, speed: number?)
 	if not SoundBanks.has(bank) then
 		return
 	end
 	local sound = Instance.new("Sound")
 	sound.Name = "UI_" .. group
+	sound.PlaybackSpeed = speed or 1
 	sound.Parent = SoundService
-	local duration = SoundBanks.play(sound, bank, group)
+	local duration = SoundBanks.play(sound, bank, group, volume)
 	task.delay((duration or 0) + 0.1, function()
 		sound:Destroy()
 	end)

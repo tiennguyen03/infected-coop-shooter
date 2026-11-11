@@ -343,6 +343,8 @@ Lower is always acceptable. Add triangles only where the silhouette needs them.
   an `Atomic` Model so nothing half-streams.
 - Particles: palette-colored flat sprites, emit bursts (`Emit(n)`) not continuous rates;
   cap concurrent burst emitters (death bursts ≤ 1 per enemy, rate-limited at 40+ alive).
+  The kill burst is dark blood, `wound.m` fading to `wound.d` (`Config.HitMarker.KillBurst`);
+  never green.
 - Keep live Instance counts low: enemies ≤ 60, projectiles pooled, decals and debris despawn
   within 10 s.
 - Measure before and after with the MicroProfiler (MCP `capture_micro_profiler`) and the

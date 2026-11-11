@@ -118,7 +118,8 @@ Each step is small and playtestable on its own. **Phase 1 needs no lobby and no 
 feel it this week.**
 
 **Phase 1: make one mission feel great** (Tien + Claude, match side)
-1. Kill burst colour (it is green today, against the owner's rule) + a kill-confirm sound.
+1. Kill burst colour + a kill-confirm sound. **Built 2026-11-10** (dark blood burst; a soft
+   tick for the killer, `Config.Audio.KillConfirm`); needs a listen in a playtest.
 2. The start becomes a choice: the site marker shows early, the squad starts the Primary;
    one of the three laid-out sites picked at random; a Misdrop crate ~0:30.
 3. Rewards that land: starting reserve about half (the first pallet matters); the Warden's
