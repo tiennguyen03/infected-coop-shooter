@@ -9,8 +9,8 @@ registers the v2 meshes only with `-- --infected-v2`.
 shapes, the committed previews). Triangle counts under `BODY_TRI_CAP` (1,792 / 2,100 / 2,088 /
 1,632). Static checks and Lune specs pass (no `src` change). Not checked: anything in game.
 No FBX exported, nothing uploaded, `MeshAssets` untouched.
-**Heads-up:** v2 heads and torsos are not symmetric: mirror them in X before upload. The
-Walker's legs and arms and the Brute's arms are sided meshes. The previews render without
+**Heads-up:** v2 heads, torsos and sided limbs are not symmetric: mirror them in X before
+upload. The Walker's legs and arms and the Brute's arms are sided meshes. The previews render without
 Workbench's specular sheen, so they are a little flatter than the `ref_inf_*` previews.
 **Next:** owner picks per form (adopt, change, or drop). For an adopted form: build with
 `--infected-v2`, upload, update `MeshAssets`, then check gore stumps, hitboxes and clips in a

@@ -438,8 +438,9 @@ the outline, a face with dark sockets and an open jaw, and one bad side.
   to the waist, a hump between the shoulders. Strain green only at the bottom of the throat
   and on the sac.
 
-Sided limbs: Walker arms and legs, Brute arms (`infected_v2.SIDED`). Heads and torsos are not
-symmetric, so they need the X mirror before upload (`assets/3d/README.md`). To adopt a form:
+Sided limbs: Walker arms and legs, Brute arms (`infected_v2.SIDED`). Heads, torsos and the
+sided limbs are not symmetric, so each needs the X mirror before upload (`assets/3d/README.md`),
+or the wounds and the club's spurs land on the wrong side. To adopt a form:
 `build_assets.py -- --infected-v2` builds `inf_v2_<form>_<limb>`; upload, then point
 `MeshAssets` at them. Not checked in game: gore stumps on the new arms, hitboxes, how the
 clips move the longer right arm.

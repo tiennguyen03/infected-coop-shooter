@@ -26,8 +26,9 @@ writes `previews/infected_v2_<form>.png` and `previews/lineup_infected_v2.png`.
 In live Blender: `import infected_v2; infected_v2.live()` stands the same figures in the scene.
 
 To adopt a form: move its builder into `INFECTED_TYPES` (or register this file always),
-rebuild, upload the limbs, update `MeshAssets`. Heads and torsos here are not symmetric, and
-Roblox mirrors an imported mesh in X (assets/3d/README.md), so mirror those before upload.
+rebuild, upload the limbs, update `MeshAssets`. Heads, torsos and the sided limbs here are not
+symmetric, and Roblox mirrors an imported mesh in X (assets/3d/README.md), so mirror those
+before upload.
 """
 
 import math
