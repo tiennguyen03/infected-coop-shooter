@@ -1,9 +1,9 @@
 --!strict
 -- A crew figure on the Carrier: Roblox's default R15 avatar (Nova, 2026-11-11: "just make them
 -- default r15 models and then we can just change clothing/attributes as needed on each"). Each
--- figure's look is a Dress: body colours (skin by name, shirt, trousers) and, when given,
--- Roblox catalog clothing, a face, hats and hair by asset id, applied through the Humanoid's
--- own avatar description. The rig is joined with rigid Motor6Ds and its root anchored where
+-- figure's look is a Dress: body colours (skin by name, shirt, trousers) and a list of Roblox
+-- catalog items (layered clothing, hats, vests, glasses...), applied through the Humanoid's own
+-- avatar description (Shared.AvatarLook). The rig is joined with rigid Motor6Ds and its root anchored where
 -- the figure stands; desk figures breathe with Config.Lobby.Crew.Animations.Idle, walkers are
 -- moved and animated on each client (CrewWalk). Nothing collides and no Humanoid is tagged
 -- Enemy. Ship's company and Army staff wear working dress, never Pike grey (docs/LORE.md).
@@ -12,22 +12,19 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
+local AvatarLook = require(ReplicatedStorage.Shared.AvatarLook)
 local Config = require(ReplicatedStorage.Shared.Config)
 
 local NpcBody = {}
 
 -- A figure's look. Colours are body colours (arms and head are skin, picked by the figure's
--- name); the ids are Roblox catalog assets (0 or nil: none). `hats` and `hair` are
--- comma-separated accessory ids, as a HumanoidDescription takes them.
+-- name; torso and legs show only where no clothing covers them); `items` are Roblox catalog
+-- asset ids of any kind a body wears (AvatarLook sorts them into place).
 export type Dress = {
 	shirt: Color3,
 	trousers: Color3,
 	skin: Color3?, -- instead of the one picked by name
-	shirtId: number?,
-	pantsId: number?,
-	faceId: number?,
-	hats: string?,
-	hair: string?,
+	items: { number }?,
 }
 
 NpcBody.Ship = {
@@ -36,10 +33,12 @@ NpcBody.Ship = {
 } :: Dress
 NpcBody.Army =
 	{ shirt = Color3.fromRGB(92, 96, 70), trousers = Color3.fromRGB(78, 80, 60) } :: Dress
--- Lantern's crew chief (docs/LORE.md > Lantern): a sage flight suit.
+-- Lantern's crew chief (docs/LORE.md > Lantern): a green flight suit and a helmet with a comms
+-- headset (picks F1 H6).
 NpcBody.Aircrew = {
 	shirt = Color3.fromRGB(110, 112, 90),
 	trousers = Color3.fromRGB(110, 112, 90),
+	items = { 105079389547650, 80718108109770 },
 } :: Dress
 
 -- Skin, picked by the figure's name so a figure looks the same every visit.
@@ -142,24 +141,6 @@ local function pick<T>(list: { T }, name: string, salt: number): T
 	return list[hash % #list + 1]
 end
 
--- The figure's avatar description from its Dress.
-local function describe(name: string, dress: Dress): HumanoidDescription
-	local skin = dress.skin or pick(SKINS, name, 7)
-	local description = Instance.new("HumanoidDescription")
-	description.HeadColor = skin
-	description.LeftArmColor = skin
-	description.RightArmColor = skin
-	description.TorsoColor = dress.shirt
-	description.LeftLegColor = dress.trousers
-	description.RightLegColor = dress.trousers
-	description.Shirt = dress.shirtId or 0
-	description.Pants = dress.pantsId or 0
-	description.Face = dress.faceId or 0
-	description.HatAccessory = dress.hats or ""
-	description.HairAccessory = dress.hair or ""
-	return description
-end
-
 -- Puts on the look, then breathes (`idle`). Applying a description can rebuild joints, so the
 -- limbs are joined again after it.
 local function finish(model: Model, dress: Dress, idle: boolean)
@@ -167,12 +148,12 @@ local function finish(model: Model, dress: Dress, idle: boolean)
 	if not humanoid then
 		return
 	end
-	local ok, err = pcall(function()
-		humanoid:ApplyDescriptionAsync(describe(model.Name, dress))
-	end)
-	if not ok then
-		warn(`[NpcBody] {model.Name}: the look did not apply ({err})`)
-	end
+	AvatarLook.apply(humanoid, {
+		items = dress.items,
+		skin = dress.skin or pick(SKINS, model.Name, 7),
+		shirt = dress.shirt,
+		trousers = dress.trousers,
+	})
 	joint(model)
 	for _, part in model:GetDescendants() do
 		if part:IsA("BasePart") then

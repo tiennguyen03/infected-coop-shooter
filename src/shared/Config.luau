@@ -33,6 +33,25 @@ local Config = {
 		MaxHealth = 100,
 		WalkSpeed = 16,
 		SprintSpeed = 24,
+		-- The soldier's look (Nova, 2026-11-11: "not really a fan of how he looks"; "the new look
+		-- should change in match as well"): Roblox's default R15 body wearing catalog items
+		-- (Shared.AvatarLook), on players and bots in the match and on the ship. Enabled = false
+		-- puts the Pike limb body (PLAYER_BODY, dressModel) back. Picks page codes: a tactical
+		-- vest with an olive shirt, slim combat pants, an AVS plate carrier, a black FAST helmet,
+		-- a buzzcut (T3 A9 P2 H4 R1).
+		Look = {
+			Enabled = true,
+			Items = {
+				135730034330771,
+				74956577347922,
+				108890568133405,
+				92700467676199,
+				77191128701026,
+			},
+			Skin = Color3.fromRGB(176, 140, 112),
+			Shirt = Color3.fromRGB(86, 92, 66), -- under the clothing
+			Trousers = Color3.fromRGB(60, 62, 56),
+		},
 		-- Stances: Keys.Crouch toggles crouch, Keys.Prone toggles prone; sprint, a vault
 		-- or a climb stands the body up. Speeds are factors of WalkSpeed (no sprint while low).
 		Stances = {

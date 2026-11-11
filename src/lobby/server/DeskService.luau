@@ -21,16 +21,42 @@ local COUNTER = Color3.fromRGB(84, 88, 92)
 local CRATE = Color3.fromRGB(86, 92, 66)
 local WIRE = Color3.fromRGB(120, 124, 126)
 
--- Each figure's look (NpcBody.Dress): body colours, plus Roblox catalog ids when wanted, e.g.
--- { shirt = ..., trousers = ..., shirtId = 123, pantsId = 456, faceId = 789,
---   hats = "111,222", hair = "333" } (0 or nil: none; skin is picked by name unless `skin`).
+-- Each figure's look (NpcBody.Dress): body colours and `items`, Roblox catalog asset ids of any
+-- kind a body wears (layered shirts and pants, hats, hair, vests, glasses...). The codes in the
+-- comments are the picks page's (Nova, 2026-11-11: first try of the suggestions).
+local ARMY = NpcBody.Army
+local SHIP = NpcBody.Ship
 local DRESS: { [string]: NpcBody.Dress } = {
-	arms_room = NpcBody.Army,
-	-- Ship's working dress.
-	loadmaster = { shirt = NpcBody.Ship.shirt, trousers = NpcBody.Ship.trousers },
-	fires = NpcBody.Army,
-	engineers = NpcBody.Army,
-	plot = NpcBody.Army,
+	-- Woodland shirt and pants, olive patrol cap, reading glasses (A3 A4 K1 O1).
+	arms_room = {
+		shirt = ARMY.shirt,
+		trousers = ARMY.trousers,
+		items = { 16125110410, 16125087437, 13418346088, 119588777391950 },
+	},
+	-- Green flight suit, a headset (F1 E4), short brown hair (R2).
+	loadmaster = {
+		shirt = SHIP.shirt,
+		trousers = SHIP.trousers,
+		items = { 105079389547650, 15946756199, 14763639823 },
+	},
+	-- Woodland shirt and pants, a headset (A3 A4 E3), short black hair (R3).
+	fires = {
+		shirt = ARMY.shirt,
+		trousers = ARMY.trousers,
+		items = { 16125110410, 16125087437, 15987281035, 14763641985 },
+	},
+	-- Woodland top and pants, tan patrol cap (A1 A2 K2).
+	engineers = {
+		shirt = ARMY.shirt,
+		trousers = ARMY.trousers,
+		items = { 9482682978, 9482717204, 13418356502 },
+	},
+	-- Military shirt, combat pants, a headset (A6 A9 E5), buzzcut (R1).
+	plot = {
+		shirt = ARMY.shirt,
+		trousers = ARMY.trousers,
+		items = { 130988807898132, 74956577347922, 10154340203, 77191128701026 },
+	},
 }
 
 -- Props per desk, relative to the person's feet and facing (X right, Z forward).

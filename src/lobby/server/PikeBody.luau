@@ -13,6 +13,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local AvatarLook = require(ReplicatedStorage.Shared.AvatarLook)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
 local PlayerSetup = require(script.Parent.PlayerSetup)
 
@@ -127,8 +128,12 @@ local function onCharacterAdded(character: Model)
 	local humanoid = character:WaitForChild("Humanoid") :: Humanoid
 	character:WaitForChild("HumanoidRootPart")
 	humanoid.WalkSpeed = Config.Lobby.Soldier.WalkSpeed
-	-- Templates build asynchronously at boot; a character that beats them keeps the stock body.
-	if MeshAssets.waitFor(PlayerSetup.BODY .. "head", TEMPLATE_WAIT) then
+	-- The soldier's look as catalog items (Config.Player.Look), as in the match; else the Pike
+	-- limb body. Templates build asynchronously at boot; a character that beats them keeps
+	-- the stock body.
+	if Config.Player.Look.Enabled then
+		AvatarLook.apply(humanoid, PlayerSetup.look())
+	elseif MeshAssets.waitFor(PlayerSetup.BODY .. "head", TEMPLATE_WAIT) then
 		MeshAssets.dressModel(character, PlayerSetup.BODY)
 		if
 			character:FindFirstChild("LeftLowerArm") and character:FindFirstChild("RightUpperArm")

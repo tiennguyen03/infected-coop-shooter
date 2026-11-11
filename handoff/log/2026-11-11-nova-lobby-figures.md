@@ -26,3 +26,13 @@ R15 avatar, dressed per figure by `NpcBody.Dress` (colours; optional catalog `sh
 `faceId`, `hats`, `hair`; `ApplyDescriptionAsync`). Removed: `crew.py`, the `npc_crew_*` limb
 meshes and the `npc_gear_*` meshes (MeshAssets, ASSET_IDS, exports; the uploads stay in the
 group, unused), the block kit. Not played.
+
+**Third pass:** catalog outfits. Picks page (https://claude.ai/artifact/EmC4Vf5rWuvPCBAZDoGRZ7, 56
+items with codes). Nova: try them. `Shared.AvatarLook` (look up each id's asset type, fill a
+HumanoidDescription, ApplyDescriptionAsync / CreateHumanoidModelFromDescription); NpcBody.Dress
+is colours + `items`; each desk, walker and the crew chief wear the page's suggestion. The soldier
+wears `Config.Player.Look` in the match (players: PlayerSetup; bots: BotService builds the rig
+from it) and on the ship (PikeBody); the Pike limb body is the `Enabled = false` fallback.
+**Heads-up Tien:** PlayerSetup, BotService and Config.Player changed (the soldier's body).
+**Next:** Nova playtests the outfits and swaps codes; check the rifle grip and first person with
+the new body in the match.

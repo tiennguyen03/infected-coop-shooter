@@ -398,7 +398,17 @@ sling across his chest"; the crew's block eyes "dont look right" on the R15 bodi
   meshes, the face/hair/headgear meshes and the block kit are gone). `NpcBody.Dress` per figure
   (`DeskService`, `CrewService`, `LanternBird`): body colours (head and arms skin, picked by
   name; torso the shirt; legs the trousers) and optional catalog ids `shirtId`, `pantsId`,
-  `faceId`, `hats`, `hair`, applied with `Humanoid:ApplyDescriptionAsync`.
+  any catalog `items`, applied with `Humanoid:ApplyDescriptionAsync` through `Shared.AvatarLook`
+  (each id's kind is looked up once: layered shirt, pants, jacket; hat, hair, face, front,
+  shoulder accessory; classic 2D shirt or pants). First outfits are the suggestions from the
+  picks page (https://claude.ai/artifact/EmC4Vf5rWuvPCBAZDoGRZ7): coveralls and ear
+  defenders on the deck crew, woodland uniforms and patrol caps on the Army desks, flight
+  suits on the Loadmaster and crew chief, a plate carrier and helmet on the lane sentry.
+- **The soldier's look** (Nova: "not really a fan of how he looks"; "the new look should change
+  in match as well"): `Config.Player.Look`, catalog items on the default R15 body for players
+  and bots in the match (`PlayerSetup`, `BotService`) and on the ship (`PikeBody`): a tactical
+  vest over an olive shirt, combat pants, an AVS plate carrier, a black FAST helmet, a
+  buzzcut. `Look.Enabled = false` puts the Pike limb body back.
 - **Slow stride, sprint on Shift** (second pass): `Soldier.WalkSpeed` 6.5, `SprintSpeed` 15
   while `Keys.Sprint` or `Soldier.SprintPad` is held (the Rthro run above 9 studs/s).
 ## Files
