@@ -288,9 +288,11 @@ The rack is where guns are **bought** (merits, onto the soldier's record; owner 
 - **Looking** (all local to the player, so four can look at once): "Show me the guns." frames
   the wall from over the counter; Q or the button swaps to the counter, seen from above through
   the glass (movement off, the prompt off, the Quartermaster, his sign and the soldier's own
-  body hidden for this player). The cursor aims at invisible boxes, one per place (the `Hits`
-  folder, the size of the whole place), so the hover never flickers or picks a neighbour as a
-  gun slides out; the gun under it slides 0.6 out with a soft yellow rim. A click frames it in
+  body hidden for this player). The cursor aims at invisible boxes, one per piece (the `Hits`
+  folder: the piece's outline plus a quarter stud, never past its place, refitted when its mesh
+  loads; they stay put, so the hover never flickers as a gun slides out). The cursor's ray is
+  `ScreenPointToRay` (mouse positions are GUI coordinates, under the top bar: the first cut
+  used `ViewportPointToRay` and picked 58 px above the cursor); the gun under it slides 0.6 out with a soft yellow rim. A click frames it in
   the screen the card leaves free (left of the card, under the header, over the buttons): far
   enough back for its whole length to fit that width, and no more than 40% of the screen's
   height (it used to fit the whole screen and then shift, leaving half the gun off screen). The

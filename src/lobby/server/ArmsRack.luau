@@ -184,8 +184,19 @@ local function fixture(
 	return part
 end
 
+-- The hit box: the piece's own outline with a little air, never past its place (`cell`), so
+-- the cursor picks the gun it is on, not the empty wall beside it (Nova: the boxes overhung).
+local HIT_AIR = 0.25
+local function fitHit(hit: BasePart, span: Vector2, cell: Vector3)
+	hit.Size = Vector3.new(
+		math.min(span.X + HIT_AIR * 2, cell.X),
+		math.min(span.Y + HIT_AIR * 2, cell.Y),
+		cell.Z
+	)
+end
+
 -- One piece on a display at `frame` (+X the muzzle, +Y the gun's top), its side toward
--- `face`, and its hit box (`cell`: length, height, depth).
+-- `face`, and its hit box (`cell`: the most room it may take: length, height, depth).
 local function place(
 	folder: Instance,
 	hits: Instance,
@@ -201,10 +212,6 @@ local function place(
 	model:SetAttribute(Attributes.RackFace, face)
 	buildSilhouette(model, id, frame)
 	model.Parent = folder
-	local meshName = meshFor(id)
-	if meshName and MeshAssets.isUploaded(meshName) then
-		useMesh(model, meshName, frame)
-	end
 	local hit = Build.part(
 		hits,
 		id,
@@ -214,6 +221,18 @@ local function place(
 		{ transparency = 1, collide = false, shadow = false }
 	)
 	hit.CanQuery = true
+	local function refit()
+		local span = model:GetAttribute(Attributes.RackSpan)
+		if typeof(span) == "Vector2" then
+			fitHit(hit, span, cell)
+		end
+	end
+	refit()
+	model:GetAttributeChangedSignal(Attributes.RackSpan):Connect(refit) -- the mesh loaded
+	local meshName = meshFor(id)
+	if meshName and MeshAssets.isUploaded(meshName) then
+		useMesh(model, meshName, frame)
+	end
 end
 
 -- The long-gun wall on the hull: a board, a lamp over it, a rail under every row, the long

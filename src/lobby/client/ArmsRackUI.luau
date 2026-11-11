@@ -9,6 +9,7 @@
 -- Loadmaster's (LoadmasterUI).
 
 local ContextActionService = game:GetService("ContextActionService")
+local GuiService = game:GetService("GuiService")
 local Players = game:GetService("Players")
 local ProximityPromptService = game:GetService("ProximityPromptService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -161,7 +162,10 @@ local function pick(screen: Vector2): Model?
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Include
 	params.FilterDescendantsInstances = { hits }
-	local ray = camera:ViewportPointToRay(screen.X, screen.Y)
+	-- Mouse and touch positions are GUI coordinates (under the top bar): ScreenPointToRay, not
+	-- ViewportPointToRay, or the pick lands a top bar's height above the cursor (Nova: the
+	-- boxes sat below the guns).
+	local ray = camera:ScreenPointToRay(screen.X, screen.Y)
 	local hit = Workspace:Raycast(ray.Origin, ray.Direction * 60, params)
 	local id = hit and hit.Instance.Name
 	return if id and table.find(order, id) then gun(id) else nil
@@ -415,7 +419,7 @@ end
 local function freeRect(withCard: boolean): Rect
 	local camera = Workspace.CurrentCamera
 	local viewport = if camera then camera.ViewportSize else Vector2.new(1600, 900)
-	local inset = gui.AbsolutePosition.Y -- the HUD sits under the top bar
+	local inset = GuiService:GetGuiInset().Y -- the HUD sits under the top bar
 	local edge = HudTheme.Margin * 2
 	local top = rackHeader.AbsolutePosition.Y + rackHeader.AbsoluteSize.Y + inset + edge
 	local bottom = hint.AbsolutePosition.Y + inset - edge
