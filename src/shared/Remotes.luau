@@ -29,6 +29,7 @@ local REMOTE_NAMES = {
 	"Impact", -- server -> client: ("knockdown", seconds) the body is knocked down (Squad.knock) | ("push", velocity: Vector3) a shove the client applies to its root
 	"Stance", -- client -> server: (stance: "stand"|"crouch"|"prone"); server -> client: ("prone") stand-up refused under a ceiling
 	"Record", -- lobby place, client -> server: ("buy", gunId); server -> client: ("state", merits, ownedIds, tabs) | ("refused", gunId, reason)
+	"EnemySpit", -- server -> client (Messages.EnemySpit; client SpitFX draws it): ("windup", model, seconds) | ("launch", id, origin: Vector3, velocity: Vector3, size) | ("impact", id, position, normal, splashRadius, poolGround: CFrame?, poolRadius?, poolSeconds?) | ("gone", id) | ("reset")
 	"Launch", -- lobby place, server -> client: ("manifest", spot, names, secondsLeft, squad, isLead) | ("lifting", spot) | ("failed", reason) | ("cleared"); client -> server: ("squad", size)
 }
 

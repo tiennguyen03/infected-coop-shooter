@@ -1741,6 +1741,76 @@ local Config = {
 		BossCorpseLifetime = 8, -- an Index host's body stays long enough to read
 		MaxPuddles = 8, -- caustic puddles alive at once (perf); the oldest goes first
 		ThroatSacSwell = 1.8, -- Hocker sac size multiplier at the end of the windup
+		-- How a spit looks (owner 2026-11-11: "just a yellow circle"; bile and pus, no green,
+		-- no cartoon yellow). Drawn on each client (SpitFX; curves in Rules/SpitShape); the
+		-- server keeps the arc, the hit and the puddle damage (EnemyProjectileService).
+		-- Enabled = false: the old server-made ball and disc in the projectile's own Color.
+		SpitFX = {
+			Enabled = true,
+			-- The tell, on top of the sac swell and the windup voice: the head goes back
+			-- over the windup and snaps forward on the spit, bile running from the mouth.
+			Tell = {
+				HeadBack = 16, -- degrees
+				Lunge = 10, -- degrees forward on the spit
+				Recover = 0.3, -- seconds back to level
+				DroolInterval = 0.14, -- seconds between drops from the mouth
+			},
+			-- In flight: an ellipsoid along its path (never a ball), a smaller darker blob
+			-- dragging behind, a strand between and after them, drops falling off.
+			Glob = {
+				Color = Color3.fromRGB(142, 104, 44), -- amber-brown bile
+				TailColor = Color3.fromRGB(98, 34, 30), -- dark red clot
+				Reflectance = 0.12, -- wet
+				Stretch = 1.5, -- length over width at rest
+				SpeedStretch = 0.012, -- more per stud/s
+				MaxStretch = 2.4,
+				Wobble = 0.22, -- +/- share of the stretch
+				WobbleRate = 6, -- per second
+				TailSize = 0.55, -- of the glob
+				TailLag = 0.7, -- glob lengths behind
+				StrandLife = 0.12, -- seconds the strand hangs in the air (about 5 studs of it)
+				StrandWidth = 0.55, -- of the glob's size, tapering to nothing
+				StrandColor = Color3.fromRGB(104, 44, 30),
+				DripInterval = 0.11, -- seconds between drops off one glob
+			},
+			-- Every drop (drool, drip, splash) is one of these; MaxPerSecond caps the drool
+			-- and drips of all spits together (splash bursts are per impact).
+			Drops = {
+				Color = Color3.fromRGB(126, 90, 38),
+				DarkColor = Color3.fromRGB(88, 30, 28),
+				Size = 0.32, -- studs
+				MaxPerSecond = 40,
+			},
+			Impact = {
+				Burst = 12, -- drops thrown off the surface
+				BurstSpeed = 16, -- studs/s
+				SplatColor = Color3.fromRGB(96, 66, 30),
+				SplatSize = 2.2, -- blotch diameter, of the projectile's Size
+				SplatLobes = 3, -- smaller discs round the blotch (an uneven edge)
+				SplatLife = 2.5, -- seconds; fades over the last half
+				MaxSplats = 6, -- alive at once; the oldest goes first
+			},
+			-- The damaging pool: the core disc is exactly the damage radius; a darker rim
+			-- under it marks the edge; it bubbles, and fades out as its damage ends.
+			Pool = {
+				Color = Color3.fromRGB(134, 98, 40),
+				EdgeColor = Color3.fromRGB(72, 28, 24),
+				EdgeWidth = 0.4, -- studs of rim outside the core
+				Transparency = 0.25,
+				Grow = 0.25, -- seconds to spread out
+				StartSize = 0.3, -- share of full size it lands at
+				Fade = 1, -- seconds, at the end of its life
+				BubbleInterval = 0.28, -- seconds between bubbles in one pool
+				BubbleColor = Color3.fromRGB(206, 186, 112), -- pus
+			},
+			-- Splashed (inside the impact's SplashRadius): the screen edges smear with bile.
+			Smear = {
+				Enabled = true,
+				Color = Color3.fromRGB(110, 78, 30),
+				Strength = 0.5, -- opacity at the screen edge
+				Time = 0.8, -- seconds to clear
+			},
+		},
 		PathfindingMax = 10,
 		PathfindInterval = 0.5,
 		PathfindVerticalGap = 4,

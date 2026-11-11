@@ -30,7 +30,8 @@ upgrades) → the Warden (boss) → extraction on Lantern → OPERATION COMPLETE
   `Config.Enemies.BodyVersion = 1` puts the first ones back), dismemberment, the Warden with
   plates. They spread round a target instead of stacking on it
   (`Config.Enemies.Spacing`; **built from static checks only, not yet played**: `Enabled = false`
-  is the old chase).
+  is the old chase). Spit (Hocker, Warden) is drawn on each client: `SpitFX`, not yet seen
+  in game (`handoff/log/2026-11-11-tien-hocker-spit.md`).
 - **Feel:** camera kick, blast shake, limp bodies thrown by the killing hit, hit flinch,
   a dark blood kill burst and a soft kill-confirm tick for the killer,
   low-health grey/heartbeat/muffle, reload clip. Every per-item feel value sits on the gun's
@@ -45,7 +46,7 @@ upgrades) → the Warden (boss) → extraction on Lantern → OPERATION COMPLETE
 - **Roblox:** the group Boomin Dev Studios (270506601) owns the game "Co-op Zombie Shooter" and
   every sound and animation. Its start place 87556879379942 holds the **lobby**; the match is
   "Checkpoint Delta" 125769854992316 (`Config.Places`).
-- **Checks:** stylua, selene, rojo build, 251 Lune tests (rules plus the source-wiring spec, which also reads the lobby's remotes), luau-lsp, CI on every push.
+- **Checks:** stylua, selene, rojo build, 258 Lune tests (rules plus the source-wiring spec, which also reads the lobby's remotes), luau-lsp, CI on every push.
 
 ## Who owns what
 

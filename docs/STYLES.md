@@ -391,8 +391,7 @@ Not built: Bloat, Shedder, Crawler, Kite, Growth, the other Index hosts, Kilo.
   jaw, a stepped notch down the chest, a `white.l` surgical mask, soaked shirt, knees bent
   18 deg. 1,524 / 2,008 / 2,172 / 1,484 tris (caps in `BODY_TRI_CAP`). Previews:
   `ref_inf_<form>.png`, `_side.png`, `_back.png`.
-- Hocker sac: `strain.m` SmoothPlastic, swells 1.8x over the 0.8 s windup; its spit is a
-  Neon ball of the same colour and the puddle a flat Neon disc at 0.45 transparency.
+- Hocker sac: `strain.m` SmoothPlastic, swells 1.8x over the 0.8 s windup. Its spit: §8.
 - Gore (owner: limbs come off when shot): a severed limb leaves a flat raw stump
   (`inf_gore_stump`: `flesh.d` rim, `wound` face, a `rebuilt.l` bone end) and hits throw
   small low-poly chunks; no blood spray, no pools, no interior detail. Stumps sit at the
@@ -559,6 +558,17 @@ orange (`rgb(255,150,60)`) plus a ball at the landing point.
   built-in smoke sprite tinted from the palette. The whole table:
   [PROGRESSION.md > Call-in arrivals](PROGRESSION.md#call-in-arrivals).
 - Fire ground: faceted orange/yellow triangles on the floor, flicker by scale not by light.
+- Infected spit (owner 2026-11-11: "just a yellow circle"; `SpitFX`, client only, colours and
+  numbers in `Config.Enemies.SpitFX`, curves in `Rules/SpitShape`): bile and pus, never green
+  or bright yellow, no Neon. Tell: the head goes back 16 deg over the windup and snaps forward
+  on the spit, bile dripping from the mouth. In flight: an amber-brown ellipsoid stretched
+  along its path and wobbling, a dark red clot dragging behind, a tapering strand, drops
+  falling off. Impact: a burst of drops off the surface and a blotch with an uneven edge
+  (2.5 s); on the ground the pool is a core disc of exactly the damage radius over a dark red
+  rim, bubbling toward the edge, fading over its last second. A splashed player's screen
+  edges smear with bile for 0.8 s. Budget: bodies pooled and reused, nine burst-only
+  emitters in all whatever the number of spitters, drool and drips capped at 40 drops/s
+  together, 6 blotches, pools at `MaxPuddles`. `Enabled = false` is the old Neon ball and disc.
 - First person (`CameraController`, `Config.Camera.FirstPerson`; Nova 2026-11-10): T or the
   right stick click toggles it, the wheel in past `MinDistance` enters and back out leaves.
   The eye sits on the Head (0.45 forward, 0.1 up), so crouch and prone carry it; yaw, pitch,
