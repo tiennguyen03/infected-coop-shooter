@@ -103,6 +103,18 @@ match place.
   nothing replicates) and shows a line over a head when a soldier comes within
   `Config.Lobby.Crew.BubbleDistance` (lines in `LobbyCrew`). No prompts, no Humanoids. Routes
   checked clear of walls and desks in a playtest.
+- **Kit on the bodies** (2026-11-10, Nova: "personality"; details by the lore developer,
+  docs/lore/desk_crew.md, ship_company.md, docs/CHARACTERS.md): `NpcBody.build` takes a kit
+  list of named block accessories (`KIT` in NpcBody). The Quartermaster: glasses on a cord, a
+  clipboard, keys. The Loadmaster: flight helmet pushed up with the visor raised, harness and
+  tether, a grease pencil. Fires: a headset round her neck, a notebook. The Engineers: belt
+  gloves, red wire cutters, a wire coil. The watch officer: one-cup headset, a steel mug, a
+  rank tab. Lantern's crew chief: gloves and harness. The walking crew: ear defenders, a
+  chock and chain, a rag, a clipboard, a mask and blue gloves, a helmet with a slung rifle and
+  a white MP brassard. Kit on an arm (`RightArm_...`) swings with it. Every Pike on the ship
+  (`PikeBody`) wears the white screening band with its yellow stripe on the left wrist, a
+  green chemlight on the left shoulder strap and the tourniquet high on the right arm; the
+  match body (PlayerSetup, Tien's) does not yet.
 
 ## Ship art (2026-11-09: built; uploaded and seen in a Studio playtest)
 

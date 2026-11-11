@@ -23,10 +23,20 @@ local WIRE = Color3.fromRGB(120, 124, 126)
 
 local DRESS: { [string]: NpcBody.Dress } = {
 	arms_room = NpcBody.Army,
-	loadmaster = NpcBody.Ship,
+	-- Ship's working dress, bareheaded: his flight helmet sits pushed up (KIT visorUp).
+	loadmaster = { shirt = NpcBody.Ship.shirt, trousers = NpcBody.Ship.trousers },
 	fires = NpcBody.Army,
 	engineers = NpcBody.Army,
 	plot = NpcBody.Army,
+}
+
+-- What each one carries (NpcBody kit; the lore developer's details, docs/lore/desk_crew.md).
+local KIT: { [string]: NpcBody.Kit } = {
+	arms_room = { "glasses", "clipboard", "keyring" },
+	loadmaster = { "visorUp", "harness", "greasePencil" },
+	fires = { "headsetNeck", "notebook" },
+	engineers = { "beltGloves", "cutters", "wireCoil" },
+	plot = { "headsetOneEar", "mug", "rankTab" },
 }
 
 -- Props per desk, relative to the person's feet and facing (X right, Z forward).
@@ -109,7 +119,8 @@ function DeskService.init()
 			desk.title,
 			place.feet,
 			place.facing,
-			DRESS[desk.id] or NpcBody.Ship
+			DRESS[desk.id] or NpcBody.Ship,
+			KIT[desk.id]
 		)
 		local frame = CFrame.lookAt(place.feet, place.feet + place.facing)
 		props(folder, desk.id, frame)

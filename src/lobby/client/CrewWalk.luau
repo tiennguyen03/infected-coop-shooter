@@ -119,8 +119,10 @@ local function add(model: Model)
 		if part:IsA("BasePart") then
 			table.insert(walker.parts, part)
 			table.insert(walker.rest, feet:ToObjectSpace(part.CFrame))
-			table.insert(walker.swing, SWINGS[part.Name] or 0)
-			table.insert(walker.pivotY, if string.find(part.Name, "Leg") then HIP_Y else SHOULDER_Y)
+			-- A limb, or kit on it ("RightArm_Clipboard"), swings with that limb.
+			local limb = string.match(part.Name, "^(%a+)") or part.Name
+			table.insert(walker.swing, SWINGS[limb] or 0)
+			table.insert(walker.pivotY, if string.find(limb, "Leg") then HIP_Y else SHOULDER_Y)
 		end
 	end
 	table.insert(walkers, walker)

@@ -38,7 +38,17 @@ local DRESS: { [string]: NpcBody.Dress } = {
 	},
 	runner = NpcBody.Ship,
 	medic = { shirt = Color3.fromRGB(222, 222, 216), trousers = ARMY.trousers },
-	sentry = { shirt = ARMY.shirt, trousers = ARMY.trousers, cover = Color3.fromRGB(66, 70, 52) },
+	sentry = { shirt = ARMY.shirt, trousers = ARMY.trousers }, -- helmeted (KIT)
+}
+
+-- What each one carries (NpcBody kit; docs/lore/ship_company.md).
+local KIT: { [string]: NpcBody.Kit } = {
+	director = { "earDefenders" },
+	deckhand = { "chocks" },
+	mechanic = { "rag" },
+	runner = { "clipboard" },
+	medic = { "blueGloves", "mask" },
+	sentry = { "helmet", "slungRifle", "brassard" },
 }
 
 -- "x,y,z;x,y,z;..." for the client (attributes hold no arrays).
@@ -63,7 +73,8 @@ function CrewService.init()
 			crew.role,
 			route[1],
 			route[2] - route[1],
-			DRESS[crew.id] or NpcBody.Ship
+			DRESS[crew.id] or NpcBody.Ship,
+			KIT[crew.id]
 		)
 		model:SetAttribute(Attributes.CrewId, crew.id)
 		model:SetAttribute(Attributes.CrewRoute, encode(route))
