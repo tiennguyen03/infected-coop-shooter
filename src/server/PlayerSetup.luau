@@ -298,6 +298,9 @@ function PlayerSetup.init()
 	-- Characters spawn as bare R15 rigs (no avatar clothing/accessories) so the class body
 	-- is the whole look and every player is the same silhouette.
 	StarterPlayer.LoadCharacterAppearance = false
+	if Config.Player.Look.Enabled then
+		AvatarLook.prefetch(Config.Player.Look.Items)
+	end
 	if Config.Player.SkinnedBody then
 		installSkinnedBody() -- yields on the asset fetch
 	end

@@ -135,7 +135,10 @@ function WeaponController.requestReload()
 	if WeaponController.isReloading() or mag >= weapon.MagazineSize or reserve <= 0 then
 		return
 	end
-	if workspace:GetAttribute(Attributes.GamePaused) == true then
+	if
+		workspace:GetAttribute(Attributes.GamePaused) == true
+		or player:GetAttribute(Attributes.Cinematic) == true
+	then
 		return
 	end
 	lastReloadRequest = os.clock()
@@ -143,7 +146,10 @@ function WeaponController.requestReload()
 end
 
 local function tryFire()
-	if workspace:GetAttribute(Attributes.GamePaused) == true then
+	if
+		workspace:GetAttribute(Attributes.GamePaused) == true
+		or Players.LocalPlayer:GetAttribute(Attributes.Cinematic) == true
+	then
 		return
 	end
 

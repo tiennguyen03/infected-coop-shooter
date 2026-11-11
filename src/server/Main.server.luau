@@ -51,6 +51,7 @@ local BOOT: { ModuleScript } = {
 	Server.BotService,
 	Server.HandoffService,
 	Server.MeritService,
+	Server.InsertionService,
 	Server.RunManager,
 	Server.DevTestService,
 }

@@ -122,6 +122,12 @@ local function onBlast(instance: Instance)
 end
 
 -- A UI that needs the mouse (the dev panel) frees the cursor while it holds a reason.
+-- A cutscene holds the camera (InsertionCutscene): the follow camera stands aside until off.
+local cinematic = false
+function CameraController.setCinematic(on: boolean)
+	cinematic = on
+end
+
 function CameraController.setCursorFree(reason: string, free: boolean)
 	if free then
 		cursorHolders[reason] = true
@@ -275,6 +281,10 @@ local function consumeMouseInput()
 end
 
 local function onRenderStep(deltaTime: number)
+	if cinematic then
+		UserInputService.MouseIconEnabled = false
+		return
+	end
 	local camera = workspace.CurrentCamera
 	local character = Players.LocalPlayer.Character
 	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?

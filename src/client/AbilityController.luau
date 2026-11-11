@@ -331,8 +331,11 @@ function AbilityController.init()
 		if gameProcessed then
 			return
 		end
-		-- Nothing fires while the field is frozen (run end).
-		if workspace:GetAttribute(Attributes.GamePaused) == true then
+		-- Nothing fires while the field is frozen (run end) or a cutscene plays.
+		if
+			workspace:GetAttribute(Attributes.GamePaused) == true
+			or Players.LocalPlayer:GetAttribute(Attributes.Cinematic) == true
+		then
 			return
 		end
 		local key = input.KeyCode
