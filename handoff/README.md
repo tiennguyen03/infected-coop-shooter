@@ -46,6 +46,8 @@ Claim work in the table below before starting it; delete the row when it ships.
 
 ## Open work, in priority order
 
+**The owner's one-page view of everything open (try it, building, your call, later): [docs/BACKLOG.md](../docs/BACKLOG.md).** Update it in the same commit as the work.
+
 The plan beyond this table, in phases, with the owner's open decisions: [docs/ROADMAP.md](../docs/ROADMAP.md).
 
 | # | What | Owner | Notes |
