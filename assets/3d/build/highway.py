@@ -336,6 +336,131 @@ def traffic_cone(b):
     b.cyl(0.42, 0.3, (0, 0, 1.15), segs=8, swatch="white_l")  # reflective band
 
 
+# ------------------------------------------------------------------ Mile 14 v2 (proposal, 2026-11-11)
+
+
+def tanker_trailer(b):
+    # 40-long fuel tanker (the jackknife): a 10-sided tank on a frame, tandem axles, landing
+    # legs, a hazard diamond. WALL. Kingpin end toward -X. A different outline from the vans.
+    L, R = 40.0, 4.0
+    b.cyl(R, L - 2.0, (0, 0, 4.4 + R), segs=10, rot=(0, 90, 0), swatch="gun_l")
+    for x in (-L / 2 + 1.0, L / 2 - 1.0):
+        b.cyl(R * 0.8, 0.6, (x, 0, 4.4 + R), segs=10, rot=(0, 90, 0), swatch="gun")  # dished ends
+    for x in (-12.0, 0.0, 12.0):
+        b.cyl(R + 0.08, 0.5, (x, 0, 4.4 + R), segs=10, rot=(0, 90, 0), swatch="gun")  # ring seams
+        b.cyl(0.9, 0.6, (x, 0, 4.4 + 2 * R + 0.2), segs=8, swatch="gun_d")  # manholes
+    b.box((L - 4.0, 1.6, 0.25), (0, 0, 4.4 + 2 * R + 0.05), swatch="gun_d")  # top walkway
+    b.box((L - 2.0, 6.0, 0.8), (0, 0, 4.0), swatch="gun_d")  # frame
+    for s in (-1, 1):
+        b.box((L - 6.0, 0.4, 0.5), (0, s * 4.0, 5.2), swatch="red_d")  # side rail
+        for x in (L / 2 - 6.0, L / 2 - 9.4):
+            b.cyl(1.6, 1.0, (x, s * 3.4, 1.6), segs=10, rot=(90, 0, 0), swatch="dark_d")
+        b.box((0.4, 0.4, 3.6), (-L / 2 + 8.0, s * 2.6, 2.2), swatch="gun")  # landing legs
+        b.box((2.2, 0.1, 2.2), (4.0, s * (R + 0.02), 4.4 + R), rot=(45, 0, 0), swatch="warning_orange")  # hazard diamond
+    b.box((0.3, 7.0, 1.2), (L / 2 - 0.4, 0, 3.4), swatch="red_d")  # rear bumper
+    b.box((7.0, 0.12, 3.0), (-8.0, -R * 0.96, 4.4 + R - 1.4), swatch="rust")  # the leak run
+
+
+def sound_wall(b):
+    # Precast noise wall, 24 long x 18 tall: ribbed panels between steel H posts, a cap.
+    # WALL: it closes the map's edge beside the road. Never climbable.
+    L, H = 24.0, 18.0
+    b.box((L, 0.8, H), (0, 0, H / 2), swatch="concrete")
+    for z in (4.5, 9.0, 13.5):
+        b.box((L, 0.9, 0.3), (0, 0, z), swatch="concrete_d")  # panel joints
+    for x in (-L / 2 + 0.5, 0.0, L / 2 - 0.5):
+        b.box((1.0, 1.4, H + 0.6), (x, 0, (H + 0.6) / 2), swatch="gun_d")  # posts
+    b.box((L, 1.2, 0.5), (0, 0, H + 0.1), swatch="concrete_l")  # cap
+    b.box((5.0, 0.86, 7.0), (-5.0, 0, 3.6), swatch="concrete_d")  # damp stain
+    b.box((3.0, 0.1, 2.0), (6.0, -0.46, 5.0), swatch="red_d")  # sprayed quarantine mark
+
+
+def pine_stand(b):
+    # A 44-long strip of six roadside pines (28-44 tall): the tree line that hides the map's
+    # edge. Dark needles, one dead and gone brown. No collision, beyond the fence.
+    trees = ((-19, 1.0, 34, "foliage_d"), (-12, -2.5, 42, "foliage_d"), (-4, 1.5, 30, "tan_d"),
+             (3, -1.5, 44, "foliage_d"), (11, 2.0, 36, "foliage"), (18, -1.0, 40, "foliage_d"))
+    for x, y, h, sw in trees:
+        b.cyl(0.9, h * 0.5, (x, y, h * 0.25), segs=5, r2=0.5, swatch="dark_l")
+        r = h * 0.19
+        for k in range(3):  # three stacked skirts
+            z0 = h * (0.28 + 0.22 * k)
+            hk = h * (0.34 - 0.03 * k)
+            b.cyl(r * (1.0 - 0.27 * k), hk, (x, y, z0 + hk / 2), segs=6, r2=0.0 if k == 2 else r * 0.25, swatch=sw)
+
+
+def billboard(b):
+    # Roadside billboard: a 40 x 14 double face at 26..40 on a monopole, a catwalk and four
+    # dead lamps per face. The faces are Parts with a SurfaceGui in game (the evacuation notice).
+    b.box((4.0, 4.0, 0.8), (0, 0, 0.4), swatch="concrete")
+    b.cyl(1.3, 26.0, (0, 0, 13.8), segs=8, swatch="gun")
+    b.box((30.0, 2.4, 1.6), (0, 0, 26.0), swatch="gun_d")  # torsion beam
+    for s in (-1, 1):
+        b.box((40.0, 0.4, 14.0), (0, s * 1.4, 34.0), swatch="white_d")  # the face
+        b.box((40.4, 0.5, 0.5), (0, s * 1.4, 41.2), swatch="gun_d")
+        b.box((40.4, 0.5, 0.5), (0, s * 1.4, 26.9), swatch="gun_d")
+        b.box((34.0, 0.1, 4.0), (0, s * 1.65, 36.5), swatch="red_d")  # headline band
+        b.box((26.0, 0.1, 1.2), (-3.0, s * 1.65, 32.0), swatch="dark")  # text lines
+        b.box((20.0, 0.1, 1.2), (-6.0, s * 1.65, 29.8), swatch="dark")
+        b.box((40.0, 1.6, 0.2), (0, s * 2.6, 26.2), swatch="gun_d")  # catwalk
+        for x in (-15.0, -5.0, 5.0, 15.0):
+            b.box((0.3, 2.4, 0.3), (x, s * 3.0, 25.8), swatch="gun")  # lamp arms
+            b.box((1.2, 0.6, 0.4), (x, s * 4.2, 26.0), swatch="gun_l")
+    b.box((12.0, 0.12, 9.0), (12.0, -1.72, 31.5), rot=(0, 8, 0), swatch="tan_d")  # a torn sheet
+
+
+def scale_house(b):
+    # The weigh station's scale house, 28 x 14 x 11: block walls, a window band on the lane
+    # side, a flat roof with eaves, a door, roof plant. WALL / CLIMB (roof).
+    b.box((28.0, 14.0, 10.0), (0, 0, 5.0), swatch="concrete_l")
+    b.box((29.6, 15.6, 0.8), (0, 0, 10.4), swatch="gun_d")  # roof with eaves
+    b.box((28.2, 14.2, 1.2), (0, 0, 0.6), swatch="concrete_d")  # plinth
+    b.box((20.0, 0.2, 3.6), (-2.0, -7.05, 6.0), swatch="glass")  # lane-side windows
+    b.box((19.6, 0.24, 0.5), (-2.0, -7.06, 7.3), swatch="glass_l")
+    for x in (-8.0, -2.0, 4.0):
+        b.box((0.3, 0.3, 3.6), (x, -7.1, 6.0), swatch="white_d")  # mullions
+    b.box((0.2, 8.0, 3.6), (-14.05, -2.0, 6.0), swatch="glass")  # the end the trucks come from
+    b.box((3.0, 0.2, 7.0), (11.0, -7.05, 4.7), swatch="gun_d")  # door
+    b.box((28.3, 0.16, 0.8), (0, -7.1, 9.2), swatch="paint_navy")  # state stripe
+    b.box((3.0, 3.0, 2.0), (8.0, 3.0, 11.8), swatch="gun")  # roof plant
+    b.box((0.4, 0.4, 5.0), (-10.0, 4.0, 13.3), swatch="gun")  # aerial
+    b.box((10.0, 0.2, 5.0), (9.0, 7.06, 4.0), swatch="concrete_d")  # stained back wall
+    b.box((1.0, 0.5, 2.6), (-12.0, -7.6, 8.4), swatch="dark")  # lane signal: red
+    b.box((0.6, 0.1, 0.6), (-12.0, -7.9, 9.0), swatch="red")
+
+
+def road_sign(b):
+    # Ground-mounted services sign, 14 x 8 on two posts (the blue "REST AREA" / "WEIGH STATION"
+    # board; white_l bars stand in for the lettering).
+    for x in (-5.0, 5.0):
+        b.box((0.5, 0.5, 14.0), (x, 0.2, 7.0), swatch="gun")
+    b.box((14.0, 0.3, 8.0), (0, -0.1, 10.0), swatch="paint_navy")
+    b.box((13.2, 0.08, 0.4), (0, -0.28, 13.4), swatch="white_l")
+    b.box((13.2, 0.08, 0.4), (0, -0.28, 6.6), swatch="white_l")
+    b.box((9.0, 0.08, 1.4), (-1.0, -0.28, 11.3), swatch="white_l")
+    b.box((6.0, 0.08, 1.2), (-2.5, -0.28, 8.6), swatch="white_l")
+    b.box((2.0, 0.08, 1.6), (4.6, -0.28, 8.8), rot=(0, 45, 0), swatch="white_l")  # the arrow
+
+
+def lane_dashes(b):
+    # 96 studs of lane line: eight 6-long dashes, 12 apart. Laid 0.1 above the road Part; one
+    # mesh instead of eight Parts a lane. No collision.
+    for i in range(8):
+        b.box((6.0, 0.5, 0.06), (-42.0 + 12.0 * i, 0, 0.03), swatch="white_d")
+
+
+def road_debris(b):
+    # A 10 x 7 scatter of crash litter: a torn bumper, a wheel, two suitcases, glass. Clutter,
+    # no collision.
+    b.box((5.0, 0.6, 0.7), (-1.5, 1.8, 0.35), rot=(0, 0, 18), swatch="gun_l")
+    b.cyl(1.4, 0.9, (2.8, -1.6, 0.45), segs=8, swatch="dark_d")
+    b.cyl(0.6, 0.94, (2.8, -1.6, 0.45), segs=6, swatch="gun")
+    b.box((2.2, 1.4, 0.8), (-3.0, -1.8, 0.4), rot=(0, 0, -25), swatch="paint_maroon")
+    b.box((1.8, 1.2, 0.7), (-0.4, -2.6, 0.35), rot=(0, 0, 40), swatch="tan_d")
+    b.box((3.4, 2.6, 0.04), (0.6, 0.2, 0.02), rot=(0, 0, 12), swatch="glass_l")
+    b.box((1.2, 0.3, 0.3), (4.2, 2.4, 0.15), rot=(0, 0, 70), swatch="rust")
+
+
 HIGHWAY_PIECES = {
     "env_overpass_span": overpass_span,
     "env_bridge_bent": bridge_bent,
@@ -355,6 +480,15 @@ HIGHWAY_PIECES = {
     "env_bus_burnt": bus_burnt,
     "prop_mile_marker": mile_marker,
     "prop_traffic_cone": traffic_cone,
+    # Mile 14 v2 (proposal, 2026-11-11)
+    "env_tanker_trailer": tanker_trailer,
+    "env_sound_wall_24": sound_wall,
+    "env_pine_stand": pine_stand,
+    "env_billboard": billboard,
+    "env_scale_house": scale_house,
+    "prop_road_sign": road_sign,
+    "env_lane_dashes_96": lane_dashes,
+    "prop_road_debris": road_debris,
 }
 
 
