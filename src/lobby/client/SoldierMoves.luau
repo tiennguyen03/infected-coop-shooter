@@ -13,6 +13,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local StarterGui = game:GetService("StarterGui")
+local UserInputService = game:GetService("UserInputService")
 
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 
@@ -22,6 +23,20 @@ local SETTINGS = Config.Lobby.Soldier
 local FADE = 0.25
 local IDLE_SPEED = 0.6 -- studs a second: slower than this stands
 local stepConnection: RBXScriptConnection? = nil
+local sprintHeld = false
+
+-- Sprint while the key is held: the soldier's speed is the client's to set (it moves its own
+-- character). A frozen soldier (HoldStill: speed 0, at a desk or boarding) stays frozen.
+local function applySpeed(humanoid: Humanoid)
+	if humanoid.WalkSpeed <= 0 then
+		return
+	end
+	humanoid.WalkSpeed = if sprintHeld then SETTINGS.SprintSpeed else SETTINGS.WalkSpeed
+end
+
+local function isSprintKey(input: InputObject): boolean
+	return input.KeyCode == Config.Keys.Sprint or input.KeyCode == SETTINGS.SprintPad
+end
 
 -- True once every track has its keyframes (Length is 0 until a clip loads, and stays 0
 -- when it is refused).
@@ -132,6 +147,24 @@ function SoldierMoves.init()
 		end)
 	end
 	local player = Players.LocalPlayer
+	local function sprint(held: boolean)
+		sprintHeld = held
+		local character = player.Character
+		local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+		if humanoid then
+			applySpeed(humanoid)
+		end
+	end
+	UserInputService.InputBegan:Connect(function(input, processed)
+		if not processed and isSprintKey(input) then
+			sprint(true)
+		end
+	end)
+	UserInputService.InputEnded:Connect(function(input)
+		if isSprintKey(input) then
+			sprint(false)
+		end
+	end)
 	player.CharacterAdded:Connect(setup)
 	if player.Character then
 		task.spawn(setup, player.Character)

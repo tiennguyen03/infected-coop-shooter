@@ -18,3 +18,11 @@ reaching into `ReviveAnimation`; one shared module later is worth it. MIRROR_X_P
 `npc_gear_`.
 **Next:** tune by eye: `Soldier.Sling`, `Soldier.Hands` (poles, LeftShare), `WalkSpeed`, the
 crew's `WalkClipSpeed`.
+
+**Second pass:** Nova liked the soldier's walk but slower, with a sprint on Shift: WalkSpeed 6.5,
+SprintSpeed 15 on `Keys.Sprint` / `Soldier.SprintPad` (client sets its own speed; a HoldStill
+freeze is left alone). Nova did not like the crew models at all: every NPC is now Roblox's default
+R15 avatar, dressed per figure by `NpcBody.Dress` (colours; optional catalog `shirtId`, `pantsId`,
+`faceId`, `hats`, `hair`; `ApplyDescriptionAsync`). Removed: `crew.py`, the `npc_crew_*` limb
+meshes and the `npc_gear_*` meshes (MeshAssets, ASSET_IDS, exports; the uploads stay in the
+group, unused), the block kit. Not played.

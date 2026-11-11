@@ -128,13 +128,9 @@ match place.
   checked clear of walls and desks in a playtest.
 - **R15 crew** (2026-11-10, Nova: "all the npcs to have r15 models like the player instead of
   just being regular blocks"): every desk figure, walker and Lantern's crew chief is a real R15
-  rig (`Players:CreateHumanoidModelFromDescription`, one cached rig cloned) wearing the crew
-  body (`npc_crew_` limbs, `assets/3d/build/crew.py`: the player's limb boxes, tapered forearms
-  and shins, elbow and knee caps, in plain working dress: collar, placket, breast pockets,
-  boots). The body is worn untextured and coloured per figure (shirt, trousers, skin, gloves,
-  boots), so one 9-mesh upload dresses everyone; skin and hair are picked from the name. A face
-  (eyes, brows, mouth), hair, a belt, the cap or flight helmet and the kit are small welded
-  parts. The joints are rigid Motor6Ds (NpcBody `joint`): the stock rig now ships physics
+  rig (`Players:CreateHumanoidModelFromDescription`, one cached rig cloned). Since the second
+  pass of 2026-11-11 it is Roblox's default R15 avatar dressed per figure (see Figures and how
+  they move); the crew limb meshes of 2026-11-10 are retired. The joints are rigid Motor6Ds (NpcBody `joint`): the stock rig now ships physics
   joints (AnimationConstraint + BallSocket), which made every limb a body the server simulated
   while each client moved only the walker's root, dragging and correcting limbs every frame
   (lag, fixed the same day). The root is anchored and the Humanoid's state machine is off, so
@@ -391,20 +387,20 @@ sling across his chest"; the crew's block eyes "dont look right" on the R15 bodi
   (`Config.Lobby.Crew.Animations`) and the soldier (`Config.Lobby.Soldier.Animations`, plus the
   Rthro run above 12 studs/s). Measured on our rig: the stock walk is made for 14 studs/s (the
   crew played it at 0.45, slow motion), the Rthro walk for 5.7 and the run for 10.5. The crew
-  walk at 5.5 studs/s at rate 0.96; the soldier walks the ship at 10 (`Soldier.WalkSpeed`, was
-  Roblox's 16) at a rate kept within 0.6 to 1.6.
+  walk at 5.5 studs/s at rate 0.96; the soldier's rate is kept within 0.6 to 1.6.
 - **The sling**: PikeBody moves the Tool's `RightGrip` weld onto the upper torso
   (`Soldier.Sling`: grip low right, muzzle down past the left hip, the top toward the face);
   `SlingHands` (client, every soldier) solves both arms onto the carried gun after the
   Animator each frame: the right palm on the grip, the left on the handguard part-way to the
   muzzle, so it fits any gun. Two-bone IK, the method of Tien's revive arms, kept separate.
-- **Faces, hair, headgear**: `crew.py` reshapes the crew head (cranium, narrower jaw,
-  cheekbones, brow ridge, a nose with bridge and tip, chin) and adds `npc_gear_*` meshes built
-  around the head's origin: the face (eyes under the brow ridge, mouth), four hair styles with
-  their brows (crop, parted, buzz, bun), a cap, a combat helmet, a flight helmet and its visor,
-  ear defenders, a one-ear headset, glasses. NpcBody wears them like limbs, coloured per
-  figure; under any headgear the hair is the buzz cut; Fires wears the bun. Hand-held kit
-  (clipboard, notebook, mug, chocks...) stays small parts.
+- **The crew are Roblox's default R15 avatar** (Nova, second pass: "just make them default r15
+  models and then we can just change clothing/attributes as needed on each"; the crew limb
+  meshes, the face/hair/headgear meshes and the block kit are gone). `NpcBody.Dress` per figure
+  (`DeskService`, `CrewService`, `LanternBird`): body colours (head and arms skin, picked by
+  name; torso the shirt; legs the trousers) and optional catalog ids `shirtId`, `pantsId`,
+  `faceId`, `hats`, `hair`, applied with `Humanoid:ApplyDescriptionAsync`.
+- **Slow stride, sprint on Shift** (second pass): `Soldier.WalkSpeed` 6.5, `SprintSpeed` 15
+  while `Keys.Sprint` or `Soldier.SprintPad` is held (the Rthro run above 9 studs/s).
 ## Files
 
 | Place | File |

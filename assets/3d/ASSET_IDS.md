@@ -214,27 +214,6 @@ Lobby meshes (12 `env_fallow_*`, 4 `veh_lantern_*`) uploaded 2026-11-09 to the g
 | pc_assault_upper_leg | 96325067678523 | 114031815727891 | 1.08, 1.59, 1.09 | offset 0.043, -0.115, -0.058 |
 | pc_assault_lower_leg | 131875477288797 | 108866156558305 | 1.01, 1.30, 0.99 | offset 0.000, 0.000, 0.000 |
 | pc_assault_foot | 79144855233866 | 112575972731289 | 1.01, 0.31, 1.00 | offset 0.000, 0.000, 0.000 |
-| npc_crew_head | 75604247805862 | 137142646132421 | 1.26, 1.18, 1.24 | offset 0.000, 0.000, -0.048 (untextured, coloured per figure; 2026-11-11 face planes) |
-| npc_crew_upper_torso | 85978695721727 | 126103295936800 | 1.94, 1.70, 1.10 | offset 0.000, 0.000, -0.050 (untextured, coloured per figure) |
-| npc_crew_lower_torso | 80351304652292 | 112058906942275 | 1.99, 0.40, 1.00 | offset 0.000, 0.000, 0.000 (untextured, coloured per figure) |
-| npc_crew_upper_arm | 110314480935040 | 82793731849114 | 1.04, 1.44, 1.04 | offset 0.000, -0.098, 0.000 (untextured, coloured per figure) |
-| npc_crew_lower_arm | 106413045096439 | 136351375059306 | 1.00, 1.12, 1.00 | offset 0.000, 0.000, 0.000 (untextured, coloured per figure) |
-| npc_crew_hand | 108782428124781 | 113774630304168 | 0.82, 0.32, 0.86 | offset 0.000, 0.000, 0.000 (untextured, coloured per figure) |
-| npc_crew_upper_leg | 101791646143939 | 81438170916012 | 0.99, 1.59, 1.04 | offset 0.000, -0.115, -0.032 (untextured, coloured per figure) |
-| npc_crew_lower_leg | 107324902853571 | 131632832203669 | 0.99, 1.30, 0.97 | offset 0.000, 0.000, 0.000 (untextured, coloured per figure) |
-| npc_crew_foot | 76812379013675 | 96007982604042 | 1.01, 0.71, 1.00 | offset 0.000, 0.198, 0.000 (untextured, coloured per figure) |
-| npc_gear_face | 115204323873645 | 133520846127657 | 0.65, 0.44, 0.11 | offset 0.000, -0.099, -0.505 (head space, exported mirrored, coloured per figure) |
-| npc_gear_hair_crop | 121999065279850 | 112353509366734 | 1.22, 0.76, 1.26 | offset 0.000, 0.370, -0.007 (head space, exported mirrored, coloured per figure) |
-| npc_gear_hair_buzz | 102741691715580 | 129921010433728 | 1.18, 0.56, 1.24 | offset 0.000, 0.370, -0.020 (head space, exported mirrored, coloured per figure) |
-| npc_gear_hair_parted | 91230784540494 | 120791528681270 | 1.22, 0.84, 1.26 | offset 0.000, 0.410, -0.007 (head space, exported mirrored, coloured per figure) |
-| npc_gear_hair_bun | 109538199843977 | 101436156583761 | 1.22, 0.72, 1.48 | offset 0.000, 0.350, 0.100 (head space, exported mirrored, coloured per figure) |
-| npc_gear_cap | 129185423997477 | 75798855978464 | 1.20, 0.42, 1.59 | offset 0.000, 0.663, -0.176 (head space, exported mirrored, coloured per figure) |
-| npc_gear_helmet_combat | 102984997881628 | 91165100318089 | 1.42, 1.29, 1.44 | offset 0.000, 0.115, 0.040 (head space, exported mirrored, coloured per figure) |
-| npc_gear_helmet_flight | 99941651779965 | 95877402381567 | 1.44, 1.09, 1.44 | offset 0.000, 0.205, 0.000 (head space, exported mirrored, coloured per figure) |
-| npc_gear_visor | 115970219262250 | 89122987175530 | 1.27, 0.40, 0.25 | offset 0.000, 0.120, -0.600 (head space, exported mirrored, coloured per figure) |
-| npc_gear_ear_defenders | 106836069889643 | 117625720505194 | 1.53, 0.99, 0.54 | offset 0.000, 0.225, 0.020 (head space, exported mirrored, coloured per figure) |
-| npc_gear_headset_one_ear | 136766390688806 | 101610535706010 | 1.47, 1.06, 1.14 | offset -0.005, 0.190, 0.010 (head space, exported mirrored, coloured per figure) |
-| npc_gear_glasses | 72518420105284 | 114280971763193 | 1.18, 0.22, 0.57 | offset 0.000, 0.088, -0.338 (head space, exported mirrored, coloured per figure) |
 | pc_assault_skinned (skin) | 106205735830249 | 87236345847400 | 3.98, 5.45, 1.26 | switched off (`Config.Player.SkinnedBody`); `MeshAssets.SKINNED_BODIES.body` loads the model id |
 | pc_assault_skinned_parts (hidden rig) | 15 meshes | 89768415142935 | R15 boxes | switched off; `SKINNED_BODIES.parts` |
 | pc_assault_gear_helmet | 106002887456604 | 115206275662165 | 1.34, 1.11, 1.54 | rigid gear for the skinned body, on Head, offset 0.000, 0.095, -0.060 |

@@ -1827,11 +1827,6 @@ def weller_skinned(b):
 
 _register_chosen()
 
-# The Carrier's crew body (lobby NPCs, worn untextured and coloured per figure) lives in
-# crew.py (2026-11-10).
-import crew  # noqa: E402
-
-crew.register(sys.modules[__name__])
 
 
 # ------------------------------------------------------------------ scene plumbing
@@ -1861,7 +1856,7 @@ MIRROR_X_COLLECTIONS = {"Fallow", "Vehicles", "Deployables"}
 # The same for single sets inside a collection that is otherwise left alone: the remade
 # Infected have one bad side (heads, torsos, the `_l` / `_r` limbs), the older bodies were
 # uploaded as they are.
-MIRROR_X_PREFIXES = ("inf_v2_", "npc_gear_")  # npc_gear_: the crew's faces, hair, headgear
+MIRROR_X_PREFIXES = ("inf_v2_",)
 
 
 def exports_mirrored(name, obj):

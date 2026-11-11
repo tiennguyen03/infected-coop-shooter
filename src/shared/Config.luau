@@ -2512,7 +2512,12 @@ local Config = {
 			Enabled = true, -- false: Roblox's stock animations and no rifle, as before
 			CarryRifle = true, -- false: the clips with empty hands
 			ClipWait = 8, -- seconds a client waits for the clips before keeping the stock Animate
-			WalkSpeed = 10, -- studs a second on the ship (Roblox's default is 16, a run)
+			-- A slow stride on the ship, a sprint while Keys.Sprint (or SprintPad) is held (owner
+			-- 2026-11-11: "a little too fast, he should have a slow stride and then have a
+			-- seperate sprint animation on the shift key").
+			WalkSpeed = 6.5, -- studs a second (the Rthro walk at about 1.1)
+			SprintSpeed = 15, -- studs a second (the Rthro run at about 1.4)
+			SprintPad = Enum.KeyCode.ButtonL3, -- the gamepad's sprint
 			Animations = {
 				Idle = "rbxassetid://2510196951", -- Rthro Idle
 				Walk = "rbxassetid://2510202577", -- Rthro Walk
@@ -2522,7 +2527,7 @@ local Config = {
 			-- speed): rate = speed / this, within MinRate..MaxRate.
 			WalkClipSpeed = 5.7,
 			RunClipSpeed = 10.5,
-			RunAbove = 12, -- studs a second: faster than this plays the run
+			RunAbove = 9, -- studs a second: faster than this plays the run (the sprint)
 			MinRate = 0.6,
 			MaxRate = 1.6,
 			-- The gun across the chest, in the upper torso's space (front -Z, right +X): the

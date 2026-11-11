@@ -19,36 +19,26 @@ local CrewService = {}
 local SHIP_TROUSERS = Color3.fromRGB(40, 44, 54)
 local ARMY = NpcBody.Army
 
+-- Each figure's look (NpcBody.Dress): body colours, plus Roblox catalog ids when wanted, e.g.
+-- { shirt = ..., trousers = ..., shirtId = 123, pantsId = 456, faceId = 789,
+--   hats = "111,222", hair = "333" } (0 or nil: none; skin is picked by name unless `skin`).
 -- Flight deck jerseys by job (the coloured shirt is how a deck crew reads at a distance).
 local DRESS: { [string]: NpcBody.Dress } = {
 	director = {
 		shirt = Color3.fromRGB(214, 176, 40),
 		trousers = SHIP_TROUSERS,
-		cover = Color3.fromRGB(214, 176, 40),
 	},
 	deckhand = {
 		shirt = Color3.fromRGB(46, 92, 170),
 		trousers = SHIP_TROUSERS,
-		cover = Color3.fromRGB(46, 92, 170),
 	},
 	mechanic = {
 		shirt = Color3.fromRGB(58, 120, 64),
 		trousers = Color3.fromRGB(70, 74, 64),
-		cover = Color3.fromRGB(58, 120, 64),
 	},
 	runner = NpcBody.Ship,
 	medic = { shirt = Color3.fromRGB(222, 222, 216), trousers = ARMY.trousers },
-	sentry = { shirt = ARMY.shirt, trousers = ARMY.trousers }, -- helmeted (KIT)
-}
-
--- What each one carries (NpcBody kit; docs/lore/ship_company.md).
-local KIT: { [string]: NpcBody.Kit } = {
-	director = { "earDefenders" },
-	deckhand = { "chocks" },
-	mechanic = { "rag" },
-	runner = { "clipboard" },
-	medic = { "blueGloves", "mask" },
-	sentry = { "helmet", "slungRifle", "brassard" },
+	sentry = { shirt = ARMY.shirt, trousers = ARMY.trousers },
 }
 
 -- "x,y,z;x,y,z;..." for the client (attributes hold no arrays).
@@ -74,7 +64,6 @@ function CrewService.init()
 			route[1],
 			route[2] - route[1],
 			DRESS[crew.id] or NpcBody.Ship,
-			KIT[crew.id],
 			false -- each client walks and animates them (CrewWalk)
 		)
 		-- Walkers never block or shove a soldier (they move on each client, not in physics).

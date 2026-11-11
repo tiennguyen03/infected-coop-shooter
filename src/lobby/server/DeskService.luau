@@ -21,22 +21,16 @@ local COUNTER = Color3.fromRGB(84, 88, 92)
 local CRATE = Color3.fromRGB(86, 92, 66)
 local WIRE = Color3.fromRGB(120, 124, 126)
 
+-- Each figure's look (NpcBody.Dress): body colours, plus Roblox catalog ids when wanted, e.g.
+-- { shirt = ..., trousers = ..., shirtId = 123, pantsId = 456, faceId = 789,
+--   hats = "111,222", hair = "333" } (0 or nil: none; skin is picked by name unless `skin`).
 local DRESS: { [string]: NpcBody.Dress } = {
 	arms_room = NpcBody.Army,
-	-- Ship's working dress, bareheaded: his flight helmet sits pushed up (KIT visorUp).
+	-- Ship's working dress.
 	loadmaster = { shirt = NpcBody.Ship.shirt, trousers = NpcBody.Ship.trousers },
 	fires = NpcBody.Army,
 	engineers = NpcBody.Army,
 	plot = NpcBody.Army,
-}
-
--- What each one carries (NpcBody kit; the lore developer's details, docs/lore/desk_crew.md).
-local KIT: { [string]: NpcBody.Kit } = {
-	arms_room = { "glasses", "clipboard", "keyring" },
-	loadmaster = { "visorUp", "harness", "greasePencil" },
-	fires = { "headsetNeck", "notebook", "bun" },
-	engineers = { "beltGloves", "cutters", "wireCoil" },
-	plot = { "headsetOneEar", "mug", "rankTab" },
 }
 
 -- Props per desk, relative to the person's feet and facing (X right, Z forward).
@@ -105,8 +99,7 @@ function DeskService.init()
 			desk.title,
 			place.feet,
 			place.facing,
-			DRESS[desk.id] or NpcBody.Ship,
-			KIT[desk.id]
+			DRESS[desk.id] or NpcBody.Ship
 		)
 		local frame = CFrame.lookAt(place.feet, place.feet + place.facing)
 		props(folder, desk.id, frame)
