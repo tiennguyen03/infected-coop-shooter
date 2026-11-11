@@ -26,4 +26,13 @@ return {
 		expect.equal(DifficultyCurve.maxAlive(schedule, 30, 900, 3, 44, 2), 36, "two extra")
 		expect.equal(DifficultyCurve.maxAlive(schedule, 30, 900, 3, 44, 9), 44, "capped")
 	end,
+	["a flat multiplier stays at 1 for the whole run"] = function()
+		expect.equal(DifficultyCurve.multiplier(0, 1, 0), 1, "insert")
+		expect.equal(DifficultyCurve.multiplier(0, 1, 3600), 1, "an hour in")
+	end,
+	["a multiplier grows per unpaused minute up to its cap"] = function()
+		expect.near(DifficultyCurve.multiplier(0.1, 2, 0), 1, 1e-9)
+		expect.near(DifficultyCurve.multiplier(0.1, 2, 300), 1.5, 1e-9)
+		expect.near(DifficultyCurve.multiplier(0.1, 2, 3600), 2, 1e-9)
+	end,
 }
