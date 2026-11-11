@@ -8,6 +8,9 @@
 -- Doorman; MineService: Tripline; ConcertinaService; SupplyDropService: Speedball, Aid Bag)
 -- with that call-in's upgrade flag. Published per player as
 -- CallIn<n>Charges and CallIn<n>ReadyAt (server time of the next charge; 0 when full).
+-- Arrivals (Rules/Arrival, Config.CallIns.Arrivals): every throw is told to every client
+-- once (remote CallInArrival) and CallInArrivalFX draws how that call-in comes in; an
+-- emplacement or a bundle is held back here for its row's Arrival.Time while it does.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -16,6 +19,7 @@ local RunService = game:GetService("RunService")
 local Messages = require(ReplicatedStorage.Shared.Messages)
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local CallInDefinitions = require(ReplicatedStorage.Shared.CallInDefinitions)
+local Arrival = require(ReplicatedStorage.Shared.Rules.Arrival)
 local CallInCharges = require(ReplicatedStorage.Shared.Rules.CallInCharges)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
@@ -62,7 +66,26 @@ end
 
 local slots: { [Player]: { Slot } } = {}
 local usedRemote: RemoteEvent
+local arrivalRemote: RemoteEvent
 local lastStep = 0
+-- Bumped on a run start so kit still on its way down from the last run never lands in the next.
+local generation = 0
+
+-- Runs `deploy` once the kit has arrived, `seconds` of unpaused time from now (at once for
+-- 0). Dropped when the run restarted or the thrower left meanwhile.
+local function deployAfter(seconds: number, player: Player, deploy: () -> ())
+	if seconds <= 0 then
+		deploy()
+		return
+	end
+	local thisGeneration = generation
+	task.spawn(function()
+		PauseService.wait(seconds)
+		if thisGeneration == generation and player.Parent then
+			deploy()
+		end
+	end)
+end
 
 local function chargesFor(player: Player, slot: number): number
 	local definition = CallInDefinitions.get(LoadoutService.getCallIn(player, slot))
@@ -155,25 +178,50 @@ local function fire(
 	if definition.Kind == "throw" then
 		WorldSounds.at(landing, "callins", "callin_throw")
 	end
+	-- The arrival: the clients draw it, and anything that is not a fire mission (those keep
+	-- their own Delay) is on the ground and working `holdFor` seconds from now.
+	local arrivals = Config.CallIns.Arrivals
+	local arrival = Arrival.resolve(arrivals.Defaults :: any, cfg.Arrival)
+	local holdFor = Arrival.deployDelay(arrival, arrivals.Enabled)
+	local impacts: { Vector3 }? = nil
+	local fired = false
 	local id = definition.Id
 	if id == "hammer" then
 		local walking = LoadoutService.hasUpgrade(player, "walking_barrage")
 		local step = if walking then Config.Upgrades.WalkingBarrage.Step else 0
-		return AirStrikeService.fireMission(player, Config.CallIns.Hammer, landing, direction, step)
+		fired, impacts =
+			AirStrikeService.fireMission(player, Config.CallIns.Hammer, landing, direction, step)
 	elseif id == "anvil" then
-		return AirStrikeService.fireMission(player, Config.CallIns.Anvil, landing, direction, 0)
+		fired, impacts =
+			AirStrikeService.fireMission(player, Config.CallIns.Anvil, landing, direction, 0)
 	elseif id == "shrike" then
-		return AirStrikeService.gunRun(player, landing, direction)
+		fired, impacts = AirStrikeService.gunRun(player, landing, direction)
 	elseif id == "doorman" then
-		return SentryService.deploy(player, landing, direction)
+		fired = true
+		deployAfter(holdFor, player, function()
+			SentryService.deploy(player, landing, direction)
+		end)
 	elseif id == "tripline" then
-		return MineService.layArc(player, landing, direction)
+		fired = true
+		deployAfter(holdFor, player, function()
+			MineService.layArc(player, landing, direction)
+		end)
 	elseif id == "concertina" then
-		return ConcertinaService.lay(player, landing, direction)
+		fired = true
+		deployAfter(holdFor, player, function()
+			ConcertinaService.lay(player, landing, direction)
+		end)
 	elseif id == "speedball" or id == "aid_bag" then
-		return SupplyDropService.drop(id, landing, direction)
+		fired = true
+		local falls = not arrivals.Enabled
+		deployAfter(holdFor, player, function()
+			SupplyDropService.drop(id, landing, direction, falls)
+		end)
 	end
-	return false
+	if fired and arrivals.Enabled then
+		arrivalRemote:FireAllClients(id, player, landing, direction, impacts)
+	end
+	return fired
 end
 
 -- Dev tools (DevTestService FireCallIn): fires call-in `id` for `player` aimed at `point`
@@ -274,12 +322,16 @@ end
 
 function CallInService.init()
 	Lifecycle.register("CallInService", {
+		onRunStart = function()
+			generation += 1
+		end,
 		onPlayerReset = CallInService.resetPlayer,
 		onPlayerRemoving = function(player: Player)
 			slots[player] = nil
 		end,
 	})
 	usedRemote = Remotes.get("AbilityUsed")
+	arrivalRemote = Remotes.get("CallInArrival")
 	Remotes.get("CallIn").OnServerEvent:Connect(onCallIn)
 	-- A changed slot (dev panel, the Arms Room) starts full, or empty with its cooldown
 	-- running when the Arms Room changed it in a run.
