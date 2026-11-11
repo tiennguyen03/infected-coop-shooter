@@ -23,7 +23,7 @@ new bodies in live Blender first (below) so the owner can direct the shape befor
 ported into a build file.
 
 **Roblox mirrors an imported mesh in X** about its bounds centre (found 2026-11-09 on the
-Fallow): the `Fallow` and `Vehicles` collections export pre-mirrored (`MIRROR_X_COLLECTIONS`;
+Fallow): the `Fallow`, `Vehicles` and `Deployables` collections export pre-mirrored (`MIRROR_X_COLLECTIONS`;
 previews and offsets unchanged). An asymmetric mesh in another collection needs the same
 before upload. The lobby's art: `build/fallow.py` (12 `env_fallow_*`, the ship) and
 `build/lantern.py` (4 `veh_lantern_*`, the lift bird); ids in `ASSET_IDS.md`, budgets in
@@ -81,6 +81,7 @@ and the lineups with only those assets; run a full build afterwards.
 | env_bus | 712 | bottom | 42-stud transit bus, 12.5 tall (Hocker-proof cover) |
 | env_city_* (+ `_lit`) | 960-1,870 a tower | bottom (`_lit`: the tower origin) | the skyline (`city.py`, [STYLES.md](../../docs/STYLES.md) §7) |
 | veh_lantern_body / _trim / _rotor / _tail_rotor | 240 / 1,436 / 172 / 64 | helo frame (body, trim: origin at the mast foot on the deck); hubs (rotors) | Lantern, the lift bird (`build/lantern.py`, collection `Vehicles`): shell, trim (interior, door, tally, tide line), four-blade main rotor, tail rotor. Uploaded 2026-11-09 (ids in `ASSET_IDS.md`) |
+| dep_doorman_base / _cradle / _gun | 860 / 304 / 1,136 | ground under the traverse axis (base); top of the tripod head (cradle, yaws); the trunnion (gun, pitches) | the Doorman sentry gun (`build/doorman.py`, collection `Deployables`, exported pre-mirrored): tripod with spade feet, sandbags, battery box; yoke; belt-fed gun with its ammo can and sensor head. Pivots and muzzle are constants in the file and on `Config.CallIns.Doorman`. Previews `doorman_v2_*.png`. Uploaded 2026-11-11 (ids in `ASSET_IDS.md`) |
 | env_fallow_* (12) | 3,302 unique; ~8,000 placed | ship (no shift: `offset` is the position on the ship) | the Fallow, the lobby ship (`build/fallow.py`, collection `Fallow`): hull shells bow / mid_port / mid_stbd / stern + their trims, island + trim, radar (pivot on its axis), catwalk / catwalk_rafts bays (pivot at the hull face, instanced 18x). Uploaded 2026-11-09 (ids in `ASSET_IDS.md`) |
 | prop_cot | 108 | bottom | field cot 6.5 x 2.1 x 3 |
 | prop_generator | 172 | bottom | towed generator 8 x 5.2 x 4.5 |

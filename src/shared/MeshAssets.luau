@@ -1153,6 +1153,28 @@ local MESHES: { [string]: MeshDef } = {
 		offset = Vector3.new(0.000, 0.000, 0.000),
 		castShadow = false,
 	},
+	-- The Doorman sentry gun (assets/3d/build/doorman.py; SentryService builds it when
+	-- Config.CallIns.Doorman.Model is 2). `offset` is each piece's bounds centre from its own
+	-- origin: the ground under the traverse axis (base), the top of the tripod head (cradle,
+	-- which yaws there), the trunnion (gun, which pitches there). Look only, no collision.
+	dep_doorman_base = {
+		meshId = "rbxassetid://88745683715018",
+		size = Vector3.new(4.05, 1.93, 4.13),
+		offset = Vector3.new(0, 0.935, -0.242),
+		castShadow = true,
+	},
+	dep_doorman_cradle = {
+		meshId = "rbxassetid://70576240552981",
+		size = Vector3.new(1.36, 0.96, 1.09),
+		offset = Vector3.new(-0.14, 0.461, 0.147),
+		castShadow = true,
+	},
+	dep_doorman_gun = {
+		meshId = "rbxassetid://75248273049381",
+		size = Vector3.new(1.95, 1.53, 5.54),
+		offset = Vector3.new(-0.105, 0.145, -0.75),
+		castShadow = true,
+	},
 }
 
 -- Swap in each pending entry's `fallback` (header): the earlier mesh at its own size, plain
