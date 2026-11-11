@@ -155,7 +155,8 @@ out of the door; fire missions are someone on the net. HUD names and radio: [LOR
 Every built call-in is thrown (`Kind "throw"`, `ThrowUtil` clamp). Services:
 `AirStrikeService` (Hammer, Anvil share `fireMission`, patterns from `Rules/StrikePattern`;
 Shrike's `gunRun` under a Part gunship at 45 studs), `SentryService` (Doorman: a ray from the
-muzzle to the nearest visible Infected), `MineService` (Tripline), `ConcertinaService`,
+gun's pivot to the nearest visible Infected; its body is `Config.CallIns.Doorman.Model`, 2 =
+the modelled gun whose pivot is 2.6 up, 1 = the Part tripod at 3.2), `MineService` (Tripline), `ConcertinaService`,
 `SupplyDropService` (Speedball, Aid Bag fall 50 studs and land quiet). The support weapons
 need the support-weapon carry and the explosive projectile hook (ARCHITECTURE F7). Dev:
 `SetCallIn <slot> <id>`, `FireCallIn <id>` (20 studs ahead, no slot or charge).

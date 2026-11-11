@@ -6,7 +6,7 @@ last one. **End of a session:** edit this page in place (never append history he
 one note to `handoff/log/` (format in `handoff/log/README.md`). History lives in
 `docs/HISTORY.md`; this page is only "now".
 
-Last updated: 2026-11-09 by Tien + Claude.
+Last updated: 2026-11-11 by Tien + Claude.
 
 ## The game today (on `main`)
 
@@ -21,7 +21,8 @@ upgrades) → the Warden (boss) → extraction on Lantern → OPERATION COMPLETE
   and own shot and reload sounds; Q swap, G frag (hold to aim, release to throw), V shove,
   E stim, four call-ins on 1-4 (Hammer, Anvil, Shrike, Doorman, Concertina, Speedball, Aid
   Bag, Tripline; thrown ones are held to aim with an arc and a landing marker, the Shrike is a
-  modelled attack helicopter), flare on 5, the Arms Room on B (stand-in until Nova's lobby screen).
+  modelled attack helicopter, the Doorman a modelled tripod gun not yet seen in game:
+  `Config.CallIns.Doorman.Model = 1` puts the old one back), flare on 5, the Arms Room on B (stand-in until Nova's lobby screen).
 - **Infected:** Walker, Runner, Brute, Hocker (blocky, lore poses), dismemberment, the
   Warden with plates.
 - **Feel:** camera kick, blast shake, limp bodies thrown by the killing hit, hit flinch,

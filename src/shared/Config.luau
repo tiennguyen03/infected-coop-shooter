@@ -907,6 +907,17 @@ local Config = {
 			Range = 70,
 			MaxPerPlayer = 1, -- a second Doorman replaces the first
 			Aim = { Shape = "ring", Radius = 2 }, -- where the tripod stands
+			-- The body: 2 = the modelled gun (doorman.py, MeshAssets dep_doorman_*), 1 = the
+			-- Part tripod (also what stands while the meshes have not loaded). Model 2's
+			-- numbers, from doorman.py: the cradle turns YawHeight above the ground, the gun
+			-- tips at the trunnion PitchHeight up (it sees and fires from there; the Part body
+			-- does from 3.2), the muzzle is MuzzleReach ahead of the trunnion, and the gun
+			-- tips no further than PitchLimit degrees up or down (look only).
+			Model = 2,
+			YawHeight = 1.9,
+			PitchHeight = 2.6,
+			MuzzleReach = 3.52,
+			PitchLimit = 40,
 		},
 		-- Tripline (Mines): thrown; Mines land on an arc bulging away from the thrower and blow
 		-- when an Infected steps within TriggerRadius.
