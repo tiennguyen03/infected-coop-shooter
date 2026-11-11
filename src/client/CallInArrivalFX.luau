@@ -40,6 +40,7 @@ local Config = require(Shared:WaitForChild("Config"))
 local GroundUtil = require(Shared:WaitForChild("GroundUtil"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 local SoundBanks = require(Shared:WaitForChild("SoundBanks"))
+local ThrowUtil = require(Shared:WaitForChild("ThrowUtil"))
 
 local UP = Vector3.yAxis
 local SMOKE_TEXTURE = "rbxasset://textures/particles/smoke_main.dds"
@@ -978,7 +979,7 @@ local function onArrival(
 		local character = thrower.Character
 		local root = character and character:FindFirstChild("HumanoidRootPart")
 		if root and root:IsA("BasePart") then
-			origin = root.Position + UP * 1.5
+			origin = ThrowUtil.hand(character, root.Position + UP * 1.5)
 		end
 	end
 	local landings: { Vector3 } = {}

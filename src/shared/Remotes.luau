@@ -12,6 +12,7 @@ local REMOTE_NAMES = {
 	"Reload", -- client -> server: start a reload (LoadoutService; Mag/Reserve/ReloadUntil are player attributes)
 	"CallIn", -- client -> server: (slot: 1..Config.CallIns.Slots, landingPoint: Vector3?) use the call-in in that slot
 	"CallInArrival", -- server -> every client: (id: string, thrower: Player, point: Vector3, direction: Vector3, impacts: { Vector3 }?) a call-in was thrown; CallInArrivalFX draws its arrival (impacts: where a fire mission's rounds land)
+	"Thrown", -- server -> every client: (thrower: Player, landing: Vector3, flight: number, color: Color3) a grenade or the flare left the hand; ThrowFX flies it from the hand to the mark
 	"ShotTracer", -- server -> other clients: (origin: Vector3, endPoint: Vector3, sound: string?) draw a tracer, play that gun's shot
 	"ObjectiveUpdate", -- server -> client: (kind: "started"|"progress"|"completed", progress: number, playersIn: number?, playersLiving: number?)
 	"DamageDealt", -- server -> client (hits: the attacker only; kills: everyone): (position: Vector3, amount: number, kind: "hit"|"headshot"|"fire"|"breach"|"death"|..., attacker: Player?)

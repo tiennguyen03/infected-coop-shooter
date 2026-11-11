@@ -3,7 +3,8 @@
 -- loadout, LoadoutService.getCallIn). Each slot holds Config.CallIns.<Key>.Charges
 -- charges that refill one at a time every Cooldown seconds; a Restock card fills them.
 -- Server-authoritative: the client sends the slot and where it aimed; this validates
--- (alive, not paused, a charge), clamps the throw with ThrowUtil like the flare, and hands
+-- (alive, not paused, a charge), waits out the throw clip's wind-up (ThrowWindUp; the charge
+-- is spent at the release), clamps the throw with ThrowUtil like the flare, and hands
 -- the effect to the owning service (AirStrikeService: Hammer, Anvil, Shrike; SentryService:
 -- Doorman; MineService: Tripline; ConcertinaService; SupplyDropService: Speedball, Aid Bag)
 -- with that call-in's upgrade flag. Published per player as
@@ -31,6 +32,7 @@ local MineService = require(script.Parent.MineService)
 local PauseService = require(script.Parent.PauseService)
 local SentryService = require(script.Parent.SentryService)
 local SupplyDropService = require(script.Parent.SupplyDropService)
+local ThrowWindUp = require(script.Parent.ThrowWindUp)
 local Squad = require(script.Parent.Squad)
 local Lifecycle = require(script.Parent.Lifecycle)
 local WorldSounds = require(script.Parent.WorldSounds)
@@ -261,26 +263,43 @@ local function onCallIn(player: Player, slot: unknown, requested: unknown)
 		print(`[CallIn] {player.Name} blew {blown} mine(s) (Daisy Chain)`)
 		return
 	end
-	local state = get(player)[slotIndex]
-	-- CallInCharges.use is the gate: an empty slot refuses before anything is thrown.
-	local canUse = CallInCharges.use(state.charges, state.nextChargeAt, os.clock(), 0)
-	if not canUse then
-		return
-	end
 	local point = if typeof(requested) == "Vector3" then requested else nil
-	if not fire(player, definition, point) then
+	-- Fires it and spends the charge. CallInCharges.use is the gate: an empty slot, or one
+	-- that changed hands during the wind-up, refuses before anything is thrown.
+	local function use()
+		if LoadoutService.getCallIn(player, slotIndex) ~= definition.Id then
+			return
+		end
+		local state = get(player)[slotIndex]
+		if not CallInCharges.use(state.charges, state.nextChargeAt, os.clock(), 0) then
+			return
+		end
+		if not fire(player, definition, point) then
+			return
+		end
+		local _
+		_, state.charges, state.nextChargeAt = CallInCharges.use(
+			state.charges,
+			state.nextChargeAt,
+			os.clock(),
+			cooldownFor(player, slotIndex)
+		)
+		publish(player, slotIndex, state)
+		usedRemote:FireClient(player, Messages.Ability.CallIn, slotIndex, definition.Id)
+		print(`[CallIn] {player.Name} used {definition.Name} ({state.charges} left)`)
+	end
+	local state = get(player)[slotIndex]
+	if not CallInCharges.use(state.charges, state.nextChargeAt, os.clock(), 0) then
 		return
 	end
-	local _
-	_, state.charges, state.nextChargeAt = CallInCharges.use(
-		state.charges,
-		state.nextChargeAt,
-		os.clock(),
-		cooldownFor(player, slotIndex)
-	)
-	publish(player, slotIndex, state)
-	usedRemote:FireClient(player, Messages.Ability.CallIn, slotIndex, definition.Id)
-	print(`[CallIn] {player.Name} used {definition.Name} ({state.charges} left)`)
+	-- A thrown call-in leaves the hand at the throw clip's release (ThrowWindUp): the charge
+	-- is spent and the arrival starts there, so Arrival.Time and a fire mission's Delay count
+	-- from the release, as they did from the key.
+	if definition.Kind == "throw" then
+		ThrowWindUp.begin(player, use)
+	else
+		use()
+	end
 end
 
 local function step()
