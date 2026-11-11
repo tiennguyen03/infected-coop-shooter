@@ -16,10 +16,12 @@ product exists).
 **Heads-up (Nova, your files):** `RecordService` sends tabs as a 4th value on `Record`
 "state", uses `Record.KEY_PREFIX`, and gained `grantReceipt`; `SaveSlot` gained `update`
 (UpdateAsync); `TabsService` is new and in the lobby BOOT list; `RecordClient` gained `tabs()`
-and `balanceText()`; one balance line each in `ArmsRackUI` and `DeskShop`. One thing to look
-at: when a record fails to **load** (a DataStore error on join), `RecordService` holds a
-fresh 1000-merit record and the next buy saves it over the real one. That now costs earned
-merits and paid tabs; a failed load should block saving for that soldier.
+and `balanceText()`; one balance line each in `ArmsRackUI` and `DeskShop`. Review fixes, also
+in your files: `SaveSlot.load` returns a second value (did the store answer); when a record
+fails to **load** on join `RecordService` no longer saves the stand-in 1000-merit record over
+the real one (that would have cost earned merits and paid tabs; buys that visit are not kept);
+while a receipt is paid the waiting save goes out first and a BUY answers "loading", so a
+late save cannot wipe the tabs after Roblox was told PurchaseGranted.
 **Next:** Secondaries counted in the match (they pay 0 until then), the Stand Down bonus,
 the Roblox products and a place to buy a pack, the first thing sold for tabs (owner's call),
 Nova's debrief panel can show the merits line.

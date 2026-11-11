@@ -275,7 +275,10 @@ The rack is where guns are **bought** (merits, onto the soldier's record; owner 
   rack header and the desk panels show "N MERITS  ·  N TABS". `TabsService` answers
   `MarketplaceService.ProcessReceipt`: a pack from `Config.Tabs.Products` is paid through
   `RecordService.grantReceipt` (`SaveSlot.update`, UpdateAsync; the receipt id is saved with
-  the tabs, so a repeat pays nothing) and only then answered PurchaseGranted. Every
+  the tabs, so a repeat pays nothing) and only then answered PurchaseGranted. While a receipt
+  is being paid the soldier's waiting save is written first and a BUY is refused, so no other
+  save lands over the tabs. A record that could not be **read** on join (a DataStore error) is
+  never saved over: the soldier can buy for that visit, none of it is kept. Every
   `ProductId` is 0 (no product exists on Roblox), nothing prompts a purchase and nothing is
   sold for tabs.
 

@@ -88,12 +88,18 @@ function SaveSlot.attempt<T>(self: Slot, what: string, call: (store: DataStore) 
 	return nil
 end
 
--- The saved value (yields), or nil when there is none or the store is unavailable.
-function SaveSlot.load(self: Slot, player: Player): unknown
+-- The saved value (yields), or nil when there is none or the store is unavailable. The
+-- second value says whether the store answered: false means the read failed, so a nil is
+-- "unknown", not "no save" (RecordService never saves over a record it could not read).
+function SaveSlot.load(self: Slot, player: Player): (unknown, boolean)
 	local key = self.prefix .. player.UserId
-	return self:attempt("load", function(store: DataStore)
-		return store:GetAsync(key)
+	local answered = false
+	local value = self:attempt("load", function(store: DataStore): unknown
+		local stored = store:GetAsync(key)
+		answered = true
+		return stored
 	end)
+	return value, answered
 end
 
 function SaveSlot.write(self: Slot, player: Player)
