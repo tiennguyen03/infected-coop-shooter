@@ -407,7 +407,8 @@ sling across his chest"; the crew's block eyes "dont look right" on the R15 bodi
 - **The soldier's look** (Nova: "not really a fan of how he looks"; "the new look should change
   in match as well"): `Config.Player.Look`, catalog items on the default R15 body for players
   and bots in the match (`PlayerSetup`, `BotService`) and on the ship (`PikeBody`): a tactical
-  vest over an olive shirt, combat pants, an AVS plate carrier, a black FAST helmet, a
+  vest over an olive shirt, combat pants and a black FAST helmet (the AVS plate carrier is
+  out: rigid, it poked through the shirt's vest; shirts layer over pants), a
   buzzcut (dropped: that catalog piece covers the face). Each player wears their own avatar's
   head, face and skin tone (`Look.PlayerFace`; bots keep the default face). `Look.Enabled = false`
   puts the Pike limb body back.

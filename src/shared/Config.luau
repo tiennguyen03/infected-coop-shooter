@@ -38,14 +38,14 @@ local Config = {
 		-- (Shared.AvatarLook), on players and bots in the match and on the ship. Enabled = false
 		-- puts the Pike limb body (PLAYER_BODY, dressModel) back. Picks page codes: a tactical
 		-- vest with an olive shirt, slim combat pants, an AVS plate carrier, a black FAST helmet
-		-- (T3 A9 P2 H4). Not R1: that "buzzcut" is a novelty piece worn over the face.
+		-- (T3 A9 H4). Not R1: that "buzzcut" is a novelty piece worn over the face; not the P2
+		-- plate carrier: rigid, it poked through the shirt's own vest.
 		Look = {
 			Enabled = true,
 			PlayerFace = true, -- each player wears their own avatar's head, face and skin tone (bots: the default)
 			Items = {
 				135730034330771,
 				74956577347922,
-				108890568133405,
 				92700467676199,
 			},
 			Skin = Color3.fromRGB(176, 140, 112),

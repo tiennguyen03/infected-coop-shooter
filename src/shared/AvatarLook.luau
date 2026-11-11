@@ -30,17 +30,19 @@ local RIGID: { [number]: Enum.AccessoryType } = {
 	[46] = Enum.AccessoryType.Back,
 	[47] = Enum.AccessoryType.Waist,
 }
--- Asset type id -> layered (3D) clothing slot, and the order it wraps in (inner first).
+-- Asset type id -> layered (3D) clothing slot, and the order it wraps in (inner first). Shirts
+-- go over pants (Nova, 2026-11-11: layers poking through; the waist read wrong with the pants
+-- wrapped outside the shirt).
 local LAYERED: { [number]: { kind: Enum.AccessoryType, order: number } } = {
 	[64] = { kind = Enum.AccessoryType.TShirt, order = 1 },
-	[65] = { kind = Enum.AccessoryType.Shirt, order = 2 },
 	[66] = { kind = Enum.AccessoryType.Pants, order = 2 },
 	[69] = { kind = Enum.AccessoryType.Shorts, order = 2 },
-	[72] = { kind = Enum.AccessoryType.DressSkirt, order = 3 },
-	[68] = { kind = Enum.AccessoryType.Sweater, order = 4 },
-	[67] = { kind = Enum.AccessoryType.Jacket, order = 5 },
-	[70] = { kind = Enum.AccessoryType.LeftShoe, order = 6 },
-	[71] = { kind = Enum.AccessoryType.RightShoe, order = 6 },
+	[65] = { kind = Enum.AccessoryType.Shirt, order = 3 },
+	[72] = { kind = Enum.AccessoryType.DressSkirt, order = 4 },
+	[68] = { kind = Enum.AccessoryType.Sweater, order = 5 },
+	[67] = { kind = Enum.AccessoryType.Jacket, order = 6 },
+	[70] = { kind = Enum.AccessoryType.LeftShoe, order = 7 },
+	[71] = { kind = Enum.AccessoryType.RightShoe, order = 7 },
 }
 local SHIRT_2D, PANTS_2D, FACE = 11, 12, 18
 local DEFAULT_SKIN = Color3.fromRGB(176, 140, 112)
