@@ -253,7 +253,8 @@ local function tabs(): { Tab }
 							hotkey = Enum.KeyCode.F6,
 						},
 						{ label = "Drop supply crate", send = cmd("DropSupplyCrate") },
-						{ label = "Drop upgrade crate", send = cmd("DropUpgradeCrate") }
+						{ label = "Drop upgrade crate", send = cmd("DropUpgradeCrate") },
+						{ label = "Drop objective reward", send = cmd("DropObjectiveCrate") }
 					),
 				},
 				{

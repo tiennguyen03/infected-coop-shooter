@@ -297,10 +297,25 @@ start on the mark at once).
   per extra player; spawn interval x0.7 for 30 s).
 - **The pallet is the ammo box:** every living player within `RearmRadius` 6 is re-armed
   once (both guns full, grenades back).
-- Three cards, the same for everyone (`Crates.SupplyCards`): **Medkit** (full heal, stims
-  back), **Restock** (every call-in slot full, grenades and stims too), **Armour Plate** (+50
-  shield soaked before health, cap 100). One pick per player per pallet; cards vanish at
-  60 s. No rarity, no upgrades from pallets.
+- Three cards, the same for everyone (`Crates.SupplyCards`; what each gives is its row in
+  `Crates.Cards`, and the card text is built from the row): **Medkit** (full heal, stims
+  back), **Restock** (every call-in slot full, grenades and stims too), **Armour Plate** (+75
+  armour soaked before health, cap 100; was 50, which a full heal always beat). One pick
+  per player per pallet; the pallet closes at 90 s. No rarity, no upgrades from pallets.
+- **Taking a card** (owner 2026-11-11: never by walking over it; `Requisition.Pick`,
+  `Rules/Reward`, `RewardPanel`): every crate has a label and, when it is worth a walk, a
+  light pillar. Within 9 studs hold **E** 0.3 s (gamepad X, tap on touch) and
+  a panel of up to three big cards opens at screen centre: key, kind, icon, name, one plain
+  line with its numbers, and "REPLACES ..." when a field upgrade would push one out. Pick
+  with a click or tap, keys 1-3, or the gamepad; the card flashes, a line under the mission
+  line names what was taken and the squad gets "<callsign> took <card>". E again, Backspace,
+  gamepad B, a click beside the cards or walking 12 studs off closes it without a pick, and
+  the crate can be opened again. The game does not pause and the player can be hit. The
+  server checks the crate, the offer, one pick per player, reach and "not down". The panel
+  and the crate's label show who has taken theirs. `Pick.WalkOver = true` restores the old
+  world cards.
+- **Bots** take no panel: one within 14 studs of a pallet takes the supply card covering
+  what it misses most (today that is health: a Medkit below 75%), once per pallet.
 - Playtest targets per drop: 5-7 drops per 12 min solo, picks within 20 s, at most one death
   per three drops, consecutive drops 60+ studs apart, pool minus cost at throw not always ~0
   (else there is no "when" decision). Fixes if missed: an overflow bonus (throw at 1.5x cost
@@ -313,10 +328,19 @@ start on the mark at once).
 Weapon, Kit and one per carried call-in (`CallIn1`-`CallIn4`; the upgrade moves with its
 call-in); a new pick in a filled slot replaces it. Each changes how a tool works, never a
 percentage, and must stay legible next to the flat curve. Sources: the Primary's two site crates
-(one lands when the hold zone appears, one when the hold ends, `Objective.CompleteCrate`,
-10 studs beside the first; each shows 3 you can still take), so both picks are made before
-the Index arrives; later Stores and Secondary crates (3-5 per mission). Until 2026-11-10
+(a FIELD UPGRADE crate when the hold zone appears; the **OBJECTIVE REWARD** crate when the
+hold ends, `Objective.CompleteCrate`, 10 studs beside the first), so both picks are made
+before the Index arrives; later Stores and Secondary crates (3-5 per mission). Each offers
+3 the player does not hold, ones for an empty slot before ones that would replace a pick
+(`Rules/Reward.upgradeOffer`); a short offer is filled with supply cards. Until 2026-11-10
 the second set came on the Index pallet, with only the extraction left to use it.
+
+**The Main objective's reward** (2026-11-11; `Crates.Kinds.objective`): as the crate lands
+every living soldier is restocked without picking anything (`Squad`: full health, ammo,
+every call-in charge, grenades, stims, +50 armour), then each player picks one field
+upgrade from it (open for 180 s). The 500 into the Resupply pool is unchanged. Crate kinds
+(label, life, pillar, squad share) are rows in `Crates.Kinds`; `RequisitionService.dropCrate`
+takes the kind.
 
 | Slot | Lore name | Effect |
 |---|---|---|

@@ -25,6 +25,7 @@ local Loadout = require(ReplicatedStorage.Shared.Rules.Loadout)
 local Magazine = require(ReplicatedStorage.Shared.Rules.Magazine)
 local Messages = require(ReplicatedStorage.Shared.Messages)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
+local Reward = require(ReplicatedStorage.Shared.Rules.Reward)
 local RunStates = require(ReplicatedStorage.Shared.RunStates)
 local SoundBanks = require(ReplicatedStorage.Shared.SoundBanks)
 local UpgradeDefinitions = require(ReplicatedStorage.Shared.UpgradeDefinitions)
@@ -550,29 +551,33 @@ function LoadoutService.clearUpgrades(player: Player)
 	publishLoadout(player, state)
 end
 
--- Upgrades this player could take right now: applies to a slot they have, not already held.
-function LoadoutService.availableUpgrades(player: Player): { string }
+-- `count` different upgrades for a crate (fewer when the pool is short): never one held,
+-- ones for an empty slot before ones that would replace a pick (Rules/Reward).
+function LoadoutService.rollUpgradeOffer(player: Player, count: number): { string }
 	local state = get(player)
-	local ids = {}
+	local candidates: { Reward.Candidate } = {}
 	for _, id in UpgradeDefinitions.upgradeIds() do
 		local definition = UpgradeDefinitions.get(id) :: UpgradeDefinitions.CardDefinition
-		if slotFor(state, definition) and not LoadoutService.hasUpgrade(player, id) then
-			table.insert(ids, id)
+		local slot = slotFor(state, definition)
+		if slot then
+			table.insert(candidates, { Id = id, Slot = slot })
 		end
 	end
-	return ids
+	return Reward.upgradeOffer(candidates, state.upgrades, count, function(n: number): number
+		return math.random(n)
+	end)
 end
 
--- `count` distinct random upgrades for an upgrade crate (fewer when the pool is short).
-function LoadoutService.rollUpgradeOffer(player: Player, count: number): { string }
-	local pool = LoadoutService.availableUpgrades(player)
-	local choices = {}
-	while #choices < count and #pool > 0 do
-		local index = math.random(#pool)
-		table.insert(choices, pool[index])
-		table.remove(pool, index)
+-- The upgrade this player would lose by taking `upgradeId` (the one in its slot), if any.
+function LoadoutService.replacedBy(player: Player, upgradeId: string): string?
+	local definition = UpgradeDefinitions.get(upgradeId)
+	if not definition then
+		return nil
 	end
-	return choices
+	local state = get(player)
+	local slot = slotFor(state, definition)
+	local inSlot = if slot then state.upgrades[slot] else nil
+	return if inSlot ~= upgradeId then inSlot else nil
 end
 
 ----------------------------------------------------------------------

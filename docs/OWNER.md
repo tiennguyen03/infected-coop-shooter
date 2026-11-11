@@ -65,6 +65,11 @@ something; never delete one without the owner.
 - **Loadout is chosen in the lobby** once the lobby exists; the in-mission Arms Room (B) is
   a stand-in. (2026-11-08)
 
+- **Rewards are picked from a big panel, never by walking over them.** The world cards were
+  "so small to read" and "sometimes you pick the wrong item". Walk up to the crate, hold the
+  prompt, choose from large cards that say exactly what each does. The Main objective's
+  reward must be clearly better than a routine pallet. (2026-11-11)
+
 ## How it looks and sounds
 
 - **Blocky Roblox style for the Infected,** lore-accurate poses and costumes. A rounded,

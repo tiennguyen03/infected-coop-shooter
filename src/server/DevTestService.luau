@@ -7,7 +7,7 @@
 -- MCP runtime eval, e.g.:
 --   require(game.ServerScriptService.Server.DevTestService).spawnEnemy("Brute", 1)
 -- Loadout rework: SetCallIn / FireCallIn / GiveUpgrade / ClearUpgrades / RefillAmmo /
--- RestockCallIns / SetWeapon / DropUpgradeCrate / DropSupplyCrate drive LoadoutService,
+-- RestockCallIns / SetWeapon / DropUpgradeCrate / DropSupplyCrate / DropObjectiveCrate drive LoadoutService,
 -- CallInService and RequisitionService directly.
 
 local CollectionService = game:GetService("CollectionService")
@@ -159,7 +159,7 @@ function DevTestService.restartRun(player: Player)
 end
 
 -- Drops a crate of `kind` in front of the player (quiet: no wave).
-function DevTestService.dropCrate(player: Player, kind: "supply" | "upgrade")
+function DevTestService.dropCrate(player: Player, kind: RequisitionService.CrateKind)
 	local character = player.Character
 	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
 	if not root then
@@ -370,6 +370,9 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 	end,
 	DropUpgradeCrate = function(player)
 		DevTestService.dropCrate(player, "upgrade")
+	end,
+	DropObjectiveCrate = function(player)
+		DevTestService.dropCrate(player, "objective")
 	end,
 	DropSupplyCrate = function(player)
 		DevTestService.dropCrate(player, "supply")
