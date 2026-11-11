@@ -3,7 +3,7 @@
 -- The BuffNotice remote carries (text, kind):
 -- - a radio line (Messages.Notice.Radio) is a subtitle at lower centre under the mission
 --   line: "CONTROL: line", the speaker in bold caps; the Warden's tells use the same line
---   ("HANDSET: ...", BossBarUI);
+--   ("WARDEN: ...", BossBarUI);
 -- - anything else (a pickup, a squadmate's pick) is a card at top right: a dark strip with a
 --   red-outlined square and a bold title; up to three stack downward, each slides in,
 --   holds and fades. While the boss bar shows, the cards start lower (BossBarUI).

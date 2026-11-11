@@ -12,7 +12,7 @@ Code identifiers (`Stage*`, `Operation*`) keep their names.
 ## The run in one paragraph
 
 Harlan Control inserts Pike (four anonymous soldiers, Pike One to Four; bots fill empty
-seats) by helo ("Lantern") into a district of the Harlan corridor before its scheduled fire
+seats) by helicopter ("Helo" on the radio) into a district of the Harlan corridor before its scheduled fire
 mission, **the Burn**. Each district is one **mission**: a **Primary** objective from the
 mission's pool and two optional **Secondaries**. The squad explores, loots abandoned
 **stores**, earns **Resupply** pallets and **field upgrades** while the difficulty clock
@@ -26,11 +26,11 @@ Every mission brought home raises that district's **containment %** on the share
 
 | Step | What happens | Today |
 |---|---|---|
-| Insert | Lantern lands at the pad; squad spawns; Control reads the Primary, Secondaries and the Burn timer (14:00) | spawn at four pads round the LZ (`Config.Run`) |
+| Insert | The helicopter lands at the pad; squad spawns; Control reads the Primary, Secondaries and the Burn timer (14:00) | spawn at four pads round the LZ (`Config.Run`) |
 | Explore | Loot stores, earn Resupply, find field upgrades; clock runs (`Config.Difficulty`) | Resupply and the loadout built; no stores |
 | Primary | One from the mission's pool, at one of its three sites or a named landmark; the squad starts it | hold zone appears at one spot after 180 s (`Config.Objective`) |
 | Index | Completing the Primary calls the boss from its canon entry | the Warden on Delta |
-| Call the bird | Green smoke at a pad; Lantern inbound 90 s; squad holds the LZ; anyone outside is left (Dead for the mission) | 30 s hold, every living player on the pad, run ends |
+| Call the bird | Green smoke at a pad; Helo inbound 90 s; squad holds the LZ; anyone outside is left (Dead for the mission) | 30 s hold, every living player on the pad, run ends |
 | Next mission | Dead players respawn at the next pad; clock, Resupply pool and drop counter carry over | not built |
 | Stand Down | After Kestrel: board = run ends, scored; or a **Second Pass** (same corridor, higher clock floor, later forms, containment gains doubled) | not built |
 
@@ -186,7 +186,7 @@ Module boundary, so the lobby can host it:
 ### Call-ins
 
 `CallInDefinitions`, numbers in `Config.CallIns`; no friendly fire. Four slots, keys 1-4;
-each holds charges that refill one at a time. Lantern's crew kicks support weapons and supply
+each holds charges that refill one at a time. The helicopter crew kicks support weapons and supply
 out of the door; fire missions are someone on the net. HUD names and radio: [LORE.md](LORE.md)
 > The Arms Room. Call-ins must be things a real army fields (OWNER.md).
 
@@ -349,7 +349,7 @@ interval x0.8, +3 alive and +1 heavy per extra living player, hard cap 44).
   the one resource more-not-tougher does not hand out). Only the Burn counts down on the HUD;
   run time stays a plain readout. At 0:00 the incendiaries land: burning dressing, no more
   pallets, spawn interval x0.5, more alive and +2 Brute/Hocker caps (`Config.Overrun`,
-  reserved), Lantern takes 120 s instead of 90. The run goes on; extracting after the Burn
+  reserved), the helicopter takes 120 s instead of 90. The run goes on; extracting after the Burn
   scores Partial. Calling the bird freezes the timer.
 - **Extraction today** (`Config.Extraction`, 2026-11-10): a 60 s hold (was 30). On the
   call Walker 12, Runner 4, Brute 1 round the pad and spawn interval x0.8; when the hold
@@ -416,7 +416,7 @@ LEVELS.md.
 | Sample Run | "Control wants tissue from a heavy host. Bag one." | kill the marked Brute/Bloat, hold E on the corpse, carry (no sprint) to the LZ | all | the next pallet shows 3 field-upgrade cards |
 | Headcount | "Control has 212 names from the Delta roster. Confirm what's left." | reach and interact at the mission's 3 story spots | all | lore delivery, moves the player (pillar 1) |
 | Clear the Spitters | "Hockers on the Overpass are shelling the toll lane." | kill N of one form before a short timer | Mile 14, Delta late | Resupply burst |
-| Misdrop | "Lantern put a pallet in the Suburb. It's yours if you get there first." | reach a crate in an outer district within 4 min | all | the crate is the reward |
+| Misdrop | "Helo put a pallet in the Suburb. It's yours if you get there first." | reach a crate in an outer district within 4 min | all | the crate is the reward |
 | Sealed Bus | "Bus 7 reads NEG on the manifest. Confirm it." | hold E on a chained bus; Runner burst; kill all | Delta Gate, Mile 14 the Jam | dark beat (it was never NEG) |
 | Recover Logs | "Toll booth recorder is still live. Pull it." | walk-in pickup at one story spot | all | codex entry |
 
@@ -518,7 +518,7 @@ Patient reuse the frame. Index hosts never dismember: their plates are the mecha
   shield 600. A round into a plate does 25% to the plate and nothing to the body; a round into
   a limb whose plate is gone does 150%. At half a plate cracks (yellow pip); at zero it flies
   off, he staggers 1.5 s. HUD order: HELM, CHEST, BACK, L SHLD, R SHLD, SHIELD.
-- **Attacks**, each announced by the handset's words on the boss bar. Where you stand picks
+- **Attacks**, each announced by his words ("WARDEN: ...") on the boss bar. Where you stand picks
   his move: **Bash** (0-15 studs, 70° arc, 40, 0.9 s windup; roll through it); **Shield
   Sweep** (17 studs, 180°, 25 and a shove; get behind him); **Overhead Slam** (17 x 6 line at
   a body that stopped moving in reach, 60, 1.3 s; step aside); **Ground Pound** (23-stud ring

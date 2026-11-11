@@ -57,6 +57,24 @@ fell). One rule per form; roster and stage of first appearance in
 
 ---
 
+# Naming
+
+Owner, 2026-11-11 ([OWNER.md](OWNER.md) > Decisions): this is a multiplayer game with lore in
+it, not a campaign, so a new player must understand every name on first read.
+
+- Anything a player sees or hears that has an obvious plain word is called by it: **the
+  Carrier** (the ship), **the helicopter** ("Helo" where the radio or a sign needs a short
+  word), **the Warden** (the speaker label on his lines, not "Handset").
+- No coined proper noun for a thing that has a plain word. Before adding a new name, ask
+  whether a first-time player would know what it is.
+- Kept: **HARLAN** (the place and the mark), **Pike** and **Control** (who you are and who
+  talks to you), boss names that say what they look like, and the call-in names (Hammer,
+  Anvil, Shrike, Doorman...), which always show their plain designation under them.
+- Code identifiers, file names and sound keys do not have to follow (`LanternSpool`,
+  `FallowLayout`, `warden_handset`); only what players read does.
+
+---
+
 # The Harlan Corridor
 
 Command lost the Harlan quarantine corridor. Pike goes up it by helo, one fallen
@@ -72,19 +90,20 @@ towns, the quarantine line and what has burned) is the Plot's map:
 4. **Harlan Yard** — the rail yard. Boss: the Lineman.
 5. **Harlan Reservoir Station** — the dam and the research station. Boss: the Specimen.
 
-**Control, Lantern, the Burn.** Harlan Control runs the corridor net; the squad is Pike; the
-helo that carries Pike is Lantern (airframe in [The Carrier > Lantern](#lantern)), the only
+**Control, the helicopter, the Burn.** Harlan Control runs the corridor net; the squad is Pike; the
+helicopter that carries Pike ("Helo" on the radio; airframe in
+[The Carrier > The helicopter](#the-helicopter)) is the only
 thing that stays the same and the only way out. Command sanitizes what it cannot hold: each district has a scheduled incendiary fire
 mission, the Burn, and the skyline burning beyond the walls is the districts that already
 got theirs. A squad is inserted in the window before the Burn. Prove the district can be
 held and Control pushes the Burn back; stay past it and the fire does not wait. **Stand
-Down** is Lantern offering the seat home at the end of the operation: board it and the run
+Down** is the helicopter offering the seat home at the end of the operation: board it and the run
 ends on your terms. Ask for a Second Pass and the bird turns south into a corridor that has
 had time to get worse. Stage detail (landmarks, sites, story spots) is in
 [PROGRESSION.md](PROGRESSION.md).
 
 Control's voice is procedural, short, no banter: "Pike, Control. Green smoke on the Helipad."
-"Lantern 2-1, ninety seconds. Hold the LZ."
+"Helo 2-1, ninety seconds. Hold the LZ."
 
 ## Containment
 
@@ -106,7 +125,7 @@ day: hands, papers, through. He was bitten through the shield sleeve by a civili
 had passed the count. When the containment order came he chained the Gate himself, from
 the outside, with the garrison and the highway's refugees still in the pens, and stayed
 on post. The strain found the kit before it found the man: riot plate grown into bone,
-the handset fused to the chest plate and still keyed open, so every attack starts with
+the radio handset fused to the chest plate and still keyed open, so every attack starts with
 carrier hiss and a squelch. He still walks the route, Gate to bus line to Inner Gate to
 the Apron, checking buses that have been empty for a week. Shoot the plates off and he
 is just a man again. Optional name for the roster board: SGT HALE (not used in game).
@@ -124,10 +143,10 @@ written but not yet placed):
 | Inner Gate | "Inner Gate. He's working his second checkpoint. Flank when he guards." |
 | First plate | "Plate's off. That's bone under it. Keep working the seams." |
 | Last plate | "Last plate. He's just a man again. Put him down." |
-| Riot Call (the handset) | "...all posts, Gate. Crowd at the wire. Send the reserve..." |
-| Bash (the handset) | "...hands. Show me your hands. Hands..." |
-| Charge (the handset) | "...move back. Move back. Clear the lane..." |
-| Canister (the handset) | "...gas. Gas in the lane..." |
+| Riot Call (the Warden's radio) | "...all posts, Gate. Crowd at the wire. Send the reserve..." |
+| Bash (the Warden's radio) | "...hands. Show me your hands. Hands..." |
+| Charge (the Warden's radio) | "...move back. Move back. Clear the lane..." |
+| Canister (the Warden's radio) | "...gas. Gas in the lane..." |
 | Kill | "Index down. Control copies. Gate's yours, Pike. Pallet inbound." |
 | Wipe (not placed) | "Pike, Control. Lost you at the Gate. Marking Delta red." |
 
@@ -138,7 +157,7 @@ highway, never a number, when it is spoken on the radio).
 
 ## Resupply
 
-Lantern does not come back for a squad that has not earned it. Kills and objectives build
+The helicopter does not come back for a squad that has not earned it. Kills and objectives build
 Resupply on Control's board; when it clears, a red flare brings a pallet down in twenty
 seconds, loud, with three issues on it and one pick per soldier. Green smoke brings the bird
 itself. The stores each position abandoned when it fell are still where they left them, if
@@ -150,37 +169,38 @@ you can get the lid off quietly, which you cannot.
 
 Canon as of 2026-11-09 (lobby place, Nova). Renamed from "the Fallow" by the owner
 (2026-11-09: easier to understand); older docs and code comments that say "LORE.md > The
-Fallow" mean this section.
+Fallow" mean this section. Code identifiers keep the old word (`FallowLayout`,
+`env_fallow_*`); players only ever read "the Carrier".
 
 The corridor runs north from the coast to the dam; Checkpoint Delta is the gate nearest the
 sea. Command runs the corridor from offshore. The Carrier is a helicopter carrier pulled out
 of the reserve fleet for Harlan: a flat deck, one island, a hangar under the deck, her old
 hull number painted out and HARLAN sprayed over it. She holds station off the coast, past the
-reach of anything that walks. Harlan Control works out of her Plot, every Lantern flies off
+reach of anything that walks. Harlan Control works out of her Plot, every helicopter flies off
 her deck, and every window team waits in her hangar until its window opens. The seat home at
 Stand Down is a seat back to the Carrier.
 
-The Infected cannot reach the ship. The one way aboard is Lantern, so everyone who steps off
+The Infected cannot reach the ship. The one way aboard is the helicopter, so everyone who steps off
 a helo walks the screening lane at the deck edge (hose, hands, eyes, band), Pike included,
 every time. Delta screened and failed. The Carrier screens and has not, yet.
 
 Many window teams share the ship. They are **not** all Pike (owner and Nova, 2026-11-09):
 how the other teams are called is open, for the lore developer.
 
-- **Flight deck.** Numbered Lantern spots; a team launches by boarding its bird. By day smoke
+- **Flight deck.** Numbered helicopter spots; a team launches by boarding its bird. By day smoke
   stands over the coast where the Burn has been; at night it shows orange.
 - **Hangar deck.** Where the teams wait, and where they kit up (owner, 2026-11-09). Every
   soldier has a **record**: the kit signed to their name. A soldier buys kit onto it at the
   **Arms Room** with **merits**, which the Plot pays a window team for containment work done
   before the Burn (not "Requisition", which is the pallet cost). The desks: the **Arms Room**
   (the **Quartermaster** behind a wire cage: guns, sidearms, grenades, bought off the rack),
-  the **Loadmaster** (Lantern's crew chief: he makes up each soldier's **Loadout**, what they
+  the **Loadmaster** (the helicopter crew chief: he makes up each soldier's **Loadout**, what they
   carry and what is kicked out of the door, and they sign for it before they walk up the
   ramp), **Fires** (a fire support officer: your callsign on the
   Hammer, Anvil and Shrike nets), the **Engineers** (a sapper sergeant: Doorman, Tripline,
   Concertina). Desk crew wear ship or Army working dress, never Pike grey. The four desks
   are run by the same four people every visit: the Quartermaster (a sergeant first class,
-  thirty years in arms rooms), the Loadmaster (Lantern's crew chief, who rides the door),
+  thirty years in arms rooms), the Loadmaster (the helicopter crew chief, who rides the door),
   Fires (a lieutenant) and the Engineers (a staff sergeant, a sapper). Voices and lines in
   [lore/desk_crew.md](lore/desk_crew.md).
 - **The Plot.** Control's map room under the island, lit red. The corridor chart is a paper
@@ -200,7 +220,7 @@ how the other teams are called is open, for the lore developer.
 - **The mark: HARLAN.** (2026-11-10, replaces HRD, which the owner did not like and which
   misread as NRD.) Every hull and airframe drawn from the reserve for the corridor has its
   old unit marks painted out and HARLAN sprayed over them by hand, white, in capitals: on the
-  island, both bow sides, the deck's bow end and every Lantern. It means the thing belongs to
+  island, both bow sides, the deck's bow end and every helicopter. It means the thing belongs to
   Task Force Harlan and is quarantined with it: nothing that wears the word goes back to the
   fleet until the corridor is Contained. Soldiers say it is the one promise Command ever
   wrote down.
@@ -212,15 +232,18 @@ daily stock), and the PA is procedural (no propaganda).
 
 | Cue | Line |
 |---|---|
-| Launch | "Pike, Control. Lantern on spot three, turning. Window opens on lift." |
-| Recovery | "Lantern recovering, spot two. Screening party to the deck edge." |
+| Launch | "Pike, Control. Helo on spot three, turning. Window opens on lift." |
+| Recovery | "Helo recovering, spot two. Screening party to the deck edge." |
 | Board change | (no line; the plotter's grease pencil) |
 
-## Lantern
+## The helicopter
 
-Canon as of 2026-11-09 (owner approved).
+Canon as of 2026-11-09 (owner approved). Called "Lantern" until 2026-11-11
+([Naming](#naming)); code identifiers keep that word (`LanternBird`, `Config.Lobby.Lantern`,
+`veh_lantern_*`, `lantern_rotor`), and older docs that say "LORE.md > Lantern" mean this
+section. Players read "the helicopter", and "Helo" on the radio and on signs.
 
-Every lift bird off the Carrier flies as Lantern. Each is a medium utility helo drawn from the
+Every lift bird off the Carrier is the same helicopter. Each is a medium utility helo drawn from the
 same reserve fleet as the ship: one main rotor, a tail rotor, skids, a boxy cabin and a long
 thin tail boom ending in a tall fin. It is built to carry one window team and nothing else:
 two pilots, a crew chief, four Pike on canvas seats facing the door, and the bundles at their
@@ -232,12 +255,11 @@ feet.
   The crew chiefs are the Loadmaster's people; at his desk on the hangar deck each soldier
   signs for their Loadout before boarding.
 - **No door gun.** The pintle mount is still on the door frame, empty, its arm swung inboard
-  and tied off. Lantern does not fight for its LZ. Pike holds it. When the squad needs a gun
+  and tied off. The helicopter does not fight for its LZ. Pike holds it. When the squad needs a gun
   from the air, it calls Shrike.
 - **The lamp.** A single amber lamp sits on the housing behind the rotor mast. It is lit
   whenever the rotor turns, day or night. Soldiers say it is what you look for when you have
-  thrown green smoke and cannot see the smoke. Officially the name comes from the net; nobody
-  believes that.
+  thrown green smoke and cannot see the smoke.
 - **Reserve paint.** The paint is faded, with darker patches where the old unit markings were
   painted out and HARLAN sprayed over each one, as on the ship. The bird's number is stencilled
   in white on both nose doors and on the fin. The boom is sooted behind the exhausts. There is
@@ -246,9 +268,9 @@ feet.
 - **The tally.** On the inside of the door frame, at the crew chief's shoulder, there is a
   column of grease-pencil marks: a stroke for every seat taken out, a cross for every seat
   brought home. The crosses are behind.
-- **Numbers.** "Lantern" is the callsign; the number is flight and aircraft. "Lantern 2-1" is
+- **Numbers.** "Helo" is the callsign; the number is flight and aircraft. "Helo 2-1" is
   the second flight's first bird, stencilled 21. The four birds on the Carrier's deck spots are
-  21 to 24. A bird and a spot are not tied: Control gives the spot ("Lantern on spot three")
+  21 to 24. A bird and a spot are not tied: Control gives the spot ("Helo on spot three")
   and the bird answers with its number.
 
 # Pike
@@ -260,7 +282,7 @@ Command does not send heroes up the corridor. It sends window teams: four soldie
 and the time before the Burn. On paper each one is a Task Force Harlan recovery team;
 everyone who has done it calls it "the window". Control knows a team by its callsign and a
 soldier by a number. This team is Pike: Pike One to Pike Four, numbered in boarding order.
-When a soldier goes down, Control says "Pike Three down", and whoever Lantern brings in next
+When a soldier goes down, Control says "Pike Three down", and whoever the helicopter brings in next
 is Pike Three again. The number belongs to the seat, not the man. In solo, the empty seats
 are filled by soldiers called only by their numbers: Pike Two, Pike Three, Pike Four.
 
@@ -283,8 +305,8 @@ Carrier, where kit is bought onto a soldier's record. Naming rules:
   on the net.
 - **Support weapons, emplacements and supply** take a soldier's word for the thing, with
   the designation in small type under it.
-- **Delivery:** Lantern's crew chief kicks support weapons and supply out of the starboard
-  door as a slung case or a speedball ([The Carrier > Lantern](#lantern)). Nothing falls from
+- **Delivery:** the helicopter crew chief kicks support weapons and supply out of the starboard
+  door as a slung case or a speedball ([The Carrier > The helicopter](#the-helicopter)). Nothing falls from
   orbit.
 
 | HUD name | Under it | Family |
@@ -311,8 +333,8 @@ Radio, one line per family:
 |---|---|
 | Fire mission call | "Hammer, Pike. Fire mission, my smoke, over." |
 | Fire mission answer | "Hammer. Shot, over." |
-| Supply call | "Lantern, Pike. Need a Speedball at my flare." |
-| Supply answer | "Lantern. Kicking it now." |
+| Supply call | "Helo, Pike. Need a Speedball at my flare." |
+| Supply answer | "Helo. Kicking it now." |
 | Gun run | "Shrike inbound. Mark your line." |
 
 ---

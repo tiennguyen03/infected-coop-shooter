@@ -78,7 +78,7 @@ local LobbyDesks: { Desk } = {
 	{
 		id = "loadmaster",
 		title = "LOADMASTER",
-		who = "Lantern's crew chief",
+		who = "Helicopter crew chief",
 		issues = "Your Loadout, plus ammo and medical drops",
 		talk = {
 			greetings = {

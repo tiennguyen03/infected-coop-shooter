@@ -46,6 +46,11 @@ something; never delete one without the owner.
   clip, icon, sound) lives on that item's own Config/definition row with a default. Never a
   hard-coded list of item names in a system. (2026-11-09)
 - **The lobby ship is "the Carrier"** (was "the Fallow"): easier to understand. (2026-11-09)
+- **Plain names for what players see.** "It's kind of just a multiplayer game that has lore
+  integrated in it", not a campaign: do not coin names a player would not understand. The
+  ship is the Carrier, the helicopter is the helicopter ("Helo" on the radio, not
+  "Lantern"), the Warden's lines are labelled "Warden" (not "Handset"). HARLAN and the
+  call-in names stay. The rule: `docs/LORE.md` > Naming. (2026-11-11)
 - **Two currencies: merits and tabs.** (2026-11-10; replaces the single "Credits".)
   - **Merits** are the soft currency: earned by playing (paid when a mission ends, never per
     kill) and spent at the Carrier's desks on kit: guns, grenades and call-ins, permanent

@@ -154,10 +154,11 @@ function RunManager.goHome()
 		workspace:SetAttribute(Attributes.Homebound, false)
 		workspace:SetAttribute(Attributes.ReturnsHome, false)
 		clearReady()
-		Remotes.get("BuffNotice"):FireAllClients(
-			"Control: Lantern can't lift. Stay on the pad, Pike.",
-			Messages.Notice.Radio
-		)
+		Remotes.get("BuffNotice")
+			:FireAllClients(
+				"Control: Helo can't lift. Stay on the pad, Pike.",
+				Messages.Notice.Radio
+			)
 	end)
 end
 

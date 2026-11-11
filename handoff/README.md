@@ -12,7 +12,7 @@ Last updated: 2026-11-11 by Tien + Claude.
 
 The full loop works in solo with bots: drop on Checkpoint Delta → fight the Infected →
 Resupply flare and pallet cards → Hold Position at the objective site (1 of 3 field
-upgrades) → the Warden (boss) → extraction on Lantern → OPERATION COMPLETE → ready up.
+upgrades) → the Warden (boss) → extraction by helicopter → OPERATION COMPLETE → ready up.
 
 - **Squad:** anonymous soldiers Pike One to Four; bots Pike Two to Four in solo; downed and
   revive (hold E). Bots walk and path to the leader (teleport only when stuck) and use stims,
@@ -39,12 +39,16 @@ upgrades) → the Warden (boss) → extraction on Lantern → OPERATION COMPLETE
   low-health grey/heartbeat/muffle, reload clip. Every per-item feel value sits on the gun's
   or call-in's own Config row.
 - **Lobby (Nova):** the Carrier (still "the Fallow" in code), `lobby.project.json` +
-  `src/lobby/`: hangar desks, the Loadmaster's saved Loadout, Lantern spots that lift a squad
+  `src/lobby/`: hangar desks, the Loadmaster's saved Loadout, helicopter spots that lift a squad
   into one reserved match server (`docs/sprints/LOBBY_V1_FALLOW.md`).
 - **Economy:** merits (soft) are paid when a mission ends (Win 120, Partial 60, Loss 0) onto
   the record the Carrier's desks spend from; tabs (hard, Robux or events, never power) are a
   balance on the same record with nothing to buy yet (`docs/OWNER.md`, `docs/ROADMAP.md` >
   Progression).
+- **Names (owner, 2026-11-11; Nova, this touches lobby text):** players read "the Carrier",
+  "the helicopter" / "Helo" (signs `HELO · SPOT n`, the map's pencil track, the Loadmaster is
+  the "Helicopter crew chief") and "Warden"; never "Fallow", "Lantern" or "Handset" in a
+  string. Files, Config keys and sound keys keep the old words (`docs/LORE.md` > Naming).
 - **Roblox:** the group Boomin Dev Studios (270506601) owns the game "Co-op Zombie Shooter" and
   every sound and animation. Its start place 87556879379942 holds the **lobby**; the match is
   "Checkpoint Delta" 125769854992316 (`Config.Places`).

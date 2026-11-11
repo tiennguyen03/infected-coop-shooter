@@ -11,6 +11,7 @@
 local Config = require(game:GetService("ReplicatedStorage").Shared.Config)
 
 local FallowLayout = {}
+-- Players read "the Carrier"; this module keeps the old name (docs/LORE.md > Naming).
 
 FallowLayout.HalfWidth = 35
 FallowLayout.HalfLength = 180

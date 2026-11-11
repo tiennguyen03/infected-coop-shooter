@@ -90,9 +90,9 @@ local function refreshStatus()
 	local returnsHome = workspace:GetAttribute(Attributes.ReturnsHome) == true
 	local homebound = workspace:GetAttribute(Attributes.Homebound) == true
 	if homebound then
-		text = "Lantern inbound · back to the Carrier"
+		text = "Helo inbound · back to the Carrier"
 	elseif returnsHome then
-		text = string.gsub(text, "next deployment", "Lantern lifts")
+		text = string.gsub(text, "next deployment", "Helo lifts")
 	end
 	status.Text = text
 	local button = readyButton
