@@ -101,7 +101,7 @@ match place.
   at each end. `CrewService` places NpcBody figures once (tag `Crew`, route as an attribute);
   each client walks its own copy (`CrewWalk`: one `BulkMoveTo` a frame, a leg and arm swing,
   nothing replicates) and shows a line over a head when a soldier comes within
-  `Config.Lobby.Crew.BubbleDistance` (lines in `LobbyCrew`). No prompts, no Humanoids. Routes
+  `Config.Lobby.Crew.BubbleDistance` (lines in `LobbyCrew`). No prompts, no Humanoids, no collision. Routes
   checked clear of walls and desks in a playtest.
 - **Kit on the bodies** (2026-11-10, Nova: "personality"; details by the lore developer,
   docs/lore/desk_crew.md, ship_company.md, docs/CHARACTERS.md): `NpcBody.build` takes a kit

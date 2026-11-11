@@ -76,6 +76,13 @@ function CrewService.init()
 			DRESS[crew.id] or NpcBody.Ship,
 			KIT[crew.id]
 		)
+		-- Walkers never block or shove a soldier (they move on each client, not in physics).
+		for _, part in model:GetDescendants() do
+			if part:IsA("BasePart") then
+				part.CanCollide = false
+				part.CanTouch = false
+			end
+		end
 		model:SetAttribute(Attributes.CrewId, crew.id)
 		model:SetAttribute(Attributes.CrewRoute, encode(route))
 		CollectionService:AddTag(model, Attributes.CrewTag)
