@@ -1,10 +1,10 @@
 --!strict
 -- The Arms Room counter (owner, 2026-11-09, after a GTA gun counter): talk to the Quartermaster (F)
--- and choose. "Any work going?" gets his answer (no taskings yet); "Show me the rack." turns
--- the camera to the rack on the wall behind his cage (ArmsRack): the gun under the cursor
--- slides off its pegs with a soft glow, a click frames it with its card (name, the real gun,
--- the line, on the record or not, stat bars from Rules/ArmsStats), arrows step along the rack, Back
--- steps out. All local: the camera, the slide and the card are this player's alone, so four
+-- and choose. "Show me the guns." turns the camera to the long-gun wall behind him (ArmsRack;
+-- Q or the button swaps to his glass counter): the gun under the cursor slides out with a
+-- soft glow, a click frames it with its card (name, the real gun, the line, on the record or
+-- not, stat bars from Rules/ArmsStats) in the screen the card leaves free, arrows step through
+-- every piece, Back steps out. All local: the camera, the slide and the card are this player's alone, so four
 -- soldiers can look at once. The rack is for buying (merits, after F9); equipping is the
 -- Loadmaster's (LoadmasterUI).
 
@@ -36,6 +36,7 @@ local ACTION_BACK = "ArmsRackBack"
 local ACTION_NEXT = "ArmsRackNext"
 local ACTION_PREV = "ArmsRackPrev"
 local ACTION_CHOOSE = "ArmsRackChoose"
+local ACTION_VIEW = "ArmsRackView"
 -- The talk choices are numbered on screen, so the number keys pick them too.
 local CHOICE_KEYS: { [Enum.KeyCode]: number } = {
 	[Enum.KeyCode.One] = 1,
@@ -58,7 +59,7 @@ local hovered: Model? = nil
 local selected = 0 -- index into `order` while inspecting
 local bases: { [Model]: CFrame } = {}
 local glow: Highlight? = nil
-local hidden: { BasePart } = {}
+local hidden: { Instance } = {}
 local talkCloseAt = 0
 
 -- --------------------------------------------------------------- the rack in the world
@@ -67,10 +68,18 @@ local function rackFolder(): Instance?
 	return desks and desks:FindFirstChild("ArmsRack")
 end
 
-local function board(): BasePart?
+-- The back of a display ("wall" or "counter"; ArmsRack): the overview frames it.
+local function display(which: string): BasePart?
 	local folder = rackFolder()
-	local part = folder and folder:FindFirstChild("RackBoard")
-	return if part and part:IsA("BasePart") then part else nil
+	if not folder then
+		return nil
+	end
+	for _, child in folder:GetChildren() do
+		if child:IsA("BasePart") and child:GetAttribute(Attributes.RackDisplay) == which then
+			return child
+		end
+	end
+	return nil
 end
 
 local function gun(id: string): Model?
@@ -79,10 +88,10 @@ local function gun(id: string): Model?
 	return if model and model:IsA("Model") then model else nil
 end
 
--- Out of the board, into the hangar.
-local function outward(): Vector3
-	local part = board()
-	return if part then part.CFrame.RightVector else Vector3.new(1, 0, 0)
+-- The way a piece or a display faces: toward whoever looks at it.
+local function faceOf(thing: Instance): Vector3
+	local face = thing:GetAttribute(Attributes.RackFace)
+	return if typeof(face) == "Vector3" then face.Unit else Vector3.new(1, 0, 0)
 end
 
 local function slide(model: Model, forward: number)
@@ -97,7 +106,7 @@ local function slide(model: Model, forward: number)
 	value.Changed:Connect(function(cframe)
 		model:PivotTo(cframe)
 	end)
-	local tween = TweenService:Create(value, SLIDE, { Value = base + outward() * forward })
+	local tween = TweenService:Create(value, SLIDE, { Value = base + faceOf(model) * forward })
 	tween.Completed:Once(function()
 		value:Destroy()
 	end)
@@ -143,16 +152,19 @@ local function pick(screen: Vector2): Model?
 	if not (folder and camera) then
 		return nil
 	end
+	-- Only the Hits boxes: each is a piece's whole place and never moves, so the pick does
+	-- not flicker as a gun slides out under the cursor.
+	local hits = folder:FindFirstChild("Hits")
+	if not hits then
+		return nil
+	end
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Include
-	params.FilterDescendantsInstances = { folder }
+	params.FilterDescendantsInstances = { hits }
 	local ray = camera:ViewportPointToRay(screen.X, screen.Y)
-	local hit = Workspace:Raycast(ray.Origin, ray.Direction * 40, params)
-	local part = hit and hit.Instance
-	while part and part.Parent ~= folder do
-		part = part.Parent
-	end
-	return if part and part:IsA("Model") and table.find(order, part.Name) then part else nil
+	local hit = Workspace:Raycast(ray.Origin, ray.Direction * 60, params)
+	local id = hit and hit.Instance.Name
+	return if id and table.find(order, id) then gun(id) else nil
 end
 
 -- --------------------------------------------------------------- camera
@@ -165,37 +177,8 @@ local function tweenCamera(cframe: CFrame, fov: number)
 	TweenService:Create(camera, EASE, { CFrame = cframe, FieldOfView = fov }):Play()
 end
 
--- Back far enough that a box of `half` (studs, wide x tall) fills the view at `fov`.
-local function fitDistance(half: Vector2, fov: number): number
-	local camera = Workspace.CurrentCamera
-	local viewport = if camera then camera.ViewportSize else Vector2.new(16, 9)
-	local aspect = viewport.X / math.max(viewport.Y, 1)
-	local tanHalf = math.tan(math.rad(fov) / 2)
-	return math.max(half.Y / tanHalf, half.X / (tanHalf * aspect))
-end
-
-local function overview()
-	local part = board()
-	if not part then
-		return
-	end
-	local half = Vector2.new(part.Size.Z / 2 + TUNING.Margin, part.Size.Y / 2 + TUNING.Margin)
-	local distance = math.min(fitDistance(half, TUNING.RackFov), TUNING.MaxRackDistance)
-	local eye = part.Position + outward() * distance
-	tweenCamera(CFrame.lookAt(eye, part.Position), TUNING.RackFov)
-end
-
-local function frameGun(model: Model)
-	local size = model:GetExtentsSize()
-	local length = math.max(size.X, size.Z)
-	local target = (bases[model] or model:GetPivot()).Position + outward() * TUNING.SlideOut
-	local half = Vector2.new(length / 2 + TUNING.Margin * 0.5, size.Y / 2 + TUNING.Margin * 0.5)
-	local distance = math.max(fitDistance(half, TUNING.InspectFov), TUNING.MinInspectDistance)
-	-- Aim a little right of the gun so the card on the right does not cover it.
-	local side = outward():Cross(Vector3.new(0, 1, 0)).Unit
-	local aim = target - side * (length * TUNING.InspectShift)
-	tweenCamera(CFrame.lookAt(aim + outward() * distance, aim), TUNING.InspectFov)
-end
+-- The display the overview shows ("wall" or "counter").
+local showing = "wall"
 
 -- --------------------------------------------------------------- the screen
 local gui = HudTheme.gui("ArmsRackUI", 7)
@@ -310,7 +293,7 @@ local bar = Instance.new("Frame")
 bar.BackgroundTransparency = 1
 bar.AnchorPoint = Vector2.new(0.5, 1)
 bar.Position = UDim2.new(0.5, 0, 1, -HudTheme.Margin * 2)
-bar.Size = UDim2.fromOffset(360, 40)
+bar.Size = UDim2.fromOffset(460, 40)
 bar.Visible = false
 bar.Parent = gui
 local barList = Instance.new("UIListLayout")
@@ -325,6 +308,9 @@ local backButton = button(bar, "Back", 140)
 backButton.LayoutOrder = 2
 local nextButton = button(bar, "▶", 56)
 nextButton.LayoutOrder = 3
+-- Between the long-gun wall and the glass counter (Q).
+local viewButton = button(bar, "", 190)
+viewButton.LayoutOrder = 4
 
 -- The card: the gun, its status, its line, its numbers.
 local card = HudTheme.rect(
@@ -392,6 +378,93 @@ local function statRow(row: CardRow, order_: number)
 end
 
 HudTheme.parent(gui)
+
+-- The camera that shows a thing of `size` (studs: across, up) at `target`, looking against
+-- `face`, filling the screen rectangle `rect` (pixels: left, top, right, bottom) with `margin`
+-- studs of air: back far enough for both sides to fit, then sideways and up so the thing sits
+-- in the middle of the rectangle, not of the screen.
+local function fitView(
+	target: Vector3,
+	face: Vector3,
+	size: Vector2,
+	fov: number,
+	rect: Rect,
+	minDistance: number
+): CFrame
+	local camera = Workspace.CurrentCamera
+	local viewport = if camera then camera.ViewportSize else Vector2.new(1600, 900)
+	local tanHalf = math.tan(math.rad(fov) / 2)
+	-- Air round it: a share of its size, so a pistol fills the view as a rifle does.
+	local margin = math.max(size.X, size.Y) * TUNING.Margin
+	-- Studs across the screen's height at distance d: 2 d tanHalf.
+	local distance = math.max(
+		(size.X + margin * 2) * viewport.Y / (2 * tanHalf * math.max(rect.Width, 1)),
+		(size.Y + margin * 2) * viewport.Y / (2 * tanHalf * math.max(rect.Height, 1)),
+		minDistance
+	)
+	local studsPerPixel = 2 * distance * tanHalf / viewport.Y
+	local centre = (rect.Min + rect.Max) / 2
+	local right = (centre.X - viewport.X / 2) * studsPerPixel
+	local down = (centre.Y - viewport.Y / 2) * studsPerPixel
+	local look = CFrame.lookAt(target + face * distance, target)
+	return look - look.RightVector * right + look.UpVector * down
+end
+
+-- The screen left free by the header (top left), the hint and buttons (bottom) and, when
+-- `card`, the card (right), in viewport pixels.
+local function freeRect(withCard: boolean): Rect
+	local camera = Workspace.CurrentCamera
+	local viewport = if camera then camera.ViewportSize else Vector2.new(1600, 900)
+	local inset = gui.AbsolutePosition.Y -- the HUD sits under the top bar
+	local edge = HudTheme.Margin * 2
+	local top = rackHeader.AbsolutePosition.Y + rackHeader.AbsoluteSize.Y + inset + edge
+	local bottom = hint.AbsolutePosition.Y + inset - edge
+	local right = viewport.X - edge
+	if withCard then
+		right = math.max(card.AbsolutePosition.X - edge, viewport.X * 0.45)
+	end
+	-- Never squeeze the view below half the screen's height.
+	if bottom - top < viewport.Y * 0.5 then
+		top, bottom = viewport.Y * 0.2, viewport.Y * 0.8
+	end
+	return Rect.new(edge, top, right, bottom)
+end
+
+local function overview()
+	local part = display(showing)
+	if not part then
+		return
+	end
+	local span = part:GetAttribute(Attributes.RackSpan)
+	local size = if typeof(span) == "Vector2" then span else Vector2.new(part.Size.Z, part.Size.Y)
+	tweenCamera(
+		fitView(part.Position, faceOf(part), size, TUNING.RackFov, freeRect(false), 0),
+		TUNING.RackFov
+	)
+end
+
+-- Frames a piece in the part of the screen the card leaves free (left of it), the whole gun
+-- in view, at most InspectHeightShare of the screen's height.
+local function frameGun(model: Model)
+	local face = faceOf(model)
+	local span = model:GetAttribute(Attributes.RackSpan)
+	local size = if typeof(span) == "Vector2" then span else Vector2.new(3, 1)
+	local target = (bases[model] or model:GetPivot()).Position + face * TUNING.SlideOut
+	local rect = freeRect(true)
+	local camera = Workspace.CurrentCamera
+	local height = (if camera then camera.ViewportSize.Y else 900) * TUNING.InspectHeightShare
+	local middle = (rect.Min.Y + rect.Max.Y) / 2
+	rect = Rect.new(
+		rect.Min.X,
+		math.max(rect.Min.Y, middle - height / 2),
+		rect.Max.X,
+		math.min(rect.Max.Y, middle + height / 2)
+	)
+	tweenCamera(
+		fitView(target, face, size, TUNING.InspectFov, rect, TUNING.MinInspectDistance),
+		TUNING.InspectFov
+	)
+end
 
 -- --------------------------------------------------------------- the catalog
 local function statsOf(id: string): ArmsStats.Stats
@@ -487,20 +560,35 @@ local function setMovement(enabled: boolean)
 end
 
 local function hideQuartermaster(hide: boolean)
-	for _, part in hidden do
-		part.LocalTransparencyModifier = 0
+	for _, thing in hidden do
+		if thing:IsA("BasePart") then
+			thing.LocalTransparencyModifier = 0
+		elseif thing:IsA("BillboardGui") then
+			thing.Enabled = true
+		end
 	end
 	table.clear(hidden)
 	if not (hide and desk) then
 		return
 	end
+	-- Him, his sign, and this soldier's own body (it stands between the camera and the wall).
 	local desks = Workspace:FindFirstChild("Desks")
-	local figure = desks and desks:FindFirstChild(desk.title)
-	if figure then
-		for _, part in figure:GetDescendants() do
-			if part:IsA("BasePart") then
-				part.LocalTransparencyModifier = 1
-				table.insert(hidden, part)
+	local figures: { Instance } = {}
+	local quartermaster = desks and desks:FindFirstChild(desk.title)
+	if quartermaster then
+		table.insert(figures, quartermaster)
+	end
+	if player.Character then
+		table.insert(figures, player.Character)
+	end
+	for _, figure in figures do
+		for _, thing in figure:GetDescendants() do
+			if thing:IsA("BasePart") then
+				thing.LocalTransparencyModifier = 1
+				table.insert(hidden, thing)
+			elseif thing:IsA("BillboardGui") and thing.Enabled then
+				thing.Enabled = false
+				table.insert(hidden, thing)
 			end
 		end
 	end
@@ -516,6 +604,8 @@ local function showOverlay()
 	bar.Visible = inRack
 	prevButton.Visible = mode == "inspect"
 	nextButton.Visible = mode == "inspect"
+	viewButton.Visible = mode == "rack"
+	viewButton.Text = if showing == "wall" then "The counter  >" else "<  Long guns"
 	card.Visible = mode == "inspect"
 end
 
@@ -532,6 +622,9 @@ local function backAction(_: string, state: Enum.UserInputState): Enum.ContextAc
 			end
 			setGlow(nil)
 			selected = 0
+			-- Back to the display that piece is on.
+			local on = model and model:GetAttribute(Attributes.RackDisplay)
+			showing = if type(on) == "string" then on else showing
 			overview()
 			showOverlay()
 		elseif mode == "rack" then
@@ -539,6 +632,17 @@ local function backAction(_: string, state: Enum.UserInputState): Enum.ContextAc
 		end
 	end
 	return Enum.ContextActionResult.Sink
+end
+
+local function viewAction(_: string, state: Enum.UserInputState): Enum.ContextActionResult
+	if state == Enum.UserInputState.Begin and mode == "rack" then
+		hover(nil)
+		showing = if showing == "wall" then "counter" else "wall"
+		overview()
+		showOverlay()
+		return Enum.ContextActionResult.Sink
+	end
+	return Enum.ContextActionResult.Pass
 end
 
 local function stepAction(step: number): (string, Enum.UserInputState) -> Enum.ContextActionResult
@@ -575,16 +679,17 @@ end
 
 local function enterRack()
 	local rack = desk and desk.rack
-	if not rack or not board() then
+	if not rack or not display("wall") then
 		return
 	end
 	mode = "rack"
+	showing = "wall"
 	rackTitle.Text = rack.header
 	rackSay.Text = `"{(desk :: LobbyDesks.Desk).talk.openLine}"`
 	rackMerits.Text = `{RecordClient.merits()} {rack.currency}`
 	hint.Text = if HudTheme.isTouch()
 		then "Tap a weapon to look closer"
-		else "Click a weapon to look closer   ·   Backspace to step back"
+		else "Click a weapon to look closer   ·   Q for the other display   ·   Backspace to step back"
 	ContextActionService:UnbindAction(ACTION_CHOOSE)
 	setMovement(false)
 	if prompt then
@@ -598,6 +703,13 @@ local function enterRack()
 		false,
 		Enum.KeyCode.Backspace,
 		Enum.KeyCode.ButtonB
+	)
+	ContextActionService:BindAction(
+		ACTION_VIEW,
+		viewAction,
+		false,
+		Enum.KeyCode.Q,
+		Enum.KeyCode.ButtonY
 	)
 	ContextActionService:BindAction(
 		ACTION_NEXT,
@@ -631,6 +743,7 @@ function leaveRack()
 	ContextActionService:UnbindAction(ACTION_BACK)
 	ContextActionService:UnbindAction(ACTION_NEXT)
 	ContextActionService:UnbindAction(ACTION_PREV)
+	ContextActionService:UnbindAction(ACTION_VIEW)
 	local camera = Workspace.CurrentCamera
 	if camera then
 		camera.CameraType = Enum.CameraType.Custom
@@ -770,6 +883,9 @@ function ArmsRackUI.init()
 	end)
 	nextButton.Activated:Connect(function()
 		stepAction(1)(ACTION_NEXT, Enum.UserInputState.Begin)
+	end)
+	viewButton.Activated:Connect(function()
+		viewAction(ACTION_VIEW, Enum.UserInputState.Begin)
 	end)
 
 	-- Hover with the mouse; click or tap to look closer.

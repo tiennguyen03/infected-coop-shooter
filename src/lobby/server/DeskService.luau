@@ -51,22 +51,8 @@ local function props(folder: Folder, id: string, frame: CFrame)
 		Build.part(folder, name, size, frame * CFrame.new(offset), color, options)
 	end
 	if id == "arms_room" then
-		-- The wire cage around the Quartermaster, open at the back: the rack on the hangar wall
-		-- behind him is the cage's back (ArmsRack).
-		for x = -5, 5, 1.25 do
-			prop("CageBar", Vector3.new(0.15, 9, 0.15), Vector3.new(x, 4.5, -2.6), WIRE)
-		end
-		for z = -1.35, 5.15, 1.3 do
-			prop("CageBar", Vector3.new(0.15, 9, 0.15), Vector3.new(-5, 4.5, z), WIRE)
-			prop("CageBar", Vector3.new(0.15, 9, 0.15), Vector3.new(5, 4.5, z), WIRE)
-		end
-		prop(
-			"CageTop",
-			Vector3.new(10.4, 0.2, 8.4),
-			Vector3.new(0, 9, 1.6),
-			WIRE,
-			{ transparency = 0.4 }
-		)
+		-- The whole corner: the glass counter, the long-gun wall, the fence (ArmsRack,
+		-- FallowLayout.ArmsRoom).
 		ArmsRack.build(folder)
 	elseif id == "loadmaster" then
 		-- Slung cases waiting for the door.

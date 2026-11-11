@@ -84,7 +84,7 @@ export type DeskPlace = {
 	id: string, -- LobbyDesks id
 	feet: Vector3, -- where the person stands
 	facing: Vector3, -- the way they face (flat)
-	counter: boolean?, -- false: no counter, the sign floats over them (the Plot's watch officer)
+	counter: boolean?, -- false: no stock counter, the sign floats over them
 }
 
 -- Hangar desks (LobbyDesks), between the spawn and the ramp's foot: the Arms Room cage on the
@@ -94,8 +94,9 @@ export type DeskPlace = {
 FallowLayout.Desks = {
 	{
 		id = "arms_room",
-		feet = Vector3.new(-27, FallowLayout.HangarY, 105),
+		feet = Vector3.new(-26, FallowLayout.HangarY, 124),
 		facing = Vector3.new(1, 0, 0),
+		counter = false, -- his counter is the glass case (ArmsRack, FallowLayout.ArmsRoom)
 	},
 	{
 		id = "engineers",
@@ -122,17 +123,41 @@ FallowLayout.Desks = {
 	},
 } :: { DeskPlace }
 
--- The Arms Room's rack (ArmsRack, ArmsRackUI): a board on the hangar's port wall behind the
--- Quartermaster's cage. Long guns hang in a column, muzzles toward the bow; sidearms and grenades in
--- a column beside them. The board's outward face is +X (into the hangar).
-FallowLayout.ArmsRack = {
-	board = { x0 = -32.95, x1 = -32.75, z0 = 100.5, z1 = 109.5, y0 = 21.4, y1 = 28.6 },
-	out = 0.45, -- studs the guns hang off the board
-	longZ = 103.4,
-	-- one row per long gun in the Arms Room (WeaponDefinitions.PRIMARIES: seven today)
-	longRows = { 27.9, 26.9, 25.9, 24.9, 23.9, 22.9, 21.9 },
-	sideZ = 107.6,
-	sideRows = { 26.6, 25.0, 23.4 },
+-- The Arms Room fills the hangar's port fore corner (Nova, 2026-11-10: "use that entire corner
+-- for him"; ArmsRack builds it, ArmsRackUI looks at it). The Quartermaster stands behind a glass
+-- counter (Nova: "the glass case would act as the desk, like in GTA") holding sidearms, melee and
+-- grenades; the long guns hang on a wall along the hull behind him. Wire fence closes the corner
+-- off at the counter's ends. Every display has empty places to grow into.
+FallowLayout.ArmsRoom = {
+	fenceX = -23.6, -- the counter's line: the corner is X < this, Z > aftZ
+	aftZ = 111,
+	-- The long-gun wall: a board on the hull, guns hung in cells, muzzles toward the bow.
+	wall = {
+		x = -32.75, -- the board's face
+		z0 = 112.5,
+		z1 = 138.5,
+		y0 = 21,
+		y1 = 30.6,
+		columns = 4,
+		rows = 8,
+		out = 0.45, -- studs the guns hang off the board
+	},
+	-- The glass counter: its front (the soldier's side) at x1, the pieces on a felt bed tilted
+	-- toward the soldier, two rows deep. Sections from the soldier's left (+Z) to right.
+	counter = {
+		x0 = -24.8,
+		x1 = -22.4,
+		z0 = 116,
+		z1 = 132,
+		top = 23.4,
+		bedY = 22.25, -- the bed's centre
+		tilt = 22, -- degrees the bed leans toward the soldier
+		sections = {
+			{ holds = "sidearms", length = 7, pitch = 1.4 },
+			{ holds = "melee", length = 4.5, pitch = 2.2 },
+			{ holds = "grenades", length = 4.5, pitch = 0.9 },
+		},
+	},
 }
 
 -- Ship art (assets/3d/build/fallow.py, placed by FallowArt).

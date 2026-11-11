@@ -104,6 +104,12 @@ local Attributes = table.freeze({
 	CrewTag = "Crew",
 	CrewId = "CrewId",
 	CrewRoute = "CrewRoute",
+	-- Lobby place: an Arms Room piece (ArmsRack) and its display's back carry which display
+	-- they are on ("wall" or "cabinet") and the way they face (Vector3); a piece also its
+	-- length and height (Vector2, studs). Read by the client's ArmsRackUI to frame them.
+	RackDisplay = "RackDisplay",
+	RackFace = "RackFace",
+	RackSpan = "RackSpan",
 
 	-- Names built from a slot or a clip, so they stay in one place too.
 	-- Player: the upgrade in a field-upgrade slot (UpgradeDefinitions.SLOTS).

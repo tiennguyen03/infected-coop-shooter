@@ -71,7 +71,7 @@ match place.
   retries, then "Lantern couldn't lift". In Studio teleports can't run: the panel says so and
   the spot resets after 6 s. Screen: `LaunchUI` (spot, who is aboard against the squad size, countdown, the picker for the
   first aboard).
-- **Four hangar desks** (`DeskService`, data `LobbyDesks`): Arms Room (cage, port side),
+- **Four hangar desks** (`DeskService`, data `LobbyDesks`): Arms Room (the port fore corner),
   Engineers (wire spools, starboard), Loadmaster (slung cases at the foot of the ramp), Fires
   (at the Plot door). Block crew figures in working dress, a counter, a sign, an F "Talk" prompt. The
   **Every desk talks the same way** (dialog rewrite 2026-11-10, Nova and Tien: "too cryptic,
@@ -250,25 +250,30 @@ The rack is where guns are **bought** (merits, onto the soldier's record; owner 
 - **Talk** (F on the Quartermaster, `ArmsRackUI` for a desk with a `rack` in `LobbyDesks`): a
   greeting, then 1 "Show me the guns." (the rack), 2 "How do I get merits?", 3 "That's all." Wording by the lore developer: BUY and a price in
   MERITS may show; never shop, store, wares, sell, lock or unlock.
-- **The rack** (`ArmsRack`, `FallowLayout.ArmsRack`): a board on the hangar's port wall behind
-  the cage (the cage lost its back row of bars and the old RifleRack block). Every catalog item
-  hangs on two pegs in catalog order: the seven long guns in a column, the sidearms and the
-  frag beside them. Each gun hangs its own held mesh (its row's `Model`, the one the match puts
-  in the hands; 2026-11-09), with a block silhouette until it loads or when it has none (the
-  frag). A new gun needs no rack edit, only a row; an eighth long gun needs a row added
-  to `FallowLayout.ArmsRack.longRows`.
-- **Looking** (all local to the player, so four can look at once): the camera glides inside
-  the cage to frame the whole board (movement off, the prompt off, the Quartermaster hidden for this
-  player only). The gun under the cursor slides 0.6 off its pegs with a soft yellow rim (a
-  Highlight; the owner asked for the glow, the lore pass wanted none, so it stays faint). Click
-  or tap frames that gun left of centre with its card on the right: name, the real gun, ON YOUR
-  RECORD (the default kit, `ArmsRoom.default()`) or NOT ON YOUR RECORD with "Merit book not open", its line, and
-  six bars from `Rules/ArmsStats` (damage per pull, fire rate, magazine, reload, range,
-  aimed accuracy, each against the best on the rack); the frag shows its numbers without bars.
-  ◀ ▶ (or arrow keys, A/D, the d-pad) step along the rack; Back (or Backspace, B) steps back to
-  the board, and again to walk away. Tuning in `Config.Lobby.Rack`.
-- **Previews**: `assets/3d/build/previews/rack_view.png` (what the camera frames, a hovered gun
-  forward) and `rack_cage.png` (the cage from the walk).
+- **The corner** (`ArmsRack`, `FallowLayout.ArmsRoom`; Nova 2026-11-10: "use that entire
+  corner for him", "the glass case would act as the desk, like in GTA"): the Arms Room fills
+  the hangar's port fore corner (X -33..-23.6, Z 111..140), fenced off with wire at the ends
+  of a 16-stud **glass counter** (Z 116..132) the Quartermaster stands behind (-26, 124). The
+  counter holds sidearms, melee and grenades on a felt bed tilted toward the soldier, two rows
+  deep, in labelled sections (sidearms 10 places, melee 4, grenades 10); no melee weapon exists
+  yet, so its section is empty. Behind him the **long-gun wall** on the hull: a board 26 x 9.6
+  with a lamp over it and a gun rail under each of 8 rows, 4 guns a row (32 places, 7 used). Each
+  gun lies or hangs as its own held mesh (its row's `Model`; a block silhouette until it loads,
+  or for the frag), muzzles to the soldier's left. A new gun needs no edit, only a row.
+- **Looking** (all local to the player, so four can look at once): "Show me the guns." frames
+  the wall from over the counter; Q or the button swaps to the counter, seen from above through
+  the glass (movement off, the prompt off, the Quartermaster, his sign and the soldier's own
+  body hidden for this player). The cursor aims at invisible boxes, one per place (the `Hits`
+  folder, the size of the whole place), so the hover never flickers or picks a neighbour as a
+  gun slides out; the gun under it slides 0.6 out with a soft yellow rim. A click frames it in
+  the screen the card leaves free (left of the card, under the header, over the buttons): far
+  enough back for its whole length to fit that width, and no more than 40% of the screen's
+  height (it used to fit the whole screen and then shift, leaving half the gun off screen). The
+  card on the right: name, the real gun, ON YOUR RECORD or NOT ON YOUR RECORD with the price
+  and BUY, its line, six bars from `Rules/ArmsStats`; the frag shows its numbers without bars.
+  ◀ ▶ (or arrow keys, A/D, the d-pad) step through every piece on both displays; Back (or
+  Backspace, B) steps back to that piece's display, and again to walk away. Tuning in
+  `Config.Lobby.Rack`.
 
 ## Plan view (studs; +Z bow, +X starboard)
 
@@ -276,7 +281,8 @@ The rack is where guns are **bought** (merits, onto the soldier's record; owner 
  Z  210  bow ───────────────────────────────
     140  ── hangar bulkhead (fore) ──
     125  HANGAR: spawn (0, 125), facing aft
-    105  Arms Room (-27) ←walk→ Engineers (27)
+    124  Arms Room: the port fore corner, counter at X -23.6 (Quartermaster -26)
+    105  Engineers (27)
      88  Loadmaster (-2), facing the spawn
      80  ┌ramp foot (hangar)┐ well X -30..-10
      20  └ramp top (deck)───┘ comes up facing aft
