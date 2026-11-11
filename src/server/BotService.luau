@@ -26,6 +26,7 @@ local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
 local DamageService = require(script.Parent.DamageService)
 local PlayerSetup = require(script.Parent.PlayerSetup)
 local ProjectileServer = require(script.Parent.ProjectileServer)
+local ReviveAnimService = require(script.Parent.ReviveAnimService)
 local Squad = require(script.Parent.Squad)
 
 local ENEMY_TAG = "Enemy"
@@ -448,6 +449,7 @@ local function tryRevive(bot: Bot, humanoid: Humanoid, root: BasePart): boolean
 		return true
 	end
 	humanoid:MoveTo(root.Position)
+	ReviveAnimService.hold(bot.member, target) -- kneel and treat while the hold runs
 	bot.reviveProgress += settings.ThinkInterval
 	if bot.reviveProgress >= Config.Downed.ReviveHold then
 		Squad.revive(target, bot.member)
@@ -530,6 +532,11 @@ local function think(bot: Bot, now: number, params: RaycastParams)
 	local downedTrack = bot.tracks.downed
 	if downedTrack and downedTrack.IsPlaying then
 		downedTrack:Stop(0.3)
+	end
+	-- Pulling a squadmate up, or getting up after a revive: stand still while the clip plays.
+	if ReviveAnimService.busy(model) then
+		humanoid:MoveTo(root.Position)
+		return
 	end
 	-- Knocked down (Squad.knock): on the ground until the attribute clears; the fall and
 	-- the get-up play at the rates that fit the knockdown.

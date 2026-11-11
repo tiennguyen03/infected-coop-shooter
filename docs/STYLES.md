@@ -498,7 +498,12 @@ sprint that blend four directions, shouldered aim while the trigger is held, a s
 per shot, a flinch on damage, a fall on death. Upper-body clips (aim, fire, hit, reload,
 throw) leave the legs to the locomotion clip. Each Infected type has its own gait, attack,
 flinch and death; locomotion rate scales with ground speed so feet do not slide
-(`Config.Animations.MoveClipSpeed`). The grenade ghost (hold G) is a Neon ring in the accent
+(`Config.Animations.MoveClipSpeed`). The revive (`Config.ReviveAnimation`) reuses three
+clips, the crouch idle as the kneel, the last frame of the knockdown as the casualty on
+their back, the get-up, and solves the reviver's arms onto the casualty's chest in code
+(two-bone IK over the clip, per client), because no clip can reach a chest that lies
+somewhere different every time; a soft gear rustle from the `player_gear` bank while they
+work. Its poses were set from the clip numbers and have not been tuned by eye yet. The grenade ghost (hold G) is a Neon ring in the accent
 orange (`rgb(255,150,60)`) plus a ball at the landing point.
 
 ---
