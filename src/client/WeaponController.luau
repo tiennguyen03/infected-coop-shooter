@@ -30,6 +30,8 @@ local WeaponController = {}
 
 local isFiring = false
 local isAiming = false
+local aimButton = false -- the right mouse button is down
+local aimHeld = false -- a dev tool holds the sights up (WeaponController.holdAim)
 local triggerSpent = false -- a semi-auto round went out on this press
 local lastFireTime = 0
 local lastReloadRequest = 0
@@ -237,15 +239,25 @@ local function tryFire()
 	Remotes.get("FireWeapon"):FireServer(origin, direction.Unit, isAiming, pellets)
 	AnimationController.onShot()
 	if not pellets then
-		drawTracer(origin, aimPoint)
+		-- Behind a scope picture the tracer starts well out (Sights.Scope.TracerStart).
+		local from = origin
+		if shown and FirstPersonView.isHidden() then
+			local out = math.min(direction.Magnitude / 2, Config.Weapon.Sights.Scope.TracerStart)
+			from = origin + direction.Unit * out
+		end
+		drawTracer(from, aimPoint)
 	end
 
 	-- Local-only muzzle flash and shot sound for instant feedback.
 	SoundFX.gunshot(weapon.Sound)
 	local flash = Instance.new("Part")
 	flash.Shape = Enum.PartType.Ball
-	-- In first person the flash shrinks with the gun on screen (Config.Camera.FirstPerson.Scale).
-	local flashScale = if shown then Config.Camera.FirstPerson.Scale else 1
+	-- In first person the flash shrinks with the gun on screen (FirstPersonView.scale); behind
+	-- a scope picture only its light shows, not a ball across the magnified lens.
+	local flashScale = if shown then FirstPersonView.scale() else 1
+	if shown and FirstPersonView.isHidden() then
+		flash.Transparency = 1
+	end
 	flash.Size = Vector3.new(0.7, 0.7, 0.7) * flashScale
 	flash.Position = origin + direction.Unit * 1.5 * flashScale
 	flash.Anchored = true
@@ -263,6 +275,12 @@ local function tryFire()
 	task.delay(0.05, function()
 		flash:Destroy()
 	end)
+end
+
+-- Holds the sights up without the mouse button (the dev sight tour, SightTour).
+function WeaponController.holdAim(on: boolean)
+	aimHeld = on
+	setAiming(on or aimButton)
 end
 
 function WeaponController.init()
@@ -302,6 +320,7 @@ function WeaponController.init()
 			triggerSpent = false
 			AnimationController.setAiming(true)
 		elseif input.UserInputType == Enum.UserInputType.MouseButton2 then
+			aimButton = true
 			setAiming(true)
 		elseif input.KeyCode == Enum.KeyCode.R then
 			WeaponController.requestReload()
@@ -313,7 +332,8 @@ function WeaponController.init()
 			isFiring = false
 			AnimationController.setAiming(isAiming)
 		elseif input.UserInputType == Enum.UserInputType.MouseButton2 then
-			setAiming(false)
+			aimButton = false
+			setAiming(aimHeld)
 		end
 	end)
 

@@ -25,6 +25,7 @@ local WeaponDefinitions =
 local UpgradeDefinitions =
 	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("UpgradeDefinitions"))
 local CameraController = require(script.Parent.CameraController)
+local SightTour = require(script.Parent.SightTour)
 
 local CREATOR_USER_ID = 67169996
 local TOGGLE_KEY = Enum.KeyCode.F1
@@ -146,7 +147,8 @@ local function tabs(): { Tab }
 	end
 
 	-- GUNS: every gun row, by slot.
-	local primaries: { Action } = {}
+	-- First person down the sights of every gun in turn (SightTour; F10 with the panel shut).
+	local primaries: { Action } = { { label = "Sight tour (F10)", run = SightTour.toggle } }
 	local sidearms: { Action } = {}
 	for _, id in WeaponDefinitions.allIds() do
 		local definition = WeaponDefinitions.get(id)

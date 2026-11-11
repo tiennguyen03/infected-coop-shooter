@@ -66,9 +66,7 @@ type MeshDef = {
 	-- A held gun (wpn_*): the barrel tip relative to the grip (Roblox axes, barrel along -Z);
 	-- PlayerSetup puts the Muzzle there. `offset` is the bounds centre from the grip.
 	muzzle: Vector3?,
-	-- A held gun with modelled irons: the sight line's point at the rear sight, from the grip
-	-- (Roblox axes). PlayerSetup puts a Sight part there; first person looks through it.
-	sight: Vector3?,
+	-- (Its sights' two points are on the gun's row: Config.Weapons.<id>.Sight.)
 	-- The earlier upload that stands in while meshId is "" (see the header). At upload:
 	-- paste the new meshId and delete the fallback.
 	fallback: { meshId: string, size: Vector3, fidelity: Enum.CollisionFidelity? }?,
@@ -112,21 +110,18 @@ local MESHES: { [string]: MeshDef } = {
 		size = Vector3.new(0.25, 0.75, 1),
 		offset = Vector3.new(0, 0.088, -0.258),
 		muzzle = Vector3.new(0, 0.34, -0.76),
-		sight = Vector3.new(0, 0.45, -0.02),
 	},
 	wpn_sniper = {
 		meshId = "rbxassetid://71899784449648",
 		size = Vector3.new(0.47, 1.07, 3.65),
 		offset = Vector3.new(0.112, 0.246, -0.795),
 		muzzle = Vector3.new(0, 0.34, -2.62),
-		sight = Vector3.new(0, 0.62, -0.62),
 	},
 	wpn_goose = {
 		meshId = "rbxassetid://91078392816733",
 		size = Vector3.new(0.62, 0.94, 3.03),
 		offset = Vector3.new(-0.073, 0.202, -0.078),
 		muzzle = Vector3.new(0, 0.42, -1.58),
-		sight = Vector3.new(-0.3, 0.54, -1.08),
 	},
 	-- The six original guns (guns.py, 2026-11-09); until then they all wore wpn_rifle. The five
 	-- long guns rebuilt 2026-11-10 (Nova: "clean up the guns"): tapered stocks, curved magazines.
@@ -136,42 +131,36 @@ local MESHES: { [string]: MeshDef } = {
 		size = Vector3.new(0.25, 1.16, 3.08),
 		offset = Vector3.new(0.012, 0.083, -0.48),
 		muzzle = Vector3.new(0, 0.36, -2.02),
-		sight = Vector3.new(0, 0.615, 0.04),
 	},
 	wpn_mp5 = {
 		meshId = "rbxassetid://97053083297242",
 		size = Vector3.new(0.24, 0.97, 2.2),
 		offset = Vector3.new(-0.02, 0.161, -0.39),
 		muzzle = Vector3.new(0, 0.32, -1.49),
-		sight = Vector3.new(0, 0.585, 0.05),
 	},
 	wpn_m249 = {
 		meshId = "rbxassetid://126749782608669",
 		size = Vector3.new(0.32, 0.98, 2.94),
 		offset = Vector3.new(-0.043, 0.223, -0.42),
 		muzzle = Vector3.new(0, 0.38, -1.89),
-		sight = Vector3.new(0, 0.68, 0.03),
 	},
 	wpn_mossberg = {
 		meshId = "rbxassetid://74477534761633",
 		size = Vector3.new(0.26, 0.8, 2.86),
 		offset = Vector3.new(-0.025, 0.132, -0.388),
 		muzzle = Vector3.new(0, 0.42, -1.8),
-		sight = Vector3.new(0, 0.5, 0.1),
 	},
 	wpn_m110 = {
 		meshId = "rbxassetid://87592748941938",
 		size = Vector3.new(0.23, 1.11, 3.27),
 		offset = Vector3.new(0, 0.204, -0.833),
 		muzzle = Vector3.new(0, 0.4, -2.45),
-		sight = Vector3.new(0, 0.64, -0.68),
 	},
 	wpn_m17 = {
 		meshId = "rbxassetid://113489832840781",
 		size = Vector3.new(0.14, 0.76, 0.67),
 		offset = Vector3.new(0, 0.07, -0.148),
 		muzzle = Vector3.new(0, 0.32, -0.485),
-		sight = Vector3.new(0, 0.45, 0.11),
 	},
 	-- Environment (assets/3d Environment collection, built to the 5-stud character; sizes are
 	-- the Blender dims in Roblox axis order). `solid` = Box obstacle; see ArenaService.
@@ -1501,11 +1490,6 @@ end
 function MeshAssets.getMuzzle(name: string): Vector3?
 	local def = MESHES[name]
 	return def and def.muzzle
-end
-
-function MeshAssets.getSight(name: string): Vector3?
-	local def = MESHES[name]
-	return def and def.sight
 end
 
 -- Builds the composite colliders of a placed piece as invisible anchored Parts parented to

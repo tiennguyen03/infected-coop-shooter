@@ -415,15 +415,20 @@ local Config = {
 			GamepadKey = Enum.KeyCode.ButtonR3,
 			EyeForward = 0.45, -- studs ahead of the head's centre
 			EyeUp = 0.1,
-			GunHip = CFrame.new(0.9, -0.95, -2.6), -- the gun's centre from the eye, at the hip
-			GunAds = CFrame.new(0, 0, -2.1), -- down the sights: centred, this far ahead
-			SightEye = 1.2, -- down the sights: the rear sight this far ahead of the eye (full size)
-			SightDrop = 0.55, -- a gun without modelled irons: its centre this share of its height low
+			-- Where the gun sits (at the hip, down the sights) comes from the gun's own sight:
+			-- Weapon.Sights and Weapons.<id>.Sight below.
 			Sway = 0.6, -- how much of a camera turn the gun lags behind (eases back)
+			AdsSway = 0.25, -- the share of that lag left down the sights (they stay lined up)
 			Bob = 0.06, -- studs the gun bobs at a full walk (none down the sights)
 			KickBack = 0.18, -- studs a shot pushes the gun back
+			AdsKick = 0.4, -- the share of KickBack left down the sights (the rear sight is close)
 			KickPitch = 4, -- degrees a shot tips the muzzle up
-			Scale = 0.4, -- the viewmodel shrunk toward the eye (same look, nothing cuts into it)
+			SwapDip = 0.7, -- studs the gun drops out of view and back during a Q swap
+			-- The viewmodel shrunk toward the eye (same look, nothing cuts into it). It grows
+			-- past this only as far as a close rear sight needs to stay NearMargin times
+			-- outside the camera's near plane (Rules/Sight.viewScale).
+			Scale = 0.4,
+			NearMargin = 1.25,
 		},
 		-- Per-shot kick (CameraController): each gun's Weapons.<id>.Kick pushes the view up by
 		-- Pitch degrees plus a random +/- Yaw, eased back over Recover seconds (never a
@@ -472,6 +477,46 @@ local Config = {
 			FOV = 55, -- degrees (hip is the engine default, 70)
 			EnterTime = 0.15, -- seconds to settle into or out of the sights
 		},
+		-- First person: what every gun's `Sight` (Weapons.<id>.Sight) falls back on, and the
+		-- scope picture (Rules/Sight, FirstPersonView, ScopeView; docs/STYLES.md > First person).
+		-- A row's Sight names its mesh's Rear and Front sight points (from the grip, barrel
+		-- along -Z; taken from assets/3d/build/guns.py) and may override Kind ("irons" |
+		-- "scope"), Hold, EyeRelief and Zoom. Third person keeps ADS above for every gun.
+		Sights = {
+			Zoom = 1.35, -- irons: the view this many times larger than the hip (FOV 70 -> 55)
+			ScopeZoom = 4, -- a scope that names none
+			-- Studs from the eye back from the rear sight, at the gun's real size, by Hold:
+			-- a cheek on the stock, or a pistol at arm's length.
+			EyeRelief = { long = 0.35, sidearm = 1.0, shoulder = 0.35 },
+			ScopeRelief = 0.3, -- the eye behind a scope's eyepiece
+			-- Where the grip (the right hand) sits from the eye at the hip, by Hold: a long gun
+			-- low right, a sidearm closer and nearer the middle, a launcher on the shoulder.
+			Hold = {
+				long = Vector3.new(0.89, -1.03, -2.12),
+				sidearm = Vector3.new(0.55, -0.8, -1.7),
+				shoulder = Vector3.new(0.62, -0.78, -1.15),
+			},
+			-- Sights and shot agree here: the spec fails a gun whose sight line stands so far
+			-- off its bore that the two differ visibly at this range (studs).
+			ZeroDistance = 100,
+			ScopeTime = 0.25, -- seconds into or out of a scope (irons: ADS.EnterTime)
+			-- The scope picture: a round lens on the screen's centre, black around it.
+			Scope = {
+				Lens = 0.4, -- lens radius as a share of the screen's height
+				Rows = 44, -- strips the black round the lens is cut into (ScopeView)
+				Shadow = { 0.25, 0.5, 0.75 }, -- transparency of the soft rings inside the rim
+				ShadowWidth = 0.035, -- each ring's width as a share of the lens radius
+				Line = 1, -- pixels: the fine crosshair
+				Post = 4, -- pixels: the three heavy posts
+				PostGap = 0.3, -- the posts stop this share of the radius short of the centre
+				Ticks = 4, -- range marks each way along the fine crosshair
+				TickStep = 0.055, -- their spacing as a share of the radius
+				Dot = 4, -- pixels: the red centre dot
+				-- The own tracer is drawn from this far out (studs): at the barrel it would
+				-- streak across the magnified lens.
+				TracerStart = 30,
+			},
+		},
 	},
 
 	-- The guns (WeaponDefinitions rows read these; docs/PROGRESSION.md > Loadout has the
@@ -504,6 +549,8 @@ local Config = {
 			HeadshotMultiplier = 3.0, -- EnemyDefinitions may override per form
 			Kick = { Pitch = 0.9, Yaw = 0.3, Recover = 0.12 }, -- degrees up, +/- degrees, seconds
 			Model = "wpn_m16",
+			-- The flip-up peep's centre and the A2 post's tip (guns.py m4_rear_sight, m4_front_sight).
+			Sight = { Rear = Vector3.new(0, 0.615, 0.04), Front = Vector3.new(0, 0.615, -1.345) },
 			Price = 0, -- merits at the Quartermaster's rack (Rules/Record); issued free
 			ArmsOrder = 1, -- Arms Room position in its slot (rack, menu); the first is the default
 		},
@@ -526,6 +573,12 @@ local Config = {
 			HeadshotMultiplier = 3.0,
 			Kick = { Pitch = 0.5, Yaw = 0.2, Recover = 0.12 },
 			Model = "wpn_mp5",
+			-- The drum's peep and the hooded post's tip.
+			Sight = {
+				Rear = Vector3.new(0, 0.585, 0.05),
+				Front = Vector3.new(0, 0.585, -0.85),
+				Zoom = 1.25,
+			},
 			Price = 300, -- merits at the Quartermaster's rack (Rules/Record)
 			ArmsOrder = 2,
 			Sound = "smg",
@@ -549,6 +602,8 @@ local Config = {
 			HeadshotMultiplier = 3.0,
 			Kick = { Pitch = 1.1, Yaw = 0.5, Recover = 0.12 },
 			Model = "wpn_m249",
+			-- The leaf's peep on the feed cover and the eared post by the muzzle.
+			Sight = { Rear = Vector3.new(0, 0.68, 0.03), Front = Vector3.new(0, 0.68, -1.68) },
 			Price = 600, -- merits at the Quartermaster's rack (Rules/Record)
 			ArmsOrder = 3,
 			Sound = "lmg",
@@ -575,6 +630,12 @@ local Config = {
 			HeadshotMultiplier = 1.5,
 			Kick = { Pitch = 4.0, Yaw = 0.8, Recover = 0.12 },
 			Model = "wpn_mossberg",
+			-- No rear sight: the back of the receiver's top channel, level with the bead's centre.
+			Sight = {
+				Rear = Vector3.new(0, 0.5, 0.05),
+				Front = Vector3.new(0, 0.5, -1.79),
+				Zoom = 1.2,
+			},
 			Price = 400, -- merits at the Quartermaster's rack (Rules/Record)
 			ArmsOrder = 4,
 			Sound = "shotgun",
@@ -601,6 +662,13 @@ local Config = {
 			HeadshotMultiplier = 3.0,
 			Kick = { Pitch = 2.6, Yaw = 0.4, Recover = 0.12 },
 			Model = "wpn_m110",
+			-- The scope's eyepiece and objective, on its axis.
+			Sight = {
+				Kind = "scope",
+				Rear = Vector3.new(0, 0.64, 0.17),
+				Front = Vector3.new(0, 0.64, -0.79),
+				Zoom = 3.5,
+			},
 			Price = 500, -- merits at the Quartermaster's rack (Rules/Record)
 			ArmsOrder = 5,
 			Sound = "dmr",
@@ -624,6 +692,13 @@ local Config = {
 			HeadshotMultiplier = 3.0,
 			Kick = { Pitch = 1.6, Yaw = 0.3, Recover = 0.12 },
 			Model = "wpn_m17",
+			-- The rear notch's tops and the front post's top.
+			Sight = {
+				Hold = "sidearm",
+				Rear = Vector3.new(0, 0.45, 0.11),
+				Front = Vector3.new(0, 0.45, -0.43),
+				Zoom = 1.15,
+			},
 			Price = 0, -- merits at the Quartermaster's rack (Rules/Record); issued free
 			ArmsOrder = 1,
 			Sound = "pistol",
@@ -652,6 +727,16 @@ local Config = {
 			HeadshotMultiplier = 3.0,
 			Kick = { Pitch = 3.0, Yaw = 0.6, Recover = 0.18 },
 			Model = "wpn_revolver",
+			-- The front blade's top, sighted over the hammer spur: on this mesh the spur (top
+			-- 0.463 at z 0.1) stands 0.013 above the rear notch (0.45 at z -0.02) and hides it
+			-- from the eye, so the line clears the spur by 0.013 (the red insert shows over it)
+			-- until the mesh is rebuilt with a lower hammer; then Rear is the notch.
+			Sight = {
+				Hold = "sidearm",
+				Rear = Vector3.new(0, 0.476, 0.1),
+				Front = Vector3.new(0, 0.45, -0.69),
+				Zoom = 1.15,
+			},
 			Price = 350, -- merits at the Quartermaster's rack (Rules/Record)
 			ArmsOrder = 2,
 			Sound = "revolver",
@@ -678,6 +763,13 @@ local Config = {
 			HeadshotMultiplier = 3.0,
 			Kick = { Pitch = 5.0, Yaw = 0.8, Recover = 0.25 },
 			Model = "wpn_sniper",
+			-- The scope's eyepiece and objective, on its axis.
+			Sight = {
+				Kind = "scope",
+				Rear = Vector3.new(0, 0.62, 0.23),
+				Front = Vector3.new(0, 0.62, -0.97),
+				Zoom = 6,
+			},
 			Price = 700, -- merits at the Quartermaster's rack (Rules/Record)
 			ArmsOrder = 6,
 			Sound = "sniper",
@@ -706,6 +798,14 @@ local Config = {
 			ProjectileSpeed = 220, -- studs/s
 			Explosive = { Radius = 6, Damage = 120, ShakePower = 4 },
 			Model = "wpn_goose",
+			-- The 3x sight on the tube's left: its eyepiece and objective.
+			Sight = {
+				Kind = "scope",
+				Hold = "shoulder",
+				Rear = Vector3.new(-0.3, 0.54, -0.23),
+				Front = Vector3.new(-0.3, 0.54, -0.6),
+				Zoom = 3,
+			},
 			Price = 900, -- merits at the Quartermaster's rack (Rules/Record)
 			ArmsOrder = 7,
 			Sound = "goose",

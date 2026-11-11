@@ -119,7 +119,9 @@ Numbers in `Config.Weapons.<Gun>`, rows in `WeaponDefinitions`. Semi guns fire o
 | **Goose, M3 recoilless** (sample "RPG", primary slot; later the call-in) | a visible rocket at 220 studs/s: 400 to the Infected struck, then the frag's blast 120 in 6 studs, no friendly fire | single, reload 6 s | 400 + blast | 1 + 1 / 1 | 6.0 | 2.0 / 0.25 | 0 | 300 | 0 |
 
 - ADS move factor: rifle 0.6, SMG 0.85, LMG 0.35, shotgun 0.7, DMR 0.5, pistol 0.9. ADS
-  pulls the camera to 5 studs over the shoulder at FOV 55 (`Weapon.ADS`); the client sends
+  pulls the camera to 5 studs over the shoulder at FOV 55 (`Weapon.ADS`); in first person each
+  gun aims through its own sights at its own zoom, the M2010 (6x), M110 (3.5x) and Goose (3x)
+  through a scope picture (`Weapons.<id>.Sight`; docs/STYLES.md > First person); the client sends
   an `aiming` flag with each shot and the server picks the cone.
 - Headshot x3.0 (per gun, `HeadshotMultiplier`); the Brute overrides to 1.25 (plated skull).
   Tracers are client-drawn.

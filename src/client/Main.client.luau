@@ -37,5 +37,6 @@ require(script.Parent.ThrowFX).init()
 require(script.Parent.AbilityUI).init()
 require(script.Parent.AllyOutline).init()
 require(script.Parent.DevTestPanel).init()
+require(script.Parent.SightTour).init()
 
 print("[Client] All controllers initialized")
