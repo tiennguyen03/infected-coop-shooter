@@ -182,11 +182,11 @@ Retired 2026-11-08: Magpie (drones) and Pen Coil (shock pulse), too sci-fi; see 
   per player per pallet; the pallet closes at 90 s. No rarity, no upgrades from pallets.
 - **Taking a card** (owner 2026-11-11: never by walking over it; `Requisition.Pick`,
   `Rules/Reward`, `RewardPanel`): every crate has a label and, when it is worth a walk, a
-  light pillar. Within 9 studs hold **F** 0.3 s (gamepad X, tap on touch; E is the stim) and
+  light pillar. Within 9 studs hold **E** 0.3 s (gamepad X, tap on touch) and
   a panel of up to three big cards opens at screen centre: key, kind, icon, name, one plain
   line with its numbers, and "REPLACES ..." when a field upgrade would push one out. Pick
   with a click or tap, keys 1-3, or the gamepad; the card flashes, a line under the mission
-  line names what was taken and the squad gets "<callsign> took <card>". F again, Backspace,
+  line names what was taken and the squad gets "<callsign> took <card>". E again, Backspace,
   gamepad B, a click beside the cards or walking 12 studs off closes it without a pick, and
   the crate can be opened again. The game does not pause and the player can be hit. The
   server checks the crate, the offer, one pick per player, reach and "not down". The panel

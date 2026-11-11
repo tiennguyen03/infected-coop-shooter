@@ -803,10 +803,13 @@ local Config = {
 		-- Taking a card (owner 2026-11-11: never by walking over it). Walk up to the crate,
 		-- hold Key for Hold seconds, and a panel of big cards opens (RewardPanel); pick with
 		-- a click or tap, keys 1-3 or the gamepad. Walking past CloseRadius closes it without
-		-- a pick. E is the stim, so the key is the revive key.
+		-- a pick. The key is the interact key (owner 2026-11-11: E interact, V stim, F shove).
 		Pick = {
 			WalkOver = false, -- true: the old way back (small cards in the world, walk into one)
-			Key = Enum.KeyCode.F,
+			Key = Enum.KeyCode.E, -- becomes Config.Keys.Interact once claude/keybinds merges
+			-- The open panel's card keys, left to right; it swallows them, so they fire no
+			-- call-in meanwhile. Becomes Config.Keys.CallIns once claude/keybinds merges.
+			CardKeys = { Enum.KeyCode.One, Enum.KeyCode.Two, Enum.KeyCode.Three },
 			GamepadKey = Enum.KeyCode.ButtonX,
 			Hold = 0.3, -- seconds the key is held to open the panel
 			Radius = 9, -- studs from the crate: the prompt shows and a pick is taken

@@ -35,7 +35,7 @@ local ACTION = "RewardPanelKeys"
 local SUPPLY_COLOR = C.Yellow
 local UPGRADE_COLOR = C.Squad
 local ANSWER_SECONDS = 2 -- no word from the server by then: the cards wake up again
-local PICK_KEYS = { Enum.KeyCode.One, Enum.KeyCode.Two, Enum.KeyCode.Three }
+local PICK_KEYS = Config.Requisition.Pick.CardKeys
 
 export type Options = {
 	title: string, -- the crate's label: "RESUPPLY"
@@ -506,12 +506,10 @@ function RewardPanel.open(options: Options)
 		onKey,
 		false,
 		Enum.ContextActionPriority.High.Value + 100,
-		Enum.KeyCode.One,
-		Enum.KeyCode.Two,
-		Enum.KeyCode.Three,
 		pick.Key,
 		Enum.KeyCode.Backspace,
-		Enum.KeyCode.ButtonB
+		Enum.KeyCode.ButtonB,
+		table.unpack(PICK_KEYS)
 	)
 	local first = current.cards[1]
 	if first and UserInputService:GetLastInputType() == Enum.UserInputType.Gamepad1 then

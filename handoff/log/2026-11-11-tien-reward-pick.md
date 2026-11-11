@@ -2,8 +2,8 @@
 
 **Changed:** nothing is picked by walking over it any more (owner: the world cards were "so
 small to read ... sometimes you pick the wrong item"). Every crate has one label and a
-prompt: within 9 studs hold F 0.3 s (gamepad X, tap on touch) and a panel of up to three
-big cards opens; pick with a click or tap, keys 1-3 or the gamepad. F, Backspace, B, a click
+prompt: within 9 studs hold E 0.3 s (gamepad X, tap on touch) and a panel of up to three
+big cards opens; pick with a click or tap, keys 1-3 or the gamepad. E, Backspace, B, a click
 beside the cards or walking off closes it without a pick. The game does not pause. The hold's
 end now drops an OBJECTIVE REWARD crate: the whole squad is restocked as it lands (health,
 ammo, call-ins, grenades, stims, +50 armour) and each player picks a field upgrade. Upgrade
@@ -18,7 +18,7 @@ new). **Not playtested**: Studio was the owner's.
 keeps its signature; the kind may now also be `"objective"`. `Config.Crates.ArmourPlate` is
 now `Crates.Cards.armour_plate.Plate`; `Requisition.CardLifetime` is `Crates.Kinds.*.Lifetime`.
 `LoadoutService.availableUpgrades` is gone (no callers). New `Resupply` message kinds
-`refused` and `taken`; new attribute `CrateId`. The pick key is F, not E (E is the stim).
+`refused` and `taken`; new attribute `CrateId`. The pick key is E, the interact key (2026-11-11 keys; the stim moves to V in claude/keybinds).
 `Requisition.Pick.WalkOver = true` restores the old world cards. Dev: "Drop objective reward".
 **Next:** play it: panel size during a fight (`Pick.PanelScale`, `Pick.Dim`), whether the full
 call-in restock before the Warden is too much (`Crates.Kinds.objective.Squad`), the open
