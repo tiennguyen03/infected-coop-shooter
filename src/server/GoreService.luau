@@ -22,6 +22,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
+local Dismember = require(ReplicatedStorage.Shared.Rules.Dismember)
 local EnemyDefinitions = require(ReplicatedStorage.Shared.EnemyDefinitions)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
@@ -44,28 +45,9 @@ local function cfg()
 	return Config.Enemies.Dismember
 end
 
-type JointSpec = { Counts: { string }, Falls: { string }, Fraction: number, Limb: string }
+type JointSpec = Dismember.JointSpec
 local function joints(): { [string]: JointSpec }
 	return Config.Enemies.Dismember.Joints :: any
-end
-
-local function sideOf(partName: string): (string?, string?)
-	if string.sub(partName, 1, 4) == "Left" then
-		return "Left", string.sub(partName, 5)
-	elseif string.sub(partName, 1, 5) == "Right" then
-		return "Right", string.sub(partName, 6)
-	end
-	return nil, nil
-end
-
--- The joint whose total a hit on `base` (a part name without its side) fills.
-local function jointFor(base: string): string?
-	for joint, spec in joints() do
-		if table.find(spec.Counts, base) then
-			return joint
-		end
-	end
-	return nil
 end
 
 -- The joint that holds `part` to the rig, the part above it and the joint's world frame.
@@ -235,10 +217,6 @@ local function sever(
 	end
 end
 
-local function canSever(form: any, limb: string): boolean
-	return (limb == "Arm" and form.Arms == true) or (limb == "Leg" and form.Legs == true)
-end
-
 local function pushFrom(info: DamageService.HitInfo, model: Model): Vector3
 	local attacker = info.attacker
 	local character = attacker and attacker.Character
@@ -272,13 +250,13 @@ local function onHit(info: DamageService.HitInfo)
 		end
 		return
 	end
-	local side, base = sideOf(part.Name)
+	local side, base = Dismember.sideOf(part.Name)
 	if not side or not base then
 		return
 	end
-	local joint = jointFor(base)
+	local joint = Dismember.jointFor(joints(), base)
 	local spec = joint and joints()[joint]
-	if not joint or not spec or not canSever(form, spec.Limb) then
+	if not joint or not spec or not Dismember.canSever(form, spec.Limb) then
 		return
 	end
 	local state = states[model]
@@ -290,12 +268,11 @@ local function onHit(info: DamageService.HitInfo)
 		end)
 	end
 	local key = side .. joint
-	local total = (state.totals[key] or 0) + info.amount
-	state.totals[key] = total
 	local definition = EnemyDefinitions[typeName]
 	local maxHealth = if definition then definition.MaxHealth else info.humanoid.MaxHealth
-	if total >= maxHealth * spec.Fraction then
-		state.totals[key] = -math.huge -- once
+	local total, severed = Dismember.hit(state.totals[key], info.amount, maxHealth, spec.Fraction)
+	state.totals[key] = total
+	if severed then
 		sever(model, info.humanoid, side, joint, push, settings.Impulse)
 	end
 end
@@ -315,7 +292,7 @@ function GoreService.blast(humanoid: Humanoid, center: Vector3)
 	end
 	local options = {}
 	for joint, spec in joints() do
-		if canSever(form, spec.Limb) then
+		if Dismember.canSever(form, spec.Limb) then
 			for _, side in { "Left", "Right" } do
 				table.insert(options, { joint = joint, side = side })
 			end
