@@ -85,10 +85,8 @@ end
 local function setHidden(model: Model, hidden: boolean)
 	local value = if hidden then 1 else 0
 	for _, part in model:GetDescendants() do
-		if part:IsA("BasePart") then
-			part.LocalTransparencyModifier = value
-		elseif part:IsA("Decal") then
-			part.LocalTransparencyModifier = value
+		if part:IsA("BasePart") or part:IsA("Decal") then
+			(part :: any).LocalTransparencyModifier = value
 		end
 	end
 end
