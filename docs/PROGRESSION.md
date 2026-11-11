@@ -80,6 +80,28 @@ thrown on release. A dotted arc from the hand and the item's own marker on the g
 `Across` for the wire) follow the crosshair. The flare (5) and the "self" call-ins still
 fire on the press. `AbilityController`.
 
+**Throwing** (owner 2026-11-11: things "activate before the actual animation plays"): the
+grenade, every thrown call-in and the flare leave the hand at the throw clip's release, not
+when the key comes up.
+- **Timing:** `Config.Animations.Throws` has a row per throw clip (`Start`, `Release`,
+  `Speed`, over `Default`); `Rules/ThrowTiming` turns it into the wind-up. `grenade_throw`
+  is 2.77 s with the release at 2.0 s (the hand's fastest frame in the retargeted clip); it
+  plays from 1.3 s at 1.4x, so the wind-up is 0.5 s. A new throw clip gets its own row.
+- **Client:** the clip starts the moment the key comes up (`AnimationController.playThrow`)
+  and replicates to the squad; a second throw waits for the first to leave the hand.
+- **Server:** `ThrowWindUp.begin` holds the real throw back for the wind-up (less up to
+  `ThrowMaxLag` 0.1 s of the thrower's ping), one throw at a time per soldier. The grenade,
+  the charge or the pool is spent **at the release**: downed, knocked down or dead during the
+  wind-up throws nothing and costs nothing.
+- **From the hand:** the grenade and the flare fly from the thrower's `RightHand` to the mark
+  (remote `Thrown`, drawn by `ThrowFX`; `Grenade.Flight` and `Requisition.FlareFlight`,
+  0.45 s) and the real one appears where it lands; the frag's 0.8 s fuse still starts on
+  landing. A call-in's marker starts at the hand too (`CallInArrivalFX`).
+- **With arrivals:** a call-in's `Arrival.Time` and a fire mission's `Delay` count from the
+  release, so key to effect is the 0.5 s wind-up plus what it was.
+- **Not there:** no prop in the hand during the wind-up (no model exists); bots throw
+  nothing yet; dev `FireCallIn` skips the wind-up.
+
 ### Guns
 
 Numbers in `Config.Weapons.<Gun>`, rows in `WeaponDefinitions`. Semi guns fire once per click.

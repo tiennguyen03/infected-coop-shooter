@@ -26,6 +26,7 @@ local ThrowUtil = require(ReplicatedStorage.Shared.ThrowUtil)
 local UpgradeDefinitions = require(ReplicatedStorage.Shared.UpgradeDefinitions)
 local BotService = require(script.Parent.BotService)
 local CallInService = require(script.Parent.CallInService)
+local ThrowWindUp = require(script.Parent.ThrowWindUp)
 local EnemyService = require(script.Parent.EnemyService)
 local LoadoutService = require(script.Parent.LoadoutService)
 local PauseService = require(script.Parent.PauseService)
@@ -279,18 +280,26 @@ local function land(drop: Pending)
 	RequisitionService.dropCrate(drop.position, drop.facing, "supply", true)
 end
 
-local function onFlare(player: Player, target: unknown)
+-- True when `player` may throw the flare now: standing, no pallet inbound, the cooldown
+-- over and the pool covering the cost.
+local function canThrowFlare(player: Player): boolean
 	if pending or PauseService.isPaused() then
-		return
+		return false
 	end
 	local member = Squad.fromPlayer(player)
 	if not member or not Squad.canAct(member) then
+		return false
+	end
+	return os.clock() >= flareReadyAt and pool >= currentCost()
+end
+
+-- The release (ThrowWindUp, the throw clip's release): the pool pays here and the flare
+-- flies from the hand for FlareFlight (ThrowFX on the clients) before it burns on the mark.
+local function releaseFlare(player: Player, target: unknown)
+	if not canThrowFlare(player) then
 		return
 	end
 	local now = os.clock()
-	if now < flareReadyAt or pool < currentCost() then
-		return
-	end
 	local character = player.Character
 	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
 	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
@@ -310,20 +319,36 @@ local function onFlare(player: Player, target: unknown)
 	)
 	local back = Vector3.new(root.Position.X - landing.X, 0, root.Position.Z - landing.Z)
 	local facing = if back.Magnitude > 0.5 then back.Unit else -root.CFrame.LookVector
-	pending = {
+	local flare = buildFlare(landing)
+	flare.Parent = nil -- in the air until it lands
+	local thrown: Pending = {
 		position = landing,
 		facing = Vector3.new(facing.X, 0, facing.Z).Unit,
 		landAt = now + cfg.DropDelay,
-		flare = (function()
-			local flare = buildFlare(landing)
-			WorldSounds.loopOn(flare, "callins", "flare_burn")
-			return flare
-		end)(),
+		flare = flare,
 	}
+	pending = thrown
+	ThrowWindUp.thrown(player, flare.Position, cfg.FlareFlight, FLARE_COLOR)
+	task.spawn(function()
+		PauseService.wait(cfg.FlareFlight)
+		if pending == thrown then
+			flare.Parent = folder
+			WorldSounds.loopOn(flare, "callins", "flare_burn")
+		end
+	end)
 	EnemyService.setLure(landing, cfg.Lure.Radius, cfg.DropDelay)
 	resupplyRemote:FireAllClients(Messages.Resupply.Called, Squad.callsign(player))
 	publish()
 	print(`[Requisition] {player.Name} threw the flare; pallet in {cfg.DropDelay}s (drop {drops})`)
+end
+
+-- The flare key: the wind-up starts; the flare leaves the hand, and the pool pays, at the release.
+local function onFlare(player: Player, target: unknown)
+	if canThrowFlare(player) then
+		ThrowWindUp.begin(player, function()
+			releaseFlare(player, target)
+		end)
+	end
 end
 
 -- Applies a taken card to the player. Returns the notice for the rest of the squad.

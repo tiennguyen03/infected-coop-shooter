@@ -687,6 +687,7 @@ local Config = {
 	Grenade = {
 		Carried = 3,
 		ThrowGap = 0.8, -- seconds between two throws
+		Flight = 0.45, -- seconds in the air from the hand to the mark; a row's own Flight wins
 		-- M67 frag: one-shots a Hocker, not a Brute. Thrown like the flare (ThrowUtil).
 		Frag = {
 			Price = 0, -- merits on the Carrier (Rules/Record, KitPrices); issued free
@@ -802,6 +803,20 @@ local Config = {
 			-- (TrussPart) while the Humanoid is in its Climbing state; not a Mixamo clip
 			ladder_climb = "rbxassetid://507765644",
 		},
+		-- Throw timing, one row per throw clip (Rules/ThrowTiming; docs/PROGRESSION.md >
+		-- Throwing): the clip plays from Start seconds in at Speed, and the grenade, marker or
+		-- flare leaves the hand when the clip reaches Release (the server waits that long,
+		-- ThrowWindUp). A clip without a row gets Default.
+		Throws = {
+			Default = { Start = 0, Release = 0.3, Speed = 1 },
+			-- 2.77 s clip: pin pulled until 1.0, the arm goes back from 1.3, the hand is at its
+			-- fastest (the release) at 2.0 (measured from the retargeted clip's keyframes). The
+			-- pin pull is skipped: 0.5 s from the key coming up to the release.
+			grenade_throw = { Start = 1.3, Release = 2.0, Speed = 1.4 },
+		},
+		-- The thrower's own clip starts a ping before the server hears of the throw: up to
+		-- this many seconds of that come off the server's wait. 0 = the full wind-up always.
+		ThrowMaxLag = 0.1,
 		-- The Pike soldier (every player and bot): which clip plays for each state.
 		Assault = {
 			idle = "rifle_idle",
@@ -956,6 +971,7 @@ local Config = {
 		CostPerExtraPlayer = 0.4, -- 4 players: cost x2.2 (matches their ~x2 kill income)
 		FlareCooldown = 20, -- seconds after a pallet lands before the next flare
 		FlareThrowDistance = 35, -- studs, same arc as the breach charge
+		FlareFlight = 0.45, -- seconds the flare is in the air from the hand to the mark
 		DropDelay = 20, -- seconds from flare to pallet (the lure window)
 		CardLifetime = 60, -- unpicked cards vanish
 		CardSpacing = 4.5, -- studs between the three cards

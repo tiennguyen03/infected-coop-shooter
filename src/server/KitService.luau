@@ -23,6 +23,7 @@ local EnemyService = require(script.Parent.EnemyService)
 local LoadoutService = require(script.Parent.LoadoutService)
 local PauseService = require(script.Parent.PauseService)
 local Squad = require(script.Parent.Squad)
+local ThrowWindUp = require(script.Parent.ThrowWindUp)
 local Lifecycle = require(script.Parent.Lifecycle)
 local WorldSounds = require(script.Parent.WorldSounds)
 
@@ -31,6 +32,7 @@ local FRAG_COLOR = Color3.fromRGB(255, 120, 60)
 
 type FragSettings = {
 	ThrowDistance: number,
+	Flight: number?, -- seconds in the air; Config.Grenade.Flight when the row has none
 	FuseTime: number,
 	Radius: number,
 	Damage: number,
@@ -133,9 +135,10 @@ function KitService.blast(player: Player?, center: Vector3, settings: BlastSetti
 	end
 end
 
--- The throw itself, for a player (throwGrenade, after its checks) or a bot (BotService,
+-- The throw itself, for a player (releaseGrenade, after its checks) or a bot (BotService,
 -- `player` nil; it counts its own grenades): grenade `grenadeId` leaves `character` toward
--- `requested`, lands (ThrowUtil), blinks through its fuse and blows (KitService.blast).
+-- `requested`, flies for its Flight (ThrowFX on the clients), lands (ThrowUtil), blinks
+-- through its fuse and blows (KitService.blast).
 function KitService.throwFrag(
 	player: Player?,
 	character: Model,
@@ -149,13 +152,17 @@ function KitService.throwFrag(
 		character,
 		effectsFolder,
 	}) + Vector3.new(0, 1, 0)
+	local flight = settings.Flight or Config.Grenade.Flight
 	WorldSounds.at(center, "callins", "callin_throw")
+	if player then
+		ThrowWindUp.thrown(player, center, flight, FRAG_COLOR)
+	end
 	-- Bait Charge: a longer fuse, and the Infected around walk to it until it blows.
 	local fuse = settings.FuseTime
 	if player and LoadoutService.hasUpgrade(player, "lure_charge") then
 		local lure = Config.Upgrades.LureCharge
 		fuse = lure.FuseTime
-		EnemyService.setLure(center, lure.Radius, fuse)
+		EnemyService.setLure(center, lure.Radius, flight + fuse)
 	end
 
 	local grenade = Instance.new("Part")
@@ -168,7 +175,6 @@ function KitService.throwFrag(
 	grenade.CanQuery = false
 	grenade.Material = Enum.Material.Neon
 	grenade.Color = FRAG_COLOR
-	grenade.Parent = effectsFolder
 
 	-- Warning ring on the ground: the blast radius.
 	local ring = Instance.new("Part")
@@ -184,6 +190,11 @@ function KitService.throwFrag(
 	ring.Parent = effectsFolder
 
 	task.spawn(function()
+		PauseService.wait(flight) -- in the air; the ring already warns where it lands
+		if not ring.Parent then
+			return -- a run start cleared the field
+		end
+		grenade.Parent = effectsFolder
 		local blinks = 4
 		for _ = 1, blinks do
 			grenade.Transparency = 0.6
@@ -198,21 +209,37 @@ function KitService.throwFrag(
 	end)
 end
 
-local function throwGrenade(player: Player, requested: Vector3?)
+-- The release (ThrowWindUp, the throw clip's release): the grenade is spent here, flies
+-- from the hand for its Flight and its fuse starts when it lands.
+local function releaseGrenade(player: Player, requested: Vector3?)
 	local member, root = standing(player)
 	local character = player.Character
 	if not member or not root or not character then
 		return
 	end
-	local now = os.clock()
-	if now < (throwReadyAt[player] or 0) then
-		return
-	end
 	if not LoadoutService.useGrenade(player) then
 		return
 	end
-	throwReadyAt[player] = now + Config.Grenade.ThrowGap
 	KitService.throwFrag(player, character, root, requested, LoadoutService.getGrenade(player))
+end
+
+-- G: the wind-up starts (one throw at a time, ThrowGap apart, a grenade in the pouch); the
+-- grenade leaves the hand, and the pouch, at the release.
+local function throwGrenade(player: Player, requested: Vector3?)
+	local member = standing(player)
+	if not member then
+		return
+	end
+	local now = os.clock()
+	if now < (throwReadyAt[player] or 0) or LoadoutService.grenadesLeft(player) <= 0 then
+		return
+	end
+	local began = ThrowWindUp.begin(player, function()
+		releaseGrenade(player, requested)
+	end)
+	if began then
+		throwReadyAt[player] = now + Config.Grenade.ThrowGap
+	end
 end
 
 ----------------------------------------------------------------------

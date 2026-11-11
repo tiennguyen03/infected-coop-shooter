@@ -5,7 +5,8 @@
 -- this controller forwards input and draws the aim: hold G or a thrown call-in's key and an
 -- arc from the hand plus that item's marker show where it will land (the aim point, clamped
 -- to throw range, dropped to the ground) and what it covers; release to throw it there. The
--- flare throws at the crosshair at once (ThrowUtil, the server's maths).
+-- flare throws at the crosshair at once (ThrowUtil, the server's maths). Every throw starts
+-- the throw clip here at once; the thing leaves the hand at the clip's release (ThrowWindUp).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -109,6 +110,20 @@ type Aiming = {
 }
 
 local aiming: Aiming? = nil
+-- One throw at a time (the server's rule, ThrowWindUp): os.clock until which the hand is
+-- still winding one up, with a little over for the trip to the server.
+local THROW_MARGIN = 0.15
+local throwingUntil = 0
+
+-- Starts the throw clip; false while the last throw has not left the hand yet.
+local function beginThrow(): boolean
+	local now = os.clock()
+	if now < throwingUntil then
+		return false
+	end
+	throwingUntil = now + AnimationController.playThrow() + THROW_MARGIN
+	return true
+end
 
 local function ghostPart(name: string, parent: Instance, transparency: number): Part
 	local part = Instance.new("Part")
@@ -270,17 +285,32 @@ local function release(key: Enum.KeyCode)
 	if not target or workspace:GetAttribute(Attributes.GamePaused) == true then
 		return
 	end
+	-- The clip starts now; the server lets go at its release (ThrowWindUp).
+	if not beginThrow() then
+		return
+	end
 	if state.slot then
 		Remotes.get("CallIn"):FireServer(state.slot, target)
 	else
 		Remotes.get("UseAbility"):FireServer(Messages.Ability.Grenade, target)
 	end
-	AnimationController.playAbility("throw")
+end
+
+-- The flare key: the flare goes at the crosshair at once. The clip plays when the squad can pay for
+-- a pallet and none is inbound (the server's own gates, RequisitionService).
+local function throwFlare()
+	local pool = (workspace:GetAttribute(Attributes.ResupplyPool) :: number?) or 0
+	local cost = (workspace:GetAttribute(Attributes.ResupplyCost) :: number?) or 1
+	local dropIn = (workspace:GetAttribute(Attributes.ResupplyDropIn) :: number?) or -1
+	if pool < cost or dropIn >= 0 or not beginThrow() then
+		return
+	end
+	Remotes.get("Resupply")
+		:FireServer(Messages.Resupply.Flare, landingPoint(Config.Requisition.FlareThrowDistance))
 end
 
 function AbilityController.init()
 	local useAbility = Remotes.get("UseAbility")
-	local resupply = Remotes.get("Resupply")
 
 	UserInputService.InputBegan:Connect(function(input, gameProcessed)
 		if gameProcessed then
@@ -303,10 +333,7 @@ function AbilityController.init()
 		elseif key == Enum.KeyCode.E then
 			useAbility:FireServer(Messages.Ability.Stim)
 		elseif key == Enum.KeyCode.Five then
-			resupply:FireServer(
-				Messages.Resupply.Flare,
-				landingPoint(Config.Requisition.FlareThrowDistance)
-			)
+			throwFlare()
 		end
 	end)
 

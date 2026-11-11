@@ -9,7 +9,7 @@
 -- clip and ability clips sit on top; a vault or climb clip (MovementController) replaces
 -- the locomotion while the body is carried over cover. Upper-body clips (aim, fire, hit,
 -- throw) carry no leg poses so the legs keep moving underneath them. Other controllers
--- call in: WeaponController (setAiming, onShot), AbilityController (playAbility),
+-- call in: WeaponController (setAiming, onShot), AbilityController (playThrow),
 -- StanceController (setStance), MovementController (playMove).
 
 local Players = game:GetService("Players")
@@ -21,6 +21,9 @@ local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild
 local WeaponDefinitions =
 	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("WeaponDefinitions"))
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
+local ThrowTiming = require(
+	ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Rules"):WaitForChild("ThrowTiming")
+)
 
 local FADE = 0.2
 local IDLE_SPEED = 1 -- studs/s below which the character counts as standing still
@@ -378,11 +381,18 @@ function AnimationController.onShot()
 	end
 end
 
-function AnimationController.playAbility(name: string)
-	local track = (tracks :: { [string]: AnimationTrack? })[name]
+-- The throw (AbilityController, the moment the key comes up): the clip from its Start at
+-- its Speed, so the hand lets go when the server releases the throw (Rules/ThrowTiming).
+-- Returns the seconds until that release.
+function AnimationController.playThrow(): number
+	local animations = Config.Animations
+	local timing = ThrowTiming.resolve(animations.Throws :: any, animations.Assault.throw)
+	local track = tracks.throw
 	if track and not dead then
-		track:Play(0.1)
+		track:Play(0.1, 1, timing.Speed)
+		track.TimePosition = timing.Start
 	end
+	return ThrowTiming.windUp(timing)
 end
 
 -- Switches stance: the old set stops, the transition clip (the old stance's exit or the

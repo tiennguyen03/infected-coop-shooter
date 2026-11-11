@@ -40,6 +40,7 @@ local BOOT: { ModuleScript } = {
 	Server.EnemyService,
 	Server.GoreService,
 	Server.ShockCoilService,
+	Server.ThrowWindUp,
 	Server.KitService,
 	Server.CallInService,
 	Server.RequisitionService,
