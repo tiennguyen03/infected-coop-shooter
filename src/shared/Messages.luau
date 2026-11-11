@@ -76,6 +76,14 @@ local Messages = table.freeze({
 		Roll = "roll",
 		Slide = "slide",
 	}),
+	-- EnemySpit (server -> client): an Infected spit's look (EnemyProjectileService -> SpitFX)
+	EnemySpit = table.freeze({
+		Windup = "windup", -- (model, seconds) the spitter planted and is rearing back
+		Launch = "launch", -- (id, origin, velocity, size) a glob left the mouth
+		Impact = "impact", -- (id, position, normal, splashRadius, poolGround?, poolRadius?, poolSeconds?)
+		Gone = "gone", -- (id) the glob left the world without landing
+		Reset = "reset", -- () new run: clear everything
+	}),
 	-- Launch (lobby place, server -> client): your seat on a Lantern spot
 	-- Record (lobby place): the Quartermaster's rack (RecordService, Rules/Record)
 	Record = table.freeze({

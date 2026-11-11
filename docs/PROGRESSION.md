@@ -428,7 +428,8 @@ lore-accurate poses, no zombie green (OWNER.md); build sheets in [CHARACTERS.md]
 
 Enemy behaviour is data-driven (`EnemyDefinitions`: `Behaviour` melee | projectile,
 `StandOff`, `Windup`, `Projectile` + `Puddle`, `BodySet`, `HeadshotMultiplier`; caps keyed by
-type; `EnemyProjectileService` owns lobs and puddles). Still to add as forms need them:
+type; `EnemyProjectileService` owns lobs and puddles and makes no parts: clients draw the
+spit, docs/STYLES.md §8). Still to add as forms need them:
 `onDeath` (cloud | split), `mover` (none | flyer).
 
 ## Hit feedback on the Infected (owner: it must feel satisfying)
