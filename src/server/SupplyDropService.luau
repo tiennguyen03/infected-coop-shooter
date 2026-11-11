@@ -1,7 +1,9 @@
 --!strict
 -- Supply call-ins (CallInService): Lantern's crew kicks a bundle out of the door and it
--- falls onto the throw (Config.CallIns.Drop). Quiet: no lure, no wave (the pallet's
--- loud landing stays the Resupply flare's).
+-- comes down onto the throw. The way down is drawn on the clients (CallInArrivalFX, each
+-- bundle's own Arrival); CallInService calls `drop` when it is on the ground. With
+-- Config.CallIns.Arrivals.Enabled false the bundle falls here instead (Config.CallIns.Drop).
+-- Quiet: no lure, no wave (the pallet's loud landing stays the Resupply flare's).
 --   Speedball (ammo bundle, Config.CallIns.Speedball): each living player walking within
 --     Radius is re-armed (LoadoutService.refillAmmo, the pallet's ammo box without cards),
 --     Visits times in all; the same player again only after stepping out.
@@ -46,6 +48,12 @@ local folder: Folder
 local noticeRemote: RemoteEvent
 local drops: { Drop } = {}
 local lastStep = 0
+local aidListeners: { (member: Squad.Member) -> () } = {}
+
+-- Runs for every squad member an Aid Bag treats (BotService: a bot's stims back).
+function SupplyDropService.onAidBag(listener: (member: Squad.Member) -> ())
+	table.insert(aidListeners, listener)
+end
 
 local function remove(index: number)
 	drops[index].part:Destroy()
@@ -124,9 +132,16 @@ local function land(drop: Drop)
 	WorldSounds.at(drop.position, "callins", "pallet_land", 0.6)
 end
 
--- CallInService: a bundle of `kind` falls onto `point`.
-function SupplyDropService.drop(kind: Kind, point: Vector3, facing: Vector3): boolean
+-- CallInService: a bundle of `kind` is on the ground at `point`; `falls` = it drops from
+-- the sky here first (the old look, arrivals off).
+function SupplyDropService.drop(
+	kind: Kind,
+	point: Vector3,
+	facing: Vector3,
+	falls: boolean
+): boolean
 	local dropCfg = Config.CallIns.Drop
+	local fallTime = if falls then dropCfg.FallTime else 0
 	local ground = GroundUtil.GetGroundPosition(point, 0)
 	local flat = Vector3.new(facing.X, 0, facing.Z)
 	flat = if flat.Magnitude > 0.01 then flat.Unit else Vector3.zAxis
@@ -137,7 +152,7 @@ function SupplyDropService.drop(kind: Kind, point: Vector3, facing: Vector3): bo
 	part.CanQuery = false
 	part.CanTouch = false
 	local rest = CFrame.lookAt(ground, ground + flat) * CFrame.new(0, part.Size.Y / 2, 0)
-	place(part, rest + Vector3.new(0, dropCfg.Height, 0))
+	place(part, if falls then rest + Vector3.new(0, dropCfg.Height, 0) else rest)
 	part.Parent = folder
 
 	local cfg = if kind == "speedball" then Config.CallIns.Speedball else Config.CallIns.AidBag
@@ -153,12 +168,16 @@ function SupplyDropService.drop(kind: Kind, point: Vector3, facing: Vector3): bo
 		),
 		position = ground,
 		landed = false,
-		expiresAt = os.clock() + dropCfg.FallTime + cfg.Lifetime,
+		expiresAt = os.clock() + fallTime + cfg.Lifetime,
 		visitsLeft = Config.CallIns.Speedball.Visits,
 		inside = {},
 		served = {},
 	}
 	table.insert(drops, drop)
+	if not falls then
+		land(drop)
+		return true
+	end
 
 	-- The fall: the body tweens, its pieces follow each frame until it lands.
 	local value = Instance.new("CFrameValue")
@@ -220,6 +239,9 @@ local function stepAidBag(drop: Drop)
 		end
 		drop.served[member.id] = true
 		humanoid.Health = humanoid.MaxHealth
+		for _, listener in aidListeners do
+			listener(member)
+		end
 		local owner = member.owner
 		if owner then
 			if typeof(refillStims) == "function" then

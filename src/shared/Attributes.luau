@@ -11,6 +11,18 @@ local Attributes = table.freeze({
 	RunResult = "RunResult",
 	RunStartTime = "RunStartTime",
 	GamePaused = "GamePaused",
+	-- client only, on the local Player: a cutscene holds the soldier (InsertionCutscene); no firing
+	-- or using kit while it is set
+	Cinematic = "Cinematic",
+	-- workspace: when this run's insertion cutscene starts (server time; RunManager writes it a
+	-- moment after Insert begins so every client is ready, InsertionCutscene reads it)
+	InsertStartsAt = "InsertStartsAt",
+	-- a soldier's character: their night vision is on (NightVisionService writes it from the
+	-- client's toggle; every client lowers that body's goggles, client NightVision)
+	NightVision = "NightVision",
+	-- the goggles accessory: its frame in the head's space as modelled (lowered), set when it
+	-- is fitted (Shared.Goggles)
+	GoggleBase = "GoggleBase",
 	ReadyCount = "ReadyCount",
 	ReadyNeeded = "ReadyNeeded",
 	ReadyUpEndsAt = "ReadyUpEndsAt",
@@ -26,6 +38,8 @@ local Attributes = table.freeze({
 	ObjectiveActive = "ObjectiveActive",
 	ObjectiveCompleted = "ObjectiveCompleted",
 	ExtractionActive = "ExtractionActive",
+	-- spawn interval multiplier while extracting (ExtractionService writes, EnemyService reads)
+	ExtractionSpawnFactor = "ExtractionSpawnFactor",
 	IndexActive = "IndexActive",
 	ResupplyActive = "ResupplyActive",
 	ResupplyCost = "ResupplyCost",
@@ -56,9 +70,18 @@ local Attributes = table.freeze({
 	ReloadUntil = "ReloadUntil",
 	Shield = "Shield",
 	Kills = "Kills",
+	-- true while this player carries an objective item (Objectives/RecoverRecord): no sprint
+	Carrying = "Carrying",
 	Callsign = "Callsign", -- "Pike One" ... (Squad): the name the HUD and the radio use
 	MoveSpeedMult = "MoveSpeedMult",
 	Ready = "Ready",
+	-- the merits the mission that just ended paid this player (MeritService; RunEndUI shows
+	-- it): the amount, -1 when it could not be saved, nil while a run is live
+	MeritsEarned = "MeritsEarned",
+	-- the merits and tabs on this player's record as the match last read it at a mission's end
+	-- (MeritService; RunEndUI shows the wallet): nil until then, or when the read failed
+	MeritsHeld = "MeritsHeld",
+	TabsHeld = "TabsHeld",
 	DevGod = "DevGod",
 	Bloom = "Bloom",
 	LastShotAt = "LastShotAt", -- local only: the client stamps each of its own shots
@@ -69,12 +92,30 @@ local Attributes = table.freeze({
 	BleedOutAt = "BleedOutAt",
 	SelfReviveAt = "SelfReviveAt",
 	Reviver = "Reviver",
+	-- ReplicatedStorage.SquadRoster (the folder's name, kept here so writer and reader share
+	-- one spelling): one entry per squad member, player or bot, always replicated (bodies
+	-- stream out). Squad writes SquadState, BleedOutAt, Reviver, Callsign and Shield there
+	-- too, plus these; the client's SquadPanelUI reads them. Times are server time, 0 = none.
+	SquadRoster = "SquadRoster",
+	SquadUserId = "SquadUserId", -- the player's UserId, 0 for a bot
+	SquadHealth = "SquadHealth",
+	SquadMaxHealth = "SquadMaxHealth",
+	ReviveEndsAt = "ReviveEndsAt", -- when the revive in progress completes
+	RespawnAt = "RespawnAt", -- when a dead bot rejoins
+	-- The revive animation (ReviveAnimService): "" | "treat" | "finish" on the reviver,
+	-- "treated" | "recover" on the casualty; where the reviver kneels and what they face.
+	ReviveRole = "ReviveRole",
+	ReviveKneel = "ReviveKneel", -- CFrame: the kneel point and heading
+	ReviveChest = "ReviveChest", -- Vector3: the casualty's chest, to face again after a step
 	KnockedUntil = "KnockedUntil",
 	KnockGraceUntil = "KnockGraceUntil",
 	CoverMoveUntil = "CoverMoveUntil",
 	RootDrop = "RootDrop",
 	StandHipHeight = "StandHipHeight",
 	StanceSettle = "StanceSettle",
+	-- Character (a player's or a bot's): true while the binoculars are up (CallInService);
+	-- every client's BinocularPose raises the arms and the prop on that body.
+	Spotting = "Spotting",
 
 	-- Enemy models and the Warden's plates (EnemyService, IndexService)
 	EnemyType = "EnemyType",
@@ -95,6 +136,9 @@ local Attributes = table.freeze({
 	BlastPower = "BlastPower",
 	BlastGlobal = "BlastGlobal",
 
+	-- A crate's ProximityPrompt carries the crate's id (RequisitionService), read by the
+	-- client's ResupplyUI to open that crate's cards.
+	CrateId = "CrateId",
 	-- Lobby place: a desk's ProximityPrompt carries its desk id (LobbyDesks), read by the
 	-- client's DeskDialogUI.
 	DeskId = "DeskId",

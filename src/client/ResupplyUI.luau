@@ -1,13 +1,16 @@
 --!strict
--- Resupply on the client: the HUD meter top left under the abilities (pool / cost, "[5] FLARE" when it
+-- Resupply on the client: the HUD meter top left under the abilities (pool / cost, "[X] FLARE" (Config.Keys.Flare) when it
 -- covers the cost, the drop countdown while a pallet is inbound; a short pulse when a kill
--- feeds the pool) and the world cards. When a crate lands the server sends this player
--- their own card ids (supply cards on a pallet, field upgrades on an upgrade crate:
--- UpgradeDefinitions) and the card positions; this module stands a card at each as a
--- billboard anchored to a local part and picks the one the player walks into. Other
--- players see their own cards at the same spots. Nothing here pauses the game.
+-- feeds the pool) and the crate's cards. When a crate lands the server sends this player
+-- their own card ids (supply cards on a pallet, field upgrades on an upgrade or objective
+-- crate: UpgradeDefinitions). The player walks up, holds the crate's prompt and picks from
+-- a panel (RewardPanel; owner 2026-11-11: never by walking over a card); walking away,
+-- going down or the crate closing shuts the panel without a pick. Nothing here pauses the
+-- game. Config.Requisition.Pick.WalkOver = true brings back the old way: a small card
+-- billboard at each card position, taken by walking into it.
 
 local Players = game:GetService("Players")
+local ProximityPromptService = game:GetService("ProximityPromptService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
@@ -15,11 +18,20 @@ local TweenService = game:GetService("TweenService")
 local Messages = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Messages"))
 local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attributes"))
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
+local KeyBindings = require(
+	ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Rules"):WaitForChild("KeyBindings")
+)
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
+local Reward =
+	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Rules"):WaitForChild("Reward"))
 local UpgradeDefinitions =
 	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("UpgradeDefinitions"))
 local HudTheme = require(script.Parent.HudTheme)
 local BuffNoticeUI = require(script.Parent.BuffNoticeUI)
+local CameraController = require(script.Parent.CameraController)
+local RewardPanel = require(script.Parent.RewardPanel)
+
+local FLARE_HINT = `[{KeyBindings.label(Config.Keys.Flare.Name)}] FLARE`
 
 local C = HudTheme.Color
 
@@ -32,6 +44,28 @@ local GAIN_PULSE_SECONDS = 0.35
 type Card = { cardId: string, anchor: BasePart, position: Vector3 }
 type CrateCards = { id: number, cards: { Card }, pickSent: boolean }
 
+-- This player's cards on a crate (the panel's content).
+type Offer = {
+	id: number,
+	kind: string,
+	choices: { string },
+	replaces: { string },
+	position: Vector3,
+	expiresAt: number, -- os.clock
+	picked: boolean,
+	taken: { string }, -- callsigns that have taken theirs
+	prompt: ProximityPrompt?,
+}
+
+-- Why the server refused a pick (Rules/Reward.checkPick), in plain words.
+local REFUSALS: { [string]: string } = {
+	gone = "THIS CRATE HAS CLOSED.",
+	taken = "YOU ALREADY TOOK ONE FROM THIS CRATE.",
+	not_offered = "THAT CARD IS NOT ON THIS CRATE.",
+	down = "YOU CANNOT PICK WHILE DOWN.",
+	far = "TOO FAR FROM THE CRATE. STEP CLOSER.",
+}
+
 local ResupplyUI = {}
 
 local resupplyRemote: RemoteEvent
@@ -43,6 +77,8 @@ local lastPool = 0
 local gainPulseUntil = 0
 local worldFolder: Folder
 local openCrates: { [number]: CrateCards } = {}
+local offers: { [number]: Offer } = {}
+local panelCrate: number? = nil -- the crate the panel is open on
 
 ----------------------------------------------------------------------
 -- HUD meter
@@ -84,7 +120,7 @@ local function updateMeter()
 		-- Ready: the bar pulses so the eye finds it without a pop-up.
 		local pulse = 0.5 + 0.5 * math.sin(now * 4)
 		fill.BackgroundColor3 = C.Yellow:Lerp(C.White, pulse)
-		setText(`RESUPPLY READY  {HudTheme.tint("[5] FLARE", C.Yellow)}`, C.Text)
+		setText(`RESUPPLY READY  {HudTheme.tint(FLARE_HINT, C.Yellow)}`, C.Text)
 	else
 		-- A kill just fed the pool: a brief brighten.
 		local gain = math.clamp((gainPulseUntil - now) / GAIN_PULSE_SECONDS, 0, 1)
@@ -118,7 +154,158 @@ local function createMeter()
 end
 
 ----------------------------------------------------------------------
--- World cards
+-- The panel (hold the crate's prompt, pick from big cards)
+----------------------------------------------------------------------
+
+local function kindRow(kind: string): { Label: string, Squad: { [string]: any }? }
+	return (Config.Crates.Kinds :: any)[kind] or Config.Crates.Kinds.supply
+end
+
+local function setPrompt(offer: Offer, enabled: boolean)
+	local prompt = offer.prompt
+	if prompt and prompt.Parent then
+		-- Local only: the other players' prompt on this crate is theirs.
+		prompt.Enabled = enabled
+	end
+end
+
+local function closePanel()
+	if panelCrate then
+		RewardPanel.close() -- onClose below puts the prompt back
+	end
+end
+
+local function openPanel(offer: Offer)
+	closePanel()
+	local row = kindRow(offer.kind)
+	local squad = row.Squad
+	panelCrate = offer.id
+	setPrompt(offer, false)
+	CameraController.setCursorFree("RewardPanel", true)
+	RewardPanel.open({
+		title = row.Label,
+		note = if squad
+			then `Pick one. The squad already got: {Reward.effectsLine(squad :: any)}.`
+			else "Pick one. Each soldier picks their own.",
+		cards = offer.choices,
+		replaces = offer.replaces,
+		expiresAt = offer.expiresAt,
+		taken = offer.taken,
+		onPick = function(cardId: string)
+			resupplyRemote:FireServer(Messages.Resupply.Pick, offer.id, cardId)
+		end,
+		onClose = function()
+			panelCrate = nil
+			CameraController.setCursorFree("RewardPanel", false)
+			if not offer.picked then
+				setPrompt(offer, true)
+			end
+		end,
+	})
+end
+
+-- The crate's prompt was held: open this player's cards on it.
+local function onPrompt(prompt: ProximityPrompt)
+	local crateId = prompt:GetAttribute(Attributes.CrateId)
+	if typeof(crateId) ~= "number" then
+		return
+	end
+	local offer = offers[crateId]
+	if not offer or offer.picked then
+		prompt.Enabled = false
+		BuffNoticeUI.card("NOTHING LEFT HERE", "You already took yours")
+		return
+	end
+	offer.prompt = prompt
+	openPanel(offer)
+end
+
+local function onPicked(crateId: number, cardId: string?)
+	local offer = offers[crateId]
+	if not offer then
+		return
+	end
+	offer.picked = true
+	setPrompt(offer, false)
+	local definition = UpgradeDefinitions.get(cardId)
+	if definition then
+		-- The pick moment: the card flashes in the panel (the pouch sound is the server's)
+		-- and a line under the mission line says what was taken.
+		BuffNoticeUI.subtitle(
+			nil,
+			`<b>{string.upper(definition.Name)}</b> taken. {definition.Description}`,
+			C.Yellow,
+			5
+		)
+	end
+	if panelCrate == crateId then
+		panelCrate = nil
+		CameraController.setCursorFree("RewardPanel", false)
+		if cardId then
+			RewardPanel.confirm(cardId)
+		else
+			RewardPanel.close(true)
+		end
+	end
+end
+
+local function storeOffer(
+	crateId: number,
+	kind: string,
+	choices: { string },
+	cratePosition: Vector3,
+	secondsLeft: number,
+	replaces: { string }
+)
+	offers[crateId] = {
+		id = crateId,
+		kind = kind,
+		choices = choices,
+		replaces = replaces,
+		position = cratePosition,
+		expiresAt = os.clock() + secondsLeft,
+		picked = false,
+		taken = {},
+		prompt = nil,
+	}
+	-- The arrival: say what landed and how to take it.
+	local row = kindRow(kind)
+	if row.Squad then
+		BuffNoticeUI.card("SQUAD RESTOCKED", "Reward crate down: 1 field upgrade each")
+	else
+		BuffNoticeUI.card(`{row.Label} DOWN`, "Open it at the crate: pick 1")
+	end
+end
+
+-- The open panel shuts when its player walks off, goes down or dies.
+local function watchPanel()
+	local crateId = panelCrate
+	local offer = if crateId then offers[crateId] else nil
+	if not offer then
+		return
+	end
+	local character = Players.LocalPlayer.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	local standing = character ~= nil
+		and root ~= nil
+		and humanoid ~= nil
+		and humanoid.Health > 0
+		and character:GetAttribute(Attributes.SquadState) ~= "Downed"
+	local away = root
+		and Vector3.new(
+				root.Position.X - offer.position.X,
+				0,
+				root.Position.Z - offer.position.Z
+			).Magnitude
+			> Config.Requisition.Pick.CloseRadius
+	if not standing or away then
+		closePanel()
+	end
+end
+
+----------------------------------------------------------------------
+-- World cards (Config.Requisition.Pick.WalkOver: the old way)
 ----------------------------------------------------------------------
 
 -- The kind tag line: "SUPPLY" on a pallet card, the upgrade's slot on a field upgrade.
@@ -307,10 +494,12 @@ local function checkPicks()
 	end
 end
 
+-- A respawn: the walk-over cards go; the panel shuts but the offers stay to be taken.
 local function clearAll()
 	for crateId in openCrates do
 		closeCards(crateId)
 	end
+	closePanel()
 end
 
 function ResupplyUI.init()
@@ -322,10 +511,37 @@ function ResupplyUI.init()
 
 	resupplyRemote.OnClientEvent:Connect(function(kind: string, ...: any)
 		if kind == Messages.Resupply.Cards then
-			showCards(...)
-		elseif kind == Messages.Resupply.Picked or kind == Messages.Resupply.Closed then
+			local crateId, crateKind, choices, positions, cratePosition, secondsLeft, replaces = ...
+			if Config.Requisition.Pick.WalkOver then
+				showCards(crateId, crateKind, choices, positions)
+			else
+				storeOffer(crateId, crateKind, choices, cratePosition, secondsLeft, replaces)
+			end
+		elseif kind == Messages.Resupply.Picked then
+			local crateId, cardId = ...
+			closeCards(crateId)
+			onPicked(crateId, cardId)
+		elseif kind == Messages.Resupply.Refused then
+			local crateId, reason = ...
+			if panelCrate == crateId then
+				RewardPanel.refuse(REFUSALS[reason] or "NOT TAKEN. PICK AGAIN.")
+			end
+		elseif kind == Messages.Resupply.Taken then
+			local crateId, names = ...
+			local offer = offers[crateId]
+			if offer then
+				offer.taken = names
+				if panelCrate == crateId then
+					RewardPanel.setTaken(names)
+				end
+			end
+		elseif kind == Messages.Resupply.Closed then
 			local crateId = ...
 			closeCards(crateId)
+			if panelCrate == crateId then
+				closePanel()
+			end
+			offers[crateId] = nil
 		elseif kind == Messages.Resupply.Called then
 			local thrower = ...
 			noticeText = if thrower == Players.LocalPlayer:GetAttribute(Attributes.Callsign)
@@ -336,10 +552,28 @@ function ResupplyUI.init()
 		end
 	end)
 
+	ProximityPromptService.PromptTriggered:Connect(function(prompt: ProximityPrompt, who: Player)
+		if who == Players.LocalPlayer then
+			onPrompt(prompt)
+		end
+	end)
+	-- A crate this player has already taken from shows them no prompt.
+	ProximityPromptService.PromptShown:Connect(function(prompt: ProximityPrompt)
+		local crateId = prompt:GetAttribute(Attributes.CrateId)
+		local offer = if typeof(crateId) == "number" then offers[crateId] else nil
+		if offer then
+			offer.prompt = prompt
+			if offer.picked or panelCrate == offer.id then
+				prompt.Enabled = false
+			end
+		end
+	end)
+
 	Players.LocalPlayer.CharacterAdded:Connect(clearAll)
 	RunService.Heartbeat:Connect(function()
 		updateMeter()
 		checkPicks()
+		watchPanel()
 	end)
 end
 

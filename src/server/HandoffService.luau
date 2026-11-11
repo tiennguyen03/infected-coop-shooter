@@ -89,6 +89,18 @@ function HandoffService.operation(): string
 	return Handoff.DEFAULT_OPERATION
 end
 
+-- The main objective the squad picked in the lobby, when the lobby sent one (nothing
+-- does yet). ObjectiveService plays it only if the map's pool offers it.
+function HandoffService.objective(): string?
+	for _, player in Players:GetPlayers() do
+		local join = HandoffService.joinFor(player)
+		if join.fromLobby and join.objective then
+			return join.objective
+		end
+	end
+	return nil
+end
+
 -- The lobby this match flies home to: a Dev pair's lobby when this is that pair's match, else
 -- Config.Places.Lobby (0 = none).
 function HandoffService.lobbyPlaceId(): number

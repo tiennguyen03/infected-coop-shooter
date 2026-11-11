@@ -1,7 +1,8 @@
 --!strict
 -- Where a thrown thing lands: the requested aim point clamped to the thrower's reach,
 -- stopped short of any wall in the way and dropped to the ground. Shared by the breach
--- charge (server), the red flare (server) and the client's aim ghosts so all agree.
+-- charge (server), the red flare (server) and the client's aim ghosts so all agree. `hand`
+-- is where the throw starts on screen (ThrowFX, CallInArrivalFX).
 
 local ThrowUtil = {}
 
@@ -30,6 +31,12 @@ function ThrowUtil.landingPoint(
 	local ground =
 		workspace:Raycast(landXZ + Vector3.new(0, 30, 0), Vector3.new(0, -200, 0), params)
 	return if ground then ground.Position else landXZ
+end
+
+-- Where a throw leaves the body: the throwing hand, or `fallback` for a body without one.
+function ThrowUtil.hand(character: Model?, fallback: Vector3): Vector3
+	local hand = character and character:FindFirstChild("RightHand")
+	return if hand and hand:IsA("BasePart") then hand.Position else fallback
 end
 
 return ThrowUtil
