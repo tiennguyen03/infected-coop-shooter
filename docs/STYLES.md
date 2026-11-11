@@ -512,6 +512,13 @@ orange (`rgb(255,150,60)`) plus a ball at the landing point.
 - Strike warning: flat disc in `warning orange`, blast = expanding faceted sphere,
   no stock fire textures.
 - Fire ground: faceted orange/yellow triangles on the floor, flicker by scale not by light.
+- First person (`CameraController`, `Config.Camera.FirstPerson`; Nova 2026-11-10): T or the
+  right stick click toggles it, the wheel in past `MinDistance` enters and back out leaves.
+  The eye sits on the Head (0.45 forward, 0.1 up), so crouch and prone carry it; yaw, pitch,
+  kick, shake and the sights work as in third person (the sights only narrow the FOV). The
+  soldier's own body is hidden on their client only, and a local copy of the held gun (the
+  biggest visible part of the Tool) hangs off the camera at `GunHip`, easing to `GunAds` down
+  the sights; it follows swaps and never blocks the aim ray. Others always see the body.
 - Camera kick (`CameraController`): every own shot pushes the view up
   `Config.Weapons.<id>.Kick.Pitch` degrees plus a random +/- `Yaw`, eased back over `Recover`
   (0.12 s, ~95% gone) on top of the aim, so the aim never drifts. M16A4 0.9 / 0.3, MP5

@@ -28,7 +28,7 @@ single-player; every system is written for four.
 Controls: WASD move (the body has weight: it speeds up and slows down), **Shift** sprint,
 **LeftControl** crouch, **C** prone, **Space** vault or climb cover, **Shift + LeftControl**
 roll, **Shift + C** slide, **hold left-click** to shoot (over-the-shoulder aim, mouse wheel
-zooms), **R** reload, **Q** swap primary/pistol, **G** frag, **V** shove, **E** stim, **1-4**
+zooms), **T** first person (or the wheel in past the closest zoom), **R** reload, **Q** swap primary/pistol, **G** frag, **V** shove, **E** stim, **1-4**
 call-ins, **5** Resupply flare, **B** Arms Room (loadout), **hold F** revive a downed squadmate.
 
 The loop: you drop with a squad of four; in solo, three bot squadmates (Pike Two to Four)

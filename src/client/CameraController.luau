@@ -10,6 +10,11 @@
 -- FOV so the sights feel steady. The pivot drops with the stance (StanceController) and the
 -- body's yaw can be locked while a vault/climb carries it (MovementController). No
 -- wall-occlusion handling yet - the arena is open ground.
+--
+-- First person (Config.Camera.FirstPerson): T toggles it, or the wheel past the closest zoom.
+-- The same yaw, pitch, kick, shake and sights, the eye on the Head instead of behind the
+-- shoulder; this soldier's own body is hidden on this client, and a local copy of the held
+-- gun (the Rifle tool's mesh) hangs off the camera, moving to the centre down the sights.
 
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
@@ -50,6 +55,10 @@ local kickRecover = 0.12
 -- Blast shake (Config.Camera.Shake): amplitude in degrees, decaying each frame.
 local shakeAmplitude = 0
 local lastFocus: Vector3? = nil
+local firstPerson = false
+local hiddenParts: { BasePart } = {} -- this soldier's parts hidden in first person
+local viewGun: BasePart? = nil -- the camera's copy of the held gun
+local viewGunSource: BasePart? = nil -- the held gun part it copies
 
 -- Fraction left after `dt` of an exponential ease that is ~95% done after `over` seconds.
 local function decayFactor(dt: number, over: number): number
@@ -109,6 +118,79 @@ function CameraController.setBodyYawLocked(locked: boolean)
 	bodyYawLocked = locked
 end
 
+-- The held gun's visible part: the biggest visible part of the character's Tool (the gun
+-- mesh, or the block rifle's body).
+local function heldGun(character: Model): BasePart?
+	local tool = character:FindFirstChildOfClass("Tool")
+	local best: BasePart? = nil
+	if tool then
+		for _, part in tool:GetDescendants() do
+			if
+				part:IsA("BasePart")
+				and part.Transparency < 1
+				and (not best or part.Size.Magnitude > best.Size.Magnitude)
+			then
+				best = part
+			end
+		end
+	end
+	return best
+end
+
+-- Keeps the camera's gun a copy of the one in hand (swaps, respawns), or drops it.
+local function updateViewGun(character: Model?)
+	local source = if firstPerson and character then heldGun(character) else nil
+	if source == viewGunSource and (viewGun == nil) == (source == nil) then
+		return
+	end
+	if viewGun then
+		viewGun:Destroy()
+		viewGun = nil
+	end
+	viewGunSource = source
+	if source then
+		local copy = source:Clone()
+		copy:ClearAllChildren()
+		copy.Anchored = true
+		copy.CanCollide = false
+		copy.CanQuery = false -- the aim ray must pass through it
+		copy.CanTouch = false
+		copy.CastShadow = false
+		copy.LocalTransparencyModifier = 0
+		copy.Parent = workspace.CurrentCamera
+		viewGun = copy
+	end
+end
+
+local function refreshHidden()
+	for _, part in hiddenParts do
+		part.LocalTransparencyModifier = 0
+	end
+	table.clear(hiddenParts)
+	local character = Players.LocalPlayer.Character
+	if not (firstPerson and character) then
+		return
+	end
+	for _, part in character:GetDescendants() do
+		if part:IsA("BasePart") then
+			table.insert(hiddenParts, part)
+		end
+	end
+end
+
+function CameraController.setFirstPerson(on: boolean)
+	if firstPerson == on then
+		return
+	end
+	firstPerson = on
+	refreshHidden()
+	updateViewGun(Players.LocalPlayer.Character)
+end
+
+function CameraController.isFirstPerson(): boolean
+	return firstPerson
+end
+
 local function applyCharacterSettings(character: Model)
 	local humanoid = character:WaitForChild("Humanoid") :: Humanoid
 	-- We rotate the character to the camera yaw ourselves each frame.
@@ -125,6 +207,13 @@ local function applyCharacterSettings(character: Model)
 	kickPitch = 0
 	kickYaw = 0
 	shakeAmplitude = 0
+	-- A new body: hide it again if we are in first person, and anything added to it later.
+	task.defer(refreshHidden)
+	character.DescendantAdded:Connect(function(thing)
+		if firstPerson and thing:IsA("BasePart") then
+			task.defer(refreshHidden)
+		end
+	end)
 end
 
 local function createCrosshair()
@@ -265,7 +354,30 @@ local function onRenderStep(deltaTime: number)
 		+ Vector3.new(0, pivotHeight + rootDrop, 0)
 		+ rotation:VectorToWorldSpace(Vector3.new(shoulder.X, shoulder.Y, 0))
 	lastFocus = focus
-	camera.CFrame = CFrame.new(focus) * rotation * CFrame.new(0, 0, reach)
+	local head = character and character:FindFirstChild("Head")
+	if firstPerson and head and head:IsA("BasePart") then
+		-- The eye on the head (it follows crouch, prone and the body's bob), just ahead of its
+		-- centre; the sights only narrow the view. The body is re-hidden each frame because
+		-- Roblox's camera scripts reset LocalTransparencyModifier.
+		local eye = Config.Camera.FirstPerson
+		local flatYaw = CFrame.fromEulerAnglesYXZ(0, yaw, 0)
+		local at = head.Position
+			+ Vector3.new(0, eye.EyeUp, 0)
+			+ flatYaw:VectorToWorldSpace(Vector3.new(0, 0, -eye.EyeForward))
+		lastFocus = at
+		camera.CFrame = CFrame.new(at) * rotation
+		for _, part in hiddenParts do
+			part.LocalTransparencyModifier = 1
+		end
+		updateViewGun(character)
+		local gun = viewGun
+		if gun then
+			-- A held gun's mesh runs along its Z with the muzzle to -Z: the camera's forward.
+			gun.CFrame = camera.CFrame * eye.GunHip:Lerp(eye.GunAds, adsBlend)
+		end
+	else
+		camera.CFrame = CFrame.new(focus) * rotation * CFrame.new(0, 0, reach)
+	end
 
 	-- Character faces the aim direction while alive.
 	if humanoid and humanoid.Health > 0 and not bodyYawLocked then
@@ -278,11 +390,33 @@ local function onInputChanged(input: InputObject, gameProcessed: boolean)
 		return
 	end
 	if input.UserInputType == Enum.UserInputType.MouseWheel then
+		local scroll = input.Position.Z
+		if firstPerson then
+			if scroll < 0 then -- wheel back: out to the closest third-person zoom
+				CameraController.setFirstPerson(false)
+				distance = Config.Camera.MinDistance
+			end
+			return
+		end
+		if scroll > 0 and distance <= Config.Camera.MinDistance then
+			CameraController.setFirstPerson(true) -- wheel in past the closest zoom
+			return
+		end
 		distance = math.clamp(
-			distance - input.Position.Z * 1.5,
+			distance - scroll * 1.5,
 			Config.Camera.MinDistance,
 			Config.Camera.MaxDistance
 		)
+	end
+end
+
+local function onInputBegan(input: InputObject, gameProcessed: boolean)
+	if gameProcessed then
+		return
+	end
+	local keys = Config.Camera.FirstPerson
+	if input.KeyCode == keys.Key or input.KeyCode == keys.GamepadKey then
+		CameraController.setFirstPerson(not firstPerson)
 	end
 end
 
@@ -305,6 +439,7 @@ function CameraController.init()
 	end
 
 	UserInputService.InputChanged:Connect(onInputChanged)
+	UserInputService.InputBegan:Connect(onInputBegan)
 
 	-- After the default camera update so our settings win each frame.
 	RunService:BindToRenderStep("OTSCamera", Enum.RenderPriority.Camera.Value + 1, onRenderStep)

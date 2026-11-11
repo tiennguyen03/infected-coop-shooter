@@ -216,6 +216,19 @@ local Config = {
 		-- Pivot height above the root part per stance (stand is roughly head height).
 		PivotHeight = { stand = 2, crouch = 0.6, prone = -1.2 },
 		PivotEaseTime = 0.25,
+		-- First person (Nova, 2026-11-10: "a first person toggle for players in the match"):
+		-- T (or the right stick click) toggles it; the wheel past MinDistance goes in, the
+		-- wheel back out leaves it. The eye rides the Head, a little forward of its centre;
+		-- the soldier's own body is hidden on this client, and a copy of the held gun hangs
+		-- off the camera (the third-person pose holds it below the eye, out of view).
+		FirstPerson = {
+			Key = Enum.KeyCode.T,
+			GamepadKey = Enum.KeyCode.ButtonR3,
+			EyeForward = 0.45, -- studs ahead of the head's centre
+			EyeUp = 0.1,
+			GunHip = CFrame.new(1.1, -1.05, -2.2), -- the gun's centre from the eye, at the hip
+			GunAds = CFrame.new(0, -0.56, -1.9), -- and down the sights (centred under the dot)
+		},
 		-- Per-shot kick (CameraController): each gun's Weapons.<id>.Kick pushes the view up by
 		-- Pitch degrees plus a random +/- Yaw, eased back over Recover seconds (never a
 		-- permanent aim change). Aiming down sights scales it by AdsScale.
