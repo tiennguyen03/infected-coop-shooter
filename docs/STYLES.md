@@ -410,12 +410,12 @@ switched off (`Config.Player.SkinnedBody = false`, see `assets/3d/README.md`).
 - Weapons: `gun` and `dark` materials, one accent facet (sight, mag tape) in the owning
   item's accent color.
 
-### Infected v2 (proposal, 2026-11-10; not in the game)
+### Infected v2 (in the game since 2026-11-11)
 
-A remade look for Walker, Runner, Brute and Hocker, for the owner to compare with the bodies
-above. The game still loads the current ones; nothing is exported or uploaded. Source:
-`assets/3d/build/infected_v2.py`. Pictures (current next to v2, front and back):
-`assets/3d/build/previews/infected_v2_<form>.png` and `lineup_infected_v2.png`.
+The remade Walker, Runner, Brute and Hocker (owner: "I like the new zombies"). The game wears
+them while `Config.Enemies.BodyVersion` is 2; 1 puts the bodies above back (both sets stay
+uploaded). Source: `assets/3d/build/infected_v2.py`. Pictures (first bodies next to v2, front
+and back): `assets/3d/build/previews/infected_v2_<form>.png` and `lineup_infected_v2.png`.
 
 Same rules: blocky R15 limb sets, palette swatches, no green skin, costumes from
 CHARACTERS.md. What changes is the read at distance: a few big shapes instead of many small
@@ -439,11 +439,14 @@ the outline, a face with dark sockets and an open jaw, and one bad side.
   and on the sac.
 
 Sided limbs: Walker arms and legs, Brute arms (`infected_v2.SIDED`). Heads, torsos and the
-sided limbs are not symmetric, so each needs the X mirror before upload (`assets/3d/README.md`),
-or the wounds and the club's spurs land on the wrong side. To adopt a form:
-`build_assets.py -- --infected-v2` builds `inf_v2_<form>_<limb>`; upload, then point
-`MeshAssets` at them. Not checked in game: gore stumps on the new arms, hitboxes, how the
-clips move the longer right arm.
+sided limbs are not symmetric, so every `inf_v2_*` FBX is exported mirrored in X
+(`assets/3d/README.md`); the bad side is the body's own right. The Hocker's sac is placed
+from the limb centre, not the mesh centre (the hump moves the torso's bounds). Hit boxes are
+the limb bounds, so they grew with the shapes: Walker head 1.38 x 1.92 x 1.40 (was 1.22 x
+1.60 x 1.48), Hocker head 1.84 x 1.56 x 1.90 (was 1.33 x 1.60 x 1.70), Brute upper torso
+3.29 x 3.40 x 1.91 (was 2.86 x 3.11 x 1.87), Brute right forearm 1.48 x 2.12 x 1.34 (was
+1.19 x 2.12 x 1.01). Not yet seen in game: which side the wounds land on, gore stumps on the
+new arms, how the clips move the longer right arm.
 
 ### The Carrier's sky (gloomy, 2026-11-10)
 

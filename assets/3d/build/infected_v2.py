@@ -1,9 +1,9 @@
-"""Infected v2: a remade look for the four common Infected. A PROPOSAL, not what the game loads.
+"""Infected v2: the remade Walker, Runner, Brute and Hocker. What the game loads since
+2026-11-11 (owner: "I like the new zombies").
 
-Walker, Runner, Brute and Hocker rebuilt for the read at game distance (docs/STYLES.md §7
-"Infected v2 (proposal)"). The current bodies in build_assets.py (`INFECTED_TYPES`) stay as
-they are and stay what the game loads; nothing here is exported or uploaded until the owner
-picks. The Warden is not touched.
+Rebuilt for the read at game distance (docs/STYLES.md §7 "Infected v2"). The first bodies in
+build_assets.py (`INFECTED_TYPES`) stay built and uploaded as the fallback set
+(`Config.Enemies.BodyVersion = 1`). The Warden is not touched.
 
 What changed, on every form: the infection is a few big shapes, not many small ones. One
 large open wound per body with pale bone in it, growths that break the outline (chunky pus
@@ -14,9 +14,9 @@ costumes from docs/CHARACTERS.md, under the caps in `BODY_TRI_CAP`.
 
 Meshes: `inf_v2_<form>_<limb>` (`_l` / `_r` where the sides differ, `SIDED`), collection
 `Infected`, plus the assembled `ref_inf_v2_<form>` figures. `register(ba)` adds them to
-build_assets' ASSETS table; build_assets only calls it when asked:
-
-    blender --background --python assets/3d/build/build_assets.py -- --infected-v2 --only <names>
+build_assets' ASSETS table on every build. Every `inf_v2_*` FBX is written mirrored in X
+(`build_assets.MIRROR_X_PREFIXES`): Roblox mirrors an imported mesh, and each body has one bad
+side. Previews and the printed `offset` stay in design coordinates (+X is the body's right).
 
 The side-by-side previews (current next to v2, front and back; no FBX, no .blend):
 
@@ -25,10 +25,8 @@ The side-by-side previews (current next to v2, front and back; no FBX, no .blend
 writes `previews/infected_v2_<form>.png` and `previews/lineup_infected_v2.png`.
 In live Blender: `import infected_v2; infected_v2.live()` stands the same figures in the scene.
 
-To adopt a form: move its builder into `INFECTED_TYPES` (or register this file always),
-rebuild, upload the limbs, update `MeshAssets`. Heads, torsos and the sided limbs here are not
-symmetric, and Roblox mirrors an imported mesh in X (assets/3d/README.md), so mirror those
-before upload.
+To change a form: edit its builder, rebuild, upload the changed limbs, update the ids, sizes
+and offsets in `MeshAssets` and `ASSET_IDS.md`.
 """
 
 import math

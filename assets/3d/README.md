@@ -13,11 +13,12 @@ One Blender project holds every asset: **`arena_survivor.blend`**. Collections i
 | `Infected` | enemy limb sets `inf_<walker|runner|brute|hocker>_<limb>` (one builder per form in `INFECTED_TYPES`, from `docs/CHARACTERS.md`), the Warden (`build/warden.py`) |
 | `_Reference` | a 5-stud human block for scale; never exported |
 
-**Proposal, not built by default:** `build/infected_v2.py` holds a remade Walker, Runner,
-Brute and Hocker (`inf_v2_<form>_<limb>`, [STYLES.md](../../docs/STYLES.md) §7 "Infected
-v2"). `blender --background --python assets/3d/build/infected_v2.py` renders current next to
-v2 into `build/previews/infected_v2_<form>.png` and `lineup_infected_v2.png` and writes
-nothing else; `build_assets.py -- --infected-v2` adds the limb meshes to a build.
+**The remade Infected** (in game since 2026-11-11): `build/infected_v2.py` holds the Walker,
+Runner, Brute and Hocker the game wears (`inf_v2_<form>_<limb>`, 45 meshes,
+[STYLES.md](../../docs/STYLES.md) §7 "Infected v2"), built with everything else. The first
+bodies (`inf_<form>_<limb>`) stay built and uploaded: `Config.Enemies.BodyVersion = 1` puts
+them back. `blender --background --python assets/3d/build/infected_v2.py` renders the two
+side by side into `build/previews/infected_v2_<form>.png` and `lineup_infected_v2.png`.
 
 The `.blend` is **generated** by `build/build_assets.py`. Every asset is described in code
 (boxes, cylinders, icospheres painted with palette swatches), so edits made by hand in Blender
@@ -30,8 +31,9 @@ ported into a build file.
 
 **Roblox mirrors an imported mesh in X** about its bounds centre (found 2026-11-09 on the
 Fallow): the `Fallow` and `Vehicles` collections export pre-mirrored (`MIRROR_X_COLLECTIONS`;
-previews and offsets unchanged). An asymmetric mesh in another collection needs the same
-before upload. The lobby's art: `build/fallow.py` (12 `env_fallow_*`, the ship) and
+previews and offsets unchanged), and so does every `inf_v2_*` mesh (`MIRROR_X_PREFIXES`). An
+asymmetric mesh in another collection needs the same before upload; the first Infected
+bodies and the Warden went up unmirrored. The lobby's art: `build/fallow.py` (12 `env_fallow_*`, the ship) and
 `build/lantern.py` (4 `veh_lantern_*`, the lift bird); ids in `ASSET_IDS.md`, budgets in
 `docs/STYLES.md`.
 
@@ -105,6 +107,7 @@ and the lineups with only those assets; run a full build afterwards.
 | prop_chainlink_panel | 268 | bottom | fence panel 12 x 7 x 0.3 (see-through) |
 | prop_concertina | 288 | bottom | razor wire coil 12.1 x 2.9 x 2.9 |
 | inf_walker_* / inf_runner_* / inf_brute_* / inf_hocker_* | per body in [STYLES.md](../../docs/STYLES.md) §7 (caps `BODY_TRI_CAP`) | center | the 15 R15 limb MeshParts of each Infected (`MeshAssets.dressInfected`) |
+| inf_v2_walker_* / _runner_* / _brute_* / _hocker_* | 1,792 / 2,100 / 2,088 / 1,632 a body | center | the remade bodies the game wears (`infected_v2.py`; `Config.Enemies.BodyVersion`), exported mirrored in X; Walker arms and legs and Brute arms are `_l` / `_r` |
 | inf_warden_* / inf_warden_plate_* | STYLES §7 (cap 5,000) | center | the Warden: 12 limb meshes with sided upper arm / lower arm / hand (`warden.SIDED`, `MeshAssets.limbMeshName`) plus six plates welded on by `IndexService.buildPlates` (helmet, chest, back, shoulder `_l` / `_r`, shield) |
 | inf_gore_stump, inf_gore_chunk_a/b/c | small | origin / center | stump welded at a joint when a limb comes off (GoreService); chunks thrown at body hits (client GoreFX). `gore.py`, a small `loft` kit |
 | pc_assault_* | ~650 per body | center | the Pike soldier's 15 R15 limb MeshParts (`PlayerSetup` -> `MeshAssets.dressModel`); tapered forearms and shins with joint caps (`PC_TAPER`) |

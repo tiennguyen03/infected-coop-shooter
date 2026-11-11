@@ -1378,13 +1378,12 @@ import lantern  # noqa: E402
 
 lantern.register(sys.modules[__name__])
 
-# Proposal (2026-11-10): the remade common Infected live in infected_v2.py (`inf_v2_*`). Built
-# only when asked for (`-- --infected-v2`), so a plain build exports nothing new until the
-# owner adopts them. Its own previews: `blender --background --python infected_v2.py`.
-if "--infected-v2" in sys.argv:
-    import infected_v2  # noqa: E402
+# The remade common Infected (owner adopted them 2026-11-11) live in infected_v2.py
+# (`inf_v2_*`); the bodies above stay built as the fallback set (Config.Enemies.BodyVersion).
+# Its side-by-side previews: `blender --background --python infected_v2.py`.
+import infected_v2  # noqa: E402
 
-    infected_v2.register(sys.modules[__name__])
+infected_v2.register(sys.modules[__name__])
 
 
 # ------------------------------------------------------------------ The Chosen (player bodies)
@@ -1853,6 +1852,14 @@ def get_collection(name):
 # so their export is pre-mirrored about the same centre. Previews and the printed `offset`
 # (the bounds centre, unchanged by this mirror) stay in design coordinates.
 MIRROR_X_COLLECTIONS = {"Fallow", "Vehicles"}
+# The same for single sets inside a collection that is otherwise left alone: the remade
+# Infected have one bad side (heads, torsos, the `_l` / `_r` limbs), the older bodies were
+# uploaded as they are.
+MIRROR_X_PREFIXES = ("inf_v2_",)
+
+
+def exports_mirrored(name, obj):
+    return obj.users_collection[0].name in MIRROR_X_COLLECTIONS or name.startswith(MIRROR_X_PREFIXES)
 
 
 class mirrored_x:
@@ -2234,7 +2241,7 @@ def main():
             changed.append(name)
             prints[name] = fp
         if not name.startswith("ref_") and not same:
-            if obj.users_collection[0].name in MIRROR_X_COLLECTIONS:
+            if exports_mirrored(name, obj):
                 with mirrored_x(obj):
                     export_fbx(obj, fbx)
             else:

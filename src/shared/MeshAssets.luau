@@ -24,6 +24,8 @@ local InsertService = game:GetService("InsertService")
 local RunService = game:GetService("RunService")
 local ServerStorage = game:GetService("ServerStorage")
 
+local Config = require(script.Parent.Config)
+
 local MeshAssets = {}
 
 -- Shared palette texture (assets/3d/palette.png as an Image asset).
@@ -1038,6 +1040,235 @@ local MESHES: { [string]: MeshDef } = {
 		size = Vector3.new(1.010, 0.310, 1.000),
 		offset = Vector3.new(0.000, 0.000, 0.000),
 	},
+	-- The remade Walker, Runner, Brute and Hocker (assets/3d/build/infected_v2.py; owner adopted
+	-- them 2026-11-11). Worn when Config.Enemies.BodyVersion is 2; the sets above are the
+	-- fallback (1). Exported pre-mirrored in X (build_assets.MIRROR_X_PREFIXES): each body has
+	-- one bad side. Walker arms and legs and Brute arms are `_l` / `_r` meshes.
+	inf_v2_walker_head = {
+		meshId = "rbxassetid://106046525739295",
+		size = Vector3.new(1.380, 1.922, 1.402),
+		offset = Vector3.new(0.165, -0.179, -0.358),
+	},
+	inf_v2_walker_upper_torso = {
+		meshId = "rbxassetid://130984694916153",
+		size = Vector3.new(2.097, 2.040, 1.230),
+		offset = Vector3.new(0.048, 0.170, -0.015),
+	},
+	inf_v2_walker_lower_torso = {
+		meshId = "rbxassetid://116673965788066",
+		size = Vector3.new(2.050, 1.510, 1.532),
+		offset = Vector3.new(0.000, -0.535, 0.036),
+	},
+	inf_v2_walker_upper_arm_l = {
+		meshId = "rbxassetid://113808700591325",
+		size = Vector3.new(0.924, 1.240, 0.924),
+		offset = Vector3.new(0.000, 0.000, 0.000),
+	},
+	inf_v2_walker_upper_arm_r = {
+		meshId = "rbxassetid://77497709366262",
+		size = Vector3.new(0.924, 0.920, 0.924),
+		offset = Vector3.new(0.000, -0.160, 0.000),
+	},
+	inf_v2_walker_lower_arm_l = {
+		meshId = "rbxassetid://110020715905919",
+		size = Vector3.new(0.850, 1.120, 0.850),
+		offset = Vector3.new(0.000, 0.000, 0.000),
+	},
+	inf_v2_walker_lower_arm_r = {
+		meshId = "rbxassetid://122085562689176",
+		size = Vector3.new(0.887, 1.470, 0.983),
+		offset = Vector3.new(0.000, -0.155, -0.048),
+	},
+	inf_v2_walker_hand_l = {
+		meshId = "rbxassetid://132475899202414",
+		size = Vector3.new(0.980, 0.484, 1.035),
+		offset = Vector3.new(0.000, 0.002, -0.002),
+	},
+	inf_v2_walker_hand_r = {
+		meshId = "rbxassetid://86081304835633",
+		size = Vector3.new(1.060, 0.630, 1.055),
+		offset = Vector3.new(0.000, -0.315, -0.013),
+	},
+	inf_v2_walker_upper_leg_l = {
+		meshId = "rbxassetid://74493617508481",
+		size = Vector3.new(0.887, 1.400, 0.991),
+		offset = Vector3.new(0.000, -0.020, -0.052),
+	},
+	inf_v2_walker_upper_leg_r = {
+		meshId = "rbxassetid://118173706075340",
+		size = Vector3.new(0.924, 1.480, 1.026),
+		offset = Vector3.new(0.000, -0.060, -0.051),
+	},
+	inf_v2_walker_lower_leg_l = {
+		meshId = "rbxassetid://89226940260983",
+		size = Vector3.new(0.990, 1.300, 0.970),
+		offset = Vector3.new(0.000, 0.000, 0.000),
+	},
+	inf_v2_walker_lower_leg_r = {
+		meshId = "rbxassetid://130488390819949",
+		size = Vector3.new(0.823, 1.320, 0.778),
+		offset = Vector3.new(0.018, 0.010, -0.001),
+	},
+	inf_v2_walker_foot_l = {
+		meshId = "rbxassetid://89851504280755",
+		size = Vector3.new(1.010, 0.310, 1.000),
+		offset = Vector3.new(0.000, 0.000, 0.000),
+	},
+	inf_v2_walker_foot_r = {
+		meshId = "rbxassetid://103085284485495",
+		size = Vector3.new(0.860, 0.240, 1.020),
+		offset = Vector3.new(0.000, 0.000, -0.020),
+	},
+	inf_v2_runner_head = {
+		meshId = "rbxassetid://92992241182272",
+		size = Vector3.new(1.230, 1.488, 1.450),
+		offset = Vector3.new(0.000, -0.382, -0.602),
+	},
+	inf_v2_runner_upper_torso = {
+		meshId = "rbxassetid://112205940493491",
+		size = Vector3.new(2.034, 2.374, 1.854),
+		offset = Vector3.new(0.000, 0.211, -0.259),
+	},
+	inf_v2_runner_lower_torso = {
+		meshId = "rbxassetid://126259712134046",
+		size = Vector3.new(2.030, 0.510, 1.110),
+		offset = Vector3.new(0.000, 0.055, -0.035),
+	},
+	inf_v2_runner_upper_arm = {
+		meshId = "rbxassetid://129209031197714",
+		size = Vector3.new(0.850, 1.210, 0.900),
+		offset = Vector3.new(0.000, -0.005, -0.460),
+	},
+	inf_v2_runner_lower_arm = {
+		meshId = "rbxassetid://122188743008383",
+		size = Vector3.new(0.739, 1.710, 0.740),
+		offset = Vector3.new(0.000, -0.295, -0.450),
+	},
+	inf_v2_runner_hand = {
+		meshId = "rbxassetid://97826414704368",
+		size = Vector3.new(0.900, 1.010, 0.600),
+		offset = Vector3.new(0.000, -0.925, -0.410),
+	},
+	inf_v2_runner_upper_leg = {
+		meshId = "rbxassetid://97805557700329",
+		size = Vector3.new(0.924, 1.420, 1.066),
+		offset = Vector3.new(0.000, -0.030, -0.071),
+	},
+	inf_v2_runner_lower_leg = {
+		meshId = "rbxassetid://106415508101028",
+		size = Vector3.new(0.960, 1.300, 0.960),
+		offset = Vector3.new(0.000, 0.000, 0.000),
+	},
+	inf_v2_runner_foot = {
+		meshId = "rbxassetid://121298677483978",
+		size = Vector3.new(1.010, 0.325, 1.150),
+		offset = Vector3.new(0.000, 0.008, 0.075),
+	},
+	inf_v2_brute_head = {
+		meshId = "rbxassetid://76553837381211",
+		size = Vector3.new(1.435, 1.320, 1.330),
+		offset = Vector3.new(0.048, -0.410, -0.125),
+	},
+	inf_v2_brute_upper_torso = {
+		meshId = "rbxassetid://124063376133641",
+		size = Vector3.new(3.290, 3.403, 1.913),
+		offset = Vector3.new(0.064, 0.714, 0.094),
+	},
+	inf_v2_brute_lower_torso = {
+		meshId = "rbxassetid://77149886757059",
+		size = Vector3.new(2.400, 1.000, 1.280),
+		offset = Vector3.new(0.000, -0.300, -0.040),
+	},
+	inf_v2_brute_upper_arm_l = {
+		meshId = "rbxassetid://76176836206722",
+		size = Vector3.new(0.859, 1.260, 0.818),
+		offset = Vector3.new(-0.420, 0.010, -0.001),
+	},
+	inf_v2_brute_upper_arm_r = {
+		meshId = "rbxassetid://124758308397002",
+		size = Vector3.new(0.919, 1.260, 0.818),
+		offset = Vector3.new(0.450, 0.010, -0.001),
+	},
+	inf_v2_brute_lower_arm_l = {
+		meshId = "rbxassetid://79780586870672",
+		size = Vector3.new(1.188, 2.120, 1.061),
+		offset = Vector3.new(-0.515, -0.500, -0.032),
+	},
+	inf_v2_brute_lower_arm_r = {
+		meshId = "rbxassetid://131988248316791",
+		size = Vector3.new(1.478, 2.120, 1.340),
+		offset = Vector3.new(0.586, -0.500, 0.000),
+	},
+	inf_v2_brute_hand_l = {
+		meshId = "rbxassetid://96571432842893",
+		size = Vector3.new(0.980, 0.530, 1.050),
+		offset = Vector3.new(-0.420, -1.145, -0.035),
+	},
+	inf_v2_brute_hand_r = {
+		meshId = "rbxassetid://109046248505404",
+		size = Vector3.new(1.360, 0.810, 1.270),
+		offset = Vector3.new(0.420, -1.255, -0.045),
+	},
+	inf_v2_brute_upper_leg = {
+		meshId = "rbxassetid://76191672765321",
+		size = Vector3.new(1.040, 1.490, 1.131),
+		offset = Vector3.new(0.030, -0.065, -0.076),
+	},
+	inf_v2_brute_lower_leg = {
+		meshId = "rbxassetid://86489818051367",
+		size = Vector3.new(1.040, 1.320, 1.070),
+		offset = Vector3.new(0.000, 0.010, -0.025),
+	},
+	inf_v2_brute_foot = {
+		meshId = "rbxassetid://130043563819891",
+		size = Vector3.new(1.010, 0.365, 1.070),
+		offset = Vector3.new(0.000, 0.027, -0.035),
+	},
+	inf_v2_hocker_head = {
+		meshId = "rbxassetid://140161122857322",
+		size = Vector3.new(1.840, 1.558, 1.897),
+		offset = Vector3.new(0.000, -0.011, 0.174),
+	},
+	inf_v2_hocker_upper_torso = {
+		meshId = "rbxassetid://138173749193214",
+		size = Vector3.new(2.158, 2.230, 1.592),
+		offset = Vector3.new(0.000, 0.265, 0.104),
+	},
+	inf_v2_hocker_lower_torso = {
+		meshId = "rbxassetid://116673965788066",
+		size = Vector3.new(2.050, 1.510, 1.532),
+		offset = Vector3.new(0.000, -0.535, 0.036),
+	},
+	inf_v2_hocker_upper_arm = {
+		meshId = "rbxassetid://103111103864201",
+		size = Vector3.new(0.832, 1.230, 0.832),
+		offset = Vector3.new(0.000, -0.015, 0.000),
+	},
+	inf_v2_hocker_lower_arm = {
+		meshId = "rbxassetid://110555669059770",
+		size = Vector3.new(0.702, 1.100, 0.711),
+		offset = Vector3.new(0.000, -0.010, -0.004),
+	},
+	inf_v2_hocker_hand = {
+		meshId = "rbxassetid://117772985136475",
+		size = Vector3.new(0.900, 0.598, 1.166),
+		offset = Vector3.new(0.000, -0.129, -0.093),
+	},
+	inf_v2_hocker_upper_leg = {
+		meshId = "rbxassetid://84470153407726",
+		size = Vector3.new(0.887, 1.522, 1.232),
+		offset = Vector3.new(0.000, 0.012, -0.235),
+	},
+	inf_v2_hocker_lower_leg = {
+		meshId = "rbxassetid://105574227113144",
+		size = Vector3.new(0.990, 1.384, 1.109),
+		offset = Vector3.new(0.000, -0.093, -0.074),
+	},
+	inf_v2_hocker_foot = {
+		meshId = "rbxassetid://89851504280755",
+		size = Vector3.new(1.010, 0.310, 1.000),
+		offset = Vector3.new(0.000, 0.000, 0.000),
+	},
 	-- The Fallow, the lobby ship (assets/3d/build/fallow.py; FallowArt places them). Built in
 	-- ship coordinates: `offset` is the mesh centre on the ship (radar: from its turning axis;
 	-- catwalk bays: from the hull face at deck height). Shells draw as Metal (`surface`),
@@ -1298,6 +1529,36 @@ function MeshAssets.waitFor(name: string, timeoutSeconds: number): MeshPart?
 	return MeshAssets.clone(name)
 end
 
+-- The limb set an Infected form wears: the remade set (`inf_v2_<form>_`) when
+-- Config.Enemies.BodyVersion is 2 and that form has one uploaded, else the first bodies
+-- (`inf_<form>_`: every form at version 1, and the Warden always).
+local function infectedPrefix(typeName: string): string
+	local form = string.lower(typeName)
+	if Config.Enemies.BodyVersion >= 2 then
+		local remade = `inf_v2_{form}_`
+		local head = MESHES[remade .. "head"]
+		if head and head.meshId ~= "" then
+			return remade
+		end
+	end
+	return `inf_{form}_`
+end
+
+-- True for a limb mesh of the Infected set that BodyVersion leaves unworn: no template is
+-- built for it (45 or 39 meshes the server never clones).
+local REMADE_FORMS = { "walker", "runner", "brute", "hocker" }
+local function isShelvedInfected(name: string): boolean
+	for _, form in REMADE_FORMS do
+		local worn = infectedPrefix(form)
+		for _, prefix in { `inf_{form}_`, `inf_v2_{form}_` } do
+			if prefix ~= worn and string.sub(name, 1, #prefix) == prefix then
+				return true
+			end
+		end
+	end
+	return false
+end
+
 -- Server only. Templates fill in asynchronously; clone() returns nil until a template is ready.
 function MeshAssets.init()
 	if not RunService:IsServer() then
@@ -1307,7 +1568,9 @@ function MeshAssets.init()
 	folder.Name = "MeshTemplates"
 	folder.Parent = ServerStorage
 	for name, def in MESHES do
-		task.spawn(buildTemplate, folder, name, def)
+		if not isShelvedInfected(name) then
+			task.spawn(buildTemplate, folder, name, def)
+		end
 	end
 end
 
@@ -1364,7 +1627,7 @@ function MeshAssets.hasSet(prefix: string): boolean
 end
 
 function MeshAssets.hasInfectedSet(typeName: string): boolean
-	return MeshAssets.hasSet(`inf_{string.lower(typeName)}_`)
+	return MeshAssets.hasSet(infectedPrefix(typeName))
 end
 
 -- Swaps every R15 limb of `model` for the `prefix` limb set (same part names, same centres,
@@ -1586,7 +1849,14 @@ function MeshAssets.offsetOf(name: string): Vector3?
 end
 
 function MeshAssets.dressInfected(model: Model, typeName: string): boolean
-	return MeshAssets.dressModel(model, `inf_{string.lower(typeName)}_`)
+	return MeshAssets.dressModel(model, infectedPrefix(typeName))
+end
+
+-- Where the mesh an Infected form wears on `limb` ("upper_torso") sits from the R15 limb
+-- centre: subtract it to place something on the limb itself, whichever body set is worn.
+-- A sided limb needs its `_l` / `_r` name.
+function MeshAssets.infectedLimbOffset(typeName: string, limb: string): Vector3
+	return MeshAssets.offsetOf(infectedPrefix(typeName) .. limb) or Vector3.zero
 end
 
 -- The shared palette texture every palette mesh uses (PaletteController re-applies it).
