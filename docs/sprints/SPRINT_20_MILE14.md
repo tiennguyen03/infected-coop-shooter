@@ -251,3 +251,15 @@ budget, no `MeshAssets` entries, no placement checks (`delta_map.py`'s), no path
 points, no lights. The site and pad positions are the level designer's v1 ideas moved to fit,
 not re-reviewed by the design agents. Previews are lit as dusk so shapes read; the mission is
 full dark.
+
+**Review of the previews (2026-11-11, pictures and tables only, no Blender):** the counts above
+match the tables. Seen or measured, not fixed:
+- The five wrecks in the median sit on the parapet line (x 0): sedan (4, -236), van (-5, -140),
+  hatch (-4, -356) and humvee (5, 46) pass through a parapet, the pickup (3, 172) through the
+  light pole at z 168 (visible in `skyline`). Move them or open the parapet run there.
+- Harlan covers the northern 128 degrees only; south, east and west the horizon is pines and
+  bare sky. The fields between the places are flat and nearly empty (`oblique`).
+- The ground slab's edge shows from high up (`oblique`), not from eye height in any preview.
+- `weigh` is framed against a truck cab; the Weigh Station itself is not really shown.
+- The 8 new kit pieces have no per-piece preview and no FBX in `export/`; their tri counts
+  were re-added by hand from the builders, not re-measured.

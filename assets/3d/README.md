@@ -240,6 +240,11 @@ live Blender: `import mile14_map; mile14_map.build()` (with `assets/3d/build` on
 headless: `blender --background --python assets/3d/build/mile14_map.py`. When Mile 14 gets
 mission data the tables move to Luau and this script reads them, as `delta_map.py` does.
 
+Mile 14 v2 (proposal, 2026-11-11): `build/mile14_v2.py` (same shape, `mile14_v2.blend`) and 8
+more `highway.py` pieces: `env_tanker_trailer`, `env_sound_wall_24`, `env_pine_stand`,
+`env_billboard`, `env_scale_house`, `prop_road_sign`, `env_lane_dashes_96`, `prop_road_debris`.
+No per-piece previews or FBX yet; not uploaded.
+
 ## The map in Blender (`build/delta_map.py`, `delta_map.blend`)
 
 Checkpoint Delta is built from plain Parts by `src/server/ArenaService.luau` (exact
