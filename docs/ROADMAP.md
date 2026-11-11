@@ -19,7 +19,8 @@ names; modular per-item rows).
   2. The first three minutes have no reason to move: a hidden 180 s timer, Walkers only.
   3. Rewards land when you need nothing (the first pallet at full ammo; the Warden's upgrade
      cards with 30 s of extraction left); one field-upgrade pick per run.
-  4. Solo doesn't feel like a squad: bots never call anything in, the radio is text only.
+  4. Solo doesn't feel like a squad: bots never call anything in (they do since 2026-11-11:
+     frags, stims, Hammer / Anvil), the radio is text only.
   5. The middle of the Warden fight drags (130 s+ solo); extraction (30 s) ends before it builds.
   6. The results screen erases the run: four numbers, nothing that happened.
 

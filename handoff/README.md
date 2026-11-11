@@ -15,7 +15,8 @@ Resupply flare and pallet cards → Hold Position at the objective site (1 of 3 
 upgrades) → the Warden (boss) → extraction on Lantern → OPERATION COMPLETE → ready up.
 
 - **Squad:** anonymous soldiers Pike One to Four; bots Pike Two to Four in solo; downed and
-  revive (hold F).
+  revive (hold E). Bots walk and path to the leader (teleport only when stuck) and use stims,
+  frags and one fire mission each (not yet seen in a playtest).
 - **Kit:** six real guns (M16A4, MP5, M249, Mossberg 590, M110, M17) plus three samples in the
   dev panel (S&W 686 revolver, M2010 sniper, the Goose rocket), each with its own Blender model
   and own shot and reload sounds; Q swap, G frag (hold to aim, release to throw), V shove,
@@ -41,7 +42,7 @@ upgrades) → the Warden (boss) → extraction on Lantern → OPERATION COMPLETE
 - **Roblox:** the group Boomin Dev Studios (270506601) owns the game "Co-op Zombie Shooter" and
   every sound and animation. Its start place 87556879379942 holds the **lobby**; the match is
   "Checkpoint Delta" 125769854992316 (`Config.Places`).
-- **Checks:** stylua, selene, rojo build, 200 Lune tests (rules plus the source-wiring spec, which also reads the lobby's remotes), luau-lsp, CI on every push.
+- **Checks:** stylua, selene, rojo build, 223 Lune tests (rules plus the source-wiring spec, which also reads the lobby's remotes), luau-lsp, CI on every push.
 
 ## Who owns what
 

@@ -109,6 +109,20 @@ Numbers in `Config.Weapons.<Gun>`, rows in `WeaponDefinitions`. Semi guns fire o
   Index kill fills it to `ReserveMax`. The Goose keeps its one spare round.
 - Bots fire the rifle slower (`Bots.FireCooldown` 0.30: three bots on sustained fire ~ one
   player), same magazine, infinite reserve.
+- Bots walk (2026-11-11): straight to the formation slot when it is close and in sight, else
+  along a path, sprinting when far. They teleport only when far from the leader and stalled
+  (or out of the world), to a spot no living player faces. Rules in `Rules/BotBrain`,
+  numbers in `Config.Bots`.
+- Bots use a soldier's kit through the players' server paths (no kill credit): a stim at
+  40% health; a frag (3 carried) at 4+ Infected with no squad member near the blast; one
+  fire mission each (Hammer, Anvil, Hammer by slot) at 8+ Infected or a Brute / boss, 180 s
+  per bot, 45 s between any two, announced on the radio subtitle. A Restock card taken by
+  any player refills their frags and stims; an Aid Bag refills a treated bot's stims.
+- Bots in a boss fight (`Config.Bots.Boss`, switch `Enabled`): while the boss is within 60
+  studs of the leader they leave formation for posts 32 studs from the boss, 40 degrees
+  apart on the leader's side, and back off as he comes; they run 5 studs clear of a
+  telegraphed disc or line, step out of caustic puddles, stim at 60% health, and revive only
+  when the boss is 26+ studs from the downed body.
 - The three sample guns (2026-11-09) are in the Arms Room like every gun: its lists are every
   row of the slot, ordered by the row's `ArmsOrder` (default 100; the first is the default
   gun), so a new gun appears by having a row. ADS move: revolver 0.85, sniper 0.4, Goose 0.4.
@@ -537,6 +551,6 @@ Not scheduled:
 - **Meta between runs:** the Containment Board plus unlocks (call-ins, field upgrades, guns;
   launch target 5 primaries + 3 sidearms, 4 throwables, 2 heavy call-ins, 2 specials; +3-4
   guns per drop). Today every call-in is unlocked from run 1.
-- **Bots:** call-ins and vaulting.
+- **Bots:** vaulting, the other call-ins (Shrike, emplacements, supply), a voiced radio line.
 - **Sound:** Control's voiced radio lines, the Burn, pickup one-shots
   (`assets/audio/README.md`).

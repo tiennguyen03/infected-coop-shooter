@@ -234,6 +234,28 @@ function CallInService.fireFree(player: Player, id: string, point: Vector3?): bo
 	return fire(player, definition, point)
 end
 
+-- A bot's fire mission (BotService; it keeps its own cooldown): a shelled mission (the
+-- Hammer, the Anvil) thrown from `member`'s body at `point`, clamped and landed like a player's throw, with no
+-- owner (no kill credit, no upgrades). False for any other call-in or no body.
+function CallInService.fireMissionFor(member: Squad.Member, id: string, point: Vector3): boolean
+	local definition = CallInDefinitions.get(id)
+	local character, root = member.character, member.root
+	if not definition or not character or not root or not Squad.canAct(member) then
+		return false
+	end
+	local cfg = (Config.CallIns :: { [string]: any })[definition.ConfigKey]
+	-- A shelled fire mission is a thrown row with Shells (AirStrikeService.MissionConfig).
+	if definition.Kind ~= "throw" or typeof(cfg.Shells) ~= "number" then
+		return false
+	end
+	local landing =
+		ThrowUtil.landingPoint(root, point, cfg.ThrowDistance, throwExclusions(character))
+	local flat = Vector3.new(landing.X - root.Position.X, 0, landing.Z - root.Position.Z)
+	local direction = if flat.Magnitude > 0.5 then flat.Unit else root.CFrame.LookVector
+	WorldSounds.at(landing, "callins", "callin_throw")
+	return AirStrikeService.fireMission(nil, cfg, landing, direction, 0)
+end
+
 local function onCallIn(player: Player, slot: unknown, requested: unknown)
 	if typeof(slot) ~= "number" or slot % 1 ~= 0 or slot < 1 or slot > slotCount() then
 		return

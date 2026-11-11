@@ -41,6 +41,11 @@ mine, sentry and wire caps, every `PlayerRemoving` handler, kill credit via
   do not hold it up); otherwise "WAITING FOR SQUAD (n / m)". One helper, `Squad.zoneCount`.
 - **Hits:** `DamageDealt` goes to the attacking player only; a bot's hit to nobody; kills to
   everyone.
+- **Bots:** each follows the nearest living player on foot (a path when the straight line is
+  blocked); a teleport is the last resort and lands where no living player faces. Their
+  stims, frags and fire missions run through the players' server functions with no owner
+  (`KitService.dose` / `throwFrag`, `CallInService.fireMissionFor`), and are never thrown
+  with any squad member, player or bot, inside the blast.
 - **Clock:** `DifficultyService.getElapsed` adds time only while the field is not paused
   (the HUD timer stays wall-clock). `GamePaused` is only the run-end freeze.
 - **Spawns:** the Infected spawn around living players only; four spawn pads, one per member.

@@ -87,8 +87,8 @@ end
 
 -- The frag's blast, shared by anything that explodes on a soldier's behalf (the Goose's
 -- rocket): a flash, the screen shake, `Damage` to every Infected within `Radius`. No friendly
--- fire (the call-ins' rule).
-function KitService.blast(player: Player, center: Vector3, settings: BlastSettings)
+-- fire (the call-ins' rule). `player` is nil for a bot's frag (no kill credit, no hit marker).
+function KitService.blast(player: Player?, center: Vector3, settings: BlastSettings)
 	local boom = Instance.new("Explosion")
 	boom.Position = center
 	boom.BlastRadius = 0
@@ -133,23 +133,18 @@ function KitService.blast(player: Player, center: Vector3, settings: BlastSettin
 	end
 end
 
-local function throwGrenade(player: Player, requested: Vector3?)
-	local member, root = standing(player)
-	local character = player.Character
-	if not member or not root or not character then
-		return
-	end
-	local now = os.clock()
-	if now < (throwReadyAt[player] or 0) then
-		return
-	end
-	local definition = WeaponDefinitions.grenade(LoadoutService.getGrenade(player))
+-- The throw itself, for a player (throwGrenade, after its checks) or a bot (BotService,
+-- `player` nil; it counts its own grenades): grenade `grenadeId` leaves `character` toward
+-- `requested`, lands (ThrowUtil), blinks through its fuse and blows (KitService.blast).
+function KitService.throwFrag(
+	player: Player?,
+	character: Model,
+	root: BasePart,
+	requested: Vector3?,
+	grenadeId: string?
+)
+	local definition = WeaponDefinitions.grenade(grenadeId)
 	local settings = (Config.Grenade :: any)[definition.ConfigKey] :: FragSettings
-	if not LoadoutService.useGrenade(player) then
-		return
-	end
-	throwReadyAt[player] = now + Config.Grenade.ThrowGap
-
 	local center = ThrowUtil.landingPoint(root, requested, settings.ThrowDistance, {
 		character,
 		effectsFolder,
@@ -157,7 +152,7 @@ local function throwGrenade(player: Player, requested: Vector3?)
 	WorldSounds.at(center, "callins", "callin_throw")
 	-- Bait Charge: a longer fuse, and the Infected around walk to it until it blows.
 	local fuse = settings.FuseTime
-	if LoadoutService.hasUpgrade(player, "lure_charge") then
+	if player and LoadoutService.hasUpgrade(player, "lure_charge") then
 		local lure = Config.Upgrades.LureCharge
 		fuse = lure.FuseTime
 		EnemyService.setLure(center, lure.Radius, fuse)
@@ -201,6 +196,23 @@ local function throwGrenade(player: Player, requested: Vector3?)
 		WorldSounds.at(center, "player_gear", "breach")
 		KitService.blast(player, center, settings)
 	end)
+end
+
+local function throwGrenade(player: Player, requested: Vector3?)
+	local member, root = standing(player)
+	local character = player.Character
+	if not member or not root or not character then
+		return
+	end
+	local now = os.clock()
+	if now < (throwReadyAt[player] or 0) then
+		return
+	end
+	if not LoadoutService.useGrenade(player) then
+		return
+	end
+	throwReadyAt[player] = now + Config.Grenade.ThrowGap
+	KitService.throwFrag(player, character, root, requested, LoadoutService.getGrenade(player))
 end
 
 ----------------------------------------------------------------------
@@ -263,21 +275,14 @@ end
 -- E: stim
 ----------------------------------------------------------------------
 
-local function stim(player: Player)
-	local member = standing(player)
-	local humanoid = member and member.humanoid
-	if not member or not humanoid then
-		return
-	end
-	local now = os.clock()
-	if now < (stimUntil[player] or 0) or humanoid.Health >= humanoid.MaxHealth then
-		return -- one stim at a time; a full bar wastes none
-	end
-	if not LoadoutService.useStim(player) then
+-- The dose itself, for a player (stim, after its checks) or a bot (BotService; it counts
+-- its own stims): Config.Stim.Heal over Duration on `member`.
+function KitService.dose(member: Squad.Member)
+	local humanoid = member.humanoid
+	if not humanoid then
 		return
 	end
 	local settings = Config.Stim
-	stimUntil[player] = now + settings.Duration
 	if member.root then
 		WorldSounds.on(member.root, "player_gear", "revive", "Gear")
 	end
@@ -295,6 +300,23 @@ local function stim(player: Player)
 			humanoid.Health = math.min(humanoid.Health + perTick, humanoid.MaxHealth)
 		end
 	end)
+end
+
+local function stim(player: Player)
+	local member = standing(player)
+	local humanoid = member and member.humanoid
+	if not member or not humanoid then
+		return
+	end
+	local now = os.clock()
+	if now < (stimUntil[player] or 0) or humanoid.Health >= humanoid.MaxHealth then
+		return -- one stim at a time; a full bar wastes none
+	end
+	if not LoadoutService.useStim(player) then
+		return
+	end
+	stimUntil[player] = now + Config.Stim.Duration
+	KitService.dose(member)
 end
 
 ----------------------------------------------------------------------
