@@ -55,6 +55,7 @@ local function raycastParams(): RaycastParams
 		{
 			"Projectiles",
 			"KitEffects",
+			"CallInEffects",
 			"GrenadeGhost",
 			"Resupply",
 			"Drones",
