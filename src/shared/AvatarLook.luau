@@ -8,6 +8,9 @@
 
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Goggles = require(ReplicatedStorage.Shared.Goggles)
 
 local AvatarLook = {}
 
@@ -146,6 +149,10 @@ function AvatarLook.apply(humanoid: Humanoid, look: Look): boolean
 	local ok, err = pcall(function()
 		humanoid:ApplyDescriptionAsync(description)
 	end)
+	local body = humanoid.Parent
+	if ok and body and body:IsA("Model") then
+		Goggles.fit(body)
+	end
 	if not ok then
 		warn(
 			`[AvatarLook] {humanoid.Parent and humanoid.Parent.Name or "?"}: the look did not apply ({err})`
@@ -161,6 +168,7 @@ function AvatarLook.rig(look: Look): Model?
 		return Players:CreateHumanoidModelFromDescription(description, Enum.HumanoidRigType.R15)
 	end)
 	if ok and typeof(result) == "Instance" and result:IsA("Model") then
+		Goggles.fit(result)
 		return result
 	end
 	warn(`[AvatarLook] no rig: {result}`)

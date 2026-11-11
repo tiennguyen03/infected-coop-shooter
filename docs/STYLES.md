@@ -642,7 +642,10 @@ orange (`rgb(255,150,60)`) plus a ball at the landing point.
   `Weapon.ADS` view. **Night vision** (2026-11-11, client `NightVision`, `Config.NightVision`): N or D-pad up
   flips the helmet's goggles down or up with a short blink and a click; through them the
   exposure is raised 2.2 stops, a green tint with no colour of its own, bloom on lights, a
-  slight flicker, dark screen edges; off on respawn and death. Made for the night area. The viewmodel's own animation, timed to the body's events: the reload (from
+  slight flicker, dark screen edges; off on respawn and death. Made for the night area. The goggles
+  are seen to move (2026-11-11): a PVS-31 accessory on a plain FAST helmet's mount, modelled lowered,
+  hinged on the mount (`Shared.Goggles`, `Config.NightVision.Goggles`): stowed folded up, they swing
+  down over the eyes in 0.35 s while that soldier's night vision is on, for every player to see. The viewmodel's own animation, timed to the body's events: the reload (from
   `ReloadUntil`: the gun cants, the left hand takes the magazine down out of view and seats a
   fresh one), a kick per shot (`KickBack`, `KickPitch`; less down the sights), sway behind
   camera turns (`Sway`), a walking bob (`Bob`) and a dip during a swap (`SwapDip`). Built at

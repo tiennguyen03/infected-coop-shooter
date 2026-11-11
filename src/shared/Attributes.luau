@@ -17,6 +17,12 @@ local Attributes = table.freeze({
 	-- workspace: when this run's insertion cutscene starts (server time; RunManager writes it a
 	-- moment after Insert begins so every client is ready, InsertionCutscene reads it)
 	InsertStartsAt = "InsertStartsAt",
+	-- a soldier's character: their night vision is on (NightVisionService writes it from the
+	-- client's toggle; every client lowers that body's goggles, client NightVision)
+	NightVision = "NightVision",
+	-- the goggles accessory: its frame in the head's space as modelled (lowered), set when it
+	-- is fitted (Shared.Goggles)
+	GoggleBase = "GoggleBase",
 	ReadyCount = "ReadyCount",
 	ReadyNeeded = "ReadyNeeded",
 	ReadyUpEndsAt = "ReadyUpEndsAt",
