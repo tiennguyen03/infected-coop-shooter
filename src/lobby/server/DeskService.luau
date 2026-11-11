@@ -33,11 +33,11 @@ local DRESS: { [string]: NpcBody.Dress } = {
 		trousers = ARMY.trousers,
 		items = { 16125110410, 16125087437, 13418346088, 119588777391950 },
 	},
-	-- Green flight suit, a headset (F1 E4), short brown hair (R2).
+	-- Green flight suit, a headset (F1 E4); no hair (Nova).
 	loadmaster = {
 		shirt = SHIP.shirt,
 		trousers = SHIP.trousers,
-		items = { 105079389547650, 15946756199, 14763639823 },
+		items = { 105079389547650, 15946756199 },
 	},
 	-- Woodland shirt and pants, a headset (A3 A4 E3), short black hair (R3).
 	fires = {
@@ -51,11 +51,11 @@ local DRESS: { [string]: NpcBody.Dress } = {
 		trousers = ARMY.trousers,
 		items = { 9482682978, 9482717204, 13418356502 },
 	},
-	-- Military shirt, combat pants, a headset (A6 A9 E5), buzzcut (R1).
+	-- Military shirt, combat pants, a headset (A6 A9 E5).
 	plot = {
 		shirt = ARMY.shirt,
 		trousers = ARMY.trousers,
-		items = { 130988807898132, 74956577347922, 10154340203, 77191128701026 },
+		items = { 130988807898132, 74956577347922, 10154340203 },
 	},
 }
 

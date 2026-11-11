@@ -37,8 +37,8 @@ local Config = {
 		-- should change in match as well"): Roblox's default R15 body wearing catalog items
 		-- (Shared.AvatarLook), on players and bots in the match and on the ship. Enabled = false
 		-- puts the Pike limb body (PLAYER_BODY, dressModel) back. Picks page codes: a tactical
-		-- vest with an olive shirt, slim combat pants, an AVS plate carrier, a black FAST helmet,
-		-- a buzzcut (T3 A9 P2 H4 R1).
+		-- vest with an olive shirt, slim combat pants, an AVS plate carrier, a black FAST helmet
+		-- (T3 A9 P2 H4). Not R1: that "buzzcut" is a novelty piece worn over the face.
 		Look = {
 			Enabled = true,
 			Items = {
@@ -46,7 +46,6 @@ local Config = {
 				74956577347922,
 				108890568133405,
 				92700467676199,
-				77191128701026,
 			},
 			Skin = Color3.fromRGB(176, 140, 112),
 			Shirt = Color3.fromRGB(86, 92, 66), -- under the clothing
