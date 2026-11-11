@@ -3,7 +3,8 @@
 -- while any player stands inside (pauses outside, never resets), pays
 -- Config.Objective.SupplyReward into the Resupply pool once on completion, and never
 -- repeats. An upgrade crate (field upgrades, RequisitionService.dropCrate) lands at the
--- site when the zone appears: the Primary is the one guaranteed upgrade source of a run.
+-- site when the zone appears, and a second one beside it when the hold ends (the cards
+-- the Index's pallet used to show, moved ahead of the fight they are for).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -89,6 +90,29 @@ local function stopSiren()
 	end
 end
 
+-- The hold is done: the second upgrade crate, beside the site crate on the side the
+-- nearest living member stands, so the pick is made before the Index arrives.
+local function dropCompleteCrate()
+	local kind = Config.Objective.CompleteCrate
+	if kind == "" then
+		return
+	end
+	local center = Config.Objective.ZonePosition
+	local nearest = Squad.nearestLiving(center)
+	local nearestRoot = nearest and nearest.root
+	local toward = if nearestRoot
+		then Vector3.new(nearestRoot.Position.X - center.X, 0, nearestRoot.Position.Z - center.Z)
+		else Vector3.zAxis
+	local facing = if toward.Magnitude > 0.01 then toward.Unit else Vector3.zAxis
+	task.spawn(
+		RequisitionService.dropCrate,
+		center + facing * Config.Objective.CompleteCrateOffset,
+		facing,
+		(kind :: any) :: RequisitionService.CrateKind,
+		false
+	)
+end
+
 local function complete()
 	if completed then
 		return
@@ -107,6 +131,7 @@ local function complete()
 	end
 
 	RequisitionService.addRequisition(Config.Objective.SupplyReward)
+	dropCompleteCrate()
 
 	objectiveRemote:FireAllClients(
 		Messages.ObjectiveUpdate.Completed,

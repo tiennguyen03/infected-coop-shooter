@@ -7,9 +7,15 @@
 -- the sky and lands loud (a wave spawns around it). The pallet is the ammo box: every
 -- living player who walks within RearmRadius is re-armed once (full magazine + reserve).
 -- Its three cards are the supply cards (Medkit / Restock / Armour Plate; one pick per
--- player per pallet). An upgrade crate (`dropCrate(..., "upgrade")`, the Primary's site
--- crate) shows each player field upgrades instead. Server-authoritative: the client only
--- asks to throw and asks to pick; both are validated here.
+-- player per pallet). An upgrade crate (`dropCrate(..., "upgrade")`, the site crate) shows
+-- each player field upgrades instead; an objective crate (`"objective"`, the hold's end)
+-- does too and restocks the whole squad as it lands (Config.Crates.Kinds).
+-- Taking a card (owner 2026-11-11): never by walking over it. The crate carries a
+-- ProximityPrompt; the client opens a panel of the player's cards on it (RewardPanel) and
+-- asks for one. Server-authoritative: the client only asks to throw and asks to pick; both
+-- are validated here (Rules/Reward.checkPick: the crate, the offer, one pick per player,
+-- reach, not downed). Bots near a crate take a supply card by need (Reward.botChoice).
+-- Config.Requisition.Pick.WalkOver = true restores the old walk-into-a-card pick.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -22,6 +28,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local GroundUtil = require(ReplicatedStorage.Shared.GroundUtil)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
+local Reward = require(ReplicatedStorage.Shared.Rules.Reward)
 local ThrowUtil = require(ReplicatedStorage.Shared.ThrowUtil)
 local UpgradeDefinitions = require(ReplicatedStorage.Shared.UpgradeDefinitions)
 local CallInService = require(script.Parent.CallInService)
@@ -37,9 +44,13 @@ local CRATE_DROP_HEIGHT = 60
 local CRATE_DROP_TIME = 1.1
 local CARD_HEIGHT = 2 -- card anchor above the ground
 local CARD_FORWARD = 3.5 -- cards stand this far in front of the pallet, toward the thrower
-local PICK_SLACK = 3 -- server tolerance on top of PickRadius (latency, card width)
+local PICK_SLACK = 3 -- walk-over only: server tolerance on top of PickRadius
+local MARKER_COLOR = Color3.fromRGB(232, 181, 75)
 
-export type CrateKind = "supply" | "upgrade"
+export type CrateKind = "supply" | "upgrade" | "objective"
+
+-- A row of Config.Crates.Kinds.
+type KindRow = { Label: string, Lifetime: number, Beacon: boolean, Squad: Reward.Effects? }
 
 type Pending = {
 	position: Vector3,
@@ -56,6 +67,9 @@ type Crate = {
 	cardPositions: { Vector3 },
 	offers: { [Player]: { string } },
 	picked: { [Player]: boolean },
+	botPicked: { [string]: boolean }, -- Squad member ids of the bots that took a card
+	taken: { string }, -- callsigns that have taken a card, in order
+	status: TextLabel, -- the marker's second line: "TAKEN 1/2"
 	rearmed: { [Player]: boolean },
 	expiresAt: number,
 }
@@ -77,6 +91,14 @@ local lastStep = 0
 
 local function livingPlayers(): { Player }
 	return Squad.livingOwners()
+end
+
+local function kindRow(kind: CrateKind): KindRow
+	return (Config.Crates.Kinds :: any)[kind] or Config.Crates.Kinds.supply
+end
+
+local function cardEffects(): { [string]: Reward.Effects }
+	return Config.Crates.Cards :: any
 end
 
 local function currentCost(): number
@@ -165,18 +187,156 @@ local function cardPositions(center: Vector3, facing: Vector3): { Vector3 }
 	return positions
 end
 
--- What `player` sees on a crate of `kind`: the supply cards, or a roll of field upgrades
--- they can still take (possibly none).
+-- What `player` sees on a crate of `kind`: the supply cards, or field upgrades they do
+-- not hold (ones for an empty slot first), filled up with supply cards when short.
 local function offerFor(player: Player, kind: CrateKind): { string }
+	local supply = Config.Crates.SupplyCards
 	if kind == "supply" then
-		return table.clone(Config.Crates.SupplyCards)
+		return table.clone(supply)
 	end
-	return LoadoutService.rollUpgradeOffer(player, Config.Crates.CardsPerPlayer)
+	local count = Config.Crates.CardsPerPlayer
+	return Reward.pad(LoadoutService.rollUpgradeOffer(player, count), supply, count)
 end
 
--- Drops a crate of `kind` on `position` (ground-snapped), cards facing `facing`. `loud`
--- lands it like a pallet: a ring wave and extra pressure for a while. The part falls in
--- from the sky; the cards show once it lands.
+-- Gives a set of effects to a member: the heal reaches a bot, the rest needs a player's kit.
+local function applyEffects(member: Squad.Member, effects: Reward.Effects)
+	local humanoid = member.humanoid
+	if effects.Heal and humanoid and humanoid.Health > 0 then
+		humanoid.Health = humanoid.MaxHealth
+	end
+	local player = member.owner
+	if not player then
+		return
+	end
+	if effects.Ammo then
+		LoadoutService.refillAmmo(player)
+	end
+	if effects.CallIns then
+		CallInService.refill(player)
+	end
+	if effects.Grenades then
+		LoadoutService.refillGrenades(player)
+	end
+	if effects.Stims then
+		LoadoutService.refillStims(player)
+	end
+	local plate = effects.Plate
+	if plate and plate > 0 then
+		LoadoutService.addShield(player, plate)
+	end
+end
+
+-- The label over a crate: what it is, and under it who has taken theirs.
+local function buildMarker(part: BasePart, text: string): TextLabel
+	local marker = Instance.new("BillboardGui")
+	marker.Size = UDim2.fromOffset(240, 54)
+	marker.StudsOffset = Vector3.new(0, 3.4, 0)
+	marker.AlwaysOnTop = true
+	marker.MaxDistance = 300
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(1, 0, 0, 32)
+	label.BackgroundTransparency = 1
+	label.Text = text
+	label.TextColor3 = MARKER_COLOR
+	label.TextStrokeTransparency = 0.4
+	label.TextScaled = true
+	label.Font = Enum.Font.GothamBlack
+	label.Parent = marker
+	local status = Instance.new("TextLabel")
+	status.Size = UDim2.new(1, 0, 0, 20)
+	status.Position = UDim2.fromOffset(0, 34)
+	status.BackgroundTransparency = 1
+	status.Text = ""
+	status.TextColor3 = Color3.fromRGB(240, 240, 240)
+	status.TextStrokeTransparency = 0.4
+	status.TextScaled = true
+	status.Font = Enum.Font.GothamBold
+	status.Parent = marker
+	marker.Parent = part
+	return status
+end
+
+-- A thin pillar of light over a crate worth walking to, seen across the map.
+local function buildBeacon(part: BasePart, ground: Vector3)
+	local cfg = Config.Crates.Beacon
+	local beam = Instance.new("Part")
+	beam.Name = "Beacon"
+	beam.Shape = Enum.PartType.Cylinder
+	beam.Size = Vector3.new(cfg.Height, cfg.Width, cfg.Width)
+	beam.CFrame = CFrame.new(ground + Vector3.new(0, cfg.Height / 2, 0))
+		* CFrame.Angles(0, 0, math.rad(90))
+	beam.Anchored = true
+	beam.CanCollide = false
+	beam.CanQuery = false
+	beam.CanTouch = false
+	beam.CastShadow = false
+	beam.Material = Enum.Material.Neon
+	beam.Color = MARKER_COLOR
+	beam.Transparency = cfg.Transparency
+	beam.Parent = part
+	local light = Instance.new("PointLight")
+	light.Color = MARKER_COLOR
+	light.Brightness = 2
+	light.Range = 16
+	light.Parent = part
+end
+
+-- The prompt a player holds to open the crate's cards; the client reads CrateId off it.
+local function buildPrompt(part: BasePart, crateId: number, text: string)
+	local cfg = Config.Requisition.Pick
+	local prompt = Instance.new("ProximityPrompt")
+	prompt.Name = "CratePrompt"
+	prompt.ActionText = "Open"
+	prompt.ObjectText = text
+	prompt.KeyboardKeyCode = cfg.Key
+	prompt.GamepadKeyCode = cfg.GamepadKey
+	prompt.HoldDuration = cfg.Hold
+	prompt.MaxActivationDistance = cfg.Radius
+	prompt.RequiresLineOfSight = false
+	prompt:SetAttribute(Attributes.CrateId, crateId)
+	prompt.Parent = part
+end
+
+-- Who has taken a card: the marker's second line and every client's panel.
+local function publishTaken(crate: Crate)
+	local offered, picked = 0, 0
+	for player in crate.offers do
+		offered += 1
+		if crate.picked[player] then
+			picked += 1
+		end
+	end
+	crate.status.Text = if #crate.taken > 0 and offered > 0 then `TAKEN {picked}/{offered}` else ""
+	resupplyRemote:FireAllClients(Messages.Resupply.Taken, crate.id, crate.taken)
+end
+
+-- Sends `player` their cards on `crate` (also: the upgrade each card would replace).
+local function sendCards(player: Player, crate: Crate)
+	local choices = crate.offers[player]
+	if not choices or #choices == 0 then
+		return
+	end
+	local replaces: { string } = {}
+	for index, cardId in choices do
+		replaces[index] = LoadoutService.replacedBy(player, cardId) or ""
+	end
+	resupplyRemote:FireClient(
+		player,
+		Messages.Resupply.Cards,
+		crate.id,
+		crate.kind,
+		choices,
+		crate.cardPositions,
+		crate.position,
+		math.max(crate.expiresAt - os.clock(), 0),
+		replaces
+	)
+end
+
+-- Drops a crate of `kind` on `position` (ground-snapped), facing `facing`. `loud` lands it
+-- like a pallet: a ring wave and extra pressure for a while. The part falls in from the
+-- sky; once it lands each player has their cards on it and, for a kind with a Squad row
+-- (the Main objective's reward), every living soldier is restocked.
 function RequisitionService.dropCrate(
 	position: Vector3,
 	facing: Vector3,
@@ -184,6 +344,7 @@ function RequisitionService.dropCrate(
 	loud: boolean
 )
 	local cfg = Config.Requisition
+	local row = kindRow(kind)
 	local ground = GroundUtil.GetGroundPosition(position, 0)
 	local flat = Vector3.new(facing.X, 0, facing.Z)
 	local forward = if flat.Magnitude > 0.01 then flat.Unit else Vector3.zAxis
@@ -202,21 +363,7 @@ function RequisitionService.dropCrate(
 	part.CanQuery = false
 	part.CanTouch = false
 	part.Parent = folder
-
-	local marker = Instance.new("BillboardGui")
-	marker.Size = UDim2.fromOffset(110, 26)
-	marker.StudsOffset = Vector3.new(0, 2.6, 0)
-	marker.AlwaysOnTop = true
-	marker.MaxDistance = 250
-	local label = Instance.new("TextLabel")
-	label.Size = UDim2.fromScale(1, 1)
-	label.BackgroundTransparency = 1
-	label.Text = if kind == "supply" then "RESUPPLY" else "FIELD KIT"
-	label.TextColor3 = Color3.fromRGB(232, 181, 75)
-	label.TextScaled = true
-	label.Font = Enum.Font.GothamBold
-	label.Parent = marker
-	marker.Parent = part
+	local status = buildMarker(part, row.Label)
 
 	local fall = TweenService:Create(
 		part,
@@ -229,6 +376,9 @@ function RequisitionService.dropCrate(
 		return
 	end
 	WorldSounds.at(ground, "callins", "pallet_land")
+	if row.Beacon then
+		buildBeacon(part, ground)
+	end
 
 	local living = livingPlayers()
 	if loud then
@@ -239,7 +389,14 @@ function RequisitionService.dropCrate(
 		workspace:SetAttribute(Attributes.ResupplyActive, true)
 	end
 
-	-- Personal cards: the same three positions for everyone, each player's own offer.
+	-- The squad's share first, then each player's own cards: a downed player gets theirs
+	-- too, to take once back up.
+	local squad = row.Squad
+	if squad then
+		for _, member in Squad.living() do
+			applyEffects(member, squad)
+		end
+	end
 	if #crates >= cfg.MaxCrates then
 		closeCrate(1)
 	end
@@ -251,26 +408,26 @@ function RequisitionService.dropCrate(
 		cardPositions = cardPositions(ground, forward),
 		offers = {},
 		picked = {},
+		botPicked = {},
+		taken = {},
+		status = status,
 		rearmed = {},
-		expiresAt = os.clock() + cfg.CardLifetime,
+		expiresAt = os.clock() + row.Lifetime,
 	}
 	nextCrateId += 1
 	table.insert(crates, crate)
-	for _, player in living do
-		local choices = offerFor(player, kind)
-		crate.offers[player] = choices
-		if #choices > 0 then
-			resupplyRemote:FireClient(
-				player,
-				Messages.Resupply.Cards,
-				crate.id,
-				kind,
-				choices,
-				crate.cardPositions
-			)
+	if not cfg.Pick.WalkOver then
+		buildPrompt(part, crate.id, row.Label)
+	end
+	local offered = 0
+	for _, player in Players:GetPlayers() do
+		if Squad.fromPlayer(player) then
+			crate.offers[player] = offerFor(player, kind)
+			sendCards(player, crate)
+			offered += 1
 		end
 	end
-	print(`[Requisition] {kind} crate {crate.id} down, {#living} players offered`)
+	print(`[Requisition] {kind} crate {crate.id} down, {offered} players offered`)
 end
 
 local function land(drop: Pending)
@@ -325,73 +482,109 @@ local function onFlare(player: Player, target: unknown)
 	print(`[Requisition] {player.Name} threw the flare; pallet in {cfg.DropDelay}s (drop {drops})`)
 end
 
--- Applies a taken card to the player. Returns the notice for the rest of the squad.
-local function applyCard(player: Player, cardId: string): string?
+-- Applies a taken card to the member. Returns the notice for the rest of the squad.
+local function applyCard(member: Squad.Member, cardId: string): string?
 	local definition = UpgradeDefinitions.get(cardId)
 	if not definition then
 		return nil
 	end
+	local player = member.owner
 	if definition.Kind == "upgrade" then
-		if not LoadoutService.giveUpgrade(player, cardId) then
+		if not player or not LoadoutService.giveUpgrade(player, cardId) then
 			return nil
 		end
-	elseif cardId == "medkit" then
-		local character = player.Character
-		local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-		if humanoid and humanoid.Health > 0 then
-			humanoid.Health = humanoid.MaxHealth
-		end
-		LoadoutService.refillStims(player)
-	elseif cardId == "restock" then
-		CallInService.refill(player)
-		LoadoutService.refillGrenades(player)
-		LoadoutService.refillStims(player)
-	elseif cardId == "armour_plate" then
-		LoadoutService.addShield(player, Config.Crates.ArmourPlate)
 	else
-		return nil
+		local effects = cardEffects()[cardId]
+		if not effects then
+			return nil
+		end
+		applyEffects(member, effects)
 	end
-	return `{Squad.callsign(player)} took {definition.Name}`
+	return `{member.name} took {definition.Name}`
+end
+
+local function findCrate(crateId: number): Crate?
+	for _, candidate in crates do
+		if candidate.id == crateId then
+			return candidate
+		end
+	end
+	return nil
 end
 
 local function onPick(player: Player, crateId: unknown, cardId: unknown)
 	if typeof(crateId) ~= "number" or typeof(cardId) ~= "string" then
 		return
 	end
-	local crate: Crate? = nil
-	for _, candidate in crates do
-		if candidate.id == crateId then
-			crate = candidate
-		end
-	end
-	if not crate or crate.picked[player] then
-		return
-	end
-	local offer = crate.offers[player]
-	local index = if offer then table.find(offer, cardId) else nil
-	if not index then
-		return
-	end
+	local crate = findCrate(crateId)
 	local member = Squad.fromPlayer(player)
 	local root = member and member.root
-	if not member or not Squad.canAct(member) or not root then
-		return
+	local offer = if crate then crate.offers[player] else nil
+	local pickCfg = Config.Requisition.Pick
+	-- Reach: the crate itself, or (walk-over) the card the player walked into.
+	local target = if crate then crate.position else Vector3.zero
+	local radius = pickCfg.Radius + pickCfg.Slack
+	if crate and pickCfg.WalkOver then
+		local index = if offer then table.find(offer, cardId) else nil
+		target = if index then crate.cardPositions[index] else target
+		radius = Config.Requisition.PickRadius + PICK_SLACK
 	end
-	local cardPosition = crate.cardPositions[index]
-	local flat = Vector3.new(root.Position.X - cardPosition.X, 0, root.Position.Z - cardPosition.Z)
-	if flat.Magnitude > Config.Requisition.PickRadius + PICK_SLACK then
-		return
-	end
-	local notice = applyCard(player, cardId)
-	if not notice then
+	local distance = if root
+		then Vector3.new(root.Position.X - target.X, 0, root.Position.Z - target.Z).Magnitude
+		else math.huge
+	local ok, reason = Reward.checkPick({
+		open = crate ~= nil and os.clock() < crate.expiresAt,
+		offer = offer,
+		cardId = cardId,
+		picked = crate ~= nil and crate.picked[player] == true,
+		canAct = member ~= nil and root ~= nil and Squad.canAct(member),
+		distance = distance,
+		radius = radius,
+	})
+	local notice = if ok and member then applyCard(member, cardId) else nil
+	if not crate or not member or not root or not notice then
+		resupplyRemote:FireClient(player, Messages.Resupply.Refused, crateId, reason or "gone")
 		return
 	end
 	crate.picked[player] = true
+	table.insert(crate.taken, member.name)
 	WorldSounds.on(root, "ui_radio", "card_pick", "Gear")
-	resupplyRemote:FireClient(player, Messages.Resupply.Picked, crate.id)
+	resupplyRemote:FireClient(player, Messages.Resupply.Picked, crate.id, cardId)
+	publishTaken(crate)
 	for _, other in Players:GetPlayers() do
 		if other ~= player then
 			noticeRemote:FireClient(other, notice, Messages.Notice.Pickup)
+		end
+	end
+end
+
+-- Bots take no panel: one close to a crate takes the supply card that covers what it is
+-- missing most (a bot has health only), once per crate.
+local function botPicks()
+	local cfg = Config.Crates
+	for _, crate in crates do
+		if crate.kind ~= "supply" then
+			continue -- field upgrades: a bot has no loadout to carry one
+		end
+		for _, member in Squad.living() do
+			local root, humanoid = member.root, member.humanoid
+			if member.kind ~= "bot" or crate.botPicked[member.id] or not root or not humanoid then
+				continue
+			end
+			if (root.Position - crate.position).Magnitude > cfg.BotRadius then
+				continue
+			end
+			local need: Reward.Need = {
+				Heal = 1 - humanoid.Health / math.max(humanoid.MaxHealth, 1),
+			}
+			local cardId = Reward.botChoice(cfg.SupplyCards, cardEffects(), need, cfg.BotNeed)
+			local notice = if cardId then applyCard(member, cardId) else nil
+			if notice then
+				crate.botPicked[member.id] = true
+				table.insert(crate.taken, member.name)
+				publishTaken(crate)
+				noticeRemote:FireAllClients(notice, Messages.Notice.Pickup)
+			end
 		end
 	end
 end
@@ -452,6 +645,7 @@ local function step()
 		end
 	end
 	rearmNearby()
+	botPicks()
 	if pressureUntil > 0 and now >= pressureUntil then
 		pressureUntil = 0
 		workspace:SetAttribute(Attributes.ResupplyActive, false)

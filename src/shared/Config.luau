@@ -147,7 +147,7 @@ local Config = {
 		ReviveRadius = 8, -- studs
 		ReviveHealthFraction = 0.5,
 		DownedHealth = 1,
-		MaxRevives = 2, -- per run; the next lethal hit after that kills outright
+		MaxRevives = 2, -- per mission; the next lethal hit after that kills outright
 		CrawlSpeed = 3, -- studs/s: a downed body crawls on hands and knees toward cover or help
 	},
 	-- Knocked down (the Warden's Pound and Stomp; Squad.knock): KnockedUntil on the
@@ -290,20 +290,21 @@ local Config = {
 	-- table and the reasoning). Real-world fire rates: FireCooldown = 60 / rpm. Spreads are
 	-- half-angles in degrees: hip, ADS, then BloomPerShot per round up to BloomMax on top,
 	-- recovering at BloomRecovery degrees per second. AdsMoveFactor scales the walk while
-	-- aiming (sprint is off). Reserve is rounds beyond the loaded magazine; a pallet fills it
-	-- to ReserveMax. Pellets: rounds per trigger pull (Damage is per pellet). Pierce: Infected
+	-- aiming (sprint is off). Reserve is rounds beyond the loaded magazine: a soldier lands
+	-- with ReserveStart (about half, so the first pallet matters) and a pallet fills it to
+	-- ReserveMax. Pellets: rounds per trigger pull (Damage is per pellet). Pierce: Infected
 	-- a round passes through after the first. FireMode "semi": one round per click.
 	Weapons = {
 		-- M16A4, the baseline: Walker 3 body / 1 head, Brute 13 / 11; burst DPS 250. Bloom
-		-- makes a held trigger spray at range, so 3-5 round bursts are the skill. 30 + 240 =
-		-- 9 mags: the Warden fight never runs it dry at the pallet costs below.
+		-- makes a held trigger spray at range, so 3-5 round bursts are the skill. Re-armed:
+		-- 30 + 240 = 9 mags, the Warden fight never runs it dry at the pallet costs below.
 		ServiceRifle = {
 			FireMode = "auto",
 			Damage = 20,
 			FireCooldown = 0.08, -- 750 rpm
 			MagazineSize = 30,
 			ReloadTime = 2.2,
-			ReserveStart = 240,
+			ReserveStart = 120,
 			ReserveMax = 240,
 			HipSpread = 1.5, -- about a stud off at 40 studs
 			AdsSpread = 0.3,
@@ -325,7 +326,7 @@ local Config = {
 			FireCooldown = 0.075, -- 800 rpm
 			MagazineSize = 30,
 			ReloadTime = 1.8,
-			ReserveStart = 210,
+			ReserveStart = 120,
 			ReserveMax = 210,
 			HipSpread = 0.9,
 			AdsSpread = 0.6,
@@ -348,7 +349,7 @@ local Config = {
 			FireCooldown = 0.075, -- 800 rpm
 			MagazineSize = 100,
 			ReloadTime = 5.5,
-			ReserveStart = 300,
+			ReserveStart = 150,
 			ReserveMax = 300,
 			HipSpread = 3.0,
 			AdsSpread = 0.5,
@@ -374,7 +375,7 @@ local Config = {
 			FireCooldown = 0.75, -- 80 rpm
 			MagazineSize = 8,
 			ReloadTime = 3.5,
-			ReserveStart = 40,
+			ReserveStart = 20,
 			ReserveMax = 40,
 			HipSpread = 5.0,
 			AdsSpread = 3.5,
@@ -400,7 +401,7 @@ local Config = {
 			FireCooldown = 0.2, -- 300 rpm
 			MagazineSize = 20,
 			ReloadTime = 2.6,
-			ReserveStart = 80,
+			ReserveStart = 40,
 			ReserveMax = 80,
 			HipSpread = 4.0,
 			AdsSpread = 0.1,
@@ -423,7 +424,7 @@ local Config = {
 			FireCooldown = 0.15, -- 400 rpm
 			MagazineSize = 17,
 			ReloadTime = 1.5,
-			ReserveStart = 68,
+			ReserveStart = 34,
 			ReserveMax = 68,
 			HipSpread = 1.2,
 			AdsSpread = 0.5,
@@ -451,7 +452,7 @@ local Config = {
 			FireCooldown = 0.4, -- 150 rpm
 			MagazineSize = 6,
 			ReloadTime = 2.8, -- speedloader
-			ReserveStart = 30,
+			ReserveStart = 18,
 			ReserveMax = 30,
 			HipSpread = 1.8,
 			AdsSpread = 0.4,
@@ -477,7 +478,7 @@ local Config = {
 			FireCooldown = 1.25, -- 48 rpm (bolt cycle)
 			MagazineSize = 5,
 			ReloadTime = 3.2,
-			ReserveStart = 30,
+			ReserveStart = 15,
 			ReserveMax = 30,
 			HipSpread = 6.0,
 			AdsSpread = 0.05,
@@ -799,9 +800,27 @@ local Config = {
 		FlareCooldown = 20, -- seconds after a pallet lands before the next flare
 		FlareThrowDistance = 35, -- studs, same arc as the breach charge
 		DropDelay = 20, -- seconds from flare to pallet (the lure window)
-		CardLifetime = 60, -- unpicked cards vanish
-		CardSpacing = 4.5, -- studs between the three cards
-		PickRadius = 2.5, -- walk this close to a card to take it
+		-- Taking a card (owner 2026-11-11: never by walking over it). Walk up to the crate,
+		-- hold Key for Hold seconds, and a panel of big cards opens (RewardPanel); pick with
+		-- a click or tap, keys 1-3 or the gamepad. Walking past CloseRadius closes it without
+		-- a pick. The key is the interact key (owner 2026-11-11: E interact, V stim, F shove).
+		Pick = {
+			WalkOver = false, -- true: the old way back (small cards in the world, walk into one)
+			Key = Enum.KeyCode.E, -- becomes Config.Keys.Interact once claude/keybinds merges
+			-- The open panel's card keys, left to right; it swallows them, so they fire no
+			-- call-in meanwhile. Becomes Config.Keys.CallIns once claude/keybinds merges.
+			CardKeys = { Enum.KeyCode.One, Enum.KeyCode.Two, Enum.KeyCode.Three },
+			GamepadKey = Enum.KeyCode.ButtonX,
+			Hold = 0.3, -- seconds the key is held to open the panel
+			Radius = 9, -- studs from the crate: the prompt shows and a pick is taken
+			Slack = 3, -- server tolerance on top of Radius (latency)
+			CloseRadius = 12, -- the open panel closes beyond this
+			ConfirmSeconds = 0.45, -- the taken card flashes this long before the panel goes
+			PanelScale = 1, -- the whole panel, on top of the HUD scale (0.8: smaller, see more fight)
+			Dim = 0.8, -- transparency of the dark layer behind the panel (1: none)
+		},
+		CardSpacing = 4.5, -- Pick.WalkOver only: studs between the three cards
+		PickRadius = 2.5, -- Pick.WalkOver only: walk this close to a card to take it
 		RearmRadius = 6, -- studs from the pallet: full magazine + reserve, once per player per pallet
 		MaxCrates = 4, -- oldest pallet closes when a fifth lands (perf)
 		Lure = {
@@ -813,15 +832,49 @@ local Config = {
 		},
 	},
 
-	-- Pallet cards: every pallet shows each player the same three
-	-- supply cards (UpgradeDefinitions, Kind "supply"); walk into one to take it. Upgrade
-	-- crates (the Primary's site crate today; Stores and Secondary crates later) show
-	-- CardsPerPlayer field upgrades instead. No rarity.
+	-- Crates and their cards (RequisitionService, Rules/Reward). A crate of a kind shows each
+	-- player up to CardsPerPlayer cards in a panel; one pick per player per crate. No rarity.
+	--   supply: a Resupply pallet (and the Warden's): the three supply cards.
+	--   upgrade: the site crate when the hold starts: field upgrades the player does not
+	--     hold, ones for an empty slot first.
+	--   objective: the Main objective's reward when the hold ends: the same field-upgrade
+	--     choice, and on landing every living soldier gets Squad (no pick needed).
+	-- A field-upgrade offer short of CardsPerPlayer is filled with supply cards, so a crate
+	-- is never empty.
 	Crates = {
 		CardsPerPlayer = 3,
 		SupplyCards = { "medkit", "restock", "armour_plate" }, -- card order, left to right
-		ArmourPlate = 50, -- hit points of Shield soaked before health (EnemyProjectileService)
-		ShieldCap = 100, -- two plates at most
+		-- What each supply card gives (Rules/Reward Effects); the card text is built from
+		-- these rows (UpgradeDefinitions).
+		Cards = {
+			medkit = { Heal = true, Stims = true },
+			restock = { CallIns = true, Grenades = true, Stims = true },
+			-- 75 (was 50): beside a full heal, half a health bar was never the pick.
+			armour_plate = { Plate = 75 }, -- soaked before health (EnemyProjectileService)
+		},
+		ShieldCap = 100, -- the most armour a soldier carries
+		Kinds = {
+			supply = { Label = "RESUPPLY", Lifetime = 90, Beacon = false },
+			upgrade = { Label = "FIELD UPGRADE", Lifetime = 120, Beacon = true },
+			objective = {
+				Label = "OBJECTIVE REWARD",
+				Lifetime = 180,
+				Beacon = true,
+				Squad = {
+					Heal = true,
+					Ammo = true,
+					CallIns = true,
+					Grenades = true,
+					Stims = true,
+					Plate = 50,
+				},
+			},
+		},
+		Beacon = { Height = 70, Width = 0.7, Transparency = 0.55 }, -- the light pillar over a crate
+		-- A bot takes a supply card when it is missing at least this much of what the card
+		-- gives (today: health); bots have no call-ins, stims or upgrades to refill.
+		BotNeed = 0.25,
+		BotRadius = 14, -- studs from the crate: a bot this close takes its card
 	},
 
 	-- Call-ins (CallInDefinitions; Slots slots on keys 1-4). Charges refill one at a time every
@@ -996,27 +1049,40 @@ local Config = {
 	},
 
 	-- Hold Position objective V1. Pays SupplyReward into the Resupply pool on completion and
-	-- drops an upgrade crate at the site when it activates (field upgrade source).
+	-- drops an upgrade crate at the site when it activates (field upgrade source), and a
+	-- second one when the hold ends: picked before the Index arrives, not after it falls.
 	Objective = {
 		AppearDelay = 180, -- seconds after server start before the zone appears
 		RequiredSeconds = 45, -- total accumulated seconds inside the zone
 		PressureWave = { Walker = 8, Runner = 4 }, -- spawned around the zone on appear
 		PressureBruteAfter = 0, -- also +1 Brute if the run is older than this (seconds)
 		SupplyReward = 500,
+		-- The crate the hold's end drops (Crates.Kinds): "objective" restocks the squad and
+		-- offers a field upgrade; "upgrade" is the plain crate; "" for none.
+		CompleteCrate = "objective",
+		CompleteCrateOffset = 10, -- studs from the site crate, toward the nearest soldier
 		ZoneSize = Vector3.new(46, 1, 46), -- Sprint 13 tune: bigger, room to kite while holding
 		ZonePosition = Vector3.new(50, 8.5, 50), -- on the Compound's lower tier (ArenaService HILLS)
 		SyncInterval = 0.1, -- seconds between progress updates to the UI
 	},
 
-	-- Extraction phase (Sprint 12): starts when the objective completes. The helipad in the
-	-- south-west corner, ~226 studs from the objective hill.
+	-- Extraction phase (Sprint 12): starts when the Index falls. The helipad in the
+	-- south-west corner, ~226 studs from the objective hill. PressureWave lands on the call;
+	-- each Waves row lands when the hold's progress reaches At (Rules/ExtractionWaves).
 	Extraction = {
-		HoldDuration = 30, -- accumulated seconds inside the zone to win
+		HoldDuration = 60, -- accumulated seconds inside the zone to win
 		ZoneSize = Vector3.new(28, 1, 28),
 		ZonePosition = Vector3.new(-90, 0.6, -90),
 		SyncInterval = 0.1,
 		PressureWave = { Walker = 12, Runner = 4, Brute = 1 },
 		SpawnFactor = 0.8, -- spawn interval multiplier while extracting (+20%)
+		-- Count: phase-weighted Infected (Spawning.Phases) in a ring round the pad, plus
+		-- PerExtraPlayer per living player beyond the first. SpawnFactor replaces the one
+		-- above from that wave on.
+		Waves = {
+			{ At = 30, Count = 12, PerExtraPlayer = 3, SpawnFactor = 0.6 },
+		},
+		WaveRadio = "Second wave closing on the pad. Hold it, Pike.", -- shown as "CONTROL: ..."
 	},
 
 	-- Flat threat curve (the spine): no per-minute health or damage growth. The
@@ -1402,7 +1468,7 @@ local Config = {
 			-- Flank: full damage even while he guards (the back).
 			Plates = {
 				Helmet = { Limb = "Head", Mesh = "inf_warden_plate_helmet", Health = 300 },
-				Chest = { Limb = "UpperTorso", Mesh = "inf_warden_plate_chest", Health = 500 },
+				Chest = { Limb = "UpperTorso", Mesh = "inf_warden_plate_chest", Health = 400 },
 				Back = {
 					Limb = "UpperTorso",
 					Mesh = "inf_warden_plate_back",
@@ -1557,9 +1623,10 @@ local Config = {
 			},
 			-- The field while he is up: fewer ambient spawns, a smaller horde, no Brutes.
 			Pressure = { SpawnFactor = 1.5, MaxAliveReduction = 8, Caps = { Brute = 0 } },
-			-- The priority pallet on death: an upgrade crate (Crates.CardsPerPlayer cards each),
-			-- a full heal and a re-arm; his SupplyValue goes to the Resupply pool like any kill.
-			Drop = { Offset = 6 },
+			-- The priority pallet on death: a full heal, a re-arm and a quiet pallet with the
+			-- supply cards (Cards; "upgrade" puts the field upgrades back here, as before
+			-- Objective.CompleteCrate took them). His SupplyValue goes to the Resupply pool.
+			Drop = { Offset = 6, Cards = "supply" },
 			-- Radio lines (lore developer), shown as notices. Insert and wipe lines
 			-- belong to RunManager flows later.
 			Radio = {

@@ -39,6 +39,10 @@ mine, sentry and wire caps, every `PlayerRemoving` handler, kill credit via
 - **Hold:** any living member (player or bot) in the zone runs it; the HUD shows `n / living`.
 - **Extraction:** runs only while every living player is on the pad (downed players and bots
   do not hold it up); otherwise "WAITING FOR SQUAD (n / m)". One helper, `Squad.zoneCount`.
+- **Crate cards:** each player has their own offer on a crate and picks once, from a panel
+  they open at the crate (`Requisition.Pick`); the game does not pause and the panel closes
+  when they walk off or go down. Bots take a supply card by need, no panel. The Main
+  objective's squad restock reaches every living member.
 - **Hits:** `DamageDealt` goes to the attacking player only; a bot's hit to nobody; kills to
   everyone.
 - **Clock:** `DifficultyService.getElapsed` adds time only while the field is not paused
@@ -67,7 +71,8 @@ Planned shape | Fix when`.
    target, not a snack); the pressure is the timer and the teammate having to stop shooting.
    A teammate holds F next to them to revive (bots revive on their own). Timer out = *Dead*,
    spectate; the dead respawn when the next mission starts. Until missions chain, dead =
-   spectate to run end. Numbers in `Config.Downed` (max revives per run included).
+   spectate to run end. Numbers in `Config.Downed` (max revives per mission included: `Squad` resets the count on
+   the Lifecycle `onMissionStart` hook as well as on a fresh run).
 4. **Run ownership: anyone can request, short ready-up timer.** The first request opens a
    countdown; the run starts when it expires or everyone readies. Restart works the same way.
 5. **Items are per owner.** Inventories stay per player. A world pickup that a player's own

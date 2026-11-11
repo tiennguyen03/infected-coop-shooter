@@ -19,7 +19,8 @@ export type CardDefinition = {
 	Id: string,
 	Kind: CardKind,
 	Name: string,
-	Description: string,
+	Description: string, -- one plain line of exactly what it does, numbers included
+	Tag: string?, -- supply cards: the kind shown on the card ("HEAL"); upgrades show their slot
 	Slot: Slot?, -- upgrades only; "CallIn" resolves to CallIn<n> by the slot carrying CallIn
 	CallIn: string?, -- the call-in id a "CallIn" upgrade rides on
 	Abbrev: string,
@@ -30,6 +31,7 @@ export type CardDefinition = {
 local UpgradeDefinitions = {}
 
 local SUPPLY = Color3.fromRGB(232, 181, 75)
+local U = Config.Upgrades
 
 local ROWS: { [string]: CardDefinition } = {
 	-- Supply cards.
@@ -37,7 +39,8 @@ local ROWS: { [string]: CardDefinition } = {
 		Id = "medkit",
 		Kind = "supply",
 		Name = "Medkit",
-		Description = "Heal to full, stims refilled.",
+		Description = `Heal to full health. Your {Config.Stim.Carried} stims are refilled.`,
+		Tag = "HEAL",
 		Abbrev = "MK",
 		Color = Color3.fromRGB(210, 130, 130),
 		IconId = "rbxassetid://137643580128142",
@@ -46,7 +49,8 @@ local ROWS: { [string]: CardDefinition } = {
 		Id = "restock",
 		Kind = "supply",
 		Name = "Restock",
-		Description = "Every call-in charge back, grenades and stims too.",
+		Description = `Every call-in is ready again now. {Config.Grenade.Carried} grenades and {Config.Stim.Carried} stims refilled.`,
+		Tag = "CALL-IN RESTOCK",
 		Abbrev = "RS",
 		Color = SUPPLY,
 		IconId = "rbxassetid://127917945022019",
@@ -55,7 +59,8 @@ local ROWS: { [string]: CardDefinition } = {
 		Id = "armour_plate",
 		Kind = "supply",
 		Name = "Armour Plate",
-		Description = "+50 plate, soaked before health.",
+		Description = `+{Config.Crates.Cards.armour_plate.Plate} armour. It takes damage before your health does (most you can carry: {Config.Crates.ShieldCap}).`,
+		Tag = "ARMOUR",
 		Abbrev = "AP",
 		Color = Color3.fromRGB(78, 132, 196),
 		IconId = "rbxassetid://112286218001477",
@@ -66,7 +71,7 @@ local ROWS: { [string]: CardDefinition } = {
 		Id = "lure_charge",
 		Kind = "upgrade",
 		Name = "Bait Charge",
-		Description = "A frag draws the Infected in for three seconds, then blows.",
+		Description = `Your grenade pulls every Infected within {U.LureCharge.Radius} studs to it for {U.LureCharge.FuseTime} seconds, then blows.`,
 		Slot = "Grenade",
 		Abbrev = "BC",
 		Color = Color3.fromRGB(220, 60, 60),
@@ -77,7 +82,7 @@ local ROWS: { [string]: CardDefinition } = {
 		Id = "through_and_through",
 		Kind = "upgrade",
 		Name = "Through-and-Through",
-		Description = "Rounds from any gun pass through the first Infected into the next.",
+		Description = `Every bullet goes through the Infected it hits and hits {U.ThroughAndThrough.Pierce} more behind it. Works with any gun.`,
 		Slot = "Weapon",
 		Abbrev = "TT",
 		Color = Color3.fromRGB(120, 200, 210),
@@ -87,7 +92,7 @@ local ROWS: { [string]: CardDefinition } = {
 		Id = "hollow_point",
 		Kind = "upgrade",
 		Name = "Hollow Point",
-		Description = "Every hit from any gun stops the Infected in its tracks for a moment.",
+		Description = `Every hit stops that Infected for {U.HollowPoint.StaggerSeconds} seconds. Works with any gun.`,
 		Slot = "Weapon",
 		Abbrev = "HP",
 		Color = Color3.fromRGB(196, 58, 44),
@@ -98,7 +103,7 @@ local ROWS: { [string]: CardDefinition } = {
 		Id = "last_stand",
 		Kind = "upgrade",
 		Name = "Last Stand",
-		Description = "Fire from the ground while downed (hip, wide).",
+		Description = "When you are downed you can keep shooting from the ground (no aiming, wide spread).",
 		Slot = "Kit",
 		Abbrev = "LS",
 		Color = Color3.fromRGB(70, 214, 140),
@@ -108,7 +113,7 @@ local ROWS: { [string]: CardDefinition } = {
 		Id = "tourniquet",
 		Kind = "upgrade",
 		Name = "Spare Tourniquet",
-		Description = "Once per mission, get back up on your own four seconds after going down.",
+		Description = `Once per mission you stand back up on your own, {U.Tourniquet.Seconds} seconds after going down.`,
 		Slot = "Kit",
 		Abbrev = "ST",
 		Color = Color3.fromRGB(176, 38, 52),
@@ -119,7 +124,7 @@ local ROWS: { [string]: CardDefinition } = {
 		Id = "walking_barrage",
 		Kind = "upgrade",
 		Name = "Walk It In",
-		Description = "Hammer's shells walk forward along your throw, eight studs apart.",
+		Description = `Your Hammer mortar shells walk forward along your throw, {U.WalkingBarrage.Step} studs apart, instead of landing on one spot.`,
 		Slot = "CallIn",
 		CallIn = "hammer",
 		Abbrev = "WI",
@@ -130,7 +135,7 @@ local ROWS: { [string]: CardDefinition } = {
 		Id = "command_detonation",
 		Kind = "upgrade",
 		Name = "Daisy Chain",
-		Description = "Press Tripline's key again to blow every charge you have out.",
+		Description = "Press the Tripline key again to blow all your mines at once.",
 		Slot = "CallIn",
 		CallIn = "tripline",
 		Abbrev = "DC",

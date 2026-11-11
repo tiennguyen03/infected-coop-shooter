@@ -123,8 +123,9 @@ feel it this week.**
    one of the three laid-out sites picked at random; a Misdrop crate ~0:30.
 3. Rewards that land: starting reserve about half (the first pallet matters); the Warden's
    upgrade cards at the hold's end, not at extraction; Warden chest plate 500 -> 400 (fight
-   100-120 s).
-4. Extraction 30 -> 60 s with a second wave; revives per mission.
+   100-120 s). **Built 2026-11-10, not yet playtested** (PROGRESSION > Guns, Field upgrades).
+4. Extraction 30 -> 60 s with a second wave; revives per mission. **Built 2026-11-10, not
+   yet playtested** (PROGRESSION > Operation).
 5. Readability: world markers, squad roster, call-in inbound/kill cards.
 6. Results that tell the run (squad table, awards).
 7. Voiced Control for five beats (insert, site up, pallet inbound, Index moving, bird inbound),

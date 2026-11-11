@@ -26,6 +26,8 @@ local Attributes = table.freeze({
 	ObjectiveActive = "ObjectiveActive",
 	ObjectiveCompleted = "ObjectiveCompleted",
 	ExtractionActive = "ExtractionActive",
+	-- spawn interval multiplier while extracting (ExtractionService writes, EnemyService reads)
+	ExtractionSpawnFactor = "ExtractionSpawnFactor",
 	IndexActive = "IndexActive",
 	ResupplyActive = "ResupplyActive",
 	ResupplyCost = "ResupplyCost",
@@ -95,6 +97,9 @@ local Attributes = table.freeze({
 	BlastPower = "BlastPower",
 	BlastGlobal = "BlastGlobal",
 
+	-- A crate's ProximityPrompt carries the crate's id (RequisitionService), read by the
+	-- client's ResupplyUI to open that crate's cards.
+	CrateId = "CrateId",
 	-- Lobby place: a desk's ProximityPrompt carries its desk id (LobbyDesks), read by the
 	-- client's DeskDialogUI.
 	DeskId = "DeskId",

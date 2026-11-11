@@ -1247,9 +1247,9 @@ local function spawnLoop()
 		if workspace:GetAttribute(Attributes.ObjectiveActive) == true then
 			interval *= Config.Difficulty.ObjectiveSpawnFactor
 		end
-		-- And during extraction.
+		-- And during extraction (harder again once a wave has hit the pad).
 		if workspace:GetAttribute(Attributes.ExtractionActive) == true then
-			interval *= Config.Extraction.SpawnFactor
+			interval *= (workspace:GetAttribute(Attributes.ExtractionSpawnFactor) :: number?) or Config.Extraction.SpawnFactor
 		end
 		-- And for a while after a Resupply pallet lands.
 		if workspace:GetAttribute(Attributes.ResupplyActive) == true then
