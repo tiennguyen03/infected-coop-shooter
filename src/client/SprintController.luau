@@ -90,7 +90,11 @@ function SprintController.setOverrideSpeed(speed: number?)
 end
 
 function SprintController.isSprinting(): boolean
-	return isSprinting and sprintAllowed and not isAiming and Stamina.canSprint(stamina)
+	return isSprinting
+		and sprintAllowed
+		and not isAiming
+		and Players.LocalPlayer:GetAttribute(Attributes.Carrying) ~= true
+		and Stamina.canSprint(stamina)
 end
 
 -- A roll or slide pays its cost here. False (and nothing taken) when the body is winded.
@@ -173,6 +177,8 @@ function SprintController.init()
 	-- Items/buffs can change the multiplier mid-run; reapply immediately.
 	Players.LocalPlayer:GetAttributeChangedSignal(Attributes.MoveSpeedMult):Connect(applySpeed)
 	Players.LocalPlayer:GetAttributeChangedSignal(Attributes.Weapon):Connect(applySpeed)
+	-- Carrying an objective item (the screening record): the carrier walks.
+	Players.LocalPlayer:GetAttributeChangedSignal(Attributes.Carrying):Connect(applySpeed)
 end
 
 return SprintController

@@ -339,11 +339,13 @@ end
 -- like a pallet: a ring wave and extra pressure for a while. The part falls in from the
 -- sky; once it lands each player has their cards on it and, for a kind with a Squad row
 -- (the Main objective's reward), every living soldier is restocked.
+-- `landed`: it is already on the ground (a Misdrop pallet the squad reached), so no fall.
 function RequisitionService.dropCrate(
 	position: Vector3,
 	facing: Vector3,
 	kind: CrateKind,
-	loud: boolean
+	loud: boolean,
+	landed: boolean?
 )
 	local cfg = Config.Requisition
 	local row = kindRow(kind)
@@ -372,12 +374,16 @@ function RequisitionService.dropCrate(
 		TweenInfo.new(CRATE_DROP_TIME, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
 		{ CFrame = rest }
 	)
-	fall:Play()
-	fall.Completed:Wait()
-	if not part.Parent then
-		return
+	if landed then
+		part.CFrame = rest
+	else
+		fall:Play()
+		fall.Completed:Wait()
+		if not part.Parent then
+			return
+		end
+		WorldSounds.at(ground, "callins", "pallet_land")
 	end
-	WorldSounds.at(ground, "callins", "pallet_land")
 	if row.Beacon then
 		buildBeacon(part, ground)
 	end

@@ -2,6 +2,8 @@
 -- All gameplay tuning values live here. Systems read from this module so
 -- balance changes never require touching system code.
 
+local ObjectiveDefinitions = require(script.Parent.ObjectiveDefinitions)
+
 local Config = {
 	Player = {
 		MaxHealth = 100,
@@ -1596,6 +1598,39 @@ local Config = {
 		SyncInterval = 0.1, -- seconds between progress updates to the UI
 	},
 
+	-- The objective pools (docs/PROGRESSION.md > Objective pools; ObjectiveService, the
+	-- modules in src/server/Objectives, Rules/Objectives). Each drop draws one main objective
+	-- (known before the squad moves; never the same twice in a row on a server) and SideCount
+	-- side objectives the squad finds on the ground, from the map's own pool. The objectives'
+	-- rows (words, tuning) and each map's pool and sites are ObjectiveDefinitions, read here
+	-- as Rows and Maps: a new objective or map is a row there, never a list anywhere else.
+	-- Enabled = false restores the single hold zone of Config.Objective above (appears after
+	-- its AppearDelay at its ZonePosition; no side objectives).
+	Objectives = {
+		Enabled = true,
+		-- Every objective prompt and "Hold E ..." step line (owner 2026-11-11: E interacts).
+		InteractKey = Enum.KeyCode.E, -- becomes Config.Keys.Interact once claude/keybinds merges
+		SideCount = 2,
+		GraceSeconds = 0, -- after the squad lands, before reaching the main objective starts it
+		SiteCrateOffset = 6, -- studs from the main objective to the field-upgrade crate it brings
+		-- A side objective shows (HUD, marker, Control's brief) when a living squad member
+		-- comes this close to it, or when Control calls it out: the first RevealAfter seconds
+		-- after landing, each further one that much later again.
+		RevealRadius = 80,
+		RevealAfter = 90,
+		BriefSeconds = 8, -- the main objective's card at insert stays this long
+		RadioGap = 4.5, -- seconds between Control's lines (insert, the Warden's line)
+		SyncInterval = 0.25, -- seconds between HUD updates at most
+		DoneSeconds = 6, -- a finished or failed side objective stays on the HUD this long
+		MarkerDistance = 1200, -- studs a world marker is seen from
+		MetresPerStud = 0.28,
+		LampColor = Color3.fromRGB(255, 176, 64), -- Lights On: sodium
+		-- Said once at insert, before the main objective's brief.
+		Frame = "Pike, Control. Clear this checkpoint so the helicopter can land and we can hold the district.",
+		Rows = ObjectiveDefinitions.Rows,
+		Maps = ObjectiveDefinitions.Maps,
+	},
+
 	-- Extraction phase (Sprint 12): starts when the Index falls. The helipad in the
 	-- south-west corner, ~226 studs from the objective hill. PressureWave lands on the call;
 	-- each Waves row lands when the hold's progress reaches At (Rules/ExtractionWaves).
@@ -2276,7 +2311,7 @@ local Config = {
 			-- Radio lines (lore developer), shown as notices. Insert and wipe lines
 			-- belong to RunManager flows later.
 			Radio = {
-				PrimaryComplete = "Control copies. That's the Primary. Index is moving at the Gate.",
+				PrimaryComplete = "That woke the Gate sergeant. He still guards this post. The Warden is coming up the road.",
 				GateOpen = "Gate's open. Contact in the lane, big. It's wearing riot plate.",
 				Sighting = "Eyes on. That's the Gate NCOIC. Control, Index confirmed.",
 				BusLine = "Bus line. He's checking buses. Plates first, then the body.",

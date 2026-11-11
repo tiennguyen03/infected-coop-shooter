@@ -127,7 +127,9 @@ Hard-won gotchas:
 - DevCommand commands (fire from `client-1`): God (toggle; player attribute DevGod skips
   enemy damage), Heal (also revives), DownPlayer(botName?), RevivePlayer(botName?),
   KillPlayer, DownBot, KillBots, SetBots(n), ToggleSpawns (workspace DevSpawnsOff),
-  ActivateObjective (hold zone now), ForceObjectiveComplete, ForceMissionSuccess, ForceWipe,
+  ActivateObjective (start the main objective now), SetMainObjective <id> [site] /
+  SetSideObjective <id> [site] / RedrawObjectives / ListObjectives (the objective pools: ids in
+  `ObjectiveDefinitions`; every side objective shows at once after one), ForceObjectiveComplete, ForceMissionSuccess, ForceWipe,
   RestartRun, FillResupply, SpawnEnemy(type, count), ClearEnemies, SetCallIn(slot, id),
   GiveUpgrade(id), ClearUpgrades, RefillAmmo, RestockCallIns, SetWeapon(id),
   DropUpgradeCrate, DropSupplyCrate, PrintRunState, VerifyCleanup (expects a dead run: in a
