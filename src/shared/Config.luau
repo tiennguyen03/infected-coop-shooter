@@ -1028,7 +1028,7 @@ local Config = {
 		Waves = {
 			{ At = 30, Count = 12, PerExtraPlayer = 3, SpawnFactor = 0.6 },
 		},
-		WaveRadio = "Control: second wave closing on the pad. Hold it, Pike.",
+		WaveRadio = "Second wave closing on the pad. Hold it, Pike.", -- shown as "CONTROL: ..."
 	},
 
 	-- Flat threat curve (the spine): no per-minute health or damage growth. The
