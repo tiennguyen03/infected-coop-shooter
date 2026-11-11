@@ -66,6 +66,28 @@ thrown on release. A dotted arc from the hand and the item's own marker on the g
 `Across` for the wire) follow the crosshair. The flare (5) and the "self" call-ins still
 fire on the press. `AbilityController`.
 
+### Downed and revive
+
+The rules (bleed-out, hold F for `Config.Downed.ReviveHold`, radius, max revives) are in
+[MULTIPLAYER_READINESS.md](MULTIPLAYER_READINESS.md) decision 3 and `Config.Downed`. What a
+revive looks like (owner 2026-11-11: "the revive is just us standing there";
+`Config.ReviveAnimation`, `Enabled = false` turns it off):
+
+- **Reviver:** slides to a kneel point at the casualty's side (the nearer side of the chest;
+  the other side when that one is walled off or taken; where they stand when neither will
+  do or it is over `MaxNudge` away), drops to a knee facing them, slings the rifle across
+  the back and presses a dressing into the chest with both hands. Letting go stands them up
+  at once. When the revive lands a hand takes the casualty's arm and pulls them up.
+- **Casualty:** rolls from all fours onto their back while someone is on them, head rocking
+  with each press; drops back to the crawl when the reviver lets go; gets up with the
+  get-up clip when revived (the Spare Tourniquet and dev revives too).
+- Nobody is rooted (the rules did not change): a reviver who walks, or a casualty who
+  crawls, breaks the pose until they are still again. A bot stands still for
+  `BotHoldSeconds` into its pull-up or get-up.
+- Players, bots and any mix of the two use the same code: `ReviveAnimService` (roles and
+  the kneel point, server), `Shared.ReviveAnimation` (clips by the body's owner, arms on
+  every client), `Rules/ReviveAnim` (kneel point and phases, tested).
+
 ### Guns
 
 Numbers in `Config.Weapons.<Gun>`, rows in `WeaponDefinitions`. Semi guns fire once per click.
