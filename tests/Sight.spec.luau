@@ -7,6 +7,7 @@ local fs = require("@lune/fs")
 local luau = require("@lune/luau")
 local roblox = require("@lune/roblox")
 
+local ObjectiveDefinitions = require("../src/shared/ObjectiveDefinitions")
 local Sight = require("../src/shared/Rules/Sight")
 local expect = require("./expect")
 
@@ -24,6 +25,11 @@ local function loadConfig(): any
 		math = math,
 		table = table,
 		string = string,
+		-- Config requires its one sibling, script.Parent.ObjectiveDefinitions.
+		script = { Parent = { ObjectiveDefinitions = ObjectiveDefinitions } },
+		require = function(module: any): any
+			return module
+		end,
 	}
 	local chunk = luau.load(
 		fs.readFile("src/shared/Config.luau"),
