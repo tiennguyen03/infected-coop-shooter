@@ -117,7 +117,7 @@ written but not yet placed):
 | Cue | Line |
 |---|---|
 | Insert (not placed) | "Pike, Control. Delta's Index is the Gate NCOIC. He chained it. Expect him to come looking." |
-| Primary complete | "Control copies. That's the Primary. Index is moving at the Gate." |
+| Main objective complete | "That woke the Gate sergeant. He still guards this post. The Warden is coming up the road." (plain words, 2026-11-11) |
 | Gate open | "Gate's open. Contact in the lane, big. It's wearing riot plate." |
 | Sighting | "Eyes on. That's the Gate NCOIC. Control, Index confirmed." |
 | Bus line | "Bus line. He's checking buses. Plates first, then the body." |

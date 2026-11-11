@@ -37,6 +37,11 @@ mine, sentry and wire caps, every `PlayerRemoving` handler, kill credit via
   or extraction completes; start and restart use the ready-up (decision 4) and reset every
   player. Run-end screens follow `RunState` / `RunResult`, not respawn.
 - **Hold:** any living member (player or bot) in the zone runs it; the HUD shows `n / living`.
+- **Objectives:** drawn once per run for the whole squad (`ObjectiveService`; state per run,
+  never per player). A living member (player or bot) reaching one starts or reveals it; a
+  hold-F prompt takes any living player; only a player carries an item (`Carrying` on that
+  player: no sprint), and it drops where they went down for anyone to take. Marked Infected
+  scale with living players, not bots. The board goes to every client and to one that loads late.
 - **Extraction:** runs only while every living player is on the pad (downed players and bots
   do not hold it up); otherwise "WAITING FOR SQUAD (n / m)". One helper, `Squad.zoneCount`.
 - **Hits:** `DamageDealt` goes to the attacking player only; a bot's hit to nobody; kills to

@@ -1146,6 +1146,39 @@ function EnemyService.spawnMixedWave(count: number, center: Vector3)
 	end
 end
 
+-- An objective's own body (Confirm Casualties, Clear the Spitters): one `typeName` at
+-- `groundPosition`, handed back so the objective can outline it and count its death.
+function EnemyService.spawnAt(typeName: string, groundPosition: Vector3): (Model?, Humanoid?)
+	local zombie = spawnZombie(groundPosition, typeName)
+	if not zombie then
+		return nil, nil
+	end
+	return zombie.model, zombie.humanoid
+end
+
+-- A spot in a ring round `center` on open ground (an objective placing its own bodies).
+function EnemyService.groundNear(center: Vector3, minDistance: number, maxDistance: number): Vector3
+	return groundPositionNear(center, minDistance, maxDistance)
+end
+
+-- Silence the Alarm: a roaming spawn picked within `radius` of `position` happens only
+-- `factor` of the time (0..1). nil clears it; a fresh run clears it too.
+local quiet: { position: Vector3, radius: number, factor: number }? = nil
+function EnemyService.setQuiet(position: Vector3?, radius: number?, factor: number?)
+	if position then
+		quiet = { position = position, radius = radius or 0, factor = factor or 1 }
+	else
+		quiet = nil
+	end
+end
+
+local function quietSkips(position: Vector3): boolean
+	local zone = quiet
+	return zone ~= nil
+		and (position - zone.position).Magnitude <= zone.radius
+		and math.random() > zone.factor
+end
+
 -- Melee forms within `radius` of `position` walk to it for `duration` seconds (the
 -- Resupply flare, a Bait Charge). Lures stack; nil clears them all.
 function EnemyService.setLure(position: Vector3?, radius: number?, duration: number?)
@@ -1270,7 +1303,7 @@ local function spawnLoop()
 			and #zombies < maxAlive
 		then
 			local position = randomSpawnPosition()
-			if position then
+			if position and not quietSkips(position) then
 				spawnZombie(position, pickSpawnType())
 			end
 		end
@@ -1311,6 +1344,7 @@ end
 function EnemyService.reset()
 	table.clear(lures)
 	table.clear(slowGeneration)
+	quiet = nil
 	missionGeneration += 1
 	EnemyService.clearAll()
 end

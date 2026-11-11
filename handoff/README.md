@@ -6,13 +6,14 @@ last one. **End of a session:** edit this page in place (never append history he
 one note to `handoff/log/` (format in `handoff/log/README.md`). History lives in
 `docs/HISTORY.md`; this page is only "now".
 
-Last updated: 2026-11-09 by Tien + Claude.
+Last updated: 2026-11-11 by Tien + Claude.
 
 ## The game today (on `main`)
 
 The full loop works in solo with bots: drop on Checkpoint Delta → fight the Infected →
-Resupply flare and pallet cards → Hold Position at the objective site (1 of 3 field
-upgrades) → the Warden (boss) → extraction on Lantern → OPERATION COMPLETE → ready up.
+Resupply flare and pallet cards → the main objective, one of five drawn per drop and started
+by reaching it (field upgrades at its start and end), with two side objectives to find
+(`docs/PROGRESSION.md` > Objective pools; unplayed) → the Warden (boss) → extraction on Lantern → OPERATION COMPLETE → ready up.
 
 - **Squad:** anonymous soldiers Pike One to Four; bots Pike Two to Four in solo; downed and
   revive (hold F).
@@ -33,7 +34,7 @@ upgrades) → the Warden (boss) → extraction on Lantern → OPERATION COMPLETE
 - **Roblox:** the group Boomin Dev Studios (270506601) owns the game "Co-op Zombie Shooter" and
   every sound and animation. Its start place 87556879379942 holds the **lobby**; the match is
   "Checkpoint Delta" 125769854992316 (`Config.Places`).
-- **Checks:** stylua, selene, rojo build, 144 Lune tests (rules plus the source-wiring spec, which also reads the lobby's remotes), luau-lsp, CI on every push.
+- **Checks:** stylua, selene, rojo build, 181 Lune tests (rules plus the source-wiring spec, which also reads the lobby's remotes), luau-lsp, CI on every push.
 
 ## Who owns what
 
@@ -57,7 +58,7 @@ The plan beyond this table, in phases, with the owner's open decisions: [docs/RO
 | 5 | Support weapons (Gun, Thumper, Kettle), incendiary + stun grenades | open | the revolver, sniper and Goose are in the Arms Room and on the lobby's rack (2026-11-09); a new gun shows up by having a row with `ArmsOrder`; guns are modelled in Blender (`guns.py`) when no free model is in hand |
 | 6 | Performance measurements | open | 2-client network + MicroProfiler during an Anvil into 20, low-end device at low health (`docs/STUDIO_MCP.md`) |
 | 7 | Owner calls waiting | Tien | generator to 4.8, light-tower collision as two boxes, movement keys (roll/slide chords) |
-| 8 | Objective pools on Delta, then Mile 14 + its boss | open | `docs/PROGRESSION.md` |
+| 8 | Objective pools: **play the first slice** (2026-11-11, unplayed; checklist in the PR and `handoff/log/2026-11-11-tien-objective-pools.md`; dev `SetMainObjective <id>`), then Open the Gate and the unbuilt side objectives, then Mile 14 + its boss | Tien + Claude | `docs/PROGRESSION.md` > Objective pools; the dev panel has no buttons for the new commands yet (`claude/dev-menu`) |
 | 9 | Warden follow-ups | open | time the fight with the chest plate at 400 (target 100-120 s), Gate dressing, insert/wipe radio lines (`docs/sprints/SPRINT_19_WARDEN.md`) |
 | 10 | Housekeeping | Tien | rotate the group Open Cloud key (it was pasted in chat); archive the old CZS and "Shooterr" experiences |
 

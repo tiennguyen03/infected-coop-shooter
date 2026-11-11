@@ -202,7 +202,9 @@ UIScale) and its text through `HudTheme.label`.
 | Run timer (`RunTimerUI`) | top centre (0,8) | 16 pt, no panel |
 | Ammo (`LoadoutUI`) | crosshair (+40,+40) | the gun in hand 12 pt above it with "[Q] PISTOL" dim (the other gun); magazine GothamBlack 26 + " / reserve" 16 dim; yellow low, "RELOADING" + bar, red "DRY [R]"; attribute-driven |
 | Arms Room (`LoadoutMenu`, hosted by `LoadoutUI` on B) | centre, 760 wide, DisplayOrder 110 (above the results) | menu style: (22,8,8) at 0.08 with a red.m 1 px box, "//ARMS ROOM" 30, a dim 12 pt rule line; columns PRIMARY / SIDEARM + GRENADE / CALL-INS of 26 px rows (name 14 bold left, designation 11 right), the pick in the cream fill with dark text, call-ins badged "[n]" by slot; the hovered item's line under the columns; cream DEPLOY LOADOUT bottom right, the server's refusal in red.l above it; height grows with the longest list |
-| Mission line (`MissionLine`, driven by `ObjectiveUI` / `ExtractionUI`) | lower centre (0.5, 0.8) | "SECURE the AREA" / "HOLD the LZ" / "WAITING FOR SQUAD n/m" / red "RETURN to the LZ", a second line, a 300x3 bar; extraction outranks the objective |
+| Mission line (`MissionLine`, driven by `ObjectiveUI` / `ExtractionUI`) | lower centre (0.5, 0.8) | "MAIN OBJECTIVE  NAME" (name yellow), its reason on the second line the whole time, a dim 14 pt third line (what to do now, progress, timer, distance in metres), a 300x3 bar; "HOLD the LZ" / "WAITING FOR SQUAD n/m" / red "RETURN to the LZ"; extraction outranks the objective |
+| Objective list (`ObjectiveUI`) | top left (16,150) | one row per known objective: a needle that turns toward it (up = ahead), "MAIN OBJECTIVE / SIDE OBJECTIVE  NAME  140 m" 14 pt; a side objective adds its reason and its step, 12 pt; DONE yellow, FAILED red.l for 6 s; refreshed at 4 Hz |
+| Objective card (`ObjectiveUI`) | upper centre (0.5, 120) | at insert, 8 s, no panel: "MAIN OBJECTIVE" 14 dim, the name GothamBlack 36 yellow, the reason 18, "at <place>" 16 dim |
 | Subtitles (`BuffNoticeUI.subtitle`) | under the mission line | "CONTROL: radio line" (BuffNotice kind radio), the Warden's "HANDSET: ..." tells |
 | Notification cards (`BuffNoticeUI.card`) | top right (-16,12), y 120 during a boss | dark strip, red-outlined square, bold title; pickups, picks, the flare call, an upgrade landing; max 3 |
 | Boss bar (`BossBarUI`) | top right (-16,12) | name in red right-aligned, 380x16 faceted body bar ending in a round emblem (blue while stunned), six 56x6 plate bars with labels |
@@ -212,8 +214,9 @@ UIScale) and its text through `HudTheme.label`.
 
 - No always-on loadout strip: an upgrade shows as a card when it lands and as a diamond on
   its ability circle.
-- Not built yet: world markers (objective, LZ, pallet diamonds with distance) and a squad
-  roster; both need the server to publish positions and squad state.
+- World markers: each objective carries a BillboardGui ("MAIN OBJECTIVE" / "SIDE OBJECTIVE"
+  over its name, seen through walls from 1200 studs; `Objectives/Kit.marker`). Not built yet:
+  LZ and pallet diamonds with distance, and a squad roster.
 - Cards in the world (pallet billboards) keep their layout.
 - UI stays **code-generated** (disk is the single source of truth). No hand edits in Studio.
 - Never block the centre of the screen except for the run-end screens.

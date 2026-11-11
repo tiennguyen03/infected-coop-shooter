@@ -490,6 +490,31 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 		require(script.Parent.ObjectiveService).activateNow()
 		print("[DevTest] ActivateObjective")
 	end,
+	-- The objective pools (ObjectiveService.redraw): pick the main objective, or one side
+	-- objective, by its ObjectiveDefinitions id and optionally its site (1, 2, ...); draw
+	-- everything again at random; print the ids this map offers. Works any time before
+	-- the main objective is done; side objectives are all shown at once after any of them.
+	SetMainObjective = function(_player, id, site)
+		local ObjectiveService = require(script.Parent.ObjectiveService)
+		print(
+			"[DevTest] SetMainObjective ->",
+			ObjectiveService.redraw(tostring(id), nil, tonumber(site))
+		)
+	end,
+	SetSideObjective = function(_player, id, site)
+		local ObjectiveService = require(script.Parent.ObjectiveService)
+		print(
+			"[DevTest] SetSideObjective ->",
+			ObjectiveService.redraw(nil, tostring(id), tonumber(site))
+		)
+	end,
+	RedrawObjectives = function()
+		local ObjectiveService = require(script.Parent.ObjectiveService)
+		print("[DevTest] RedrawObjectives ->", ObjectiveService.redraw(nil, nil, nil))
+	end,
+	ListObjectives = function()
+		print("[DevTest] ListObjectives ->", require(script.Parent.ObjectiveService).list())
+	end,
 	ForceWipe = function()
 		require(script.Parent.RunManager).endRun("Wiped")
 		print("[DevTest] ForceWipe")

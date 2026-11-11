@@ -108,18 +108,21 @@ walks. Hill levels 0/6/8/12/14/16; everything climbable or ramped.
 | tower (280,40), checkpoint (160,120), tents (215,140),(240,140), lamp (160,90), bunker (235,-205), wreck (180,-150) | as built | | |
 | stores crates | A1 (185,0.3,32); A3 (237,0.3,32) | | #1 always; #3 at Held+ |
 
-## A5. Primary placements (not built)
+## A5. Main objective placements (`ObjectiveDefinitions` > `Maps.delta.Sites`)
 
-| Primary | Where | Props / points |
-|---|---|---|
-| Secure the Site | any of the 3 sites | zones as in A3 |
-| Sanitize | the Pens | interact points at the tents' east faces (-254,6,102/120/138) |
-| Recover the Record | Ridge to comm tower | A (-90,8,56); B (88,16,88) |
-| Recover Logs | Screening Block | the desk, ground floor SW corner under the window (-10,1.3,64.5); the NW corner is the stair run |
-| Restore Comms | Compound upper tier | prop (88,16,88); survive 60 s on the 24x24 tier |
-| Confirm Casualties | Depot aisles + the Shed | 6 marked Brutes at aisle ends (185,2),(185,62),(211,2),(211,62),(237,2),(237,62); 2 in the Shed (190,86),(202,80) |
-| Open the Route | the Gate | 4 jersey barriers across the lane at z-274, x-39,-33,-27,-21; 3 lock blocks at (-36,2.9,-274),(-30,2.9,-274),(-24,2.9,-274); point beyond (-30,0,-288) |
-| Evacuate | never at Delta | |
+| Main objective | Where | Props / points | State |
+|---|---|---|---|
+| Secure the Site | any of the 3 sites | zones as in A3 | built |
+| Sanitize the Pens | the Pens | fuel cans at the tents' east faces (-254,7.1,102/120/138) | built |
+| Recover the Record | Ridge to comm tower | A (-90,8.25,56); B (88,16.5,88), delivered within 9 studs | built |
+| Restore Comms | Compound upper tier | radio set (88,17.2,88); hold within 20 studs of it | built |
+| Confirm Casualties | Depot aisles | marked Brutes at the aisle ends (185,2),(185,62),(211,2),(211,62),(237,2),(237,62), drawn in a random order; starts within 75 studs of (211,32). The Shed points (190,86),(202,80) are not used yet: a spawn there needs a floor height | built |
+| Open the Gate | the Gate | 4 jersey barriers across the lane at z-274, x-39,-33,-27,-21; 3 lock blocks at (-36,2.9,-274),(-30,2.9,-274),(-24,2.9,-274); point beyond (-30,0,-288) | not built |
+| Recover Logs (side) | Screening Block | the desk, ground floor SW corner under the window (-10,1.3,64.5); the NW corner is the stair run | not built |
+| Evacuate | never at Delta | | |
+
+The props are plain code-built Parts (fuel cans, the radio set, the ledger, the siren switch);
+no new meshes.
 
 ## A6. Index entry: the Warden (`Config.Index.Warden`, `IndexService`)
 
@@ -133,18 +136,19 @@ walks. Hill levels 0/6/8/12/14/16; everything climbable or ramped.
   windows (storey 2, y 9..17.6) overlook the whole walk from the Inner Gate; the Compound W
   slope the retreat up, the road under the bridge south.
 
-## A7. Pads, stores, Secondaries
+## A7. Pads, stores, side objectives
 
 | Thing | Position |
 |---|---|
 | Main pad (insert + extract) | (-90,0.6,-90), hold zone 28x28 |
 | Alternate pad | (255,0.6,85) on the Depot pad; overwatched from the Stack |
 | Stores crates (not built) | #1 Depot A1 (185,0.3,32); #2 Ridge (-90,8.3,40); #3 Depot A3 (237,0.3,32) [Held+]; #4 Inner Gate bunker (-52,0.3,-98) [Contained] |
-| Silence the Alarm | siren at the Gate (-14,-264) |
-| Lights On | generator (178,-2) |
+| Silence the Alarm (built) | siren at the Gate (-14,-264); its switch box on the post's north face (-14,3,-263.1) |
+| Lights On (built) | generator (178,-2); the switch point on its south face (178,3,1.2); lights the 5 nearest lamp posts within 320 studs |
 | Light the Pad | (255,0.6,85) |
 | Sealed Bus | Bus 7 (-4,-242); Runner burst spawns at (-20,-242),(12,-242) |
-| Misdrop | one of (20,250), (-250,-20), (235,12,-205) |
+| Misdrop (built) | one of (20,250) the Suburb, (-250,-20) the Barracks, (235,12,-205) the Depot mound |
+| Clear the Spitters (built) | one of the highway deck west of the pad (-175,12,-45), the bus line (-25,0,-160); the Hockers stand 6-18 studs round it |
 | Headcount story spots | 1 Ridge whiteboard (-87,11,48); 2 Bus 7 "NEG" decal (-10,6,-242); 3 the Pens' tent 2 door (-254,6,120); 4 the church loft (60,7,251) |
 
 ## A8. Traversal rules and composite colliders
