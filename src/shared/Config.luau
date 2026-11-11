@@ -1278,6 +1278,10 @@ local Config = {
 	-- doors, ramps) recomputed no more than every PathfindInterval; at most PathfindingMax
 	-- bodies path at once, the rest (and any failed path) chase straight as before.
 	Enemies = {
+		-- Which bodies Walker, Runner, Brute and Hocker wear (MeshAssets): 2 = the remade set
+		-- (`inf_v2_*`, owner 2026-11-11), 1 = the first bodies (`inf_<form>_*`). The fallback
+		-- switch: set 1 to go back, no revert. The Warden has one body and ignores this.
+		BodyVersion = 2,
 		-- Dismemberment (systems designer 2026-11-08; docs/PROGRESSION.md > Dismemberment;
 		-- GoreService). The joint above the part a round hits keeps a running damage total;
 		-- at MaxHealth x Fraction the joint breaks on that hit (the kill included) and the

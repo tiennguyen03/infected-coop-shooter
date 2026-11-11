@@ -50,7 +50,7 @@ local BACK_OFF_DISTANCE = 8 -- studs a projectile form retreats when a player ge
 -- cover; it sidesteps NUDGE_DISTANCE perpendicular to its target, alternating sides.
 local NUDGE_STUCK_DISTANCE = 1
 local NUDGE_DISTANCE = 8
-local SAC_OFFSET = CFrame.new(0, 0.95, -0.5) -- throat sac relative to UpperTorso (the rig faces -Z)
+local SAC_OFFSET = CFrame.new(0, 0.95, -0.5) -- throat sac from the UpperTorso limb centre (the rig faces -Z)
 local SAC_SIZE = 0.9
 -- Vocals: each form has a bank named after it (SoundBanks) with
 -- <form>_idle / _attack / _hurt / _death groups (the Hocker adds _windup and _spit); lines
@@ -475,11 +475,18 @@ local function spawnZombie(
 			local projectile = definition.Behaviour.Projectile
 			ball.Color = if projectile then projectile.Color else definition.Color
 			ball.Transparency = 0.15
-			ball.CFrame = torso.CFrame * SAC_OFFSET
+			-- The torso part is centred on its mesh bounds, which a hump or a soaked front
+			-- moves off the limb centre: take that shift out so the sac stays on the throat.
+			local bodySet = definition.BodySet or typeName
+			local sacOffset = if dressedTemplates[bodySet]
+				then SAC_OFFSET
+					- MeshAssets.infectedLimbOffset(bodySet, "upper_torso") * definition.Scale
+				else SAC_OFFSET -- the bare rig: the part is the limb
+			ball.CFrame = torso.CFrame * sacOffset
 			local weld = Instance.new("Weld")
 			weld.Part0 = torso
 			weld.Part1 = ball
-			weld.C0 = SAC_OFFSET
+			weld.C0 = sacOffset
 			weld.Parent = ball
 			ball.Parent = model
 			sac = ball
