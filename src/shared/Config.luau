@@ -91,6 +91,32 @@ local Config = {
 		SkipKeys = { Enum.KeyCode.Space, Enum.KeyCode.ButtonA },
 	},
 
+	-- What can be fitted to a gun (Nova, 2026-11-11: at the Loadmaster "a button next to each gun
+	-- that says edit and then pulls up a screen of the gun model and several differnt options for
+	-- accessories ie. the suppressor being for the barrel"). Slots in the order the screen lists
+	-- them; each option names its slot. A gun offers an option when its row has it (the
+	-- suppressor: Config.Weapons.<id>.Suppressor; not the revolver or the Goose).
+	Attachments = {
+		Slots = { "Barrel" },
+		Options = {
+			suppressor = {
+				Name = "Suppressor",
+				Slot = "Barrel",
+				Description = "The shot carries a fraction as far: the Infected hear it only close in. No muzzle flash.",
+				Color = Color3.fromRGB(34, 36, 38),
+				Volume = 0.3, -- the shot sound's volume with it fitted
+			},
+		} :: {
+			[string]: {
+				Name: string,
+				Slot: string,
+				Description: string,
+				Color: Color3,
+				Volume: number,
+			},
+		},
+	},
+
 	-- What the Infected notice (Nova, 2026-11-11, the night map: "we go in quiet ... if we mess
 	-- up and it goes loud then its gonna be rough"; Shared.Rules.Awareness, EnemyService). On a
 	-- mission listed in Missions every Infected is Sleeping, Idle, Wandering, Alerted or in
@@ -766,6 +792,7 @@ local Config = {
 		-- makes a held trigger spray at range, so 3-5 round bursts are the skill. Re-armed:
 		-- 30 + 240 = 9 mags, the Warden fight never runs it dry at the pallet costs below.
 		ServiceRifle = {
+			Suppressor = { Noise = 25, Length = 0.9, Width = 0.22 }, -- the Barrel option: its quiet reach, its size
 			Noise = 110, -- studs a shot carries (Config.Awareness; inside half it brings a chase)
 			FireMode = "auto",
 			Damage = 20,
@@ -791,6 +818,7 @@ local Config = {
 		},
 		-- MP5: the best hip-fire; chews Runners, weak on Brutes (Walker 4 / 2, Brute 19 / 15).
 		Smg = {
+			Suppressor = { Noise = 15, Length = 0.8, Width = 0.2 }, -- the Barrel option: its quiet reach, its size
 			Noise = 70, -- studs a shot carries (Config.Awareness; inside half it brings a chase)
 			FireMode = "auto",
 			Damage = 14,
@@ -821,6 +849,7 @@ local Config = {
 		},
 		-- M249: a 100-round belt, no reload inside a hold; slow to aim on the move.
 		Lmg = {
+			Suppressor = { Noise = 35, Length = 1.0, Width = 0.26 }, -- the Barrel option: its quiet reach, its size
 			Noise = 140, -- studs a shot carries (Config.Awareness; inside half it brings a chase)
 			FireMode = "auto",
 			Damage = 20,
@@ -848,6 +877,7 @@ local Config = {
 		-- Mossberg 590: point-blank, one decision per pull; one pull drops every form but the
 		-- Brute (3).
 		Shotgun = {
+			Suppressor = { Noise = 40, Length = 0.9, Width = 0.28 }, -- the Barrel option: its quiet reach, its size
 			Noise = 120, -- studs a shot carries (Config.Awareness; inside half it brings a chase)
 			Heavy = true, -- staggers a Brute (Config.Enemies.Flinch)
 			FireMode = "semi", -- pump
@@ -881,6 +911,7 @@ local Config = {
 		-- M110: one-taps Walkers, hits two in a line, poor up close. Ammo reins it in
 		-- (100 x 60 is the M16's 270 x 20).
 		Dmr = {
+			Suppressor = { Noise = 30, Length = 1.0, Width = 0.24 }, -- the Barrel option: its quiet reach, its size
 			Noise = 130, -- studs a shot carries (Config.Awareness; inside half it brings a chase)
 			Heavy = true, -- staggers a Brute (Config.Enemies.Flinch)
 			FireMode = "semi",
@@ -914,6 +945,7 @@ local Config = {
 		},
 		-- M17: the sidearm, backup when the primary runs dry.
 		Pistol = {
+			Suppressor = { Noise = 12, Length = 0.55, Width = 0.16 }, -- the Barrel option: its quiet reach, its size
 			Noise = 45, -- studs a shot carries (Config.Awareness; inside half it brings a chase)
 			FireMode = "semi",
 			Damage = 25,
@@ -985,6 +1017,7 @@ local Config = {
 		-- M2010 ESR: one round per form but the Brute (2), through three more in a line. One
 		-- decision per bolt; useless from the hip (Walker 1 / 1, Brute 2 / 2).
 		Sniper = {
+			Suppressor = { Noise = 45, Length = 1.2, Width = 0.26 }, -- the Barrel option: its quiet reach, its size
 			Noise = 200, -- studs a shot carries (Config.Awareness; inside half it brings a chase)
 			Heavy = true,
 			FireMode = "semi", -- bolt action

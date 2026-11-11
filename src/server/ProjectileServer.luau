@@ -289,7 +289,13 @@ local function fireHitscan(
 	end
 	for _, other in Players:GetPlayers() do
 		if other ~= player then
-			tracerRemote:FireClient(other, origin, endPoint, weapon.Sound)
+			tracerRemote:FireClient(
+				other,
+				origin,
+				endPoint,
+				weapon.Sound,
+				LoadoutService.fitted(player, weapon.Id, "Barrel")
+			)
 		end
 	end
 end
@@ -384,7 +390,9 @@ local function onFireRequest(
 
 	local previousShot = lastFireTime[player]
 	lastFireTime[player] = now
-	EnemyService.noise(root.Position, weapon.Noise) -- the Infected hear it (Config.Awareness)
+	-- The Infected hear it (Config.Awareness): the gun's reach, or its suppressor's.
+	local barrel = LoadoutService.fitted(player, weapon.Id, "Barrel")
+	EnemyService.noise(root.Position, WeaponDefinitions.shotNoise(weapon, barrel))
 	local exclude = excludeList(character)
 	-- The client says whether it is aiming down sights; that only tightens the cone (the
 	-- speed penalty is client-owned movement either way), so trusting it costs nothing.

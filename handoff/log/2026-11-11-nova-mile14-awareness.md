@@ -20,6 +20,13 @@ still, 12 wandering), a rifle shot at the player sent the two awake bodies insid
 look and left sleepers 81+ away asleep; a 1400 test noise brought everyone in.
 **Known:** a sleeper is the walk clip frozen mid-stride (wants a slumped pose); no night lighting
 yet; dead trees stand in for the woods.
+**Then the suppressor** (Nova: at the Loadmaster, "a button next to each gun that says edit"
+and a screen of the gun with options per part): `Loadout.attachments` + `Config.Attachments`
+(Barrel: suppressor) + `Suppressor` on seven gun rows; `GunsmithUI` in the lobby (the rack's gun
+in a viewport, NONE / SUPPRESSOR); the match quiets the shot (noise, volume 0.3, no flash) and
+shows the can on the gun. Checked: tests (6 new), types, a lobby playtest screenshot of the EDIT
+screen on the M16 with the can on the muzzle (framing tightened after; the replay to see it did
+not start). Not played in a match yet.
 **Next (the plan's steps):** 2 the suppressor (per gun row, Arms Room pick, muzzle model, quiet
 shot sound); 3 the map proper (the Overpass, night sky, living trees, sleepers placed in buses
 and booths); 4 going loud (the horn, spawns, Kill the Horn) and quiet objectives with a reward;

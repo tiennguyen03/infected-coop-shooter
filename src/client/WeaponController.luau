@@ -17,6 +17,8 @@ local UserInputService = game:GetService("UserInputService")
 local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attributes"))
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
+local Loadout =
+	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Rules"):WaitForChild("Loadout"))
 local ShotCone = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("ShotCone"))
 local WeaponDefinitions =
 	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("WeaponDefinitions"))
@@ -254,8 +256,19 @@ local function tryFire()
 		drawTracer(from, aimPoint)
 	end
 
-	-- Local-only muzzle flash and shot sound for instant feedback.
-	SoundFX.gunshot(weapon.Sound)
+	-- Local-only muzzle flash and shot sound for instant feedback. A suppressor (the
+	-- Loadmaster's EDIT, Config.Attachments) quiets the shot and hides the flash.
+	local fitted = Players.LocalPlayer:GetAttribute(Attributes.Fitted)
+	local barrel = Loadout.fitted(
+		Loadout.decodeFitted(if typeof(fitted) == "string" then fitted else ""),
+		weapon.Id,
+		"Barrel"
+	)
+	local option = barrel and Config.Attachments.Options[barrel]
+	SoundFX.gunshot(weapon.Sound, nil, if option then option.Volume else nil)
+	if option then
+		return
+	end
 	local flash = Instance.new("Part")
 	flash.Shape = Enum.PartType.Ball
 	-- In first person the flash shrinks with the gun on screen (FirstPersonView.scale); behind
@@ -302,9 +315,13 @@ function WeaponController.init()
 	tracerFolder = folder
 	-- Another squad member's shot (a player or a bot): the tracer plus a 3D gunshot.
 	Remotes.get("ShotTracer").OnClientEvent
-		:Connect(function(origin: Vector3, endPoint: Vector3, sound: string?)
+		:Connect(function(origin: Vector3, endPoint: Vector3, sound: string?, barrel: string?)
 			drawTracer(origin, endPoint)
-			SoundFX.gunshot(if typeof(sound) == "string" then sound else nil, origin, 0.8)
+			local option = if typeof(barrel) == "string"
+				then Config.Attachments.Options[barrel]
+				else nil
+			local volume = if option then 0.8 * option.Volume else 0.8
+			SoundFX.gunshot(if typeof(sound) == "string" then sound else nil, origin, volume)
 		end)
 
 	UserInputService.InputBegan:Connect(function(input, gameProcessed)

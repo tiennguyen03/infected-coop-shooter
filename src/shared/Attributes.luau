@@ -87,6 +87,9 @@ local Attributes = table.freeze({
 	TabsHeld = "TabsHeld",
 	DevGod = "DevGod",
 	Bloom = "Bloom",
+	-- Player: what is fitted to each of their guns, Rules/Loadout.encodeFitted
+	-- ("gun.Slot=option;..."; LoadoutService in the match, LoadmasterService on the ship)
+	Fitted = "Fitted",
 	LastShotAt = "LastShotAt", -- local only: the client stamps each of its own shots
 	UpgradeKit = "UpgradeKit",
 

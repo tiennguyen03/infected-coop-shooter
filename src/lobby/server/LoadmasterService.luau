@@ -36,12 +36,7 @@ local function isValid(entry: unknown): boolean
 end
 
 local function copy(source: Loadout.Loadout): Loadout.Loadout
-	return {
-		primary = source.primary,
-		secondary = source.secondary,
-		grenade = source.grenade,
-		callIns = table.clone(source.callIns),
-	}
+	return Loadout.copy(source) -- with what is fitted to each gun
 end
 
 -- Signs `loadout` for `player`. Its primary is the gun they carry on the ship: the Weapon
@@ -49,6 +44,7 @@ end
 local function sign(player: Player, loadout: Loadout.Loadout)
 	signed[player] = loadout
 	player:SetAttribute(Attributes.Weapon, loadout.primary)
+	player:SetAttribute(Attributes.Fitted, Loadout.encodeFitted(loadout.attachments))
 end
 
 local function load(player: Player)

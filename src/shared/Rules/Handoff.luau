@@ -16,7 +16,13 @@ Handoff.OUTCOMES = { win = true, partial = true, loss = true }
 -- The loadout shape (Rules/Loadout) and the two checks the caller passes in, so this rule
 -- needs no other module: `default` is Loadout.default(catalog), `isValid` wraps
 -- Loadout.validate(loadout, catalog).
-export type Loadout = { primary: string, secondary: string, grenade: string, callIns: { string } }
+export type Loadout = {
+	primary: string,
+	secondary: string,
+	grenade: string,
+	callIns: { string },
+	attachments: { [string]: { [string]: string } }?,
+}
 export type LoadoutCheck = { default: Loadout, isValid: (loadout: unknown) -> boolean }
 
 -- What a joining player brings, after checking.

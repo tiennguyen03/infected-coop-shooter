@@ -138,6 +138,7 @@ local function publishKit(player: Player, state: State)
 end
 
 local function publishLoadout(player: Player, state: State)
+	player:SetAttribute(Attributes.Fitted, Loadout.encodeFitted(pickFor(player).attachments))
 	for slot = 1, Config.CallIns.Slots do
 		player:SetAttribute(Attributes.callIn(slot), state.callIns[slot] or "")
 	end
@@ -168,6 +169,11 @@ end
 ----------------------------------------------------------------------
 
 -- The gun in hand.
+-- What `player` has fitted to gun `weaponId` in `slot` (the Loadmaster's EDIT), or nil.
+function LoadoutService.fitted(player: Player, weaponId: string, slot: string): string?
+	return Loadout.fitted(pickFor(player).attachments, weaponId, slot)
+end
+
 function LoadoutService.getWeapon(player: Player): WeaponDefinitions.WeaponDefinition
 	return WeaponDefinitions.get(activeGun(get(player)).id)
 end
@@ -458,14 +464,9 @@ function LoadoutService.apply(player: Player, requested: unknown): (boolean, str
 	if not ok then
 		return false, reason
 	end
-	local source = requested :: Loadout.Loadout
-	local pick: Loadout.Loadout = {
-		primary = source.primary,
-		secondary = source.secondary,
-		grenade = source.grenade,
-		callIns = table.clone(source.callIns),
-	}
+	local pick = Loadout.copy(requested :: Loadout.Loadout)
 	picks[player] = pick
+	player:SetAttribute(Attributes.Fitted, Loadout.encodeFitted(pick.attachments))
 	local state = get(player)
 	if state.primary.id ~= pick.primary then
 		state.primary = fullGun(pick.primary)

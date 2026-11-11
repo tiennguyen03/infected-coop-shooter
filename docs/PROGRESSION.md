@@ -44,6 +44,18 @@ Hades-style twist (field upgrades). Retired 2026-11-07/08: XP, levels, orbs, sta
 rarity, the class system and the Chosen, Q dash, E breach, Combat Momentum; see
 [HISTORY.md](HISTORY.md).
 
+### Attachments
+
+Nova, 2026-11-11: fitted at the Loadmaster (EDIT on a gun, `GunsmithUI`), kept per gun, signed
+and flown to the match with the Loadout (`Loadout.attachments`, `Attributes.Fitted` on the
+player). One slot so far, the **Barrel**, and one option, the **suppressor**
+(`Config.Attachments`; a gun takes one when its `Config.Weapons` row has `Suppressor`: every gun
+but the revolver and the Goose). With it fitted a shot carries the row's `Suppressor.Noise`
+instead of its `Noise` (pistol 12, MP5 15, M16 25, M110 30, M249 35, Mossberg 40, M2010 45: the
+Infected hear it only close in, [Awareness](#awareness-the-quiet-missions)); the shot plays at
+0.3 volume with no muzzle flash, and a dark cylinder sits on the muzzle (the shot leaves from its
+end) in third and first person. No damage or range cost yet.
+
 ### The soldier
 
 Every player is a Pike soldier; no classes, no hero kit. A soldier carries a primary, the M17
