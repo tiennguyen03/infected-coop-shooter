@@ -13,6 +13,12 @@ One Blender project holds every asset: **`arena_survivor.blend`**. Collections i
 | `Infected` | enemy limb sets `inf_<walker|runner|brute|hocker>_<limb>` (one builder per form in `INFECTED_TYPES`, from `docs/CHARACTERS.md`), the Warden (`build/warden.py`) |
 | `_Reference` | a 5-stud human block for scale; never exported |
 
+**Proposal, not built by default:** `build/infected_v2.py` holds a remade Walker, Runner,
+Brute and Hocker (`inf_v2_<form>_<limb>`, [STYLES.md](../../docs/STYLES.md) §7 "Infected
+v2"). `blender --background --python assets/3d/build/infected_v2.py` renders current next to
+v2 into `build/previews/infected_v2_<form>.png` and `lineup_infected_v2.png` and writes
+nothing else; `build_assets.py -- --infected-v2` adds the limb meshes to a build.
+
 The `.blend` is **generated** by `build/build_assets.py`. Every asset is described in code
 (boxes, cylinders, icospheres painted with palette swatches), so edits made by hand in Blender
 are overwritten by the next build. **One file per singular asset** (owner): a boss or a body

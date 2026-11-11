@@ -410,6 +410,41 @@ switched off (`Config.Player.SkinnedBody = false`, see `assets/3d/README.md`).
 - Weapons: `gun` and `dark` materials, one accent facet (sight, mag tape) in the owning
   item's accent color.
 
+### Infected v2 (proposal, 2026-11-10; not in the game)
+
+A remade look for Walker, Runner, Brute and Hocker, for the owner to compare with the bodies
+above. The game still loads the current ones; nothing is exported or uploaded. Source:
+`assets/3d/build/infected_v2.py`. Pictures (current next to v2, front and back):
+`assets/3d/build/previews/infected_v2_<form>.png` and `lineup_infected_v2.png`.
+
+Same rules: blocky R15 limb sets, palette swatches, no green skin, costumes from
+CHARACTERS.md. What changes is the read at distance: a few big shapes instead of many small
+ones. Each body gets one large open wound with pale bone in it, pustules big enough to break
+the outline, a face with dark sockets and an open jaw, and one bad side.
+
+- **Walker** (1,792 tris, cap 1,800): the left side is still a person (jacket, sleeve,
+  screening band, trouser, shoe). The right side is bare `pallor`: chest open over three
+  ribs, a clump of pustules on the dropped shoulder, a swollen arm hanging 0.2 lower, the
+  trouser leg torn off, a bare foot. Head `pallor.l`, tilted to the bad side, jaw hanging.
+- **Runner** (2,100, cap 2,200): three values instead of one dark red: `flesh` where light
+  lands, `wound` where it is deep, bone you can count (rib cage over a starved waist, bare
+  jaw open, brow, shoulder blade, spine). The black T-shirt is one rag and a strip.
+- **Brute** (2,088, cap 3,000): the shelf is one yoke: whole on the left with two broken bone
+  ends above the crown, broken short on the right under a tumour of four big pustules. The
+  chest is split top to bottom with ribs standing in it, on a `bruise.l` chest. The right
+  forearm and fist are a bone club with spurs; the left is the arm it had.
+- **Hocker** (1,632, cap 2,200): built round the neck. Swollen `flesh` glands and a ring of
+  pustules for the sac to sit in, the mouth a raw dark hole above it, the jacket front soaked
+  to the waist, a hump between the shoulders. Strain green only at the bottom of the throat
+  and on the sac.
+
+Sided limbs: Walker arms and legs, Brute arms (`infected_v2.SIDED`). Heads, torsos and the
+sided limbs are not symmetric, so each needs the X mirror before upload (`assets/3d/README.md`),
+or the wounds and the club's spurs land on the wrong side. To adopt a form:
+`build_assets.py -- --infected-v2` builds `inf_v2_<form>_<limb>`; upload, then point
+`MeshAssets` at them. Not checked in game: gore stumps on the new arms, hitboxes, how the
+clips move the longer right arm.
+
 ### The Carrier's sky (gloomy, 2026-11-10)
 
 Tien: gloomier. An overcast, cold late afternoon on a grey sea (`Config.Lobby.Sky`): ClockTime

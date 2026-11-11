@@ -1378,6 +1378,14 @@ import lantern  # noqa: E402
 
 lantern.register(sys.modules[__name__])
 
+# Proposal (2026-11-10): the remade common Infected live in infected_v2.py (`inf_v2_*`). Built
+# only when asked for (`-- --infected-v2`), so a plain build exports nothing new until the
+# owner adopts them. Its own previews: `blender --background --python infected_v2.py`.
+if "--infected-v2" in sys.argv:
+    import infected_v2  # noqa: E402
+
+    infected_v2.register(sys.modules[__name__])
+
 
 # ------------------------------------------------------------------ The Chosen (player bodies)
 # Same limb-swap build as the Infected: one mesh per R15 limb inside the stock limb box.
@@ -2186,7 +2194,7 @@ def main():
     argv = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
     only = None
     if "--only" in argv:
-        only = [a for a in argv[argv.index("--only") + 1 :] if a != "--force"]
+        only = [a for a in argv[argv.index("--only") + 1 :] if not a.startswith("--")]
     force = "--force" in argv
     prints = {} if force else load_fingerprints()
     changed = []
