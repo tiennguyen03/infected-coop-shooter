@@ -24,15 +24,54 @@ local Config = {
 		Reload = Enum.KeyCode.R,
 		CallIns = { Enum.KeyCode.One, Enum.KeyCode.Two, Enum.KeyCode.Three, Enum.KeyCode.Four },
 		Loadout = Enum.KeyCode.B, -- the Arms Room menu
+		NightVision = Enum.KeyCode.N, -- the helmet's night vision goggles, on and off
 		-- Roll and slide have no key of their own (owner 2026-11-11): Sprint twice rolls, and
 		-- holding a Crouch key while sprinting slides (MovementController; StanceController
 		-- does not crouch then).
+	},
+
+	-- Night vision (Nova, 2026-11-11: the goggles on the soldier's FAST helmet, for a night-time
+	-- area): Keys.NightVision or GamepadKey flips them down and up (client NightVision). The view
+	-- goes green and bright: Lighting exposure raised, a green colour correction with no colour
+	-- of its own, bloom on lights, a slight flicker, the screen edges dark. Local to the player.
+	NightVision = {
+		Enabled = true,
+		GamepadKey = Enum.KeyCode.DPadUp,
+		FlipSeconds = 0.18, -- the blink as the tubes come down or go up
+		Exposure = 2.2, -- added to Lighting.ExposureCompensation (stops)
+		Tint = Color3.fromRGB(120, 255, 150),
+		Brightness = 0.08,
+		Contrast = 0.3,
+		Saturation = -1, -- the tubes see no colour; the tint is the phosphor's
+		Flicker = 0.025, -- random brightness wobble per frame
+		Bloom = { Intensity = 0.7, Size = 24, Threshold = 0.8 },
+		Vignette = 0.22, -- share of the screen each dark edge covers
+		Click = { Bank = "ui_radio", Group = "ui_click", Volume = 0.35, Pitch = 0.8 },
 	},
 
 	Player = {
 		MaxHealth = 100,
 		WalkSpeed = 16,
 		SprintSpeed = 24,
+		-- The soldier's look (Nova, 2026-11-11: "not really a fan of how he looks"; "the new look
+		-- should change in match as well"): Roblox's default R15 body wearing catalog items
+		-- (Shared.AvatarLook), on players and bots in the match and on the ship. Enabled = false
+		-- puts the Pike limb body (PLAYER_BODY, dressModel) back. Picks page codes: a tactical
+		-- vest with an olive shirt, slim combat pants, an AVS plate carrier, a black FAST helmet
+		-- (T3 A9 H4). Not R1: that "buzzcut" is a novelty piece worn over the face; not the P2
+		-- plate carrier: rigid, it poked through the shirt's own vest.
+		Look = {
+			Enabled = true,
+			PlayerFace = true, -- each player wears their own avatar's head, face and skin tone (bots: the default)
+			Items = {
+				135730034330771,
+				74956577347922,
+				92700467676199,
+			},
+			Skin = Color3.fromRGB(176, 140, 112),
+			Shirt = Color3.fromRGB(86, 92, 66), -- under the clothing
+			Trousers = Color3.fromRGB(60, 62, 56),
+		},
 		-- Stances: Keys.Crouch toggles crouch, Keys.Prone toggles prone; sprint, a vault
 		-- or a climb stands the body up. Speeds are factors of WalkSpeed (no sprint while low).
 		Stances = {
@@ -2432,6 +2471,61 @@ local Config = {
 		-- Music on the Carrier (LobbyMusic): licensed tracks from Roblox's audio library, free for
 		-- any experience, picked for an overcast, waiting-to-go-in mood (Nova, 2026-11-10). Low in
 		-- the mix (OWNER.md: no harsh sound); fades out as your Lantern lifts.
+		-- Sounds of a working ship (Nova, 2026-11-11: "noises that one would hear on a boat. people
+		-- moving around, crew mumbling"; client ShipAmbience). Pro Sound Effects clips from Roblox's
+		-- audio library (licensed for any experience), low in the mix (OWNER.md: no harsh sound),
+		-- in their own SoundGroup, faded out with the music when the Lantern lifts. Roblox has no
+		-- walls for sound, so each area has its own bed and the two cross-fade by where you stand.
+		Ambience = {
+			Volume = 1, -- the Ambience SoundGroup once faded in
+			FadeInSeconds = 4,
+			FadeOutSeconds = 2.5, -- as the Lantern lifts
+			DeckHeight = 36, -- a soldier's root above this (studs) is on the flight deck
+			CrossFadeSeconds = 2.5, -- hangar <-> deck
+			-- One loop per area, everywhere in it (no position).
+			Beds = {
+				Hangar = {
+					Id = "rbxassetid://9112739336", -- Aircraft Carrier Ambience 3: hallway, loop (36 s)
+					Volume = 0.3,
+				},
+				Deck = {
+					Id = "rbxassetid://9117340070", -- Pier Light Dock Creak 2: motor idle, waves, wind (61 s)
+					Volume = 0.35,
+				},
+			},
+			-- Loops at FallowLayout.Ambience points (the key), heard from Near to Far studs, only
+			-- in their Area.
+			Spots = {
+				plot = {
+					Id = "rbxassetid://9113063523", -- Aircraft Carrier Bridge 3: radio chatter, voices (92 s)
+					Volume = 0.45,
+					Near = 6,
+					Far = 30,
+					Area = "Hangar",
+				},
+				walla = {
+					Id = "rbxassetid://9114012248", -- Crowd Murmur 1: interior, quiet walla (36 s)
+					Volume = 0.3,
+					Near = 10,
+					Far = 45,
+					Area = "Hangar",
+				},
+			},
+			-- Now and then one of these from a random point of its Area's key.
+			OneShots = {
+				{ Id = "rbxassetid://9119630175", Volume = 0.3, Area = "Hangar" }, -- Steel Door 4
+				{ Id = "rbxassetid://9126003568", Volume = 0.25, Area = "Hangar" }, -- Steel Lockers, slam
+				{ Id = "rbxassetid://9116725218", Volume = 0.25, Area = "Hangar" }, -- Metal Latches 17
+				{ Id = "rbxassetid://9119077202", Volume = 0.2, Area = "Hangar" }, -- Ship Horn, carrier interior
+				{ Id = "rbxassetid://9113060656", Volume = 0.3, Area = "Deck" }, -- Carrier flight deck PA
+			},
+			OneShotGap = { 9, 22 }, -- seconds between one-shots (random in the range)
+			OneShotNear = 10,
+			OneShotFar = 70,
+			CrewStepLength = 2.4, -- studs a walking crew member covers per footstep (Footsteps bank)
+			CrewStepVolume = 0.3,
+			CrewStepFar = 30, -- studs
+		},
 		Music = {
 			Tracks = {
 				"rbxassetid://115363600284265", -- A Light Dies Out On The Water (173 s)
@@ -2448,24 +2542,69 @@ local Config = {
 		-- idle and walk clips (client SoldierMoves, the shared SoldierLocomotion; the clips are
 		-- Config.Animations.Assault, not repeated here) and the signed primary in the hands
 		-- (PikeBody, the match's PlayerSetup.attachRifle).
+		-- Owner 2026-11-11 (second pass): "standing up straight with the gun at a resting position
+		-- in a sling across his chest", not the match's hunched rifle walk, and no hand floating
+		-- off a short gun. Roblox's Rthro idle and walk (owner's pick; Roblox's own, free to use),
+		-- the gun welded across the chest (PikeBody) and both hands put on it in code every frame
+		-- on every client (SlingHands), so they sit on whatever gun is carried.
 		Soldier = {
 			Enabled = true, -- false: Roblox's stock animations and no rifle, as before
-			CarryRifle = true, -- false: the match's clips with empty hands
+			CarryRifle = true, -- false: the clips with empty hands
 			ClipWait = 8, -- seconds a client waits for the clips before keeping the stock Animate
+			-- A slow stride on the ship, a sprint while Keys.Sprint (or SprintPad) is held (owner
+			-- 2026-11-11: "a little too fast, he should have a slow stride and then have a
+			-- seperate sprint animation on the shift key").
+			WalkSpeed = 6.5, -- studs a second (the Rthro walk at about 1.1)
+			SprintSpeed = 15, -- studs a second (the Rthro run at about 1.4)
+			SprintPad = Enum.KeyCode.ButtonL3, -- the gamepad's sprint
+			Animations = {
+				Idle = "rbxassetid://2510196951", -- Rthro Idle
+				Walk = "rbxassetid://2510202577", -- Rthro Walk
+				Run = "rbxassetid://2510198475", -- Rthro Run, above RunAbove
+			},
+			-- Ground speed each clip was made for (measured 2026-11-11, the planted foot's
+			-- speed): rate = speed / this, within MinRate..MaxRate.
+			WalkClipSpeed = 5.7,
+			RunClipSpeed = 10.5,
+			RunAbove = 9, -- studs a second: faster than this plays the run (the sprint)
+			MinRate = 0.6,
+			MaxRate = 1.6,
+			-- The gun across the chest, in the upper torso's space (front -Z, right +X): the
+			-- grip low on the right, the muzzle down past the left hip, the gun's top toward the
+			-- face and out from the chest.
+			Sling = {
+				Position = Vector3.new(0.45, -0.2, -0.8),
+				Barrel = Vector3.new(-0.8, -0.6, 0),
+				Up = Vector3.new(-0.5, 0.7, -0.5),
+			},
+			Hands = {
+				HandLength = 0.3, -- studs from the wrist to the palm
+				-- The left hand on the handguard: this share of the way from the grip to the
+				-- muzzle, held within Along studs.
+				LeftShare = 0.55,
+				LeftAlong = { 0.5, 1.2 },
+				LeftUp = 0.06, -- studs above the bore line
+				-- Where the elbows point, in the upper torso's space.
+				RightPole = Vector3.new(1, -0.7, 0.5),
+				LeftPole = Vector3.new(-1, -0.7, 0.4),
+				BlendSeconds = 0.3, -- hands ease onto the gun
+			},
 		},
 		-- The walking crew (LobbyCrew, CrewWalk): pace, stride and when they speak.
 		Crew = {
-			WalkSpeed = 5, -- studs a second (a soldier walks 16)
+			WalkSpeed = 5.5, -- studs a second (a soldier walks Soldier.WalkSpeed)
 			Pause = 4, -- seconds standing at each end of the route
 			BubbleDistance = 12, -- studs: a soldier this close hears a line
 			BubbleSeconds = 4,
 			BubbleCooldown = 14, -- seconds before the same one speaks again
-			-- Roblox's stock R15 clips for the crew (NpcBody, CrewWalk): not ours, free to use.
+			-- Roblox's Rthro idle and walk for the crew (NpcBody, CrewWalk; owner 2026-11-11: the
+			-- stock walk "looks silly"; it is made for 14 studs/s and played at a third of that).
+			-- Roblox's own clips, free to use.
 			Animations = {
-				Idle = "rbxassetid://507766388",
-				Walk = "rbxassetid://507777826",
+				Idle = "rbxassetid://2510196951", -- Rthro Idle
+				Walk = "rbxassetid://2510202577", -- Rthro Walk (made for 5.7 studs/s)
 			},
-			WalkClipSpeed = 0.45, -- the stock walk's playback rate at WalkSpeed (it is cut for 16)
+			WalkClipSpeed = 0.96, -- the walk's playback rate at WalkSpeed (5.5 / 5.7)
 		},
 		-- The Plot's paper map (WorldMap, WorldMapData; canon docs/lore/world_map.md).
 		WorldMap = {

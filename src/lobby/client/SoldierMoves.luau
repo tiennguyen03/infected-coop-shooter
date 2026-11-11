@@ -1,27 +1,42 @@
 --!strict
--- Your soldier on the ship stands and walks like the match's (owner, 2026-11-11): the match's
--- rifle idle and four-way walk/run blend (Config.Animations.Assault, the shared
--- SoldierLocomotion that the match's AnimationController also drives) in place of Roblox's
--- stock Animate script. Each client plays its own character's clips on the Animator, so the
--- other soldiers see them too. No combat states here (aim, stances, roll, vault).
+-- Your soldier on the ship stands up straight and walks with the gun slung across the chest
+-- (owner, 2026-11-11: not the match's hunched rifle walk). Roblox's Rthro idle, walk and run
+-- (Config.Lobby.Soldier.Animations) replace the stock Animate script, each at a rate that
+-- fits the ground speed; the gun is welded across the chest by the server (PikeBody) and the
+-- hands are put on it by SlingHands. Each client plays its own character's clips on the
+-- Animator, so the other soldiers see them too.
 --
--- The clips belong to the group and only play in places the group owns. If the idle or the
--- walk does not load within Config.Lobby.Soldier.ClipWait seconds, the stock Animate script
--- is left running and nothing changes. Config.Lobby.Soldier.Enabled = false turns this off.
+-- If the clips do not load within Config.Lobby.Soldier.ClipWait seconds, the stock Animate
+-- script is left running. Config.Lobby.Soldier.Enabled = false turns this off.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local StarterGui = game:GetService("StarterGui")
+local UserInputService = game:GetService("UserInputService")
 
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
-local SoldierLocomotion =
-	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("SoldierLocomotion"))
 
 local SoldierMoves = {}
 
 local SETTINGS = Config.Lobby.Soldier
+local FADE = 0.25
+local IDLE_SPEED = 0.6 -- studs a second: slower than this stands
 local stepConnection: RBXScriptConnection? = nil
+local sprintHeld = false
+
+-- Sprint while the key is held: the soldier's speed is the client's to set (it moves its own
+-- character). A frozen soldier (HoldStill: speed 0, at a desk or boarding) stays frozen.
+local function applySpeed(humanoid: Humanoid)
+	if humanoid.WalkSpeed <= 0 then
+		return
+	end
+	humanoid.WalkSpeed = if sprintHeld then SETTINGS.SprintSpeed else SETTINGS.WalkSpeed
+end
+
+local function isSprintKey(input: InputObject): boolean
+	return input.KeyCode == Config.Keys.Sprint or input.KeyCode == SETTINGS.SprintPad
+end
 
 -- True once every track has its keyframes (Length is 0 until a clip loads, and stays 0
 -- when it is refused).
@@ -43,27 +58,31 @@ local function loaded(tracks: { AnimationTrack }, character: Model): boolean
 	return false
 end
 
+local function load(
+	animator: Animator,
+	id: string,
+	priority: Enum.AnimationPriority
+): AnimationTrack
+	local animation = Instance.new("Animation")
+	animation.AnimationId = id
+	local track = animator:LoadAnimation(animation)
+	track.Looped = true
+	track.Priority = priority
+	return track
+end
+
 local function setup(character: Model)
 	local humanoid = character:WaitForChild("Humanoid") :: Humanoid
 	local root = character:WaitForChild("HumanoidRootPart") :: BasePart
 	local animator = humanoid:WaitForChild("Animator") :: Animator
 
-	local clips = Config.Animations.Assault
-	local idle = SoldierLocomotion.loadLooped(animator, clips.idle, Enum.AnimationPriority.Core)
-	local walk = SoldierLocomotion.loadMoveSet(animator, clips.walk)
-	-- The ship has no sprint today; the run set plays if a soldier ever moves that fast.
-	local run = SoldierLocomotion.loadMoveSet(animator, clips.run)
-	if not idle or not walk then
-		warn("[SoldierMoves] the idle or walk clip has no id; keeping the stock animations")
-		return
-	end
-	local needed: { AnimationTrack } = { idle }
-	for _, track in walk.tracks do
-		table.insert(needed, track)
-	end
-	if not loaded(needed, character) then
+	local clips = SETTINGS.Animations
+	local idle = load(animator, clips.Idle, Enum.AnimationPriority.Core)
+	local walk = load(animator, clips.Walk, Enum.AnimationPriority.Movement)
+	local run = load(animator, clips.Run, Enum.AnimationPriority.Movement)
+	if not loaded({ idle, walk, run }, character) then
 		if character.Parent then
-			warn("[SoldierMoves] the soldier clips did not load; keeping the stock animations")
+			warn("[SoldierMoves] the clips did not load; keeping the stock animations")
 		end
 		return
 	end
@@ -77,18 +96,16 @@ local function setup(character: Model)
 		track:Stop(0)
 	end
 
-	local current: SoldierLocomotion.MoveSet? = nil
-	local idling = false
-	local function setIdle(on: boolean)
-		if idling == on then
+	local playing: AnimationTrack? = nil
+	local function switch(track: AnimationTrack)
+		if playing == track then
 			return
 		end
-		idling = on
-		if on then
-			idle:Play(SoldierLocomotion.FADE)
-		else
-			idle:Stop(SoldierLocomotion.FADE)
+		if playing then
+			playing:Stop(FADE)
 		end
+		track:Play(FADE)
+		playing = track
 	end
 
 	if stepConnection then
@@ -105,19 +122,16 @@ local function setup(character: Model)
 			return
 		end
 		local velocity = root.AssemblyLinearVelocity
-		local flat = Vector3.new(velocity.X, 0, velocity.Z)
-		local speed = flat.Magnitude
-		if speed < SoldierLocomotion.IDLE_SPEED then
-			current = SoldierLocomotion.switch(current, nil)
-			setIdle(true)
+		local speed = Vector3.new(velocity.X, 0, velocity.Z).Magnitude
+		if speed < IDLE_SPEED then
+			switch(idle)
 			return
 		end
-		setIdle(false)
-		local set = SoldierLocomotion.pick(walk, run, speed)
-		current = SoldierLocomotion.switch(current, set)
-		if set then
-			SoldierLocomotion.drive(set, root.CFrame:VectorToObjectSpace(flat), speed)
-		end
+		local running = speed > SETTINGS.RunAbove
+		local track = if running then run else walk
+		switch(track)
+		local made = if running then SETTINGS.RunClipSpeed else SETTINGS.WalkClipSpeed
+		track:AdjustSpeed(math.clamp(speed / made, SETTINGS.MinRate, SETTINGS.MaxRate))
 	end)
 	stepConnection = connection
 end
@@ -133,6 +147,24 @@ function SoldierMoves.init()
 		end)
 	end
 	local player = Players.LocalPlayer
+	local function sprint(held: boolean)
+		sprintHeld = held
+		local character = player.Character
+		local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+		if humanoid then
+			applySpeed(humanoid)
+		end
+	end
+	UserInputService.InputBegan:Connect(function(input, processed)
+		if not processed and isSprintKey(input) then
+			sprint(true)
+		end
+	end)
+	UserInputService.InputEnded:Connect(function(input)
+		if isSprintKey(input) then
+			sprint(false)
+		end
+	end)
 	player.CharacterAdded:Connect(setup)
 	if player.Character then
 		task.spawn(setup, player.Character)

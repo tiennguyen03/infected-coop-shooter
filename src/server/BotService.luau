@@ -30,6 +30,7 @@ local CallInDefinitions = require(ReplicatedStorage.Shared.CallInDefinitions)
 local Config = require(ReplicatedStorage.Shared.Config)
 local EnemyDefinitions = require(ReplicatedStorage.Shared.EnemyDefinitions)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
+local AvatarLook = require(ReplicatedStorage.Shared.AvatarLook)
 local Messages = require(ReplicatedStorage.Shared.Messages)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local RunStates = require(ReplicatedStorage.Shared.RunStates)
@@ -205,7 +206,11 @@ local function spawnBot(bot: Bot, position: Vector3)
 	end
 	bot.spawning = true
 	local generation = runGeneration
+	-- A bot wears the soldier's look (Config.Player.Look) when it is on.
 	local ok, built = pcall(function()
+		if Config.Player.Look.Enabled then
+			return AvatarLook.rig(PlayerSetup.look())
+		end
 		return Players:CreateHumanoidModelFromDescription(
 			Instance.new("HumanoidDescription"),
 			Enum.HumanoidRigType.R15
@@ -236,7 +241,7 @@ local function spawnBot(bot: Bot, position: Vector3)
 	humanoid.UseJumpPower = true
 	humanoid.JumpPower = 0
 	humanoid.BreakJointsOnDeath = false
-	if MeshAssets.waitFor(PlayerSetup.BODY .. "head", 5) then
+	if not Config.Player.Look.Enabled and MeshAssets.waitFor(PlayerSetup.BODY .. "head", 5) then
 		MeshAssets.dressModel(rig, PlayerSetup.BODY)
 	end
 	rig:PivotTo(CFrame.new(position + Vector3.new(0, 3, 0)))

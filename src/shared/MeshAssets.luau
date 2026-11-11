@@ -34,8 +34,6 @@ local PALETTE_TEXTURE = "rbxassetid://121741835746247" -- palette v3 (vehicle gl
 -- PaletteController): a neutral mid grey, never the black a leftover BodyColors gave.
 local PALETTE_FALLBACK = Color3.fromRGB(118, 122, 128)
 -- The crew body is worn untextured and recoloured per limb (NpcBody).
-local CREW_SURFACE =
-	{ material = Enum.Material.SmoothPlastic, color = Color3.fromRGB(200, 200, 200) }
 
 -- `solid` = a static obstacle: CanCollide + CastShadow on (buildings, barriers).
 -- `offset` = the mesh's bounds centre relative to its design origin (Infected limbs are
@@ -736,62 +734,6 @@ local MESHES: { [string]: MeshDef } = {
 		meshId = "rbxassetid://79144855233866",
 		size = Vector3.new(1.010, 0.310, 1.000),
 		offset = Vector3.new(0.000, 0.000, 0.000),
-	},
-	-- The Carrier's crew body (assets/3d/build/crew.py; lobby NPCs, NpcBody): untextured,
-	-- every limb coloured per figure (shirt, trousers, skin or gloves, boots).
-	npc_crew_head = {
-		meshId = "rbxassetid://131227012252937",
-		size = Vector3.new(1.260, 1.180, 1.220),
-		offset = Vector3.new(0.000, 0.000, -0.052),
-		surface = CREW_SURFACE,
-	},
-	npc_crew_upper_torso = {
-		meshId = "rbxassetid://85978695721727",
-		size = Vector3.new(1.940, 1.700, 1.100),
-		offset = Vector3.new(0.000, 0.000, -0.050),
-		surface = CREW_SURFACE,
-	},
-	npc_crew_lower_torso = {
-		meshId = "rbxassetid://80351304652292",
-		size = Vector3.new(1.990, 0.400, 1.000),
-		offset = Vector3.new(0.000, 0.000, 0.000),
-		surface = CREW_SURFACE,
-	},
-	npc_crew_upper_arm = {
-		meshId = "rbxassetid://110314480935040",
-		size = Vector3.new(1.040, 1.440, 1.040),
-		offset = Vector3.new(0.000, -0.098, 0.000),
-		surface = CREW_SURFACE,
-	},
-	npc_crew_lower_arm = {
-		meshId = "rbxassetid://106413045096439",
-		size = Vector3.new(1.000, 1.120, 1.000),
-		offset = Vector3.new(0.000, 0.000, 0.000),
-		surface = CREW_SURFACE,
-	},
-	npc_crew_hand = {
-		meshId = "rbxassetid://108782428124781",
-		size = Vector3.new(0.820, 0.320, 0.860),
-		offset = Vector3.new(0.000, 0.000, 0.000),
-		surface = CREW_SURFACE,
-	},
-	npc_crew_upper_leg = {
-		meshId = "rbxassetid://101791646143939",
-		size = Vector3.new(0.990, 1.590, 1.040),
-		offset = Vector3.new(0.000, -0.115, -0.032),
-		surface = CREW_SURFACE,
-	},
-	npc_crew_lower_leg = {
-		meshId = "rbxassetid://107324902853571",
-		size = Vector3.new(0.990, 1.300, 0.970),
-		offset = Vector3.new(0.000, 0.000, 0.000),
-		surface = CREW_SURFACE,
-	},
-	npc_crew_foot = {
-		meshId = "rbxassetid://76812379013675",
-		size = Vector3.new(1.010, 0.710, 1.000),
-		offset = Vector3.new(0.000, 0.198, 0.000),
-		surface = CREW_SURFACE,
 	},
 	-- Skinned Weller gear (Config.Player.SkinnedGear): rigid helmet and Pike carrier built
 	-- at the head / upper torso origin, welded onto the skinned body by PlayerSetup.

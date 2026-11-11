@@ -9,6 +9,7 @@ local StarterPlayer = game:GetService("StarterPlayer")
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
+local AvatarLook = require(ReplicatedStorage.Shared.AvatarLook)
 local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
 
 local PlayerSetup = {}
@@ -170,6 +171,19 @@ function PlayerSetup.attachRifle(character: Model, humanoid: Humanoid)
 	end)
 end
 
+-- The soldier's look as catalog items (Config.Player.Look), for AvatarLook; `player` (nil for a
+-- bot) wears their own face when Look.PlayerFace is on.
+function PlayerSetup.look(player: Player?): AvatarLook.Look
+	local look = Config.Player.Look
+	return {
+		items = look.Items,
+		skin = look.Skin,
+		shirt = look.Shirt,
+		trousers = look.Trousers,
+		faceOf = if player and look.PlayerFace then player.UserId else nil,
+	}
+end
+
 -- No floating health bar or name over a squad body (players and bots): squadmates' status
 -- is the squad panel (Config.SquadPanel, whose switches bring Roblox's own back).
 function PlayerSetup.hideOverhead(humanoid: Humanoid)
@@ -259,10 +273,13 @@ local function onCharacterAdded(character: Model)
 
 	character:WaitForChild("HumanoidRootPart")
 	character:WaitForChild("RightHand")
-	-- Swap the stock R15 limbs for the class body before the rifle welds to the hand.
+	-- The soldier's look: catalog items on the default R15 body (Config.Player.Look); else
+	-- swap the stock R15 limbs for the class body before the rifle welds to the hand.
 	-- Templates build asynchronously at boot; a character that beats them keeps the stock body.
 	-- A skinned StarterCharacter already is the body: only its gear goes on.
-	if character:FindFirstChild(SKIN_PART) then
+	if Config.Player.Look.Enabled then
+		AvatarLook.apply(humanoid, PlayerSetup.look(Players:GetPlayerFromCharacter(character)))
+	elseif character:FindFirstChild(SKIN_PART) then
 		attachGear(character)
 	elseif MeshAssets.waitFor(PLAYER_BODY .. "head", 10) then
 		MeshAssets.dressModel(character, PLAYER_BODY)

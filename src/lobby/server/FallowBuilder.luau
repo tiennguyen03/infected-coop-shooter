@@ -768,6 +768,25 @@ local function buildWorld(ship: Folder)
 	clouds.Parent = Workspace.Terrain
 end
 
+-- Invisible anchors for the ship's sounds (FallowLayout.Ambience; client ShipAmbience plays them).
+local function buildAmbience(ship: Folder)
+	local folder = Build.folder(ship, "Ambience")
+	for key, points in Layout.Ambience :: { [string]: { Vector3 } } do
+		for _, point in points do
+			local anchor = Instance.new("Part")
+			anchor.Name = key
+			anchor.Size = Vector3.one
+			anchor.Transparency = 1
+			anchor.Anchored = true
+			anchor.CanCollide = false
+			anchor.CanQuery = false
+			anchor.CanTouch = false
+			anchor.Position = point
+			anchor.Parent = folder
+		end
+	end
+end
+
 function FallowBuilder.init()
 	clearTemplate()
 	local ship = Build.folder(Workspace, "Fallow")
@@ -779,6 +798,7 @@ function FallowBuilder.init()
 	buildLane(ship)
 	buildSpawn(ship)
 	buildWorld(ship)
+	buildAmbience(ship)
 	FallowArt.build(ship)
 end
 

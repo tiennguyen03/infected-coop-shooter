@@ -1827,11 +1827,6 @@ def weller_skinned(b):
 
 _register_chosen()
 
-# The Carrier's crew body (lobby NPCs, worn untextured and coloured per figure) lives in
-# crew.py (2026-11-10).
-import crew  # noqa: E402
-
-crew.register(sys.modules[__name__])
 
 
 # ------------------------------------------------------------------ scene plumbing
