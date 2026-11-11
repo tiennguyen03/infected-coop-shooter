@@ -268,9 +268,19 @@ The rack is where guns are **bought** (merits, onto the soldier's record; owner 
   `LoadoutMenu.mount` option `locked`, `handle.refresh`), the server refuses a forged one ("not
   on record"), and a saved Loadout naming anything no longer on the record falls back to the
   default.
-- **Not built:** earning merits (only the starting grant): a run's pay is the systems
-  designer's call and the match would save it (the record is per UserId in the same
-  experience). The match's B Arms Room still offers every gun.
+- **Earning merits** (2026-11-10): the match pays them onto this record when a mission ends
+  (docs/LOBBY_MATCH_HANDOFF.md > Merits). The match's B Arms Room still offers every gun.
+- **Tabs** (2026-11-10, the hard currency; docs/OWNER.md): the record is version 2 and also
+  holds `tabs` and the last 50 Robux receipt ids (a version 1 save reads with 0 tabs). The
+  rack header and the desk panels show "N MERITS  ·  N TABS". `TabsService` answers
+  `MarketplaceService.ProcessReceipt`: a pack from `Config.Tabs.Products` is paid through
+  `RecordService.grantReceipt` (`SaveSlot.update`, UpdateAsync; the receipt id is saved with
+  the tabs, so a repeat pays nothing) and only then answered PurchaseGranted. While a receipt
+  is being paid the soldier's waiting save is written first and a BUY is refused, so no other
+  save lands over the tabs. A record that could not be **read** on join (a DataStore error) is
+  never saved over: the soldier can buy for that visit, none of it is kept. Every
+  `ProductId` is 0 (no product exists on Roblox), nothing prompts a purchase and nothing is
+  sold for tabs.
 
 - **Talk** (F on the Quartermaster, `ArmsRackUI` for a desk with a `rack` in `LobbyDesks`): a
   greeting, then 1 "Show me the guns." (the rack), 2 "How do I get merits?", 3 "That's all." Wording by the lore developer: BUY and a price in
@@ -404,9 +414,7 @@ called **Loadout**. Lines by the lore developer (merits, the record, `LobbyDesks
   the match place directly (docs/LOBBY_MATCH_HANDOFF.md > Decisions).
 - **The debrief panel** (`DebriefUI`, docs/LOBBY_MATCH_HANDOFF.md > Nova step 5): the result
   of a run, shown once when the squad flies home (BACK TO THE CARRIER is built match side).
-- **Earning merits** (the record only has the starting grant): how many a run pays is the
-  systems designer's; the match would add them to the record. **Real board numbers** wait for
-  the save service (F9).
+- **Real board numbers** wait for the save service (F9).
 - **Ship and Lantern art: full check** (uploaded and wired 2026-11-09; v2 the same day: the first
   upload showed every mesh mirrored left-right, so the island raft rack hung over the HRD patch
   and one-sided trim sat on the wrong side; `build_assets.MIRROR_X_COLLECTIONS` pre-mirrors

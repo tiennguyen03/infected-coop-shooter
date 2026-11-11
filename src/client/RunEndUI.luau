@@ -28,6 +28,7 @@ local results: ScreenGui? = nil
 local banner: ScreenGui? = nil
 local statusLabel: TextLabel? = nil
 local readyButton: TextButton? = nil
+local meritsLabel: TextLabel? = nil
 
 local function formatTime(totalSeconds: number): string
 	local minutes = math.floor(totalSeconds / 60)
@@ -41,6 +42,25 @@ local function hideResults()
 		results = nil
 		statusLabel = nil
 		readyButton = nil
+		meritsLabel = nil
+	end
+end
+
+-- The merits this mission paid (MeritService writes the player's MeritsEarned attribute).
+local function refreshMerits()
+	local label = meritsLabel
+	if not label then
+		return
+	end
+	local earned = Players.LocalPlayer:GetAttribute(Attributes.MeritsEarned)
+	if typeof(earned) ~= "number" then
+		label.Text = ""
+	elseif earned < 0 then
+		label.Text = "MERITS NOT SAVED"
+		label.TextColor3 = C.RedLight
+	else
+		label.Text = `+{earned} MERITS`
+		label.TextColor3 = C.Yellow
 	end
 end
 
@@ -176,8 +196,12 @@ local function showResults()
 		value.Position = UDim2.new(1, -20, 0, y + 3)
 	end
 
+	local merits = HudTheme.label(column, { font = HudTheme.Font.Headline, size = 22 })
+	merits.LayoutOrder = 3
+	meritsLabel = merits
+
 	local button = Instance.new("TextButton")
-	button.LayoutOrder = 3
+	button.LayoutOrder = 4
 	button.Size = UDim2.fromOffset(240, 48)
 	button.BackgroundColor3 = C.MenuSelect
 	button.BorderSizePixel = 0
@@ -198,12 +222,13 @@ local function showResults()
 
 	local status =
 		HudTheme.label(column, { font = HudTheme.Font.Body, size = 16, color = C.TextDim })
-	status.LayoutOrder = 4
+	status.LayoutOrder = 5
 	statusLabel = status
 	readyButton = button
 	HudTheme.parent(gui)
 	results = gui
 	refreshStatus()
+	refreshMerits()
 end
 
 local downedBanner: ScreenGui? = nil
@@ -342,6 +367,7 @@ function RunEndUI.init()
 		workspace:GetAttributeChangedSignal(name):Connect(refreshStatus)
 	end
 	player:GetAttributeChangedSignal(Attributes.Ready):Connect(refreshStatus)
+	player:GetAttributeChangedSignal(Attributes.MeritsEarned):Connect(refreshMerits)
 	player.CharacterAdded:Connect(onCharacterAdded)
 	if player.Character then
 		task.spawn(onCharacterAdded, player.Character)

@@ -26,6 +26,7 @@ local ObjectiveService = require(script.Parent.ObjectiveService)
 local PauseService = require(script.Parent.PauseService)
 local HandoffService = require(script.Parent.HandoffService)
 local LoadoutService = require(script.Parent.LoadoutService)
+local MeritService = require(script.Parent.MeritService)
 local Missions = require(script.Parent.Missions)
 local Squad = require(script.Parent.Squad)
 local Lifecycle = require(script.Parent.Lifecycle)
@@ -104,6 +105,15 @@ function RunManager.endRun(result: RunStates.RunResult)
 	PauseService.setPaused(true)
 	EnemyService.clearAll()
 	clearReady()
+	-- Merits for the mission (MeritService): every player here, whatever state they are in.
+	-- No mission tracks Secondaries yet, so they pay 0. Paying never stops the run from ending.
+	local paid, payError = pcall(function(): string?
+		MeritService.pay(Handoff.outcome(result, primaryDone), 0)
+		return nil
+	end)
+	if not paid then
+		warn(`[RunManager] merits were not paid: {payError}`)
+	end
 	setState("Ended", result)
 	-- A squad from the lobby goes home: READY now means "back to the Carrier", and the bird
 	-- lifts on its own after Config.Handoff.ReturnAfterSeconds.
@@ -137,6 +147,7 @@ function RunManager.goHome()
 	}, runResult == "Extracted")
 	print("[RunManager] going home:", result.missions[1].outcome, "standDown", result.standDown)
 	task.spawn(function()
+		MeritService.settle() -- the lobby reads the record on landing: let the pay be saved first
 		if HandoffService.sendHome(result) then
 			return
 		end

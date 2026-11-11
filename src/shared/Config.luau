@@ -187,6 +187,33 @@ local Config = {
 		RetryDelay = 2, -- seconds between them
 	},
 
+	-- Merits, the soft currency (owner 2026-11-10; docs/OWNER.md): what one mission pays every
+	-- real player in the squad, dead or alive, when it ends (MeritService, Rules/Economy).
+	-- Never per kill. Bots earn nothing. Saved on the record the lobby reads (Rules/Record,
+	-- Config.Lobby.Save.RecordStore).
+	Merits = {
+		Win = 120, -- the squad extracted
+		Partial = 60, -- wiped after the Primary was done
+		Loss = 0, -- wiped before it
+		Secondary = 30, -- added per Secondary done (no mission tracks Secondaries yet: pays 0)
+		Retries = 2, -- extra attempts after a failed save
+		RetryDelay = 1, -- seconds between them
+		SettleSeconds = 6, -- the trip home waits this long at most for the pay to be saved
+	},
+
+	-- Tabs, the hard currency (owner 2026-11-10; docs/OWNER.md): bought with Robux or granted
+	-- by events; they buy cosmetics and conveniences, never power. Nothing is sold for tabs yet.
+	Tabs = {
+		-- Robux packs (TabsService, Rules/Economy.tabsFor): one developer product each.
+		-- ProductId 0 = not created on Roblox yet; such a pack can never be bought or paid.
+		Products = {
+			{ ProductId = 0, Tabs = 100 },
+			{ ProductId = 0, Tabs = 550 },
+			{ ProductId = 0, Tabs = 1200 },
+		},
+		ReceiptsKept = 50, -- Robux receipts remembered per record, so one never pays twice
+	},
+
 	Run = {
 		InsertSeconds = 3, -- Insert -> Explore: the squad lands before the first wave
 		-- A squad from the lobby: the run starts when everyone the lobby sent has a body, or
@@ -1643,7 +1670,7 @@ local Config = {
 		Save = {
 			Store = "LoadmasterLoadouts", -- DataStore name; keys are "u_<UserId>"
 			RecordStore = "PikeRecords", -- DataStore name; keys are "r_<UserId>"
-			StartMerits = 1000, -- a new soldier's merits (earning them from runs is not built yet)
+			StartMerits = 1000, -- a new soldier's merits (missions pay more: Config.Merits)
 			MinWriteGap = 6, -- seconds between saves per soldier; the newest pick wins
 			Retries = 2, -- extra attempts after a failed DataStore call
 			RetryDelay = 1,

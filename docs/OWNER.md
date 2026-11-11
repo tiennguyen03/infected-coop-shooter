@@ -46,12 +46,14 @@ something; never delete one without the owner.
   clip, icon, sound) lives on that item's own Config/definition row with a default. Never a
   hard-coded list of item names in a system. (2026-11-09)
 - **The lobby ship is "the Carrier"** (was "the Fallow"): easier to understand. (2026-11-09)
-- **Merits, spent on the Carrier** (Nova, 2026-11-10: the currency is **merits**, the lore
-  developer's name, not "Credits"; `docs/ROADMAP.md` still says Credits, Tien to confirm).
-  Players earn merits on missions and buy kit at the Carrier's desks: guns, grenades and
-  call-ins, permanent unlocks (new options, never stronger versions). No cosmetics and no
-  one-run consumables for now. There is no ship to upgrade like Helldivers; the Carrier sells
-  kit instead (Tien and Nova). (2026-11-09)
+- **Two currencies: merits and tabs.** (2026-11-10; replaces the single "Credits".)
+  - **Merits** are the soft currency: earned by playing (paid when a mission ends, never per
+    kill) and spent at the Carrier's desks on kit: guns, grenades and call-ins, permanent
+    unlocks (new options, never stronger versions). There is no ship to upgrade like
+    Helldivers; the Carrier sells kit instead (Tien and Nova, 2026-11-09).
+  - **Tabs** are the hard currency (the owner's name, "tabs for now"): bought with Robux or
+    granted by events. **Tabs never buy power:** cosmetics and conveniences only. Nothing is
+    sold for tabs yet, and no one-run consumables for now.
 - **Transitions are a fade, not a loading card.** Fade to black with the helicopter sound, Roblox's
   own loading screen on a teleport, fade in on the pad with the drop-off sound; the same between
   missions. No custom ride card or teleport screen for now. (2026-11-09)
