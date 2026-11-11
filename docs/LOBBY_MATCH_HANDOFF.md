@@ -97,6 +97,29 @@ At Stand Down or a wipe, the match teleports the party back to the lobby with
 The lobby only **shows** it (an operation summary). The match has already saved whatever the
 run earned; the lobby reads progress from the DataStore, never from this table.
 
+### Merits (built 2026-11-10)
+
+When a mission ends (`RunManager.endRun`), `MeritService` pays every real player in the
+server, dead or alive (bots earn nothing): Win 120, Partial 60, Loss 0, each Secondary +30
+(`Config.Merits`, `Rules/Economy.missionMerits`, outcome from `Handoff.outcome`). No mission
+tracks Secondaries yet, so they pay 0.
+
+- **Where:** the lobby's own record, DataStore `PikeRecords`, key `Rules/Record.key(userId)`
+  (`r_<UserId>`), the versioned `Rules/Record` shape. The match uses `UpdateAsync` (read,
+  credit, write in one step) and leaves a save it cannot read alone (`Record.canUpdate`). A
+  player is in the lobby or in a match, never both, so the two never write one record at once.
+- **Shown:** one line on the results screen, "+120 MERITS" (player attribute `MeritsEarned`;
+  "MERITS NOT SAVED" when the save failed). The result table above is unchanged. Under it,
+  "ON YOUR RECORD" and the wallet (medal + merits, tag + tabs; shared `WalletReadout`),
+  counting up from the balance before the pay: player attributes `MeritsHeld` / `TabsHeld`,
+  the record `UpdateAsync` returned, or a `GetAsync` read when nothing was paid. Hidden when
+  the record could not be read (Studio without API access).
+- **Trip home:** `goHome` waits for the saves first (`MeritService.settle`, at most
+  `Config.Merits.SettleSeconds`), so the lobby reads the paid record on landing.
+- **Studio:** DataStores fail without API access; it is logged once and the run end carries on.
+- **A direct join** (no lobby) is paid too; a soldier with no record yet gets the starting
+  merits plus the pay.
+
 ## The match side, built (2026-11-09, plan by the architect agent)
 
 - **Shared rule** `Rules/Handoff`: `departure(operation, aboardUserIds, loadouts?)` builds the

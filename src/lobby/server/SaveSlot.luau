@@ -88,12 +88,18 @@ function SaveSlot.attempt<T>(self: Slot, what: string, call: (store: DataStore) 
 	return nil
 end
 
--- The saved value (yields), or nil when there is none or the store is unavailable.
-function SaveSlot.load(self: Slot, player: Player): unknown
+-- The saved value (yields), or nil when there is none or the store is unavailable. The
+-- second value says whether the store answered: false means the read failed, so a nil is
+-- "unknown", not "no save" (RecordService never saves over a record it could not read).
+function SaveSlot.load(self: Slot, player: Player): (unknown, boolean)
 	local key = self.prefix .. player.UserId
-	return self:attempt("load", function(store: DataStore)
-		return store:GetAsync(key)
+	local answered = false
+	local value = self:attempt("load", function(store: DataStore): unknown
+		local stored = store:GetAsync(key)
+		answered = true
+		return stored
 	end)
+	return value, answered
 end
 
 function SaveSlot.write(self: Slot, player: Player)
@@ -108,6 +114,25 @@ function SaveSlot.write(self: Slot, player: Player)
 	self:attempt("save", function(store: DataStore)
 		store:SetAsync(key, value, { userId })
 		return true
+	end)
+end
+
+-- Changes the saved value in one step (UpdateAsync, yields): `transform` gets what is stored
+-- and returns what to store, or nil to leave it alone. Returns the value written, or nil when
+-- nothing was written (the store is unavailable, every try failed, or `transform` said nil).
+-- For changes that must not be lost or doubled (a Robux receipt); `save` stays the everyday
+-- path.
+function SaveSlot.update(self: Slot, player: Player, transform: (old: unknown) -> any): any
+	local key = self.prefix .. player.UserId
+	local userId = player.UserId
+	return self:attempt("update", function(store: DataStore): any
+		return store:UpdateAsync(key, function(old: unknown): ...any
+			local value = transform(old)
+			if value == nil then
+				return nil
+			end
+			return value, { userId }
+		end)
 	end)
 end
 

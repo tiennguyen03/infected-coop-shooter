@@ -59,6 +59,13 @@ local Attributes = table.freeze({
 	Callsign = "Callsign", -- "Pike One" ... (Squad): the name the HUD and the radio use
 	MoveSpeedMult = "MoveSpeedMult",
 	Ready = "Ready",
+	-- the merits the mission that just ended paid this player (MeritService; RunEndUI shows
+	-- it): the amount, -1 when it could not be saved, nil while a run is live
+	MeritsEarned = "MeritsEarned",
+	-- the merits and tabs on this player's record as the match last read it at a mission's end
+	-- (MeritService; RunEndUI shows the wallet): nil until then, or when the read failed
+	MeritsHeld = "MeritsHeld",
+	TabsHeld = "TabsHeld",
 	DevGod = "DevGod",
 	Bloom = "Bloom",
 	LastShotAt = "LastShotAt", -- local only: the client stamps each of its own shots
