@@ -10,6 +10,16 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage.Shared.Config)
 local Sight = require(ReplicatedStorage.Shared.Rules.Sight)
 local KeyBindings = require(ReplicatedStorage.Shared.Rules.KeyBindings)
+local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
+
+-- A row's sight points are written on the gun's design (guns.py); the eye lines up where
+-- they show on the uploaded mesh, which Roblox mirrors left-right (MeshAssets.shownPoint).
+local function shown(model: string, sight: Sight.Resolved): Sight.Resolved
+	local out = table.clone(sight)
+	out.Rear = MeshAssets.shownPoint(model, sight.Rear)
+	out.Front = MeshAssets.shownPoint(model, sight.Front)
+	return out
+end
 
 export type WeaponSlot = "primary" | "secondary"
 export type FireMode = "auto" | "semi"
@@ -146,7 +156,10 @@ local function row(
 		Explosive = tuning.Explosive,
 		ProjectileSpeed = tuning.ProjectileSpeed,
 		ArmsOrder = tuning.ArmsOrder or DEFAULT_ARMS_ORDER,
-		Sight = Sight.resolve(tuning.Sight or DEFAULT_SIGHT, Config.Weapon.Sights),
+		Sight = shown(
+			tuning.Model or DEFAULT_MODEL,
+			Sight.resolve(tuning.Sight or DEFAULT_SIGHT, Config.Weapon.Sights)
+		),
 	}
 end
 

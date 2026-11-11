@@ -624,7 +624,10 @@ orange (`rgb(255,150,60)`) plus a ball at the landing point.
   the shoulder). **Sights (2026-11-11, `Rules/Sight`, not yet seen in game):** every gun row
   carries `Sight`: its mesh's `Rear` and `Front` sight points (peep centre or notch top and the
   post's tip; a scope's eyepiece and objective), and optionally `Kind`, `Hold`, `EyeRelief`,
-  `Zoom`. Down the sights the eye sits on the line through the two, the eye relief behind the
+  `Zoom`. The points are written on the gun's design; Roblox shows an uploaded mesh mirrored
+  left-right about its bounds centre, so `WeaponDefinitions` moves them (and `getMuzzle` the
+  barrel tip) to where they show, x = 2 * offset.X - x (`MeshAssets.shownPoint`; measured
+  2026-11-11: without it the M249, MP5 and M16 put the eye beside the sights). Down the sights the eye sits on the line through the two, the eye relief behind the
   rear sight (0.35 studs with a cheek on the stock, 1.0 for a sidearm at arm's length, 0.3
   behind a scope), looking at the front one, so the post is centred in the peep on the screen's
   centre, where the round goes; the crosshair fades out. The view narrows by the gun's own
