@@ -61,7 +61,10 @@ something; never delete one without the owner.
     sold for tabs yet, and no one-run consumables for now.
 - **Transitions are a fade, not a loading card.** Fade to black with the helicopter sound, Roblox's
   own loading screen on a teleport, fade in on the pad with the drop-off sound; the same between
-  missions. No custom ride card or teleport screen for now. (2026-11-09)
+  missions. No custom ride card or teleport screen for now. (2026-11-09) **The arrival is a
+  cutscene** (2026-11-11, Nova: "a cutscene of the lantern dropping the squad off at the landing
+  zone"): the helicopter flies in, hovers over the LZ and leaves; skippable (client
+  InsertionCutscene, Config.Insertion).
 - **Loadout is chosen in the lobby** once the lobby exists; the in-mission Arms Room (B) is
   a stand-in. (2026-11-08)
 

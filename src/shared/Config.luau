@@ -30,6 +30,36 @@ local Config = {
 		-- does not crouch then).
 	},
 
+	-- The insertion cutscene (Nova, 2026-11-11: "a cutscene of the lantern dropping the squad off
+	-- at the landing zone"; replaces the plain fade-in on the pad, docs/OWNER.md). While the run
+	-- is in Insert every client plays it locally (client InsertionCutscene): the helicopter
+	-- comes in low over the city, flares over the LZ pad, hovers in its own dust while the squad
+	-- drops, and climbs away; letterbox bars, the HUD hidden, the soldier held still. Three
+	-- shots, timed by the phases below (seconds). SkipKeys end it at once for that player. The
+	-- server holds Insert for Seconds plus Run.InsertSeconds and reads the brief at the end.
+	Insertion = {
+		Enabled = true,
+		Approach = 6, -- in from the edge of the map to over the pad
+		Flare = 2.5, -- nose up, bleeding speed, down to the hover
+		Drop = 1.6, -- the hover: dust, the squad drops (revealed halfway)
+		Depart = 3.2, -- climbs and flies off behind the squad
+		Seconds = 13.3, -- the whole cutscene (the four above)
+		StartDistance = 420, -- studs out from the pad, on the line from the map's centre
+		StartHeight = 110, -- studs above the pad at the start
+		CruiseHeight = 30, -- over the pad at the end of the approach
+		HoverHeight = 6, -- skids above the pad during the drop
+		FlarePitch = 14, -- degrees nose up at the height of the flare
+		RotorSpin = 1100, -- degrees a second, main rotor (the tail rotor 3x)
+		-- The Lantern's hubs in its own frame (assets/3d/build/lantern.py HUB, TAIL_HUB; the
+		-- lobby's LanternBird uses the same).
+		Hub = Vector3.new(0, 11.9, 0),
+		TailHub = Vector3.new(-0.6, 11.5, -26.6),
+		Letterbox = 0.11, -- share of the screen height each bar covers
+		Fov = 50,
+		RotorVolume = 1,
+		SkipKeys = { Enum.KeyCode.Space, Enum.KeyCode.ButtonA },
+	},
+
 	-- Night vision (Nova, 2026-11-11: the goggles on the soldier's FAST helmet, for a night-time
 	-- area): Keys.NightVision or GamepadKey flips them down and up (client NightVision). The view
 	-- goes green and bright: Lighting exposure raised, a green colour correction with no colour

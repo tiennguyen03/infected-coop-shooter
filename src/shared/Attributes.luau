@@ -11,6 +11,9 @@ local Attributes = table.freeze({
 	RunResult = "RunResult",
 	RunStartTime = "RunStartTime",
 	GamePaused = "GamePaused",
+	-- client only, on the local Player: a cutscene holds the soldier (InsertionCutscene); no firing
+	-- or using kit while it is set
+	Cinematic = "Cinematic",
 	ReadyCount = "ReadyCount",
 	ReadyNeeded = "ReadyNeeded",
 	ReadyUpEndsAt = "ReadyUpEndsAt",
