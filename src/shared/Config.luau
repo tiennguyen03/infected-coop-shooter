@@ -1600,6 +1600,7 @@ local Config = {
 	},
 
 	-- The lobby place: the Fallow (docs/sprints/LOBBY_V1_FALLOW.md, LORE.md > The Fallow).
+	-- Players read "the Carrier"; identifiers keep the old name (docs/LORE.md > Naming).
 	Lobby = {
 		-- The match a squad launches into: Config.Places (Match, or a Dev pair's).
 		-- Music on the Carrier (LobbyMusic): licensed tracks from Roblox's audio library, free for
@@ -1661,6 +1662,7 @@ local Config = {
 			Cooldown = 6, -- seconds a spot rests after a lift or a failed one
 		},
 		-- Lantern, the lift bird on each spot (LanternBird, LanternSpool; docs/LORE.md > Lantern).
+		-- Players read "the helicopter" / "Helo"; this key keeps the old name (docs/LORE.md > Naming).
 		Lantern = {
 			BirdNumbers = { 22, 24, 21, 23 }, -- stencilled number per spot: a bird and a spot are not tied
 			RotorRpm = 40, -- main rotor speed at the end of the spool

@@ -203,7 +203,7 @@ UIScale) and its text through `HudTheme.label`.
 | Ammo (`LoadoutUI`) | crosshair (+40,+40) | the gun in hand 12 pt above it with "[Q] PISTOL" dim (the other gun); magazine GothamBlack 26 + " / reserve" 16 dim; yellow low, "RELOADING" + bar, red "DRY [R]"; attribute-driven |
 | Arms Room (`LoadoutMenu`, hosted by `LoadoutUI` on B) | centre, 760 wide, DisplayOrder 110 (above the results) | menu style: (22,8,8) at 0.08 with a red.m 1 px box, "//ARMS ROOM" 30, a dim 12 pt rule line; columns PRIMARY / SIDEARM + GRENADE / CALL-INS of 26 px rows (name 14 bold left, designation 11 right), the pick in the cream fill with dark text, call-ins badged "[n]" by slot; the hovered item's line under the columns; cream DEPLOY LOADOUT bottom right, the server's refusal in red.l above it; height grows with the longest list |
 | Mission line (`MissionLine`, driven by `ObjectiveUI` / `ExtractionUI`) | lower centre (0.5, 0.8) | "SECURE the AREA" / "HOLD the LZ" / "WAITING FOR SQUAD n/m" / red "RETURN to the LZ", a second line, a 300x3 bar; extraction outranks the objective |
-| Subtitles (`BuffNoticeUI.subtitle`) | under the mission line | "CONTROL: radio line" (BuffNotice kind radio), the Warden's "HANDSET: ..." tells |
+| Subtitles (`BuffNoticeUI.subtitle`) | under the mission line | "CONTROL: radio line" (BuffNotice kind radio), the Warden's "WARDEN: ..." tells |
 | Notification cards (`BuffNoticeUI.card`) | top right (-16,12), y 120 during a boss | dark strip, red-outlined square, bold title; pickups, picks, the flare call, an upgrade landing; max 3 |
 | Boss bar (`BossBarUI`) | top right (-16,12) | name in red right-aligned, 380x16 faceted body bar ending in a round emblem (blue while stunned), six 56x6 plate bars with labels |
 | Downed / K.I.A. (`RunEndUI`) | centre (0.5, 0.22) | "DOWNED" 40 red + 360x4 bleed-out bar + line; "K.I.A." + line; no panel |
@@ -419,7 +419,7 @@ top `rgb(196,206,220)`, Exposure -0.05, ShadowSoftness 0.75; Atmosphere Density 
 Color `rgb(112,118,126)`; ColorCorrection Contrast 0.08, Saturation -0.22, Tint
 `rgb(232,238,248)`; Bloom 0.4 / 22 / threshold 1.6 (fire, Neon and lamps only). Sea
 `rgb(38,58,64)`, reflectance 0.25, seabed `rgb(16,28,32)`. The orange coast fires and the
-Lantern lamps are the warm notes. The hangar desks must still read at a glance.
+Helicopter lamps are the warm notes. The hangar desks must still read at a glance.
 
 ### The Carrier's buying panels (2026-11-10)
 
@@ -471,9 +471,9 @@ accents. The v1 `BridgeWindows` Part (Glass, transparency 0.1) broke the no-tran
 the island mesh replaces it with opaque `glass` and FallowArt removes the Part. Budget: ~8,000
 tris for the whole ship with 18 instanced catwalk bays (cap 18,000).
 
-### Lantern, the lift bird (art pass 2026-11-09, uploaded 2026-11-09)
+### The helicopter (`Lantern` in code), the lift bird (art pass 2026-11-09, uploaded 2026-11-09)
 
-Canon: `docs/LORE.md` > Lantern; sheet and decisions: `docs/sprints/LOBBY_V1_FALLOW.md` >
+Canon: `docs/LORE.md` > The helicopter; sheet and decisions: `docs/sprints/LOBBY_V1_FALLOW.md` >
 Lantern; meshes in `assets/3d/build/lantern.py`. Vehicles take the prefix `veh_` (collection
 `Vehicles`). Read from 40 studs: the dark open door (the interior is `dark` / `dark_d` on
 purpose), the long thin boom with a fin taller than the rotor, the amber lamp. Shell Metal

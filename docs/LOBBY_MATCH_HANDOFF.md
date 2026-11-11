@@ -10,7 +10,7 @@ two halves snap together without either waiting on the other. The shape lives in
 ```
  LOBBY place (Nova)                    MATCH place (today's game, "Co-op Zombie Shooter")
  main menu                  teleport   Mission 1: Checkpoint Delta
- party up (1-4)            ─────────►    insert, explore, Primary, boss, call Lantern, board
+ party up (1-4)            ─────────►    insert, explore, Primary, boss, call the helo, board
  loadout (Arms Room rules)  party +             | helo ride = the loading screen
  pick the operation         loadouts +  Mission 2: Mile 14      (same server)
  READY                      operation           |
