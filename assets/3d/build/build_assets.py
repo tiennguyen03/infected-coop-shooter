@@ -1861,7 +1861,7 @@ MIRROR_X_COLLECTIONS = {"Fallow", "Vehicles", "Deployables"}
 # The same for single sets inside a collection that is otherwise left alone: the remade
 # Infected have one bad side (heads, torsos, the `_l` / `_r` limbs), the older bodies were
 # uploaded as they are.
-MIRROR_X_PREFIXES = ("inf_v2_",)
+MIRROR_X_PREFIXES = ("inf_v2_", "npc_gear_")  # npc_gear_: the crew's faces, hair, headgear
 
 
 def exports_mirrored(name, obj):

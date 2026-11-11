@@ -3,8 +3,10 @@
 -- player instead of just being regular blocks"): a real R15 rig (Humanoid, Animator, Motor6Ds)
 -- wearing the crew body (`npc_crew_` limbs, assets/3d/build/crew.py, the same limb boxes and
 -- joints as the player's Pike body), untextured and coloured per figure: shirt, trousers,
--- skin, boots. A face, hair, a belt, headgear and the lore's kit are small parts welded to the
--- limbs, so they move with the animation. The root is anchored where the figure stands; it
+-- skin, boots. The face, hair and headgear are meshes built around the head's own origin
+-- (crew.py npc_gear_*, 2026-11-11: the block eyes "dont look right"), coloured per figure; a
+-- belt and the lore's hand-held kit are small parts. All welded to the limbs, so they move with
+-- the animation. The root is anchored where the figure stands; it
 -- breathes with the stock R15 idle (`Config.Lobby.Crew.Animations`), and walkers are moved and
 -- animated on each client (CrewWalk). Nothing collides and no Humanoid is tagged Enemy.
 -- Ship's company and Army staff wear working dress, never Pike grey (docs/LORE.md > The Fallow).
@@ -76,6 +78,19 @@ type Wear = (
 	color: Color3,
 	turn: CFrame?
 ) -> BasePart
+-- A crew gear mesh (`npc_gear_<name>`) on the head, where it was designed; `turn` moves it
+-- in the head's space first (a visor raised about its hinge).
+type WearMesh = (name: string, color: Color3, turn: CFrame?) -> BasePart?
+
+local FACE = Color3.fromRGB(34, 26, 24) -- eyes and mouth
+local VISOR = Color3.fromRGB(90, 100, 110)
+-- Hair styles, picked by name; under any headgear the hair is clipped close (it would show
+-- through the sides of a cap or helmet). The kit item "bun" asks for the bun.
+local HAIR_STYLES = { "crop", "parted", "buzz", "crop" }
+local HEADGEAR: { [string]: boolean } =
+	{ visorUp = true, earDefenders = true, helmet = true, headsetOneEar = true }
+-- The flight helmet's visor hinge, in the head's space (crew.py helmet_flight's housing).
+local VISOR_HINGE = Vector3.new(0, 0.66, -0.64)
 
 -- Gloves are the hands' own colour, not parts.
 local GLOVES: { [string]: Color3 } = {
@@ -87,18 +102,13 @@ local function v(x: number, y: number, z: number): Vector3
 	return Vector3.new(x, y, z)
 end
 
-local KIT: { [string]: (wear: Wear) -> () } = {
-	-- The Quartermaster: reading glasses (two lenses on a thin frame), a clipboard, keys.
-	glasses = function(wear)
-		for _, x in { -0.24, 0.24 } do
-			local lens = wear("Head", "GlassesLens", v(0.3, 0.2, 0.03), v(x, 0.09, -0.6), STEEL)
-			lens.Material = Enum.Material.Glass
-			lens.Transparency = 0.55
-			wear("Head", "GlassesRim", v(0.32, 0.04, 0.04), v(x, 0.2, -0.6), BLACK)
-			wear("Head", "GlassesArm", v(0.04, 0.04, 0.56), v(x * 2.33, 0.19, -0.33), BLACK)
-		end
-		wear("Head", "GlassesBridge", v(0.16, 0.04, 0.04), v(0, 0.17, -0.61), BLACK)
+local KIT: { [string]: (wear: Wear, wearMesh: WearMesh) -> () } = {
+	-- The Quartermaster: reading glasses, a clipboard, keys.
+	glasses = function(_, wearMesh)
+		wearMesh("glasses", BLACK)
 	end,
+	-- Fires wears her hair tied back (finish reads it; nothing to add here).
+	bun = function() end,
 	clipboard = function(wear)
 		wear(
 			"RightHand",
@@ -137,11 +147,8 @@ local KIT: { [string]: (wear: Wear) -> () } = {
 		)
 	end,
 	-- The watch officer: a headset with one earcup on, a steel mug, a rank tab.
-	headsetOneEar = function(wear)
-		wear("Head", "HeadsetBand", v(1.24, 0.1, 0.22), v(0, 0.64, 0), BLACK)
-		wear("Head", "HeadsetCup", v(0.22, 0.5, 0.5), v(-0.66, 0, 0), BLACK)
-		wear("Head", "HeadsetCup", v(0.22, 0.45, 0.45), v(0.66, 0.24, 0.36), BLACK)
-		wear("Head", "HeadsetMic", v(0.05, 0.05, 0.55), v(-0.6, -0.24, -0.38), BLACK)
+	headsetOneEar = function(_, wearMesh)
+		wearMesh("headset_one_ear", BLACK)
 	end,
 	mug = function(wear)
 		local mug: Part = wear(
@@ -196,16 +203,15 @@ local KIT: { [string]: (wear: Wear) -> () } = {
 	end,
 	-- The Loadmaster: flight helmet pushed up with the visor up, a monkey harness and tether, a
 	-- grease pencil.
-	visorUp = function(wear)
-		wear("Head", "Helmet", v(1.28, 0.62, 1.3), v(0, 0.5, 0.14), Color3.fromRGB(48, 53, 59))
-		wear(
-			"Head",
-			"Visor",
-			v(1.0, 0.36, 0.08),
-			v(0, 0.78, -0.5),
-			Color3.fromRGB(154, 164, 174),
-			CFrame.Angles(math.rad(-30), 0, 0)
-		)
+	visorUp = function(_, wearMesh)
+		wearMesh("helmet_flight", Color3.fromRGB(48, 53, 59))
+		local up = CFrame.new(VISOR_HINGE)
+			* CFrame.Angles(math.rad(75), 0, 0)
+			* CFrame.new(-VISOR_HINGE)
+		local visor = wearMesh("visor", VISOR, up)
+		if visor then
+			visor.Material = Enum.Material.Glass
+		end
 	end,
 	harness = function(wear)
 		for _, lean in { 28, -28 } do
@@ -243,12 +249,8 @@ local KIT: { [string]: (wear: Wear) -> () } = {
 		wear("Head", "Mask", v(0.8, 0.42, 0.06), v(0, -0.2, -0.62), Color3.fromRGB(226, 232, 230))
 	end,
 	-- Flight deck crew: ear defenders over the cloth helmet; chocks and chains; a rag.
-	earDefenders = function(wear)
-		local red = Color3.fromRGB(200, 60, 40)
-		wear("Head", "EarDefenderBand", v(1.36, 0.1, 0.2), v(0, 0.64, 0), red)
-		for _, x in { -0.66, 0.66 } do
-			wear("Head", "EarCup", v(0.26, 0.55, 0.55), v(x, 0, 0), red)
-		end
+	earDefenders = function(_, wearMesh)
+		wearMesh("ear_defenders", Color3.fromRGB(200, 60, 40))
 	end,
 	chocks = function(wear)
 		wear(
@@ -277,14 +279,8 @@ local KIT: { [string]: (wear: Wear) -> () } = {
 		)
 	end,
 	-- The lane sentry: helmet, a slung rifle, a white MP brassard.
-	helmet = function(wear)
-		wear(
-			"Head",
-			"CombatHelmet",
-			v(1.36, 0.62, 1.4),
-			v(0, 0.46, 0.02),
-			Color3.fromRGB(66, 70, 52)
-		)
+	helmet = function(_, wearMesh)
+		wearMesh("helmet_combat", Color3.fromRGB(66, 70, 52))
 	end,
 	slungRifle = function(wear)
 		wear(
@@ -503,35 +499,59 @@ local function finish(model: Model, dress: Dress, kit: Kit?, idle: boolean)
 		return part
 	end
 
-	-- The face, hair and belt everyone has.
-	for _, x in { -0.24, 0.24 } do
-		wear("Head", "Eye", v(0.15, 0.1, 0.04), v(x, 0.08, -0.575), BLACK)
-		wear("Head", "Brow", v(0.26, 0.06, 0.04), v(x, 0.2, -0.575), hair)
+	local head = model:FindFirstChild("Head")
+	local function wearMesh(gear: string, color: Color3, turn: CFrame?): BasePart?
+		local meshName = "npc_gear_" .. gear
+		local part = MeshAssets.clone(meshName)
+		if not (part and head and head:IsA("BasePart")) then
+			return nil
+		end
+		part.Name = gear
+		part.Color = color
+		part.Material = Enum.Material.SmoothPlastic
+		part.Anchored = false
+		part.CanCollide = false
+		part.CanTouch = false
+		part.CanQuery = false
+		part.CastShadow = false
+		part.Massless = true
+		part.CFrame = origin(head, dressed)
+			* (turn or CFrame.identity)
+			* CFrame.new(MeshAssets.getOffset(meshName))
+		local weld = Instance.new("WeldConstraint")
+		weld.Part0 = head
+		weld.Part1 = part
+		weld.Parent = part
+		part.Parent = model
+		return part
 	end
-	wear("Head", "Mouth", v(0.34, 0.05, 0.04), v(0, -0.28, -0.575), Color3.fromRGB(110, 70, 60))
-	wear("Head", "Hair", v(1.14, 0.14, 1.14), v(0, 0.6, 0.02), hair)
-	wear("Head", "HairBack", v(1.14, 0.5, 0.1), v(0, 0.32, 0.57), hair)
+
+	-- The face, hair and belt everyone has; hair clipped close under any headgear.
+	local covered = dress.cover ~= nil or dress.helmet ~= nil
+	local bun = false
+	for _, item in (kit or {}) :: Kit do
+		covered = covered or HEADGEAR[item] == true
+		bun = bun or item == "bun"
+	end
+	local style = if covered then "buzz" elseif bun then "bun" else pick(HAIR_STYLES, name, 5)
+	wearMesh("face", FACE)
+	wearMesh("hair_" .. style, hair)
 	wear("LowerTorso", "Belt", v(2.03, 0.16, 1.04), v(0, 0.06, 0), BLACK)
 	wear("LowerTorso", "Buckle", v(0.3, 0.16, 0.06), v(0, 0.06, -0.53), BRASS)
 	if dress.cover then
-		wear("Head", "Cover", v(1.18, 0.3, 1.2), v(0, 0.66, 0.02), dress.cover)
-		wear("Head", "CoverBrim", v(1.0, 0.06, 0.42), v(0, 0.54, -0.76), dress.cover)
+		wearMesh("cap", dress.cover)
 	end
 	if dress.helmet then
-		wear("Head", "Helmet", v(1.32, 0.86, 1.34), v(0, 0.32, 0.04), dress.helmet)
-		local visor = wear(
-			"Head",
-			"Visor",
-			v(1.04, 0.42, 0.08),
-			v(0, 0.06, -0.66),
-			Color3.fromRGB(90, 100, 110)
-		)
-		visor.Material = Enum.Material.Glass
+		wearMesh("helmet_flight", dress.helmet)
+		local visor = wearMesh("visor", VISOR)
+		if visor then
+			visor.Material = Enum.Material.Glass
+		end
 	end
 	for _, item in (kit or {}) :: Kit do
 		local add = KIT[item]
 		if add then
-			add(wear)
+			add(wear, wearMesh)
 		else
 			warn(`[NpcBody] no kit item "{item}"`)
 		end

@@ -381,13 +381,37 @@ and out with the music when the Lantern lifts. Nothing replicates.
 - **Crew footsteps**: the walking crew (`CrewWalk`) step on the deck every 2.4 studs with the
   match's Footsteps bank (hard surface).
 Picked by description, not by ear: swap a clip in `Config.Lobby.Ambience`.
+
+## Figures and how they move (2026-11-11)
+
+Nova: the crew's walk "looks silly and dont fit the vibe", the soldier's lobby walk is hunched
+and a hand floats off the SMG; "standing up straight with the gun at a resting position in a
+sling across his chest"; the crew's block eyes "dont look right" on the R15 bodies.
+- **Clips**: Roblox's Rthro idle and walk (owner's pick over a Mixamo download), for the crew
+  (`Config.Lobby.Crew.Animations`) and the soldier (`Config.Lobby.Soldier.Animations`, plus the
+  Rthro run above 12 studs/s). Measured on our rig: the stock walk is made for 14 studs/s (the
+  crew played it at 0.45, slow motion), the Rthro walk for 5.7 and the run for 10.5. The crew
+  walk at 5.5 studs/s at rate 0.96; the soldier walks the ship at 10 (`Soldier.WalkSpeed`, was
+  Roblox's 16) at a rate kept within 0.6 to 1.6.
+- **The sling**: PikeBody moves the Tool's `RightGrip` weld onto the upper torso
+  (`Soldier.Sling`: grip low right, muzzle down past the left hip, the top toward the face);
+  `SlingHands` (client, every soldier) solves both arms onto the carried gun after the
+  Animator each frame: the right palm on the grip, the left on the handguard part-way to the
+  muzzle, so it fits any gun. Two-bone IK, the method of Tien's revive arms, kept separate.
+- **Faces, hair, headgear**: `crew.py` reshapes the crew head (cranium, narrower jaw,
+  cheekbones, brow ridge, a nose with bridge and tip, chin) and adds `npc_gear_*` meshes built
+  around the head's origin: the face (eyes under the brow ridge, mouth), four hair styles with
+  their brows (crop, parted, buzz, bun), a cap, a combat helmet, a flight helmet and its visor,
+  ear defenders, a one-ear headset, glasses. NpcBody wears them like limbs, coloured per
+  figure; under any headgear the hair is the buzz cut; Fires wears the bun. Hand-held kit
+  (clipboard, notebook, mug, chocks...) stays small parts.
 ## Files
 
 | Place | File |
 |---|---|
 | Project | `lobby.project.json` (shares `src/shared`; `src/lobby/shared` as `ReplicatedStorage.Lobby`; maps the match's `src/server/PlayerSetup.luau` into the lobby server and `src/client/HudTheme.luau`, `PaletteController.luau`, `LoadoutMenu.luau` into the lobby client; sets `Lighting.Technology`) |
 | Server | `src/lobby/server/`: `Main.server`, `FallowLayout`, `Build`, `FallowBuilder`, `FallowArt`, `PikeBody`, `NpcBody`, `DeskService`, `ContainmentBoard`, `PlotService`, `LaunchService`, `LanternBird`, `ArmsRack`, `LoadmasterService` |
-| Client | `src/lobby/client/`: `Main.client`, `LaunchUI`, `DeskDialogUI`, `ArmsRackUI`, `LoadmasterUI`, `DeskShop`, `RecordClient`, `LobbyMusic`, `ShipAmbience`, `HoldStill`, `RadarSpin`, `LanternSpool`, `SoldierMoves` |
+| Client | `src/lobby/client/`: `Main.client`, `LaunchUI`, `DeskDialogUI`, `ArmsRackUI`, `LoadmasterUI`, `DeskShop`, `RecordClient`, `LobbyMusic`, `ShipAmbience`, `SlingHands`, `HoldStill`, `RadarSpin`, `LanternSpool`, `SoldierMoves` |
 | Art | `assets/3d/build/fallow.py` (12 `env_fallow_*` meshes), `lantern.py` (4 `veh_lantern_*`); `MeshAssets` entries; `Config.Lobby.Ship`, `Config.Lobby.Lantern`; attribute `LiftAt`; rule `Rules/ArmsStats` (+ spec), `Config.Lobby.Rack` |
 | Shared | `src/lobby/shared/LobbyDesks`; rules `src/shared/Rules/Manifest`, `Rules/Containment`, `Rules/Handoff` (main's, the teleport data both places share); `Config.Lobby`, `Config.Places`, `Config.Containment`; remotes `Launch` + `Messages.Launch`, `Loadout` (shared with the match); attribute `DeskId` |
 | Match side | `HandoffService` reads the teleport data and `RunManager.receive` applies the signed Loadout (2026-11-09; `JoinData` retired); `LoadoutMenu.mount` options (title, hint, confirm) |

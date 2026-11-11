@@ -97,9 +97,36 @@ local function pikeKit(character: Model)
 	end, Color3.fromRGB(120, 255, 120), true)
 end
 
+-- The gun across the chest (Config.Lobby.Soldier.Sling): the Tool's grip weld, which Roblox
+-- makes on the right hand when the Tool is equipped, is moved onto the upper torso; a new
+-- grip weld (a re-equip) is moved again. SlingHands (client) puts the hands on it.
+local function sling(character: Model)
+	local hand = character:FindFirstChild("RightHand")
+	local torso = character:FindFirstChild("UpperTorso")
+	if not (hand and torso and torso:IsA("BasePart")) then
+		return
+	end
+	local settings = Config.Lobby.Soldier.Sling
+	local seat = CFrame.lookAlong(settings.Position, settings.Barrel.Unit, settings.Up.Unit)
+	local function move(child: Instance)
+		if child.Name == "RightGrip" and child:IsA("Weld") then
+			task.defer(function() -- after Roblox has set the weld up
+				child.Part0 = torso
+				child.C0 = seat
+				child.C1 = CFrame.identity
+			end)
+		end
+	end
+	hand.ChildAdded:Connect(move)
+	for _, child in hand:GetChildren() do
+		move(child)
+	end
+end
+
 local function onCharacterAdded(character: Model)
 	local humanoid = character:WaitForChild("Humanoid") :: Humanoid
 	character:WaitForChild("HumanoidRootPart")
+	humanoid.WalkSpeed = Config.Lobby.Soldier.WalkSpeed
 	-- Templates build asynchronously at boot; a character that beats them keeps the stock body.
 	if MeshAssets.waitFor(PlayerSetup.BODY .. "head", TEMPLATE_WAIT) then
 		MeshAssets.dressModel(character, PlayerSetup.BODY)
@@ -115,6 +142,7 @@ local function onCharacterAdded(character: Model)
 	local soldier = Config.Lobby.Soldier
 	if soldier.Enabled and soldier.CarryRifle and character.Parent then
 		if character:WaitForChild("RightHand", TEMPLATE_WAIT) then
+			sling(character)
 			PlayerSetup.attachRifle(character, humanoid)
 		end
 	end

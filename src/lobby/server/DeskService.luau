@@ -34,7 +34,7 @@ local DRESS: { [string]: NpcBody.Dress } = {
 local KIT: { [string]: NpcBody.Kit } = {
 	arms_room = { "glasses", "clipboard", "keyring" },
 	loadmaster = { "visorUp", "harness", "greasePencil" },
-	fires = { "headsetNeck", "notebook" },
+	fires = { "headsetNeck", "notebook", "bun" },
 	engineers = { "beltGloves", "cutters", "wireCoil" },
 	plot = { "headsetOneEar", "mug", "rankTab" },
 }

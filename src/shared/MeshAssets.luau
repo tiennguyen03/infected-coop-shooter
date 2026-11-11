@@ -740,9 +740,83 @@ local MESHES: { [string]: MeshDef } = {
 	-- The Carrier's crew body (assets/3d/build/crew.py; lobby NPCs, NpcBody): untextured,
 	-- every limb coloured per figure (shirt, trousers, skin or gloves, boots).
 	npc_crew_head = {
-		meshId = "rbxassetid://131227012252937",
-		size = Vector3.new(1.260, 1.180, 1.220),
-		offset = Vector3.new(0.000, 0.000, -0.052),
+		meshId = "rbxassetid://75604247805862",
+		size = Vector3.new(1.260, 1.180, 1.240),
+		offset = Vector3.new(0.000, 0.000, -0.048),
+		surface = CREW_SURFACE,
+	},
+	-- The crew's faces, hair and headgear (crew.py npc_gear_*, 2026-11-11): built around the
+	-- head's design origin, worn by NpcBody like a limb, untextured and coloured per figure.
+	npc_gear_face = {
+		meshId = "rbxassetid://115204323873645",
+		size = Vector3.new(0.650, 0.440, 0.110),
+		offset = Vector3.new(0.000, -0.099, -0.505),
+		surface = CREW_SURFACE,
+	},
+	npc_gear_hair_crop = {
+		meshId = "rbxassetid://121999065279850",
+		size = Vector3.new(1.220, 0.760, 1.260),
+		offset = Vector3.new(0.000, 0.370, -0.007),
+		surface = CREW_SURFACE,
+	},
+	npc_gear_hair_buzz = {
+		meshId = "rbxassetid://102741691715580",
+		size = Vector3.new(1.180, 0.560, 1.240),
+		offset = Vector3.new(0.000, 0.370, -0.020),
+		surface = CREW_SURFACE,
+	},
+	npc_gear_hair_parted = {
+		meshId = "rbxassetid://91230784540494",
+		size = Vector3.new(1.220, 0.840, 1.260),
+		offset = Vector3.new(0.000, 0.410, -0.007),
+		surface = CREW_SURFACE,
+	},
+	npc_gear_hair_bun = {
+		meshId = "rbxassetid://109538199843977",
+		size = Vector3.new(1.220, 0.720, 1.480),
+		offset = Vector3.new(0.000, 0.350, 0.100),
+		surface = CREW_SURFACE,
+	},
+	npc_gear_cap = {
+		meshId = "rbxassetid://129185423997477",
+		size = Vector3.new(1.200, 0.420, 1.590),
+		offset = Vector3.new(0.000, 0.663, -0.176),
+		surface = CREW_SURFACE,
+	},
+	npc_gear_helmet_combat = {
+		meshId = "rbxassetid://102984997881628",
+		size = Vector3.new(1.420, 1.290, 1.440),
+		offset = Vector3.new(0.000, 0.115, 0.040),
+		surface = CREW_SURFACE,
+	},
+	npc_gear_helmet_flight = {
+		meshId = "rbxassetid://99941651779965",
+		size = Vector3.new(1.440, 1.090, 1.440),
+		offset = Vector3.new(0.000, 0.205, 0.000),
+		surface = CREW_SURFACE,
+	},
+	npc_gear_visor = {
+		meshId = "rbxassetid://115970219262250",
+		size = Vector3.new(1.270, 0.400, 0.250),
+		offset = Vector3.new(0.000, 0.120, -0.600),
+		surface = CREW_SURFACE,
+	},
+	npc_gear_ear_defenders = {
+		meshId = "rbxassetid://106836069889643",
+		size = Vector3.new(1.530, 0.990, 0.540),
+		offset = Vector3.new(0.000, 0.225, 0.020),
+		surface = CREW_SURFACE,
+	},
+	npc_gear_headset_one_ear = {
+		meshId = "rbxassetid://136766390688806",
+		size = Vector3.new(1.470, 1.060, 1.140),
+		offset = Vector3.new(-0.005, 0.190, 0.010),
+		surface = CREW_SURFACE,
+	},
+	npc_gear_glasses = {
+		meshId = "rbxassetid://72518420105284",
+		size = Vector3.new(1.180, 0.220, 0.570),
+		offset = Vector3.new(0.000, 0.088, -0.338),
 		surface = CREW_SURFACE,
 	},
 	npc_crew_upper_torso = {

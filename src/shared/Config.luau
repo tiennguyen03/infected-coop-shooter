@@ -2503,24 +2503,64 @@ local Config = {
 		-- idle and walk clips (client SoldierMoves, the shared SoldierLocomotion; the clips are
 		-- Config.Animations.Assault, not repeated here) and the signed primary in the hands
 		-- (PikeBody, the match's PlayerSetup.attachRifle).
+		-- Owner 2026-11-11 (second pass): "standing up straight with the gun at a resting position
+		-- in a sling across his chest", not the match's hunched rifle walk, and no hand floating
+		-- off a short gun. Roblox's Rthro idle and walk (owner's pick; Roblox's own, free to use),
+		-- the gun welded across the chest (PikeBody) and both hands put on it in code every frame
+		-- on every client (SlingHands), so they sit on whatever gun is carried.
 		Soldier = {
 			Enabled = true, -- false: Roblox's stock animations and no rifle, as before
-			CarryRifle = true, -- false: the match's clips with empty hands
+			CarryRifle = true, -- false: the clips with empty hands
 			ClipWait = 8, -- seconds a client waits for the clips before keeping the stock Animate
+			WalkSpeed = 10, -- studs a second on the ship (Roblox's default is 16, a run)
+			Animations = {
+				Idle = "rbxassetid://2510196951", -- Rthro Idle
+				Walk = "rbxassetid://2510202577", -- Rthro Walk
+				Run = "rbxassetid://2510198475", -- Rthro Run, above RunAbove
+			},
+			-- Ground speed each clip was made for (measured 2026-11-11, the planted foot's
+			-- speed): rate = speed / this, within MinRate..MaxRate.
+			WalkClipSpeed = 5.7,
+			RunClipSpeed = 10.5,
+			RunAbove = 12, -- studs a second: faster than this plays the run
+			MinRate = 0.6,
+			MaxRate = 1.6,
+			-- The gun across the chest, in the upper torso's space (front -Z, right +X): the
+			-- grip low on the right, the muzzle down past the left hip, the gun's top toward the
+			-- face and out from the chest.
+			Sling = {
+				Position = Vector3.new(0.45, -0.2, -0.8),
+				Barrel = Vector3.new(-0.8, -0.6, 0),
+				Up = Vector3.new(-0.5, 0.7, -0.5),
+			},
+			Hands = {
+				HandLength = 0.3, -- studs from the wrist to the palm
+				-- The left hand on the handguard: this share of the way from the grip to the
+				-- muzzle, held within Along studs.
+				LeftShare = 0.55,
+				LeftAlong = { 0.5, 1.2 },
+				LeftUp = 0.06, -- studs above the bore line
+				-- Where the elbows point, in the upper torso's space.
+				RightPole = Vector3.new(1, -0.7, 0.5),
+				LeftPole = Vector3.new(-1, -0.7, 0.4),
+				BlendSeconds = 0.3, -- hands ease onto the gun
+			},
 		},
 		-- The walking crew (LobbyCrew, CrewWalk): pace, stride and when they speak.
 		Crew = {
-			WalkSpeed = 5, -- studs a second (a soldier walks 16)
+			WalkSpeed = 5.5, -- studs a second (a soldier walks Soldier.WalkSpeed)
 			Pause = 4, -- seconds standing at each end of the route
 			BubbleDistance = 12, -- studs: a soldier this close hears a line
 			BubbleSeconds = 4,
 			BubbleCooldown = 14, -- seconds before the same one speaks again
-			-- Roblox's stock R15 clips for the crew (NpcBody, CrewWalk): not ours, free to use.
+			-- Roblox's Rthro idle and walk for the crew (NpcBody, CrewWalk; owner 2026-11-11: the
+			-- stock walk "looks silly"; it is made for 14 studs/s and played at a third of that).
+			-- Roblox's own clips, free to use.
 			Animations = {
-				Idle = "rbxassetid://507766388",
-				Walk = "rbxassetid://507777826",
+				Idle = "rbxassetid://2510196951", -- Rthro Idle
+				Walk = "rbxassetid://2510202577", -- Rthro Walk (made for 5.7 studs/s)
 			},
-			WalkClipSpeed = 0.45, -- the stock walk's playback rate at WalkSpeed (it is cut for 16)
+			WalkClipSpeed = 0.96, -- the walk's playback rate at WalkSpeed (5.5 / 5.7)
 		},
 		-- The Plot's paper map (WorldMap, WorldMapData; canon docs/lore/world_map.md).
 		WorldMap = {
