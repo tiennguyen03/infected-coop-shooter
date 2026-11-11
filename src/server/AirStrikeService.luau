@@ -4,7 +4,8 @@
 --     the first Delay seconds after the throw, then ShellInterval apart. Walk It In
 --     (walking_barrage): each shell lands Config.Upgrades.WalkingBarrage.Step further along
 --     the throw.
---   Anvil (105 mm, Config.CallIns.Anvil): the same path, one heavy shell.
+--   Anvil (105 mm, Config.CallIns.Anvil): the same path, one heavy shell, on a point marked
+--     through binoculars (CallInService, Rules/Spotting) instead of a thrown marker.
 --   Shrike (helicopter gun run, Config.CallIns.Shrike): after Delay a gunship passes along
 --     the throw; Bursts impacts centred on the mark, Step studs apart, BurstInterval apart.
 -- Every impact is a BlastRadius area hit on the Infected only (DamageService.dealDamage; no
@@ -191,8 +192,9 @@ export type MissionConfig = {
 -- CallInService (Hammer, Anvil): shells from `cfg` land around `point`; `direction` is the
 -- flat throw direction, `step` how far each shell walks along it (Walk It In; 0 otherwise).
 -- Returns true and where each shell will land, in order (for the clients' arrival).
+-- `player` gets the kills; nil (a bot's mission) credits nobody.
 function AirStrikeService.fireMission(
-	player: Player?, -- nil for a bot (no kill credit)
+	player: Player?,
 	cfg: MissionConfig,
 	point: Vector3,
 	direction: Vector3,

@@ -35,6 +35,7 @@ local lastFireTime = 0
 local lastReloadRequest = 0
 local tracerFolder: Folder? = nil
 local RELOAD_REQUEST_GAP = 0.5 -- seconds between automatic reload requests on an empty mag
+local blocked = false -- the hands are full (binoculars up): no shot, no sights
 
 -- A thin bright line from the muzzle to where the round went, gone in a few frames. Drawn
 -- locally for our own shots (instant) and for other players' shots via ShotTracer.
@@ -105,6 +106,17 @@ local function getAimPoint(): Vector3?
 		return result.Position
 	end
 	return ray.Origin + ray.Direction * Config.Weapon.MaxAimDistance
+end
+
+-- The hands are busy with something else (BinocularController): the trigger and the sights
+-- do nothing until it lets go. The mouse buttons are then that thing's to read.
+function WeaponController.setBlocked(on: boolean)
+	blocked = on
+	if on then
+		isFiring = false
+		setAiming(false)
+		AnimationController.setAiming(false)
+	end
 end
 
 -- The magazine as the server published it.
@@ -273,6 +285,16 @@ function WeaponController.init()
 
 	UserInputService.InputBegan:Connect(function(input, gameProcessed)
 		if gameProcessed then
+			return
+		end
+		local button = input.UserInputType
+		if
+			blocked
+			and (
+				button == Enum.UserInputType.MouseButton1
+				or button == Enum.UserInputType.MouseButton2
+			)
+		then
 			return
 		end
 		if input.UserInputType == Enum.UserInputType.MouseButton1 then

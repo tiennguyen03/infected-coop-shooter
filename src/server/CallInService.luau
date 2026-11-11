@@ -12,6 +12,11 @@
 -- Arrivals (Rules/Arrival, Config.CallIns.Arrivals): every throw is told to every client
 -- once (remote CallInArrival) and CallInArrivalFX draws how that call-in comes in; an
 -- emplacement or a bundle is held back here for its row's Arrival.Time while it does.
+-- Binoculars (a row with AimMode "Binoculars": the Anvil; Rules/Spotting, SpotUtil): nothing
+-- is thrown. The client says when the binoculars go up and come down (remote CallInSpot;
+-- the body's Spotting attribute shows them to the squad), then sends the mark over CallIn;
+-- the mark is taken only from binoculars that are up, on ground, in range and in the line
+-- of sight of the soldier's own head. `spotFor` does the same for a body without a slot.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -24,6 +29,8 @@ local Arrival = require(ReplicatedStorage.Shared.Rules.Arrival)
 local CallInCharges = require(ReplicatedStorage.Shared.Rules.CallInCharges)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
+local Spotting = require(ReplicatedStorage.Shared.Rules.Spotting)
+local SpotUtil = require(ReplicatedStorage.Shared.SpotUtil)
 local ThrowUtil = require(ReplicatedStorage.Shared.ThrowUtil)
 local AirStrikeService = require(script.Parent.AirStrikeService)
 local ConcertinaService = require(script.Parent.ConcertinaService)
@@ -67,6 +74,8 @@ local function slotCount(): number
 end
 
 local slots: { [Player]: { Slot } } = {}
+-- Whose binoculars are up: the slot they are for and when they went up (os.clock).
+local spotting: { [Player]: { slot: number, since: number } } = {}
 local usedRemote: RemoteEvent
 local arrivalRemote: RemoteEvent
 local lastStep = 0
@@ -168,17 +177,18 @@ local function fire(
 
 	local landing = root.Position
 	local direction = root.CFrame.LookVector
-	if definition.Kind == "throw" then
+	local marked = Spotting.mode(cfg) == "Binoculars"
+	if marked then
+		-- Marked through binoculars: the point itself (onCallIn checked it), nothing thrown.
+		landing = requested or landing
+	elseif definition.Kind == "throw" then
 		landing =
 			ThrowUtil.landingPoint(root, requested, cfg.ThrowDistance, throwExclusions(character))
-		local flat = Vector3.new(landing.X - root.Position.X, 0, landing.Z - root.Position.Z)
-		if flat.Magnitude > 0.5 then
-			direction = flat.Unit
-		end
-	end
-
-	if definition.Kind == "throw" then
 		WorldSounds.at(landing, "callins", "callin_throw")
+	end
+	local flat = Vector3.new(landing.X - root.Position.X, 0, landing.Z - root.Position.Z)
+	if flat.Magnitude > 0.5 then
+		direction = flat.Unit
 	end
 	-- The arrival: the clients draw it, and anything that is not a fire mission (those keep
 	-- their own Delay) is on the ground and working `holdFor` seconds from now.
@@ -236,6 +246,102 @@ function CallInService.fireFree(player: Player, id: string, point: Vector3?): bo
 	return fire(player, definition, point)
 end
 
+-- The binoculars come down (the body's Spotting attribute goes with them).
+local function lower(player: Player)
+	spotting[player] = nil
+	local character = player.Character
+	if character and character:GetAttribute(Attributes.Spotting) ~= nil then
+		character:SetAttribute(Attributes.Spotting, nil)
+	end
+end
+
+-- Whether `point` is ground the body can see from its own head, within the row's range
+-- (Rules/Spotting, with the server's slack).
+local function markSeen(character: Model, cfg: any, point: Vector3): (boolean, string?)
+	local eye = SpotUtil.eye(character)
+	if not eye then
+		return false, "no body"
+	end
+	local settings = SpotUtil.settings(cfg)
+	local measured = SpotUtil.measure(eye, point, settings, SpotUtil.exclusions(true))
+	return Spotting.check(settings, measured, true)
+end
+
+local function validSlot(slot: unknown): boolean
+	return typeof(slot) == "number" and slot % 1 == 0 and slot >= 1 and slot <= slotCount()
+end
+
+-- CallInSpot: the client's binoculars went up for `slot`, or came down.
+local function onSpot(player: Player, slot: unknown, raised: unknown)
+	if raised ~= true or not validSlot(slot) or PauseService.isPaused() then
+		lower(player)
+		return
+	end
+	local member = Squad.fromPlayer(player)
+	local character = player.Character
+	local slotIndex = slot :: number
+	local definition = CallInDefinitions.get(LoadoutService.getCallIn(player, slotIndex))
+	local cfg = definition and (Config.CallIns :: { [string]: any })[definition.ConfigKey]
+	local state = get(player)[slotIndex]
+	if
+		not member
+		or not character
+		or not Squad.canAct(member)
+		or Spotting.mode(cfg) ~= "Binoculars"
+		or not CallInCharges.use(state.charges, state.nextChargeAt, os.clock(), 0)
+	then
+		lower(player)
+		return
+	end
+	spotting[player] = { slot = slotIndex, since = os.clock() }
+	character:SetAttribute(Attributes.Spotting, true)
+end
+
+-- A body without a slot marks a point through binoculars and fires call-in `id` on it: a
+-- squad bot (BotService carries no call-ins yet; this is its way in). The body raises the
+-- binoculars for the row's Raise, then the mission goes; no view, no charge. `credit` gets
+-- the kills. False when the row is not a binoculars fire mission or the body cannot see
+-- the point.
+function CallInService.spotFor(
+	character: Model,
+	id: string,
+	point: Vector3,
+	credit: Player?
+): boolean
+	local definition = CallInDefinitions.get(id)
+	local cfg = definition and (Config.CallIns :: { [string]: any })[definition.ConfigKey]
+	local root = character:FindFirstChild("HumanoidRootPart")
+	if not definition or not cfg or not (root and root:IsA("BasePart")) then
+		return false
+	end
+	if Spotting.mode(cfg) ~= "Binoculars" or typeof(cfg.Shells) ~= "number" then
+		return false
+	end
+	if PauseService.isPaused() or not markSeen(character, cfg, point) then
+		return false
+	end
+	local settings = SpotUtil.settings(cfg)
+	local thisGeneration = generation
+	character:SetAttribute(Attributes.Spotting, true)
+	task.spawn(function()
+		PauseService.wait(settings.Raise)
+		if character.Parent then
+			character:SetAttribute(Attributes.Spotting, nil)
+		end
+		local humanoid = character:FindFirstChildOfClass("Humanoid")
+		if thisGeneration ~= generation or not humanoid or humanoid.Health <= 0 then
+			return
+		end
+		local flat = Vector3.new(point.X - root.Position.X, 0, point.Z - root.Position.Z)
+		local direction = if flat.Magnitude > 0.5 then flat.Unit else root.CFrame.LookVector
+		local _, impacts = AirStrikeService.fireMission(credit, cfg, point, direction, 0)
+		if Config.CallIns.Arrivals.Enabled then
+			arrivalRemote:FireAllClients(definition.Id, credit, point, direction, impacts)
+		end
+	end)
+	return true
+end
+
 -- A bot's fire mission (BotService; it keeps its own cooldown): a shelled mission (the
 -- Hammer, the Anvil) thrown from `member`'s body at `point`, clamped and landed like a player's throw, with no
 -- owner (no kill credit, no upgrades). False for any other call-in or no body.
@@ -250,6 +356,10 @@ function CallInService.fireMissionFor(member: Squad.Member, id: string, point: V
 	if definition.Kind ~= "throw" or typeof(cfg.Shells) ~= "number" then
 		return false
 	end
+	-- A row marked through binoculars (the Anvil) is not thrown: the bot marks the point.
+	if Spotting.mode(cfg) == "Binoculars" then
+		return CallInService.spotFor(character, id, point, nil)
+	end
 	local landing =
 		ThrowUtil.landingPoint(root, point, cfg.ThrowDistance, throwExclusions(character))
 	local flat = Vector3.new(landing.X - root.Position.X, 0, landing.Z - root.Position.Z)
@@ -259,7 +369,7 @@ function CallInService.fireMissionFor(member: Squad.Member, id: string, point: V
 end
 
 local function onCallIn(player: Player, slot: unknown, requested: unknown)
-	if typeof(slot) ~= "number" or slot % 1 ~= 0 or slot < 1 or slot > slotCount() then
+	if not validSlot(slot) then
 		return
 	end
 	if PauseService.isPaused() then
@@ -314,10 +424,32 @@ local function onCallIn(player: Player, slot: unknown, requested: unknown)
 	if not CallInCharges.use(state.charges, state.nextChargeAt, os.clock(), 0) then
 		return
 	end
+	local cfg = (Config.CallIns :: { [string]: any })[definition.ConfigKey]
+	if Spotting.mode(cfg) == "Binoculars" then
+		-- The mark counts only from this slot's binoculars, up for the raise; they come down
+		-- whether or not it is taken.
+		local up = spotting[player]
+		local raisedFor = if up and up.slot == slotIndex then os.clock() - up.since else nil
+		lower(player)
+		local character = player.Character
+		if not point or not character then
+			return
+		end
+		if not Spotting.canConfirm(raisedFor, SpotUtil.settings(cfg)) then
+			print(`[CallIn] {player.Name}: {definition.Name} mark refused (binoculars not up)`)
+			return
+		end
+		local seen, reason = markSeen(character, cfg, point)
+		if not seen then
+			print(`[CallIn] {player.Name}: {definition.Name} mark refused ({reason})`)
+			return
+		end
+	end
 	-- A thrown call-in leaves the hand at the throw clip's release (ThrowWindUp): the charge
 	-- is spent and the arrival starts there, so Arrival.Time and a fire mission's Delay count
-	-- from the release, as they did from the key.
-	if definition.Kind == "throw" then
+	-- from the release, as they did from the key. A mark through binoculars is not thrown:
+	-- it goes at once.
+	if definition.Kind == "throw" and Spotting.mode(cfg) ~= "Binoculars" then
 		ThrowWindUp.begin(player, use)
 	else
 		use()
@@ -358,6 +490,7 @@ end
 
 -- Run start: full charges in every slot.
 function CallInService.resetPlayer(player: Player)
+	lower(player)
 	CallInService.refill(player)
 end
 
@@ -369,11 +502,19 @@ function CallInService.init()
 		onPlayerReset = CallInService.resetPlayer,
 		onPlayerRemoving = function(player: Player)
 			slots[player] = nil
+			spotting[player] = nil
 		end,
 	})
 	usedRemote = Remotes.get("AbilityUsed")
 	arrivalRemote = Remotes.get("CallInArrival")
 	Remotes.get("CallIn").OnServerEvent:Connect(onCallIn)
+	Remotes.get("CallInSpot").OnServerEvent:Connect(onSpot)
+	-- Going down takes the binoculars with it.
+	Squad.onStateChanged(function(member, _old, new)
+		if member.owner and new ~= "Alive" then
+			lower(member.owner)
+		end
+	end)
 	-- A changed slot (dev panel, the Arms Room) starts full, or empty with its cooldown
 	-- running when the Arms Room changed it in a run.
 	LoadoutService.onCallInChanged(function(player, slot, startEmpty)

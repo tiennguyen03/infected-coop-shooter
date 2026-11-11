@@ -210,6 +210,7 @@ UIScale) and its text through `HudTheme.label`.
 | Downed / K.I.A. (`RunEndUI`) | centre (0.5, 0.22) | "DOWNED" 40 red + 360x4 bleed-out bar + line; "K.I.A." + line; no panel |
 | Results (`RunEndUI`) | full screen | menu style: dark red field, corner L-brackets, "//OPERATION COMPLETE" yellow or "//SQUAD WIPED" red, stats in a red-outlined box, cream READY |
 | Crosshair / hit marker | centre | unchanged |
+| Binoculars (`BinocularController`, the Anvil) | full screen while they are up | black outside one pill-shaped glass (the one rounded shape besides the circles: it is a lens), a 1 px white reticle with range ticks, the call-in 14 dim above, the range GothamBlack 26 below with MARK SET yellow or the refusal red.l 14, keys 12 dim; the crosshair fades out; written only on change |
 
 - No always-on loadout strip: an upgrade shows as a card when it lands and as a diamond on
   its ability circle.

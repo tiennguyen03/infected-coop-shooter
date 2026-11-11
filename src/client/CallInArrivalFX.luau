@@ -221,7 +221,8 @@ local function sound(
 end
 
 -- The thrown marker (or the kit itself): flies the aim arc from the hand to the mark over
--- Arrival.Throw and stays there. With `Smoke` on the row it then smokes in that colour.
+-- Arrival.Throw and stays there (Throw 0: unseen). With `Smoke` on the row it then smokes
+-- in that colour.
 local function thrown(ctx: Ctx): Part
 	local arrival = ctx.arrival
 	local size = arrival.ThrownSize :: Vector3
@@ -232,6 +233,10 @@ local function thrown(ctx: Ctx): Part
 	local reach = (Vector3.new(rest.X, 0, rest.Z) - Vector3.new(ctx.origin.X, 0, ctx.origin.Z)).Magnitude
 	local rise = math.max(reach * arc.Rise, arc.MinRise)
 	local flight = arrival.Throw
+	if flight <= 0 then
+		-- Marked, not thrown (a binoculars call-in): nothing flies and nothing lies there.
+		body.Transparency = 1
+	end
 	track(ctx, 0, flight, function(t)
 		local u = Arrival.progress(t, 0, flight)
 		local at = ctx.origin:Lerp(rest, u) + UP * Arrival.hop(t, 0, flight, rise)

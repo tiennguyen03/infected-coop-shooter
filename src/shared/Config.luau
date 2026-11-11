@@ -1007,6 +1007,33 @@ local Config = {
 		-- the throw, Width; Across = true lays it across). A row without Aim shows a small ring.
 		AimArc = { Beads = 18, Rise = 0.3, MinRise = 3 }, -- the arc: beads, apex height per stud of reach
 		Slots = 4, -- call-in slots per soldier (keys 1-4; the flare is key 5)
+		-- Binoculars (Rules/Spotting, SpotUtil; docs/PROGRESSION.md > Binoculars): a row with
+		-- `AimMode = "Binoculars"` (default "Throw") is not thrown. Its key raises binoculars
+		-- (BinocularController: the view, the mark on the ground, the range; BinocularPose: the
+		-- arms and the prop on every client), fire marks any ground the eye can see, and the
+		-- server checks the mark again from the soldier's head (CallInService). A row's own
+		-- `Binoculars` block overrides any value here.
+		Binoculars = {
+			MaxRange = 300, -- studs from the eye to the mark
+			MinRange = 0, -- studs; nearer marks are refused (0 = none: no friendly fire today)
+			FieldOfView = 16, -- degrees through the glass (the hip view is 70)
+			Raise = 0.4, -- seconds up to the eyes; no mark is taken before
+			Lower = 0.25,
+			MinSlope = 0.6, -- the surface's normal.Y; steeper counts as a wall and the mark drops to its foot
+			SightLift = 1.5, -- studs above the mark the line of sight is checked to (grass, kerbs)
+			GroundProbe = 4, -- studs above and below the mark searched for ground
+			-- What the server forgives: the client's eye and the server's head never quite agree.
+			Slack = { Range = 8, Sight = 4, Ground = 3, Raise = 0.15 },
+			MetresPerStud = 0.28, -- the range readout
+			ConfirmKey = Enum.KeyCode.ButtonR2, -- gamepad; the mouse is left click, touch a tap
+			CancelKey = Enum.KeyCode.ButtonB, -- gamepad; the mouse is right click, or the slot's key again
+			MaskWidth = 1.7, -- the view's width in screen heights (two barrels side by side)
+			MaskHeight = 0.86, -- its height as a share of the screen's
+			-- The arms (procedural, no clip yet): the upper arms come up Raise degrees, roll
+			-- Roll in toward the face, and the elbows bend Bend.
+			Pose = { Raise = 105, Roll = 50, Bend = 100 },
+			PropOffset = CFrame.new(0, 0.15, -0.85), -- the binoculars from the Head's centre
+		},
 		-- Arrivals (Rules/Arrival; docs/PROGRESSION.md > Call-in arrivals): what the squad sees
 		-- and hears between a call-in's throw and its effect. Each row's `Arrival` block names
 		-- a Style (how CallInArrivalFX draws it on every client) and overrides any value in
@@ -1122,13 +1149,15 @@ local Config = {
 				FlashTime = 0.3,
 			},
 		},
-		-- Anvil (105 mm battery, AirStrikeService): one heavy shell Delay seconds after the throw.
+		-- Anvil (105 mm battery, AirStrikeService): marked through binoculars, anywhere in the
+		-- line of sight; one heavy shell Delay seconds after the mark.
 		Anvil = {
 			Price = 0, -- merits on the Carrier (Rules/Record, KitPrices); issued free
 			Desk = "fires", -- the Carrier desk that sells it (DeskShop)
 			Charges = 1,
 			Cooldown = 180,
-			ThrowDistance = 35,
+			AimMode = "Binoculars", -- "Throw" puts it back in the hand (then add ThrowDistance = 35)
+			Binoculars = { MaxRange = 400 }, -- over Config.CallIns.Binoculars
 			Delay = 5,
 			Shells = 1,
 			ShellInterval = 1,
@@ -1139,9 +1168,10 @@ local Config = {
 			Scatter = 0,
 			Aim = { Shape = "ring", Radius = 20 }, -- the blast
 			-- One ring closing on the mark; a long falling whistle, one heavy round on a flat
-			-- line from behind the thrower, a tall column of dark earth, smoke and burnt ground.
+			-- line from behind the spotter, a tall column of dark earth, smoke and burnt ground.
 			Arrival = {
 				Style = "shell",
+				Throw = 0, -- nothing is thrown: the ring and the smoke start on the mark at once
 				Smoke = Color3.fromRGB(176, 48, 36),
 				Whistle = 1.5,
 				WhistlePitch = 0.55,

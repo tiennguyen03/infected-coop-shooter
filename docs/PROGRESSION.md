@@ -197,7 +197,7 @@ out of the door; fire missions are someone on the net. HUD names and radio: [LOR
 | Support | **Thumper** (M32) | 6-round drum, 0.5 s apart, 70 in 7 studs, 24 rounds | 1 / 180 | no |
 | Support | **Kettle** (M9 projector) | 15-stud cone, 10 per 0.1 s, fire pools, 20 s of fuel | 1 / 180 | no |
 | Fire mission | **Hammer** (81 mm mortar) | 6 shells 1 s apart, 80 in 12 studs, scatter 4 | 1 / 120 | yes |
-| Fire mission | **Anvil** (105 mm battery) | one shell after 5 s, 500 in 20 studs, shake felt map-wide | 1 / 180 | yes |
+| Fire mission | **Anvil** (105 mm battery) | marked through binoculars on any ground in the line of sight, up to 400 studs; one shell 5 s later, 500 in 20 studs, shake felt map-wide | 1 / 180 | yes |
 | Fire mission | **Shrike** (helicopter gun run) | 10 bursts stepping 4 studs along the throw, 120 in 5 studs each, 4 s delay | 1 / 150 | yes |
 | Emplacement | **Doorman** (tripod sentry MG) | 45 s, 20 dmg every 0.15 s, range 70, one per player | 1 / 150 | yes |
 | Emplacement | **Tripline** (AP mines) | 6 mines on an arc, 80 in 10 studs, 90 s, 12 per player | 2 / 60 | yes |
@@ -205,7 +205,8 @@ out of the door; fire missions are someone on the net. HUD names and radio: [LOR
 | Supply | **Speedball** (ammo bundle) | 4 re-arms (a player again only after stepping out), no lure wave | 1 / 180 | yes |
 | Supply | **Aid Bag** (medical drop) | every soldier within 6 studs: full heal, stims refilled, +25 plate; once each | 1 / 180 | yes |
 
-Every built call-in is thrown (`Kind "throw"`, `ThrowUtil` clamp). Services:
+Every built call-in is thrown (`Kind "throw"`, `ThrowUtil` clamp) except the Anvil, which is
+marked through binoculars (below). Services:
 `AirStrikeService` (Hammer, Anvil share `fireMission`, patterns from `Rules/StrikePattern`;
 Shrike's `gunRun` under a Part gunship at 45 studs), `SentryService` (Doorman: a ray from the
 muzzle to the nearest visible Infected), `MineService` (Tripline), `ConcertinaService`,
@@ -214,17 +215,48 @@ need the support-weapon carry and the explosive projectile hook (ARCHITECTURE F7
 `SetCallIn <slot> <id>`, `FireCallIn <id>` (20 studs ahead, no slot or charge).
 Retired 2026-11-08: Magpie (drones) and Pen Coil (shock pulse), too sci-fi; see HISTORY.md.
 
+### Binoculars
+
+Owner: "the anvil should be like binoculars and can be called anywhere within your line of
+sight". A call-in whose row says `AimMode = "Binoculars"` (default `"Throw"`; only the Anvil
+today) is not thrown.
+
+- **Use:** the slot key raises the binoculars (0.4 s): the eye goes to the head, the view
+  narrows to 16 degrees behind a black mask with a reticle, the gun is put away. A ring on the
+  ground (the blast) and a post show where the round will land: the first surface under the
+  crosshair, or the foot of a wall or a body. The readout gives the range in metres and
+  MARK SET, OUT OF RANGE, NO LINE OF SIGHT or NO GROUND. Left click (gamepad R2) fires the
+  mission; right click (gamepad B), the slot key again or any other kit key lowers them.
+  Then the Anvil's own delay and arrival run on the mark; nothing is thrown (its
+  `Arrival.Throw` is 0).
+- **Server:** the client says when they go up and come down (`CallInSpot`) and sends the
+  mark over `CallIn`. `CallInService` takes it only from binoculars that have been up for the
+  raise, and measures it again from the soldier's own head (`SpotUtil`, `Rules/Spotting`):
+  within `MaxRange`, on ground, nothing but the Infected and the squad in the way, with a few
+  studs of slack. A refused mark spends no charge. There is no minimum range (`MinRange` 0:
+  no friendly fire today).
+- **What the squad sees:** the body carries the `Spotting` attribute while they are up;
+  every client's `BinocularPose` raises its arms and a pair of binoculars to its eyes and
+  hides its gun. **Placeholder:** the arms are posed in code over the playing clip and the
+  binoculars are Parts; a real raise / hold / lower clip and a modelled prop are still to make.
+- **Values:** `Config.CallIns.Binoculars` (range, view, raise and lower times, the server's
+  slack, the pose angles, the keys), overridden by a row's own `Binoculars` block (the Anvil:
+  `MaxRange = 400`).
+- **Bots** carry no call-ins yet; `CallInService.spotFor(character, id, point)` is their way
+  in (raise, check from the head, fire; no view).
+
 ### Call-in arrivals
 
 Owner: "Hammer and Anvil look like the same thing". Each call-in now comes in its own way
 between the throw and the effect: its own shape on the ground, its own timing, colour and
 sound. All of them start the same: the thrown marker (or the kit itself) flies the aim arc
-for 0.45 s and lands.
+for 0.45 s and lands (not the Anvil: it is marked through binoculars, so its ring and smoke
+start on the mark at once).
 
 | Call-in | Style | On the ground | In the air | Sound | When it lands |
 |---|---|---|---|---|---|
 | **Hammer** | `mortar` | red smoke; a small diamond where each round will fall, bright in its last second | a thin round dropping near straight down (84 degrees), seen 0.3 s | tubes thump far behind the thrower 2.4 s ahead of each round; a short high whistle | quick pale-yellow flash, low pale dust, a sharp crack |
-| **Anvil** | `shell` | dark red smoke; one dashed ring that starts 2.2 blast radii out and closes on the blast's edge, pulsing faster | one heavy round on a flatter line (60 degrees) from behind the thrower with a smoke trail, seen 0.7 s | a long low falling whistle from 1.5 s out | slow deep-orange flash, a 34-stud column of dark earth, 4 s of smoke, burnt ground for 10 s, a deeper boom |
+| **Anvil** | `shell` | dark red smoke; one dashed ring that starts 2.2 blast radii out and closes on the blast's edge, pulsing faster | one heavy round on a flatter line (60 degrees) from behind the spotter with a smoke trail, seen 0.7 s | a long low falling whistle from 1.5 s out | slow deep-orange flash, a 34-stud column of dark earth, 4 s of smoke, burnt ground for 10 s, a deeper boom |
 | **Shrike** | `gunrun` | orange smoke; a ladder of rungs across the lane, lit one after another the way the gunship flies, each gone as the bursts pass | the gunship (server) and a rake of extra tracers from its gun | the cannon from the air, every second burst | dust spurts walking the lane |
 | **Doorman** | `case` | blue smoke | an olive case under a cross-shaped cargo chute, swaying, 1.5 s | a thud, then a clank | the chute folds beside it; the gun stands at 2.2 s |
 | **Tripline** | `scatter` | no smoke (nothing comes from the air) | six charges hop out of the satchel to their places | the arming click | a blink at each mine as it arms, 0.95 s |

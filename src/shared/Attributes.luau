@@ -80,6 +80,9 @@ local Attributes = table.freeze({
 	RootDrop = "RootDrop",
 	StandHipHeight = "StandHipHeight",
 	StanceSettle = "StanceSettle",
+	-- Character (a player's or a bot's): true while the binoculars are up (CallInService);
+	-- every client's BinocularPose raises the arms and the prop on that body.
+	Spotting = "Spotting",
 
 	-- Enemy models and the Warden's plates (EnemyService, IndexService)
 	EnemyType = "EnemyType",
