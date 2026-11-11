@@ -100,6 +100,8 @@ and the lineups with only those assets; run a full build afterwards.
 | prop_concertina | 288 | bottom | razor wire coil 12.1 x 2.9 x 2.9 |
 | inf_walker_* / inf_runner_* / inf_brute_* / inf_hocker_* | per body in [STYLES.md](../../docs/STYLES.md) §7 (caps `BODY_TRI_CAP`) | center | the 15 R15 limb MeshParts of each Infected (`MeshAssets.dressInfected`) |
 | inf_warden_* / inf_warden_plate_* | STYLES §7 (cap 5,000) | center | the Warden: 12 limb meshes with sided upper arm / lower arm / hand (`warden.SIDED`, `MeshAssets.limbMeshName`) plus six plates welded on by `IndexService.buildPlates` (helmet, chest, back, shoulder `_l` / `_r`, shield) |
+| inf_possum_* | cap 2,000 (1,428) | center | the Possum (Mile 14, design pending the owner): sided lower arm / lower leg / foot (the triage tag, the bare right foot); stock limb lengths, posed by its clips (`knockdown_back` dormant, `downed_crawl` up) |
+| inf_driver_* / inf_driver_part_* | cap 5,000 (2,156) | center | the Driver, Mile 14's Index (`build/driver.py`, design pending): sided arms and legs plus three parts: seat (welds to LowerTorso), belly (UpperTorso; swells on the vent tell), buckle (LowerTorso; flies off at death) |
 | inf_gore_stump, inf_gore_chunk_a/b/c | small | origin / center | stump welded at a joint when a limb comes off (GoreService); chunks thrown at body hits (client GoreFX). `gore.py`, a small `loft` kit |
 | pc_assault_* | ~650 per body | center | the Pike soldier's 15 R15 limb MeshParts (`PlayerSetup` -> `MeshAssets.dressModel`); tapered forearms and shins with joint caps (`PC_TAPER`) |
 | pc_assault_skinned, pc_assault_gear_helmet / _carrier | 944 (+ gear 228) | HRP centre | switched off (below); still registered in `MeshAssets` |
@@ -219,6 +221,29 @@ be open for the tools to work. Build and look in the live scene (owner), but eve
 ships is still written into a build file and rebuilt, so the `.blend` stays reproducible.
 Re-install the add-on from https://github.com/ahujasid/blender-mcp/blob/main/addon.py if
 Blender is reinstalled.
+
+## Mile 14 kit and map (`build/highway.py`, `build/mile14_map.py`, `mile14_map.blend`)
+
+`highway.py` holds the interstate set (one file, `register(ba)`): `env_overpass_span` (126 x 36,
+deck top 4.5 above its bearing pads), `env_bridge_bent` / `_low` (cap top meets the span;
+heights from `SPAN_TOP`, `SPAN_DEPTH`, `JAM_TOP`), `env_guardrail_12`, `env_parapet_12`,
+`env_sign_gantry` (sign panels are Parts), `env_water_tower`, `env_highway_light`,
+`env_toll_booth`, `env_toll_canopy`, `env_fuel_canopy`, `prop_fuel_pump`, `env_diner_sign`,
+`env_semi_cab`, `env_box_trailer`, `env_bus_burnt` (env_bus through a charred palette),
+`prop_mile_marker`, `prop_traffic_cone`. Sizes and collision: [SPRINT_20_MILE14.md](../../docs/sprints/SPRINT_20_MILE14.md).
+Not uploaded, no `MeshAssets` entries yet.
+
+`mile14_map.py` lays the mission out in Blender before it exists in the game: the layout is
+Python tables in the ArenaService shape (`HILLS`, `PARTS`, `DRESSING`), the ground and slopes
+come from `delta_map`, and every kit piece is built once and placed as linked instances. In the
+live Blender: `import mile14_map; mile14_map.build()` (with `assets/3d/build` on `sys.path`);
+headless: `blender --background --python assets/3d/build/mile14_map.py`. When Mile 14 gets
+mission data the tables move to Luau and this script reads them, as `delta_map.py` does.
+
+Mile 14 v2 (proposal, 2026-11-11): `build/mile14_v2.py` (same shape, `mile14_v2.blend`) and 8
+more `highway.py` pieces: `env_tanker_trailer`, `env_sound_wall_24`, `env_pine_stand`,
+`env_billboard`, `env_scale_house`, `prop_road_sign`, `env_lane_dashes_96`, `prop_road_debris`.
+No per-piece previews or FBX yet; not uploaded.
 
 ## The map in Blender (`build/delta_map.py`, `delta_map.blend`)
 

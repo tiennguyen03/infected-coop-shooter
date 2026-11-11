@@ -402,6 +402,8 @@ Stop lot (-150,-160) > free chase. Pads: main (240,6,60); alt (-200,0,-130). Ban
 burn, horn loops; Held toll floodlights, one lane cleared (remove 4 buses z-36..108 lane
 x=14); Contained lane lights, container "truck" at the toll (200,6,100).
 
+**Mile 14 v2 (proposal, 2026-11-11, not approved):** a bigger layout to compare: frame 640 x 900, deck 110 x 900 with a median, a Weigh Station, a tanker jackknife, four interchange ramps, the Toll Plaza across the interstate, Harlan's skyline to the north. Positions and counts: `docs/sprints/SPRINT_20_MILE14.md` > Mile 14 v2; layout `assets/3d/build/mile14_v2.py`. The table above is still the old plan.
+
 ## C2. Aid Station Kestrel (dawn)
 
 | Landmark | Centre | Bounds | Level | Built from |

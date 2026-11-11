@@ -58,6 +58,7 @@ The plan beyond this table, in phases, with the owner's open decisions: [docs/RO
 | 6 | Performance measurements | open | 2-client network + MicroProfiler during an Anvil into 20, low-end device at low health (`docs/STUDIO_MCP.md`) |
 | 7 | Owner calls waiting | Tien | generator to 4.8, light-tower collision as two boxes, movement keys (roll/slide chords) |
 | 8 | Objective pools on Delta, then Mile 14 + its boss | open | `docs/PROGRESSION.md` |
+| 8b | Mile 14 owner decisions (Possum, the Driver, no common Bloat, gas flash, layout fixes) | Tien | `docs/sprints/SPRINT_20_MILE14.md`: design pack + Blender first look (bodies, 18 kit pieces, `mile14_map.blend`, renders); not canon until approved, nothing uploaded. A bigger second layout to compare, v2 (`mile14_v2.py`, same doc > Mile 14 v2): the owner picks |
 | 9 | Warden follow-ups | open | fight length 100-120 s, Gate dressing, insert/wipe radio lines (`docs/sprints/SPRINT_19_WARDEN.md`) |
 | 10 | Housekeeping | Tien | rotate the group Open Cloud key (it was pasted in chat); archive the old CZS and "Shooterr" experiences |
 
