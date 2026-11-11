@@ -44,6 +44,9 @@ local Config = {
 		Drop = 1.6, -- the hover: dust, the squad drops (revealed halfway)
 		Depart = 3.2, -- climbs and flies off behind the squad
 		Seconds = 13.3, -- the whole cutscene (the four above)
+		-- Seconds between Insert and the cutscene's start, so every client has loaded (in Studio
+		-- the run starts the moment the first body spawns, before the client is up).
+		LeadSeconds = 2.5,
 		StartDistance = 420, -- studs out from the pad, on the line from the map's centre
 		StartHeight = 110, -- studs above the pad at the start
 		CruiseHeight = 30, -- over the pad at the end of the approach

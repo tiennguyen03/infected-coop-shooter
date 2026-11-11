@@ -83,12 +83,19 @@ local function beginRun()
 	local generation = runGeneration
 	primaryDone = false
 	workspace:SetAttribute(Attributes.StagingEndsAt, 0)
+	-- The cutscene's start time goes out before the state, so no client reads last run's.
+	workspace:SetAttribute(
+		Attributes.InsertStartsAt,
+		workspace:GetServerTimeNow()
+			+ (if Config.Insertion.Enabled then Config.Insertion.LeadSeconds else 0)
+	)
 	setState("Insert", "")
 	BotService.startRun()
 	-- The squad lands: with the insertion cutscene on (Config.Insertion, client
 	-- InsertionCutscene) Insert lasts the cutscene plus Run.InsertSeconds and the objectives are
 	-- drawn and read out as it ends, so the card is not under the letterbox; else at once.
-	local cutscene = if Config.Insertion.Enabled then Config.Insertion.Seconds else 0
+	local insertion = Config.Insertion
+	local cutscene = if insertion.Enabled then insertion.LeadSeconds + insertion.Seconds else 0
 	task.delay(cutscene, function()
 		if generation == runGeneration and RunStates.current() == "Insert" then
 			ObjectiveService.brief(HandoffService.objective())

@@ -15,3 +15,5 @@ CameraController gained `setCinematic`. RunManager: Insert lasts `Insertion.Seco
 WeaponController and AbilityController (the Cinematic check).
 **Next:** Nova playtests and tunes the shots and timings in `Config.Insertion`; a door-side jump
 by the squad could replace the blink later.
+
+**First look (Nova):** no cutscene at first: in Studio the run turns Insert before the client is up, and the client found no InsertLantern yet. Now the server stamps `Attributes.InsertStartsAt` (Insert + `Insertion.LeadSeconds` 2.5, written before the state) and clients wait for the model and that time (black meanwhile), joining late if they must. Then: the first shot was behind the LZ cutting's wall, and the helicopter flew tail first (its nose is +Z). Every camera now stands over the pad; the frame looks along -facing and the pitch is flipped.

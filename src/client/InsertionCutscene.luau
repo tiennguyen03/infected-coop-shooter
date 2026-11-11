@@ -171,11 +171,27 @@ local function holdControls(on: boolean)
 end
 
 local function play()
-	local template = ReplicatedStorage:FindFirstChild("InsertLantern")
-	if playing or not (template and template:IsA("Model")) then
+	if playing then
 		return
 	end
 	playing = true
+	-- The server's start time for this run's cutscene; a client that is late (slow to load)
+	-- joins it where it has got to, and one that missed nearly all of it skips it.
+	local startsAt = (Workspace:GetAttribute(Attributes.InsertStartsAt) :: number?) or 0
+	local template = ReplicatedStorage:WaitForChild("InsertLantern", 10)
+	local late = Workspace:GetServerTimeNow() - startsAt
+	if
+		not (template and template:IsA("Model"))
+		or late > CUT.Seconds - 1.5
+		or Workspace:GetAttribute(Attributes.RunState) ~= "Insert"
+	then
+		if not template then
+			warn("[InsertionCutscene] no InsertLantern from the server; skipping the cutscene")
+		end
+		playing = false
+		return
+	end
+
 	skipRequested = false
 	local player = Players.LocalPlayer
 	local camera = Workspace.CurrentCamera
@@ -245,21 +261,25 @@ local function play()
 			position = hover:Lerp(away, u * u) -- gathering speed
 			pitch = -10 * math.min(u * 3, 1)
 		end
-		return CFrame.lookAlong(position, facing) * CFrame.Angles(math.rad(pitch), 0, 0)
+		-- The Lantern's nose is +Z in its own frame (the tail rotor sits at -Z, Config.Insertion
+		-- .TailHub): look along -facing so the nose leads; a positive pitch raises the nose.
+		return CFrame.lookAlong(position, -facing) * CFrame.Angles(-math.rad(pitch), 0, 0)
 	end
 
 	local function shot(t: number, frame: CFrame): Shot
-		local centre = (frame * CFrame.new(0, 6, -4)).Position
+		-- Every camera stands over the pad itself: the LZ sits in a cutting whose walls hid a
+		-- camera placed off the pad (Nova, first look).
+		local centre = (frame * CFrame.new(0, 6, 4)).Position
 		if t < tFlare then
-			local from = pad + side * 42 + facing * 12 + UP * 4
+			local from = pad + facing * 12 + side * 6 + UP * 8
 			return { from = from, look = centre, fov = CUT.Fov - 10 * (t / tFlare) }
 		elseif t < tReveal then
 			local u = (t - tFlare) / (tReveal - tFlare)
-			local door = (hover - pad) + frame.RightVector * (32 - 6 * u) + facing * 6 + UP * 3
-			return { from = pad + door, look = centre, fov = CUT.Fov - 6 }
+			local door = (hover - pad) + frame.RightVector * (20 - 4 * u) + facing * 4 + UP * 5
+			return { from = pad + door, look = centre, fov = CUT.Fov }
 		end
-		local from = pad + outward * 17 + side * 4 + UP * 3
-		return { from = from, look = pad + facing * 30 + UP * 10, fov = CUT.Fov + 6 }
+		local from = pad + outward * 9 + side * 3 + UP * 4
+		return { from = from, look = pad + facing * 30 + UP * 10, fov = CUT.Fov + 8 }
 	end
 
 	local function blinkAt(t: number): number
@@ -270,7 +290,17 @@ local function play()
 		return math.max(cutBlack, endBlack)
 	end
 
-	local began = os.clock()
+	-- Every client starts together: black, the squad unseen, until the server's start time.
+	local wait = startsAt - Workspace:GetServerTimeNow()
+	if wait > 0 then
+		black.BackgroundTransparency = 0
+		local untilAt = os.clock() + wait
+		while os.clock() < untilAt and not skipRequested do
+			setSquadHidden(true)
+			task.wait()
+		end
+	end
+	local began = os.clock() - math.max(Workspace:GetServerTimeNow() - startsAt, 0)
 	local dustOn = false
 	local revealed = false
 	local angle = 0
