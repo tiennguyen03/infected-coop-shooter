@@ -2135,6 +2135,15 @@ local Config = {
 			FadeOutSeconds = 2.5, -- as the Lantern lifts
 			GapSeconds = 3, -- silence between tracks
 		},
+		-- The soldier on the ship looks and moves like the match's (owner, 2026-11-11): the match's
+		-- idle and walk clips (client SoldierMoves, the shared SoldierLocomotion; the clips are
+		-- Config.Animations.Assault, not repeated here) and the signed primary in the hands
+		-- (PikeBody, the match's PlayerSetup.attachRifle).
+		Soldier = {
+			Enabled = true, -- false: Roblox's stock animations and no rifle, as before
+			CarryRifle = true, -- false: the match's clips with empty hands
+			ClipWait = 8, -- seconds a client waits for the clips before keeping the stock Animate
+		},
 		-- The walking crew (LobbyCrew, CrewWalk): pace, stride and when they speak.
 		Crew = {
 			WalkSpeed = 5, -- studs a second (a soldier walks 16)

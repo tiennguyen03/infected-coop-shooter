@@ -52,10 +52,25 @@ match place.
 - **The Pike body** (`PikeBody`): soldiers wear the match's body, the same limb swap as the
   match (`MeshAssets.dressModel` with `PlayerSetup.BODY`; the match's `PlayerSetup` and the
   client `PaletteController` are mapped into the lobby, not copied), no avatar clothing or
-  accessories, no rifle. The match's animation set is not in the lobby yet: the body moves
-  with Roblox's default R15 animations. Roblox's default walking sound (the "Running" Sound
-  the engine puts in each root part) is muted for every character (`DefaultStepMute`), so
-  the ship has no footsteps until the match's synced ones come with its animations.
+  accessories. Roblox's default walking sound (the "Running" Sound the engine puts in each
+  root part) is muted for every character (`DefaultStepMute`); the match's synced footsteps
+  (`FootstepController`) are not in the lobby yet.
+- **The soldier moves and is armed like the match's** (owner, 2026-11-11; built, static checks
+  only, **not yet seen in game**). Client `SoldierMoves` plays the match's rifle idle and
+  four-way walk blend (`Config.Animations.Assault`) through `src/shared/SoldierLocomotion`,
+  the same code the match's `AnimationController` now drives (rule `Rules/MoveBlend`); each
+  client animates its own character on the Animator, so everyone sees it. `PikeBody` calls
+  the match's `PlayerSetup.attachRifle` after the limb swap, and `LoadmasterService` sets the
+  player's `Weapon` attribute to the signed primary, so the gun in the hands follows the
+  Loadout (the default rifle until one is signed). The pose is the match's own rifle idle
+  (no separate slung or low-ready clip). No sprint, aim, stances, roll or vault on the ship;
+  a jump holds the pose it left the deck in. If the idle or walk clip does not load within
+  `Config.Lobby.Soldier.ClipWait` seconds (a place the group does not own), the stock
+  Animate script stays. Switches: `Config.Lobby.Soldier.Enabled`, `.CarryRifle`.
+  **To check in the lobby place:** the idle and walk play and other clients see them; the
+  rifle sits in the hands as in the match and changes after signing a different primary;
+  no hotbar slot; the rifle does not get in the way at the rack or the Loadout screen; a
+  respawn (fall off the deck) comes back armed and animated.
 - **Known warning**: `rbxassetid://203785492 … Asset type does not match requested type`
   shows in the lobby's output as it does in the match's (handoff "Minor loose ends"). No file
   in the repo names that id; it is not from lobby code and does not affect play.
@@ -352,7 +367,7 @@ not by ear: swap them in `Config.Lobby.Music.Tracks`.
 |---|---|
 | Project | `lobby.project.json` (shares `src/shared`; `src/lobby/shared` as `ReplicatedStorage.Lobby`; maps the match's `src/server/PlayerSetup.luau` into the lobby server and `src/client/HudTheme.luau`, `PaletteController.luau`, `LoadoutMenu.luau` into the lobby client; sets `Lighting.Technology`) |
 | Server | `src/lobby/server/`: `Main.server`, `FallowLayout`, `Build`, `FallowBuilder`, `FallowArt`, `PikeBody`, `NpcBody`, `DeskService`, `ContainmentBoard`, `PlotService`, `LaunchService`, `LanternBird`, `ArmsRack`, `LoadmasterService` |
-| Client | `src/lobby/client/`: `Main.client`, `LaunchUI`, `DeskDialogUI`, `ArmsRackUI`, `LoadmasterUI`, `DeskShop`, `RecordClient`, `LobbyMusic`, `HoldStill`, `RadarSpin`, `LanternSpool` |
+| Client | `src/lobby/client/`: `Main.client`, `LaunchUI`, `DeskDialogUI`, `ArmsRackUI`, `LoadmasterUI`, `DeskShop`, `RecordClient`, `LobbyMusic`, `HoldStill`, `RadarSpin`, `LanternSpool`, `SoldierMoves` |
 | Art | `assets/3d/build/fallow.py` (12 `env_fallow_*` meshes), `lantern.py` (4 `veh_lantern_*`); `MeshAssets` entries; `Config.Lobby.Ship`, `Config.Lobby.Lantern`; attribute `LiftAt`; rule `Rules/ArmsStats` (+ spec), `Config.Lobby.Rack` |
 | Shared | `src/lobby/shared/LobbyDesks`; rules `src/shared/Rules/Manifest`, `Rules/Containment`, `Rules/Handoff` (main's, the teleport data both places share); `Config.Lobby`, `Config.Places`, `Config.Containment`; remotes `Launch` + `Messages.Launch`, `Loadout` (shared with the match); attribute `DeskId` |
 | Match side | `HandoffService` reads the teleport data and `RunManager.receive` applies the signed Loadout (2026-11-09; `JoinData` retired); `LoadoutMenu.mount` options (title, hint, confirm) |
@@ -449,6 +464,6 @@ called **Loadout**. Lines by the lore developer (merits, the record, `LobbyDesks
   (a few burst emitters, inside the STYLES particle budget).
 - **The Plot's launch and recovery radio lines** (LORE.md > The Fallow) are not played yet.
 - **Other teams' callsigns** (not all Pike) are open with the lore developer.
-- **The match's animations in the lobby** (unarmed idle and walk): the Pike body uses Roblox's
-  default R15 set on the ship today.
+- **The lobby soldier, after a look in game**: a relaxed carry (slung or low-ready clip) if
+  the match's rifle idle reads too ready for the ship, a jump clip, the match's footsteps.
 - `Config` split by domain (F10) is not done: the lobby loads the match's tuning too.

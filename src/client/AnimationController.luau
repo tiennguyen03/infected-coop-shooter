@@ -24,20 +24,18 @@ local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Co
 local ThrowTiming = require(
 	ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Rules"):WaitForChild("ThrowTiming")
 )
+-- The directional walk/run blend is shared with the lobby (its SoldierMoves).
+local SoldierLocomotion =
+	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("SoldierLocomotion"))
 
-local FADE = 0.2
-local IDLE_SPEED = 1 -- studs/s below which the character counts as standing still
-local MIN_CLIP_RATE, MAX_CLIP_RATE = 0.6, 1.8
-local MIN_WEIGHT = 0.001 -- a looped track at zero weight stops contributing but keeps time
-local DIRECTIONS = { "forward", "back", "left", "right" }
+local FADE = SoldierLocomotion.FADE
+local IDLE_SPEED = SoldierLocomotion.IDLE_SPEED
 
 export type Stance = "stand" | "crouch" | "prone"
 
 local AnimationController = {}
 
--- One locomotion set: a looped track per direction it has, blended by weight. Directions
--- a set lacks fold into forward (the prone crawl has no sideways clips).
-type MoveSet = { tracks: { [string]: AnimationTrack }, clips: { [string]: string } }
+type MoveSet = SoldierLocomotion.MoveSet
 
 -- Everything one stance plays.
 type StanceSet = {
@@ -106,39 +104,8 @@ local function stopAll(fade: number)
 	end
 end
 
-local function loadMoveSet(animator: Animator, clips: { [string]: string }?): MoveSet?
-	if not clips then
-		return nil
-	end
-	local set: MoveSet = { tracks = {}, clips = clips }
-	for _, direction in DIRECTIONS do
-		local clip = clips[direction]
-		if clip then
-			local track = Animations.load(animator, clip, Enum.AnimationPriority.Core)
-			if not track then
-				return nil
-			end
-			track.Looped = true
-			set.tracks[direction] = track
-		end
-	end
-	if not set.tracks.forward then
-		return nil
-	end
-	return set
-end
-
-local function loadLooped(
-	animator: Animator,
-	clip: string?,
-	priority: Enum.AnimationPriority
-): AnimationTrack?
-	local track = clip and Animations.load(animator, clip, priority)
-	if track then
-		track.Looped = true
-	end
-	return track
-end
+local loadMoveSet = SoldierLocomotion.loadMoveSet
+local loadLooped = SoldierLocomotion.loadLooped
 
 local function loadStance(animator: Animator, clips: { [string]: any }): StanceSet
 	return {
@@ -175,46 +142,7 @@ local function setIdle(on: boolean)
 end
 
 local function switchSet(set: MoveSet?)
-	if set == currentSet then
-		return
-	end
-	if currentSet then
-		for _, track in currentSet.tracks do
-			track:Stop(FADE)
-		end
-	end
-	currentSet = set
-	if set then
-		for _, track in set.tracks do
-			track:Play(FADE, MIN_WEIGHT)
-		end
-	end
-end
-
--- Blend weights from the direction of travel in the body's frame: the body faces -Z,
--- +X is its right. Diagonals split between two clips; directions the set lacks go forward.
-local function blendWeights(localVelocity: Vector3, set: MoveSet): { [string]: number }
-	local forward = math.max(0, -localVelocity.Z)
-	local back = math.max(0, localVelocity.Z)
-	local right = math.max(0, localVelocity.X)
-	local left = math.max(0, -localVelocity.X)
-	local total = forward + back + right + left
-	if total <= 0 then
-		return { forward = 1, back = 0, left = 0, right = 0 }
-	end
-	local weights = {
-		forward = forward / total,
-		back = back / total,
-		left = left / total,
-		right = right / total,
-	}
-	for _, direction in DIRECTIONS do
-		if direction ~= "forward" and not set.tracks[direction] then
-			weights.forward += weights[direction]
-			weights[direction] = 0
-		end
-	end
-	return weights
+	currentSet = SoldierLocomotion.switch(currentSet, set)
 end
 
 local function playAim(on: boolean)
@@ -272,18 +200,10 @@ local function step(humanoid: Humanoid, root: BasePart)
 	end
 	setIdle(false)
 	local set = current()
-	local moveSet = if set.run and speed >= Config.Animations.WalkRunThreshold
-		then set.run
-		else set.walk
+	local moveSet = SoldierLocomotion.pick(set.walk, set.run, speed)
 	switchSet(moveSet)
-	if not moveSet then
-		return
-	end
-	local weights = blendWeights(root.CFrame:VectorToObjectSpace(flat), moveSet)
-	for direction, track in moveSet.tracks do
-		track:AdjustWeight(math.max(weights[direction], MIN_WEIGHT), 0.1)
-		local reference = Config.Animations.MoveClipSpeed[moveSet.clips[direction]] or speed
-		track:AdjustSpeed(math.clamp(speed / reference, MIN_CLIP_RATE, MAX_CLIP_RATE))
+	if moveSet then
+		SoldierLocomotion.drive(moveSet, root.CFrame:VectorToObjectSpace(flat), speed)
 	end
 end
 
