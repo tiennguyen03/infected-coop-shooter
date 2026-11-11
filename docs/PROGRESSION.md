@@ -159,10 +159,47 @@ Every built call-in is thrown (`Kind "throw"`, `ThrowUtil` clamp). Services:
 `AirStrikeService` (Hammer, Anvil share `fireMission`, patterns from `Rules/StrikePattern`;
 Shrike's `gunRun` under a Part gunship at 45 studs), `SentryService` (Doorman: a ray from the
 muzzle to the nearest visible Infected), `MineService` (Tripline), `ConcertinaService`,
-`SupplyDropService` (Speedball, Aid Bag fall 50 studs and land quiet). The support weapons
+`SupplyDropService` (Speedball, Aid Bag land quiet). The support weapons
 need the support-weapon carry and the explosive projectile hook (ARCHITECTURE F7). Dev:
 `SetCallIn <slot> <id>`, `FireCallIn <id>` (20 studs ahead, no slot or charge).
 Retired 2026-11-08: Magpie (drones) and Pen Coil (shock pulse), too sci-fi; see HISTORY.md.
+
+### Call-in arrivals
+
+Owner: "Hammer and Anvil look like the same thing". Each call-in now comes in its own way
+between the throw and the effect: its own shape on the ground, its own timing, colour and
+sound. All of them start the same: the thrown marker (or the kit itself) flies the aim arc
+for 0.45 s and lands.
+
+| Call-in | Style | On the ground | In the air | Sound | When it lands |
+|---|---|---|---|---|---|
+| **Hammer** | `mortar` | red smoke; a small diamond where each round will fall, bright in its last second | a thin round dropping near straight down (84 degrees), seen 0.3 s | tubes thump far behind the thrower 2.4 s ahead of each round; a short high whistle | quick pale-yellow flash, low pale dust, a sharp crack |
+| **Anvil** | `shell` | dark red smoke; one dashed ring that starts 2.2 blast radii out and closes on the blast's edge, pulsing faster | one heavy round on a flatter line (60 degrees) from behind the thrower with a smoke trail, seen 0.7 s | a long low falling whistle from 1.5 s out | slow deep-orange flash, a 34-stud column of dark earth, 4 s of smoke, burnt ground for 10 s, a deeper boom |
+| **Shrike** | `gunrun` | orange smoke; a ladder of rungs across the lane, lit one after another the way the gunship flies, each gone as the bursts pass | the gunship (server) and a rake of extra tracers from its gun | the cannon from the air, every second burst | dust spurts walking the lane |
+| **Doorman** | `case` | blue smoke | an olive case under a cross-shaped cargo chute, swaying, 1.5 s | a thud, then a clank | the chute folds beside it; the gun stands at 2.2 s |
+| **Tripline** | `scatter` | no smoke (nothing comes from the air) | six charges hop out of the satchel to their places | the arming click | a blink at each mine as it arms, 0.95 s |
+| **Concertina** | `unroll` | no smoke | the coil splits into two drums that roll out to the ends paying out a strand, with dust | three rattles | the wire stands at 1.05 s |
+| **Speedball** | `tumble` | yellow smoke | the bundle tumbles down from 50 studs with no chute in 0.75 s | the landing thump | one bounce, dust, ready at 1.5 s |
+| **Aid Bag** | `streamer` | pink smoke | the bag comes down steadily from 38 studs under a 9-stud red and white streamer | the landing thump | the streamer falls across the ground; ready at 1.8 s |
+
+- **Where the values live:** each call-in's row has an `Arrival` block (`Style` plus any
+  value it changes) over `Config.CallIns.Arrivals.Defaults`; `Rules/Arrival` merges them and
+  holds the curves (the fall, the drift, the hop, the round's line, the gunship's pass). A row
+  without one arrives as a plain thrown marker. No system lists call-in names.
+- **Who does what:** `CallInService` tells every client once per throw (remote
+  `CallInArrival`: id, thrower, point, direction, and a fire mission's impact points) and
+  holds an emplacement or a bundle back for its `Arrival.Time`; `CallInArrivalFX` (client)
+  draws the rest from Parts, Beams, Trails and particle bursts, on the same clock (it holds
+  while paused). Damage, the blast flash that shakes the camera, the blast sound (its clip,
+  pitch and flash colour from the row) and the gunship stay on the server.
+- **Timing that changed:** Doorman works 2.2 s after the throw, Tripline 0.95 s, Concertina
+  1.05 s (all three were instant); Speedball 1.5 s and Aid Bag 1.8 s (were 0.9 s). Fire
+  missions keep their `Delay`.
+- **Budget:** at most 8 arrivals drawn at once per client (`MaxActive`); the biggest (Anvil)
+  is 22 Parts; smoke and dust are bursts of 2 to 20 particles, no lights.
+- **Switch:** `Config.CallIns.Arrivals.Enabled = false` puts back the flat red discs, the
+  stock blast, the one shared whistle and the instant kit.
+- **Needs an in-game look (none of it has been seen running):** `handoff/log/2026-11-10-tien-callin-arrivals.md`.
 
 ### Pallets (Resupply)
 

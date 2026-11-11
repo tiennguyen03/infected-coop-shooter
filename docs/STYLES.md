@@ -511,8 +511,11 @@ orange (`rgb(255,150,60)`) plus a ball at the landing point.
   `Config.Weapon.TracerDuration` (0.06 s), client-side only. Headshot numbers are white and
   a third larger than hit numbers.
 - Objective / extraction zones: flat ring + low translucent cylinder in `objective yellow`.
-- Strike warning: flat disc in `warning orange`, blast = expanding faceted sphere,
-  no stock fire textures.
+- Strike warning: each call-in's own mark in its accent colour (Hammer a diamond per round,
+  Anvil a closing dashed ring, Shrike a ladder of rungs), blast = expanding faceted sphere
+  in the row's `Flash` colour, no stock fire textures. Smoke and dust are bursts of the
+  built-in smoke sprite tinted from the palette. The whole table:
+  [PROGRESSION.md > Call-in arrivals](PROGRESSION.md#call-in-arrivals).
 - Fire ground: faceted orange/yellow triangles on the floor, flicker by scale not by light.
 - First person (`CameraController`, `Config.Camera.FirstPerson`; Nova 2026-11-10): T or the
   right stick click toggles it, the wheel in past `MinDistance` enters and back out leaves.

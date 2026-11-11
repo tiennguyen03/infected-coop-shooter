@@ -10,6 +10,11 @@
 -- Every impact is a BlastRadius area hit on the Infected only (DamageService.dealDamage; no
 -- friendly fire); a blast kill throws limbs (GoreService.blast). Geometry and timing come
 -- from Rules/StrikePattern.
+-- What leads up to an impact (marks on the ground, the whistle, the round coming in, the
+-- dust) is drawn on the clients by CallInArrivalFX from the impact points returned here;
+-- this service keeps the damage, the blast sound and the flash that shakes the camera, each
+-- call-in's own from its row's Arrival block (Rules/Arrival). With
+-- Config.CallIns.Arrivals.Enabled false it draws the old marks and blast itself.
 
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -20,6 +25,7 @@ local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local GroundUtil = require(ReplicatedStorage.Shared.GroundUtil)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
+local Arrival = require(ReplicatedStorage.Shared.Rules.Arrival)
 local StrikePattern = require(ReplicatedStorage.Shared.Rules.StrikePattern)
 local DamageService = require(script.Parent.DamageService)
 local GoreService = require(script.Parent.GoreService)
@@ -41,6 +47,20 @@ export type Shell = {
 -- loadouts brings its own; Config.Camera.Shake.DefaultPower when it names none.
 local function shakeOf(cfg: any): (number, number?)
 	return cfg.ShakePower or Config.Camera.Shake.DefaultPower, cfg.ShakeGlobal
+end
+
+-- Whether the clients draw the arrivals (Config.CallIns.Arrivals.Enabled).
+local function arrivalsOn(): boolean
+	return Config.CallIns.Arrivals.Enabled
+end
+
+-- A call-in block's arrival: its own Arrival over the defaults, or the defaults alone (the
+-- old look) while arrivals are off.
+local function arrivalOf(cfg: any): Arrival.Resolved
+	return Arrival.resolve(
+		Config.CallIns.Arrivals.Defaults :: any,
+		if arrivalsOn() then cfg.Arrival else nil
+	)
 end
 
 local AirStrikeService = {}
@@ -117,17 +137,19 @@ local function hurtAround(player: Player, center: Vector3, shell: Shell)
 	end
 end
 
-local function detonate(player: Player, center: Vector3, shell: Shell)
-	-- Stock Explosion for the flash and boom only: zeroed radius/pressure so it can't hurt
-	-- anyone; damage is applied manually below.
-	local boom = Instance.new("Explosion")
-	boom.Position = center
-	boom.BlastRadius = 0
-	boom.BlastPressure = 0
-	boom.DestroyJointRadiusPercent = 0
-	boom.Parent = workspace
+local function detonate(player: Player, center: Vector3, shell: Shell, arrival: Arrival.Resolved)
+	if not arrivalsOn() then
+		-- The old look: a stock Explosion for the fireball only, zeroed radius/pressure so it
+		-- can't hurt anyone; damage is applied manually below.
+		local boom = Instance.new("Explosion")
+		boom.Position = center
+		boom.BlastRadius = 0
+		boom.BlastPressure = 0
+		boom.DestroyJointRadiusPercent = 0
+		boom.Parent = workspace
+	end
 	local power, global = shakeOf(shell)
-	flash(center, shell.BlastRadius, Color3.fromRGB(255, 140, 40), 0.45, power, global)
+	flash(center, shell.BlastRadius, arrival.Flash, arrival.FlashTime, power, global)
 	hurtAround(player, center, shell)
 end
 
@@ -149,16 +171,8 @@ local function marker(at: Vector3, radius: number): BasePart
 	return disc
 end
 
--- Waits `seconds` of unpaused time (a mission in the air holds while paused).
-local function waitUnpaused(seconds: number)
-	local remaining = seconds
-	while remaining > 0 do
-		local dt = task.wait()
-		if not PauseService.isPaused() then
-			remaining -= dt
-		end
-	end
-end
+-- A mission in the air holds while paused.
+local waitUnpaused = PauseService.wait
 
 local function flatUnit(direction: Vector3): Vector3
 	local flat = Vector3.new(direction.X, 0, direction.Z)
@@ -176,14 +190,17 @@ export type MissionConfig = {
 
 -- CallInService (Hammer, Anvil): shells from `cfg` land around `point`; `direction` is the
 -- flat throw direction, `step` how far each shell walks along it (Walk It In; 0 otherwise).
+-- Returns true and where each shell will land, in order (for the clients' arrival).
 function AirStrikeService.fireMission(
 	player: Player,
 	cfg: MissionConfig,
 	point: Vector3,
 	direction: Vector3,
 	step: number
-): boolean
+): (boolean, { Vector3 })
 	local flat = flatUnit(direction)
+	local arrival = arrivalOf(cfg)
+	local drawn = arrivalsOn()
 	local impacts: { Vector3 } = {}
 	local markers: { BasePart } = {}
 	for _, offset in StrikePattern.offsets(cfg.Shells, step, false) do
@@ -194,7 +211,9 @@ function AirStrikeService.fireMission(
 		)
 		local impact = GroundUtil.GetGroundPosition(point + flat * offset + scatter, 0.05)
 		table.insert(impacts, impact)
-		table.insert(markers, marker(impact, cfg.BlastRadius))
+		if not drawn then
+			table.insert(markers, marker(impact, cfg.BlastRadius))
+		end
 	end
 
 	local thisGeneration = generation
@@ -206,20 +225,29 @@ function AirStrikeService.fireMission(
 			if thisGeneration ~= generation then
 				return
 			end
-			WorldSounds.at(impact + Vector3.new(0, 30, 0), "callins", "anvil_incoming")
+			if not drawn then
+				-- The clients play each call-in's own whistle with the round they draw.
+				WorldSounds.at(impact + Vector3.new(0, 30, 0), "callins", "anvil_incoming")
+			end
 			waitUnpaused(math.min(lead, at))
 			if thisGeneration ~= generation then
 				return
 			end
 			local disc = markers[index]
-			if disc.Parent then
+			if disc and disc.Parent then
 				disc:Destroy()
 			end
-			WorldSounds.at(impact, "callins", "anvil_blast")
-			detonate(player, impact + Vector3.new(0, 2, 0), cfg)
+			WorldSounds.at(
+				impact,
+				"callins",
+				arrival.BlastSound,
+				arrival.BlastVolume,
+				arrival.BlastPitch
+			)
+			detonate(player, impact + Vector3.new(0, 2, 0), cfg, arrival)
 		end)
 	end
-	return true
+	return true, impacts
 end
 
 -- The gunship's pass over the run (look only): the Shrike flies along the throw at
@@ -234,7 +262,7 @@ local function gunshipPass(
 ): () -> Vector3?
 	local cfg = Config.CallIns.Shrike
 	local height = Vector3.new(0, cfg.PassHeight, 0)
-	local lead = flat * 60
+	local lead = flat * cfg.PassLead
 	local from = first + height - lead
 	local to = last + height + lead
 	local mesh = MeshAssets.clone("veh_shrike_hull")
@@ -322,43 +350,53 @@ local function tracer(from: Vector3, to: Vector3)
 	end)
 end
 
--- CallInService (Shrike): the gun run lands along `direction` through `point`.
-function AirStrikeService.gunRun(player: Player, point: Vector3, direction: Vector3): boolean
+-- CallInService (Shrike): the gun run lands along `direction` through `point`. Returns
+-- true and where each burst will land, in order (for the clients' arrival).
+function AirStrikeService.gunRun(
+	player: Player,
+	point: Vector3,
+	direction: Vector3
+): (boolean, { Vector3 })
 	local cfg = Config.CallIns.Shrike
 	local flat = flatUnit(direction)
+	local arrival = arrivalOf(cfg)
 	local impacts: { Vector3 } = {}
 	for _, offset in StrikePattern.offsets(cfg.Bursts, cfg.Step, true) do
 		table.insert(impacts, GroundUtil.GetGroundPosition(point + flat * offset, 0.05))
 	end
 
-	-- One strip marker over the whole run.
-	local span = cfg.Step * (cfg.Bursts - 1) + cfg.BlastRadius * 2
-	local strip = Instance.new("Part")
-	strip.Name = "StrikeMarker"
-	strip.Size = Vector3.new(cfg.BlastRadius * 2, 0.3, span)
-	strip.CFrame = CFrame.lookAt(point, point + flat) + Vector3.new(0, 0.1, 0)
-	strip.Anchored = true
-	strip.CanCollide = false
-	strip.CanQuery = false
-	strip.CanTouch = false
-	strip.CastShadow = false
-	strip.Material = Enum.Material.Neon
-	strip.Color = MARKER_COLOR
-	strip.Transparency = 0.5
-	strip.Parent = effectFolder
+	-- The old look: one strip marker over the whole run (the clients draw a lane otherwise).
+	local strip: BasePart? = nil
+	if not arrivalsOn() then
+		local span = cfg.Step * (cfg.Bursts - 1) + cfg.BlastRadius * 2
+		local flatStrip = Instance.new("Part")
+		flatStrip.Name = "StrikeMarker"
+		flatStrip.Size = Vector3.new(cfg.BlastRadius * 2, 0.3, span)
+		flatStrip.CFrame = CFrame.lookAt(point, point + flat) + Vector3.new(0, 0.1, 0)
+		flatStrip.Anchored = true
+		flatStrip.CanCollide = false
+		flatStrip.CanQuery = false
+		flatStrip.CanTouch = false
+		flatStrip.CastShadow = false
+		flatStrip.Material = Enum.Material.Neon
+		flatStrip.Color = MARKER_COLOR
+		flatStrip.Transparency = 0.5
+		flatStrip.Parent = effectFolder
+		strip = flatStrip
+	end
 
 	local thisGeneration = generation
 	task.spawn(function()
-		local runTime = cfg.BurstInterval * (cfg.Bursts - 1)
 		-- The gunship comes in from behind the throw so it is overhead for the bursts.
-		local approach = math.min(1.5, cfg.Delay)
-		waitUnpaused(cfg.Delay - approach)
+		local startsAt, seconds =
+			Arrival.pass(cfg.Delay, arrival.Approach, cfg.Bursts, cfg.BurstInterval)
+		waitUnpaused(startsAt)
 		if thisGeneration ~= generation then
 			return
 		end
-		local gunAt = gunshipPass(impacts[1], impacts[#impacts], flat, approach * 2 + runTime)
-		waitUnpaused(approach)
-		if strip.Parent then
+		local gunAt = gunshipPass(impacts[1], impacts[#impacts], flat, seconds)
+		waitUnpaused(cfg.Delay - startsAt)
+		if strip and strip.Parent then
 			strip:Destroy()
 		end
 		for index, impact in impacts do
@@ -378,7 +416,7 @@ function AirStrikeService.gunRun(player: Player, point: Vector3, direction: Vect
 			end
 		end
 	end)
-	return true
+	return true, impacts
 end
 
 function AirStrikeService.reset()

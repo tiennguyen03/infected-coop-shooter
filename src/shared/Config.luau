@@ -868,6 +868,81 @@ local Config = {
 		-- the throw, Width; Across = true lays it across). A row without Aim shows a small ring.
 		AimArc = { Beads = 18, Rise = 0.3, MinRise = 3 }, -- the arc: beads, apex height per stud of reach
 		Slots = 4, -- call-in slots per soldier (keys 1-4; the flare is key 5)
+		-- Arrivals (Rules/Arrival; docs/PROGRESSION.md > Call-in arrivals): what the squad sees
+		-- and hears between a call-in's throw and its effect. Each row's `Arrival` block names
+		-- a Style (how CallInArrivalFX draws it on every client) and overrides any value in
+		-- Defaults; a row without one arrives as a plain thrown marker. `Time` holds the kit
+		-- back on the server (CallInService); fire missions keep their own Delay.
+		Arrivals = {
+			-- false: nothing is drawn, nothing waits, and the fire missions go back to the flat
+			-- red discs, the stock blast and the one shared whistle.
+			Enabled = true,
+			MaxActive = 8, -- arrivals drawn at once on a client; the oldest goes first
+			Defaults = {
+				Style = "thrown", -- the marker flies and lands, nothing more
+				Time = 0, -- seconds from the throw until the kit works (emplacements, supply)
+				Throw = 0.45, -- seconds the thrown marker is in the air
+				ThrownSize = Vector3.new(0.5, 0.9, 0.5), -- the thing thrown
+				-- `Smoke = <colour>` on a row: marker smoke where it lands, for SmokeTime.
+				SmokeTime = 6,
+				-- Incoming rounds ("mortar", "shell"): the whistle starts Whistle seconds before
+				-- the impact; the round is seen for its last Fall seconds, coming in Angle degrees
+				-- above the ground from Distance studs; Report > 0 = the tube is heard that long
+				-- before its round lands.
+				Whistle = 0.8,
+				WhistlePitch = 1,
+				WhistleVolume = 0.7,
+				Fall = 0.4,
+				Angle = 75,
+				Distance = 120,
+				ShellSize = Vector3.new(0.5, 0.5, 6),
+				Report = 0,
+				ReportPitch = 1.7,
+				ReportVolume = 0.12,
+				-- The strike on the ground: Dust is the colour thrown up (DustCount puffs,
+				-- DustSize studs); Column > 0 a pillar of earth that high and ColumnWidth wide;
+				-- Linger seconds of smoke after; Scorch seconds the burnt ground stays; Close =
+				-- how many blast radii out the warning ring starts.
+				Dust = Color3.fromRGB(158, 131, 90),
+				DustCount = 10,
+				DustSize = 5,
+				Column = 0,
+				ColumnWidth = 6,
+				Linger = 0,
+				Scorch = 0,
+				Close = 1,
+				-- The blast itself (server, AirStrikeService): the clip in the callins bank, its
+				-- pitch and volume, the flash ball's colour and seconds.
+				BlastSound = "anvil_blast",
+				BlastPitch = 1,
+				BlastVolume = 1,
+				Flash = Color3.fromRGB(255, 140, 40),
+				FlashTime = 0.45,
+				-- A gun run ("gunrun"): the gunship comes in Approach seconds before the first
+				-- burst; lane marks MarkSpacing apart; every GunEvery-th burst plays GunSound
+				-- (guns bank) and each draws Tracers extra rounds landing up to TracerSpread
+				-- studs off the line.
+				Approach = 1.5,
+				MarkSpacing = 6,
+				GunSound = "lmg_shot",
+				GunPitch = 0.75,
+				GunVolume = 0.5,
+				GunEvery = 2,
+				Tracers = 2,
+				TracerSpread = 1.5,
+				-- Things dropped ("case", "tumble", "streamer"): from Height studs; Settle seconds
+				-- on the ground before the kit works; Sway studs side to side on the way down;
+				-- Hop studs (a bounce, or a tossed charge's rise); Spin degrees a second while it
+				-- tumbles; Streamer and Chute sizes in studs.
+				Height = 45,
+				Settle = 0.25,
+				Sway = 1,
+				Hop = 1.2,
+				Spin = 540,
+				Streamer = 9,
+				Chute = 8,
+			},
+		},
 		-- Hammer (81 mm mortar section, AirStrikeService): marks a point; the first shell lands
 		-- Delay seconds after the throw, then one every ShellInterval, each Scatter studs off
 		-- the mark at most. Walk It In steps them Config.Upgrades.WalkingBarrage.Step apart.
@@ -885,6 +960,28 @@ local Config = {
 			BlastDamage = 80,
 			Scatter = 4,
 			Aim = { Shape = "ring", Radius = 16 }, -- Scatter + BlastRadius: where shells can land
+			-- A cross where each round will land; the tubes thump far off, then each round
+			-- drops near straight down with a short high whistle: a quick pale flash, low dust.
+			Arrival = {
+				Style = "mortar",
+				Smoke = Color3.fromRGB(214, 69, 51),
+				Report = 2.4,
+				Whistle = 0.45,
+				WhistlePitch = 1.5,
+				WhistleVolume = 0.5,
+				Fall = 0.3,
+				Angle = 84,
+				Distance = 90,
+				ShellSize = Vector3.new(0.35, 0.35, 4),
+				Dust = Color3.fromRGB(201, 172, 124),
+				DustCount = 8,
+				DustSize = 5,
+				BlastSound = "tripline_blast",
+				BlastPitch = 1.15,
+				BlastVolume = 0.9,
+				Flash = Color3.fromRGB(255, 226, 150),
+				FlashTime = 0.3,
+			},
 		},
 		-- Anvil (105 mm battery, AirStrikeService): one heavy shell Delay seconds after the throw.
 		Anvil = {
@@ -902,6 +999,30 @@ local Config = {
 			BlastDamage = 500,
 			Scatter = 0,
 			Aim = { Shape = "ring", Radius = 20 }, -- the blast
+			-- One ring closing on the mark; a long falling whistle, one heavy round on a flat
+			-- line from behind the thrower, a tall column of dark earth, smoke and burnt ground.
+			Arrival = {
+				Style = "shell",
+				Smoke = Color3.fromRGB(176, 48, 36),
+				Whistle = 1.5,
+				WhistlePitch = 0.55,
+				WhistleVolume = 0.9,
+				Fall = 0.7,
+				Angle = 60,
+				Distance = 220,
+				ShellSize = Vector3.new(1.2, 1.2, 10),
+				Dust = Color3.fromRGB(62, 52, 44),
+				DustCount = 20,
+				DustSize = 9,
+				Column = 34,
+				ColumnWidth = 9,
+				Linger = 4,
+				Scorch = 10,
+				Close = 2.2,
+				BlastPitch = 0.8,
+				Flash = Color3.fromRGB(255, 120, 30),
+				FlashTime = 0.7,
+			},
 		},
 		-- Shrike (helicopter gun run, AirStrikeService): Delay seconds after the throw, Bursts
 		-- impacts centred on the mark, Step studs apart along the throw, BurstInterval apart.
@@ -919,6 +1040,7 @@ local Config = {
 			ShakePower = 2,
 			BlastDamage = 120,
 			PassHeight = 45, -- the helicopter's flight height over the mark (look only)
+			PassLead = 60, -- studs before the first burst and past the last that it is seen
 			-- The gunship (aircraft.py, MeshAssets veh_shrike_*): offsets from the hull's origin
 			-- (Roblox axes, nose toward -Z) to the rotor hub and the chin gun's muzzle; the rotor
 			-- turns RotorSpin degrees per second. The pass falls back to a plain hull Part
@@ -927,6 +1049,16 @@ local Config = {
 			GunMuzzle = Vector3.new(0, -1.75, -11.4),
 			RotorSpin = 1440,
 			Aim = { Shape = "strip", Length = 46, Width = 10 }, -- the run: Step x (Bursts - 1) + 2 x BlastRadius
+			-- A lane of arrows running the way the gunship flies; the cannon is heard from the
+			-- air, a rake of tracers walks the lane and each burst kicks up a spurt of dust.
+			Arrival = {
+				Style = "gunrun",
+				Smoke = Color3.fromRGB(196, 110, 52),
+				SmokeTime = 5,
+				Dust = Color3.fromRGB(201, 172, 124),
+				DustCount = 4,
+				DustSize = 3,
+			},
 		},
 		-- Doorman (tripod sentry MG, SentryService): stands where it lands for Duration; every
 		-- FireInterval it shoots the nearest Infected in Range it can see.
@@ -942,6 +1074,17 @@ local Config = {
 			Range = 70,
 			MaxPerPlayer = 1, -- a second Doorman replaces the first
 			Aim = { Shape = "ring", Radius = 2 }, -- where the tripod stands
+			-- A slung case comes down under a cross-shaped cargo chute onto blue smoke, thuds,
+			-- and the gun stands up out of it.
+			Arrival = {
+				Style = "case",
+				Time = 2.2,
+				Smoke = Color3.fromRGB(96, 150, 220),
+				SmokeTime = 3,
+				Height = 45,
+				Settle = 0.3,
+				Sway = 1.2,
+			},
 		},
 		-- Tripline (Mines): thrown; Mines land on an arc bulging away from the thrower and blow
 		-- when an Infected steps within TriggerRadius.
@@ -961,6 +1104,14 @@ local Config = {
 			Lifetime = 90,
 			MaxMines = 12, -- per player; the oldest goes first
 			Aim = { Shape = "ring", Radius = 8 }, -- ArcRadius: the mines' arc
+			-- The satchel lands and the charges hop out of it to their places on the arc, each
+			-- blinking once as it arms. No smoke: nothing comes from the air.
+			Arrival = {
+				Style = "scatter",
+				Time = 0.95,
+				ThrownSize = Vector3.new(1.2, 0.6, 0.9),
+				Hop = 2.5,
+			},
 		},
 		-- Concertina (wire, ConcertinaService): a Length x Width strip laid across the throw,
 		-- centred where it lands, for Duration. Infected inside walk at SlowFactor and take
@@ -979,6 +1130,16 @@ local Config = {
 			TickInterval = 0.5,
 			MaxPerPlayer = 4, -- the oldest strip goes first
 			Aim = { Shape = "strip", Length = 16, Width = 3, Across = true }, -- the wire, laid across the throw
+			-- The coil lands and springs open: two drums roll out to the ends paying out a
+			-- strand, rattling and kicking dust, and the wire stands up behind them.
+			Arrival = {
+				Style = "unroll",
+				Time = 1.05,
+				ThrownSize = Vector3.new(0.7, 1.5, 1.5), -- the coil, a drum on its side
+				Dust = Color3.fromRGB(201, 172, 124),
+				DustCount = 2,
+				DustSize = 2,
+			},
 		},
 		-- Speedball (ammo bundle, SupplyDropService): drops where it lands, no lure wave; each
 		-- living player walking within Radius is re-armed (full magazine and reserve), Visits
@@ -993,6 +1154,19 @@ local Config = {
 			Radius = 6,
 			Lifetime = 90,
 			Aim = { Shape = "ring", Radius = 6 }, -- the re-arm radius
+			-- Kicked out of the door onto yellow smoke: no chute, it tumbles down fast, hits,
+			-- bounces once and settles in its own dust.
+			Arrival = {
+				Style = "tumble",
+				Time = 1.5,
+				Smoke = Color3.fromRGB(232, 181, 75),
+				SmokeTime = 4,
+				Height = 50,
+				Fall = 0.75,
+				Settle = 0.25,
+				Hop = 1.2,
+				Spin = 540,
+			},
 		},
 		-- Aid Bag (medical drop, SupplyDropService): every soldier within Radius, once each:
 		-- full heal, stims refilled, +Plate shield (Config.Crates.ShieldCap still caps it).
@@ -1006,8 +1180,19 @@ local Config = {
 			Plate = 25,
 			Lifetime = 60,
 			Aim = { Shape = "ring", Radius = 6 }, -- the heal radius
+			-- A soft drop onto pink smoke: the bag comes down steadily under a long red and
+			-- white streamer that flutters above it and falls across it when it lands.
+			Arrival = {
+				Style = "streamer",
+				Time = 1.8,
+				Smoke = Color3.fromRGB(210, 130, 130),
+				SmokeTime = 5,
+				Height = 38,
+				Sway = 0.8,
+				Streamer = 9,
+			},
 		},
-		-- Shared by the supply drops: the bundle falls this far, this fast.
+		-- The supply drops' old fall (server-side), used only while Arrivals.Enabled is false.
 		Drop = { Height = 50, FallTime = 0.9 },
 	},
 
