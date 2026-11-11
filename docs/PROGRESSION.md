@@ -60,6 +60,7 @@ vault, climb and shove are free. At zero the soldier is **winded**: no sprint, r
 until 25 (~2.1 s), then a held Shift sprints again. Downed or knocked down nothing drains; a
 respawn or a new run refills it. Bots have none.
 
+**Keys:** Shift twice rolls; holding C or Ctrl while sprinting slides until the key is let go.
 **Slides keep momentum** (owner 2026-11-11; `Config.Movement.Slide`, `Rules/Slide`): a slide
 starts at the speed going in + 6 (at least 24, at most 40 studs/s), loses 17/s to friction and
 gains 60/s x the slope's sine from the floor under it: flat from a sprint is the old ~0.95 s,

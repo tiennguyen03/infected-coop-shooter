@@ -59,7 +59,7 @@ The plan beyond this table, in phases, with the owner's open decisions: [docs/RO
 | 4 | Mission flow: lobby -> match -> three missions -> lobby | Tien + Claude | Both sides joined up and published 2026-11-09 (`docs/LOBBY_MATCH_HANDOFF.md`; publishing: `docs/STUDIO_MCP.md` > Places and publishing). **Tien:** the live test with a friend. Next on the match: the rest of Delta's facts (F6), the mission-to-mission transition, Mile 14 |
 | 5 | Support weapons (Gun, Thumper, Kettle), incendiary + stun grenades | open | the revolver, sniper and Goose are in the Arms Room and on the lobby's rack (2026-11-09); a new gun shows up by having a row with `ArmsOrder`; guns are modelled in Blender (`guns.py`) when no free model is in hand |
 | 6 | Performance measurements | open | 2-client network + MicroProfiler during an Anvil into 20, low-end device at low health (`docs/STUDIO_MCP.md`) |
-| 7 | Owner calls waiting | Tien | generator to 4.8, light-tower collision as two boxes, movement keys (roll/slide chords) |
+| 7 | Owner calls waiting | Tien | generator to 4.8, light-tower collision as two boxes (movement keys decided 2026-11-11: Shift twice rolls, hold C or Ctrl slides) |
 | 8 | Objective pools on Delta, then Mile 14 + its boss | open | `docs/PROGRESSION.md` |
 | 9 | Warden follow-ups | open | fight length 100-120 s, Gate dressing, insert/wipe radio lines (`docs/sprints/SPRINT_19_WARDEN.md`) |
 | 10 | Housekeeping | Tien | rotate the group Open Cloud key (it was pasted in chat); archive the old CZS and "Shooterr" experiences |
