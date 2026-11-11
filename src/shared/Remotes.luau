@@ -11,6 +11,8 @@ local REMOTE_NAMES = {
 	"FireWeapon", -- client -> server: (origin: Vector3, direction: Vector3, aiming: boolean, pellets: { Vector3 }?) a shotgun sends the pellets it drew
 	"Reload", -- client -> server: start a reload (LoadoutService; Mag/Reserve/ReloadUntil are player attributes)
 	"CallIn", -- client -> server: (slot: 1..Config.CallIns.Slots, landingPoint: Vector3?) use the call-in in that slot
+	"CallInSpot", -- client -> server: (slot: number, raised: boolean) the binoculars for the call-in in that slot went up or came down (a row with AimMode "Binoculars"); the mark itself goes over CallIn
+	"CallInArrival", -- server -> every client: (id: string, thrower: Player, point: Vector3, direction: Vector3, impacts: { Vector3 }?) a call-in was thrown; CallInArrivalFX draws its arrival (impacts: where a fire mission's rounds land)
 	"ShotTracer", -- server -> other clients: (origin: Vector3, endPoint: Vector3, sound: string?) draw a tracer, play that gun's shot
 	"ObjectiveUpdate", -- server -> client: (kind: "started"|"progress"|"completed", progress: number, playersIn: number?, playersLiving: number?)
 	"DamageDealt", -- server -> client (hits: the attacker only; kills: everyone): (position: Vector3, amount: number, kind: "hit"|"headshot"|"fire"|"breach"|"death"|..., attacker: Player?)
