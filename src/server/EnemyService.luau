@@ -4,7 +4,8 @@
 -- throw range, plant, wind up and lob through EnemyProjectileService. A phase-based spawn
 -- director picks types by run time with fairness caps from Config.Spawning (count
 -- schedules and share caps keyed by type). Enemies pass through each other (Enemy collision
--- group) but still hit players and the world. Player damage: EnemyProjectileService.damagePlayer.
+-- group; EnemySpacing steers the chase so they rarely do) but still hit players and the
+-- world. Player damage: EnemyProjectileService.damagePlayer.
 -- Climbing: a melee form pressed against cover no taller than its
 -- EnemyDefinitions.ClimbHeight goes over it (Shared.Ledge; the root is anchored and driven
 -- along the ledge path for Config.Movement.Infected.Duration seconds while its climb clip
@@ -33,6 +34,7 @@ local RunStates = require(ReplicatedStorage.Shared.RunStates)
 local ArenaService = require(script.Parent.ArenaService)
 local DifficultyService = require(script.Parent.DifficultyService)
 local EnemyProjectileService = require(script.Parent.EnemyProjectileService)
+local EnemySpacing = require(script.Parent.EnemySpacing)
 local DamageService = require(script.Parent.DamageService)
 local PauseService = require(script.Parent.PauseService)
 local WorldSounds = require(script.Parent.WorldSounds)
@@ -570,6 +572,7 @@ local function spawnZombie(
 		end)
 	end
 	table.insert(zombies, zombie)
+	EnemySpacing.add(root, humanoid, typeName)
 
 	humanoid.HealthChanged:Connect(function(newHealth)
 		-- One pain grunt per burst of hits, not one per bullet.
@@ -933,8 +936,12 @@ local function stepZombies()
 							continue
 						end
 					end
-					local stuck = (here - zombie.lastRepathPosition).Magnitude
-						< NUDGE_STUCK_DISTANCE
+					-- Spacing: a goal that keeps off the neighbours and on the attack ring;
+					-- a body the crowd is holding is not stuck (no nudge, no climb).
+					local spaced, waiting =
+						EnemySpacing.goal(zombie.root, here, goal, zombie.attackRange, now)
+					local stuck = not waiting
+						and (here - zombie.lastRepathPosition).Magnitude < NUDGE_STUCK_DISTANCE
 					if stuck and (goal - here).Magnitude > zombie.attackRange then
 						local toTarget = Vector3.new(goal.X - here.X, 0, goal.Z - here.Z)
 						if toTarget.Magnitude > 0.1 and tryClimb(zombie, toTarget, now) then
@@ -946,6 +953,8 @@ local function stepZombies()
 							zombie.nudgeSign = -zombie.nudgeSign
 							goal = here + side * NUDGE_DISTANCE
 						end
+					else
+						goal = spaced
 					end
 					zombie.lastRepathPosition = here
 					zombie.humanoid:MoveTo(goal)
