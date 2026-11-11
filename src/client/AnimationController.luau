@@ -73,6 +73,7 @@ local idlePlaying = false
 local aiming = false
 local dead = false
 local busyUntil = 0 -- a vault/climb clip owns the body until then
+local moveToken = 0 -- the newest playMove / holdMove / releaseMove; older delayed stops skip
 local lastHealth = 0
 local stepConnection: RBXScriptConnection? = nil
 
@@ -441,14 +442,53 @@ function AnimationController.playMove(
 	if not track then
 		return false
 	end
+	moveToken += 1
+	local token = moveToken
 	track:Play(0.1)
 	track:AdjustSpeed(math.max(track.Length, 0.01) / duration)
 	task.delay(duration, function()
-		if track.IsPlaying then
+		if token == moveToken and track.IsPlaying then
 			track:Stop(FADE)
 		end
 	end)
 	return true
+end
+
+-- Freezes a move clip where it is (a slide that outlasts its clip holds the slide pose)
+-- and keeps the locomotion off until releaseMove.
+function AnimationController.holdMove(kind: "vault" | "climb" | "roll" | "slide")
+	if dead then
+		return
+	end
+	moveToken += 1
+	busyUntil = math.huge
+	local track = (tracks :: { [string]: AnimationTrack? })[kind]
+	if track and track.IsPlaying then
+		track:AdjustSpeed(0)
+	end
+end
+
+-- Plays the rest of a held clip over `seconds`, then hands the body back to the locomotion.
+function AnimationController.releaseMove(
+	kind: "vault" | "climb" | "roll" | "slide",
+	seconds: number
+)
+	if dead then
+		return
+	end
+	moveToken += 1
+	local token = moveToken
+	busyUntil = os.clock() + seconds
+	local track = (tracks :: { [string]: AnimationTrack? })[kind]
+	if not track or not track.IsPlaying then
+		return
+	end
+	track:AdjustSpeed(math.max(track.Length - track.TimePosition, 0.01) / math.max(seconds, 0.01))
+	task.delay(seconds, function()
+		if token == moveToken and track.IsPlaying then
+			track:Stop(FADE)
+		end
+	end)
 end
 
 -- Knocked down (KnockdownController): the fall clip over the first part of `seconds`, the

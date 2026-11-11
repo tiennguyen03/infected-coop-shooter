@@ -12,7 +12,13 @@
 -- direction of travel (StanceController leaves those keys alone while sprinting). Both
 -- lock the heading, drive the humanoid along that direction at a speed this module owns
 -- (SprintController.setOverrideSpeed) and hand the exit speed back to MomentumController.
--- The roll reports itself to the server (CoverMove) for its melee immunity window.
+-- The roll reports itself to the server (CoverMove) for its melee immunity window. Each
+-- costs stamina once on entry (Config.Stamina, SprintController.spendStamina).
+--
+-- The slide keeps momentum (Rules/Slide, Config.Movement.Slide): it starts from the speed
+-- going in, and each frame friction takes speed off and the floor under the body (one short
+-- ray) adds it downhill or takes more uphill, until it is too slow. Whatever speed is left
+-- above the walk or sprint speed then bleeds off (the coast) instead of snapping.
 
 local ContextActionService = game:GetService("ContextActionService")
 local Players = game:GetService("Players")
@@ -25,6 +31,8 @@ local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Ledge = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Ledge"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
+local Slide =
+	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Rules"):WaitForChild("Slide"))
 local AnimationController = require(script.Parent.AnimationController)
 local CameraController = require(script.Parent.CameraController)
 local MomentumController = require(script.Parent.MomentumController)
@@ -52,13 +60,15 @@ type Dash = {
 	root: BasePart,
 	direction: Vector3,
 	startedAt: number,
-	duration: number,
-	startSpeed: number,
-	endSpeed: number,
+	duration: number, -- the roll's length; a slide ends by its speed
+	speed: number, -- studs/s now
+	params: RaycastParams, -- for the slide's floor ray
+	clip: "playing" | "held" | "done", -- the slide clip: holds its pose on a long slide
 }
 
 local move: Move? = nil
 local dash: Dash? = nil
+local coast: number? = nil -- studs/s still carried out of a roll or slide, bleeding off
 local nextAutoCheck = 0
 local readyAt = { roll = 0, slide = 0 }
 
@@ -102,6 +112,8 @@ local function begin(humanoid: Humanoid, root: BasePart, ledge: Ledge.Ledge)
 	local duration = if kind == Messages.CoverMove.Vault
 		then settings.VaultDuration
 		else settings.ClimbDuration
+	coast = nil
+	SprintController.setOverrideSpeed(nil)
 	StanceController.setStance("stand")
 	CameraController.setBodyYawLocked(true)
 	MomentumController.suspend()
@@ -162,13 +174,26 @@ local function onSpace(_name: string, state: Enum.UserInputState): Enum.ContextA
 	return Enum.ContextActionResult.Sink
 end
 
+local function slideGetUp(): number
+	local settings = Config.Movement.Slide
+	return settings.ClipDuration * (1 - settings.ClipHoldAt)
+end
+
 local function endDash(current: Dash)
 	dash = nil
+	if current.clip == "held" then
+		AnimationController.releaseMove(current.kind, slideGetUp())
+	end
 	SprintController.setOverrideSpeed(nil)
 	CameraController.setBodyYawLocked(false)
 	if current.root.Parent then
-		-- Leave the move still travelling: the end speed, capped by the walk/sprint speed.
-		local exitSpeed = math.min(current.endSpeed, current.humanoid.WalkSpeed)
+		-- Leave the move still travelling. Speed above the walk/sprint speed is kept and
+		-- bleeds off in step() (the coast); the body never stops dead or snaps down.
+		local exitSpeed = current.speed
+		if exitSpeed > SprintController.getBaseSpeed() then
+			coast = exitSpeed
+			SprintController.setOverrideSpeed(exitSpeed)
+		end
 		MomentumController.resume(current.direction * exitSpeed)
 	else
 		MomentumController.resume(Vector3.zero)
@@ -177,18 +202,57 @@ local function endDash(current: Dash)
 		+ Config.Movement[if current.kind == Messages.CoverMove.Roll then "Roll" else "Slide"].Cooldown
 end
 
-local function stepDash(current: Dash)
+-- How steeply the floor under a sliding body falls away along its travel (Slide.slope);
+-- 0 in the air.
+local function floorSlope(current: Dash): number
+	local hit = workspace:Raycast(
+		current.root.Position,
+		Vector3.new(0, -Config.Movement.Slide.FloorProbe, 0),
+		current.params
+	)
+	if not hit then
+		return 0
+	end
+	return Slide.slope(current.direction.X, current.direction.Z, hit.Normal.X, hit.Normal.Z)
+end
+
+local function stepDash(current: Dash, dt: number)
 	if not current.root.Parent or current.humanoid.Health <= 0 then
 		endDash(current)
 		return
 	end
-	local alpha = (os.clock() - current.startedAt) / current.duration
-	if alpha >= 1 then
-		endDash(current)
-		return
+	local elapsed = os.clock() - current.startedAt
+	if current.kind == Messages.CoverMove.Roll then
+		if elapsed >= current.duration then
+			endDash(current)
+			return
+		end
+	else
+		local settings = Config.Movement.Slide
+		local slope = floorSlope(current)
+		current.speed = Slide.step(current.speed, slope, dt, settings)
+		if Slide.isOver(current.speed, elapsed, settings) then
+			endDash(current)
+			return
+		end
+		-- The clip runs once; when the slide will outlast it, it holds the slide pose and
+		-- plays the get-up as the slide runs out. A flat slide never holds.
+		local left = Slide.timeLeft(current.speed, slope, elapsed, settings)
+		if current.clip == "playing" then
+			if elapsed >= settings.ClipDuration * settings.ClipHoldAt then
+				if left > slideGetUp() then
+					AnimationController.holdMove(current.kind)
+					current.clip = "held"
+				else
+					current.clip = "done"
+				end
+			end
+		elseif current.clip == "held" and left <= slideGetUp() then
+			AnimationController.releaseMove(current.kind, slideGetUp())
+			current.clip = "done"
+		end
 	end
-	local speed = current.startSpeed + (current.endSpeed - current.startSpeed) * alpha
-	SprintController.setOverrideSpeed(speed)
+	SprintController.setOverrideSpeed(current.speed)
 	current.humanoid:Move(current.direction, false)
 end
 
@@ -220,14 +284,17 @@ function MovementController.tryDash(kind: "roll" | "slide"): boolean
 	end
 	local direction = heading.Unit
 	local settings = Config.Movement
-	local duration, startSpeed, endSpeed
-	if kind == Messages.CoverMove.Roll then
-		duration, startSpeed, endSpeed =
-			settings.Roll.Duration, settings.Roll.Speed, settings.Roll.Speed
-	else
-		duration, startSpeed, endSpeed =
-			settings.Slide.Duration, settings.Slide.StartSpeed, settings.Slide.EndSpeed
+	local isRoll = kind == Messages.CoverMove.Roll
+	-- Last refusal: a winded body cannot roll or slide. The cost is paid once, here.
+	local cost = if isRoll then Config.Stamina.RollCost else Config.Stamina.SlideCost
+	if not SprintController.spendStamina(cost) then
+		return false
 	end
+	local duration = if isRoll then settings.Roll.Duration else settings.Slide.ClipDuration
+	local startSpeed = if isRoll
+		then settings.Roll.Speed
+		else Slide.entrySpeed(heading.Magnitude, settings.Slide)
+	coast = nil
 	StanceController.setStance("stand")
 	CameraController.setBodyYawLocked(true)
 	MomentumController.suspend()
@@ -243,17 +310,29 @@ function MovementController.tryDash(kind: "roll" | "slide"): boolean
 		direction = direction,
 		startedAt = os.clock(),
 		duration = duration,
-		startSpeed = startSpeed,
-		endSpeed = endSpeed,
+		speed = startSpeed,
+		params = rayParams(model),
+		clip = if isRoll then "done" else "playing",
 	}
 	return true
 end
 
-local function step()
+local function step(dt: number)
 	local currentDash = dash
 	if currentDash then
-		stepDash(currentDash)
+		stepDash(currentDash, dt)
 		return
+	end
+	local carried = coast
+	if carried then
+		local speed = carried - Config.Movement.Slide.ExitDecel * dt
+		if speed <= SprintController.getBaseSpeed() then
+			coast = nil
+			SprintController.setOverrideSpeed(nil)
+		else
+			coast = speed
+			SprintController.setOverrideSpeed(speed)
+		end
 	end
 	local current = move
 	if current then
@@ -307,6 +386,7 @@ function MovementController.init()
 	Players.LocalPlayer.CharacterAdded:Connect(function()
 		move = nil
 		dash = nil
+		coast = nil
 		readyAt.roll, readyAt.slide = 0, 0
 		SprintController.setOverrideSpeed(nil)
 		CameraController.setBodyYawLocked(false)

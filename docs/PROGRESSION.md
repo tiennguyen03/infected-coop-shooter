@@ -52,6 +52,20 @@ Q swaps long gun and sidearm (`Weapon.SwapTime` 0.5 s; no shot, no reload; a rel
 progress is dropped; each gun keeps its own magazine). G throws a grenade (3 carried; a
 pallet refills). V shoves (15 dmg, 0.8 s stagger, 6-stud push, 1 s cooldown). E uses a stim
 (2 carried, heals 60 over 1 s; Medkit refills). 5 throws the Resupply flare (always carried).
+
+**Stamina** (owner 2026-11-11; `Config.Stamina`, `Rules/Stamina`, client-owned like sprint):
+100, sprinting drains 12/s (~8 s from full), back at 22/s after 1 s without spending (empty to
+full ~5.5 s). A roll costs 20, a slide 10 (any stamina left is enough; it floors at zero);
+vault, climb and shove are free. At zero the soldier is **winded**: no sprint, roll or slide
+until 25 (~2.1 s), then a held Shift sprints again. Downed or knocked down nothing drains; a
+respawn or a new run refills it. Bots have none.
+
+**Slides keep momentum** (owner 2026-11-11; `Config.Movement.Slide`, `Rules/Slide`): a slide
+starts at the speed going in + 6 (at least 24, at most 40 studs/s), loses 17/s to friction and
+gains 60/s x the slope's sine from the floor under it: flat from a sprint is the old ~0.95 s,
+about 16 degrees downhill holds its speed, steeper gains up to 40, uphill dies in about half the
+time. It ends at 14 studs/s (or after 6 s); speed still above the walk or sprint speed bleeds
+off at 40/s instead of snapping. One stamina cost on entry, however long the hill.
 Every gun is hitscan at its real-world rate (the Goose fires a rocket); the server owns every
 magazine (`LoadoutService`). A shotgun's pellets are drawn by the client and checked by the
 server against its cone (`Rules/Spread`), so the pellets you see are the ones that hit. Each
