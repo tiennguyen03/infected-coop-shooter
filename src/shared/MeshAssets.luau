@@ -117,35 +117,36 @@ local MESHES: { [string]: MeshDef } = {
 		offset = Vector3.new(-0.061, 0.202, -0.078),
 		muzzle = Vector3.new(0, 0.42, -1.58),
 	},
-	-- The six original guns (guns.py, 2026-11-09); until then they all wore wpn_rifle.
+	-- The six original guns (guns.py, 2026-11-09); until then they all wore wpn_rifle. The five
+	-- long guns rebuilt 2026-11-10 (Nova: "clean up the guns"): tapered stocks, curved magazines.
 	wpn_m16 = {
-		meshId = "rbxassetid://74091027600803",
-		size = Vector3.new(0.27, 1.02, 3.09),
-		offset = Vector3.new(0.025, 0.144, -0.475),
+		meshId = "rbxassetid://113056747297699",
+		size = Vector3.new(0.25, 1.13, 3.08),
+		offset = Vector3.new(0.012, 0.068, -0.48),
 		muzzle = Vector3.new(0, 0.36, -2.02),
 	},
 	wpn_mp5 = {
-		meshId = "rbxassetid://84221584333359",
-		size = Vector3.new(0.23, 0.87, 2.19),
-		offset = Vector3.new(-0.025, 0.167, -0.393),
+		meshId = "rbxassetid://89228593159207",
+		size = Vector3.new(0.24, 0.94, 2.2),
+		offset = Vector3.new(-0.02, 0.148, -0.39),
 		muzzle = Vector3.new(0, 0.32, -1.49),
 	},
 	wpn_m249 = {
-		meshId = "rbxassetid://106050421873423",
-		size = Vector3.new(0.32, 0.95, 2.89),
-		offset = Vector3.new(-0.043, 0.207, -0.445),
+		meshId = "rbxassetid://117037453362871",
+		size = Vector3.new(0.32, 0.95, 2.94),
+		offset = Vector3.new(-0.043, 0.207, -0.42),
 		muzzle = Vector3.new(0, 0.38, -1.89),
 	},
 	wpn_mossberg = {
-		meshId = "rbxassetid://101866256014088",
-		size = Vector3.new(0.26, 0.77, 2.82),
-		offset = Vector3.new(-0.025, 0.119, -0.401),
+		meshId = "rbxassetid://135886607063550",
+		size = Vector3.new(0.26, 0.77, 2.85),
+		offset = Vector3.new(-0.025, 0.119, -0.386),
 		muzzle = Vector3.new(0, 0.42, -1.8),
 	},
 	wpn_m110 = {
-		meshId = "rbxassetid://124848490890431",
-		size = Vector3.new(0.23, 1.03, 3.25),
-		offset = Vector3.new(0, 0.24, -0.825),
+		meshId = "rbxassetid://74655020774624",
+		size = Vector3.new(0.23, 1.11, 3.27),
+		offset = Vector3.new(0, 0.204, -0.833),
 		muzzle = Vector3.new(0, 0.4, -2.45),
 	},
 	wpn_m17 = {

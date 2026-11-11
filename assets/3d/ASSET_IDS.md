@@ -25,11 +25,11 @@ Lobby meshes (12 `env_fallow_*`, 4 `veh_lantern_*`) uploaded 2026-11-09 to the g
 | wpn_revolver | 133525801275343 | 110455613061010 | 0.25 x 0.76 x 1.0 | S&W 686 sample gun (guns.py, in-game size); offset/muzzle in MeshAssets |
 | wpn_sniper | 86507403821540 | 138249511970708 | 0.46 x 1.07 x 3.65 | M2010 ESR sample gun |
 | wpn_goose | 82637563176152 | 80902890703049 | 0.6 x 0.94 x 3.03 | M3 recoilless ("Goose") sample launcher |
-| wpn_m16 | 74091027600803 | 104945563283109 | 0.27 x 1.02 x 3.09 | M16A4 (guns.py, in-game size) |
-| wpn_mp5 | 84221584333359 | 112693756802429 | 0.23 x 0.87 x 2.19 | MP5A3 (guns.py, in-game size) |
-| wpn_m249 | 106050421873423 | 129764792627355 | 0.32 x 0.95 x 2.89 | M249 SAW (guns.py, in-game size) |
-| wpn_mossberg | 101866256014088 | 103329258934721 | 0.26 x 0.77 x 2.82 | Mossberg 590 (guns.py, in-game size) |
-| wpn_m110 | 124848490890431 | 88359560754649 | 0.23 x 1.03 x 3.25 | M110 SASS (guns.py, in-game size) |
+| wpn_m16 | 113056747297699 | 77503197777610 | 0.25 x 1.13 x 3.08 | M16A4 (guns.py, in-game size) |
+| wpn_mp5 | 89228593159207 | 107414219319674 | 0.24 x 0.94 x 2.2 | MP5A3 (guns.py, in-game size) |
+| wpn_m249 | 117037453362871 | 136476701593879 | 0.32 x 0.95 x 2.94 | M249 SAW (guns.py, in-game size) |
+| wpn_mossberg | 135886607063550 | 132243563357204 | 0.26 x 0.77 x 2.85 | Mossberg 590 (guns.py, in-game size) |
+| wpn_m110 | 74655020774624 | 71684027179779 | 0.23 x 1.11 x 3.27 | M110 SASS (guns.py, in-game size) |
 | wpn_m17 | 104797900074658 | 80875013937947 | 0.14 x 0.76 x 0.67 | M17 (guns.py, in-game size) |
 | veh_shrike_hull | 137109529997310 | 107275791771348 | 8.4 x 8.62 x 29.75 | the Shrike gunship (aircraft.py); offset from the fuselage centre in MeshAssets |
 | veh_shrike_rotor | 137738331555839 | 103052309432570 | 18.96 x 0.35 x 18.89 | its main rotor, origin at the hub; spun by AirStrikeService |

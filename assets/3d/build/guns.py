@@ -119,82 +119,130 @@ def goose(b):
 # (owner 2026-11-09: "just make them"): until now every one wore wpn_rifle.
 
 
+def trigger_group(b, y=-0.1, swatch="gun"):
+    # A real loop under the receiver: bottom bar, front post, and the trigger inside it.
+    b.box((0.035, 0.26, 0.035), (0, y, 0.055), swatch=swatch)  # guard bottom
+    b.box((0.035, 0.035, 0.13), (0, y - 0.13, 0.11), swatch=swatch)  # guard front
+    b.box((0.03, 0.04, 0.1), (0, y + 0.01, 0.13), rot=(18, 0, 0), swatch="dark_d")  # trigger
+
+
+def curved_mag(b, top, size, rakes, swatch="dark_d"):
+    # A magazine as segments stacked down from `top` (y, z), each raked further forward, so it
+    # bends like the real thing instead of hanging as one brick.
+    w, d, h = size
+    y, z = top
+    for i, a in enumerate(rakes):
+        r = math.radians(a)
+        dy, dz = -math.sin(r) * h, -math.cos(r) * h  # forward (-Y) and down
+        b.box((w, d, h + 0.02), (0, y + dy / 2, z + dz / 2), rot=(-a, 0, 0), swatch=swatch)
+        y, z = y + dy, z + dz
+    b.box((w + 0.02, d + 0.03, 0.04), (0, y, z), rot=(-rakes[-1], 0, 0), swatch="dark")  # floor plate
+
+
+def tapered_stock(b, y0, y1, ztop, h_front, h_back, w, swatch="dark", pad="dark_d"):
+    # A stock whose top line runs straight back and whose belly drops toward the butt (the A2 /
+    # shotgun profile): a level box as tall as the front, a wedge under it that grows to the
+    # back's height, and the butt plate.
+    length, mid = y1 - y0, (y0 + y1) / 2
+    b.box((w, length, h_front), (0, mid, ztop - h_front / 2), swatch=swatch)
+    drop = h_back - h_front
+    # The builder's wedge is full height at -X with a flat bottom; flipped and turned it is
+    # flat on top and full height at +Y (the butt).
+    b.wedge((length, w, drop), (0, mid, ztop - h_front - drop / 2), rot=(0, 180, 90), swatch=swatch)
+    b.box((w + 0.02, 0.06, h_back + 0.02), (0, y1 + 0.03, ztop - h_back / 2), swatch=pad)  # butt
+
+
 def m16(b):
-    # M16A4: black, fixed A2 stock, flat-top upper with a quad-rail handguard, the triangle
+    # M16A4: black, fixed A2 stock, flat-top upper with a round ribbed handguard, the triangle
     # front sight, a curved 30-round magazine. 3.1 long.
     grip(b, (0.15, 0.24, 0.44), (0, 0.02, -0.02))
-    b.box((0.18, 0.62, 0.2), (0, -0.2, 0.2), swatch="dark")  # lower receiver
-    b.box((0.16, 0.22, 0.18), (0, -0.38, 0.05), swatch="dark")  # magwell
-    b.box((0.14, 0.22, 0.42), (0, -0.44, -0.14), rot=(-12, 0, 0), swatch="dark_d")  # magazine
-    b.box((0.18, 0.72, 0.2), (0, -0.22, 0.38), swatch="dark")  # upper receiver
-    b.box((0.1, 0.72, 0.05), (0, -0.22, 0.505), swatch="gun_d")  # top rail
-    b.box((0.06, 0.12, 0.12), (0, 0.05, 0.585), swatch="dark")  # rear sight
-    b.box((0.12, 0.06, 0.04), (0, 0.12, 0.47), swatch="gun_d")  # charging handle
-    b.box((0.02, 0.2, 0.1), (0.1, -0.2, 0.38), swatch="gun")  # ejection port cover
-    b.box((0.2, 0.75, 0.2), (0, -0.95, 0.36), swatch="dark")  # quad-rail handguard
-    for z in (0.47, 0.25):
-        b.box((0.22, 0.73, 0.03), (0, -0.95, z), swatch="gun_d")  # rail edges
-    b.box((0.12, 0.1, 0.1), (0, -1.38, 0.38), swatch="dark")  # front sight base
-    b.box((0.06, 0.08, 0.24), (0, -1.38, 0.53), rot=(-12, 0, 0), swatch="dark")  # sight post
-    b.cyl(0.035, 0.62, (0, -1.63, 0.36), segs=8, rot=(90, 0, 0), swatch="gun_d")  # barrel
-    b.cyl(0.05, 0.12, (0, -1.96, 0.36), segs=8, rot=(90, 0, 0), swatch="dark")  # flash hider
-    b.box((0.16, 0.85, 0.28), (0, 0.6, 0.28), swatch="dark")  # A2 stock
-    b.box((0.18, 0.06, 0.42), (0, 1.04, 0.24), swatch="dark_d")  # butt plate
-    b.box((0.03, 0.24, 0.03), (0, -0.1, 0.07), swatch="gun")  # trigger guard
+    b.box((0.17, 0.6, 0.18), (0, -0.2, 0.2), swatch="dark")  # lower receiver
+    b.box((0.19, 0.24, 0.16), (0, -0.42, 0.07), swatch="dark")  # flared magwell
+    curved_mag(b, (-0.42, 0.0), (0.13, 0.22, 0.15), (6, 14, 22))
+    b.box((0.16, 0.72, 0.18), (0, -0.22, 0.37), swatch="dark")  # upper receiver
+    b.box((0.09, 0.72, 0.05), (0, -0.22, 0.485), swatch="gun_d")  # flat-top rail
+    for i in range(7):
+        b.box((0.11, 0.03, 0.02), (0, 0.1 - i * 0.1, 0.515), swatch="dark_d")  # rail slots
+    b.box((0.06, 0.12, 0.12), (0, 0.05, 0.57), swatch="dark")  # rear sight
+    b.box((0.12, 0.06, 0.04), (0, 0.12, 0.46), swatch="gun_d")  # charging handle
+    b.box((0.02, 0.2, 0.1), (0.09, -0.2, 0.37), swatch="gun")  # ejection port cover
+    b.cyl(0.03, 0.08, (0.1, -0.02, 0.36), segs=6, rot=(0, 90, 0), swatch="gun_d")  # forward assist
+    b.cyl(0.03, 0.04, (0, -0.6, 0.36), segs=8, rot=(90, 0, 0), swatch="gun_d")  # delta ring
+    b.cyl(0.11, 0.72, (0, -0.97, 0.36), segs=8, rot=(90, 0, 0), swatch="dark")  # round handguard
+    for i in range(6):
+        b.cyl(0.115, 0.03, (0, -0.7 - i * 0.11, 0.36), segs=8, rot=(90, 0, 0), swatch="dark_d")  # ribs
+    b.box((0.1, 0.1, 0.12), (0, -1.38, 0.38), swatch="dark")  # front sight base
+    b.box((0.05, 0.07, 0.22), (0, -1.38, 0.52), rot=(-12, 0, 0), swatch="dark")  # sight post
+    b.cyl(0.03, 0.66, (0, -1.65, 0.36), segs=8, rot=(90, 0, 0), swatch="gun_d")  # barrel
+    b.cyl(0.045, 0.12, (0, -1.96, 0.36), segs=8, rot=(90, 0, 0), swatch="dark")  # flash hider
+    tapered_stock(b, 0.18, 1.0, 0.44, 0.18, 0.4, 0.15)
+    trigger_group(b)
 
 
 def mp5(b):
-    # MP5A3: short, black, the slim handguard, drum rear sight, cocking tube on top, a strongly
-    # curved magazine, retractable stock on two rails. 2.2 long.
+    # MP5A3: short, black, the slim tapered handguard, drum rear sight, cocking tube on top, a
+    # strongly curved magazine, retractable stock on two rails. 2.2 long.
     grip(b, (0.14, 0.22, 0.42), (0, 0.02, -0.02))
-    b.box((0.16, 0.95, 0.22), (0, -0.35, 0.34), swatch="dark")  # receiver
-    b.box((0.1, 1.0, 0.06), (0, -0.37, 0.47), swatch="dark_d")  # cocking tube ridge
-    b.cyl(0.06, 0.1, (0, 0.05, 0.54), segs=8, rot=(0, 90, 0), swatch="dark")  # drum rear sight
-    b.box((0.1, 0.06, 0.16), (0, -0.85, 0.52), swatch="dark")  # front sight hood
-    b.box((0.12, 0.18, 0.5), (0, -0.4, 0.0), rot=(-20, 0, 0), swatch="dark_d")  # curved magazine
-    b.box((0.18, 0.42, 0.18), (0, -0.98, 0.28), swatch="dark")  # handguard
-    b.cyl(0.035, 0.26, (0, -1.32, 0.32), segs=8, rot=(90, 0, 0), swatch="gun_d")  # barrel
-    b.cyl(0.045, 0.06, (0, -1.46, 0.32), segs=8, rot=(90, 0, 0), swatch="dark")  # muzzle
+    b.box((0.15, 0.9, 0.2), (0, -0.35, 0.33), swatch="dark")  # receiver
+    b.cyl(0.075, 1.0, (0, -0.37, 0.45), segs=8, rot=(90, 0, 0), swatch="dark")  # cocking tube
+    b.cyl(0.06, 0.1, (0, 0.05, 0.56), segs=8, rot=(0, 90, 0), swatch="dark_d")  # drum rear sight
+    b.box((0.05, 0.08, 0.06), (0, 0.05, 0.5), swatch="dark")  # its post
+    b.box((0.1, 0.06, 0.14), (0, -0.85, 0.54), swatch="dark")  # front sight hood
+    b.box((0.13, 0.22, 0.12), (0, -0.42, 0.18), swatch="dark")  # magwell
+    curved_mag(b, (-0.42, 0.13), (0.11, 0.17, 0.14), (12, 24, 36))
+    b.cyl(0.1, 0.42, (0, -0.98, 0.3), segs=8, r2=0.085, rot=(90, 0, 0), swatch="dark")  # handguard
+    b.cyl(0.03, 0.26, (0, -1.32, 0.34), segs=8, rot=(90, 0, 0), swatch="gun_d")  # barrel
+    b.cyl(0.042, 0.06, (0, -1.46, 0.34), segs=8, rot=(90, 0, 0), swatch="dark")  # muzzle
     b.box((0.08, 0.03, 0.03), (-0.1, -0.85, 0.45), swatch="gun")  # cocking handle
     for x in (-0.06, 0.06):
-        b.box((0.03, 0.56, 0.03), (x, 0.38, 0.38), swatch="gun")  # stock rails
-    b.box((0.16, 0.05, 0.3), (0, 0.68, 0.32), swatch="dark")  # butt pad
-    b.box((0.03, 0.22, 0.03), (0, -0.1, 0.07), swatch="gun")  # trigger guard
+        b.box((0.03, 0.56, 0.03), (x, 0.38, 0.36), swatch="gun")  # stock rails
+    b.box((0.16, 0.06, 0.3), (0, 0.68, 0.32), swatch="dark")  # butt pad
+    trigger_group(b)
 
 
 def m249(b):
-    # M249 SAW: a big black receiver with the feed cover, an olive soft ammo pouch under it with
-    # the brass belt going in, carry handle, heat shield, folded bipod. 2.9 long.
+    # M249 SAW: a big black receiver with the ridged feed cover, an olive soft ammo pouch with
+    # the brass belt going in, carry handle, heat shield, folded bipod, the skeleton stock.
     grip(b, (0.16, 0.24, 0.44), (0, 0.02, -0.02))
     b.box((0.24, 0.9, 0.3), (0, -0.2, 0.36), swatch="dark")  # receiver
     b.box((0.22, 0.5, 0.06), (0, -0.2, 0.54), swatch="gun_d")  # feed tray cover
+    for i in range(4):
+        b.box((0.23, 0.03, 0.03), (0, -0.02 - i * 0.12, 0.58), swatch="dark_d")  # cover ribs
     b.box((0.3, 0.36, 0.38), (-0.05, -0.36, 0.0), swatch="olive")  # soft ammo pouch
     b.box((0.31, 0.05, 0.36), (-0.05, -0.55, 0.0), swatch="olive_d")  # its flap seam
     b.box((0.06, 0.12, 0.18), (-0.15, -0.36, 0.24), swatch="brass")  # belt into the feed
+    for i in range(3):
+        b.box((0.07, 0.035, 0.05), (-0.15, -0.32 - i * 0.04, 0.34), swatch="brass")  # rounds
     b.box((0.04, 0.4, 0.04), (0, -0.92, 0.66), swatch="gun_d")  # carry handle
     for y in (-0.75, -1.08):
         b.box((0.04, 0.04, 0.16), (0, y, 0.58), swatch="gun_d")
     b.box((0.13, 0.5, 0.1), (0, -1.0, 0.48), swatch="gun_d")  # heat shield
+    for i in range(4):
+        b.box((0.135, 0.05, 0.02), (0, -0.82 - i * 0.12, 0.535), swatch="dark_d")  # its vents
     b.cyl(0.045, 1.1, (0, -1.2, 0.38), segs=8, rot=(90, 0, 0), swatch="gun_d")  # barrel
     b.cyl(0.06, 0.14, (0, -1.82, 0.38), segs=8, rot=(90, 0, 0), swatch="dark")  # flash hider
     b.box((0.05, 0.05, 0.16), (0, -1.68, 0.5), swatch="dark")  # front sight
     for x in (-0.08, 0.08):
         b.box((0.04, 0.6, 0.04), (x, -1.2, 0.26), swatch="gun_d")  # bipod, folded
-    b.box((0.18, 0.7, 0.24), (0, 0.6, 0.32), swatch="dark")  # stock
-    b.box((0.2, 0.06, 0.36), (0, 0.97, 0.28), swatch="dark_d")  # butt pad
-    b.box((0.03, 0.24, 0.03), (0, -0.1, 0.07), swatch="gun")  # trigger guard
+    # Skeleton stock: a top tube, a strut sloping down to the butt, the pad.
+    b.cyl(0.045, 0.75, (0, 0.6, 0.42), segs=8, rot=(90, 0, 0), swatch="dark")
+    b.box((0.06, 0.82, 0.06), (0, 0.6, 0.24), rot=(-12, 0, 0), swatch="dark")
+    b.box((0.16, 0.08, 0.42), (0, 0.98, 0.3), swatch="dark")
+    b.box((0.18, 0.04, 0.4), (0, 1.03, 0.3), swatch="dark_d")
+    trigger_group(b)
 
 
 def mossberg(b):
-    # Mossberg 590: black, barrel over a long magazine tube, the grooved pump, a brass bead, a
-    # side saddle of red shells on the left. 2.8 long.
+    # Mossberg 590: black, barrel over a long magazine tube, the round grooved pump, a brass
+    # bead, a side saddle of red shells on the left, the dropped shotgun stock.
     grip(b, (0.15, 0.24, 0.44), (0, 0.02, -0.02))
-    b.box((0.18, 0.6, 0.26), (0, -0.2, 0.34), swatch="dark")  # receiver
+    b.box((0.17, 0.6, 0.26), (0, -0.2, 0.34), swatch="dark")  # receiver
+    b.box((0.02, 0.22, 0.1), (0.09, -0.24, 0.38), swatch="dark_d")  # ejection port
     b.cyl(0.045, 1.3, (0, -1.15, 0.42), segs=8, rot=(90, 0, 0), swatch="gun_d")  # barrel
     b.cyl(0.05, 1.0, (0, -1.0, 0.3), segs=8, rot=(90, 0, 0), swatch="gun_d")  # magazine tube
-    b.box((0.2, 0.42, 0.18), (0, -0.85, 0.3), swatch="dark")  # pump
+    b.cyl(0.1, 0.42, (0, -0.85, 0.3), segs=8, rot=(90, 0, 0), swatch="dark")  # round pump
     for y in (-0.7, -0.78, -0.86, -0.94, -1.02):
-        b.box((0.21, 0.03, 0.17), (0, y, 0.3), swatch="dark_d")  # pump grooves
+        b.cyl(0.105, 0.03, (0, y, 0.3), segs=8, rot=(90, 0, 0), swatch="dark_d")  # grooves
     b.box((0.1, 0.05, 0.18), (0, -1.7, 0.36), swatch="dark")  # barrel clamp
     b.ico(0.025, (0, -1.79, 0.48), subdiv=0, swatch="brass")  # bead sight
     b.box((0.03, 0.32, 0.16), (-0.1, -0.22, 0.34), swatch="dark_d")  # side saddle
@@ -202,34 +250,34 @@ def mossberg(b):
         y = -0.33 + i * 0.075
         b.box((0.05, 0.06, 0.13), (-0.13, y, 0.34), swatch="red")  # shells
         b.box((0.052, 0.062, 0.03), (-0.13, y, 0.27), swatch="brass")  # their bases
-    b.box((0.16, 0.85, 0.3), (0, 0.55, 0.26), swatch="dark")  # stock
-    b.box((0.18, 0.06, 0.4), (0, 0.98, 0.22), swatch="dark_l")  # recoil pad
-    b.box((0.03, 0.24, 0.03), (0, -0.1, 0.07), swatch="gun")  # trigger guard
+    tapered_stock(b, 0.12, 0.98, 0.46, 0.16, 0.42, 0.15, pad="dark_l")
+    trigger_group(b)
 
 
 def m110(b):
     # M110 SASS: an AR-10, black receiver, long flat dark earth handguard, straight 20-round
-    # magazine, a scope and a suppressor; crane stock. 3.25 long. (The M2010 is a bolt gun with
-    # a dark tan chassis and a skeleton stock.)
+    # magazine, a scope and a suppressor; crane stock on a buffer tube. 3.25 long.
     grip(b, (0.16, 0.24, 0.46), (0, 0.02, -0.02))
-    b.box((0.2, 0.66, 0.22), (0, -0.2, 0.2), swatch="dark")  # lower receiver
-    b.box((0.2, 0.74, 0.22), (0, -0.22, 0.4), swatch="dark")  # upper receiver
-    b.box((0.15, 0.24, 0.34), (0, -0.4, -0.04), swatch="dark_d")  # straight magazine
-    b.box((0.22, 0.95, 0.22), (0, -1.06, 0.4), swatch="tan")  # handguard
+    b.box((0.18, 0.64, 0.2), (0, -0.2, 0.2), swatch="dark")  # lower receiver
+    b.box((0.18, 0.74, 0.2), (0, -0.22, 0.39), swatch="dark")  # upper receiver
+    b.box((0.2, 0.26, 0.14), (0, -0.42, 0.06), swatch="dark")  # flared magwell
+    curved_mag(b, (-0.42, -0.0), (0.14, 0.24, 0.16), (4, 6))
+    b.cyl(0.115, 0.95, (0, -1.06, 0.4), segs=8, rot=(90, 0, 0), swatch="tan")  # handguard
     for i in range(5):
-        b.box((0.23, 0.08, 0.04), (0, -0.7 - i * 0.18, 0.4), swatch="tan_d")  # handguard slots
-    b.cyl(0.045, 0.45, (0, -1.75, 0.4), segs=8, rot=(90, 0, 0), swatch="dark")  # barrel
+        b.box((0.235, 0.08, 0.04), (0, -0.7 - i * 0.18, 0.4), swatch="tan_d")  # slots
+    b.cyl(0.04, 0.45, (0, -1.75, 0.4), segs=8, rot=(90, 0, 0), swatch="dark")  # barrel
     b.cyl(0.085, 0.5, (0, -2.2, 0.4), segs=8, rot=(90, 0, 0), swatch="gun_d")  # suppressor
-    b.cyl(0.06, 0.4, (0, 0.38, 0.4), segs=8, rot=(90, 0, 0), swatch="dark")  # buffer tube
-    b.box((0.16, 0.5, 0.26), (0, 0.5, 0.33), swatch="tan")  # crane stock
-    b.box((0.18, 0.06, 0.36), (0, 0.77, 0.3), swatch="dark")  # butt pad
-    b.cyl(0.065, 0.7, (0, -0.3, 0.66), segs=8, rot=(90, 0, 0), swatch="dark")  # scope tube
-    b.cyl(0.095, 0.18, (0, -0.7, 0.66), segs=8, rot=(90, 0, 0), swatch="dark")  # objective
-    b.cyl(0.085, 0.14, (0, 0.1, 0.66), segs=8, rot=(90, 0, 0), swatch="dark")  # eyepiece
-    b.cyl(0.07, 0.02, (0, -0.8, 0.66), segs=8, rot=(90, 0, 0), swatch="glass_l")  # lens
+    b.cyl(0.07, 0.03, (0, -2.45, 0.4), segs=8, rot=(90, 0, 0), swatch="dark_d")  # its end cap
+    b.cyl(0.055, 0.4, (0, 0.36, 0.4), segs=8, rot=(90, 0, 0), swatch="dark")  # buffer tube
+    tapered_stock(b, 0.3, 0.74, 0.47, 0.14, 0.3, 0.15, swatch="tan", pad="dark")  # crane stock
+    b.cyl(0.065, 0.7, (0, -0.3, 0.64), segs=8, rot=(90, 0, 0), swatch="dark")  # scope tube
+    b.cyl(0.095, 0.18, (0, -0.7, 0.64), segs=8, rot=(90, 0, 0), swatch="dark")  # objective
+    b.cyl(0.085, 0.14, (0, 0.1, 0.64), segs=8, rot=(90, 0, 0), swatch="dark")  # eyepiece
+    b.cyl(0.07, 0.02, (0, -0.8, 0.64), segs=8, rot=(90, 0, 0), swatch="glass_l")  # lens
+    b.cyl(0.04, 0.08, (0, -0.3, 0.72), segs=6, swatch="dark_d")  # turret
     for y in (-0.5, -0.1):
-        b.box((0.14, 0.08, 0.16), (0, y, 0.55), swatch="gun_d")  # rings
-    b.box((0.03, 0.24, 0.03), (0, -0.1, 0.07), swatch="gun")  # trigger guard
+        b.box((0.14, 0.08, 0.14), (0, y, 0.54), swatch="gun_d")  # rings
+    trigger_group(b)
 
 
 def m17(b):
