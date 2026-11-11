@@ -16,6 +16,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local ArmsRoom = require(ReplicatedStorage.Shared.ArmsRoom)
+local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Loadout = require(ReplicatedStorage.Shared.Rules.Loadout)
 local LoadoutSave = require(ReplicatedStorage.Shared.Rules.LoadoutSave)
@@ -43,6 +44,13 @@ local function copy(source: Loadout.Loadout): Loadout.Loadout
 	}
 end
 
+-- Signs `loadout` for `player`. Its primary is the gun they carry on the ship: the Weapon
+-- attribute is what the match's PlayerSetup.attachRifle (PikeBody) reads and follows.
+local function sign(player: Player, loadout: Loadout.Loadout)
+	signed[player] = loadout
+	player:SetAttribute(Attributes.Weapon, loadout.primary)
+end
+
 local function load(player: Player)
 	local loadout = LoadoutSave.decode(slot:load(player), isValid)
 	if not loadout or not RecordService.allows(player, loadout) then
@@ -50,7 +58,7 @@ local function load(player: Player)
 	end
 	-- A pick signed while the load was in flight is newer: keep it.
 	if player.Parent and not signed[player] then
-		signed[player] = loadout
+		sign(player, loadout)
 		remote:FireClient(player, Messages.Loadout.Signed, loadout)
 	end
 end
@@ -82,7 +90,7 @@ function LoadmasterService.init()
 		end
 		if valid then
 			local pick = copy(requested :: Loadout.Loadout)
-			signed[player] = pick
+			sign(player, pick)
 			slot:save(player, LoadoutSave.encode(pick))
 		end
 		remote:FireClient(player, Messages.Loadout.Result, valid, reason)
