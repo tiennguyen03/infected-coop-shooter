@@ -1364,6 +1364,37 @@ local Config = {
 		PathAgentHeight = 5,
 		PathWaypointSpacing = 4, -- studs between waypoints (the kit's stairs are 9-stud storeys)
 		PathWaypointReach = 3, -- studs: the next waypoint counts as reached
+		-- Spacing (EnemySpacing; Rules/Spacing): the Infected still pass through each other
+		-- physically, so this steering is what keeps a horde from stacking on one point.
+		-- Straight chase only (not paths, climbs, lures, Hockers or bosses). Not yet tuned
+		-- in a playtest. Enabled = false is the old behaviour exactly.
+		Spacing = {
+			Enabled = true,
+			-- Studs of personal space at Scale 1 (x the form's Scale, or the form's own
+			-- EnemyDefinitions.SpacingRadius). Bigger = a looser horde, fewer round a player.
+			Radius = 1.5,
+			RadiusVariation = 0.2, -- +- share per body, so the crowd is not a grid
+			CellSize = 6, -- studs: grid cell; at least the two biggest radii plus a step
+			RebuildInterval = 0.2, -- seconds between grid refills (server cost)
+			MaxNeighbours = 32, -- bodies one goal looks at (server cost)
+			HeightGap = 6, -- studs: a body this far above or below is on another floor
+			Steer = {
+				Lookahead = 8, -- studs a goal sits ahead (more than any form covers a repath)
+				Strength = 0.4, -- share of an overlap given way per repath; above 0.5 jitters
+				BehindWeight = 0.3, -- share of that given to a body behind (front holds its place)
+				MaxPush = 3, -- studs: the most neighbours move one goal
+				BlockSlack = 0.15, -- share of the two radii a body may walk into a neighbour
+				TravelMinPull = 0.4, -- share of the advance kept in any crowd, beyond EngageDistance
+				RingFraction = 0.8, -- attack ring radius as a share of AttackRange (under 1 = can hit)
+				EngageDistance = 24, -- studs from the target inside which ranks hold and wait
+				RingSpread = 50, -- degrees a body's approach curves round its target
+				RingPeriod = 9, -- seconds over which that curve drifts
+				SwayAngle = 10, -- degrees of weave far from the target (0 = straight lines)
+				SwayPeriod = 5,
+				Deadzone = 0.3, -- studs: smaller steps are not taken (no shuffling on the spot)
+				WaitStep = 2, -- studs: a crowded body stepping less is waiting, not stuck on cover
+			},
+		},
 	},
 
 	-- The Index (Sprint 19): the Warden, Delta's boss (IndexService; docs/PROGRESSION.md
