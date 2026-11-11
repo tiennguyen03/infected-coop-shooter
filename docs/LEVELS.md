@@ -21,6 +21,12 @@ Two engine facts that drive every site:
    body round and over cover. The one exception is the **vertical chase** (`Config.Enemies`):
    up to 10 melee forms whose target stands 4+ studs above them near a kit building follow a
    PathfindingService path through doors and up stairs; everything else chases straight.
+   **Spacing** (`Config.Enemies.Spacing`, `EnemySpacing`, `Rules/Spacing`; not yet tuned in a
+   playtest): bodies still pass through each other physically, but the straight chase steers
+   each one off its neighbours and onto an attack ring round its target, and a body behind
+   another near the target waits or slides round instead of walking through it. Beyond
+   `EngageDistance` a body always keeps `TravelMinPull` of its advance, so a doorway queue
+   never locks; paths, climbs, the nudge, lures, Hockers and bosses move as before.
 2. **Hocker geometry.** Plants at 40 studs, throws to 55, needs a clear line from +7 studs
    above its head. Hesco (4.6) and sandbags (4) stop Walkers, not spit. Buses (12.5) and
    T-walls (12.5) stop both. Low cover = melee funnel, tall cover = Hocker shadow.
