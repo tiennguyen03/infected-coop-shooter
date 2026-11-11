@@ -41,9 +41,9 @@ local Config = {
 		Enabled = true,
 		Approach = 6, -- in from the edge of the map to over the pad
 		Flare = 2.5, -- nose up, bleeding speed, down to the hover
-		Drop = 1.6, -- the hover: dust, the squad drops (revealed halfway)
+		Drop = 2.8, -- the hover: dust, the squad jumps out of the door one by one
 		Depart = 3.2, -- climbs and flies off behind the squad
-		Seconds = 13.3, -- the whole cutscene (the four above)
+		Seconds = 14.5, -- the whole cutscene (the four above)
 		-- Seconds between Insert and the cutscene's start, so every client has loaded (in Studio
 		-- the run starts the moment the first body spawns, before the client is up).
 		LeadSeconds = 2.5,
@@ -57,6 +57,28 @@ local Config = {
 		-- lobby's LanternBird uses the same).
 		Hub = Vector3.new(0, 11.9, 0),
 		TailHub = Vector3.new(-0.6, 11.5, -26.6),
+		-- The squad aboard (Nova: "see the squad sitting in the heli and then see them jumping
+		-- out"): local stand-ins of each body sit on a bench along the cabin's far wall facing the
+		-- open door (+X), then jump out in turn and land where the real body stands, which then
+		-- shows. Lantern frame: origin on the deck at the mast foot, nose +Z, door on +X.
+		Seats = {
+			Vector3.new(-2.1, 2.2, 1.6),
+			Vector3.new(-2.1, 2.2, -0.4),
+			Vector3.new(-2.1, 2.2, -2.4),
+			Vector3.new(-2.1, 2.2, -4.4),
+		},
+		Bench = { Size = Vector3.new(1.4, 0.4, 8.6), At = Vector3.new(-2.4, 1.0, -1.4) },
+		DoorX = 3.6, -- the door sill, where a jumper steps off
+		DeckY = 0.3, -- the cabin floor above the frame's origin
+		JumpStart = 0.3, -- seconds into the hover before the first jump
+		JumpStagger = 0.45, -- seconds between jumpers
+		StepSeconds = 0.3, -- up from the bench to the door
+		FallSeconds = 0.75, -- the door to the ground
+		JumpArc = 1.5, -- studs the jump rises before it falls
+		Animations = {
+			Sit = "rbxassetid://2506281703", -- Roblox's stock R15 sit
+			Fall = "rbxassetid://507767968", -- Roblox's stock R15 fall
+		},
 		Letterbox = 0.11, -- share of the screen height each bar covers
 		Fov = 50,
 		RotorVolume = 1,
