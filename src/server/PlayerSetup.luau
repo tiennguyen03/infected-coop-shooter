@@ -171,10 +171,17 @@ function PlayerSetup.attachRifle(character: Model, humanoid: Humanoid)
 	end)
 end
 
--- The soldier's look as catalog items (Config.Player.Look), for AvatarLook.
-function PlayerSetup.look(): AvatarLook.Look
+-- The soldier's look as catalog items (Config.Player.Look), for AvatarLook; `player` (nil for a
+-- bot) wears their own face when Look.PlayerFace is on.
+function PlayerSetup.look(player: Player?): AvatarLook.Look
 	local look = Config.Player.Look
-	return { items = look.Items, skin = look.Skin, shirt = look.Shirt, trousers = look.Trousers }
+	return {
+		items = look.Items,
+		skin = look.Skin,
+		shirt = look.Shirt,
+		trousers = look.Trousers,
+		faceOf = if player and look.PlayerFace then player.UserId else nil,
+	}
 end
 
 -- No floating health bar or name over a squad body (players and bots): squadmates' status
@@ -271,7 +278,7 @@ local function onCharacterAdded(character: Model)
 	-- Templates build asynchronously at boot; a character that beats them keeps the stock body.
 	-- A skinned StarterCharacter already is the body: only its gear goes on.
 	if Config.Player.Look.Enabled then
-		AvatarLook.apply(humanoid, PlayerSetup.look())
+		AvatarLook.apply(humanoid, PlayerSetup.look(Players:GetPlayerFromCharacter(character)))
 	elseif character:FindFirstChild(SKIN_PART) then
 		attachGear(character)
 	elseif MeshAssets.waitFor(PLAYER_BODY .. "head", 10) then

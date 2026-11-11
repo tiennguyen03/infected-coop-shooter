@@ -41,6 +41,7 @@ local Config = {
 		-- (T3 A9 P2 H4). Not R1: that "buzzcut" is a novelty piece worn over the face.
 		Look = {
 			Enabled = true,
+			PlayerFace = true, -- each player wears their own avatar's head, face and skin tone (bots: the default)
 			Items = {
 				135730034330771,
 				74956577347922,

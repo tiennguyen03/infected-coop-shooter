@@ -408,7 +408,9 @@ sling across his chest"; the crew's block eyes "dont look right" on the R15 bodi
   in match as well"): `Config.Player.Look`, catalog items on the default R15 body for players
   and bots in the match (`PlayerSetup`, `BotService`) and on the ship (`PikeBody`): a tactical
   vest over an olive shirt, combat pants, an AVS plate carrier, a black FAST helmet, a
-  buzzcut. `Look.Enabled = false` puts the Pike limb body back.
+  buzzcut (dropped: that catalog piece covers the face). Each player wears their own avatar's
+  head, face and skin tone (`Look.PlayerFace`; bots keep the default face). `Look.Enabled = false`
+  puts the Pike limb body back.
 - **Slow stride, sprint on Shift** (second pass): `Soldier.WalkSpeed` 6.5, `SprintSpeed` 15
   while `Keys.Sprint` or `Soldier.SprintPad` is held (the Rthro run above 9 studs/s).
 ## Files

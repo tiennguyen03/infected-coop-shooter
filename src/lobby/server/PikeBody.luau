@@ -132,7 +132,7 @@ local function onCharacterAdded(character: Model)
 	-- limb body. Templates build asynchronously at boot; a character that beats them keeps
 	-- the stock body.
 	if Config.Player.Look.Enabled then
-		AvatarLook.apply(humanoid, PlayerSetup.look())
+		AvatarLook.apply(humanoid, PlayerSetup.look(Players:GetPlayerFromCharacter(character)))
 	elseif MeshAssets.waitFor(PlayerSetup.BODY .. "head", TEMPLATE_WAIT) then
 		MeshAssets.dressModel(character, PlayerSetup.BODY)
 		if

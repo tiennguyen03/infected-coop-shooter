@@ -16,6 +16,7 @@ export type Look = {
 	skin: Color3?, -- head and arms
 	shirt: Color3?, -- torso, under any clothing
 	trousers: Color3?, -- legs, under any clothing
+	faceOf: number?, -- a player's user id: their own head, face and skin tone go on instead
 }
 
 -- Asset type id -> rigid accessory slot.
@@ -76,6 +77,21 @@ function AvatarLook.describe(look: Look): HumanoidDescription
 	description.TorsoColor = look.shirt or skin
 	description.LeftLegColor = look.trousers or skin
 	description.RightLegColor = look.trousers or skin
+	-- A player's own face (their avatar's head and face, and its skin tone on the head and arms
+	-- so they match). A failed lookup (Studio's test players, a service hiccup) keeps the default.
+	if look.faceOf and look.faceOf > 0 then
+		local userId = look.faceOf
+		local ok, own = pcall(function()
+			return Players:GetHumanoidDescriptionFromUserId(userId)
+		end)
+		if ok and own then
+			description.Head = own.Head
+			description.Face = own.Face
+			description.HeadColor = own.HeadColor
+			description.LeftArmColor = own.LeftArmColor
+			description.RightArmColor = own.RightArmColor
+		end
+	end
 	local accessories: { any } = {}
 	local items: { number } = look.items or {}
 	for index, id in items do
