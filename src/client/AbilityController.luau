@@ -310,7 +310,8 @@ function AbilityController.init()
 			pressCallIn(key, slot)
 			return
 		end
-		-- Any other kit key takes the hands off the binoculars.
+		-- Any other kit key takes the hands off the binoculars. These become Config.Keys.SwapGun,
+		-- Grenade, Shove, Stim and Flare once claude/keybinds merges (V, E and 5 change there).
 		if
 			key == Enum.KeyCode.Q
 			or key == Enum.KeyCode.G
