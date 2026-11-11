@@ -67,7 +67,8 @@ Planned shape | Fix when`.
    target, not a snack); the pressure is the timer and the teammate having to stop shooting.
    A teammate holds F next to them to revive (bots revive on their own). Timer out = *Dead*,
    spectate; the dead respawn when the next mission starts. Until missions chain, dead =
-   spectate to run end. Numbers in `Config.Downed` (max revives per run included).
+   spectate to run end. Numbers in `Config.Downed` (max revives per mission included: `Squad` resets the count on
+   the Lifecycle `onMissionStart` hook as well as on a fresh run).
 4. **Run ownership: anyone can request, short ready-up timer.** The first request opens a
    countdown; the run starts when it expires or everyone readies. Restart works the same way.
 5. **Items are per owner.** Inventories stay per player. A world pickup that a player's own

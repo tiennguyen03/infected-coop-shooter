@@ -70,17 +70,17 @@ fire on the press. `AbilityController`.
 
 Numbers in `Config.Weapons.<Gun>`, rows in `WeaponDefinitions`. Semi guns fire once per click.
 
-| Gun (real) | Role | Mode, rpm (`FireCooldown`) | Dmg | Mag + reserve | Reload | Hip / ADS | Bloom per shot / max | Range | Pierce |
+| Gun (real) | Role | Mode, rpm (`FireCooldown`) | Dmg | Mag + reserve at insert / re-armed | Reload | Hip / ADS | Bloom per shot / max | Range | Pierce |
 |---|---|---|---|---|---|---|---|---|---|
-| **M16A4 Service Rifle** (baseline) | all-rounder, 3-5 round bursts | auto, 750 (0.08) | 20 | 30 + 240 | 2.2 | 1.5 / 0.3 | 0.3 / 3.5 | 400 | 0 |
-| **MP5 SMG** | best hip-fire; chews Runners, weak on Brutes | auto, 800 (0.075) | 14 | 30 + 210 | 1.8 | 0.9 / 0.6 | 0.15 / 2.0 | 150 | 0 |
-| **M249 LMG** | 100-round belt, no reload in a hold; slow to aim moving | auto, 800 (0.075) | 20 | 100 + 300 | 5.5 | 3.0 / 0.5 | 0.15 / 2.5 | 400 | 0 |
-| **Mossberg 590 Shotgun** | point-blank, one decision per pull | pump, 80 (0.75) | 11 x 8 pellets | 8 + 40 | 3.5 | 5.0 / 3.5 | 0 | 45 | 0 |
-| **M110 DMR** | one-taps Walkers, hits two in a line; poor up close | semi, 300 (0.2) | 60 | 20 + 80 | 2.6 | 4.0 / 0.1 | 1.2 / 3.0 (recovery 8) | 600 | 1 |
-| **M17 Pistol** (sidearm) | backup when the primary runs dry | semi, 400 (0.15) | 25 | 17 + 68 | 1.5 | 1.2 / 0.5 | 0.6 / 2.5 | 120 | 0 |
-| **S&W 686 Revolver** (sidearm, sample) | panic button: one round per Walker, staggers a Brute | semi, 150 (0.4) | 55 | 6 + 30 | 2.8 | 1.8 / 0.4 | 1.5 / 3.5 (recovery 10) | 150 | 0 |
-| **M2010 ESR Sniper** (sample) | one round per kill, Brute in 2, through four in a line; useless from the hip | bolt, 48 (1.25) | 140 | 5 + 30 | 3.2 | 6.0 / 0.05 | 0 | 800 | 3 |
-| **Goose, M3 recoilless** (sample "RPG", primary slot; later the call-in) | a visible rocket at 220 studs/s: 400 to the Infected struck, then the frag's blast 120 in 6 studs, no friendly fire | single, reload 6 s | 400 + blast | 1 + 1 | 6.0 | 2.0 / 0.25 | 0 | 300 | 0 |
+| **M16A4 Service Rifle** (baseline) | all-rounder, 3-5 round bursts | auto, 750 (0.08) | 20 | 30 + 120 / 240 | 2.2 | 1.5 / 0.3 | 0.3 / 3.5 | 400 | 0 |
+| **MP5 SMG** | best hip-fire; chews Runners, weak on Brutes | auto, 800 (0.075) | 14 | 30 + 120 / 210 | 1.8 | 0.9 / 0.6 | 0.15 / 2.0 | 150 | 0 |
+| **M249 LMG** | 100-round belt, no reload in a hold; slow to aim moving | auto, 800 (0.075) | 20 | 100 + 150 / 300 | 5.5 | 3.0 / 0.5 | 0.15 / 2.5 | 400 | 0 |
+| **Mossberg 590 Shotgun** | point-blank, one decision per pull | pump, 80 (0.75) | 11 x 8 pellets | 8 + 20 / 40 | 3.5 | 5.0 / 3.5 | 0 | 45 | 0 |
+| **M110 DMR** | one-taps Walkers, hits two in a line; poor up close | semi, 300 (0.2) | 60 | 20 + 40 / 80 | 2.6 | 4.0 / 0.1 | 1.2 / 3.0 (recovery 8) | 600 | 1 |
+| **M17 Pistol** (sidearm) | backup when the primary runs dry | semi, 400 (0.15) | 25 | 17 + 34 / 68 | 1.5 | 1.2 / 0.5 | 0.6 / 2.5 | 120 | 0 |
+| **S&W 686 Revolver** (sidearm, sample) | panic button: one round per Walker, staggers a Brute | semi, 150 (0.4) | 55 | 6 + 18 / 30 | 2.8 | 1.8 / 0.4 | 1.5 / 3.5 (recovery 10) | 150 | 0 |
+| **M2010 ESR Sniper** (sample) | one round per kill, Brute in 2, through four in a line; useless from the hip | bolt, 48 (1.25) | 140 | 5 + 15 / 30 | 3.2 | 6.0 / 0.05 | 0 | 800 | 3 |
+| **Goose, M3 recoilless** (sample "RPG", primary slot; later the call-in) | a visible rocket at 220 studs/s: 400 to the Infected struck, then the frag's blast 120 in 6 studs, no friendly fire | single, reload 6 s | 400 + blast | 1 + 1 / 1 | 6.0 | 2.0 / 0.25 | 0 | 300 | 0 |
 
 - ADS move factor: rifle 0.6, SMG 0.85, LMG 0.35, shotgun 0.7, DMR 0.5, pistol 0.9. ADS
   pulls the camera to 5 studs over the shoulder at FOV 55 (`Weapon.ADS`); the client sends
@@ -90,6 +90,9 @@ Numbers in `Config.Weapons.<Gun>`, rows in `WeaponDefinitions`. Semi guns fire o
 - Rounds to kill body / head: rifle Walker 3 / 1, Brute 13 / 11; SMG 4 / 2, 19 / 15; DMR
   1 / 1, 5 / 4; shotgun one pull for every form but the Brute (3). Ammo reins in the DMR
   (100 x 60 is the M16's 270 x 20).
+- A soldier lands with about half the reserve (`ReserveStart` on the gun's row,
+  2026-11-10; was the full `ReserveMax`), so the first pallet is wanted; a pallet or the
+  Index kill fills it to `ReserveMax`. The Goose keeps its one spare round.
 - Bots fire the rifle slower (`Bots.FireCooldown` 0.30: three bots on sustained fire ~ one
   player), same magazine, infinite reserve.
 - The three sample guns (2026-11-09) are in the Arms Room like every gun: its lists are every
@@ -187,9 +190,11 @@ Retired 2026-11-08: Magpie (drones) and Pen Coil (shock pulse), too sci-fi; see 
 `UpgradeDefinitions`, flags on `LoadoutService`, numbers in `Config.Upgrades`. Slots: Grenade,
 Weapon, Kit and one per carried call-in (`CallIn1`-`CallIn4`; the upgrade moves with its
 call-in); a new pick in a filled slot replaces it. Each changes how a tool works, never a
-percentage, and must stay legible next to the flat curve. Sources: the Primary's site crate
-(lands when the hold zone appears; shows 3 you can still take) and the Index pallet; later
-Stores and Secondary crates (3-5 per mission).
+percentage, and must stay legible next to the flat curve. Sources: the Primary's two site crates
+(one lands when the hold zone appears, one when the hold ends, `Objective.CompleteCrate`,
+10 studs beside the first; each shows 3 you can still take), so both picks are made before
+the Index arrives; later Stores and Secondary crates (3-5 per mission). Until 2026-11-10
+the second set came on the Index pallet, with only the extraction left to use it.
 
 | Slot | Lore name | Effect |
 |---|---|---|
@@ -197,7 +202,7 @@ Stores and Secondary crates (3-5 per mission).
 | Weapon | Through-and-Through | a round carries into the next Infected (any gun) |
 | Weapon | Hollow Point | the hit Infected stops for 0.6 s (any gun) |
 | Kit | Last Stand | fire from the ground while downed (hip, spread x2) |
-| Kit | Spare Tourniquet | stand up on your own 4 s after going down, once per mission, no revive spent |
+| Kit | Spare Tourniquet | stand up on your own 4 s after going down, once per mission (as the two revives are: `Squad.resetMission`), no revive spent |
 | Hammer | Walk It In | the shells step 8 studs along the throw |
 | Tripline | Daisy Chain | press the key again to blow every armed mine (no charge) |
 
@@ -216,7 +221,8 @@ interval x0.8, +3 alive and +1 heavy per extra living player, hard cap 44).
 - **Stores** (not built): free crates at the position's abandoned stock. Hold E 3 s to open,
   which is loud. Count per Containment band below; places in LEVELS.md.
 - **Priority pallet** (built with the Warden, `IndexService.endFight`): an Index kill drops a
-  pallet at the corpse: re-arm, full heal, three upgrade cards each.
+  quiet pallet at the corpse: re-arm, full heal, the three supply cards
+  (`Index.Warden.Drop.Cards`; `"upgrade"` puts the field upgrades back there).
 
 ## Operation: the Burn, extraction, scoring (not built)
 
@@ -226,7 +232,13 @@ interval x0.8, +3 alive and +1 heavy per extra living player, hard cap 44).
   pallets, spawn interval x0.5, more alive and +2 Brute/Hocker caps (`Config.Overrun`,
   reserved), Lantern takes 120 s instead of 90. The run goes on; extracting after the Burn
   scores Partial. Calling the bird freezes the timer.
-- **Extraction.** A 90 s hold; on call Walker 10 Runner 4 (+3 Walkers per extra player), a
+- **Extraction today** (`Config.Extraction`, 2026-11-10): a 60 s hold (was 30). On the
+  call Walker 12, Runner 4, Brute 1 round the pad and spawn interval x0.8; when the hold
+  reaches 30 s a second wave of 12 phase-weighted Infected (+3 per extra player) rings the
+  pad, Control calls it on the radio and the spawn interval goes to x0.6 (`Waves` rows:
+  `At`, `Count`, `PerExtraPlayer`, `SpawnFactor`; `Rules/ExtractionWaves`). A wave is tied
+  to the hold's progress, so it never lands while the squad is off the pad.
+- **Extraction, designed.** A 90 s hold; on call Walker 10 Runner 4 (+3 Walkers per extra player), a
   second phase-weighted wave of 12 at 45 s, spawn interval x0.6. Progress accrues only while
   every living player is on the pad (MULTIPLAYER_READINESS #3). Secondaries do not shorten it.
   Alternate pads come from "Light the Pad".
@@ -383,7 +395,7 @@ Patient reuse the frame. Index hosts never dismember: their plates are the mecha
   Radio lines: LORE.md.
 - **Body.** 7,000 hp at scale 1.9, +33% per extra living player (the one exception to "more
   Infected, not tougher": one body cannot be more bodies). Headshot x2 once the helmet is off.
-- **Plates** (one rule): helmet 300, chest 500, back 400 (the flank), shoulders 300 each,
+- **Plates** (one rule): helmet 300, chest 400 (was 500 until 2026-11-10), back 400 (the flank), shoulders 300 each,
   shield 600. A round into a plate does 25% to the plate and nothing to the body; a round into
   a limb whose plate is gone does 150%. At half a plate cracks (yellow pip); at zero it flies
   off, he staggers 1.5 s. HUD order: HELM, CHEST, BACK, L SHLD, R SHLD, SHIELD.

@@ -44,9 +44,9 @@ export type Member = {
 	padIndex: number?, -- landing pad slot, claimed on first spawn
 	state: MemberState,
 	bleedOutAt: number?, -- os.clock, Downed only
-	revivesUsed: number, -- this run; at Config.Downed.MaxRevives a lethal hit kills
+	revivesUsed: number, -- this mission; at Config.Downed.MaxRevives a lethal hit kills
 	prompt: ProximityPrompt?,
-	tourniquetUsed: boolean, -- the Spare Tourniquet self-revive, once per run
+	tourniquetUsed: boolean, -- the Spare Tourniquet self-revive, once per mission
 	selfReviveAt: number?, -- os.clock, Downed with the tourniquet only
 }
 
@@ -482,8 +482,9 @@ function Squad.down(member: Member)
 	print(`[Squad] {member.name} is down`)
 end
 
--- RunManager, on every run start: revives are counted per run.
-function Squad.resetRun()
+-- Revives and the tourniquet are counted per mission: every mission of an operation
+-- starts with the full budget (Lifecycle onMissionStart), and so does a fresh run.
+function Squad.resetMission()
 	for _, member in members do
 		member.revivesUsed = 0
 		member.tourniquetUsed = false
@@ -572,7 +573,8 @@ end
 
 function Squad.init()
 	Lifecycle.register("Squad", {
-		onRunStart = Squad.resetRun,
+		onRunStart = Squad.resetMission,
+		onMissionStart = Squad.resetMission,
 		onPlayerRemoving = function(player: Player)
 			local member = byPlayer[player]
 			if member then
