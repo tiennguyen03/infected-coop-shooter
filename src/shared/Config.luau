@@ -155,7 +155,7 @@ local Config = {
 	-- interrupts a revive stay in Downed above. The kneel and the lying body are existing
 	-- clips; the arms are solved onto the casualty's chest each frame on every client.
 	ReviveAnimation = {
-		Enabled = true, -- false: the reviver stands and holds F, the body crawls (as before)
+		Enabled = true, -- false: the reviver stands and holds the interact key, the body crawls (as before)
 		KneelSeconds = 0.3, -- down onto the knee
 		StandSeconds = 0.3, -- back up when the hold is let go
 		LieSeconds = 0.35, -- the casualty rolls from all fours onto their back

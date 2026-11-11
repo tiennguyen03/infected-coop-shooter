@@ -15,7 +15,7 @@ Resupply flare and pallet cards → Hold Position at the objective site (1 of 3 
 upgrades) → the Warden (boss) → extraction on Lantern → OPERATION COMPLETE → ready up.
 
 - **Squad:** anonymous soldiers Pike One to Four; bots Pike Two to Four in solo; downed and
-  revive (hold F), with a revive animation: kneel, sling the rifle, press a dressing, pull
+  revive (hold E), with a revive animation: kneel, sling the rifle, press a dressing, pull
   them up (`Config.ReviveAnimation`; **not yet seen in game**, see open work).
 - **Kit:** six real guns (M16A4, MP5, M249, Mossberg 590, M110, M17) plus three samples in the
   dev panel (S&W 686 revolver, M2010 sniper, the Goose rocket), each with its own Blender model

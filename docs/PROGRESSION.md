@@ -68,7 +68,7 @@ fire on the press. `AbilityController`.
 
 ### Downed and revive
 
-The rules (bleed-out, hold F for `Config.Downed.ReviveHold`, radius, max revives) are in
+The rules (bleed-out, hold E for `Config.Downed.ReviveHold`, radius, max revives) are in
 [MULTIPLAYER_READINESS.md](MULTIPLAYER_READINESS.md) decision 3 and `Config.Downed`. What a
 revive looks like (owner 2026-11-11: "the revive is just us standing there";
 `Config.ReviveAnimation`, `Enabled = false` turns it off):
