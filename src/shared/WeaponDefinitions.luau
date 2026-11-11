@@ -8,6 +8,18 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local Sight = require(ReplicatedStorage.Shared.Rules.Sight)
+local KeyBindings = require(ReplicatedStorage.Shared.Rules.KeyBindings)
+local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
+
+-- A row's sight points are written on the gun's design (guns.py); the eye lines up where
+-- they show on the uploaded mesh, which Roblox mirrors left-right (MeshAssets.shownPoint).
+local function shown(model: string, sight: Sight.Resolved): Sight.Resolved
+	local out = table.clone(sight)
+	out.Rear = MeshAssets.shownPoint(model, sight.Rear)
+	out.Front = MeshAssets.shownPoint(model, sight.Front)
+	return out
+end
 
 export type WeaponSlot = "primary" | "secondary"
 export type FireMode = "auto" | "semi"
@@ -46,6 +58,9 @@ export type WeaponDefinition = {
 	Explosive: Explosive?, -- a launcher: the round is a visible rocket that blows at impact
 	ProjectileSpeed: number?, -- studs/s of that rocket (Explosive only)
 	ArmsOrder: number, -- its place in the Arms Room within its slot (lower first; default 100)
+	-- Its sights in first person (Rules/Sight): the two points on the mesh the eye lines up,
+	-- irons or a scope, the eye relief, the zoom and the hip hold, defaults filled in.
+	Sight: Sight.Resolved,
 }
 
 -- A launcher's blast at the impact point (the frag's blast, KitService.blast). SelfDamage is
@@ -92,10 +107,14 @@ type Tuning = {
 	Explosive: Explosive?,
 	ProjectileSpeed: number?,
 	ArmsOrder: number?,
+	Sight: Sight.Raw?,
 }
 
 local DEFAULT_ARMS_ORDER = 100
 local DEFAULT_MODEL = "wpn_rifle"
+-- A row that names no sight (tests/Sight.spec.luau fails it): along the top of wpn_rifle.
+local DEFAULT_SIGHT: Sight.Raw =
+	{ Rear = Vector3.new(0, 0.62, 0), Front = Vector3.new(0, 0.62, -1.4) }
 
 local function row(
 	id: string,
@@ -137,6 +156,10 @@ local function row(
 		Explosive = tuning.Explosive,
 		ProjectileSpeed = tuning.ProjectileSpeed,
 		ArmsOrder = tuning.ArmsOrder or DEFAULT_ARMS_ORDER,
+		Sight = shown(
+			tuning.Model or DEFAULT_MODEL,
+			Sight.resolve(tuning.Sight or DEFAULT_SIGHT, Config.Weapon.Sights)
+		),
 	}
 end
 
@@ -224,7 +247,7 @@ local GRENADES: { [string]: GrenadeDefinition } = {
 		Id = "frag",
 		Name = "Frag",
 		Designation = "M67",
-		Description = "Hold G to aim, release to throw. Kills a Hocker, not a Brute.",
+		Description = `Hold {KeyBindings.label(Config.Keys.Grenade.Name)} to aim, release to throw. Kills a Hocker, not a Brute.`,
 		ConfigKey = "Frag",
 	},
 }

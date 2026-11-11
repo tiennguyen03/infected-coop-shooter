@@ -96,6 +96,9 @@ Lobby meshes (12 `env_fallow_*`, 4 `veh_lantern_*`) uploaded 2026-11-09 to the g
 | veh_lantern_trim | 120258286814432 | 120432139146773 | 7.94 x 11.65 x 30.05 | Lantern (`LanternBird`); offset in MeshAssets |
 | veh_lantern_rotor | 72210514497412 | 112438582167862 | 38.01 x 1.14 x 38.01 | Lantern (`LanternBird`); offset in MeshAssets |
 | veh_lantern_tail_rotor | 130131221968255 | 134128773314348 | 0.40 x 5.20 x 0.60 | Lantern (`LanternBird`); offset in MeshAssets |
+| dep_doorman_base | 88745683715018 | 105696327827016 | 4.05 x 1.93 x 4.13 | the Doorman's tripod (`doorman.py`, `SentryService`, `Config.CallIns.Doorman.Model = 2`); origin on the ground, offset in MeshAssets; exported pre-mirrored in X |
+| dep_doorman_cradle | 70576240552981 | 127041957980191 | 1.36 x 0.96 x 1.09 | its yoke; origin on the traverse axis 1.9 up; yaws |
+| dep_doorman_gun | 75248273049381 | 86670337644554 | 1.95 x 1.53 x 5.54 | its gun, ammo can and sensor head; origin at the trunnion 2.6 up; pitches; muzzle 3.52 ahead |
 | inf_gore_chunk_a | 114738807263836 | 112453961195196 | 0.29, 0.32, 0.30 | GoreFX chunk |
 | inf_gore_chunk_b | 101420964172693 | 102105594077537 | 0.36, 0.26, 0.27 | GoreFX chunk |
 | inf_gore_chunk_c | 120197171903263 | 119620354840068 | 0.34, 0.18, 0.17 | GoreFX chunk (bone shard) |
@@ -139,6 +142,51 @@ Lobby meshes (12 `env_fallow_*`, 4 `veh_lantern_*`) uploaded 2026-11-09 to the g
 | inf_hocker_upper_leg | 71651625363542 | 107450044108565 | 0.89, 1.52, 1.23 | offset 0.000, 0.012, -0.235 |
 | inf_hocker_lower_leg | 78707080286405 | 125328826241010 | 0.99, 1.38, 1.11 | offset 0.000, -0.093, -0.074 |
 | inf_hocker_foot | 79144855233866 | 139880549411227 | 1.01, 0.31, 1.00 | offset 0.000, 0.000, 0.000 |
+| inf_v2_walker_head | 106046525739295 | 76977696227889 | 1.38, 1.92, 1.40 | offset 0.165, -0.179, -0.358 The remade bodies (`infected_v2.py`), uploaded 2026-11-11 pre-mirrored in X (`MIRROR_X_PREFIXES`); worn when `Config.Enemies.BodyVersion` is 2, the `inf_<form>_*` rows above when it is 1 |
+| inf_v2_walker_upper_torso | 130984694916153 | 89017958935363 | 2.10, 2.04, 1.23 | offset 0.048, 0.170, -0.015 |
+| inf_v2_walker_lower_torso | 116673965788066 | 80906151254901 | 2.05, 1.51, 1.53 | offset 0.000, -0.535, 0.036 |
+| inf_v2_walker_upper_arm_l | 113808700591325 | 91675238648185 | 0.92, 1.24, 0.92 | offset 0.000, 0.000, 0.000 |
+| inf_v2_walker_upper_arm_r | 77497709366262 | 72557237502062 | 0.92, 0.92, 0.92 | offset 0.000, -0.160, 0.000 |
+| inf_v2_walker_lower_arm_l | 110020715905919 | 71724120696455 | 0.85, 1.12, 0.85 | offset 0.000, 0.000, 0.000 |
+| inf_v2_walker_lower_arm_r | 122085562689176 | 107145228827460 | 0.89, 1.47, 0.98 | offset 0.000, -0.155, -0.048 |
+| inf_v2_walker_hand_l | 132475899202414 | 134121077861207 | 0.98, 0.48, 1.03 | offset 0.000, 0.002, -0.002 |
+| inf_v2_walker_hand_r | 86081304835633 | 108100816160761 | 1.06, 0.63, 1.05 | offset 0.000, -0.315, -0.013 |
+| inf_v2_walker_upper_leg_l | 74493617508481 | 88259359260194 | 0.89, 1.40, 0.99 | offset 0.000, -0.020, -0.052 |
+| inf_v2_walker_upper_leg_r | 118173706075340 | 133081136439639 | 0.92, 1.48, 1.03 | offset 0.000, -0.060, -0.051 |
+| inf_v2_walker_lower_leg_l | 89226940260983 | 75676483540007 | 0.99, 1.30, 0.97 | offset 0.000, 0.000, 0.000 |
+| inf_v2_walker_lower_leg_r | 130488390819949 | 101373566223369 | 0.82, 1.32, 0.78 | offset 0.018, 0.010, -0.001 |
+| inf_v2_walker_foot_l | 89851504280755 | 130130481540412 | 1.01, 0.31, 1.00 | offset 0.000, 0.000, 0.000 |
+| inf_v2_walker_foot_r | 103085284485495 | 91645402337491 | 0.86, 0.24, 1.02 | offset 0.000, 0.000, -0.020 |
+| inf_v2_runner_head | 92992241182272 | 119564644087330 | 1.23, 1.49, 1.45 | offset 0.000, -0.382, -0.602 |
+| inf_v2_runner_upper_torso | 112205940493491 | 74886176765658 | 2.03, 2.37, 1.85 | offset 0.000, 0.211, -0.259 |
+| inf_v2_runner_lower_torso | 126259712134046 | 89991471033814 | 2.03, 0.51, 1.11 | offset 0.000, 0.055, -0.035 |
+| inf_v2_runner_upper_arm | 129209031197714 | 73481599973842 | 0.85, 1.21, 0.90 | offset 0.000, -0.005, -0.460 |
+| inf_v2_runner_lower_arm | 122188743008383 | 128171892615453 | 0.74, 1.71, 0.74 | offset 0.000, -0.295, -0.450 |
+| inf_v2_runner_hand | 97826414704368 | 71308604138601 | 0.90, 1.01, 0.60 | offset 0.000, -0.925, -0.410 |
+| inf_v2_runner_upper_leg | 97805557700329 | 113349210045929 | 0.92, 1.42, 1.07 | offset 0.000, -0.030, -0.071 |
+| inf_v2_runner_lower_leg | 106415508101028 | 136872799475575 | 0.96, 1.30, 0.96 | offset 0.000, 0.000, 0.000 |
+| inf_v2_runner_foot | 121298677483978 | 130478122650452 | 1.01, 0.33, 1.15 | offset 0.000, 0.008, 0.075 |
+| inf_v2_brute_head | 76553837381211 | 124944684847008 | 1.44, 1.32, 1.33 | offset 0.048, -0.410, -0.125 |
+| inf_v2_brute_upper_torso | 124063376133641 | 84883874929036 | 3.29, 3.40, 1.91 | offset 0.064, 0.714, 0.094 |
+| inf_v2_brute_lower_torso | 77149886757059 | 82148222597340 | 2.40, 1.00, 1.28 | offset 0.000, -0.300, -0.040 |
+| inf_v2_brute_upper_arm_l | 76176836206722 | 117557196527847 | 0.86, 1.26, 0.82 | offset -0.420, 0.010, -0.001 |
+| inf_v2_brute_upper_arm_r | 124758308397002 | 92652226470288 | 0.92, 1.26, 0.82 | offset 0.450, 0.010, -0.001 |
+| inf_v2_brute_lower_arm_l | 79780586870672 | 129436091872291 | 1.19, 2.12, 1.06 | offset -0.515, -0.500, -0.032 |
+| inf_v2_brute_lower_arm_r | 131988248316791 | 114771819295336 | 1.48, 2.12, 1.34 | offset 0.586, -0.500, 0.000 |
+| inf_v2_brute_hand_l | 96571432842893 | 129139231347890 | 0.98, 0.53, 1.05 | offset -0.420, -1.145, -0.035 |
+| inf_v2_brute_hand_r | 109046248505404 | 76989621475430 | 1.36, 0.81, 1.27 | offset 0.420, -1.255, -0.045 |
+| inf_v2_brute_upper_leg | 76191672765321 | 131707543727441 | 1.04, 1.49, 1.13 | offset 0.030, -0.065, -0.076 |
+| inf_v2_brute_lower_leg | 86489818051367 | 112332897571268 | 1.04, 1.32, 1.07 | offset 0.000, 0.010, -0.025 |
+| inf_v2_brute_foot | 130043563819891 | 71201311804512 | 1.01, 0.36, 1.07 | offset 0.000, 0.027, -0.035 |
+| inf_v2_hocker_head | 140161122857322 | 97478838411507 | 1.84, 1.56, 1.90 | offset 0.000, -0.011, 0.174 |
+| inf_v2_hocker_upper_torso | 138173749193214 | 109159537121829 | 2.16, 2.23, 1.59 | offset 0.000, 0.265, 0.104 |
+| inf_v2_hocker_lower_torso | 116673965788066 | 112474680238891 | 2.05, 1.51, 1.53 | offset 0.000, -0.535, 0.036 |
+| inf_v2_hocker_upper_arm | 103111103864201 | 97101204999702 | 0.83, 1.23, 0.83 | offset 0.000, -0.015, 0.000 |
+| inf_v2_hocker_lower_arm | 110555669059770 | 76786357304301 | 0.70, 1.10, 0.71 | offset 0.000, -0.010, -0.004 |
+| inf_v2_hocker_hand | 117772985136475 | 125282456998603 | 0.90, 0.60, 1.17 | offset 0.000, -0.129, -0.093 |
+| inf_v2_hocker_upper_leg | 84470153407726 | 140112367072665 | 0.89, 1.52, 1.23 | offset 0.000, 0.012, -0.235 |
+| inf_v2_hocker_lower_leg | 105574227113144 | 84270922535712 | 0.99, 1.38, 1.11 | offset 0.000, -0.093, -0.074 |
+| inf_v2_hocker_foot | 89851504280755 | 80020769461600 | 1.01, 0.31, 1.00 | offset 0.000, 0.000, 0.000 |
 | inf_warden_head | 114272288507850 | 137776244732745 | 1.03, 1.20, 1.10 | offset 0.015, 0.050, -0.050 |
 | inf_warden_upper_torso | 129465433234843 | 111029482210404 | 1.94, 2.60, 1.52 | offset 0.000, 0.450, 0.000 |
 | inf_warden_lower_torso | 95229929171070 | 122177919361179 | 2.24, 1.12, 1.09 | offset -0.011, -0.350, -0.065 |
@@ -166,15 +214,6 @@ Lobby meshes (12 `env_fallow_*`, 4 `veh_lantern_*`) uploaded 2026-11-09 to the g
 | pc_assault_upper_leg | 96325067678523 | 114031815727891 | 1.08, 1.59, 1.09 | offset 0.043, -0.115, -0.058 |
 | pc_assault_lower_leg | 131875477288797 | 108866156558305 | 1.01, 1.30, 0.99 | offset 0.000, 0.000, 0.000 |
 | pc_assault_foot | 79144855233866 | 112575972731289 | 1.01, 0.31, 1.00 | offset 0.000, 0.000, 0.000 |
-| npc_crew_head | 131227012252937 | 131903886009421 | 1.26, 1.18, 1.22 | offset 0.000, 0.000, -0.052 (untextured, coloured per figure) |
-| npc_crew_upper_torso | 85978695721727 | 126103295936800 | 1.94, 1.70, 1.10 | offset 0.000, 0.000, -0.050 (untextured, coloured per figure) |
-| npc_crew_lower_torso | 80351304652292 | 112058906942275 | 1.99, 0.40, 1.00 | offset 0.000, 0.000, 0.000 (untextured, coloured per figure) |
-| npc_crew_upper_arm | 110314480935040 | 82793731849114 | 1.04, 1.44, 1.04 | offset 0.000, -0.098, 0.000 (untextured, coloured per figure) |
-| npc_crew_lower_arm | 106413045096439 | 136351375059306 | 1.00, 1.12, 1.00 | offset 0.000, 0.000, 0.000 (untextured, coloured per figure) |
-| npc_crew_hand | 108782428124781 | 113774630304168 | 0.82, 0.32, 0.86 | offset 0.000, 0.000, 0.000 (untextured, coloured per figure) |
-| npc_crew_upper_leg | 101791646143939 | 81438170916012 | 0.99, 1.59, 1.04 | offset 0.000, -0.115, -0.032 (untextured, coloured per figure) |
-| npc_crew_lower_leg | 107324902853571 | 131632832203669 | 0.99, 1.30, 0.97 | offset 0.000, 0.000, 0.000 (untextured, coloured per figure) |
-| npc_crew_foot | 76812379013675 | 96007982604042 | 1.01, 0.71, 1.00 | offset 0.000, 0.198, 0.000 (untextured, coloured per figure) |
 | pc_assault_skinned (skin) | 106205735830249 | 87236345847400 | 3.98, 5.45, 1.26 | switched off (`Config.Player.SkinnedBody`); `MeshAssets.SKINNED_BODIES.body` loads the model id |
 | pc_assault_skinned_parts (hidden rig) | 15 meshes | 89768415142935 | R15 boxes | switched off; `SKINNED_BODIES.parts` |
 | pc_assault_gear_helmet | 106002887456604 | 115206275662165 | 1.34, 1.11, 1.54 | rigid gear for the skinned body, on Head, offset 0.000, 0.095, -0.060 |

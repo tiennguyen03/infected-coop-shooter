@@ -2,12 +2,138 @@
 -- All gameplay tuning values live here. Systems read from this module so
 -- balance changes never require touching system code.
 
+local ObjectiveDefinitions = require(script.Parent.ObjectiveDefinitions)
+
 local Config = {
+	-- The keyboard (owner 2026-11-11, docs/OWNER.md). Every binding and every on-screen key
+	-- hint reads this table (Rules/KeyBindings.label turns a key into its hint), so a hint
+	-- cannot disagree with its key. One key, one action: tests/KeyBindings.spec.luau, which
+	-- also lists the overlaps that are meant. Middle mouse stays free for a ping button.
+	Keys = {
+		Interact = Enum.KeyCode.E, -- hold to revive, and anything else walked up to and used
+		Stim = Enum.KeyCode.V,
+		Shove = Enum.KeyCode.F,
+		Crouch = { Enum.KeyCode.C, Enum.KeyCode.LeftControl }, -- either key
+		Prone = Enum.KeyCode.Z,
+		Flare = Enum.KeyCode.X, -- the Resupply flare
+		Camera = Enum.KeyCode.T, -- first / third person
+		Sprint = Enum.KeyCode.LeftShift,
+		Vault = Enum.KeyCode.Space, -- vault, climb, stand up
+		SwapGun = Enum.KeyCode.Q,
+		Grenade = Enum.KeyCode.G,
+		Reload = Enum.KeyCode.R,
+		CallIns = { Enum.KeyCode.One, Enum.KeyCode.Two, Enum.KeyCode.Three, Enum.KeyCode.Four },
+		Loadout = Enum.KeyCode.B, -- the Arms Room menu
+		NightVision = Enum.KeyCode.N, -- the helmet's night vision goggles, on and off
+		-- Roll and slide have no key of their own (owner 2026-11-11): Sprint twice rolls, and
+		-- holding a Crouch key while sprinting slides (MovementController; StanceController
+		-- does not crouch then).
+	},
+
+	-- The insertion cutscene (Nova, 2026-11-11: "a cutscene of the lantern dropping the squad off
+	-- at the landing zone"; replaces the plain fade-in on the pad, docs/OWNER.md). While the run
+	-- is in Insert every client plays it locally (client InsertionCutscene): the helicopter
+	-- comes in low over the city, flares over the LZ pad, hovers in its own dust while the squad
+	-- drops, and climbs away; letterbox bars, the HUD hidden, the soldier held still. Three
+	-- shots, timed by the phases below (seconds). SkipKeys end it at once for that player. The
+	-- server holds Insert for Seconds plus Run.InsertSeconds and reads the brief at the end.
+	Insertion = {
+		Enabled = true,
+		Approach = 6, -- in from the edge of the map to over the pad
+		Flare = 2.5, -- nose up, bleeding speed, down to the hover
+		Drop = 2.8, -- the hover: dust, the squad jumps out of the door one by one
+		Depart = 3.2, -- climbs and flies off behind the squad
+		Seconds = 14.5, -- the whole cutscene (the four above)
+		-- Seconds between Insert and the cutscene's start, so every client has loaded (in Studio
+		-- the run starts the moment the first body spawns, before the client is up).
+		LeadSeconds = 2.5,
+		StartDistance = 420, -- studs out from the pad, on the line from the map's centre
+		StartHeight = 110, -- studs above the pad at the start
+		CruiseHeight = 30, -- over the pad at the end of the approach
+		HoverHeight = 6, -- skids above the pad during the drop
+		FlarePitch = 14, -- degrees nose up at the height of the flare
+		RotorSpin = 1100, -- degrees a second, main rotor (the tail rotor 3x)
+		-- The Lantern's hubs in its own frame (assets/3d/build/lantern.py HUB, TAIL_HUB; the
+		-- lobby's LanternBird uses the same).
+		Hub = Vector3.new(0, 11.9, 0),
+		TailHub = Vector3.new(-0.6, 11.5, -26.6),
+		-- The squad aboard (Nova: "see the squad sitting in the heli and then see them jumping
+		-- out"): local stand-ins of each body sit on a bench along the cabin's far wall facing the
+		-- open door (+X), then jump out in turn and land where the real body stands, which then
+		-- shows. Lantern frame: origin on the deck at the mast foot, nose +Z, door on +X.
+		-- Seated roots: the stock sit puts the feet 2.32 below the root and the thighs 1.5 below
+		-- (measured on an R15 rig, 2026-11-11), so a root 2.32 over the cabin floor rests the
+		-- feet on it and the bench top sits 1.5 under the root.
+		-- Along the door opening (about Z -3 to +5.6 on the first look's screenshot): the seats
+		-- at Z -4.4 and below were behind the cabin wall aft of the door.
+		Seats = {
+			Vector3.new(-2.1, 4.77, 4.2),
+			Vector3.new(-2.1, 4.77, 2.2),
+			Vector3.new(-2.1, 4.77, 0.2),
+			Vector3.new(-2.1, 4.77, -1.8),
+		},
+		Bench = { Size = Vector3.new(1.4, 0.4, 8.6), At = Vector3.new(-2.5, 3.07, 1.2) },
+		DoorX = 3.6, -- the door sill, where a jumper steps off
+		DeckY = 2.45, -- the cabin floor above the frame's origin (the lobby's crew chief stands on it)
+		JumpStart = 0.3, -- seconds into the hover before the first jump
+		JumpStagger = 0.45, -- seconds between jumpers
+		StepSeconds = 0.3, -- up from the bench to the door
+		FallSeconds = 0.75, -- the door to the ground
+		JumpArc = 1.5, -- studs the jump rises before it falls
+		Animations = {
+			Sit = "rbxassetid://2506281703", -- Roblox's stock R15 sit
+			Fall = "rbxassetid://507767968", -- Roblox's stock R15 fall
+			Idle = "rbxassetid://507766388", -- Roblox's stock R15 idle (a stand-in waiting on its pad)
+		},
+		Letterbox = 0.11, -- share of the screen height each bar covers
+		Fov = 50,
+		RotorVolume = 1,
+		SkipKeys = { Enum.KeyCode.Space, Enum.KeyCode.ButtonA },
+	},
+
+	-- Night vision (Nova, 2026-11-11: the goggles on the soldier's FAST helmet, for a night-time
+	-- area): Keys.NightVision or GamepadKey flips them down and up (client NightVision). The view
+	-- goes green and bright: Lighting exposure raised, a green colour correction with no colour
+	-- of its own, bloom on lights, a slight flicker, the screen edges dark. Local to the player.
+	NightVision = {
+		Enabled = true,
+		GamepadKey = Enum.KeyCode.DPadUp,
+		FlipSeconds = 0.18, -- the blink as the tubes come down or go up
+		Exposure = 2.2, -- added to Lighting.ExposureCompensation (stops)
+		Tint = Color3.fromRGB(120, 255, 150),
+		Brightness = 0.08,
+		Contrast = 0.3,
+		Saturation = -1, -- the tubes see no colour; the tint is the phosphor's
+		Flicker = 0.025, -- random brightness wobble per frame
+		Bloom = { Intensity = 0.7, Size = 24, Threshold = 0.8 },
+		Vignette = 0.22, -- share of the screen each dark edge covers
+		Click = { Bank = "ui_radio", Group = "ui_click", Volume = 0.35, Pitch = 0.8 },
+	},
+
 	Player = {
 		MaxHealth = 100,
 		WalkSpeed = 16,
 		SprintSpeed = 24,
-		-- Stances: LeftControl toggles crouch, C toggles prone; sprint, a vault
+		-- The soldier's look (Nova, 2026-11-11: "not really a fan of how he looks"; "the new look
+		-- should change in match as well"): Roblox's default R15 body wearing catalog items
+		-- (Shared.AvatarLook), on players and bots in the match and on the ship. Enabled = false
+		-- puts the Pike limb body (PLAYER_BODY, dressModel) back. Picks page codes: a tactical
+		-- vest with an olive shirt, slim combat pants, an AVS plate carrier, a black FAST helmet
+		-- (T3 A9 H4). Not R1: that "buzzcut" is a novelty piece worn over the face; not the P2
+		-- plate carrier: rigid, it poked through the shirt's own vest.
+		Look = {
+			Enabled = true,
+			PlayerFace = true, -- each player wears their own avatar's head, face and skin tone (bots: the default)
+			Items = {
+				135730034330771,
+				74956577347922,
+				92700467676199,
+			},
+			Skin = Color3.fromRGB(176, 140, 112),
+			Shirt = Color3.fromRGB(86, 92, 66), -- under the clothing
+			Trousers = Color3.fromRGB(60, 62, 56),
+		},
+		-- Stances: Keys.Crouch toggles crouch, Keys.Prone toggles prone; sprint, a vault
 		-- or a climb stands the body up. Speeds are factors of WalkSpeed (no sprint while low).
 		Stances = {
 			CrouchSpeedFactor = 0.5,
@@ -41,6 +167,21 @@ local Config = {
 		},
 	},
 
+	-- Stamina (Rules/Stamina; client SprintController owns it, StaminaUI shows it, the same
+	-- trust as sprint itself). A full bar is ~8 s of sprint; empty to full is ~5.5 s. At
+	-- zero the body is winded: no sprint, roll or slide until WindedRecover (~2.1 s).
+	-- Vault, climb and shove are free; downed or knocked down nothing drains. Bots have none.
+	Stamina = {
+		Max = 100,
+		SprintDrain = 12, -- per second while sprinting and moving
+		Regen = 22, -- per second
+		RegenDelay = 1, -- seconds after the last drain or spend before it comes back
+		WindedRecover = 25, -- winded ends here
+		RollCost = 20,
+		SlideCost = 10, -- paid once on entry, however long the hill
+		BarHideAfter = 2, -- seconds full before the bar fades out
+	},
+
 	-- Vault / climb replaces the stock jump: Space, or sprinting into cover,
 	-- sends the body over or onto whatever is in front of it. Heights are the ledge top
 	-- above the feet. Jersey 2.75, hesco 4.6, bunker 6.3, humvee 7.1, container 9.6 pass;
@@ -65,12 +206,34 @@ local Config = {
 			Acceleration = 60, -- 0 -> walk (16) in ~0.27 s, 0 -> sprint (24) in 0.4 s
 			Deceleration = 75, -- walk -> stop in ~0.2 s; a full reversal ~0.45 s
 		},
-		-- Sprint + LeftControl: a short roll along the move direction. Infected melee skips
+		-- Keys.Sprint twice: a short roll along the move direction. Infected melee skips
 		-- the body for the roll (CoverMoveService, same window as a vault).
-		Roll = { Duration = 0.8, Speed = 25, Cooldown = 1 },
-		-- Sprint + C: a longer slide that bleeds speed from StartSpeed to EndSpeed. No
-		-- immunity; it covers ground, the roll dodges.
-		Slide = { Duration = 0.95, StartSpeed = 30, EndSpeed = 14, Cooldown = 1.2 },
+		-- Sprint twice within DoubleTap seconds rolls (the first press is the sprint).
+		Roll = { Duration = 0.8, Speed = 25, Cooldown = 1, DoubleTap = 0.3 },
+		-- Sprint + hold a Keys.Crouch key: a slide that lasts while the key is down (never
+		-- shorter than MinHold) and keeps the body's momentum (Rules/Slide). It starts at the
+		-- speed going in plus EntryBoost, loses Friction per second, and the floor adds
+		-- SlopeAccel x the slope's sine: flat from a sprint is 30 -> 14 in ~0.95 s, a 16
+		-- degree downhill holds its speed, steeper gains up to MaxSpeed, uphill dies in
+		-- about half the time. Over at MinSpeed or MaxDuration; speed above the walk or
+		-- sprint speed then bleeds off at ExitDecel instead of snapping. No immunity; it
+		-- covers ground, the roll dodges. The clip plays over ClipDuration and holds its
+		-- pose at ClipHoldAt (a fraction of it) while the slide outlasts it.
+		Slide = {
+			EntryBoost = 6, -- studs/s on top of the speed going in
+			MinEntrySpeed = 24, -- studs/s; a slide never starts slower
+			Friction = 17, -- studs/s per second
+			SlopeAccel = 60, -- studs/s per second on a sheer drop, scaled by the slope
+			MaxSpeed = 40,
+			MinSpeed = 14,
+			MaxDuration = 6, -- seconds; the longest hill ends here
+			MinHold = 0.35, -- seconds; a tap still slides this long
+			ExitDecel = 40, -- studs/s per second back down to the walk or sprint speed
+			FloorProbe = 6, -- studs under the root that count as the floor
+			ClipDuration = 0.95,
+			ClipHoldAt = 0.6,
+			Cooldown = 1.2,
+		},
 		AutoVaultSprinting = true, -- sprinting into cover vaults without pressing Space
 		Infected = {
 			LowHeight = 5, -- a top above this uses the form's climbHigh clip (Runners)
@@ -95,12 +258,19 @@ local Config = {
 			headshot = Color3.fromRGB(255, 214, 90),
 			kill = Color3.fromRGB(235, 60, 50),
 		},
+		-- The burst everyone sees where an Infected dies: dark blood, STYLES `wound` mid
+		-- fading to `wound` dark. Never green (owner).
+		KillBurst = {
+			Color = Color3.fromRGB(142, 38, 48),
+			ColorEnd = Color3.fromRGB(86, 22, 32),
+			Count = 14,
+		},
 	},
 
 	-- Bot squadmates (BotService): generic Pike soldiers fill the squad in solo, one
 	-- fewer per real player. Server-side bodies on the Squad roster: the Infected target
 	-- them, they follow the nearest player in formation and shoot the nearest Infected they
-	-- can see. Downed/revive and call-ins come with Sprint A step 6 and the loadout rework.
+	-- can see, revive, stim, throw frags and call fire missions.
 	Bots = {
 		Count = 3, -- bots when one player is on; squad size caps at 4
 		-- The squad's radio callsigns (Squad): players take the lowest free one as they join
@@ -118,11 +288,90 @@ local Config = {
 		},
 		FollowSlack = 4, -- closer than this to the slot: stand
 		RunBeyond = 16, -- further than this: run
-		TeleportBeyond = 80, -- further than this (stuck, fell behind): reappear in the slot
-		-- Stuck on a doorway or a stair: moved less than StuckDistance toward a
-		-- far slot for StuckSeconds -> reappear in the slot at floor level.
-		StuckSeconds = 3,
-		StuckDistance = 1,
+		CatchUpBeyond = 45, -- further than this: sprint flat out to catch up
+		CatchUpSpeed = 30,
+		-- A bot walks to its slot. In a straight line while the slot is within DirectWithin,
+		-- on its level (DirectMaxRise) and in sight; otherwise along a PathfindingService path
+		-- (doors, stairs, ramps), asked for again no sooner than PathInterval after the last
+		-- and only once the slot has moved PathRegoal; one request per PathStagger across all
+		-- bots.
+		DirectWithin = 16,
+		DirectMaxRise = 4,
+		DirectGiveUp = 1.5, -- seconds stalled on the straight line (low cover) before it paths
+		NearLeader = 8, -- the slot is out of reach but the leader is this close: stand
+		PathInterval = 1,
+		PathRegoal = 6,
+		PathStagger = 0.3,
+		PathAgentRadius = 1.5, -- fits a 4-wide door
+		PathAgentHeight = 5,
+		PathWaypointSpacing = 4,
+		PathWaypointReach = 3, -- studs: the next waypoint counts as reached
+		-- The last resort (Rules/BotBrain.shouldTeleport): further than TeleportMinDistance
+		-- from the leader and moved less than StuckDistance for StuckSeconds
+		-- (NoPathStuckSeconds once PathFailLimit paths in a row were not found), or FallBelow
+		-- studs under the leader (out of the world). It reappears in the first formation slot
+		-- (or TeleportBehind studs behind the leader) no living player is facing
+		-- (TeleportViewDot: the cosine of the half view angle), then not again for
+		-- TeleportCooldown.
+		TeleportMinDistance = 30,
+		StuckSeconds = 6,
+		NoPathStuckSeconds = 3,
+		StuckDistance = 3,
+		PathFailLimit = 3,
+		FallBelow = 80,
+		TeleportBehind = 18,
+		TeleportViewDot = 0.3,
+		TeleportCooldown = 10,
+		-- Consumables: a bot carries a soldier's stims and frags (Config.Stim.Carried,
+		-- Config.Grenade.Carried) per run; a Restock card taken by any player refills them.
+		-- It looks for a throw every ScanInterval while it has a target, over the nearest
+		-- ScanMax Infected.
+		ScanInterval = 1,
+		ScanMax = 30,
+		StimBelow = 0.4, -- share of health at or under which it stims
+		StimCooldown = 8,
+		Grenade = {
+			MinCluster = 4, -- Infected inside the frag's Radius
+			FriendMargin = 4, -- studs past the Radius kept clear of every squad member
+			Cooldown = 12, -- seconds between two throws by one bot
+		},
+		-- Boss fights (the Warden; any Infected whose EnemyDefinitions row is a Boss). While
+		-- the boss is within Engage of a bot's leader the bot leaves its formation slot for a
+		-- post StandOff from the boss on the leader's side, the slots SpreadDegrees apart
+		-- (Rules/BotBrain.standOff), and backs off as he comes. StandOff is past every close
+		-- attack (the Pound reaches 12 x ScaleReach 1.9 = 23 studs) and inside the rifle's
+		-- Range. Enabled = false: slots, StimBelow and ReviveSafeRadius only, as before.
+		Boss = {
+			Enabled = true,
+			Engage = 60,
+			StandOff = 32,
+			SpreadDegrees = 40, -- 22 studs between neighbours at StandOff; a charge is 19 wide
+			Slack = 5, -- closer than this to the post: stand
+			StimBelow = 0.6, -- stims earlier than StimBelow while the boss is engaged
+			ReviveClear = 26, -- no revive while the boss is this close to the downed body
+			PuddleMargin = 3, -- steps this far past the edge of a caustic puddle it stands in
+			ScanInterval = 0.5, -- seconds between looks for a boss on the field
+			-- A telegraphed disc or line (IndexService danger attributes): the bot runs
+			-- DodgeMargin past its edge at DodgeSpeed. These two apply with Enabled off too.
+			DodgeMargin = 5,
+			DodgeSpeed = 30,
+		},
+		-- Fire missions: each bot carries one (Kit, by bot slot; CallInDefinitions ids with a
+		-- ring Aim), thrown at MinCluster Infected inside its BlastRadius or at a heavy (an
+		-- Infected with MaxHealth of HeavyHealth or more: a Brute, a boss). Never with a squad
+		-- member inside its Aim radius + FriendMargin. One per bot every Cooldown, none in the
+		-- first FirstDelay of a run, and SquadGap between any two bots' missions. Radio is the
+		-- subtitle: callsign, then the call-in's name. Placeholder line (lore developer).
+		CallIn = {
+			Kit = { "hammer", "anvil", "hammer" },
+			MinCluster = 8,
+			HeavyHealth = 250,
+			FriendMargin = 6,
+			Cooldown = 180,
+			FirstDelay = 45,
+			SquadGap = 45,
+			Radio = "%s: %s on the way. Stay clear of the mark.",
+		},
 		-- A bot fires the service rifle (same Damage, magazine and reload as the player:
 		-- WeaponDefinitions) slower than the player, so three bots on sustained fire (3 x ~67
 		-- DPS burst) roughly equal one player; its reserve is infinite. Fallback 0.35 if they
@@ -138,17 +387,79 @@ local Config = {
 		ReviveSafeRadius = 12, -- ...unless an Infected is this close to the downed body
 	},
 
+	-- The outline every squadmate (player or bot) wears, seen through walls (AllyOutline,
+	-- owner 2026-11-11). A thin line, no fill; it changes colour while they are downed.
+	AllyOutline = {
+		Enabled = true,
+		Color = Color3.fromRGB(150, 205, 235), -- pale blue: reads as "friend", unlike any Infected colour
+		DownedColor = Color3.fromRGB(230, 189, 96), -- the HUD yellow: needs a revive
+		Transparency = 0.45, -- of the line (0 = solid): kept light on purpose
+		DownedTransparency = 0.1,
+	},
+
 	-- Downed / revive (decision #3, Squad). A lethal hit downs a member instead of killing:
-	-- prone, no moving or firing, not a target, takes no damage. A squadmate holds F next
+	-- prone, no moving or firing, not a target, takes no damage. A squadmate holds Keys.Interact next
 	-- to them (bots revive on their own) to stand them up; the timer running out kills.
 	Downed = {
 		BleedOutSeconds = 30,
-		ReviveHold = 3, -- seconds of holding F
+		ReviveHold = 3, -- seconds of holding Keys.Interact
 		ReviveRadius = 8, -- studs
 		ReviveHealthFraction = 0.5,
 		DownedHealth = 1,
-		MaxRevives = 2, -- per run; the next lethal hit after that kills outright
+		MaxRevives = 2, -- per mission; the next lethal hit after that kills outright
 		CrawlSpeed = 3, -- studs/s: a downed body crawls on hands and knees toward cover or help
+	},
+	-- The revive animation (ReviveAnimService, Shared.ReviveAnimation, Rules/ReviveAnim;
+	-- docs/PROGRESSION.md > Downed and revive). Looks only: the hold, the radius and what
+	-- interrupts a revive stay in Downed above. The kneel and the lying body are existing
+	-- clips; the arms are solved onto the casualty's chest each frame on every client.
+	ReviveAnimation = {
+		Enabled = true, -- false: the reviver stands and holds the interact key, the body crawls (as before)
+		KneelSeconds = 0.3, -- down onto the knee
+		StandSeconds = 0.3, -- back up when the hold is let go
+		LieSeconds = 0.35, -- the casualty rolls from all fours onto their back
+		FinishSeconds = 0.9, -- the pull-up once the revive lands
+		PullShare = 0.6, -- share of FinishSeconds the reviver's hand stays on the casualty
+		RecoverSeconds = 1.0, -- the casualty's get-up clip is fitted to this
+		BotHoldSeconds = 0.6, -- a bot stands still this long into its pull-up or get-up
+		MoveBreakSpeed = 2, -- studs/s: walking (or crawling) faster than this breaks the pose...
+		MoveResumeSpeed = 0.5, -- ...until the body is slower than this again
+		-- The kneel point (Rules/ReviveAnim.kneelPoints), in the lying casualty's root space,
+		-- flat: the chest of the lying pose and the direction from feet to head.
+		Chest = { X = 0.9, Z = 0.7 },
+		BodyAxis = { X = 0.86, Z = 0.51 },
+		KneelDistance = 1.9, -- studs from the chest to the reviver's root
+		KneelTurn = 30, -- degrees the reviver turns left of the chest: the kneel clip's shoulders face right
+		MaxNudge = 8, -- studs (the prompt reaches 8): further than this from both kneel points, the reviver kneels where they stand
+		NudgeSeconds = 0.25, -- the slide to the kneel point...
+		NudgeSpeed = 14, -- ...never faster than this, studs/s
+		GroundTolerance = 1.5, -- studs the floor at a kneel point may differ from the floor underfoot
+		-- The treat: both hands press a dressing into the chest.
+		PressRate = 1.5, -- presses per second
+		PressDepth = 0.22, -- studs the hands travel
+		PressLean = 7, -- degrees the upper body leans into each press
+		HandGap = 0.16, -- studs each hand sits to its side of the chest's centre
+		HandLift = 0.12, -- studs the palms sit above the chest surface
+		HandLength = 0.3, -- studs from the wrist to the palm
+		BlendSeconds = 0.25, -- the arms ease onto the chest and off it
+		ReachSlack = 1.15, -- a chest further than the arm's length times this is out of reach...
+		-- ...and the hands work at this point in front of the knee instead (root space).
+		FallbackTarget = Vector3.new(0.6, -2.0, -1.6),
+		ElbowOut = Vector3.new(1, 0.8, 0.4), -- which way the right elbow points (root space; the left is mirrored)
+		-- The rifle rides across the back while both hands work (each client moves its own
+		-- copy of the grip weld; the shot origin is not touched on the server). false: the
+		-- rifle stays in the right hand and only the left hand treats.
+		SlingRifle = true,
+		Sling = {
+			Position = Vector3.new(0.35, -0.3, 0.65), -- the grip, in the upper torso's space
+			Barrel = Vector3.new(-0.45, 0.9, 0), -- where the muzzle points: up past the left shoulder
+		},
+		-- The casualty: the last frame of the knockdown clip, held. That frame sits low on a
+		-- standing root, so the body is raised to rest on the floor.
+		CasualtyLift = 1.0, -- studs
+		CasualtyNod = 5, -- degrees the head rocks with each press
+		-- A soft cloth-and-gear rustle from the reviver while they work.
+		Sound = { Bank = "player_gear", Group = "roll", Interval = 1.3, Volume = 0.22 },
 	},
 	-- Knocked down (the Warden's Pound and Stomp; Squad.knock): KnockedUntil on the
 	-- character. No moving, firing, abilities or reloading; still a target for the Infected.
@@ -156,6 +467,25 @@ local Config = {
 	Knockdown = {
 		GetUp = 1.0,
 		Grace = 1.0, -- after standing: no second knockdown (its damage still lands)
+	},
+	-- Squad status panel (client SquadPanelUI, Rules/SquadPanel; owner 2026-11-11: no
+	-- floating health bars, squadmates' status in a side panel). One row per other squad
+	-- member on the left edge under the top-left HUD. Offsets are 1080p pixels (HudTheme).
+	SquadPanel = {
+		Enabled = true,
+		-- true restores the old floating bars: the billboard over a hurt Infected and
+		-- Roblox's own bar over squadmates. Names: Roblox's name tag over squadmates.
+		OverheadBars = false,
+		OverheadNames = false,
+		Top = 176, -- under the health stack, the ability circles and the resupply line
+		Width = 190,
+		RowHeight = 32,
+		RowGap = 8,
+		MaxRows = 3,
+		LowFraction = 0.3, -- under this share of health the row turns red
+		BigHitFraction = 0.25, -- losing this share of max health in one hit flashes the row
+		FlashSeconds = 0.45,
+		TickSeconds = 0.25, -- countdown refresh, only while someone is down or dead
 	},
 
 	-- Run flow (RunManager, Shared.RunStates). Co-op Sprint A.
@@ -185,6 +515,45 @@ local Config = {
 		ReturnAfterSeconds = 60, -- after a run ends, the squad flies home this long after the results screen opens
 		Retries = 2, -- teleport retries before giving up
 		RetryDelay = 2, -- seconds between them
+	},
+
+	-- Merits, the soft currency (owner 2026-11-10; docs/OWNER.md): what one mission pays every
+	-- real player in the squad, dead or alive, when it ends (MeritService, Rules/Economy).
+	-- Never per kill. Bots earn nothing. Saved on the record the lobby reads (Rules/Record,
+	-- Config.Lobby.Save.RecordStore).
+	Merits = {
+		Win = 120, -- the squad extracted
+		Partial = 60, -- wiped after the Primary was done
+		Loss = 0, -- wiped before it
+		Secondary = 30, -- added per Secondary done (no mission tracks Secondaries yet: pays 0)
+		Retries = 2, -- extra attempts after a failed save
+		RetryDelay = 1, -- seconds between them
+		SettleSeconds = 6, -- the trip home waits this long at most for the pay to be saved
+	},
+
+	-- Tabs, the hard currency (owner 2026-11-10; docs/OWNER.md): bought with Robux or granted
+	-- by events; they buy cosmetics and conveniences, never power. Nothing is sold for tabs yet.
+	Tabs = {
+		-- Robux packs (TabsService, Rules/Economy.tabsFor): one developer product each.
+		-- ProductId 0 = not created on Roblox yet; such a pack can never be bought or paid.
+		Products = {
+			{ ProductId = 0, Tabs = 100 },
+			{ ProductId = 0, Tabs = 550 },
+			{ ProductId = 0, Tabs = 1200 },
+		},
+		ReceiptsKept = 50, -- Robux receipts remembered per record, so one never pays twice
+	},
+
+	-- The wallet readout (owner 2026-11-11; shared WalletReadout): merits and tabs as a mark and
+	-- a number each, in the Carrier's top bar and on the match's results screen. The marks are
+	-- the icon generator's glyphs (assets/icons/build/icons.js, ids in assets/icons/ASSET_IDS.md).
+	Wallet = {
+		-- The decals' thumbnails: their image ids are not resolved yet (ASSET_IDS.md).
+		MeritsIcon = "rbxthumb://type=Asset&id=117675850420015&w=150&h=150", -- the medal
+		TabsIcon = "rbxthumb://type=Asset&id=107657168929182&w=150&h=150", -- the steel tag
+		Size = 20, -- px at 1080p: the mark and its number
+		CountSeconds = 0.6, -- a changed balance counts to the new one over this long
+		PulseScale = 0.35, -- the mark swells by this much as a change lands, then settles
 	},
 
 	Run = {
@@ -217,25 +586,29 @@ local Config = {
 		PivotHeight = { stand = 2, crouch = 0.6, prone = -1.2 },
 		PivotEaseTime = 0.25,
 		-- First person (Nova, 2026-11-10: "a first person toggle for players in the match"):
-		-- T (or the right stick click) toggles it; the wheel past MinDistance goes in, the
+		-- Keys.Camera (or the right stick click) toggles it; the wheel past MinDistance goes in, the
 		-- wheel back out leaves it. The eye rides the Head, a little forward of its centre;
 		-- the soldier's own body is hidden on this client, and FirstPersonView shows the held
 		-- gun with gloved hands and sleeves, its own reload, kick, sway and bob.
 		-- The crosshair fades out down the sights so the iron sights or scope do the aiming.
 		FirstPerson = {
-			Key = Enum.KeyCode.T,
 			GamepadKey = Enum.KeyCode.ButtonR3,
 			EyeForward = 0.45, -- studs ahead of the head's centre
 			EyeUp = 0.1,
-			GunHip = CFrame.new(0.9, -0.95, -2.6), -- the gun's centre from the eye, at the hip
-			GunAds = CFrame.new(0, 0, -2.1), -- down the sights: centred, this far ahead
-			SightEye = 1.2, -- down the sights: the rear sight this far ahead of the eye (full size)
-			SightDrop = 0.55, -- a gun without modelled irons: its centre this share of its height low
+			-- Where the gun sits (at the hip, down the sights) comes from the gun's own sight:
+			-- Weapon.Sights and Weapons.<id>.Sight below.
 			Sway = 0.6, -- how much of a camera turn the gun lags behind (eases back)
+			AdsSway = 0.25, -- the share of that lag left down the sights (they stay lined up)
 			Bob = 0.06, -- studs the gun bobs at a full walk (none down the sights)
 			KickBack = 0.18, -- studs a shot pushes the gun back
+			AdsKick = 0.4, -- the share of KickBack left down the sights (the rear sight is close)
 			KickPitch = 4, -- degrees a shot tips the muzzle up
-			Scale = 0.4, -- the viewmodel shrunk toward the eye (same look, nothing cuts into it)
+			SwapDip = 0.7, -- studs the gun drops out of view and back during a Q swap
+			-- The viewmodel shrunk toward the eye (same look, nothing cuts into it). It grows
+			-- past this only as far as a close rear sight needs to stay NearMargin times
+			-- outside the camera's near plane (Rules/Sight.viewScale).
+			Scale = 0.4,
+			NearMargin = 1.25,
 		},
 		-- Per-shot kick (CameraController): each gun's Weapons.<id>.Kick pushes the view up by
 		-- Pitch degrees plus a random +/- Yaw, eased back over Recover seconds (never a
@@ -284,26 +657,67 @@ local Config = {
 			FOV = 55, -- degrees (hip is the engine default, 70)
 			EnterTime = 0.15, -- seconds to settle into or out of the sights
 		},
+		-- First person: what every gun's `Sight` (Weapons.<id>.Sight) falls back on, and the
+		-- scope picture (Rules/Sight, FirstPersonView, ScopeView; docs/STYLES.md > First person).
+		-- A row's Sight names its mesh's Rear and Front sight points (from the grip, barrel
+		-- along -Z; taken from assets/3d/build/guns.py) and may override Kind ("irons" |
+		-- "scope"), Hold, EyeRelief and Zoom. Third person keeps ADS above for every gun.
+		Sights = {
+			Zoom = 1.35, -- irons: the view this many times larger than the hip (FOV 70 -> 55)
+			ScopeZoom = 4, -- a scope that names none
+			-- Studs from the eye back from the rear sight, at the gun's real size, by Hold:
+			-- a cheek on the stock, or a pistol at arm's length.
+			EyeRelief = { long = 0.35, sidearm = 1.0, shoulder = 0.35 },
+			ScopeRelief = 0.3, -- the eye behind a scope's eyepiece
+			-- Where the grip (the right hand) sits from the eye at the hip, by Hold: a long gun
+			-- low right, a sidearm closer and nearer the middle, a launcher on the shoulder.
+			Hold = {
+				long = Vector3.new(0.89, -1.03, -2.12),
+				sidearm = Vector3.new(0.55, -0.8, -1.7),
+				shoulder = Vector3.new(0.62, -0.78, -1.15),
+			},
+			-- Sights and shot agree here: the spec fails a gun whose sight line stands so far
+			-- off its bore that the two differ visibly at this range (studs).
+			ZeroDistance = 100,
+			ScopeTime = 0.25, -- seconds into or out of a scope (irons: ADS.EnterTime)
+			-- The scope picture: a round lens on the screen's centre, black around it.
+			Scope = {
+				Lens = 0.4, -- lens radius as a share of the screen's height
+				Rows = 44, -- strips the black round the lens is cut into (ScopeView)
+				Shadow = { 0.25, 0.5, 0.75 }, -- transparency of the soft rings inside the rim
+				ShadowWidth = 0.035, -- each ring's width as a share of the lens radius
+				Line = 1, -- pixels: the fine crosshair
+				Post = 4, -- pixels: the three heavy posts
+				PostGap = 0.3, -- the posts stop this share of the radius short of the centre
+				Ticks = 4, -- range marks each way along the fine crosshair
+				TickStep = 0.055, -- their spacing as a share of the radius
+				Dot = 4, -- pixels: the red centre dot
+				-- The own tracer is drawn from this far out (studs): at the barrel it would
+				-- streak across the magnified lens.
+				TracerStart = 30,
+			},
+		},
 	},
 
 	-- The guns (WeaponDefinitions rows read these; docs/PROGRESSION.md > Loadout has the
 	-- table and the reasoning). Real-world fire rates: FireCooldown = 60 / rpm. Spreads are
 	-- half-angles in degrees: hip, ADS, then BloomPerShot per round up to BloomMax on top,
 	-- recovering at BloomRecovery degrees per second. AdsMoveFactor scales the walk while
-	-- aiming (sprint is off). Reserve is rounds beyond the loaded magazine; a pallet fills it
-	-- to ReserveMax. Pellets: rounds per trigger pull (Damage is per pellet). Pierce: Infected
+	-- aiming (sprint is off). Reserve is rounds beyond the loaded magazine: a soldier lands
+	-- with ReserveStart (about half, so the first pallet matters) and a pallet fills it to
+	-- ReserveMax. Pellets: rounds per trigger pull (Damage is per pellet). Pierce: Infected
 	-- a round passes through after the first. FireMode "semi": one round per click.
 	Weapons = {
 		-- M16A4, the baseline: Walker 3 body / 1 head, Brute 13 / 11; burst DPS 250. Bloom
-		-- makes a held trigger spray at range, so 3-5 round bursts are the skill. 30 + 240 =
-		-- 9 mags: the Warden fight never runs it dry at the pallet costs below.
+		-- makes a held trigger spray at range, so 3-5 round bursts are the skill. Re-armed:
+		-- 30 + 240 = 9 mags, the Warden fight never runs it dry at the pallet costs below.
 		ServiceRifle = {
 			FireMode = "auto",
 			Damage = 20,
 			FireCooldown = 0.08, -- 750 rpm
 			MagazineSize = 30,
 			ReloadTime = 2.2,
-			ReserveStart = 240,
+			ReserveStart = 120,
 			ReserveMax = 240,
 			HipSpread = 1.5, -- about a stud off at 40 studs
 			AdsSpread = 0.3,
@@ -315,6 +729,8 @@ local Config = {
 			HeadshotMultiplier = 3.0, -- EnemyDefinitions may override per form
 			Kick = { Pitch = 0.9, Yaw = 0.3, Recover = 0.12 }, -- degrees up, +/- degrees, seconds
 			Model = "wpn_m16",
+			-- The flip-up peep's centre and the A2 post's tip (guns.py m4_rear_sight, m4_front_sight).
+			Sight = { Rear = Vector3.new(0, 0.615, 0.04), Front = Vector3.new(0, 0.615, -1.345) },
 			Price = 0, -- merits at the Quartermaster's rack (Rules/Record); issued free
 			ArmsOrder = 1, -- Arms Room position in its slot (rack, menu); the first is the default
 		},
@@ -325,7 +741,7 @@ local Config = {
 			FireCooldown = 0.075, -- 800 rpm
 			MagazineSize = 30,
 			ReloadTime = 1.8,
-			ReserveStart = 210,
+			ReserveStart = 120,
 			ReserveMax = 210,
 			HipSpread = 0.9,
 			AdsSpread = 0.6,
@@ -337,6 +753,12 @@ local Config = {
 			HeadshotMultiplier = 3.0,
 			Kick = { Pitch = 0.5, Yaw = 0.2, Recover = 0.12 },
 			Model = "wpn_mp5",
+			-- The drum's peep and the hooded post's tip.
+			Sight = {
+				Rear = Vector3.new(0, 0.585, 0.05),
+				Front = Vector3.new(0, 0.585, -0.85),
+				Zoom = 1.25,
+			},
 			Price = 300, -- merits at the Quartermaster's rack (Rules/Record)
 			ArmsOrder = 2,
 			Sound = "smg",
@@ -348,7 +770,7 @@ local Config = {
 			FireCooldown = 0.075, -- 800 rpm
 			MagazineSize = 100,
 			ReloadTime = 5.5,
-			ReserveStart = 300,
+			ReserveStart = 150,
 			ReserveMax = 300,
 			HipSpread = 3.0,
 			AdsSpread = 0.5,
@@ -360,6 +782,8 @@ local Config = {
 			HeadshotMultiplier = 3.0,
 			Kick = { Pitch = 1.1, Yaw = 0.5, Recover = 0.12 },
 			Model = "wpn_m249",
+			-- The leaf's peep on the feed cover and the eared post by the muzzle.
+			Sight = { Rear = Vector3.new(0, 0.68, 0.03), Front = Vector3.new(0, 0.68, -1.68) },
 			Price = 600, -- merits at the Quartermaster's rack (Rules/Record)
 			ArmsOrder = 3,
 			Sound = "lmg",
@@ -374,7 +798,7 @@ local Config = {
 			FireCooldown = 0.75, -- 80 rpm
 			MagazineSize = 8,
 			ReloadTime = 3.5,
-			ReserveStart = 40,
+			ReserveStart = 20,
 			ReserveMax = 40,
 			HipSpread = 5.0,
 			AdsSpread = 3.5,
@@ -386,6 +810,12 @@ local Config = {
 			HeadshotMultiplier = 1.5,
 			Kick = { Pitch = 4.0, Yaw = 0.8, Recover = 0.12 },
 			Model = "wpn_mossberg",
+			-- No rear sight: the back of the receiver's top channel, level with the bead's centre.
+			Sight = {
+				Rear = Vector3.new(0, 0.5, 0.05),
+				Front = Vector3.new(0, 0.5, -1.79),
+				Zoom = 1.2,
+			},
 			Price = 400, -- merits at the Quartermaster's rack (Rules/Record)
 			ArmsOrder = 4,
 			Sound = "shotgun",
@@ -400,7 +830,7 @@ local Config = {
 			FireCooldown = 0.2, -- 300 rpm
 			MagazineSize = 20,
 			ReloadTime = 2.6,
-			ReserveStart = 80,
+			ReserveStart = 40,
 			ReserveMax = 80,
 			HipSpread = 4.0,
 			AdsSpread = 0.1,
@@ -412,6 +842,13 @@ local Config = {
 			HeadshotMultiplier = 3.0,
 			Kick = { Pitch = 2.6, Yaw = 0.4, Recover = 0.12 },
 			Model = "wpn_m110",
+			-- The scope's eyepiece and objective, on its axis.
+			Sight = {
+				Kind = "scope",
+				Rear = Vector3.new(0, 0.64, 0.17),
+				Front = Vector3.new(0, 0.64, -0.79),
+				Zoom = 3.5,
+			},
 			Price = 500, -- merits at the Quartermaster's rack (Rules/Record)
 			ArmsOrder = 5,
 			Sound = "dmr",
@@ -423,7 +860,7 @@ local Config = {
 			FireCooldown = 0.15, -- 400 rpm
 			MagazineSize = 17,
 			ReloadTime = 1.5,
-			ReserveStart = 68,
+			ReserveStart = 34,
 			ReserveMax = 68,
 			HipSpread = 1.2,
 			AdsSpread = 0.5,
@@ -435,6 +872,13 @@ local Config = {
 			HeadshotMultiplier = 3.0,
 			Kick = { Pitch = 1.6, Yaw = 0.3, Recover = 0.12 },
 			Model = "wpn_m17",
+			-- The rear notch's tops and the front post's top.
+			Sight = {
+				Hold = "sidearm",
+				Rear = Vector3.new(0, 0.45, 0.11),
+				Front = Vector3.new(0, 0.45, -0.43),
+				Zoom = 1.15,
+			},
 			Price = 0, -- merits at the Quartermaster's rack (Rules/Record); issued free
 			ArmsOrder = 1,
 			Sound = "pistol",
@@ -451,7 +895,7 @@ local Config = {
 			FireCooldown = 0.4, -- 150 rpm
 			MagazineSize = 6,
 			ReloadTime = 2.8, -- speedloader
-			ReserveStart = 30,
+			ReserveStart = 18,
 			ReserveMax = 30,
 			HipSpread = 1.8,
 			AdsSpread = 0.4,
@@ -463,6 +907,16 @@ local Config = {
 			HeadshotMultiplier = 3.0,
 			Kick = { Pitch = 3.0, Yaw = 0.6, Recover = 0.18 },
 			Model = "wpn_revolver",
+			-- The front blade's top, sighted over the hammer spur: on this mesh the spur (top
+			-- 0.463 at z 0.1) stands 0.013 above the rear notch (0.45 at z -0.02) and hides it
+			-- from the eye, so the line clears the spur by 0.013 (the red insert shows over it)
+			-- until the mesh is rebuilt with a lower hammer; then Rear is the notch.
+			Sight = {
+				Hold = "sidearm",
+				Rear = Vector3.new(0, 0.476, 0.1),
+				Front = Vector3.new(0, 0.45, -0.69),
+				Zoom = 1.15,
+			},
 			Price = 350, -- merits at the Quartermaster's rack (Rules/Record)
 			ArmsOrder = 2,
 			Sound = "revolver",
@@ -477,7 +931,7 @@ local Config = {
 			FireCooldown = 1.25, -- 48 rpm (bolt cycle)
 			MagazineSize = 5,
 			ReloadTime = 3.2,
-			ReserveStart = 30,
+			ReserveStart = 15,
 			ReserveMax = 30,
 			HipSpread = 6.0,
 			AdsSpread = 0.05,
@@ -489,6 +943,13 @@ local Config = {
 			HeadshotMultiplier = 3.0,
 			Kick = { Pitch = 5.0, Yaw = 0.8, Recover = 0.25 },
 			Model = "wpn_sniper",
+			-- The scope's eyepiece and objective, on its axis.
+			Sight = {
+				Kind = "scope",
+				Rear = Vector3.new(0, 0.62, 0.23),
+				Front = Vector3.new(0, 0.62, -0.97),
+				Zoom = 6,
+			},
 			Price = 700, -- merits at the Quartermaster's rack (Rules/Record)
 			ArmsOrder = 6,
 			Sound = "sniper",
@@ -517,18 +978,27 @@ local Config = {
 			ProjectileSpeed = 220, -- studs/s
 			Explosive = { Radius = 6, Damage = 120, ShakePower = 4 },
 			Model = "wpn_goose",
+			-- The 3x sight on the tube's left: its eyepiece and objective.
+			Sight = {
+				Kind = "scope",
+				Hold = "shoulder",
+				Rear = Vector3.new(-0.3, 0.54, -0.23),
+				Front = Vector3.new(-0.3, 0.54, -0.6),
+				Zoom = 3,
+			},
 			Price = 900, -- merits at the Quartermaster's rack (Rules/Record)
 			ArmsOrder = 7,
 			Sound = "goose",
 		},
 	},
 
-	-- The soldier's kit beside the guns (KitService; docs/PROGRESSION.md > Loadout). G throws a
-	-- grenade (Carried; a pallet re-arm refills them), V shoves, E uses a stim (a Medkit card
+	-- The soldier's kit beside the guns (KitService; docs/PROGRESSION.md > Loadout). Keys.Grenade throws a
+	-- grenade (Carried; a pallet re-arm refills them), Keys.Shove shoves, Keys.Stim uses a stim (a Medkit card
 	-- refills them). A Restock card refills grenades and stims with the call-ins.
 	Grenade = {
 		Carried = 3,
 		ThrowGap = 0.8, -- seconds between two throws
+		Flight = 0.45, -- seconds in the air from the hand to the mark; a row's own Flight wins
 		-- M67 frag: one-shots a Hocker, not a Brute. Thrown like the flare (ThrowUtil).
 		Frag = {
 			Price = 0, -- merits on the Carrier (Rules/Record, KitPrices); issued free
@@ -644,6 +1114,20 @@ local Config = {
 			-- (TrussPart) while the Humanoid is in its Climbing state; not a Mixamo clip
 			ladder_climb = "rbxassetid://507765644",
 		},
+		-- Throw timing, one row per throw clip (Rules/ThrowTiming; docs/PROGRESSION.md >
+		-- Throwing): the clip plays from Start seconds in at Speed, and the grenade, marker or
+		-- flare leaves the hand when the clip reaches Release (the server waits that long,
+		-- ThrowWindUp). A clip without a row gets Default.
+		Throws = {
+			Default = { Start = 0, Release = 0.3, Speed = 1 },
+			-- 2.77 s clip: pin pulled until 1.0, the arm goes back from 1.3, the hand is at its
+			-- fastest (the release) at 2.0 (measured from the retargeted clip's keyframes). The
+			-- pin pull is skipped: 0.5 s from the key coming up to the release.
+			grenade_throw = { Start = 1.3, Release = 2.0, Speed = 1.4 },
+		},
+		-- The thrower's own clip starts a ping before the server hears of the throw: up to
+		-- this many seconds of that come off the server's wait. 0 = the full wind-up always.
+		ThrowMaxLag = 0.1,
 		-- The Pike soldier (every player and bot): which clip plays for each state.
 		Assault = {
 			idle = "rifle_idle",
@@ -694,8 +1178,8 @@ local Config = {
 				exit = "prone_exit",
 			},
 			vault = "vault_low", -- over jersey / hesco
-			roll = "sprint_roll", -- sprint + LeftControl
-			slide = "running_slide", -- sprint + C
+			roll = "sprint_roll", -- Shift twice
+			slide = "running_slide", -- sprint + hold C or LeftControl
 			climb = "climb_ledge", -- onto bunker / humvee / container
 			downed = "downed_crawl", -- downed (Squad): on all fours, crawling
 		},
@@ -798,10 +1282,29 @@ local Config = {
 		CostPerExtraPlayer = 0.4, -- 4 players: cost x2.2 (matches their ~x2 kill income)
 		FlareCooldown = 20, -- seconds after a pallet lands before the next flare
 		FlareThrowDistance = 35, -- studs, same arc as the breach charge
+		FlareFlight = 0.45, -- seconds the flare is in the air from the hand to the mark
 		DropDelay = 20, -- seconds from flare to pallet (the lure window)
-		CardLifetime = 60, -- unpicked cards vanish
-		CardSpacing = 4.5, -- studs between the three cards
-		PickRadius = 2.5, -- walk this close to a card to take it
+		-- Taking a card (owner 2026-11-11: never by walking over it). Walk up to the crate,
+		-- hold Key for Hold seconds, and a panel of big cards opens (RewardPanel); pick with
+		-- a click or tap, keys 1-3 or the gamepad. Walking past CloseRadius closes it without
+		-- a pick. The key is the interact key (owner 2026-11-11: E interact, V stim, F shove).
+		Pick = {
+			WalkOver = false, -- true: the old way back (small cards in the world, walk into one)
+			Key = Enum.KeyCode.E, -- becomes Config.Keys.Interact once claude/keybinds merges
+			-- The open panel's card keys, left to right; it swallows them, so they fire no
+			-- call-in meanwhile. Becomes Config.Keys.CallIns once claude/keybinds merges.
+			CardKeys = { Enum.KeyCode.One, Enum.KeyCode.Two, Enum.KeyCode.Three },
+			GamepadKey = Enum.KeyCode.ButtonX,
+			Hold = 0.3, -- seconds the key is held to open the panel
+			Radius = 9, -- studs from the crate: the prompt shows and a pick is taken
+			Slack = 3, -- server tolerance on top of Radius (latency)
+			CloseRadius = 12, -- the open panel closes beyond this
+			ConfirmSeconds = 0.45, -- the taken card flashes this long before the panel goes
+			PanelScale = 1, -- the whole panel, on top of the HUD scale (0.8: smaller, see more fight)
+			Dim = 0.8, -- transparency of the dark layer behind the panel (1: none)
+		},
+		CardSpacing = 4.5, -- Pick.WalkOver only: studs between the three cards
+		PickRadius = 2.5, -- Pick.WalkOver only: walk this close to a card to take it
 		RearmRadius = 6, -- studs from the pallet: full magazine + reserve, once per player per pallet
 		MaxCrates = 4, -- oldest pallet closes when a fifth lands (perf)
 		Lure = {
@@ -813,15 +1316,49 @@ local Config = {
 		},
 	},
 
-	-- Pallet cards: every pallet shows each player the same three
-	-- supply cards (UpgradeDefinitions, Kind "supply"); walk into one to take it. Upgrade
-	-- crates (the Primary's site crate today; Stores and Secondary crates later) show
-	-- CardsPerPlayer field upgrades instead. No rarity.
+	-- Crates and their cards (RequisitionService, Rules/Reward). A crate of a kind shows each
+	-- player up to CardsPerPlayer cards in a panel; one pick per player per crate. No rarity.
+	--   supply: a Resupply pallet (and the Warden's): the three supply cards.
+	--   upgrade: the site crate when the hold starts: field upgrades the player does not
+	--     hold, ones for an empty slot first.
+	--   objective: the Main objective's reward when the hold ends: the same field-upgrade
+	--     choice, and on landing every living soldier gets Squad (no pick needed).
+	-- A field-upgrade offer short of CardsPerPlayer is filled with supply cards, so a crate
+	-- is never empty.
 	Crates = {
 		CardsPerPlayer = 3,
 		SupplyCards = { "medkit", "restock", "armour_plate" }, -- card order, left to right
-		ArmourPlate = 50, -- hit points of Shield soaked before health (EnemyProjectileService)
-		ShieldCap = 100, -- two plates at most
+		-- What each supply card gives (Rules/Reward Effects); the card text is built from
+		-- these rows (UpgradeDefinitions).
+		Cards = {
+			medkit = { Heal = true, Stims = true },
+			restock = { CallIns = true, Grenades = true, Stims = true },
+			-- 75 (was 50): beside a full heal, half a health bar was never the pick.
+			armour_plate = { Plate = 75 }, -- soaked before health (EnemyProjectileService)
+		},
+		ShieldCap = 100, -- the most armour a soldier carries
+		Kinds = {
+			supply = { Label = "RESUPPLY", Lifetime = 90, Beacon = false },
+			upgrade = { Label = "FIELD UPGRADE", Lifetime = 120, Beacon = true },
+			objective = {
+				Label = "OBJECTIVE REWARD",
+				Lifetime = 180,
+				Beacon = true,
+				Squad = {
+					Heal = true,
+					Ammo = true,
+					CallIns = true,
+					Grenades = true,
+					Stims = true,
+					Plate = 50,
+				},
+			},
+		},
+		Beacon = { Height = 70, Width = 0.7, Transparency = 0.55 }, -- the light pillar over a crate
+		-- A bot takes a supply card when it is missing at least this much of what the card
+		-- gives (today: health); bots have no call-ins, stims or upgrades to refill.
+		BotNeed = 0.25,
+		BotRadius = 14, -- studs from the crate: a bot this close takes its card
 	},
 
 	-- Call-ins (CallInDefinitions; Slots slots on keys 1-4). Charges refill one at a time every
@@ -833,6 +1370,108 @@ local Config = {
 		-- the throw, Width; Across = true lays it across). A row without Aim shows a small ring.
 		AimArc = { Beads = 18, Rise = 0.3, MinRise = 3 }, -- the arc: beads, apex height per stud of reach
 		Slots = 4, -- call-in slots per soldier (keys 1-4; the flare is key 5)
+		-- Binoculars (Rules/Spotting, SpotUtil; docs/PROGRESSION.md > Binoculars): a row with
+		-- `AimMode = "Binoculars"` (default "Throw") is not thrown. Its key raises binoculars
+		-- (BinocularController: the view, the mark on the ground, the range; BinocularPose: the
+		-- arms and the prop on every client), fire marks any ground the eye can see, and the
+		-- server checks the mark again from the soldier's head (CallInService). A row's own
+		-- `Binoculars` block overrides any value here.
+		Binoculars = {
+			MaxRange = 300, -- studs from the eye to the mark
+			MinRange = 0, -- studs; nearer marks are refused (0 = none: no friendly fire today)
+			FieldOfView = 16, -- degrees through the glass (the hip view is 70)
+			Raise = 0.4, -- seconds up to the eyes; no mark is taken before
+			Lower = 0.25,
+			MinSlope = 0.6, -- the surface's normal.Y; steeper counts as a wall and the mark drops to its foot
+			SightLift = 1.5, -- studs above the mark the line of sight is checked to (grass, kerbs)
+			GroundProbe = 4, -- studs above and below the mark searched for ground
+			-- What the server forgives: the client's eye and the server's head never quite agree.
+			Slack = { Range = 8, Sight = 4, Ground = 3, Raise = 0.15 },
+			MetresPerStud = 0.28, -- the range readout
+			ConfirmKey = Enum.KeyCode.ButtonR2, -- gamepad; the mouse is left click, touch a tap
+			CancelKey = Enum.KeyCode.ButtonB, -- gamepad; the mouse is right click, or the slot's key again
+			MaskWidth = 1.7, -- the view's width in screen heights (two barrels side by side)
+			MaskHeight = 0.86, -- its height as a share of the screen's
+			-- The arms (procedural, no clip yet): the upper arms come up Raise degrees, roll
+			-- Roll in toward the face, and the elbows bend Bend.
+			Pose = { Raise = 105, Roll = 50, Bend = 100 },
+			PropOffset = CFrame.new(0, 0.15, -0.85), -- the binoculars from the Head's centre
+		},
+		-- Arrivals (Rules/Arrival; docs/PROGRESSION.md > Call-in arrivals): what the squad sees
+		-- and hears between a call-in's throw and its effect. Each row's `Arrival` block names
+		-- a Style (how CallInArrivalFX draws it on every client) and overrides any value in
+		-- Defaults; a row without one arrives as a plain thrown marker. `Time` holds the kit
+		-- back on the server (CallInService); fire missions keep their own Delay.
+		Arrivals = {
+			-- false: nothing is drawn, nothing waits, and the fire missions go back to the flat
+			-- red discs, the stock blast and the one shared whistle.
+			Enabled = true,
+			MaxActive = 8, -- arrivals drawn at once on a client; the oldest goes first
+			Defaults = {
+				Style = "thrown", -- the marker flies and lands, nothing more
+				Time = 0, -- seconds from the throw until the kit works (emplacements, supply)
+				Throw = 0.45, -- seconds the thrown marker is in the air
+				ThrownSize = Vector3.new(0.5, 0.9, 0.5), -- the thing thrown
+				-- `Smoke = <colour>` on a row: marker smoke where it lands, for SmokeTime.
+				SmokeTime = 6,
+				-- Incoming rounds ("mortar", "shell"): the whistle starts Whistle seconds before
+				-- the impact; the round is seen for its last Fall seconds, coming in Angle degrees
+				-- above the ground from Distance studs; Report > 0 = the tube is heard that long
+				-- before its round lands.
+				Whistle = 0.8,
+				WhistlePitch = 1,
+				WhistleVolume = 0.7,
+				Fall = 0.4,
+				Angle = 75,
+				Distance = 120,
+				ShellSize = Vector3.new(0.5, 0.5, 6),
+				Report = 0,
+				ReportPitch = 1.7,
+				ReportVolume = 0.12,
+				-- The strike on the ground: Dust is the colour thrown up (DustCount puffs,
+				-- DustSize studs); Column > 0 a pillar of earth that high and ColumnWidth wide;
+				-- Linger seconds of smoke after; Scorch seconds the burnt ground stays; Close =
+				-- how many blast radii out the warning ring starts.
+				Dust = Color3.fromRGB(158, 131, 90),
+				DustCount = 10,
+				DustSize = 5,
+				Column = 0,
+				ColumnWidth = 6,
+				Linger = 0,
+				Scorch = 0,
+				Close = 1,
+				-- The blast itself (server, AirStrikeService): the clip in the callins bank, its
+				-- pitch and volume, the flash ball's colour and seconds.
+				BlastSound = "anvil_blast",
+				BlastPitch = 1,
+				BlastVolume = 1,
+				Flash = Color3.fromRGB(255, 140, 40),
+				FlashTime = 0.45,
+				-- A gun run ("gunrun"): the gunship comes in Approach seconds before the first
+				-- burst; lane marks MarkSpacing apart; every GunEvery-th burst plays GunSound
+				-- (guns bank) and each draws Tracers extra rounds landing up to TracerSpread
+				-- studs off the line.
+				Approach = 1.5,
+				MarkSpacing = 6,
+				GunSound = "lmg_shot",
+				GunPitch = 0.75,
+				GunVolume = 0.5,
+				GunEvery = 2,
+				Tracers = 2,
+				TracerSpread = 1.5,
+				-- Things dropped ("case", "tumble", "streamer"): from Height studs; Settle seconds
+				-- on the ground before the kit works; Sway studs side to side on the way down;
+				-- Hop studs (a bounce, or a tossed charge's rise); Spin degrees a second while it
+				-- tumbles; Streamer and Chute sizes in studs.
+				Height = 45,
+				Settle = 0.25,
+				Sway = 1,
+				Hop = 1.2,
+				Spin = 540,
+				Streamer = 9,
+				Chute = 8,
+			},
+		},
 		-- Hammer (81 mm mortar section, AirStrikeService): marks a point; the first shell lands
 		-- Delay seconds after the throw, then one every ShellInterval, each Scatter studs off
 		-- the mark at most. Walk It In steps them Config.Upgrades.WalkingBarrage.Step apart.
@@ -850,14 +1489,38 @@ local Config = {
 			BlastDamage = 80,
 			Scatter = 4,
 			Aim = { Shape = "ring", Radius = 16 }, -- Scatter + BlastRadius: where shells can land
+			-- A cross where each round will land; the tubes thump far off, then each round
+			-- drops near straight down with a short high whistle: a quick pale flash, low dust.
+			Arrival = {
+				Style = "mortar",
+				Smoke = Color3.fromRGB(214, 69, 51),
+				Report = 2.4,
+				Whistle = 0.45,
+				WhistlePitch = 1.5,
+				WhistleVolume = 0.5,
+				Fall = 0.3,
+				Angle = 84,
+				Distance = 90,
+				ShellSize = Vector3.new(0.35, 0.35, 4),
+				Dust = Color3.fromRGB(201, 172, 124),
+				DustCount = 8,
+				DustSize = 5,
+				BlastSound = "tripline_blast",
+				BlastPitch = 1.15,
+				BlastVolume = 0.9,
+				Flash = Color3.fromRGB(255, 226, 150),
+				FlashTime = 0.3,
+			},
 		},
-		-- Anvil (105 mm battery, AirStrikeService): one heavy shell Delay seconds after the throw.
+		-- Anvil (105 mm battery, AirStrikeService): marked through binoculars, anywhere in the
+		-- line of sight; one heavy shell Delay seconds after the mark.
 		Anvil = {
 			Price = 0, -- merits on the Carrier (Rules/Record, KitPrices); issued free
 			Desk = "fires", -- the Carrier desk that sells it (DeskShop)
 			Charges = 1,
 			Cooldown = 180,
-			ThrowDistance = 35,
+			AimMode = "Binoculars", -- "Throw" puts it back in the hand (then add ThrowDistance = 35)
+			Binoculars = { MaxRange = 400 }, -- over Config.CallIns.Binoculars
 			Delay = 5,
 			Shells = 1,
 			ShellInterval = 1,
@@ -867,6 +1530,31 @@ local Config = {
 			BlastDamage = 500,
 			Scatter = 0,
 			Aim = { Shape = "ring", Radius = 20 }, -- the blast
+			-- One ring closing on the mark; a long falling whistle, one heavy round on a flat
+			-- line from behind the spotter, a tall column of dark earth, smoke and burnt ground.
+			Arrival = {
+				Style = "shell",
+				Throw = 0, -- nothing is thrown: the ring and the smoke start on the mark at once
+				Smoke = Color3.fromRGB(176, 48, 36),
+				Whistle = 1.5,
+				WhistlePitch = 0.55,
+				WhistleVolume = 0.9,
+				Fall = 0.7,
+				Angle = 60,
+				Distance = 220,
+				ShellSize = Vector3.new(1.2, 1.2, 10),
+				Dust = Color3.fromRGB(62, 52, 44),
+				DustCount = 20,
+				DustSize = 9,
+				Column = 34,
+				ColumnWidth = 9,
+				Linger = 4,
+				Scorch = 10,
+				Close = 2.2,
+				BlastPitch = 0.8,
+				Flash = Color3.fromRGB(255, 120, 30),
+				FlashTime = 0.7,
+			},
 		},
 		-- Shrike (helicopter gun run, AirStrikeService): Delay seconds after the throw, Bursts
 		-- impacts centred on the mark, Step studs apart along the throw, BurstInterval apart.
@@ -884,6 +1572,7 @@ local Config = {
 			ShakePower = 2,
 			BlastDamage = 120,
 			PassHeight = 45, -- the helicopter's flight height over the mark (look only)
+			PassLead = 60, -- studs before the first burst and past the last that it is seen
 			-- The gunship (aircraft.py, MeshAssets veh_shrike_*): offsets from the hull's origin
 			-- (Roblox axes, nose toward -Z) to the rotor hub and the chin gun's muzzle; the rotor
 			-- turns RotorSpin degrees per second. The pass falls back to a plain hull Part
@@ -892,6 +1581,16 @@ local Config = {
 			GunMuzzle = Vector3.new(0, -1.75, -11.4),
 			RotorSpin = 1440,
 			Aim = { Shape = "strip", Length = 46, Width = 10 }, -- the run: Step x (Bursts - 1) + 2 x BlastRadius
+			-- A lane of arrows running the way the gunship flies; the cannon is heard from the
+			-- air, a rake of tracers walks the lane and each burst kicks up a spurt of dust.
+			Arrival = {
+				Style = "gunrun",
+				Smoke = Color3.fromRGB(196, 110, 52),
+				SmokeTime = 5,
+				Dust = Color3.fromRGB(201, 172, 124),
+				DustCount = 4,
+				DustSize = 3,
+			},
 		},
 		-- Doorman (tripod sentry MG, SentryService): stands where it lands for Duration; every
 		-- FireInterval it shoots the nearest Infected in Range it can see.
@@ -907,6 +1606,28 @@ local Config = {
 			Range = 70,
 			MaxPerPlayer = 1, -- a second Doorman replaces the first
 			Aim = { Shape = "ring", Radius = 2 }, -- where the tripod stands
+			-- A slung case comes down under a cross-shaped cargo chute onto blue smoke, thuds,
+			-- and the gun stands up out of it.
+			Arrival = {
+				Style = "case",
+				Time = 2.2,
+				Smoke = Color3.fromRGB(96, 150, 220),
+				SmokeTime = 3,
+				Height = 45,
+				Settle = 0.3,
+				Sway = 1.2,
+			},
+			-- The body: 2 = the modelled gun (doorman.py, MeshAssets dep_doorman_*), 1 = the
+			-- Part tripod (also what stands while the meshes have not loaded). Model 2's
+			-- numbers, from doorman.py: the cradle turns YawHeight above the ground, the gun
+			-- tips at the trunnion PitchHeight up (it sees and fires from there; the Part body
+			-- does from 3.2), the muzzle is MuzzleReach ahead of the trunnion, and the gun
+			-- tips no further than PitchLimit degrees up or down (look only).
+			Model = 2,
+			YawHeight = 1.9,
+			PitchHeight = 2.6,
+			MuzzleReach = 3.52,
+			PitchLimit = 40,
 		},
 		-- Tripline (Mines): thrown; Mines land on an arc bulging away from the thrower and blow
 		-- when an Infected steps within TriggerRadius.
@@ -926,6 +1647,14 @@ local Config = {
 			Lifetime = 90,
 			MaxMines = 12, -- per player; the oldest goes first
 			Aim = { Shape = "ring", Radius = 8 }, -- ArcRadius: the mines' arc
+			-- The satchel lands and the charges hop out of it to their places on the arc, each
+			-- blinking once as it arms. No smoke: nothing comes from the air.
+			Arrival = {
+				Style = "scatter",
+				Time = 0.95,
+				ThrownSize = Vector3.new(1.2, 0.6, 0.9),
+				Hop = 2.5,
+			},
 		},
 		-- Concertina (wire, ConcertinaService): a Length x Width strip laid across the throw,
 		-- centred where it lands, for Duration. Infected inside walk at SlowFactor and take
@@ -944,6 +1673,16 @@ local Config = {
 			TickInterval = 0.5,
 			MaxPerPlayer = 4, -- the oldest strip goes first
 			Aim = { Shape = "strip", Length = 16, Width = 3, Across = true }, -- the wire, laid across the throw
+			-- The coil lands and springs open: two drums roll out to the ends paying out a
+			-- strand, rattling and kicking dust, and the wire stands up behind them.
+			Arrival = {
+				Style = "unroll",
+				Time = 1.05,
+				ThrownSize = Vector3.new(0.7, 1.5, 1.5), -- the coil, a drum on its side
+				Dust = Color3.fromRGB(201, 172, 124),
+				DustCount = 2,
+				DustSize = 2,
+			},
 		},
 		-- Speedball (ammo bundle, SupplyDropService): drops where it lands, no lure wave; each
 		-- living player walking within Radius is re-armed (full magazine and reserve), Visits
@@ -958,6 +1697,19 @@ local Config = {
 			Radius = 6,
 			Lifetime = 90,
 			Aim = { Shape = "ring", Radius = 6 }, -- the re-arm radius
+			-- Kicked out of the door onto yellow smoke: no chute, it tumbles down fast, hits,
+			-- bounces once and settles in its own dust.
+			Arrival = {
+				Style = "tumble",
+				Time = 1.5,
+				Smoke = Color3.fromRGB(232, 181, 75),
+				SmokeTime = 4,
+				Height = 50,
+				Fall = 0.75,
+				Settle = 0.25,
+				Hop = 1.2,
+				Spin = 540,
+			},
 		},
 		-- Aid Bag (medical drop, SupplyDropService): every soldier within Radius, once each:
 		-- full heal, stims refilled, +Plate shield (Config.Crates.ShieldCap still caps it).
@@ -971,8 +1723,19 @@ local Config = {
 			Plate = 25,
 			Lifetime = 60,
 			Aim = { Shape = "ring", Radius = 6 }, -- the heal radius
+			-- A soft drop onto pink smoke: the bag comes down steadily under a long red and
+			-- white streamer that flutters above it and falls across it when it lands.
+			Arrival = {
+				Style = "streamer",
+				Time = 1.8,
+				Smoke = Color3.fromRGB(210, 130, 130),
+				SmokeTime = 5,
+				Height = 38,
+				Sway = 0.8,
+				Streamer = 9,
+			},
 		},
-		-- Shared by the supply drops: the bundle falls this far, this fast.
+		-- The supply drops' old fall (server-side), used only while Arrivals.Enabled is false.
 		Drop = { Height = 50, FallTime = 0.9 },
 	},
 
@@ -996,27 +1759,73 @@ local Config = {
 	},
 
 	-- Hold Position objective V1. Pays SupplyReward into the Resupply pool on completion and
-	-- drops an upgrade crate at the site when it activates (field upgrade source).
+	-- drops an upgrade crate at the site when it activates (field upgrade source), and a
+	-- second one when the hold ends: picked before the Index arrives, not after it falls.
 	Objective = {
 		AppearDelay = 180, -- seconds after server start before the zone appears
 		RequiredSeconds = 45, -- total accumulated seconds inside the zone
 		PressureWave = { Walker = 8, Runner = 4 }, -- spawned around the zone on appear
 		PressureBruteAfter = 0, -- also +1 Brute if the run is older than this (seconds)
 		SupplyReward = 500,
+		-- The crate the hold's end drops (Crates.Kinds): "objective" restocks the squad and
+		-- offers a field upgrade; "upgrade" is the plain crate; "" for none.
+		CompleteCrate = "objective",
+		CompleteCrateOffset = 10, -- studs from the site crate, toward the nearest soldier
 		ZoneSize = Vector3.new(46, 1, 46), -- Sprint 13 tune: bigger, room to kite while holding
 		ZonePosition = Vector3.new(50, 8.5, 50), -- on the Compound's lower tier (ArenaService HILLS)
 		SyncInterval = 0.1, -- seconds between progress updates to the UI
 	},
 
-	-- Extraction phase (Sprint 12): starts when the objective completes. The helipad in the
-	-- south-west corner, ~226 studs from the objective hill.
+	-- The objective pools (docs/PROGRESSION.md > Objective pools; ObjectiveService, the
+	-- modules in src/server/Objectives, Rules/Objectives). Each drop draws one main objective
+	-- (known before the squad moves; never the same twice in a row on a server) and SideCount
+	-- side objectives the squad finds on the ground, from the map's own pool. The objectives'
+	-- rows (words, tuning) and each map's pool and sites are ObjectiveDefinitions, read here
+	-- as Rows and Maps: a new objective or map is a row there, never a list anywhere else.
+	-- Enabled = false restores the single hold zone of Config.Objective above (appears after
+	-- its AppearDelay at its ZonePosition; no side objectives).
+	Objectives = {
+		Enabled = true,
+		-- Every objective prompt and "Hold E ..." step line (owner 2026-11-11: E interacts).
+		InteractKey = Enum.KeyCode.E, -- becomes Config.Keys.Interact once claude/keybinds merges
+		SideCount = 2,
+		GraceSeconds = 0, -- after the squad lands, before reaching the main objective starts it
+		SiteCrateOffset = 6, -- studs from the main objective to the field-upgrade crate it brings
+		-- A side objective shows (HUD, marker, Control's brief) when a living squad member
+		-- comes this close to it, or when Control calls it out: the first RevealAfter seconds
+		-- after landing, each further one that much later again.
+		RevealRadius = 80,
+		RevealAfter = 90,
+		BriefSeconds = 8, -- the main objective's card at insert stays this long
+		RadioGap = 4.5, -- seconds between Control's lines (insert, the Warden's line)
+		SyncInterval = 0.25, -- seconds between HUD updates at most
+		DoneSeconds = 6, -- a finished or failed side objective stays on the HUD this long
+		MarkerDistance = 1200, -- studs a world marker is seen from
+		MetresPerStud = 0.28,
+		LampColor = Color3.fromRGB(255, 176, 64), -- Lights On: sodium
+		-- Said once at insert, before the main objective's brief.
+		Frame = "Pike, Control. Clear this checkpoint so the helicopter can land and we can hold the district.",
+		Rows = ObjectiveDefinitions.Rows,
+		Maps = ObjectiveDefinitions.Maps,
+	},
+
+	-- Extraction phase (Sprint 12): starts when the Index falls. The helipad in the
+	-- south-west corner, ~226 studs from the objective hill. PressureWave lands on the call;
+	-- each Waves row lands when the hold's progress reaches At (Rules/ExtractionWaves).
 	Extraction = {
-		HoldDuration = 30, -- accumulated seconds inside the zone to win
+		HoldDuration = 60, -- accumulated seconds inside the zone to win
 		ZoneSize = Vector3.new(28, 1, 28),
 		ZonePosition = Vector3.new(-90, 0.6, -90),
 		SyncInterval = 0.1,
 		PressureWave = { Walker = 12, Runner = 4, Brute = 1 },
 		SpawnFactor = 0.8, -- spawn interval multiplier while extracting (+20%)
+		-- Count: phase-weighted Infected (Spawning.Phases) in a ring round the pad, plus
+		-- PerExtraPlayer per living player beyond the first. SpawnFactor replaces the one
+		-- above from that wave on.
+		Waves = {
+			{ At = 30, Count = 12, PerExtraPlayer = 3, SpawnFactor = 0.6 },
+		},
+		WaveRadio = "Second wave closing on the pad. Hold it, Pike.", -- shown as "CONTROL: ..."
 	},
 
 	-- Flat threat curve (the spine): no per-minute health or damage growth. The
@@ -1168,6 +1977,17 @@ local Config = {
 			lantern_rotor = true,
 			amb_siren = true,
 		} :: { [string]: boolean },
+		-- Kill confirm (client HitMarkerUI): a soft 2D tick for the player who landed the
+		-- kill, on top of the red kill marker. The radio keypad click pitched up, so it does
+		-- not read as a menu click or as the wet hit sound.
+		KillConfirm = {
+			Bank = "ui_radio",
+			Group = "ui_click",
+			Volume = 0.3,
+			Pitch = 1.4, -- PlaybackSpeed
+			PitchVary = 0.05, -- random +/- per tick
+			MinGap = 0.07, -- seconds; kills closer together than this share one tick
+		},
 		-- The ragged breathing loop below this health fraction (client, LowHealthSound).
 		LowHealthFraction = 0.3,
 		-- Low-health feedback (client, LowHealthFX): below Start (a health fraction) the screen
@@ -1278,6 +2098,10 @@ local Config = {
 	-- doors, ramps) recomputed no more than every PathfindInterval; at most PathfindingMax
 	-- bodies path at once, the rest (and any failed path) chase straight as before.
 	Enemies = {
+		-- Which bodies Walker, Runner, Brute and Hocker wear (MeshAssets): 2 = the remade set
+		-- (`inf_v2_*`, owner 2026-11-11), 1 = the first bodies (`inf_<form>_*`). The fallback
+		-- switch: set 1 to go back, no revert. The Warden has one body and ignores this.
+		BodyVersion = 2,
 		-- Dismemberment (systems designer 2026-11-08; docs/PROGRESSION.md > Dismemberment;
 		-- GoreService). The joint above the part a round hits keeps a running damage total;
 		-- at MaxHealth x Fraction the joint breaks on that hit (the kill included) and the
@@ -1356,6 +2180,76 @@ local Config = {
 		BossCorpseLifetime = 8, -- an Index host's body stays long enough to read
 		MaxPuddles = 8, -- caustic puddles alive at once (perf); the oldest goes first
 		ThroatSacSwell = 1.8, -- Hocker sac size multiplier at the end of the windup
+		-- How a spit looks (owner 2026-11-11: "just a yellow circle"; bile and pus, no green,
+		-- no cartoon yellow). Drawn on each client (SpitFX; curves in Rules/SpitShape); the
+		-- server keeps the arc, the hit and the puddle damage (EnemyProjectileService).
+		-- Enabled = false: the old server-made ball and disc in the projectile's own Color.
+		SpitFX = {
+			Enabled = true,
+			-- The tell, on top of the sac swell and the windup voice: the head goes back
+			-- over the windup and snaps forward on the spit, bile running from the mouth.
+			Tell = {
+				HeadBack = 16, -- degrees
+				Lunge = 10, -- degrees forward on the spit
+				Recover = 0.3, -- seconds back to level
+				DroolInterval = 0.14, -- seconds between drops from the mouth
+			},
+			-- In flight: an ellipsoid along its path (never a ball), a smaller darker blob
+			-- dragging behind, a strand between and after them, drops falling off.
+			Glob = {
+				Color = Color3.fromRGB(142, 104, 44), -- amber-brown bile
+				TailColor = Color3.fromRGB(98, 34, 30), -- dark red clot
+				Reflectance = 0.12, -- wet
+				Stretch = 1.5, -- length over width at rest
+				SpeedStretch = 0.012, -- more per stud/s
+				MaxStretch = 2.4,
+				Wobble = 0.22, -- +/- share of the stretch
+				WobbleRate = 6, -- per second
+				TailSize = 0.55, -- of the glob
+				TailLag = 0.7, -- glob lengths behind
+				StrandLife = 0.12, -- seconds the strand hangs in the air (about 5 studs of it)
+				StrandWidth = 0.55, -- of the glob's size, tapering to nothing
+				StrandColor = Color3.fromRGB(104, 44, 30),
+				DripInterval = 0.11, -- seconds between drops off one glob
+			},
+			-- Every drop (drool, drip, splash) is one of these; MaxPerSecond caps the drool
+			-- and drips of all spits together (splash bursts are per impact).
+			Drops = {
+				Color = Color3.fromRGB(126, 90, 38),
+				DarkColor = Color3.fromRGB(88, 30, 28),
+				Size = 0.32, -- studs
+				MaxPerSecond = 40,
+			},
+			Impact = {
+				Burst = 12, -- drops thrown off the surface
+				BurstSpeed = 16, -- studs/s
+				SplatColor = Color3.fromRGB(96, 66, 30),
+				SplatSize = 2.2, -- blotch diameter, of the projectile's Size
+				SplatLobes = 3, -- smaller discs round the blotch (an uneven edge)
+				SplatLife = 2.5, -- seconds; fades over the last half
+				MaxSplats = 6, -- alive at once; the oldest goes first
+			},
+			-- The damaging pool: the core disc is exactly the damage radius; a darker rim
+			-- under it marks the edge; it bubbles, and fades out as its damage ends.
+			Pool = {
+				Color = Color3.fromRGB(134, 98, 40),
+				EdgeColor = Color3.fromRGB(72, 28, 24),
+				EdgeWidth = 0.4, -- studs of rim outside the core
+				Transparency = 0.25,
+				Grow = 0.25, -- seconds to spread out
+				StartSize = 0.3, -- share of full size it lands at
+				Fade = 1, -- seconds, at the end of its life
+				BubbleInterval = 0.28, -- seconds between bubbles in one pool
+				BubbleColor = Color3.fromRGB(206, 186, 112), -- pus
+			},
+			-- Splashed (inside the impact's SplashRadius): the screen edges smear with bile.
+			Smear = {
+				Enabled = true,
+				Color = Color3.fromRGB(110, 78, 30),
+				Strength = 0.5, -- opacity at the screen edge
+				Time = 0.8, -- seconds to clear
+			},
+		},
 		PathfindingMax = 10,
 		PathfindInterval = 0.5,
 		PathfindVerticalGap = 4,
@@ -1364,6 +2258,37 @@ local Config = {
 		PathAgentHeight = 5,
 		PathWaypointSpacing = 4, -- studs between waypoints (the kit's stairs are 9-stud storeys)
 		PathWaypointReach = 3, -- studs: the next waypoint counts as reached
+		-- Spacing (EnemySpacing; Rules/Spacing): the Infected still pass through each other
+		-- physically, so this steering is what keeps a horde from stacking on one point.
+		-- Straight chase only (not paths, climbs, lures, Hockers or bosses). Not yet tuned
+		-- in a playtest. Enabled = false is the old behaviour exactly.
+		Spacing = {
+			Enabled = true,
+			-- Studs of personal space at Scale 1 (x the form's Scale, or the form's own
+			-- EnemyDefinitions.SpacingRadius). Bigger = a looser horde, fewer round a player.
+			Radius = 1.5,
+			RadiusVariation = 0.2, -- +- share per body, so the crowd is not a grid
+			CellSize = 6, -- studs: grid cell; at least the two biggest radii plus a step
+			RebuildInterval = 0.2, -- seconds between grid refills (server cost)
+			MaxNeighbours = 32, -- bodies one goal looks at (server cost)
+			HeightGap = 6, -- studs: a body this far above or below is on another floor
+			Steer = {
+				Lookahead = 8, -- studs a goal sits ahead (more than any form covers a repath)
+				Strength = 0.4, -- share of an overlap given way per repath; above 0.5 jitters
+				BehindWeight = 0.3, -- share of that given to a body behind (front holds its place)
+				MaxPush = 3, -- studs: the most neighbours move one goal
+				BlockSlack = 0.15, -- share of the two radii a body may walk into a neighbour
+				TravelMinPull = 0.4, -- share of the advance kept in any crowd, beyond EngageDistance
+				RingFraction = 0.8, -- attack ring radius as a share of AttackRange (under 1 = can hit)
+				EngageDistance = 24, -- studs from the target inside which ranks hold and wait
+				RingSpread = 50, -- degrees a body's approach curves round its target
+				RingPeriod = 9, -- seconds over which that curve drifts
+				SwayAngle = 10, -- degrees of weave far from the target (0 = straight lines)
+				SwayPeriod = 5,
+				Deadzone = 0.3, -- studs: smaller steps are not taken (no shuffling on the spot)
+				WaitStep = 2, -- studs: a crowded body stepping less is waiting, not stuck on cover
+			},
+		},
 	},
 
 	-- The Index (Sprint 19): the Warden, Delta's boss (IndexService; docs/PROGRESSION.md
@@ -1402,7 +2327,7 @@ local Config = {
 			-- Flank: full damage even while he guards (the back).
 			Plates = {
 				Helmet = { Limb = "Head", Mesh = "inf_warden_plate_helmet", Health = 300 },
-				Chest = { Limb = "UpperTorso", Mesh = "inf_warden_plate_chest", Health = 500 },
+				Chest = { Limb = "UpperTorso", Mesh = "inf_warden_plate_chest", Health = 400 },
 				Back = {
 					Limb = "UpperTorso",
 					Mesh = "inf_warden_plate_back",
@@ -1557,13 +2482,14 @@ local Config = {
 			},
 			-- The field while he is up: fewer ambient spawns, a smaller horde, no Brutes.
 			Pressure = { SpawnFactor = 1.5, MaxAliveReduction = 8, Caps = { Brute = 0 } },
-			-- The priority pallet on death: an upgrade crate (Crates.CardsPerPlayer cards each),
-			-- a full heal and a re-arm; his SupplyValue goes to the Resupply pool like any kill.
-			Drop = { Offset = 6 },
+			-- The priority pallet on death: a full heal, a re-arm and a quiet pallet with the
+			-- supply cards (Cards; "upgrade" puts the field upgrades back here, as before
+			-- Objective.CompleteCrate took them). His SupplyValue goes to the Resupply pool.
+			Drop = { Offset = 6, Cards = "supply" },
 			-- Radio lines (lore developer), shown as notices. Insert and wipe lines
 			-- belong to RunManager flows later.
 			Radio = {
-				PrimaryComplete = "Control copies. That's the Primary. Index is moving at the Gate.",
+				PrimaryComplete = "That woke the Gate sergeant. He still guards this post. The Warden is coming up the road.",
 				GateOpen = "Gate's open. Contact in the lane, big. It's wearing riot plate.",
 				Sighting = "Eyes on. That's the Gate NCOIC. Control, Index confirmed.",
 				BusLine = "Bus line. He's checking buses. Plates first, then the body.",
@@ -1600,11 +2526,67 @@ local Config = {
 	},
 
 	-- The lobby place: the Fallow (docs/sprints/LOBBY_V1_FALLOW.md, LORE.md > The Fallow).
+	-- Players read "the Carrier"; identifiers keep the old name (docs/LORE.md > Naming).
 	Lobby = {
 		-- The match a squad launches into: Config.Places (Match, or a Dev pair's).
 		-- Music on the Carrier (LobbyMusic): licensed tracks from Roblox's audio library, free for
 		-- any experience, picked for an overcast, waiting-to-go-in mood (Nova, 2026-11-10). Low in
 		-- the mix (OWNER.md: no harsh sound); fades out as your Lantern lifts.
+		-- Sounds of a working ship (Nova, 2026-11-11: "noises that one would hear on a boat. people
+		-- moving around, crew mumbling"; client ShipAmbience). Pro Sound Effects clips from Roblox's
+		-- audio library (licensed for any experience), low in the mix (OWNER.md: no harsh sound),
+		-- in their own SoundGroup, faded out with the music when the Lantern lifts. Roblox has no
+		-- walls for sound, so each area has its own bed and the two cross-fade by where you stand.
+		Ambience = {
+			Volume = 1, -- the Ambience SoundGroup once faded in
+			FadeInSeconds = 4,
+			FadeOutSeconds = 2.5, -- as the Lantern lifts
+			DeckHeight = 36, -- a soldier's root above this (studs) is on the flight deck
+			CrossFadeSeconds = 2.5, -- hangar <-> deck
+			-- One loop per area, everywhere in it (no position).
+			Beds = {
+				Hangar = {
+					Id = "rbxassetid://9112739336", -- Aircraft Carrier Ambience 3: hallway, loop (36 s)
+					Volume = 0.3,
+				},
+				Deck = {
+					Id = "rbxassetid://9117340070", -- Pier Light Dock Creak 2: motor idle, waves, wind (61 s)
+					Volume = 0.35,
+				},
+			},
+			-- Loops at FallowLayout.Ambience points (the key), heard from Near to Far studs, only
+			-- in their Area.
+			Spots = {
+				plot = {
+					Id = "rbxassetid://9113063523", -- Aircraft Carrier Bridge 3: radio chatter, voices (92 s)
+					Volume = 0.45,
+					Near = 6,
+					Far = 30,
+					Area = "Hangar",
+				},
+				walla = {
+					Id = "rbxassetid://9114012248", -- Crowd Murmur 1: interior, quiet walla (36 s)
+					Volume = 0.3,
+					Near = 10,
+					Far = 45,
+					Area = "Hangar",
+				},
+			},
+			-- Now and then one of these from a random point of its Area's key.
+			OneShots = {
+				{ Id = "rbxassetid://9119630175", Volume = 0.3, Area = "Hangar" }, -- Steel Door 4
+				{ Id = "rbxassetid://9126003568", Volume = 0.25, Area = "Hangar" }, -- Steel Lockers, slam
+				{ Id = "rbxassetid://9116725218", Volume = 0.25, Area = "Hangar" }, -- Metal Latches 17
+				{ Id = "rbxassetid://9119077202", Volume = 0.2, Area = "Hangar" }, -- Ship Horn, carrier interior
+				{ Id = "rbxassetid://9113060656", Volume = 0.3, Area = "Deck" }, -- Carrier flight deck PA
+			},
+			OneShotGap = { 9, 22 }, -- seconds between one-shots (random in the range)
+			OneShotNear = 10,
+			OneShotFar = 70,
+			CrewStepLength = 2.4, -- studs a walking crew member covers per footstep (Footsteps bank)
+			CrewStepVolume = 0.3,
+			CrewStepFar = 30, -- studs
+		},
 		Music = {
 			Tracks = {
 				"rbxassetid://115363600284265", -- A Light Dies Out On The Water (173 s)
@@ -1617,19 +2599,73 @@ local Config = {
 			FadeOutSeconds = 2.5, -- as the Lantern lifts
 			GapSeconds = 3, -- silence between tracks
 		},
+		-- The soldier on the ship looks and moves like the match's (owner, 2026-11-11): the match's
+		-- idle and walk clips (client SoldierMoves, the shared SoldierLocomotion; the clips are
+		-- Config.Animations.Assault, not repeated here) and the signed primary in the hands
+		-- (PikeBody, the match's PlayerSetup.attachRifle).
+		-- Owner 2026-11-11 (second pass): "standing up straight with the gun at a resting position
+		-- in a sling across his chest", not the match's hunched rifle walk, and no hand floating
+		-- off a short gun. Roblox's Rthro idle and walk (owner's pick; Roblox's own, free to use),
+		-- the gun welded across the chest (PikeBody) and both hands put on it in code every frame
+		-- on every client (SlingHands), so they sit on whatever gun is carried.
+		Soldier = {
+			Enabled = true, -- false: Roblox's stock animations and no rifle, as before
+			CarryRifle = true, -- false: the clips with empty hands
+			ClipWait = 8, -- seconds a client waits for the clips before keeping the stock Animate
+			-- A slow stride on the ship, a sprint while Keys.Sprint (or SprintPad) is held (owner
+			-- 2026-11-11: "a little too fast, he should have a slow stride and then have a
+			-- seperate sprint animation on the shift key").
+			WalkSpeed = 6.5, -- studs a second (the Rthro walk at about 1.1)
+			SprintSpeed = 15, -- studs a second (the Rthro run at about 1.4)
+			SprintPad = Enum.KeyCode.ButtonL3, -- the gamepad's sprint
+			Animations = {
+				Idle = "rbxassetid://2510196951", -- Rthro Idle
+				Walk = "rbxassetid://2510202577", -- Rthro Walk
+				Run = "rbxassetid://2510198475", -- Rthro Run, above RunAbove
+			},
+			-- Ground speed each clip was made for (measured 2026-11-11, the planted foot's
+			-- speed): rate = speed / this, within MinRate..MaxRate.
+			WalkClipSpeed = 5.7,
+			RunClipSpeed = 10.5,
+			RunAbove = 9, -- studs a second: faster than this plays the run (the sprint)
+			MinRate = 0.6,
+			MaxRate = 1.6,
+			-- The gun across the chest, in the upper torso's space (front -Z, right +X): the
+			-- grip low on the right, the muzzle down past the left hip, the gun's top toward the
+			-- face and out from the chest.
+			Sling = {
+				Position = Vector3.new(0.45, -0.2, -0.8),
+				Barrel = Vector3.new(-0.8, -0.6, 0),
+				Up = Vector3.new(-0.5, 0.7, -0.5),
+			},
+			Hands = {
+				HandLength = 0.3, -- studs from the wrist to the palm
+				-- The left hand on the handguard: this share of the way from the grip to the
+				-- muzzle, held within Along studs.
+				LeftShare = 0.55,
+				LeftAlong = { 0.5, 1.2 },
+				LeftUp = 0.06, -- studs above the bore line
+				-- Where the elbows point, in the upper torso's space.
+				RightPole = Vector3.new(1, -0.7, 0.5),
+				LeftPole = Vector3.new(-1, -0.7, 0.4),
+				BlendSeconds = 0.3, -- hands ease onto the gun
+			},
+		},
 		-- The walking crew (LobbyCrew, CrewWalk): pace, stride and when they speak.
 		Crew = {
-			WalkSpeed = 5, -- studs a second (a soldier walks 16)
+			WalkSpeed = 5.5, -- studs a second (a soldier walks Soldier.WalkSpeed)
 			Pause = 4, -- seconds standing at each end of the route
 			BubbleDistance = 12, -- studs: a soldier this close hears a line
 			BubbleSeconds = 4,
 			BubbleCooldown = 14, -- seconds before the same one speaks again
-			-- Roblox's stock R15 clips for the crew (NpcBody, CrewWalk): not ours, free to use.
+			-- Roblox's Rthro idle and walk for the crew (NpcBody, CrewWalk; owner 2026-11-11: the
+			-- stock walk "looks silly"; it is made for 14 studs/s and played at a third of that).
+			-- Roblox's own clips, free to use.
 			Animations = {
-				Idle = "rbxassetid://507766388",
-				Walk = "rbxassetid://507777826",
+				Idle = "rbxassetid://2510196951", -- Rthro Idle
+				Walk = "rbxassetid://2510202577", -- Rthro Walk (made for 5.7 studs/s)
 			},
-			WalkClipSpeed = 0.45, -- the stock walk's playback rate at WalkSpeed (it is cut for 16)
+			WalkClipSpeed = 0.96, -- the walk's playback rate at WalkSpeed (5.5 / 5.7)
 		},
 		-- The Plot's paper map (WorldMap, WorldMapData; canon docs/lore/world_map.md).
 		WorldMap = {
@@ -1643,7 +2679,7 @@ local Config = {
 		Save = {
 			Store = "LoadmasterLoadouts", -- DataStore name; keys are "u_<UserId>"
 			RecordStore = "PikeRecords", -- DataStore name; keys are "r_<UserId>"
-			StartMerits = 1000, -- a new soldier's merits (earning them from runs is not built yet)
+			StartMerits = 1000, -- a new soldier's merits (missions pay more: Config.Merits)
 			MinWriteGap = 6, -- seconds between saves per soldier; the newest pick wins
 			Retries = 2, -- extra attempts after a failed DataStore call
 			RetryDelay = 1,
@@ -1661,6 +2697,7 @@ local Config = {
 			Cooldown = 6, -- seconds a spot rests after a lift or a failed one
 		},
 		-- Lantern, the lift bird on each spot (LanternBird, LanternSpool; docs/LORE.md > Lantern).
+		-- Players read "the helicopter" / "Helo"; this key keeps the old name (docs/LORE.md > Naming).
 		Lantern = {
 			BirdNumbers = { 22, 24, 21, 23 }, -- stencilled number per spot: a bird and a spot are not tied
 			RotorRpm = 40, -- main rotor speed at the end of the spool

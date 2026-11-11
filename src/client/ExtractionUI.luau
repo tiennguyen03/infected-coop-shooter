@@ -23,7 +23,7 @@ local function onUpdate(kind: string, progress: number, playersIn: number?, play
 	local held = `{math.floor(progress)} of {required}s`
 	local fraction = progress / math.max(required, 1)
 	if kind == Messages.ExtractionUpdate.Available then
-		MissionLine.set(OWNER, `REACH the {LZ}`, "Lantern is inbound", nil)
+		MissionLine.set(OWNER, `REACH the {LZ}`, "The helicopter is inbound", nil)
 	elseif kind == Messages.ExtractionUpdate.Progress then
 		MissionLine.set(OWNER, `HOLD the {LZ}`, held, fraction)
 	elseif kind == Messages.ExtractionUpdate.Waiting then

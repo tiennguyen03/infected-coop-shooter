@@ -13,6 +13,7 @@ roblox.yml
 # Rendered icon PNGs (regenerate from SVG; uploaded asset IDs in ASSET_IDS.md)
 assets/icons/*.png
 assets/icons/build/contact_sheet.png
+assets/icons/build/glyph_preview.png
 
 # Generated audio: regenerate with assets/audio/build/generate.py; uploaded ids in ASSET_IDS.md
 assets/audio/*.wav
