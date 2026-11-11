@@ -1378,6 +1378,14 @@ import lantern  # noqa: E402
 
 lantern.register(sys.modules[__name__])
 
+# Checkpoint Delta v2 (a proposal, docs/sprints/DELTA_V2.md): the rebuilt vehicles and the
+# base kit live in delta_kit.py and are only built when asked for, so nothing the game
+# loads changes: `-- --delta-v2 [--only <name> ...]`.
+if "--delta-v2" in sys.argv:
+    import delta_kit  # noqa: E402
+
+    delta_kit.register(sys.modules[__name__])
+
 
 # ------------------------------------------------------------------ The Chosen (player bodies)
 # Same limb-swap build as the Infected: one mesh per R15 limb inside the stock limb box.
@@ -2186,7 +2194,7 @@ def main():
     argv = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
     only = None
     if "--only" in argv:
-        only = [a for a in argv[argv.index("--only") + 1 :] if a != "--force"]
+        only = [a for a in argv[argv.index("--only") + 1 :] if not a.startswith("--")]
     force = "--force" in argv
     prints = {} if force else load_fingerprints()
     changed = []

@@ -220,6 +220,13 @@ ships is still written into a build file and rebuilt, so the `.blend` stays repr
 Re-install the add-on from https://github.com/ahujasid/blender-mcp/blob/main/addon.py if
 Blender is reinstalled.
 
+## Checkpoint Delta v2, a proposal (`build/delta_v2.py`, `build/delta_kit.py`)
+
+A rebuilt Delta that exists only in Blender (`docs/sprints/DELTA_V2.md`). `delta_v2.py` builds
+the scene `Delta_v2` (v2 and today's map side by side, `show("v2")` / `show("today")`) and
+renders `build/previews/delta_v2_*.png`; its vehicles and base pieces live in `delta_kit.py`
+and are exported only with `build_assets.py -- --delta-v2`. None of them are uploaded.
+
 ## The map in Blender (`build/delta_map.py`, `delta_map.blend`)
 
 Checkpoint Delta is built from plain Parts by `src/server/ArenaService.luau` (exact

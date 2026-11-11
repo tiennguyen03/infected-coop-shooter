@@ -60,6 +60,7 @@ The plan beyond this table, in phases, with the owner's open decisions: [docs/RO
 | 8 | Objective pools on Delta, then Mile 14 + its boss | open | `docs/PROGRESSION.md` |
 | 9 | Warden follow-ups | open | fight length 100-120 s, Gate dressing, insert/wipe radio lines (`docs/sprints/SPRINT_19_WARDEN.md`) |
 | 10 | Housekeeping | Tien | rotate the group Open Cloud key (it was pasted in chat); archive the old CZS and "Shooterr" experiences |
+| 11 | Checkpoint Delta v2 (proposal) | Tien to look | A rebuilt Delta in Blender only: `docs/sprints/DELTA_V2.md`, previews `assets/3d/build/previews/delta_v2_*.png`. Nothing in the game changed; the owner's answers to the questions there decide what gets built |
 
 ## Where to look
 
