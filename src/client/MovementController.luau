@@ -295,10 +295,6 @@ local function step()
 	end
 end
 
-function MovementController.isMoving(): boolean
-	return move ~= nil or dash ~= nil
-end
-
 function MovementController.init()
 	ContextActionService:BindActionAtPriority(
 		ACTION,
