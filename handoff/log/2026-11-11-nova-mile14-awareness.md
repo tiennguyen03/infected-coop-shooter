@@ -27,6 +27,13 @@ in a viewport, NONE / SUPPRESSOR); the match quiets the shot (noise, volume 0.3,
 shows the can on the gun. Checked: tests (6 new), types, a lobby playtest screenshot of the EDIT
 screen on the M16 with the can on the muzzle (framing tightened after; the replay to see it did
 not start). Not played in a match yet.
+**Then the woods and the night:** four meshes from `build/trees.py` (Blender headless,
+uploaded, ids in ASSET_IDS.md) placed in the woods and along the deck; `Config.NightSky`;
+night vision raises the ambient while on. The EDIT screen now frees the mouse itself and closes
+on Backspace / Escape (Nova opened my test copy, which had neither). Mile 14 Dev could not move:
+its StarterPlayerScripts held a saved `RbxCharacterSounds`, and Roblox never inserted
+PlayerModule / PlayerScriptsLoader there; removed, `CharacterAutoLoads` matched to Match Dev,
+saved and reopened by Nova: moves now. A place copied this way needs the same check.
 **Next (the plan's steps):** 2 the suppressor (per gun row, Arms Room pick, muzzle model, quiet
 shot sound); 3 the map proper (the Overpass, night sky, living trees, sleepers placed in buses
 and booths); 4 going loud (the horn, spawns, Kill the Horn) and quiet objectives with a reward;

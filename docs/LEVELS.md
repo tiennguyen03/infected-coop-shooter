@@ -390,7 +390,7 @@ container. Built pieces are listed in `assets/3d/README.md`.
 
 ## C1. Mile 14 (full dark)
 
-**First pass built** (2026-11-11, `src/server/Missions/Mile14.luau`, played in Mile 14 Dev): the deck in two halves (HighwayS, HighwayN) with the Culvert between, the Jam (22 buses, none over the Culvert), the Toll Plaza lot with its four booths and jersey pairs, the Rest Stop diner and lot, and woods (Nova: "some wooded areas in it") on the east shoulder south, the west shoulder north, behind the Toll Plaza and behind the Rest Stop, dead trees standing in until a living tree is modelled. Not yet: the Overpass, the off-ramp, pumps and canopy, the water tower, night lighting, placed sleepers, objectives. Played quiet: [PROGRESSION.md > Awareness](PROGRESSION.md#awareness-the-quiet-missions).
+**First pass built** (2026-11-11, `src/server/Missions/Mile14.luau`, played in Mile 14 Dev): the deck in two halves (HighwayS, HighwayN) with the Culvert between, the Jam (22 buses, none over the Culvert), the Toll Plaza lot with its four booths and jersey pairs, the Rest Stop diner and lot, and woods (Nova: "some wooded areas in it") on the east shoulder south, the west shoulder north, behind the Toll Plaza and behind the Rest Stop, now real woods (`build/trees.py`: tall and young pines, a broadleaf now and then, a shrub for every third tree) and brush along both foots of the deck to creep past the Jam; night lighting (`Config.NightSky`, [STYLES.md > Mile 14's night](STYLES.md#mile-14s-night-2026-11-11)). Not yet: the Overpass, the off-ramp, pumps and canopy, the water tower, placed sleepers, objectives. Played quiet: [PROGRESSION.md > Awareness](PROGRESSION.md#awareness-the-quiet-missions).
 
 | Landmark | Centre | Bounds | Level | Built from |
 |---|---|---|---|---|

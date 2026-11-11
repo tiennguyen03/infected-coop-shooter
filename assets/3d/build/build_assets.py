@@ -1358,6 +1358,11 @@ import aircraft  # noqa: E402
 
 aircraft.register(sys.modules[__name__])
 
+# Trees and brush for Mile 14's woods (2026-11-11) live in trees.py.
+import trees  # noqa: E402
+
+trees.register(sys.modules[__name__])
+
 # The distant skyline towers (and their lit-window twins) live in city.py (owner, 2026-11-08).
 import city  # noqa: E402
 

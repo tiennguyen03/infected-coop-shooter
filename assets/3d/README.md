@@ -183,6 +183,14 @@ tent, sandbag bunker, dead tree, lamp post) and the bodies. `props.profile()` ex
 silhouette (the cars); `props.panel()` lays glass on a sloped edge. Cars are built to the
 5-stud figure (roof 4.4-7.2) with composite colliders.
 
+## Trees and brush live in `build/trees.py`
+
+Mile 14's woods (2026-11-11): `env_pine_tall` (24), `env_pine_small` (13), `env_tree_leafy`
+(15, a broadleaf) and `env_shrub` (3.4), 100-192 tris each, registered with
+`trees.register(ba)`. Pines are stacked 8-sided cones alternating `foliage_d` / `olive_d` over
+a `rust_d` trunk; shapes are jittered from fixed seeds. In game only the trunk collides
+(`MeshAssets` colliders); the shrub collides with nothing and stops rays (`hides`).
+
 ## The distant city lives in `build/city.py`
 
 Six skyline towers (`env_city_office`, `_residential`, `_deco`, `_glass`, `_ruined`,

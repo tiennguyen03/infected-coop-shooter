@@ -159,6 +159,34 @@ local Config = {
 		},
 	},
 
+	-- The night sky (Nova, 2026-11-11, Mile 14: "i want it to be nearly pitch black"). A mission
+	-- listed in Missions gets this instead of Delta's late afternoon (SkyService): midnight, no
+	-- sun or moon, near-black ambient light, a dark haze; the burning skyline is the only glow.
+	-- Night vision lifts it (NightVision.Ambient).
+	NightSky = {
+		Missions = { mile14 = true } :: { [string]: boolean },
+		ClockTime = 0,
+		Brightness = 0,
+		Ambient = Color3.fromRGB(7, 8, 11),
+		OutdoorAmbient = Color3.fromRGB(12, 13, 18),
+		ExposureCompensation = -0.4,
+		Atmosphere = {
+			Density = 0.42,
+			Offset = 0,
+			Color = Color3.fromRGB(10, 11, 15),
+			Decay = Color3.fromRGB(4, 5, 8),
+			Haze = 0.6,
+		},
+		Clouds = { Cover = 0.9, Density = 0.7, Color = Color3.fromRGB(16, 17, 21) },
+		StarCount = 300, -- a few, faint, through gaps in the cloud
+		ColorCorrection = {
+			Brightness = -0.03,
+			Contrast = 0.12,
+			Saturation = -0.45,
+			Tint = Color3.fromRGB(190, 204, 235),
+		},
+	},
+
 	-- Night vision (Nova, 2026-11-11: the goggles on the soldier's FAST helmet, for a night-time
 	-- area): Keys.NightVision or GamepadKey flips them down and up (client NightVision). The view
 	-- goes green and bright: Lighting exposure raised, a green colour correction with no colour
@@ -168,6 +196,10 @@ local Config = {
 		GamepadKey = Enum.KeyCode.DPadUp,
 		FlipSeconds = 0.18, -- the blink as the tubes come down or go up
 		Exposure = 2.2, -- added to Lighting.ExposureCompensation (stops)
+		-- While on, the ambient light on this client is raised to these (a near-black night,
+		-- NightSky, has too little light for exposure alone to lift); put back when off.
+		Ambient = Color3.fromRGB(46, 52, 46),
+		OutdoorAmbient = Color3.fromRGB(70, 78, 70),
 		Tint = Color3.fromRGB(120, 255, 150),
 		Brightness = 0.08,
 		Contrast = 0.3,

@@ -7,6 +7,7 @@
 -- suppressor). The suppressor shows on the gun as it is picked. DONE hands the fitting back
 -- to the Loadout (signed with SIGN FOR IT); BACK leaves it as it was.
 
+local ContextActionService = game:GetService("ContextActionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
@@ -26,6 +27,7 @@ local WIDTH, HEIGHT = 780, 460
 local VIEW = Vector2.new(440, 300)
 local ROW = 30
 local FOV = 34
+local ACTION_BACK = "GunsmithBack"
 
 -- The rack's copy of the gun (ArmsRack: a Model named by the gun's id), or nil.
 local function rackPiece(id: string): Model?
@@ -74,13 +76,14 @@ function GunsmithUI.open(
 	cover.AutoButtonColor = false
 	cover.Text = ""
 	cover.BackgroundColor3 = Color3.new()
-	cover.BackgroundTransparency = 0.35
+	cover.BackgroundTransparency = 0.6
 	cover.BorderSizePixel = 0
 	cover.Size = UDim2.fromScale(1, 1)
 	cover.ZIndex = 20
+	cover.Modal = true -- the mouse is free while it is open, whoever opened it
 	cover.Parent = parent
 
-	local frame = HudTheme.rect(cover, UDim2.fromOffset(WIDTH, HEIGHT), C.MenuBack, 0.04)
+	local frame = HudTheme.rect(cover, UDim2.fromOffset(WIDTH, HEIGHT), C.MenuBack, 0)
 	frame.AnchorPoint = Vector2.new(0.5, 0.5)
 	frame.Position = UDim2.fromScale(0.5, 0.5)
 	local stroke = Instance.new("UIStroke")
@@ -261,8 +264,23 @@ function GunsmithUI.open(
 		end
 		closed = true
 		spin:Disconnect()
+		ContextActionService:UnbindAction(ACTION_BACK)
 		cover:Destroy()
 	end
+	-- Backspace or Escape closes this screen only (bound over the Loadmaster's own Backspace).
+	ContextActionService:BindActionAtPriority(
+		ACTION_BACK,
+		function(_, state)
+			if state == Enum.UserInputState.Begin then
+				close()
+			end
+			return Enum.ContextActionResult.Sink
+		end,
+		false,
+		Enum.ContextActionPriority.High.Value + 10,
+		Enum.KeyCode.Backspace,
+		Enum.KeyCode.Escape
+	)
 
 	local back = textButton(frame, "BACK", Vector2.new(120, 36))
 	back.AnchorPoint = Vector2.new(1, 0)

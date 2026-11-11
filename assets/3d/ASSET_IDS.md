@@ -78,6 +78,10 @@ Lobby meshes (12 `env_fallow_*`, 4 `veh_lantern_*`) uploaded 2026-11-09 to the g
 | env_tent | 96064782371543 | 119391750870040 | 19.2 x 8.6 x 12 | solid; door on -X |
 | env_checkpoint | 71573561117915 | 129215637928455 | 22.05 x 9.5 x 7.4 | Box + composite colliders; booth at -X, boom along +X |
 | env_dead_tree | 103119294791056 | 130464254006022 | 4.97 x 13.98 x 7.09 | Hull |
+| env_pine_tall | 110981133961351 | 87840358893699 | 11.39 x 24.2 x 11.39 | trunk collider (Mile 14 woods, `build/trees.py`) |
+| env_pine_small | 111526025350273 | 134927480363018 | 6.39 x 13 x 6.39 | trunk collider |
+| env_tree_leafy | 96385340979373 | 140038457764911 | 9.98 x 15.83 x 8.42 | trunk collider |
+| env_shrub | 98735801623297 | 115146538329050 | 5.59 x 3.42 x 5.1 | no collision, stops sight and shots (`hides`) |
 | env_lamp_post | 132474171948585 | 84369687950095 | 4.9 x 13 x 1.2 | Hull; arm along +X |
 | inf_gore_stump | 85306816428466 | 84507882691071 | 0.42, 0.24, 0.44 | GoreService stump, offset 0.014, 0.070, 0 |
 | env_fallow_bow | 79486262325305 | 104622065954343 | 84.00 x 46.00 x 67.00 | the Fallow (`FallowArt`); offset in MeshAssets |

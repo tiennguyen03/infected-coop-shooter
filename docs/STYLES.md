@@ -483,6 +483,17 @@ the limb bounds, so they grew with the shapes: Walker head 1.38 x 1.92 x 1.40 (w
 1.19 x 2.12 x 1.01). Not yet seen in game: which side the wounds land on, gore stumps on the
 new arms, how the clips move the longer right arm.
 
+### Mile 14's night (2026-11-11)
+
+Nova: "nearly pitch black". `Config.NightSky` (SkyService, for its `Missions`): midnight, no sun
+or moon, brightness 0, ambient (7, 8, 11) / outdoor (12, 13, 18), exposure -0.4, a dark
+blue-black haze (density 0.42), heavy dark cloud, 300 faint stars, a cold drained grade. The
+burning skyline (the distant city) is the only glow on the horizon. Night vision lifts it on
+that client: +2.2 exposure and the ambient raised to (46, 52, 46) / (70, 78, 70)
+(`Config.NightVision.Ambient`), put back when the goggles go up. The woods are
+`build/trees.py` (tall and young pines, a broadleaf, a shrub) in the palette's dark greens on a
+dark bark.
+
 ### The Carrier's sky (gloomy, 2026-11-10)
 
 Tien: gloomier. An overcast, cold late afternoon on a grey sea (`Config.Lobby.Sky`): ClockTime
