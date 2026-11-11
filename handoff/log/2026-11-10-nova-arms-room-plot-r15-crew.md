@@ -23,3 +23,10 @@ and `.Crew` (animations). The crew walk and idle are Roblox's stock R15 clips, n
 **Next:** a real face and kit as meshes for the crew (still small blocks), the four guns not
 reworked (revolver, M2010, Goose, M17), melee weapons for the counter's empty section, Nova's
 voice lines (record into `assets/audio/voice/`, then bank and wire them).
+
+**Later the same day:** lobby lag fixed (crew rigs on rigid Motor6Ds), Arms Room hover fixed,
+first person in the match (T: arms, gun, its own reload, kick, sway; shots from the barrel;
+crosshair hides down the sights), real-world sights on all nine guns with a `sight` point per
+gun. Nova playtested: okay overall. **Still needs work:** the scopes (M2010, M110, Goose's
+optic) are only a ring and a crosshair, no zoom; `Config.Camera.FirstPerson.SightEye` may want
+tuning. Next session: the scopes first.
