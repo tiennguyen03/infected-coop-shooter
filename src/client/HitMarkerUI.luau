@@ -2,10 +2,11 @@
 -- Hit feedback. The server reports each hit to the player who landed it only, and every
 -- kill to everyone, with DamageDealt(position, amount, kind, attacker). The shooter sees
 -- the spark burst and hears the 3D hit sound at the hit point; everyone sees a kill's
--- burst. Only the attacker gets the crosshair hit marker:
--- four diagonal ticks, white on a hit, larger and gold on a headshot, larger and red on a
--- kill. Damage over time (bleed, fire, rats) bursts but never marks, so the marker stays
--- tied to the trigger. Sizes and timings in Config.HitMarker.
+-- burst (dark blood, Config.HitMarker.KillBurst). Only the attacker gets the crosshair hit
+-- marker: four diagonal ticks, white on a hit, larger and gold on a headshot, larger and red
+-- on a kill, and on a kill a soft tick (Config.Audio.KillConfirm). Damage over time (bleed,
+-- fire, rats) bursts but never marks, so the marker stays tied to the trigger. Sizes and
+-- timings in Config.HitMarker.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -13,6 +14,8 @@ local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
+local Feel =
+	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Rules"):WaitForChild("Feel"))
 local GoreFX = require(script.Parent.GoreFX)
 local SoundFX = require(script.Parent.SoundFX)
 
@@ -21,22 +24,23 @@ local HitMarkerUI = {}
 local HIT_COLOR = Color3.fromRGB(255, 233, 120)
 local HEADSHOT_COLOR = Color3.fromRGB(255, 255, 255)
 local BLEED_COLOR = Color3.fromRGB(255, 90, 70)
-local DEATH_COLOR = Color3.fromRGB(110, 185, 90)
 -- Kinds that come straight from a trigger pull or a thrown/called weapon hit.
 local MARKED_KINDS = { hit = true, headshot = true, breach = true }
 
 local markerRoot: Frame? = nil
 local ticks: { Frame } = {}
 local markerToken = 0
+local lastKillConfirm: number? = nil
 
--- Short spark burst at a world position (hit/bleed/death feedback).
-local function burst(position: Vector3, color: Color3, count: number)
+-- Short spark burst at a world position (hit/bleed/death feedback). `endColor` fades the
+-- sparks to a second colour over their life.
+local function burst(position: Vector3, color: Color3, count: number, endColor: Color3?)
 	local attachment = Instance.new("Attachment")
 	attachment.WorldPosition = position
 	attachment.Parent = workspace.Terrain
 
 	local emitter = Instance.new("ParticleEmitter")
-	emitter.Color = ColorSequence.new(color)
+	emitter.Color = ColorSequence.new(color, endColor or color)
 	emitter.Lifetime = NumberRange.new(0.2, 0.45)
 	emitter.Speed = NumberRange.new(9, 16)
 	emitter.SpreadAngle = Vector2.new(180, 180)
@@ -126,10 +130,23 @@ local function showMarker(kind: string)
 	end)
 end
 
+-- The soft tick for your own kill; kills in the same instant share one.
+local function killConfirm()
+	local settings = Config.Audio.KillConfirm
+	local now = os.clock()
+	if not Feel.canKillConfirm(now, lastKillConfirm, settings.MinGap) then
+		return
+	end
+	lastKillConfirm = now
+	local pitch = settings.Pitch + (math.random() * 2 - 1) * settings.PitchVary
+	SoundFX.ui(settings.Bank, settings.Group, settings.Volume, pitch)
+end
+
 local function onDamageDealt(position: Vector3, _amount: number, kind: string?, attacker: Player?)
 	if kind == "death" then
 		-- The death cry comes from the body itself (EnemyService plays the form's bank).
-		burst(position, DEATH_COLOR, 14)
+		local killBurst = Config.HitMarker.KillBurst
+		burst(position, killBurst.Color, killBurst.Count, killBurst.ColorEnd)
 	elseif kind == "bleed" then
 		burst(position, BLEED_COLOR, 5)
 	elseif kind == "headshot" then
@@ -147,7 +164,10 @@ local function onDamageDealt(position: Vector3, _amount: number, kind: string?, 
 	if attacker ~= Players.LocalPlayer then
 		return
 	end
-	if kind == "death" or MARKED_KINDS[kind or "hit"] then
+	if kind == "death" then
+		showMarker(kind)
+		killConfirm()
+	elseif MARKED_KINDS[kind or "hit"] then
 		showMarker(kind or "hit")
 	end
 end
