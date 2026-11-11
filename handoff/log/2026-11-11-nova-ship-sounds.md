@@ -15,3 +15,5 @@ builds, 135 tests, types for both places. Not heard: picked by description.
 **Heads-up:** `CrewWalk` now requires `SoundBanks` (shared). The player's own footsteps on the ship
 are still muted (`DefaultStepMute`; Tien's #31 leaves them so).
 **Next:** Nova listens and says what is too loud, harsh or missing; volumes are per row.
+
+**Later:** Nova saw lag in a playtest. The client log was one error each frame, `CrewWalk:232: attempt to index nil with Enabled`: near a walking crew member the speech bubble was gone (dressing the body replaces the head, and the bubble was parented to the old one), the error stopped the walkers each frame and the stack traces flooded the output. Fixed in `CrewWalk` (bubble in the PlayerGui, `Adornee` re-found on the current head). Older than the ship sounds. Server was healthy (60 fps).

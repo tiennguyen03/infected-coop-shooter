@@ -57,9 +57,15 @@ local function decode(text: string): { Vector3 }
 	return route
 end
 
+-- The line over a crew member's head. It lives in the PlayerGui, pointed at the head: dressing
+-- the body (NpcBody) replaces the head after CrewWalk first sees it, and a bubble parented to
+-- the old head went with it (every frame near that figure then raised: the lobby's lag,
+-- 2026-11-11). bubbleOf finds the current head again.
 local function bubbleOn(head: BasePart): TextLabel
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "CrewLine"
+	gui.ResetOnSpawn = false
+	gui.Adornee = head
 	gui.Size = UDim2.fromOffset(260, 60)
 	gui.StudsOffset = Vector3.new(0, 2.2, 0)
 	gui.MaxDistance = CREW.BubbleDistance * 2
@@ -81,8 +87,21 @@ local function bubbleOn(head: BasePart): TextLabel
 	pad.PaddingRight = UDim.new(0, 8)
 	pad.Parent = text
 	text.Parent = gui
-	gui.Parent = head
+	gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
 	return text
+end
+
+local function bubbleOf(w: Walker): BillboardGui?
+	local gui = w.bubble.Parent
+	if not (gui and gui:IsA("BillboardGui")) then
+		return nil
+	end
+	local head = gui.Adornee
+	if not (head and head:IsDescendantOf(w.model)) then
+		local fresh = w.model:FindFirstChild("Head")
+		gui.Adornee = if fresh and fresh:IsA("BasePart") then fresh else nil :: any
+	end
+	return gui
 end
 
 local function add(model: Model)
@@ -196,6 +215,10 @@ local function frame(dt: number)
 	for i = #walkers, 1, -1 do
 		local w = walkers[i]
 		if not w.model.Parent then
+			local gui = w.bubble.Parent
+			if gui then
+				gui:Destroy()
+			end
 			table.remove(walkers, i)
 			continue
 		end
@@ -227,15 +250,19 @@ local function frame(dt: number)
 			and now >= w.nextLine
 			and (feet.Position - me).Magnitude <= CREW.BubbleDistance
 		then
-			w.bubble.Text = w.lines[random:NextInteger(1, #w.lines)]
-			local gui = w.bubble.Parent :: BillboardGui
-			gui.Enabled = true
 			w.hideAt = now + CREW.BubbleSeconds
 			w.nextLine = now + CREW.BubbleCooldown
+			local gui = bubbleOf(w)
+			if gui then
+				w.bubble.Text = w.lines[random:NextInteger(1, #w.lines)]
+				gui.Enabled = true
+			end
 		elseif w.hideAt > 0 and now >= w.hideAt then
 			w.hideAt = 0
-			local gui = w.bubble.Parent :: BillboardGui
-			gui.Enabled = false
+			local gui = bubbleOf(w)
+			if gui then
+				gui.Enabled = false
+			end
 		end
 	end
 	if #parts > 0 then
