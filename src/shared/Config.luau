@@ -800,9 +800,24 @@ local Config = {
 		FlareCooldown = 20, -- seconds after a pallet lands before the next flare
 		FlareThrowDistance = 35, -- studs, same arc as the breach charge
 		DropDelay = 20, -- seconds from flare to pallet (the lure window)
-		CardLifetime = 60, -- unpicked cards vanish
-		CardSpacing = 4.5, -- studs between the three cards
-		PickRadius = 2.5, -- walk this close to a card to take it
+		-- Taking a card (owner 2026-11-11: never by walking over it). Walk up to the crate,
+		-- hold Key for Hold seconds, and a panel of big cards opens (RewardPanel); pick with
+		-- a click or tap, keys 1-3 or the gamepad. Walking past CloseRadius closes it without
+		-- a pick. E is the stim, so the key is the revive key.
+		Pick = {
+			WalkOver = false, -- true: the old way back (small cards in the world, walk into one)
+			Key = Enum.KeyCode.F,
+			GamepadKey = Enum.KeyCode.ButtonX,
+			Hold = 0.3, -- seconds the key is held to open the panel
+			Radius = 9, -- studs from the crate: the prompt shows and a pick is taken
+			Slack = 3, -- server tolerance on top of Radius (latency)
+			CloseRadius = 12, -- the open panel closes beyond this
+			ConfirmSeconds = 0.45, -- the taken card flashes this long before the panel goes
+			PanelScale = 1, -- the whole panel, on top of the HUD scale (0.8: smaller, see more fight)
+			Dim = 0.8, -- transparency of the dark layer behind the panel (1: none)
+		},
+		CardSpacing = 4.5, -- Pick.WalkOver only: studs between the three cards
+		PickRadius = 2.5, -- Pick.WalkOver only: walk this close to a card to take it
 		RearmRadius = 6, -- studs from the pallet: full magazine + reserve, once per player per pallet
 		MaxCrates = 4, -- oldest pallet closes when a fifth lands (perf)
 		Lure = {
@@ -814,15 +829,49 @@ local Config = {
 		},
 	},
 
-	-- Pallet cards: every pallet shows each player the same three
-	-- supply cards (UpgradeDefinitions, Kind "supply"); walk into one to take it. Upgrade
-	-- crates (the Primary's site crate today; Stores and Secondary crates later) show
-	-- CardsPerPlayer field upgrades instead. No rarity.
+	-- Crates and their cards (RequisitionService, Rules/Reward). A crate of a kind shows each
+	-- player up to CardsPerPlayer cards in a panel; one pick per player per crate. No rarity.
+	--   supply: a Resupply pallet (and the Warden's): the three supply cards.
+	--   upgrade: the site crate when the hold starts: field upgrades the player does not
+	--     hold, ones for an empty slot first.
+	--   objective: the Main objective's reward when the hold ends: the same field-upgrade
+	--     choice, and on landing every living soldier gets Squad (no pick needed).
+	-- A field-upgrade offer short of CardsPerPlayer is filled with supply cards, so a crate
+	-- is never empty.
 	Crates = {
 		CardsPerPlayer = 3,
 		SupplyCards = { "medkit", "restock", "armour_plate" }, -- card order, left to right
-		ArmourPlate = 50, -- hit points of Shield soaked before health (EnemyProjectileService)
-		ShieldCap = 100, -- two plates at most
+		-- What each supply card gives (Rules/Reward Effects); the card text is built from
+		-- these rows (UpgradeDefinitions).
+		Cards = {
+			medkit = { Heal = true, Stims = true },
+			restock = { CallIns = true, Grenades = true, Stims = true },
+			-- 75 (was 50): beside a full heal, half a health bar was never the pick.
+			armour_plate = { Plate = 75 }, -- soaked before health (EnemyProjectileService)
+		},
+		ShieldCap = 100, -- the most armour a soldier carries
+		Kinds = {
+			supply = { Label = "RESUPPLY", Lifetime = 90, Beacon = false },
+			upgrade = { Label = "FIELD UPGRADE", Lifetime = 120, Beacon = true },
+			objective = {
+				Label = "OBJECTIVE REWARD",
+				Lifetime = 180,
+				Beacon = true,
+				Squad = {
+					Heal = true,
+					Ammo = true,
+					CallIns = true,
+					Grenades = true,
+					Stims = true,
+					Plate = 50,
+				},
+			},
+		},
+		Beacon = { Height = 70, Width = 0.7, Transparency = 0.55 }, -- the light pillar over a crate
+		-- A bot takes a supply card when it is missing at least this much of what the card
+		-- gives (today: health); bots have no call-ins, stims or upgrades to refill.
+		BotNeed = 0.25,
+		BotRadius = 14, -- studs from the crate: a bot this close takes its card
 	},
 
 	-- Call-ins (CallInDefinitions; Slots slots on keys 1-4). Charges refill one at a time every
@@ -1005,7 +1054,9 @@ local Config = {
 		PressureWave = { Walker = 8, Runner = 4 }, -- spawned around the zone on appear
 		PressureBruteAfter = 0, -- also +1 Brute if the run is older than this (seconds)
 		SupplyReward = 500,
-		CompleteCrate = "upgrade", -- the crate the hold's end drops; "" for none
+		-- The crate the hold's end drops (Crates.Kinds): "objective" restocks the squad and
+		-- offers a field upgrade; "upgrade" is the plain crate; "" for none.
+		CompleteCrate = "objective",
 		CompleteCrateOffset = 10, -- studs from the site crate, toward the nearest soldier
 		ZoneSize = Vector3.new(46, 1, 46), -- Sprint 13 tune: bigger, room to kite while holding
 		ZonePosition = Vector3.new(50, 8.5, 50), -- on the Compound's lower tier (ArenaService HILLS)

@@ -6,13 +6,16 @@
 
 local Messages = table.freeze({
 	-- Resupply: client -> server ("flare", target) | ("pick", crateId, cardId);
-	-- server -> client ("called", thrower) | ("cards", ...) | ("picked", crateId) | ("closed", crateId)
+	-- server -> client ("called", thrower) | ("cards", ...) | ("picked", crateId, cardId) |
+	-- ("refused", crateId, reason) | ("taken", crateId, names) | ("closed", crateId)
 	Resupply = table.freeze({
 		Flare = "flare",
 		Pick = "pick",
 		Called = "called",
 		Cards = "cards",
 		Picked = "picked",
+		Refused = "refused", -- (crateId, reason): Rules/Reward.checkPick's word
+		Taken = "taken", -- (crateId, names): the callsigns that have taken a card from the crate
 		Closed = "closed",
 	}),
 	-- UseAbility (client -> server) and AbilityUsed (server -> client): the soldier's kit

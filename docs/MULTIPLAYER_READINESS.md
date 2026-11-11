@@ -39,6 +39,10 @@ mine, sentry and wire caps, every `PlayerRemoving` handler, kill credit via
 - **Hold:** any living member (player or bot) in the zone runs it; the HUD shows `n / living`.
 - **Extraction:** runs only while every living player is on the pad (downed players and bots
   do not hold it up); otherwise "WAITING FOR SQUAD (n / m)". One helper, `Squad.zoneCount`.
+- **Crate cards:** each player has their own offer on a crate and picks once, from a panel
+  they open at the crate (`Requisition.Pick`); the game does not pause and the panel closes
+  when they walk off or go down. Bots take a supply card by need, no panel. The Main
+  objective's squad restock reaches every living member.
 - **Hits:** `DamageDealt` goes to the attacking player only; a bot's hit to nobody; kills to
   everyone.
 - **Clock:** `DifficultyService.getElapsed` adds time only while the field is not paused

@@ -87,6 +87,7 @@ local function sections(): { Section }
 		{ label = "Restock call-ins", send = cmd("RestockCallIns") },
 		{ label = "Drop upgrade crate", send = cmd("DropUpgradeCrate") },
 		{ label = "Drop supply crate", send = cmd("DropSupplyCrate") },
+		{ label = "Drop objective reward", send = cmd("DropObjectiveCrate") },
 		{ label = "Clear upgrades", send = cmd("ClearUpgrades") },
 	}
 	for _, id in CallInDefinitions.Order do
