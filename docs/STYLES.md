@@ -410,6 +410,69 @@ switched off (`Config.Player.SkinnedBody = false`, see `assets/3d/README.md`).
 - Weapons: `gun` and `dark` materials, one accent facet (sight, mag tape) in the owning
   item's accent color.
 
+### Infected v2 (proposal, 2026-11-10; not in the game)
+
+A remade look for Walker, Runner, Brute and Hocker, for the owner to compare with the bodies
+above. The game still loads the current ones; nothing is exported or uploaded. Source:
+`assets/3d/build/infected_v2.py`. Pictures (current next to v2, front and back):
+`assets/3d/build/previews/infected_v2_<form>.png` and `lineup_infected_v2.png`.
+
+Same rules: blocky R15 limb sets, palette swatches, no green skin, costumes from
+CHARACTERS.md. What changes is the read at distance: a few big shapes instead of many small
+ones. Each body gets one large open wound with pale bone in it, pustules big enough to break
+the outline, a face with dark sockets and an open jaw, and one bad side.
+
+- **Walker** (1,792 tris, cap 1,800): the left side is still a person (jacket, sleeve,
+  screening band, trouser, shoe). The right side is bare `pallor`: chest open over three
+  ribs, a clump of pustules on the dropped shoulder, a swollen arm hanging 0.2 lower, the
+  trouser leg torn off, a bare foot. Head `pallor.l`, tilted to the bad side, jaw hanging.
+- **Runner** (2,100, cap 2,200): three values instead of one dark red: `flesh` where light
+  lands, `wound` where it is deep, bone you can count (rib cage over a starved waist, bare
+  jaw open, brow, shoulder blade, spine). The black T-shirt is one rag and a strip.
+- **Brute** (2,088, cap 3,000): the shelf is one yoke: whole on the left with two broken bone
+  ends above the crown, broken short on the right under a tumour of four big pustules. The
+  chest is split top to bottom with ribs standing in it, on a `bruise.l` chest. The right
+  forearm and fist are a bone club with spurs; the left is the arm it had.
+- **Hocker** (1,632, cap 2,200): built round the neck. Swollen `flesh` glands and a ring of
+  pustules for the sac to sit in, the mouth a raw dark hole above it, the jacket front soaked
+  to the waist, a hump between the shoulders. Strain green only at the bottom of the throat
+  and on the sac.
+
+Sided limbs: Walker arms and legs, Brute arms (`infected_v2.SIDED`). Heads, torsos and the
+sided limbs are not symmetric, so each needs the X mirror before upload (`assets/3d/README.md`),
+or the wounds and the club's spurs land on the wrong side. To adopt a form:
+`build_assets.py -- --infected-v2` builds `inf_v2_<form>_<limb>`; upload, then point
+`MeshAssets` at them. Not checked in game: gore stumps on the new arms, hitboxes, how the
+clips move the longer right arm.
+
+### Infected roster (proposal, 2026-11-11; not in the game)
+
+Bloat, Shedder, Crawler, Kite and Growth in the v2 look, for later stages. Source:
+`assets/3d/build/infected_roster.py`; pictures `previews/infected_v2_<form>.png` (front, bad
+side, back, beside the 5-stud figure) and `lineup_infected_roster.png` (all nine to scale).
+Sheets: CHARACTERS.md A. Tris are whole bodies.
+
+- **Bloat** (1,866, cap 2,400; scale 1.1): a faceted ball across both torso meshes, `flesh`
+  with a `pallor.l` front and `strain.d` veins from the navel; tan shirt on the left and
+  back; right side split in a long tear, pustules on the shoulder; arms out 42 degrees, bite
+  bandage on the left forearm, knees bowed. The navel sphere is an attached Part.
+- **Shedder** (2,332, cap 2,800; scale 1.15): a stack of tapered blocks, a `strain.d` seam
+  between each, the gown soaked in a band at every seam; neck 0.5 longer; bare spine at the
+  back; two small arms on the ribs; cut cuffs. The right forearm hangs out of its seam.
+- **Crawler** (536, cap 700; scale 0.45): one torso block carried flat between two long bone
+  arms, elbows above its back; knob head; legs are knots; raw ring at the rear.
+- **Kite** (600, cap 600; 4 parts): bone wedge, open keel, 3-stud ribbed wings (the right
+  one torn), a tail strip with hi-vis.
+- **Growth** (1,200, cap 1,200; mat, host, sac x3, root x2): an 8-stud terraced mat, the host
+  bent double in hi-vis with his ribs standing out of his back, three sacs behind him.
+
+Where this differs from the sheets (the v2 look wins): eyes are milky, not green; skin is
+`flesh` / `pallor`, not `rebuilt.l` and `white.d` (Bloat) or `infected skin`; trousers are
+`concrete.d`, not `asphalt`; the Bloat's width is in the mesh, not BodyWidthScale; the
+Bloat's wound has no bone (fat); the Crawler's raw ring is at the rear, not the top of the
+torso. Sided limbs (`infected_roster.SIDED`): Bloat arms and legs, Shedder and Crawler arms.
+Not checked: anything in game (clips on the hung-off arms, hitboxes, the Crawler's hip height).
+
 ### The Carrier's sky (gloomy, 2026-11-10)
 
 Tien: gloomier. An overcast, cold late afternoon on a grey sea (`Config.Lobby.Sky`): ClockTime
