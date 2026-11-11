@@ -119,7 +119,11 @@ match place.
   boots). The body is worn untextured and coloured per figure (shirt, trousers, skin, gloves,
   boots), so one 9-mesh upload dresses everyone; skin and hair are picked from the name. A face
   (eyes, brows, mouth), hair, a belt, the cap or flight helmet and the kit are small welded
-  parts. The root is anchored; desk figures breathe with the stock R15 idle (server), walkers
+  parts. The joints are rigid Motor6Ds (NpcBody `joint`): the stock rig now ships physics
+  joints (AnimationConstraint + BallSocket), which made every limb a body the server simulated
+  while each client moved only the walker's root, dragging and correcting limbs every frame
+  (lag, fixed the same day). The root is anchored and the Humanoid's state machine is off, so
+  a figure is one anchored assembly with no physics; desk figures breathe with the stock R15 idle (server), walkers
   are walked by each client. No Humanoid name or health shows; nothing collides. Without the
   meshes a figure keeps the stock R15 body in its colours.
 - **Kit on the bodies** (2026-11-10, Nova: "personality"; details by the lore developer,

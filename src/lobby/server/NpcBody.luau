@@ -315,6 +315,64 @@ local KIT: { [string]: (wear: Wear) -> () } = {
 	end,
 }
 
+-- The R15 joints: name, the part nearer the root, the part it moves, the rig attachment
+-- both carry (the stock rig's names, so the stock clips drive them).
+local JOINTS: { { string } } = {
+	{ "Root", "HumanoidRootPart", "LowerTorso", "RootRigAttachment" },
+	{ "Waist", "LowerTorso", "UpperTorso", "WaistRigAttachment" },
+	{ "Neck", "UpperTorso", "Head", "NeckRigAttachment" },
+	{ "LeftShoulder", "UpperTorso", "LeftUpperArm", "LeftShoulderRigAttachment" },
+	{ "LeftElbow", "LeftUpperArm", "LeftLowerArm", "LeftElbowRigAttachment" },
+	{ "LeftWrist", "LeftLowerArm", "LeftHand", "LeftWristRigAttachment" },
+	{ "RightShoulder", "UpperTorso", "RightUpperArm", "RightShoulderRigAttachment" },
+	{ "RightElbow", "RightUpperArm", "RightLowerArm", "RightElbowRigAttachment" },
+	{ "RightWrist", "RightLowerArm", "RightHand", "RightWristRigAttachment" },
+	{ "LeftHip", "LowerTorso", "LeftUpperLeg", "LeftHipRigAttachment" },
+	{ "LeftKnee", "LeftUpperLeg", "LeftLowerLeg", "LeftKneeRigAttachment" },
+	{ "LeftAnkle", "LeftLowerLeg", "LeftFoot", "LeftAnkleRigAttachment" },
+	{ "RightHip", "LowerTorso", "RightUpperLeg", "RightHipRigAttachment" },
+	{ "RightKnee", "RightUpperLeg", "RightLowerLeg", "RightKneeRigAttachment" },
+	{ "RightAnkle", "RightLowerLeg", "RightFoot", "RightAnkleRigAttachment" },
+}
+
+-- Joins the limbs with rigid Motor6Ds from their rig attachments. Today's stock rig comes
+-- with physics joints instead (AnimationConstraint + BallSocketConstraint per joint): those
+-- leave every limb a separate body the server simulates, so a walker whose root only its
+-- client moves had its limbs dragged after it and corrected over the network every frame
+-- (the lag Nova saw, 2026-11-10). With Motor6Ds the whole figure is one anchored assembly:
+-- no physics, the client moves it whole, and the clips drive the motors.
+local function joint(model: Model)
+	for _, thing in model:GetDescendants() do
+		if
+			thing:IsA("AnimationConstraint")
+			or thing:IsA("BallSocketConstraint")
+			or thing:IsA("NoCollisionConstraint")
+		then
+			thing:Destroy()
+		end
+	end
+	for _, spec in JOINTS do
+		local part0 = model:FindFirstChild(spec[2])
+		local part1 = model:FindFirstChild(spec[3])
+		local a0 = part0 and part0:FindFirstChild(spec[4])
+		local a1 = part1 and part1:FindFirstChild(spec[4])
+		if
+			not (part0 and part0:IsA("BasePart") and part1 and part1:IsA("BasePart"))
+			or not (a0 and a0:IsA("Attachment") and a1 and a1:IsA("Attachment"))
+			or part1:FindFirstChild(spec[1])
+		then
+			continue
+		end
+		local motor = Instance.new("Motor6D")
+		motor.Name = spec[1]
+		motor.Part0 = part0
+		motor.Part1 = part1
+		motor.C0 = a0.CFrame
+		motor.C1 = a1.CFrame
+		motor.Parent = part1
+	end
+end
+
 -- One stock R15 rig, cloned for every figure (building one asks the avatar service).
 local template: Model? = nil
 local function rig(): Model?
@@ -336,10 +394,12 @@ local function rig(): Model?
 				or thing:IsA("Accoutrement")
 				or thing:IsA("Clothing")
 				or thing:IsA("Decal")
+				or thing:IsA("WrapTarget")
 			then
 				thing:Destroy()
 			end
 		end
+		joint(model)
 		template = model
 	end
 	return (template :: Model):Clone()
@@ -383,6 +443,16 @@ end
 local function finish(model: Model, dress: Dress, kit: Kit?, idle: boolean)
 	local dressed = MeshAssets.waitFor(BODY .. "head", Config.Lobby.Ship.TemplateWait) ~= nil
 		and MeshAssets.dressModel(model, BODY)
+	-- dressModel's joint rebuild runs a step later and clears any joint made before it: let it
+	-- pass, join the limbs, and check once more in case it ran late.
+	task.wait(0.2)
+	joint(model)
+	task.delay(1, function()
+		local waist = model:FindFirstChild("Waist", true)
+		if model.Parent and not (waist and waist:IsA("Motor6D")) then
+			joint(model)
+		end
+	end)
 	local name = model.Name
 	local skin = pick(SKINS, name, 7)
 	local hair = pick(HAIRS, name, 13)
@@ -519,6 +589,8 @@ function NpcBody.build(
 	humanoid.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOff
 	humanoid.BreakJointsOnDeath = false
 	humanoid.RequiresNeck = false
+	-- A figure only plays clips: no falling, climbing or getting up to work out every frame.
+	humanoid.EvaluateStateMachine = false
 	local root = model:FindFirstChild("HumanoidRootPart") :: BasePart
 	root.Anchored = true
 	root.CanCollide = false
