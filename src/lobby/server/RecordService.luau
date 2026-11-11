@@ -5,10 +5,12 @@
 -- StartMerits), kept in a DataStore (SaveSlot), sent to the soldier's client on the `Record`
 -- remote. Buying is checked here with Rules/Record against each gun's own Config price
 -- (WeaponDefinitions Price: 0 = issued free, nil = not for sale). The Loadmaster only signs
--- for a Loadout whose guns are on the record (`allows`). Merits are only granted at the start
--- for now: earning them from runs is open (the match would save what a run pays). Grenades
--- and call-ins are bought the same way (KitPrices: each item's own row; call-ins at the desk
--- that sells them, DeskShop).
+-- for a Loadout whose guns are on the record (`allows`). Merits are earned on missions: the
+-- match pays them onto this same record (src/server/MeritService) while the soldier is away,
+-- and the lobby reads it fresh on every join. Grenades and call-ins are bought the same way
+-- (KitPrices: each item's own row; call-ins at the desk that sells them, DeskShop). The
+-- record also holds tabs, the hard currency (TabsService pays Robux receipts through
+-- `grantReceipt`); nothing is bought with tabs yet.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -34,7 +36,13 @@ function RecordService.priceOf(id: string): number?
 end
 
 local function send(player: Player, record: Record.Record)
-	remote:FireClient(player, Messages.Record.State, record.merits, table.clone(record.owned))
+	remote:FireClient(
+		player,
+		Messages.Record.State,
+		record.merits,
+		table.clone(record.owned),
+		record.tabs
+	)
 end
 
 -- The soldier's record, waiting up to LOAD_WAIT while it loads; nil when they left.
@@ -80,9 +88,47 @@ local function buy(player: Player, id: unknown)
 	send(player, after)
 end
 
+-- Pays a Robux receipt's tabs onto the soldier's record, once (TabsService). The saved
+-- record is changed in one step (SaveSlot.update) and only then the one held here. True when
+-- the receipt is on the saved record (paid now or on an earlier try); false when it could not
+-- be saved, and Roblox will offer the receipt again.
+function RecordService.grantReceipt(player: Player, purchaseId: string, tabs: number): boolean
+	if not RecordService.waitFor(player) then
+		return false
+	end
+	local keep = Config.Tabs.ReceiptsKept
+	local written = slot:update(player, function(old: unknown): any
+		if not Record.canUpdate(old) then
+			return nil
+		end
+		local stored = Record.decode(old, SAVE.StartMerits)
+		local paid, granted = Record.grantReceipt(stored, purchaseId, tabs, keep)
+		if not granted and not Record.hasReceipt(stored, purchaseId) then
+			return nil -- a bad id or amount: nothing to write
+		end
+		return Record.encode(paid)
+	end)
+	if written == nil then
+		return false
+	end
+	local held = records[player]
+	if held then
+		local after, granted = Record.grantReceipt(held, purchaseId, tabs, keep)
+		if granted then
+			records[player] = after
+			-- A buy still waiting to be written (or being written) carries no tabs: save the
+			-- record held here again so the newest write has both.
+			slot:save(player, Record.encode(after))
+			send(player, after)
+		end
+	end
+	print(`[RecordService] {player.Name} paid {tabs} tabs for receipt {purchaseId}`)
+	return true
+end
+
 function RecordService.init()
 	remote = Remotes.get("Record")
-	slot = SaveSlot.new(SAVE.RecordStore, "r_")
+	slot = SaveSlot.new(SAVE.RecordStore, Record.KEY_PREFIX)
 	remote.OnServerEvent:Connect(function(player: Player, kind: unknown, id: unknown)
 		if kind == Messages.Record.Buy then
 			buy(player, id)

@@ -111,6 +111,25 @@ function SaveSlot.write(self: Slot, player: Player)
 	end)
 end
 
+-- Changes the saved value in one step (UpdateAsync, yields): `transform` gets what is stored
+-- and returns what to store, or nil to leave it alone. Returns the value written, or nil when
+-- nothing was written (the store is unavailable, every try failed, or `transform` said nil).
+-- For changes that must not be lost or doubled (a Robux receipt); `save` stays the everyday
+-- path.
+function SaveSlot.update(self: Slot, player: Player, transform: (old: unknown) -> any): any
+	local key = self.prefix .. player.UserId
+	local userId = player.UserId
+	return self:attempt("update", function(store: DataStore): any
+		return store:UpdateAsync(key, function(old: unknown): ...any
+			local value = transform(old)
+			if value == nil then
+				return nil
+			end
+			return value, { userId }
+		end)
+	end)
+end
+
 -- Saves `value` for `player`, no more often than MinWriteGap; a later value replaces one
 -- still waiting.
 function SaveSlot.save(self: Slot, player: Player, value: any)
