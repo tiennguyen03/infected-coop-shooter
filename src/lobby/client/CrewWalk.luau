@@ -3,7 +3,8 @@
 -- routes on this client only, with the stock R15 walk and idle (their joints swing the
 -- limbs; only the anchored root moves), a pause at each end, and a line over their head when
 -- you come close (LobbyCrew). One BulkMoveTo a frame for all the roots; nothing replicates
--- (the server never moves them again).
+-- (the server never moves them again). Walking, their boots sound on the deck: the match's
+-- Footsteps bank, one step every Config.Lobby.Ambience.CrewStepLength studs.
 
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
@@ -14,10 +15,12 @@ local Workspace = game:GetService("Workspace")
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local LobbyCrew = require(ReplicatedStorage.Lobby.LobbyCrew)
+local SoundBanks = require(ReplicatedStorage.Shared.SoundBanks)
 
 local CrewWalk = {}
 
 local CREW = Config.Lobby.Crew
+local AMB = Config.Lobby.Ambience
 
 type Walker = {
 	model: Model,
@@ -35,6 +38,8 @@ type Walker = {
 	hideAt: number,
 	nextLine: number,
 	lines: { string },
+	steps: Sound,
+	stepDist: number, -- studs walked since the last footstep
 }
 
 local walkers: { Walker } = {}
@@ -99,6 +104,8 @@ local function add(model: Model)
 			lines = crew.lines
 		end
 	end
+	local steps = SoundBanks.create("CrewSteps", 6, AMB.CrewStepFar)
+	steps.Parent = root
 	table.insert(walkers, {
 		model = model,
 		root = root,
@@ -115,6 +122,8 @@ local function add(model: Model)
 		hideAt = 0,
 		nextLine = 0,
 		lines = lines,
+		steps = steps,
+		stepDist = random:NextNumber(0, AMB.CrewStepLength),
 	})
 end
 
@@ -202,6 +211,13 @@ local function frame(dt: number)
 			else
 				idle:Play(0.25)
 				walk:Stop(0.25)
+			end
+		end
+		if walking then
+			w.stepDist += CREW.WalkSpeed * dt
+			if w.stepDist >= AMB.CrewStepLength then
+				w.stepDist -= AMB.CrewStepLength
+				SoundBanks.play(w.steps, "Footsteps", "step_hard", AMB.CrewStepVolume)
 			end
 		end
 		-- A line when a soldier walks close, then quiet for a while.

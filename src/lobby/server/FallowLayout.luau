@@ -214,4 +214,30 @@ FallowLayout.CoastZ = 900
 -- Where the four burn sites sit along the shore (X).
 FallowLayout.BurnSites = { -900, -560, -230, 120, 450, 820 }
 
+-- Where the ship's sounds come from (Nova, 2026-11-11: "noises that one would hear on a boat";
+-- client ShipAmbience, sounds in Config.Lobby.Ambience). Each key is a list of points; FallowBuilder
+-- puts an invisible anchor at each, named by its key. A loop (Ambience.Spots) plays at every point
+-- of its key; a one-shot (Ambience.OneShots) at a random point of its area's key.
+FallowLayout.Ambience = {
+	-- The bridge's radio and voices, in the Plot under the island.
+	plot = { Vector3.new(24, H + 6, 10) },
+	-- Crew talking low: by the desks at the spawn end, and aft past the ramp.
+	walla = { Vector3.new(4, H + 5, 104), Vector3.new(-2, H + 5, -40) },
+	-- Doors, lockers and latches round the hangar's edges.
+	Hangar = {
+		Vector3.new(-31, H + 4, 112),
+		Vector3.new(31, H + 4, 70),
+		Vector3.new(-31, H + 4, -10),
+		Vector3.new(31, H + 4, -60),
+		Vector3.new(-20, H + 4, -95),
+		Vector3.new(10, H + 4, 136),
+	},
+	-- The flight deck: the island's loudspeakers and the deck edges.
+	Deck = {
+		Vector3.new(26, D + 14, 20),
+		Vector3.new(-30, D + 3, 100),
+		Vector3.new(-30, D + 3, -110),
+	},
+}
+
 return FallowLayout

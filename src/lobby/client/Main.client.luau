@@ -16,5 +16,6 @@ require(script.Parent.RadarSpin).init()
 require(script.Parent.CrewWalk).init()
 require(script.Parent.LanternSpool).init()
 require(script.Parent.LobbyMusic).init()
+require(script.Parent.ShipAmbience).init()
 
 print("[Lobby] Client up")

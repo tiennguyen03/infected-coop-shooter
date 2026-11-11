@@ -361,13 +361,33 @@ tracks, a 4 s fade in on arrival, a 2.5 s fade out when your Lantern lifts (the 
 over before the teleport's fade), back on a failed lift. Tracks were picked by name and mood,
 not by ear: swap them in `Config.Lobby.Music.Tracks`.
 
+
+## Ship sounds (2026-11-11)
+
+Nova: "noises that one would hear on a boat. people moving around, crew mumbling, give some
+life to it". `ShipAmbience` (client) plays Pro Sound Effects clips from Roblox's audio library
+(licensed for any experience; all real aircraft-carrier and crew recordings), every one a row
+of `Config.Lobby.Ambience`, low in the mix in an `Ambience` SoundGroup that fades in on arrival
+and out with the music when the Lantern lifts. Nothing replicates.
+- **Beds**, one per area, everywhere in it: the hangar plays a carrier hallway loop (movement,
+  distant voices), the flight deck a motor idle with wind and water. Roblox sound passes through
+  walls, so the beds cross-fade over 2.5 s by height (root above Y 36: the deck), and every
+  other sound belongs to an area and is silent outside it.
+- **Spots**, loops at anchors (`FallowLayout.Ambience`, invisible parts FallowBuilder puts in
+  `Fallow.Ambience`): the carrier bridge's radio chatter and voices in the Plot; crew talking
+  low by the desks and aft past the ramp. Each starts at a random point in its clip.
+- **One-shots** every 9 to 22 s from a random anchor of their area: a steel door, lockers,
+  latches, a carrier's interior horn in the hangar; the flight-deck loudspeaker on the island.
+- **Crew footsteps**: the walking crew (`CrewWalk`) step on the deck every 2.4 studs with the
+  match's Footsteps bank (hard surface).
+Picked by description, not by ear: swap a clip in `Config.Lobby.Ambience`.
 ## Files
 
 | Place | File |
 |---|---|
 | Project | `lobby.project.json` (shares `src/shared`; `src/lobby/shared` as `ReplicatedStorage.Lobby`; maps the match's `src/server/PlayerSetup.luau` into the lobby server and `src/client/HudTheme.luau`, `PaletteController.luau`, `LoadoutMenu.luau` into the lobby client; sets `Lighting.Technology`) |
 | Server | `src/lobby/server/`: `Main.server`, `FallowLayout`, `Build`, `FallowBuilder`, `FallowArt`, `PikeBody`, `NpcBody`, `DeskService`, `ContainmentBoard`, `PlotService`, `LaunchService`, `LanternBird`, `ArmsRack`, `LoadmasterService` |
-| Client | `src/lobby/client/`: `Main.client`, `LaunchUI`, `DeskDialogUI`, `ArmsRackUI`, `LoadmasterUI`, `DeskShop`, `RecordClient`, `LobbyMusic`, `HoldStill`, `RadarSpin`, `LanternSpool`, `SoldierMoves` |
+| Client | `src/lobby/client/`: `Main.client`, `LaunchUI`, `DeskDialogUI`, `ArmsRackUI`, `LoadmasterUI`, `DeskShop`, `RecordClient`, `LobbyMusic`, `ShipAmbience`, `HoldStill`, `RadarSpin`, `LanternSpool`, `SoldierMoves` |
 | Art | `assets/3d/build/fallow.py` (12 `env_fallow_*` meshes), `lantern.py` (4 `veh_lantern_*`); `MeshAssets` entries; `Config.Lobby.Ship`, `Config.Lobby.Lantern`; attribute `LiftAt`; rule `Rules/ArmsStats` (+ spec), `Config.Lobby.Rack` |
 | Shared | `src/lobby/shared/LobbyDesks`; rules `src/shared/Rules/Manifest`, `Rules/Containment`, `Rules/Handoff` (main's, the teleport data both places share); `Config.Lobby`, `Config.Places`, `Config.Containment`; remotes `Launch` + `Messages.Launch`, `Loadout` (shared with the match); attribute `DeskId` |
 | Match side | `HandoffService` reads the teleport data and `RunManager.receive` applies the signed Loadout (2026-11-09; `JoinData` retired); `LoadoutMenu.mount` options (title, hint, confirm) |

@@ -2432,6 +2432,61 @@ local Config = {
 		-- Music on the Carrier (LobbyMusic): licensed tracks from Roblox's audio library, free for
 		-- any experience, picked for an overcast, waiting-to-go-in mood (Nova, 2026-11-10). Low in
 		-- the mix (OWNER.md: no harsh sound); fades out as your Lantern lifts.
+		-- Sounds of a working ship (Nova, 2026-11-11: "noises that one would hear on a boat. people
+		-- moving around, crew mumbling"; client ShipAmbience). Pro Sound Effects clips from Roblox's
+		-- audio library (licensed for any experience), low in the mix (OWNER.md: no harsh sound),
+		-- in their own SoundGroup, faded out with the music when the Lantern lifts. Roblox has no
+		-- walls for sound, so each area has its own bed and the two cross-fade by where you stand.
+		Ambience = {
+			Volume = 1, -- the Ambience SoundGroup once faded in
+			FadeInSeconds = 4,
+			FadeOutSeconds = 2.5, -- as the Lantern lifts
+			DeckHeight = 36, -- a soldier's root above this (studs) is on the flight deck
+			CrossFadeSeconds = 2.5, -- hangar <-> deck
+			-- One loop per area, everywhere in it (no position).
+			Beds = {
+				Hangar = {
+					Id = "rbxassetid://9112739336", -- Aircraft Carrier Ambience 3: hallway, loop (36 s)
+					Volume = 0.3,
+				},
+				Deck = {
+					Id = "rbxassetid://9117340070", -- Pier Light Dock Creak 2: motor idle, waves, wind (61 s)
+					Volume = 0.35,
+				},
+			},
+			-- Loops at FallowLayout.Ambience points (the key), heard from Near to Far studs, only
+			-- in their Area.
+			Spots = {
+				plot = {
+					Id = "rbxassetid://9113063523", -- Aircraft Carrier Bridge 3: radio chatter, voices (92 s)
+					Volume = 0.45,
+					Near = 6,
+					Far = 30,
+					Area = "Hangar",
+				},
+				walla = {
+					Id = "rbxassetid://9114012248", -- Crowd Murmur 1: interior, quiet walla (36 s)
+					Volume = 0.3,
+					Near = 10,
+					Far = 45,
+					Area = "Hangar",
+				},
+			},
+			-- Now and then one of these from a random point of its Area's key.
+			OneShots = {
+				{ Id = "rbxassetid://9119630175", Volume = 0.3, Area = "Hangar" }, -- Steel Door 4
+				{ Id = "rbxassetid://9126003568", Volume = 0.25, Area = "Hangar" }, -- Steel Lockers, slam
+				{ Id = "rbxassetid://9116725218", Volume = 0.25, Area = "Hangar" }, -- Metal Latches 17
+				{ Id = "rbxassetid://9119077202", Volume = 0.2, Area = "Hangar" }, -- Ship Horn, carrier interior
+				{ Id = "rbxassetid://9113060656", Volume = 0.3, Area = "Deck" }, -- Carrier flight deck PA
+			},
+			OneShotGap = { 9, 22 }, -- seconds between one-shots (random in the range)
+			OneShotNear = 10,
+			OneShotFar = 70,
+			CrewStepLength = 2.4, -- studs a walking crew member covers per footstep (Footsteps bank)
+			CrewStepVolume = 0.3,
+			CrewStepFar = 30, -- studs
+		},
 		Music = {
 			Tracks = {
 				"rbxassetid://115363600284265", -- A Light Dies Out On The Water (173 s)
