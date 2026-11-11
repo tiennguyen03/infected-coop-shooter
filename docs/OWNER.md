@@ -84,8 +84,8 @@ something; never delete one without the owner.
 - Razor wire (Concertina) can never be vaulted. (2026-11-08)
 - Q dash and E breach are gone: Q swaps guns, G frag, V shove, E stim, 1-4 call-ins, 5 flare.
   (2026-11-08)
-- Movement keys: roll and slide need too many key combos; the owner wants a Helldivers-like
-  answer, not decided yet. Do not change the bindings without them. (2026-11-08)
+- Movement keys: roll is Shift twice; slide is holding C or Ctrl while sprinting (owner,
+  2026-11-11). Do not change bindings without the owner.
 
 ## Team and accounts
 

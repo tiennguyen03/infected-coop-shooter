@@ -41,6 +41,21 @@ local Config = {
 		},
 	},
 
+	-- Stamina (Rules/Stamina; client SprintController owns it, StaminaUI shows it, the same
+	-- trust as sprint itself). A full bar is ~8 s of sprint; empty to full is ~5.5 s. At
+	-- zero the body is winded: no sprint, roll or slide until WindedRecover (~2.1 s).
+	-- Vault, climb and shove are free; downed or knocked down nothing drains. Bots have none.
+	Stamina = {
+		Max = 100,
+		SprintDrain = 12, -- per second while sprinting and moving
+		Regen = 22, -- per second
+		RegenDelay = 1, -- seconds after the last drain or spend before it comes back
+		WindedRecover = 25, -- winded ends here
+		RollCost = 20,
+		SlideCost = 10, -- paid once on entry, however long the hill
+		BarHideAfter = 2, -- seconds full before the bar fades out
+	},
+
 	-- Vault / climb replaces the stock jump: Space, or sprinting into cover,
 	-- sends the body over or onto whatever is in front of it. Heights are the ledge top
 	-- above the feet. Jersey 2.75, hesco 4.6, bunker 6.3, humvee 7.1, container 9.6 pass;
@@ -65,12 +80,34 @@ local Config = {
 			Acceleration = 60, -- 0 -> walk (16) in ~0.27 s, 0 -> sprint (24) in 0.4 s
 			Deceleration = 75, -- walk -> stop in ~0.2 s; a full reversal ~0.45 s
 		},
-		-- Sprint + LeftControl: a short roll along the move direction. Infected melee skips
+		-- Shift twice: a short roll along the move direction. Infected melee skips
 		-- the body for the roll (CoverMoveService, same window as a vault).
-		Roll = { Duration = 0.8, Speed = 25, Cooldown = 1 },
-		-- Sprint + C: a longer slide that bleeds speed from StartSpeed to EndSpeed. No
-		-- immunity; it covers ground, the roll dodges.
-		Slide = { Duration = 0.95, StartSpeed = 30, EndSpeed = 14, Cooldown = 1.2 },
+		-- Shift twice within DoubleTap seconds rolls (the first press is the sprint).
+		Roll = { Duration = 0.8, Speed = 25, Cooldown = 1, DoubleTap = 0.3 },
+		-- Sprint + hold C or LeftControl: a slide that lasts while the key is down (never
+		-- shorter than MinHold) and keeps the body's momentum (Rules/Slide). It starts at the
+		-- speed going in plus EntryBoost, loses Friction per second, and the floor adds
+		-- SlopeAccel x the slope's sine: flat from a sprint is 30 -> 14 in ~0.95 s, a 16
+		-- degree downhill holds its speed, steeper gains up to MaxSpeed, uphill dies in
+		-- about half the time. Over at MinSpeed or MaxDuration; speed above the walk or
+		-- sprint speed then bleeds off at ExitDecel instead of snapping. No immunity; it
+		-- covers ground, the roll dodges. The clip plays over ClipDuration and holds its
+		-- pose at ClipHoldAt (a fraction of it) while the slide outlasts it.
+		Slide = {
+			EntryBoost = 6, -- studs/s on top of the speed going in
+			MinEntrySpeed = 24, -- studs/s; a slide never starts slower
+			Friction = 17, -- studs/s per second
+			SlopeAccel = 60, -- studs/s per second on a sheer drop, scaled by the slope
+			MaxSpeed = 40,
+			MinSpeed = 14,
+			MaxDuration = 6, -- seconds; the longest hill ends here
+			MinHold = 0.35, -- seconds; a tap still slides this long
+			ExitDecel = 40, -- studs/s per second back down to the walk or sprint speed
+			FloorProbe = 6, -- studs under the root that count as the floor
+			ClipDuration = 0.95,
+			ClipHoldAt = 0.6,
+			Cooldown = 1.2,
+		},
 		AutoVaultSprinting = true, -- sprinting into cover vaults without pressing Space
 		Infected = {
 			LowHeight = 5, -- a top above this uses the form's climbHigh clip (Runners)
@@ -694,8 +731,8 @@ local Config = {
 				exit = "prone_exit",
 			},
 			vault = "vault_low", -- over jersey / hesco
-			roll = "sprint_roll", -- sprint + LeftControl
-			slide = "running_slide", -- sprint + C
+			roll = "sprint_roll", -- Shift twice
+			slide = "running_slide", -- sprint + hold C or LeftControl
 			climb = "climb_ledge", -- onto bunker / humvee / container
 			downed = "downed_crawl", -- downed (Squad): on all fours, crawling
 		},
