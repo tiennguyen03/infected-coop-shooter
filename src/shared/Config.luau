@@ -61,15 +61,18 @@ local Config = {
 		-- out"): local stand-ins of each body sit on a bench along the cabin's far wall facing the
 		-- open door (+X), then jump out in turn and land where the real body stands, which then
 		-- shows. Lantern frame: origin on the deck at the mast foot, nose +Z, door on +X.
+		-- Seated roots: the stock sit puts the feet 2.32 below the root and the thighs 1.5 below
+		-- (measured on an R15 rig, 2026-11-11), so a root 2.32 over the cabin floor rests the
+		-- feet on it and the bench top sits 1.5 under the root.
 		Seats = {
-			Vector3.new(-2.1, 2.2, 1.6),
-			Vector3.new(-2.1, 2.2, -0.4),
-			Vector3.new(-2.1, 2.2, -2.4),
-			Vector3.new(-2.1, 2.2, -4.4),
+			Vector3.new(-2.1, 4.77, 1.6),
+			Vector3.new(-2.1, 4.77, -0.4),
+			Vector3.new(-2.1, 4.77, -2.4),
+			Vector3.new(-2.1, 4.77, -4.4),
 		},
-		Bench = { Size = Vector3.new(1.4, 0.4, 8.6), At = Vector3.new(-2.4, 1.0, -1.4) },
+		Bench = { Size = Vector3.new(1.4, 0.4, 8.6), At = Vector3.new(-2.5, 3.07, -1.4) },
 		DoorX = 3.6, -- the door sill, where a jumper steps off
-		DeckY = 0.3, -- the cabin floor above the frame's origin
+		DeckY = 2.45, -- the cabin floor above the frame's origin (the lobby's crew chief stands on it)
 		JumpStart = 0.3, -- seconds into the hover before the first jump
 		JumpStagger = 0.45, -- seconds between jumpers
 		StepSeconds = 0.3, -- up from the bench to the door

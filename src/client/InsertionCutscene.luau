@@ -412,20 +412,31 @@ local function play()
 			task.wait()
 		end
 	end
-	-- The squad aboard: every body there is once the wait is over (bots are built meanwhile), seated in turn.
+	-- The squad aboard: a seat for each body there is, in order, and for any that appears
+	-- later (the bots are dressed while the cutscene starts) as long as its jump is still ahead.
 	local jumpers: { Jumper } = {}
 	local stood: { [Model]: boolean } = {}
-	for index, model in squadModels() do
-		local seatAt = CUT.Seats[index]
-		if seatAt then
-			local seat = CFrame.lookAlong(seatAt, Vector3.xAxis)
-			local starts = tDrop + CUT.JumpStart + (index - 1) * CUT.JumpStagger
-			local jumper = standIn(model, seat, starts)
-			if jumper then
-				table.insert(jumpers, jumper)
+	local seated: { [Model]: boolean } = {}
+	local function seatSquad(now: number)
+		for _, model in squadModels() do
+			local index = #jumpers + 1
+			local seatAt = CUT.Seats[index]
+			if not seatAt then
+				return
+			end
+			if not seated[model] then
+				local starts = tDrop + CUT.JumpStart + (index - 1) * CUT.JumpStagger
+				if now < starts - CUT.StepSeconds then
+					local jumper = standIn(model, CFrame.lookAlong(seatAt, Vector3.xAxis), starts)
+					if jumper then
+						seated[model] = true
+						table.insert(jumpers, jumper)
+					end
+				end
 			end
 		end
 	end
+	seatSquad(0)
 
 	for _, bar in bars do
 		bar.Visible = true
@@ -528,6 +539,9 @@ local function play()
 		end
 		Workspace:BulkMoveTo(parts, cframes, Enum.BulkMoveMode.FireCFrameChanged)
 
+		if t < tDrop then
+			seatSquad(t)
+		end
 		-- The squad: stand-ins ride and jump; each real body shows when its stand-in lands.
 		for _, j in jumpers do
 			if not j.landed then
