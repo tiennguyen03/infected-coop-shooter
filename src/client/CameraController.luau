@@ -14,8 +14,11 @@
 -- First person (Config.Camera.FirstPerson): T toggles it, or the wheel past the closest zoom.
 -- The same yaw, pitch, kick, shake and sights, the eye on the Head instead of behind the
 -- shoulder; this soldier's own body is hidden on this client, and FirstPersonView shows its
--- arms and gun playing the body's clips. Down the sights in first person the crosshair fades
--- out so the iron sights or scope do the aiming.
+-- arms and gun. Down the sights in first person the crosshair fades out and the gun's own
+-- sights aim (its row's Sight, Rules/Sight): the field of view narrows by that gun's Zoom,
+-- and a scope draws its picture (ScopeView) while the gun is hidden. A reload or a Q swap
+-- lowers the gun out of the sights until it is done. Third person keeps the shared
+-- Config.Weapon.ADS view for every gun.
 
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
@@ -29,7 +32,10 @@ local WeaponDefinitions =
 	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("WeaponDefinitions"))
 local Feel =
 	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Rules"):WaitForChild("Feel"))
+local Sight =
+	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Rules"):WaitForChild("Sight"))
 local FirstPersonView = require(script.Parent.FirstPersonView)
+local ScopeView = require(script.Parent.ScopeView)
 
 local HIP_FOV = 70
 local CROSSHAIR_HIP = 22 -- ring diameter in pixels at the hip
@@ -60,6 +66,7 @@ local shakeAmplitude = 0
 local lastFocus: Vector3? = nil
 local firstPerson = false
 local hiddenParts: { BasePart } = {} -- this soldier's parts hidden in first person
+local sightWeapon: string? = nil -- the gun the sights were last eased for
 
 -- Fraction left after `dt` of an exponential ease that is ~95% done after `over` seconds.
 local function decayFactor(dt: number, over: number): number
@@ -71,6 +78,11 @@ local function onShot()
 	local weapon = WeaponDefinitions.get(player:GetAttribute(Attributes.Weapon) :: string?)
 	local kick = weapon.Kick
 	local scale = 1 + (Config.Camera.Kick.AdsScale - 1) * adsBlend
+	if firstPerson then
+		-- A magnified picture is thrown further by the same kick (Rules/Sight.kickScale).
+		local magnified = Sight.kickScale(weapon.Sight.Zoom, Config.Weapon.Sights.Zoom)
+		scale *= 1 + (magnified - 1) * adsBlend
+	end
 	kickPitch += math.rad(kick.Pitch) * scale
 	kickYaw += math.rad(kick.Yaw) * (math.random() * 2 - 1) * scale
 	kickRecover = kick.Recover
@@ -143,6 +155,7 @@ function CameraController.setFirstPerson(on: boolean)
 	refreshHidden()
 	if not on then
 		FirstPersonView.hide()
+		ScopeView.set(0, 0)
 	end
 end
 
@@ -250,25 +263,47 @@ local function onRenderStep(deltaTime: number)
 		else Enum.MouseBehavior.LockCenter
 
 	if not camera or not root then
+		ScopeView.set(0, 0)
 		return
 	end
 
 	consumeMouseInput()
 
-	-- Ease between hip and sights over Config.Weapon.ADS.EnterTime.
+	-- Ease between hip and sights over Config.Weapon.ADS.EnterTime (a scope: Sights.ScopeTime).
 	local ads = Config.Weapon.ADS
+	local player = Players.LocalPlayer
+	local weaponId = player:GetAttribute(Attributes.Weapon) :: string?
+	local sight = WeaponDefinitions.get(weaponId).Sight
+	local scoped = firstPerson and sight.Kind == "scope"
 	local target = if aiming then 1 else 0
-	local rate = deltaTime / math.max(ads.EnterTime, 0.01)
+	if firstPerson then
+		-- A reload or a Q swap takes the gun off the eye; another gun starts from the hip.
+		local now = workspace:GetServerTimeNow()
+		local reloadUntil = (player:GetAttribute(Attributes.ReloadUntil) :: number?) or 0
+		local swapUntil = (player:GetAttribute(Attributes.SwapUntil) :: number?) or 0
+		if reloadUntil > now or swapUntil > now or not humanoid or humanoid.Health <= 0 then
+			target = 0
+		end
+		if weaponId ~= sightWeapon then
+			adsBlend = 0
+		end
+	end
+	sightWeapon = weaponId
+	local enterTime = if scoped then Config.Weapon.Sights.ScopeTime else ads.EnterTime
+	local rate = deltaTime / math.max(enterTime, 0.01)
 	adsBlend += math.clamp(target - adsBlend, -rate, rate)
 	local shoulder = Config.Camera.ShoulderOffset:Lerp(ads.ShoulderOffset, adsBlend)
 	local reach = distance + (ads.CameraDistance - distance) * adsBlend
-	camera.FieldOfView = HIP_FOV + (ads.FOV - HIP_FOV) * adsBlend
+	-- First person: this gun's own zoom; a scope raises, then shades and zooms (Rules/Sight).
+	local raise, zoom, shade = Sight.phases(scoped, adsBlend)
+	local aimedFov = if firstPerson then Sight.fov(HIP_FOV, sight.Zoom) else ads.FOV
+	camera.FieldOfView = HIP_FOV + (aimedFov - HIP_FOV) * zoom
+	ScopeView.set(shade, Sight.blink(shade))
 	local ring = crosshairRing
 	if ring then
 		local size = CROSSHAIR_HIP + (CROSSHAIR_ADS - CROSSHAIR_HIP) * adsBlend
 		-- Bloom (server-owned, ProjectileServer): the ring opens while the trigger is held and
 		-- closes as it recovers; mirror the recovery locally between shots.
-		local player = Players.LocalPlayer
 		local bloomValue = (player:GetAttribute(Attributes.Bloom) :: number?) or 0
 		if bloomValue > 0 then
 			local shotAt = bloomShotAt or os.clock()
@@ -339,7 +374,8 @@ local function onRenderStep(deltaTime: number)
 		for _, part in hiddenParts do
 			part.LocalTransparencyModifier = 1
 		end
-		FirstPersonView.update(character, camera.CFrame, adsBlend, deltaTime)
+		-- The gun gives way to the scope picture at the blink's darkest moment.
+		FirstPersonView.update(character, camera.CFrame, sight, raise, shade >= 0.5, deltaTime)
 	else
 		camera.CFrame = CFrame.new(focus) * rotation * CFrame.new(0, 0, reach)
 		FirstPersonView.hide()
