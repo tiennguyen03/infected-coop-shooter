@@ -5,17 +5,13 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attributes"))
+local RunClock =
+	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Rules"):WaitForChild("RunClock"))
 local HudTheme = require(script.Parent.HudTheme)
 
 local UPDATE_INTERVAL = 0.2 -- seconds
 
 local RunTimerUI = {}
-
-local function formatTime(totalSeconds: number): string
-	local minutes = math.floor(totalSeconds / 60)
-	local seconds = math.floor(totalSeconds % 60)
-	return string.format("%02d:%02d", minutes, seconds)
-end
 
 function RunTimerUI.init()
 	-- Top centre (HudTheme): bold white digits, no panel (the corners belong to the health
@@ -30,7 +26,7 @@ function RunTimerUI.init()
 		while gui.Parent do
 			local startTime = workspace:GetAttribute(Attributes.RunStartTime) :: number?
 			if startTime then
-				label.Text = formatTime(math.max(workspace:GetServerTimeNow() - startTime, 0))
+				label.Text = RunClock.format(math.max(workspace:GetServerTimeNow() - startTime, 0))
 			end
 			task.wait(UPDATE_INTERVAL)
 		end
