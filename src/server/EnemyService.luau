@@ -4,7 +4,8 @@
 -- throw range, plant, wind up and lob through EnemyProjectileService. A phase-based spawn
 -- director picks types by run time with fairness caps from Config.Spawning (count
 -- schedules and share caps keyed by type). Enemies pass through each other (Enemy collision
--- group) but still hit players and the world. Player damage: EnemyProjectileService.damagePlayer.
+-- group; EnemySpacing steers the chase so they rarely do) but still hit players and the
+-- world. Player damage: EnemyProjectileService.damagePlayer.
 -- Climbing: a melee form pressed against cover no taller than its
 -- EnemyDefinitions.ClimbHeight goes over it (Shared.Ledge; the root is anchored and driven
 -- along the ledge path for Config.Movement.Infected.Duration seconds while its climb clip
@@ -13,6 +14,10 @@
 -- above a melee form near a kit building (ArenaService footprints) is followed on a
 -- PathfindingService path (doors, stairs, ramps) by up to PathfindingMax bodies at once;
 -- a failed path, or no slot, falls back to the straight chase.
+-- Awareness (Config.Awareness, Shared.Rules.Awareness; Nova 2026-11-11, the night map): on a
+-- mission listed there every body is Sleeping, Idle, Wandering, Alerted or in Chase. Only a
+-- Chase runs the straight chase below; the rest hold, shuffle or go to look, and notice by
+-- sight (a cone, raycast) and by noise (EnemyService.noise: shots, blasts, running feet).
 
 local CollectionService = game:GetService("CollectionService")
 local PathfindingService = game:GetService("PathfindingService")
@@ -30,14 +35,17 @@ local Ledge = require(ReplicatedStorage.Shared.Ledge)
 local Feel = require(ReplicatedStorage.Shared.Rules.Feel)
 local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
 local RunStates = require(ReplicatedStorage.Shared.RunStates)
+local Awareness = require(ReplicatedStorage.Shared.Rules.Awareness)
 local ArenaService = require(script.Parent.ArenaService)
 local DifficultyService = require(script.Parent.DifficultyService)
 local EnemyProjectileService = require(script.Parent.EnemyProjectileService)
+local EnemySpacing = require(script.Parent.EnemySpacing)
 local DamageService = require(script.Parent.DamageService)
 local PauseService = require(script.Parent.PauseService)
 local WorldSounds = require(script.Parent.WorldSounds)
 local Squad = require(script.Parent.Squad)
 local Lifecycle = require(script.Parent.Lifecycle)
+local Missions = require(script.Parent.Missions)
 
 local ENEMY_TAG = "Enemy"
 local ENEMY_COLLISION_GROUP = "Enemy"
@@ -50,7 +58,7 @@ local BACK_OFF_DISTANCE = 8 -- studs a projectile form retreats when a player ge
 -- cover; it sidesteps NUDGE_DISTANCE perpendicular to its target, alternating sides.
 local NUDGE_STUCK_DISTANCE = 1
 local NUDGE_DISTANCE = 8
-local SAC_OFFSET = CFrame.new(0, 0.95, -0.5) -- throat sac relative to UpperTorso (the rig faces -Z)
+local SAC_OFFSET = CFrame.new(0, 0.95, -0.5) -- throat sac from the UpperTorso limb centre (the rig faces -Z)
 local SAC_SIZE = 0.9
 -- Vocals: each form has a bank named after it (SoundBanks) with
 -- <form>_idle / _attack / _hurt / _death groups (the Hocker adds _windup and _spit); lines
@@ -97,6 +105,22 @@ type Zombie = {
 	pathObject: PathInstance?, -- one engine Path per body, reused across ComputeAsync calls
 	pathRequestedAt: number,
 	crippled: boolean?, -- a leg is gone (GoreService): crawl speed, never climbs
+	moveReference: number, -- the move clip's own speed (its rate is pace / this)
+	aware: Aware?, -- on an awareness mission (Config.Awareness); nil = always chase
+}
+
+-- What a body on an awareness mission is doing (Rules/Awareness).
+type Aware = {
+	state: Awareness.State,
+	post: Vector3, -- where it was placed; a wanderer strays round it
+	spot: Vector3?, -- Alerted: where it heard or saw something
+	goal: Vector3?, -- where it is walking now (a wander or a search point)
+	untilAt: number, -- Wandering: stands till then; Alerted: searches till then
+	searching: boolean, -- Alerted and at the spot
+	notice: number, -- 0..1, built by seeing a soldier (1 = Chase)
+	nextLookAt: number,
+	lastSeenAt: number, -- Chase: the last time a soldier was in sight
+	lastSeen: Vector3?,
 }
 
 type Path = { waypoints: { PathWaypoint }, index: number }
@@ -136,6 +160,13 @@ local lures: { Lure } = {}
 -- Slows (Pen Coil, Hollow Point stagger): per-humanoid generation so overlapping slows never
 -- strand a body at reduced speed.
 local slowGeneration: { [Humanoid]: number } = {}
+-- Awareness on this mission (Config.Awareness.Missions; the place's mission never changes).
+local AW = Config.Awareness
+local awareOn = AW.Missions[Missions.current().Id] == true
+local awareNight = AW.Night[Missions.current().Id] == true
+local lookParams = RaycastParams.new() -- sight lines: every Infected body excluded
+lookParams.FilterType = Enum.RaycastFilterType.Exclude
+local nextFootstepsAt = 0
 -- Limp bodies alive now (Config.Enemies.Ragdoll.MaxBodies).
 local limpBodies = 0
 -- Kill listeners (RequisitionService): every death credits its SupplyValue to the squad.
@@ -339,10 +370,16 @@ local function flinch(zombie: Zombie, info: DamageService.HitInfo)
 	end
 end
 
--- A killing round: the body goes over away from whoever fired it. Any other hit: a flinch.
+local setAware: (zombie: Zombie, state: Awareness.State, now: number, spot: Vector3?) -> ()
+
+-- A killing round: the body goes over away from whoever fired it. Any other hit: a flinch
+-- (and on an awareness mission it knows now: Chase).
 local function onHit(info: DamageService.HitInfo)
 	if not info.killed then
 		local zombie = zombieOfHumanoid(info.humanoid)
+		if zombie and zombie.aware and zombie.aware.state ~= "Chase" then
+			setAware(zombie, "Chase", os.clock())
+		end
 		if zombie and not zombie.climb then
 			flinch(zombie, info)
 		end
@@ -446,7 +483,9 @@ local function spawnZombie(
 	-- EnemyService.slow restores this after a slow without corrupting it.
 	humanoid:SetAttribute(Attributes.BaseWalkSpeed, definition.WalkSpeed)
 	humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
-	if not definition.Boss then
+	humanoid.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOff
+	-- No floating health bars (owner 2026-11-11); Config.SquadPanel.OverheadBars restores it.
+	if Config.SquadPanel.OverheadBars and not definition.Boss then
 		attachHealthBar(humanoid, root, definition.Scale) -- a boss has the boss bar (BossBarUI)
 	end
 
@@ -475,11 +514,18 @@ local function spawnZombie(
 			local projectile = definition.Behaviour.Projectile
 			ball.Color = if projectile then projectile.Color else definition.Color
 			ball.Transparency = 0.15
-			ball.CFrame = torso.CFrame * SAC_OFFSET
+			-- The torso part is centred on its mesh bounds, which a hump or a soaked front
+			-- moves off the limb centre: take that shift out so the sac stays on the throat.
+			local bodySet = definition.BodySet or typeName
+			local sacOffset = if dressedTemplates[bodySet]
+				then SAC_OFFSET
+					- MeshAssets.infectedLimbOffset(bodySet, "upper_torso") * definition.Scale
+				else SAC_OFFSET -- the bare rig: the part is the limb
+			ball.CFrame = torso.CFrame * sacOffset
 			local weld = Instance.new("Weld")
 			weld.Part0 = torso
 			weld.Part1 = ball
-			weld.C0 = SAC_OFFSET
+			weld.C0 = sacOffset
 			weld.Parent = ball
 			ball.Parent = model
 			sac = ball
@@ -502,6 +548,7 @@ local function spawnZombie(
 	local attackTrack: AnimationTrack? = nil
 	local deathTrack: AnimationTrack? = nil
 	local movingTrack: AnimationTrack? = nil
+	local moveReference = definition.WalkSpeed
 	pcall(function()
 		local animator = humanoid:FindFirstChildOfClass("Animator") :: Animator
 		local clips = Config.Animations.Infected[typeName]
@@ -509,6 +556,7 @@ local function spawnZombie(
 			and Animations.load(animator, clips.move, Enum.AnimationPriority.Core)
 		if moveTrack then
 			local reference = Config.Animations.MoveClipSpeed[clips.move] or definition.WalkSpeed
+			moveReference = reference
 			moveTrack.Looped = true
 			moveTrack:Play()
 			moveTrack:AdjustSpeed(definition.WalkSpeed / reference)
@@ -554,7 +602,25 @@ local function spawnZombie(
 		path = nil,
 		pathPending = false,
 		pathRequestedAt = 0,
+		moveReference = moveReference,
+		-- On an awareness mission a body spawned by anything but the start's population (an
+		-- objective's wave, a pallet's ring) comes knowing: in Chase.
+		aware = if awareOn and not definition.Boss
+			then {
+				state = "Chase",
+				post = groundPosition,
+				spot = nil,
+				goal = nil,
+				untilAt = 0,
+				searching = false,
+				notice = 0,
+				nextLookAt = os.clock() + math.random() * AW.SightInterval,
+				lastSeenAt = os.clock(),
+				lastSeen = nil,
+			}
+			else nil,
 	}
+	lookParams:AddToFilter(model)
 	if definition.ClimbHeight then
 		pcall(function()
 			local animator = humanoid:FindFirstChildOfClass("Animator") :: Animator
@@ -570,6 +636,7 @@ local function spawnZombie(
 		end)
 	end
 	table.insert(zombies, zombie)
+	EnemySpacing.add(root, humanoid, typeName)
 
 	humanoid.HealthChanged:Connect(function(newHealth)
 		-- One pain grunt per burst of hits, not one per bullet.
@@ -776,6 +843,7 @@ local function stepProjectileZombie(zombie: Zombie, now: number)
 			zombie.windupUntil = now + (behaviour.Windup or 0)
 			zombie.nextIdleVoiceAt = math.max(zombie.nextIdleVoiceAt, now + 3)
 			voice(zombie, "windup")
+			EnemyProjectileService.windup(zombie.model, behaviour.Windup or 0)
 			if zombie.attackTrack then
 				zombie.attackTrack:Play(0.1)
 			end
@@ -842,13 +910,218 @@ local function followPath(zombie: Zombie, here: Vector3): boolean
 	return true
 end
 
+local groundPositionNear: (center: Vector3, minDistance: number, maxDistance: number) -> Vector3
+
+-- A body's walking pace: `factor` of its form's speed, the move clip matched (stopped at 0).
+local function setPace(zombie: Zombie, factor: number)
+	local base = zombie.walkSpeed * factor
+	zombie.humanoid:SetAttribute(Attributes.BaseWalkSpeed, base)
+	if not slowGeneration[zombie.humanoid] and not PauseService.isPaused() then
+		zombie.humanoid.WalkSpeed = base
+	end
+	local track = zombie.moveTrack
+	if track then
+		if factor <= 0 then
+			track:AdjustSpeed(0)
+		else
+			track:AdjustSpeed(base / zombie.moveReference)
+		end
+	end
+end
+
+-- Moves a body into `state` (Rules/Awareness), with its pace, its timers and, for a Chase,
+-- the scream that sets the bodies round it looking.
+setAware = function(zombie: Zombie, state: Awareness.State, now: number, spot: Vector3?)
+	local aware = zombie.aware
+	if not aware then
+		return
+	end
+	local was = aware.state
+	aware.state = state
+	aware.goal = nil
+	aware.searching = false
+	setPace(zombie, (AW.Pace :: { [string]: number })[state] or 1)
+	if state == "Chase" then
+		aware.notice = 1
+		aware.lastSeenAt = now
+		zombie.nextRepathTime = 0
+		if was ~= "Chase" then
+			voice(zombie, "attack")
+			local here = zombie.root.Position
+			for _, other in zombies do
+				local otherAware = other.aware
+				if
+					other ~= zombie
+					and otherAware
+					and (otherAware.state == "Sleeping" or otherAware.state == "Idle" or otherAware.state == "Wandering")
+					and (other.root.Position - here).Magnitude <= AW.Scream
+				then
+					setAware(other, "Alerted", now, here)
+				end
+			end
+		end
+	elseif state == "Alerted" then
+		aware.spot = spot or aware.spot or zombie.root.Position
+		aware.untilAt = now + AW.SearchSeconds
+	elseif state == "Wandering" then
+		aware.untilAt = now + math.random(AW.WanderPause[1], AW.WanderPause[2])
+	else
+		zombie.humanoid:MoveTo(zombie.root.Position)
+	end
+end
+
+-- The soldier a body can see now and how well (Rules/Awareness), or nil. `chasing` looks all
+-- round (it knows they are there) at its Chase range.
+local function lookFor(zombie: Zombie, state: Awareness.State, chasing: boolean): (Vector3?, number)
+	local head = zombie.voicePart
+	local from = head.Position
+	local facing = zombie.root.CFrame.LookVector
+	local bestSpot: Vector3? = nil
+	local bestRate = 0
+	for _, member in Squad.living() do
+		local root = member.root
+		local body = member.character
+		if not root or not body then
+			continue
+		end
+		local offset = root.Position - from
+		local distance = offset.Magnitude
+		if not chasing and Awareness.touched(AW, distance) then
+			return root.Position, math.huge
+		end
+		local drop = body:GetAttribute(Attributes.RootDrop)
+		local stance = if typeof(drop) == "number" and drop > 0
+			then "prone"
+			elseif body:GetAttribute(Attributes.Crouching) == true then "crouch"
+			else "stand"
+		local range = Awareness.sightRange(AW, state, stance, awareNight)
+		if
+			not chasing
+			and not Awareness.inCone(AW, facing.X, facing.Z, offset.X, offset.Z, distance, range)
+		then
+			continue
+		end
+		if chasing and distance > range then
+			continue
+		end
+		local hit = workspace:Raycast(from, offset, lookParams)
+		if hit and not hit.Instance:IsDescendantOf(body) then
+			continue -- something in the way
+		end
+		local rate = Awareness.noticeRate(AW, distance, range)
+		if rate > bestRate then
+			bestRate = rate
+			bestSpot = root.Position
+		end
+	end
+	return bestSpot, bestRate
+end
+
+-- One body not in Chase (or a Chase checking it still has someone): look, then do the state.
+-- True when the body is in Chase after it (the straight chase runs).
+local function stepAware(zombie: Zombie, aware: Aware, now: number): boolean
+	if now >= aware.nextLookAt then
+		aware.nextLookAt = now + AW.SightInterval
+		if aware.state == "Chase" then
+			local seen = lookFor(zombie, "Chase", true)
+			if seen then
+				aware.lastSeenAt = now
+				aware.lastSeen = seen
+			elseif now - aware.lastSeenAt >= AW.LoseSeconds then
+				setAware(zombie, "Alerted", now, aware.lastSeen)
+			end
+		else
+			local seen, rate = lookFor(zombie, aware.state, false)
+			if seen then
+				aware.notice += rate * AW.SightInterval
+				if aware.notice >= 1 then
+					setAware(zombie, "Chase", now)
+					aware.lastSeen = seen
+				elseif aware.state ~= "Sleeping" then
+					if aware.state ~= "Alerted" then
+						setAware(zombie, "Alerted", now, seen)
+					else
+						aware.spot = seen
+						aware.searching = false
+						aware.untilAt = now + AW.SearchSeconds
+					end
+				end
+			else
+				aware.notice = math.max(0, aware.notice - AW.SightInterval * 0.2)
+			end
+		end
+	end
+	if aware.state == "Chase" then
+		return true
+	end
+	if now < zombie.nextRepathTime then
+		return false
+	end
+	zombie.nextRepathTime = now + REPATH_INTERVAL
+	local here = zombie.root.Position
+	if aware.state == "Wandering" then
+		local goal = aware.goal
+		if goal and Vector3.new(goal.X - here.X, 0, goal.Z - here.Z).Magnitude > 3 then
+			zombie.humanoid:MoveTo(goal)
+		elseif goal then
+			aware.goal = nil
+			aware.untilAt = now + math.random(AW.WanderPause[1], AW.WanderPause[2])
+			zombie.humanoid:MoveTo(here)
+		elseif now >= aware.untilAt then
+			aware.goal = groundPositionNear(aware.post, 4, AW.WanderRadius)
+		end
+	elseif aware.state == "Alerted" then
+		local spot = aware.spot or here
+		if not aware.searching then
+			if Vector3.new(spot.X - here.X, 0, spot.Z - here.Z).Magnitude > 4 then
+				zombie.humanoid:MoveTo(spot)
+			else
+				aware.searching = true
+				aware.untilAt = now + AW.SearchSeconds
+			end
+		else
+			local goal = aware.goal
+			if not goal or Vector3.new(goal.X - here.X, 0, goal.Z - here.Z).Magnitude <= 3 then
+				aware.goal = groundPositionNear(spot, 2, AW.SearchRadius)
+			end
+			zombie.humanoid:MoveTo(aware.goal or spot)
+			if now >= aware.untilAt then
+				aware.post = spot
+				setAware(zombie, "Wandering", now)
+			end
+		end
+	end
+	return false
+end
+
+-- Soldiers running: footsteps the Infected hear (Config.Awareness.Footsteps).
+local function stepFootsteps(now: number)
+	if now < nextFootstepsAt then
+		return
+	end
+	local steps = AW.Footsteps
+	nextFootstepsAt = now + steps.Every
+	for _, member in Squad.living() do
+		local root = member.root
+		if root then
+			local velocity = root.AssemblyLinearVelocity
+			if Vector3.new(velocity.X, 0, velocity.Z).Magnitude > steps.Speed then
+				EnemyService.noise(root.Position, steps.Reach)
+			end
+		end
+	end
+end
+
 local function stepZombies()
 	-- Soft pause: stop everything in place and skip AI/attacks.
 	local paused = PauseService.isPaused()
 	if paused ~= wasPaused then
 		wasPaused = paused
 		for _, zombie in zombies do
-			zombie.humanoid.WalkSpeed = if paused then 0 else zombie.walkSpeed
+			local base = zombie.humanoid:GetAttribute(Attributes.BaseWalkSpeed)
+			zombie.humanoid.WalkSpeed = if paused
+				then 0
+				else (if typeof(base) == "number" then base else zombie.walkSpeed)
 		end
 	end
 	if paused then
@@ -856,6 +1129,9 @@ local function stepZombies()
 	end
 
 	local now = os.clock()
+	if awareOn then
+		stepFootsteps(now)
+	end
 	local pathingCount = 0
 	for _, zombie in zombies do
 		if zombie.pathing then
@@ -874,6 +1150,11 @@ local function stepZombies()
 		if climb then
 			stepClimb(zombie, climb, now)
 			continue
+		end
+
+		local aware = zombie.aware
+		if aware and not stepAware(zombie, aware, now) then
+			continue -- asleep, standing, wandering or looking: no chase this frame
 		end
 
 		if zombie.behaviour.Attack == "projectile" then
@@ -933,8 +1214,12 @@ local function stepZombies()
 							continue
 						end
 					end
-					local stuck = (here - zombie.lastRepathPosition).Magnitude
-						< NUDGE_STUCK_DISTANCE
+					-- Spacing: a goal that keeps off the neighbours and on the attack ring;
+					-- a body the crowd is holding is not stuck (no nudge, no climb).
+					local spaced, waiting =
+						EnemySpacing.goal(zombie.root, here, goal, zombie.attackRange, now)
+					local stuck = not waiting
+						and (here - zombie.lastRepathPosition).Magnitude < NUDGE_STUCK_DISTANCE
 					if stuck and (goal - here).Magnitude > zombie.attackRange then
 						local toTarget = Vector3.new(goal.X - here.X, 0, goal.Z - here.Z)
 						if toTarget.Magnitude > 0.1 and tryClimb(zombie, toTarget, now) then
@@ -946,6 +1231,8 @@ local function stepZombies()
 							zombie.nudgeSign = -zombie.nudgeSign
 							goal = here + side * NUDGE_DISTANCE
 						end
+					else
+						goal = spaced
 					end
 					zombie.lastRepathPosition = here
 					zombie.humanoid:MoveTo(goal)
@@ -977,11 +1264,7 @@ end
 
 -- A ring around `center`; retries (Config.Spawning.SpawnAttempts) until the candidate is open
 -- ground outside every building footprint, then settles for the last one.
-local function groundPositionNear(
-	center: Vector3,
-	minDistance: number,
-	maxDistance: number
-): Vector3
+groundPositionNear = function(center: Vector3, minDistance: number, maxDistance: number): Vector3
 	local candidate = center
 	-- Bodies are not ground: a spawn must not land on an Infected, a bot or a player.
 	local exclude: { Instance } = {}
@@ -1146,6 +1429,114 @@ function EnemyService.spawnMixedWave(count: number, center: Vector3)
 	end
 end
 
+-- An objective's own body (Confirm Casualties, Clear the Spitters): one `typeName` at
+-- `groundPosition`, handed back so the objective can outline it and count its death.
+function EnemyService.spawnAt(typeName: string, groundPosition: Vector3): (Model?, Humanoid?)
+	local zombie = spawnZombie(groundPosition, typeName)
+	if not zombie then
+		return nil, nil
+	end
+	return zombie.model, zombie.humanoid
+end
+
+-- A spot in a ring round `center` on open ground (an objective placing its own bodies).
+function EnemyService.groundNear(center: Vector3, minDistance: number, maxDistance: number): Vector3
+	return groundPositionNear(center, minDistance, maxDistance)
+end
+
+-- A noise at `position` that carries `reach` studs (a shot: the gun's Noise; a blast; running
+-- feet): on an awareness mission each body that hears it comes for it (inside half the
+-- reach) or goes to look (Rules/Awareness.hear). Nothing elsewhere.
+function EnemyService.noise(position: Vector3, reach: number)
+	if not awareOn or reach <= 0 then
+		return
+	end
+	local now = os.clock()
+	for _, zombie in zombies do
+		local aware = zombie.aware
+		if aware and zombie.humanoid.Health > 0 then
+			local distance = (zombie.root.Position - position).Magnitude
+			local reaction = Awareness.hear(AW, aware.state, distance, reach)
+			if reaction == "Chase" then
+				setAware(zombie, "Chase", now)
+				aware.lastSeen = position
+			elseif reaction == "Alerted" then
+				if aware.state == "Alerted" then
+					aware.spot = position
+					aware.searching = false
+					aware.untilAt = now + AW.SearchSeconds
+				else
+					setAware(zombie, "Alerted", now, position)
+				end
+			end
+		end
+	end
+end
+
+-- Whether this mission plays the Infected's awareness (Config.Awareness.Missions).
+function EnemyService.aware(): boolean
+	return awareOn
+end
+
+-- The start of an awareness mission: the population placed round the map, asleep, standing
+-- or wandering (Config.Awareness.Population), none near the LZ.
+local function populate()
+	local settings = AW.Population
+	local lz = Config.Extraction.ZonePosition
+	local total = 0
+	for _, weight in settings.Types do
+		total += weight
+	end
+	for _ = 1, settings.Count do
+		local roll = math.random() * total
+		local typeName = "Walker"
+		for name, weight in settings.Types do
+			roll -= weight
+			if roll <= 0 then
+				typeName = name
+				break
+			end
+		end
+		local position = groundPositionNear(Vector3.new(0, lz.Y, 0), 0, 300)
+		if
+			Vector3.new(position.X - lz.X, 0, position.Z - lz.Z).Magnitude < settings.MinDistance
+		then
+			continue
+		end
+		local zombie = spawnZombie(position, typeName)
+		local aware = zombie and zombie.aware
+		if zombie and aware then
+			aware.post = position
+			local kind = math.random()
+			local state: Awareness.State = if kind < settings.Sleeping
+				then "Sleeping"
+				elseif kind < settings.Sleeping + settings.Wandering then "Wandering"
+				else "Idle"
+			zombie.root.CFrame = CFrame.new(zombie.root.Position)
+				* CFrame.Angles(0, math.random() * math.pi * 2, 0)
+			setAware(zombie, state, os.clock())
+		end
+	end
+end
+
+-- Silence the Alarm: a roaming spawn picked within `radius` of `position` happens only
+-- `factor` of the time (0..1). nil clears it; a fresh run clears it too.
+local quiet: { position: Vector3, radius: number, factor: number }? = nil
+function EnemyService.setQuiet(position: Vector3?, radius: number?, factor: number?)
+	if position then
+		quiet = { position = position, radius = radius or 0, factor = factor or 1 }
+	else
+		quiet = nil
+	end
+end
+
+local function quietSkips(position: Vector3): boolean
+	local zone = quiet
+	return zone ~= nil
+		and (position - zone.position).Magnitude <= zone.radius
+		and math.random() > zone.factor
+end
+
 -- Melee forms within `radius` of `position` walk to it for `duration` seconds (the
 -- Resupply flare, a Bait Charge). Lures stack; nil clears them all.
 function EnemyService.setLure(position: Vector3?, radius: number?, duration: number?)
@@ -1247,9 +1638,9 @@ local function spawnLoop()
 		if workspace:GetAttribute(Attributes.ObjectiveActive) == true then
 			interval *= Config.Difficulty.ObjectiveSpawnFactor
 		end
-		-- And during extraction.
+		-- And during extraction (harder again once a wave has hit the pad).
 		if workspace:GetAttribute(Attributes.ExtractionActive) == true then
-			interval *= Config.Extraction.SpawnFactor
+			interval *= (workspace:GetAttribute(Attributes.ExtractionSpawnFactor) :: number?) or Config.Extraction.SpawnFactor
 		end
 		-- And for a while after a Resupply pallet lands.
 		if workspace:GetAttribute(Attributes.ResupplyActive) == true then
@@ -1264,13 +1655,14 @@ local function spawnLoop()
 		end
 		task.wait(interval)
 		if
-			RunStates.isLive()
+			not awareOn
+			and RunStates.isLive()
 			and workspace:GetAttribute(Attributes.DevSpawnsOff) ~= true
 			and not PauseService.isPaused()
 			and #zombies < maxAlive
 		then
 			local position = randomSpawnPosition()
-			if position then
+			if position and not quietSkips(position) then
 				spawnZombie(position, pickSpawnType())
 			end
 		end
@@ -1286,7 +1678,11 @@ function EnemyService.startMission()
 	local generation = missionGeneration
 	task.delay(1.5, function()
 		if generation == missionGeneration and RunStates.isLive() then
-			EnemyService.spawnWave("Walker", Config.Spawning.InitialCount)
+			if awareOn then
+				populate()
+			else
+				EnemyService.spawnWave("Walker", Config.Spawning.InitialCount)
+			end
 		end
 	end)
 end
@@ -1311,6 +1707,7 @@ end
 function EnemyService.reset()
 	table.clear(lures)
 	table.clear(slowGeneration)
+	quiet = nil
 	missionGeneration += 1
 	EnemyService.clearAll()
 end

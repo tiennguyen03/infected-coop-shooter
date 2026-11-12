@@ -1,7 +1,8 @@
 --!strict
 -- The soldier's kit beside the guns (docs/PROGRESSION.md > Loadout; replaced the Assault
 -- class's dash, breach charge and Combat Momentum): Q swaps long gun and sidearm
--- (LoadoutService.swap), G throws a grenade, V shoves, E uses a stim. The UseAbility remote
+-- (LoadoutService.swap), G throws a grenade, F shoves, V uses a stim (Config.Keys; the client
+-- sends the kind, never the key). The UseAbility remote
 -- carries the kind (Messages.Ability); everything is server-validated (standing, not paused,
 -- a grenade or stim left, the shove's cooldown) and the counts live on LoadoutService.
 -- Bait Charge (lure_charge upgrade): a frag lures the Infected around it until it blows.
@@ -23,6 +24,7 @@ local EnemyService = require(script.Parent.EnemyService)
 local LoadoutService = require(script.Parent.LoadoutService)
 local PauseService = require(script.Parent.PauseService)
 local Squad = require(script.Parent.Squad)
+local ThrowWindUp = require(script.Parent.ThrowWindUp)
 local Lifecycle = require(script.Parent.Lifecycle)
 local WorldSounds = require(script.Parent.WorldSounds)
 
@@ -31,6 +33,7 @@ local FRAG_COLOR = Color3.fromRGB(255, 120, 60)
 
 type FragSettings = {
 	ThrowDistance: number,
+	Flight: number?, -- seconds in the air; Config.Grenade.Flight when the row has none
 	FuseTime: number,
 	Radius: number,
 	Damage: number,
@@ -87,8 +90,9 @@ end
 
 -- The frag's blast, shared by anything that explodes on a soldier's behalf (the Goose's
 -- rocket): a flash, the screen shake, `Damage` to every Infected within `Radius`. No friendly
--- fire (the call-ins' rule).
-function KitService.blast(player: Player, center: Vector3, settings: BlastSettings)
+-- fire (the call-ins' rule). `player` is nil for a bot's frag (no kill credit, no hit marker).
+function KitService.blast(player: Player?, center: Vector3, settings: BlastSettings)
+	EnemyService.noise(center, Config.Awareness.Explosion)
 	local boom = Instance.new("Explosion")
 	boom.Position = center
 	boom.BlastRadius = 0
@@ -133,34 +137,34 @@ function KitService.blast(player: Player, center: Vector3, settings: BlastSettin
 	end
 end
 
-local function throwGrenade(player: Player, requested: Vector3?)
-	local member, root = standing(player)
-	local character = player.Character
-	if not member or not root or not character then
-		return
-	end
-	local now = os.clock()
-	if now < (throwReadyAt[player] or 0) then
-		return
-	end
-	local definition = WeaponDefinitions.grenade(LoadoutService.getGrenade(player))
+-- The throw itself, for a player (releaseGrenade, after its checks) or a bot (BotService,
+-- `player` nil; it counts its own grenades): grenade `grenadeId` leaves `character` toward
+-- `requested`, flies for its Flight (ThrowFX on the clients), lands (ThrowUtil), blinks
+-- through its fuse and blows (KitService.blast).
+function KitService.throwFrag(
+	player: Player?,
+	character: Model,
+	root: BasePart,
+	requested: Vector3?,
+	grenadeId: string?
+)
+	local definition = WeaponDefinitions.grenade(grenadeId)
 	local settings = (Config.Grenade :: any)[definition.ConfigKey] :: FragSettings
-	if not LoadoutService.useGrenade(player) then
-		return
-	end
-	throwReadyAt[player] = now + Config.Grenade.ThrowGap
-
 	local center = ThrowUtil.landingPoint(root, requested, settings.ThrowDistance, {
 		character,
 		effectsFolder,
 	}) + Vector3.new(0, 1, 0)
+	local flight = settings.Flight or Config.Grenade.Flight
 	WorldSounds.at(center, "callins", "callin_throw")
+	if player then
+		ThrowWindUp.thrown(player, center, flight, FRAG_COLOR)
+	end
 	-- Bait Charge: a longer fuse, and the Infected around walk to it until it blows.
 	local fuse = settings.FuseTime
-	if LoadoutService.hasUpgrade(player, "lure_charge") then
+	if player and LoadoutService.hasUpgrade(player, "lure_charge") then
 		local lure = Config.Upgrades.LureCharge
 		fuse = lure.FuseTime
-		EnemyService.setLure(center, lure.Radius, fuse)
+		EnemyService.setLure(center, lure.Radius, flight + fuse)
 	end
 
 	local grenade = Instance.new("Part")
@@ -173,7 +177,6 @@ local function throwGrenade(player: Player, requested: Vector3?)
 	grenade.CanQuery = false
 	grenade.Material = Enum.Material.Neon
 	grenade.Color = FRAG_COLOR
-	grenade.Parent = effectsFolder
 
 	-- Warning ring on the ground: the blast radius.
 	local ring = Instance.new("Part")
@@ -189,6 +192,11 @@ local function throwGrenade(player: Player, requested: Vector3?)
 	ring.Parent = effectsFolder
 
 	task.spawn(function()
+		PauseService.wait(flight) -- in the air; the ring already warns where it lands
+		if not ring.Parent then
+			return -- a run start cleared the field
+		end
+		grenade.Parent = effectsFolder
 		local blinks = 4
 		for _ = 1, blinks do
 			grenade.Transparency = 0.6
@@ -203,8 +211,41 @@ local function throwGrenade(player: Player, requested: Vector3?)
 	end)
 end
 
+-- The release (ThrowWindUp, the throw clip's release): the grenade is spent here, flies
+-- from the hand for its Flight and its fuse starts when it lands.
+local function releaseGrenade(player: Player, requested: Vector3?)
+	local member, root = standing(player)
+	local character = player.Character
+	if not member or not root or not character then
+		return
+	end
+	if not LoadoutService.useGrenade(player) then
+		return
+	end
+	KitService.throwFrag(player, character, root, requested, LoadoutService.getGrenade(player))
+end
+
+-- G: the wind-up starts (one throw at a time, ThrowGap apart, a grenade in the pouch); the
+-- grenade leaves the hand, and the pouch, at the release.
+local function throwGrenade(player: Player, requested: Vector3?)
+	local member = standing(player)
+	if not member then
+		return
+	end
+	local now = os.clock()
+	if now < (throwReadyAt[player] or 0) or LoadoutService.grenadesLeft(player) <= 0 then
+		return
+	end
+	local began = ThrowWindUp.begin(player, function()
+		releaseGrenade(player, requested)
+	end)
+	if began then
+		throwReadyAt[player] = now + Config.Grenade.ThrowGap
+	end
+end
+
 ----------------------------------------------------------------------
--- V: shove
+-- Shove
 ----------------------------------------------------------------------
 
 local function shove(player: Player)
@@ -260,24 +301,17 @@ local function shove(player: Player)
 end
 
 ----------------------------------------------------------------------
--- E: stim
+-- Stim
 ----------------------------------------------------------------------
 
-local function stim(player: Player)
-	local member = standing(player)
-	local humanoid = member and member.humanoid
-	if not member or not humanoid then
-		return
-	end
-	local now = os.clock()
-	if now < (stimUntil[player] or 0) or humanoid.Health >= humanoid.MaxHealth then
-		return -- one stim at a time; a full bar wastes none
-	end
-	if not LoadoutService.useStim(player) then
+-- The dose itself, for a player (stim, after its checks) or a bot (BotService; it counts
+-- its own stims): Config.Stim.Heal over Duration on `member`.
+function KitService.dose(member: Squad.Member)
+	local humanoid = member.humanoid
+	if not humanoid then
 		return
 	end
 	local settings = Config.Stim
-	stimUntil[player] = now + settings.Duration
 	if member.root then
 		WorldSounds.on(member.root, "player_gear", "revive", "Gear")
 	end
@@ -295,6 +329,23 @@ local function stim(player: Player)
 			humanoid.Health = math.min(humanoid.Health + perTick, humanoid.MaxHealth)
 		end
 	end)
+end
+
+local function stim(player: Player)
+	local member = standing(player)
+	local humanoid = member and member.humanoid
+	if not member or not humanoid then
+		return
+	end
+	local now = os.clock()
+	if now < (stimUntil[player] or 0) or humanoid.Health >= humanoid.MaxHealth then
+		return -- one stim at a time; a full bar wastes none
+	end
+	if not LoadoutService.useStim(player) then
+		return
+	end
+	stimUntil[player] = now + Config.Stim.Duration
+	KitService.dose(member)
 end
 
 ----------------------------------------------------------------------

@@ -2,7 +2,9 @@
 -- Soldiers on the Fallow wear the match's Pike body, so the lobby and the game look like one
 -- thing: the same limb swap the match's PlayerSetup does (MeshAssets.dressModel with
 -- PlayerSetup.BODY, mapped into the lobby by lobby.project.json, so the body is named in one
--- place). Unarmed: nobody carries a rifle on the ship, and nothing else of PlayerSetup runs.
+-- place). Armed like the match too (owner, 2026-11-11; Config.Lobby.Soldier): the match's
+-- PlayerSetup.attachRifle puts the gun named by the player's Weapon attribute in the hands,
+-- which LoadmasterService sets to the signed primary. Nothing else of PlayerSetup runs.
 -- Follows the match's current body (Config.Player.SkinnedBody is off: the tapered rigid
 -- limbs); if the skinned body comes back, mirror PlayerSetup's installSkinnedBody here.
 
@@ -10,6 +12,8 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
+local Config = require(ReplicatedStorage.Shared.Config)
+local AvatarLook = require(ReplicatedStorage.Shared.AvatarLook)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
 local PlayerSetup = require(script.Parent.PlayerSetup)
 
@@ -94,11 +98,42 @@ local function pikeKit(character: Model)
 	end, Color3.fromRGB(120, 255, 120), true)
 end
 
+-- The gun across the chest (Config.Lobby.Soldier.Sling): the Tool's grip weld, which Roblox
+-- makes on the right hand when the Tool is equipped, is moved onto the upper torso; a new
+-- grip weld (a re-equip) is moved again. SlingHands (client) puts the hands on it.
+local function sling(character: Model)
+	local hand = character:FindFirstChild("RightHand")
+	local torso = character:FindFirstChild("UpperTorso")
+	if not (hand and torso and torso:IsA("BasePart")) then
+		return
+	end
+	local settings = Config.Lobby.Soldier.Sling
+	local seat = CFrame.lookAlong(settings.Position, settings.Barrel.Unit, settings.Up.Unit)
+	local function move(child: Instance)
+		if child.Name == "RightGrip" and child:IsA("Weld") then
+			task.defer(function() -- after Roblox has set the weld up
+				child.Part0 = torso
+				child.C0 = seat
+				child.C1 = CFrame.identity
+			end)
+		end
+	end
+	hand.ChildAdded:Connect(move)
+	for _, child in hand:GetChildren() do
+		move(child)
+	end
+end
+
 local function onCharacterAdded(character: Model)
-	character:WaitForChild("Humanoid")
+	local humanoid = character:WaitForChild("Humanoid") :: Humanoid
 	character:WaitForChild("HumanoidRootPart")
-	-- Templates build asynchronously at boot; a character that beats them keeps the stock body.
-	if MeshAssets.waitFor(PlayerSetup.BODY .. "head", TEMPLATE_WAIT) then
+	humanoid.WalkSpeed = Config.Lobby.Soldier.WalkSpeed
+	-- The soldier's look as catalog items (Config.Player.Look), as in the match; else the Pike
+	-- limb body. Templates build asynchronously at boot; a character that beats them keeps
+	-- the stock body.
+	if Config.Player.Look.Enabled then
+		AvatarLook.apply(humanoid, PlayerSetup.look(Players:GetPlayerFromCharacter(character)))
+	elseif MeshAssets.waitFor(PlayerSetup.BODY .. "head", TEMPLATE_WAIT) then
 		MeshAssets.dressModel(character, PlayerSetup.BODY)
 		if
 			character:FindFirstChild("LeftLowerArm") and character:FindFirstChild("RightUpperArm")
@@ -107,6 +142,14 @@ local function onCharacterAdded(character: Model)
 		end
 	else
 		warn("[PikeBody] body meshes did not load; this soldier keeps the stock body")
+	end
+	-- After the limb swap: the rifle welds to the hand the body now has.
+	local soldier = Config.Lobby.Soldier
+	if soldier.Enabled and soldier.CarryRifle and character.Parent then
+		if character:WaitForChild("RightHand", TEMPLATE_WAIT) then
+			sling(character)
+			PlayerSetup.attachRifle(character, humanoid)
+		end
 	end
 end
 

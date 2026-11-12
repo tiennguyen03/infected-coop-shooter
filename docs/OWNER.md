@@ -46,17 +46,32 @@ something; never delete one without the owner.
   clip, icon, sound) lives on that item's own Config/definition row with a default. Never a
   hard-coded list of item names in a system. (2026-11-09)
 - **The lobby ship is "the Carrier"** (was "the Fallow"): easier to understand. (2026-11-09)
-- **Merits, spent on the Carrier** (Nova, 2026-11-10: the currency is **merits**, the lore
-  developer's name, not "Credits"; `docs/ROADMAP.md` still says Credits, Tien to confirm).
-  Players earn merits on missions and buy kit at the Carrier's desks: guns, grenades and
-  call-ins, permanent unlocks (new options, never stronger versions). No cosmetics and no
-  one-run consumables for now. There is no ship to upgrade like Helldivers; the Carrier sells
-  kit instead (Tien and Nova). (2026-11-09)
+- **Plain names for what players see.** "It's kind of just a multiplayer game that has lore
+  integrated in it", not a campaign: do not coin names a player would not understand. The
+  ship is the Carrier, the helicopter is the helicopter ("Helo" on the radio, not
+  "Lantern"), the Warden's lines are labelled "Warden" (not "Handset"). HARLAN and the
+  call-in names stay. The rule: `docs/LORE.md` > Naming. (2026-11-11)
+- **Two currencies: merits and tabs.** (2026-11-10; replaces the single "Credits".)
+  - **Merits** are the soft currency: earned by playing (paid when a mission ends, never per
+    kill) and spent at the Carrier's desks on kit: guns, grenades and call-ins, permanent
+    unlocks (new options, never stronger versions). There is no ship to upgrade like
+    Helldivers; the Carrier sells kit instead (Tien and Nova, 2026-11-09).
+  - **Tabs** are the hard currency (the owner's name, "tabs for now"): bought with Robux or
+    granted by events. **Tabs never buy power:** cosmetics and conveniences only. Nothing is
+    sold for tabs yet, and no one-run consumables for now.
 - **Transitions are a fade, not a loading card.** Fade to black with the helicopter sound, Roblox's
   own loading screen on a teleport, fade in on the pad with the drop-off sound; the same between
-  missions. No custom ride card or teleport screen for now. (2026-11-09)
+  missions. No custom ride card or teleport screen for now. (2026-11-09) **The arrival is a
+  cutscene** (2026-11-11, Nova: "a cutscene of the lantern dropping the squad off at the landing
+  zone"): the helicopter flies in, hovers over the LZ and leaves; skippable (client
+  InsertionCutscene, Config.Insertion).
 - **Loadout is chosen in the lobby** once the lobby exists; the in-mission Arms Room (B) is
   a stand-in. (2026-11-08)
+
+- **Rewards are picked from a big panel, never by walking over them.** The world cards were
+  "so small to read" and "sometimes you pick the wrong item". Walk up to the crate, hold the
+  prompt, choose from large cards that say exactly what each does. The Main objective's
+  reward must be clearly better than a routine pallet. (2026-11-11)
 
 ## How it looks and sounds
 
@@ -78,14 +93,35 @@ something; never delete one without the owner.
   regenerate before re-enabling. Every boss gets its own sound bank; every speaker a sound
   profile so its clips match. (2026-11-08)
 - **UI direction:** Prototype 2's HUD, adapted to a squad shooter. (2026-11-08)
+- **No floating health bars,** over the Infected, players or bots. Squadmates' status is a
+  panel on the side of the HUD; the player's own health stays in the HUD and the boss keeps
+  its bar at the top of the screen. (2026-11-11)
 
 ## Rules already decided
 
 - Razor wire (Concertina) can never be vaulted. (2026-11-08)
-- Q dash and E breach are gone: Q swaps guns, G frag, V shove, E stim, 1-4 call-ins, 5 flare.
-  (2026-11-08)
-- Movement keys: roll and slide need too many key combos; the owner wants a Helldivers-like
-  answer, not decided yet. Do not change the bindings without them. (2026-11-08)
+- Q dash and E breach are gone (2026-11-08).
+- **The keyboard** (2026-11-11, "do it"; replaces the 2026-11-08 keys). Code: `Config.Keys`,
+  the only place a key is written; every hint reads it.
+
+  | Action | Key |
+  |---|---|
+  | Interact: revive (hold), crates, objective holds, anything walked up to and used | E |
+  | Stim | V |
+  | Shove | F |
+  | Crouch | C or LeftControl |
+  | Prone | Z |
+  | Resupply flare | X |
+  | First / third person | T |
+  | Sprint | Shift |
+  | Vault / climb | Space |
+  | Swap gun, grenade, reload | Q, G, R |
+  | Call-ins | 1-4 |
+  | Arms Room | B |
+  | Ping (not built) | middle mouse, kept free |
+
+- Movement keys: roll is Shift twice; slide is holding C or Ctrl while sprinting (owner,
+  2026-11-11). Do not change bindings without the owner.
 
 ## Team and accounts
 

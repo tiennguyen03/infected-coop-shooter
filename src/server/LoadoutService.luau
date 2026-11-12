@@ -25,6 +25,7 @@ local Loadout = require(ReplicatedStorage.Shared.Rules.Loadout)
 local Magazine = require(ReplicatedStorage.Shared.Rules.Magazine)
 local Messages = require(ReplicatedStorage.Shared.Messages)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
+local Reward = require(ReplicatedStorage.Shared.Rules.Reward)
 local RunStates = require(ReplicatedStorage.Shared.RunStates)
 local SoundBanks = require(ReplicatedStorage.Shared.SoundBanks)
 local UpgradeDefinitions = require(ReplicatedStorage.Shared.UpgradeDefinitions)
@@ -137,6 +138,7 @@ local function publishKit(player: Player, state: State)
 end
 
 local function publishLoadout(player: Player, state: State)
+	player:SetAttribute(Attributes.Fitted, Loadout.encodeFitted(pickFor(player).attachments))
 	for slot = 1, Config.CallIns.Slots do
 		player:SetAttribute(Attributes.callIn(slot), state.callIns[slot] or "")
 	end
@@ -167,6 +169,11 @@ end
 ----------------------------------------------------------------------
 
 -- The gun in hand.
+-- What `player` has fitted to gun `weaponId` in `slot` (the Loadmaster's EDIT), or nil.
+function LoadoutService.fitted(player: Player, weaponId: string, slot: string): string?
+	return Loadout.fitted(pickFor(player).attachments, weaponId, slot)
+end
+
 function LoadoutService.getWeapon(player: Player): WeaponDefinitions.WeaponDefinition
 	return WeaponDefinitions.get(activeGun(get(player)).id)
 end
@@ -300,6 +307,10 @@ end
 
 function LoadoutService.getGrenade(player: Player): string
 	return get(player).grenade
+end
+
+function LoadoutService.grenadesLeft(player: Player): number
+	return get(player).grenades
 end
 
 -- One grenade out of the pouch; false when none are left.
@@ -453,14 +464,9 @@ function LoadoutService.apply(player: Player, requested: unknown): (boolean, str
 	if not ok then
 		return false, reason
 	end
-	local source = requested :: Loadout.Loadout
-	local pick: Loadout.Loadout = {
-		primary = source.primary,
-		secondary = source.secondary,
-		grenade = source.grenade,
-		callIns = table.clone(source.callIns),
-	}
+	local pick = Loadout.copy(requested :: Loadout.Loadout)
 	picks[player] = pick
+	player:SetAttribute(Attributes.Fitted, Loadout.encodeFitted(pick.attachments))
 	local state = get(player)
 	if state.primary.id ~= pick.primary then
 		state.primary = fullGun(pick.primary)
@@ -546,29 +552,33 @@ function LoadoutService.clearUpgrades(player: Player)
 	publishLoadout(player, state)
 end
 
--- Upgrades this player could take right now: applies to a slot they have, not already held.
-function LoadoutService.availableUpgrades(player: Player): { string }
+-- `count` different upgrades for a crate (fewer when the pool is short): never one held,
+-- ones for an empty slot before ones that would replace a pick (Rules/Reward).
+function LoadoutService.rollUpgradeOffer(player: Player, count: number): { string }
 	local state = get(player)
-	local ids = {}
+	local candidates: { Reward.Candidate } = {}
 	for _, id in UpgradeDefinitions.upgradeIds() do
 		local definition = UpgradeDefinitions.get(id) :: UpgradeDefinitions.CardDefinition
-		if slotFor(state, definition) and not LoadoutService.hasUpgrade(player, id) then
-			table.insert(ids, id)
+		local slot = slotFor(state, definition)
+		if slot then
+			table.insert(candidates, { Id = id, Slot = slot })
 		end
 	end
-	return ids
+	return Reward.upgradeOffer(candidates, state.upgrades, count, function(n: number): number
+		return math.random(n)
+	end)
 end
 
--- `count` distinct random upgrades for an upgrade crate (fewer when the pool is short).
-function LoadoutService.rollUpgradeOffer(player: Player, count: number): { string }
-	local pool = LoadoutService.availableUpgrades(player)
-	local choices = {}
-	while #choices < count and #pool > 0 do
-		local index = math.random(#pool)
-		table.insert(choices, pool[index])
-		table.remove(pool, index)
+-- The upgrade this player would lose by taking `upgradeId` (the one in its slot), if any.
+function LoadoutService.replacedBy(player: Player, upgradeId: string): string?
+	local definition = UpgradeDefinitions.get(upgradeId)
+	if not definition then
+		return nil
 	end
-	return choices
+	local state = get(player)
+	local slot = slotFor(state, definition)
+	local inSlot = if slot then state.upgrades[slot] else nil
+	return if inSlot ~= upgradeId then inSlot else nil
 end
 
 ----------------------------------------------------------------------

@@ -8,7 +8,9 @@
 local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local MeshAssets = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("MeshAssets"))
+local Missions = require(script.Parent.Missions)
 
 local SkyService = {}
 
@@ -275,6 +277,36 @@ function SkyService.init()
 		clouds.Color = Color3.fromRGB(128, 86, 64)
 		clouds.Enabled = true
 		clouds.Parent = terrain
+	end
+
+	-- A night mission (Config.NightSky): midnight over the same skyline.
+	local night = Config.NightSky
+	if night.Missions[Missions.current().Id] then
+		Lighting.ClockTime = night.ClockTime
+		Lighting.Brightness = night.Brightness
+		Lighting.Ambient = night.Ambient
+		Lighting.OutdoorAmbient = night.OutdoorAmbient
+		Lighting.ColorShift_Top = Color3.new()
+		Lighting.ColorShift_Bottom = Color3.new()
+		Lighting.ExposureCompensation = night.ExposureCompensation
+		sky.CelestialBodiesShown = false
+		sky.StarCount = night.StarCount
+		atmosphere.Density = night.Atmosphere.Density
+		atmosphere.Offset = night.Atmosphere.Offset
+		atmosphere.Color = night.Atmosphere.Color
+		atmosphere.Decay = night.Atmosphere.Decay
+		atmosphere.Glare = 0
+		atmosphere.Haze = night.Atmosphere.Haze
+		grade.Brightness = night.ColorCorrection.Brightness
+		grade.Contrast = night.ColorCorrection.Contrast
+		grade.Saturation = night.ColorCorrection.Saturation
+		grade.TintColor = night.ColorCorrection.Tint
+		local clouds = terrain and terrain:FindFirstChildOfClass("Clouds")
+		if clouds then
+			clouds.Cover = night.Clouds.Cover
+			clouds.Density = night.Clouds.Density
+			clouds.Color = night.Clouds.Color
+		end
 	end
 
 	buildSkyline()

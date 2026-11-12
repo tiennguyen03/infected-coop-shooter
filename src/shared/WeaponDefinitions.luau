@@ -8,11 +8,25 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local Sight = require(ReplicatedStorage.Shared.Rules.Sight)
+local KeyBindings = require(ReplicatedStorage.Shared.Rules.KeyBindings)
+local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
+
+-- A row's sight points are written on the gun's design (guns.py); the eye lines up where
+-- they show on the uploaded mesh, which Roblox mirrors left-right (MeshAssets.shownPoint).
+local function shown(model: string, sight: Sight.Resolved): Sight.Resolved
+	local out = table.clone(sight)
+	out.Rear = MeshAssets.shownPoint(model, sight.Rear)
+	out.Front = MeshAssets.shownPoint(model, sight.Front)
+	return out
+end
 
 export type WeaponSlot = "primary" | "secondary"
 export type FireMode = "auto" | "semi"
 -- Per-shot camera kick: Pitch degrees up, a random +/- Yaw degrees, eased back over Recover s.
 export type WeaponKick = { Pitch: number, Yaw: number, Recover: number }
+-- The Barrel's suppressor (Config.Attachments): its quiet reach and its size on the muzzle.
+export type Suppressor = { Noise: number, Length: number, Width: number }
 
 export type WeaponDefinition = {
 	Id: string,
@@ -46,6 +60,11 @@ export type WeaponDefinition = {
 	Explosive: Explosive?, -- a launcher: the round is a visible rocket that blows at impact
 	ProjectileSpeed: number?, -- studs/s of that rocket (Explosive only)
 	ArmsOrder: number, -- its place in the Arms Room within its slot (lower first; default 100)
+	Noise: number, -- studs a shot carries to the Infected (Config.Awareness; default DefaultNoise)
+	Suppressor: Suppressor?, -- it takes one on the Barrel; nil = it cannot
+	-- Its sights in first person (Rules/Sight): the two points on the mesh the eye lines up,
+	-- irons or a scope, the eye relief, the zoom and the hip hold, defaults filled in.
+	Sight: Sight.Resolved,
 }
 
 -- A launcher's blast at the impact point (the frag's blast, KitService.blast). SelfDamage is
@@ -92,10 +111,16 @@ type Tuning = {
 	Explosive: Explosive?,
 	ProjectileSpeed: number?,
 	ArmsOrder: number?,
+	Noise: number?,
+	Suppressor: Suppressor?,
+	Sight: Sight.Raw?,
 }
 
 local DEFAULT_ARMS_ORDER = 100
 local DEFAULT_MODEL = "wpn_rifle"
+-- A row that names no sight (tests/Sight.spec.luau fails it): along the top of wpn_rifle.
+local DEFAULT_SIGHT: Sight.Raw =
+	{ Rear = Vector3.new(0, 0.62, 0), Front = Vector3.new(0, 0.62, -1.4) }
 
 local function row(
 	id: string,
@@ -137,6 +162,12 @@ local function row(
 		Explosive = tuning.Explosive,
 		ProjectileSpeed = tuning.ProjectileSpeed,
 		ArmsOrder = tuning.ArmsOrder or DEFAULT_ARMS_ORDER,
+		Noise = tuning.Noise or Config.Awareness.DefaultNoise,
+		Suppressor = tuning.Suppressor,
+		Sight = shown(
+			tuning.Model or DEFAULT_MODEL,
+			Sight.resolve(tuning.Sight or DEFAULT_SIGHT, Config.Weapon.Sights)
+		),
 	}
 end
 
@@ -224,7 +255,7 @@ local GRENADES: { [string]: GrenadeDefinition } = {
 		Id = "frag",
 		Name = "Frag",
 		Designation = "M67",
-		Description = "Hold G to aim, release to throw. Kills a Hocker, not a Brute.",
+		Description = `Hold {KeyBindings.label(Config.Keys.Grenade.Name)} to aim, release to throw. Kills a Hocker, not a Brute.`,
 		ConfigKey = "Frag",
 	},
 }
@@ -277,6 +308,24 @@ end
 
 function WeaponDefinitions.grenade(id: string?): GrenadeDefinition
 	return (id and GRENADES[id]) or GRENADES[WeaponDefinitions.DEFAULT_GRENADE]
+end
+
+-- What gun `id` can take: [slot] = its options (Config.Attachments), empty when nothing.
+function WeaponDefinitions.options(id: string): { [string]: { string } }
+	local options: { [string]: { string } } = {}
+	local gun = ROWS[id]
+	if gun and gun.Suppressor then
+		options.Barrel = { "suppressor" }
+	end
+	return options
+end
+
+-- How far a shot from `weapon` carries with `barrel` fitted (nil = bare).
+function WeaponDefinitions.shotNoise(weapon: WeaponDefinition, barrel: string?): number
+	if barrel == "suppressor" and weapon.Suppressor then
+		return weapon.Suppressor.Noise
+	end
+	return weapon.Noise
 end
 
 return WeaponDefinitions

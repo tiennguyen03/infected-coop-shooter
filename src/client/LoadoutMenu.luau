@@ -14,11 +14,18 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local ArmsRoom = require(Shared:WaitForChild("ArmsRoom"))
 local CallInDefinitions = require(Shared:WaitForChild("CallInDefinitions"))
+local Config = require(Shared:WaitForChild("Config"))
+local KeyBindings = require(Shared:WaitForChild("Rules"):WaitForChild("KeyBindings"))
 local Loadout = require(Shared:WaitForChild("Rules"):WaitForChild("Loadout"))
 local WeaponDefinitions = require(Shared:WaitForChild("WeaponDefinitions"))
 local HudTheme = require(script.Parent.HudTheme)
 
 local LoadoutMenu = {}
+
+local callInKeys = Config.Keys.CallIns
+local function keyLabel(key: Enum.KeyCode): string
+	return KeyBindings.label(key.Name)
+end
 
 local C = HudTheme.Color
 local WIDTH = 760
@@ -34,6 +41,14 @@ export type Options = {
 	-- A gun the soldier may not carry: returns the badge shown in its place (e.g. its price),
 	-- or nil when it may be picked. Locked items cannot be picked and keep confirm greyed.
 	locked: ((id: string) -> string?)?,
+	-- The Loadmaster's EDIT (GunsmithUI): given, a gun that takes attachments gets an EDIT
+	-- button; the host opens its screen with what is fitted and calls `done` with the new
+	-- fitting ([slot] = option).
+	edit: ((
+		gunId: string,
+		fitted: { [string]: string },
+		done: (fitted: { [string]: string }) -> ()
+	) -> ())?,
 }
 
 export type Handle = {
@@ -111,6 +126,7 @@ function LoadoutMenu.mount(
 	local opts: Options = options or {}
 	local catalog = ArmsRoom.catalog()
 	local pick = Loadout.default(catalog)
+	pick.attachments = {}
 	-- Tall enough for the longest list (the call-ins grow with the roster).
 	local rows =
 		math.max(#catalog.primaries, #catalog.callIns, #catalog.secondaries + #catalog.grenades + 2)
@@ -133,7 +149,8 @@ function LoadoutMenu.mount(
 	})
 	header.Position = UDim2.fromOffset(24, 16)
 	local hint = HudTheme.label(frame, {
-		text = opts.hint or "[B] CLOSE   ·   CHANGES AT INSERT, READY-UP, OR AT THE LZ WHEN CALM",
+		text = opts.hint
+			or `[{keyLabel(Config.Keys.Loadout)}] CLOSE   ·   CHANGES AT INSERT, READY-UP, OR AT THE LZ WHEN CALM`,
 		size = 12,
 		color = C.TextDim,
 	})
@@ -204,7 +221,8 @@ function LoadoutMenu.mount(
 		index: number,
 		entry: Entry,
 		isSelected: () -> (boolean, string?),
-		onPick: () -> ()
+		onPick: () -> (),
+		gun: boolean?
 	)
 		local item = button(parentColumn, 22 + (index - 1) * ROW, COLUMN)
 		local title = HudTheme.label(item, { text = entry.title, size = 14 })
@@ -219,6 +237,33 @@ function LoadoutMenu.mount(
 		sub.Name = "Sub"
 		sub.AnchorPoint = Vector2.new(1, 0)
 		sub.Position = UDim2.new(1, -10, 0, 7)
+		-- EDIT: what is fitted to this gun (the Loadmaster only).
+		local editGun = opts.edit
+		local offers = catalog.attachments and catalog.attachments[entry.id]
+		if gun and editGun and offers then
+			local editButton = Instance.new("TextButton")
+			editButton.Name = "Edit"
+			editButton.AutoButtonColor = false
+			editButton.AnchorPoint = Vector2.new(1, 0.5)
+			editButton.Position = UDim2.new(1, -4, 0.5, 0)
+			editButton.Size = UDim2.fromOffset(44, ROW - 10)
+			editButton.BackgroundColor3 = C.Red
+			editButton.BorderSizePixel = 0
+			editButton.Font = HudTheme.Font.Line
+			editButton.TextSize = 11
+			editButton.TextColor3 = C.Text
+			editButton.Text = "EDIT"
+			editButton.Parent = item
+			sub.Position = UDim2.new(1, -54, 0, 7)
+			editButton.Activated:Connect(function()
+				local attachments = pick.attachments or {}
+				pick.attachments = attachments
+				editGun(entry.id, table.clone(attachments[entry.id] or {}), function(fitted)
+					attachments[entry.id] = if next(fitted) then fitted else nil
+					repaint()
+				end)
+			end)
+		end
 		local function describeIt()
 			local lock = isLocked(entry.id)
 			describe.Text = if lock
@@ -242,7 +287,15 @@ function LoadoutMenu.mount(
 				sub.Text = lock
 				sub.TextColor3 = C.Yellow
 			else
-				sub.Text = entry.subtitle
+				-- "+SUP" for each attachment fitted to this gun.
+				local fitted: { [string]: string } = pick.attachments and pick.attachments[entry.id]
+					or {}
+				local marks = ""
+				for _, option in fitted do
+					local row = Config.Attachments.Options[option]
+					marks ..= if row then ` +{string.upper(string.sub(row.Name, 1, 3))}` else ""
+				end
+				sub.Text = entry.subtitle .. marks
 			end
 		end)
 	end
@@ -254,7 +307,7 @@ function LoadoutMenu.mount(
 			return pick.primary == id, nil
 		end, function()
 			pick.primary = id
-		end)
+		end, true)
 	end
 
 	local sidearms = column(frame, 24 + COLUMN + 16, top, "SIDEARM")
@@ -263,7 +316,7 @@ function LoadoutMenu.mount(
 			return pick.secondary == id, nil
 		end, function()
 			pick.secondary = id
-		end)
+		end, true)
 	end
 	local grenadeTop = top + 22 + #catalog.secondaries * ROW + 20
 	local grenades = column(frame, 24 + COLUMN + 16, grenadeTop, "GRENADE")
@@ -275,11 +328,19 @@ function LoadoutMenu.mount(
 		end)
 	end
 
-	local callIns = column(frame, 24 + 2 * (COLUMN + 16), top, `CALL-INS (KEYS 1-{catalog.slots})`)
+	local callIns = column(
+		frame,
+		24 + 2 * (COLUMN + 16),
+		top,
+		`CALL-INS (KEYS {keyLabel(callInKeys[1])}-{keyLabel(
+			callInKeys[catalog.slots] or callInKeys[#callInKeys]
+		)})`
+	)
 	for index, id in catalog.callIns do
 		addItem(callIns, index, callInEntry(id), function()
 			local slot = table.find(pick.callIns, id)
-			return slot ~= nil, if slot then `[{slot}]` else nil
+			local key = slot and callInKeys[slot]
+			return slot ~= nil, if key then `[{keyLabel(key)}]` else nil
 		end, function()
 			local slot = table.find(pick.callIns, id)
 			if slot then
@@ -292,12 +353,7 @@ function LoadoutMenu.mount(
 
 	deploy.Activated:Connect(function()
 		if deploy.Active then
-			onConfirm({
-				primary = pick.primary,
-				secondary = pick.secondary,
-				grenade = pick.grenade,
-				callIns = table.clone(pick.callIns),
-			})
+			onConfirm(Loadout.copy(pick))
 		end
 	end)
 
@@ -306,12 +362,8 @@ function LoadoutMenu.mount(
 	local handle: Handle = {
 		frame = frame,
 		set = function(loadout: Loadout.Loadout)
-			pick = {
-				primary = loadout.primary,
-				secondary = loadout.secondary,
-				grenade = loadout.grenade,
-				callIns = table.clone(loadout.callIns),
-			}
+			pick = Loadout.copy(loadout)
+			pick.attachments = pick.attachments or {}
 			repaint()
 		end,
 		refresh = repaint,
