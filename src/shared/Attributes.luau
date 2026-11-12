@@ -17,6 +17,9 @@ local Attributes = table.freeze({
 	-- workspace: when this run's insertion cutscene starts (server time; RunManager writes it a
 	-- moment after Insert begins so every client is ready, InsertionCutscene reads it)
 	InsertStartsAt = "InsertStartsAt",
+	-- workspace, set by the place's Rojo project (mile14.project.json): the mission this place
+	-- builds (Missions.current); none = the operation's first (Config.Operation.Missions)
+	Mission = "Mission",
 	-- a soldier's character: their night vision is on (NightVisionService writes it from the
 	-- client's toggle; every client lowers that body's goggles, client NightVision)
 	NightVision = "NightVision",
@@ -84,11 +87,17 @@ local Attributes = table.freeze({
 	TabsHeld = "TabsHeld",
 	DevGod = "DevGod",
 	Bloom = "Bloom",
+	-- Player: what is fitted to each of their guns, Rules/Loadout.encodeFitted
+	-- ("gun.Slot=option;..."; LoadoutService in the match, LoadmasterService on the ship)
+	Fitted = "Fitted",
 	LastShotAt = "LastShotAt", -- local only: the client stamps each of its own shots
 	UpgradeKit = "UpgradeKit",
 
 	-- Character: squad state, knockdown, stance (Squad, StanceService, CoverMoveService)
 	SquadState = "SquadState",
+	-- a player's character is crouched (StanceService, from the Stance remote): the Infected
+	-- see it less far (Config.Awareness.Sight.Crouch)
+	Crouching = "Crouching",
 	BleedOutAt = "BleedOutAt",
 	SelfReviveAt = "SelfReviveAt",
 	Reviver = "Reviver",

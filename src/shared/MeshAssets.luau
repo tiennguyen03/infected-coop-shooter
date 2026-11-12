@@ -61,6 +61,7 @@ type MeshDef = {
 	castShadow: boolean?, -- override: small cover never casts (default = solid)
 	render: Enum.RenderFidelity?, -- default Automatic; huge pieces always near (the Fallow) use Precise
 	seeThrough: boolean?, -- fences and wire: solid to walk into, bullets and sight pass
+	hides: boolean?, -- brush: bodies pass through, rays (sight, shots) stop at it (cover to crouch in)
 	-- A held gun (wpn_*): the barrel tip relative to the grip (Roblox axes, barrel along -Z);
 	-- PlayerSetup puts the Muzzle there. `offset` is the bounds centre from the grip.
 	muzzle: Vector3?,
@@ -374,6 +375,37 @@ local MESHES: { [string]: MeshDef } = {
 		solid = true,
 		fidelity = Enum.CollisionFidelity.Hull,
 		surface = { material = Enum.Material.Wood, color = Color3.fromRGB(48, 53, 59) }, -- dark
+	},
+	-- Mile 14's woods (assets/3d/build/trees.py, 2026-11-11): only the trunk collides (a soldier
+	-- walks under the boughs, and the Infected see past the needles).
+	env_pine_tall = {
+		meshId = "rbxassetid://110981133961351",
+		size = Vector3.new(11.39, 24.2, 11.39),
+		solid = true,
+		offset = Vector3.new(-0.05, 12.1, 0.055),
+		colliders = { { size = Vector3.new(1.2, 12, 1.2), offset = Vector3.new(0, 6, 0) } },
+	},
+	env_pine_small = {
+		meshId = "rbxassetid://111526025350273",
+		size = Vector3.new(6.39, 13, 6.39),
+		solid = true,
+		offset = Vector3.new(-0.003, 6.5, 0.053),
+		colliders = { { size = Vector3.new(0.76, 6, 0.76), offset = Vector3.new(0, 3, 0) } },
+	},
+	env_tree_leafy = {
+		meshId = "rbxassetid://96385340979373",
+		size = Vector3.new(9.98, 15.83, 8.42),
+		solid = true,
+		offset = Vector3.new(0.155, 7.913, -0.493),
+		colliders = { { size = Vector3.new(1.24, 8, 1.24), offset = Vector3.new(0, 4, 0) } },
+	},
+	-- Brush: no collision, but sight and shots stop at it (`hides`): crouch in it to hide.
+	env_shrub = {
+		meshId = "rbxassetid://98735801623297",
+		size = Vector3.new(5.59, 3.42, 5.1),
+		offset = Vector3.new(-0.022, 1.711, -0.088),
+		hides = true,
+		castShadow = false,
 	},
 	env_lamp_post = {
 		meshId = "rbxassetid://132474171948585",
@@ -1400,7 +1432,7 @@ local function buildTemplate(folder: Folder, name: string, def: MeshDef)
 	-- and raycasts (see addColliders). See-through pieces collide but let rays through.
 	local physical = def.solid == true and def.colliders == nil
 	part.CanCollide = physical
-	part.CanQuery = physical and def.seeThrough ~= true
+	part.CanQuery = (physical and def.seeThrough ~= true) or def.hides == true
 	part.CanTouch = false
 	part.CastShadow = if def.castShadow ~= nil then def.castShadow else def.solid == true
 	part.Parent = folder

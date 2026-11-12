@@ -91,6 +91,102 @@ local Config = {
 		SkipKeys = { Enum.KeyCode.Space, Enum.KeyCode.ButtonA },
 	},
 
+	-- What can be fitted to a gun (Nova, 2026-11-11: at the Loadmaster "a button next to each gun
+	-- that says edit and then pulls up a screen of the gun model and several differnt options for
+	-- accessories ie. the suppressor being for the barrel"). Slots in the order the screen lists
+	-- them; each option names its slot. A gun offers an option when its row has it (the
+	-- suppressor: Config.Weapons.<id>.Suppressor; not the revolver or the Goose).
+	Attachments = {
+		Slots = { "Barrel" },
+		Options = {
+			suppressor = {
+				Name = "Suppressor",
+				Slot = "Barrel",
+				Description = "The shot carries a fraction as far: the Infected hear it only close in. No muzzle flash.",
+				Color = Color3.fromRGB(34, 36, 38),
+				Volume = 0.3, -- the shot sound's volume with it fitted
+			},
+		} :: {
+			[string]: {
+				Name: string,
+				Slot: string,
+				Description: string,
+				Color: Color3,
+				Volume: number,
+			},
+		},
+	},
+
+	-- What the Infected notice (Nova, 2026-11-11, the night map: "we go in quiet ... if we mess
+	-- up and it goes loud then its gonna be rough"; Shared.Rules.Awareness, EnemyService). On a
+	-- mission listed in Missions every Infected is Sleeping, Idle, Wandering, Alerted or in
+	-- Chase; elsewhere they all chase as before. Noise: a gun's own Noise (Config.Weapons
+	-- rows), Explosion for a blast, Footsteps for a soldier running; inside half a noise's
+	-- reach a body comes for the noise-maker, inside all of it goes to look.
+	Awareness = {
+		Missions = { mile14 = true } :: { [string]: boolean },
+		Night = { mile14 = true } :: { [string]: boolean }, -- sight shortened (Sight.Night)
+		Hearing = { Sleeping = 0.35, Idle = 1, Wandering = 1, Alerted = 1.2 }, -- share of a noise's reach heard
+		Sight = {
+			Range = { Sleeping = 0, Idle = 45, Wandering = 55, Alerted = 70, Chase = 90 },
+			HalfAngle = 60, -- degrees either side of the facing
+			Night = 0.55,
+			Crouch = 0.6,
+			Prone = 0.35,
+			NoticeSeconds = 2.5, -- seen at the edge of the range this long = Chase (quicker closer)
+			Instant = 5, -- studs: seen this close is noticed at once
+		},
+		Touch = 3.5, -- studs: a soldier this close wakes even a sleeper
+		SightInterval = 0.35, -- seconds between a body's looks (raycasts)
+		Pace = { Sleeping = 0, Idle = 0, Wandering = 0.3, Alerted = 0.6, Chase = 1 }, -- of the form's WalkSpeed
+		WanderRadius = 28, -- studs from its post a wanderer strays
+		WanderPause = { 3, 9 }, -- seconds stood between wanders
+		SearchSeconds = 12, -- an Alerted body looks round the spot this long, then wanders
+		SearchRadius = 12,
+		LoseSeconds = 8, -- a chase with nobody in sight this long becomes a search of the last spot
+		Scream = 30, -- studs: a body that starts a chase alerts the others this close
+		DefaultNoise = 110, -- a gun row with no Noise
+		Explosion = 260, -- a blast (frag, the Goose's rocket, anything through KitService.blast)
+		Footsteps = { Speed = 19, Reach = 16, Every = 0.5 }, -- a soldier moving faster than Speed
+		-- The sleepers and wanderers placed at the start (until the map places its own): spread
+		-- over open ground at least MinDistance from the LZ.
+		Population = {
+			Count = 70,
+			MinDistance = 70,
+			Sleeping = 0.55, -- shares; the rest stand Idle
+			Wandering = 0.25,
+			Types = { Walker = 10, Runner = 2, Hocker = 1 } :: { [string]: number },
+		},
+	},
+
+	-- The night sky (Nova, 2026-11-11, Mile 14: "i want it to be nearly pitch black"). A mission
+	-- listed in Missions gets this instead of Delta's late afternoon (SkyService): midnight, no
+	-- sun or moon, near-black ambient light, a dark haze; the burning skyline is the only glow.
+	-- Night vision lifts it (NightVision.Ambient).
+	NightSky = {
+		Missions = { mile14 = true } :: { [string]: boolean },
+		ClockTime = 0,
+		Brightness = 0,
+		Ambient = Color3.fromRGB(7, 8, 11),
+		OutdoorAmbient = Color3.fromRGB(12, 13, 18),
+		ExposureCompensation = -0.4,
+		Atmosphere = {
+			Density = 0.42,
+			Offset = 0,
+			Color = Color3.fromRGB(10, 11, 15),
+			Decay = Color3.fromRGB(4, 5, 8),
+			Haze = 0.6,
+		},
+		Clouds = { Cover = 0.9, Density = 0.7, Color = Color3.fromRGB(16, 17, 21) },
+		StarCount = 300, -- a few, faint, through gaps in the cloud
+		ColorCorrection = {
+			Brightness = -0.03,
+			Contrast = 0.12,
+			Saturation = -0.45,
+			Tint = Color3.fromRGB(190, 204, 235),
+		},
+	},
+
 	-- Night vision (Nova, 2026-11-11: the goggles on the soldier's FAST helmet, for a night-time
 	-- area): Keys.NightVision or GamepadKey flips them down and up (client NightVision). The view
 	-- goes green and bright: Lighting exposure raised, a green colour correction with no colour
@@ -100,6 +196,10 @@ local Config = {
 		GamepadKey = Enum.KeyCode.DPadUp,
 		FlipSeconds = 0.18, -- the blink as the tubes come down or go up
 		Exposure = 2.2, -- added to Lighting.ExposureCompensation (stops)
+		-- While on, the ambient light on this client is raised to these (a near-black night,
+		-- NightSky, has too little light for exposure alone to lift); put back when off.
+		Ambient = Color3.fromRGB(46, 52, 46),
+		OutdoorAmbient = Color3.fromRGB(70, 78, 70),
 		Tint = Color3.fromRGB(120, 255, 150),
 		Brightness = 0.08,
 		Contrast = 0.3,
@@ -297,6 +397,23 @@ local Config = {
 			Vector3.new(-7, 0, 6),
 			Vector3.new(7, 0, 6),
 			Vector3.new(0, 0, 10),
+		},
+		-- Loose formation (Nova, 2026-11-11: "clumped up around the player"; Rules/BotBrain
+		-- respot / spreadSpot): each bot holds a spot of its own Near..Far from its leader in its
+		-- sector (degrees from the leader's facing: behind-left, behind-right, behind; +-Arc),
+		-- Spacing from the others and in the leader's line of sight, and keeps it until the
+		-- leader has moved Regroup from where it was picked (or the spot is Leash away, or the
+		-- leader is within TooClose of it). Slots below: the teleport's landing spots.
+		Loose = {
+			Near = 10,
+			Far = 18,
+			Sectors = { -115, 115, 180 },
+			Arc = 40,
+			Spacing = 9,
+			Regroup = 18,
+			Leash = 28,
+			TooClose = 6,
+			Tries = 6, -- candidates tried for one in the open and spaced
 		},
 		FollowSlack = 4, -- closer than this to the slot: stand
 		RunBeyond = 16, -- further than this: run
@@ -724,6 +841,8 @@ local Config = {
 		-- makes a held trigger spray at range, so 3-5 round bursts are the skill. Re-armed:
 		-- 30 + 240 = 9 mags, the Warden fight never runs it dry at the pallet costs below.
 		ServiceRifle = {
+			Suppressor = { Noise = 25, Length = 0.9, Width = 0.22 }, -- the Barrel option: its quiet reach, its size
+			Noise = 110, -- studs a shot carries (Config.Awareness; inside half it brings a chase)
 			FireMode = "auto",
 			Damage = 20,
 			FireCooldown = 0.08, -- 750 rpm
@@ -748,6 +867,8 @@ local Config = {
 		},
 		-- MP5: the best hip-fire; chews Runners, weak on Brutes (Walker 4 / 2, Brute 19 / 15).
 		Smg = {
+			Suppressor = { Noise = 15, Length = 0.8, Width = 0.2 }, -- the Barrel option: its quiet reach, its size
+			Noise = 70, -- studs a shot carries (Config.Awareness; inside half it brings a chase)
 			FireMode = "auto",
 			Damage = 14,
 			FireCooldown = 0.075, -- 800 rpm
@@ -777,6 +898,8 @@ local Config = {
 		},
 		-- M249: a 100-round belt, no reload inside a hold; slow to aim on the move.
 		Lmg = {
+			Suppressor = { Noise = 35, Length = 1.0, Width = 0.26 }, -- the Barrel option: its quiet reach, its size
+			Noise = 140, -- studs a shot carries (Config.Awareness; inside half it brings a chase)
 			FireMode = "auto",
 			Damage = 20,
 			FireCooldown = 0.075, -- 800 rpm
@@ -803,6 +926,8 @@ local Config = {
 		-- Mossberg 590: point-blank, one decision per pull; one pull drops every form but the
 		-- Brute (3).
 		Shotgun = {
+			Suppressor = { Noise = 40, Length = 0.9, Width = 0.28 }, -- the Barrel option: its quiet reach, its size
+			Noise = 120, -- studs a shot carries (Config.Awareness; inside half it brings a chase)
 			Heavy = true, -- staggers a Brute (Config.Enemies.Flinch)
 			FireMode = "semi", -- pump
 			Damage = 11, -- per pellet
@@ -835,6 +960,8 @@ local Config = {
 		-- M110: one-taps Walkers, hits two in a line, poor up close. Ammo reins it in
 		-- (100 x 60 is the M16's 270 x 20).
 		Dmr = {
+			Suppressor = { Noise = 30, Length = 1.0, Width = 0.24 }, -- the Barrel option: its quiet reach, its size
+			Noise = 130, -- studs a shot carries (Config.Awareness; inside half it brings a chase)
 			Heavy = true, -- staggers a Brute (Config.Enemies.Flinch)
 			FireMode = "semi",
 			Damage = 60,
@@ -867,6 +994,8 @@ local Config = {
 		},
 		-- M17: the sidearm, backup when the primary runs dry.
 		Pistol = {
+			Suppressor = { Noise = 12, Length = 0.55, Width = 0.16 }, -- the Barrel option: its quiet reach, its size
+			Noise = 45, -- studs a shot carries (Config.Awareness; inside half it brings a chase)
 			FireMode = "semi",
 			Damage = 25,
 			FireCooldown = 0.15, -- 400 rpm
@@ -901,6 +1030,7 @@ local Config = {
 		-- S&W 686 .357: one round per Walker or Runner, staggers a Brute; six shots and a slow
 		-- reload rein it in (Walker 1 / 1, Brute 5 / 4).
 		Revolver = {
+			Noise = 75, -- studs a shot carries (Config.Awareness; inside half it brings a chase)
 			Heavy = true, -- staggers a Brute (Config.Enemies.Flinch)
 			FireMode = "semi", -- double action
 			Damage = 55,
@@ -936,6 +1066,8 @@ local Config = {
 		-- M2010 ESR: one round per form but the Brute (2), through three more in a line. One
 		-- decision per bolt; useless from the hip (Walker 1 / 1, Brute 2 / 2).
 		Sniper = {
+			Suppressor = { Noise = 45, Length = 1.2, Width = 0.26 }, -- the Barrel option: its quiet reach, its size
+			Noise = 200, -- studs a shot carries (Config.Awareness; inside half it brings a chase)
 			Heavy = true,
 			FireMode = "semi", -- bolt action
 			Damage = 140,
@@ -970,6 +1102,7 @@ local Config = {
 		-- but the Warden; the blast (the frag's, no friendly fire) drops every form but the Brute
 		-- in 6 studs. Two rounds: a Brute answer, not a call-in (Hammer 6 x 80, Anvil 500).
 		Goose = {
+			Noise = 300, -- the loudest gun: half the map hears it (Config.Awareness), the blast adds its own
 			Heavy = true,
 			FireMode = "semi",
 			Damage = 400, -- the Infected struck directly; the blast hits everyone else in Radius

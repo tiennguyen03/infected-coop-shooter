@@ -24,6 +24,8 @@ local Messages = require(Shared:WaitForChild("Messages"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 local UpgradeDefinitions = require(Shared:WaitForChild("UpgradeDefinitions"))
 local WeaponDefinitions = require(Shared:WaitForChild("WeaponDefinitions"))
+local Loadout =
+	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Rules"):WaitForChild("Loadout"))
 local BuffNoticeUI = require(script.Parent.BuffNoticeUI)
 local CameraController = require(script.Parent.CameraController)
 local HudTheme = require(script.Parent.HudTheme)
@@ -177,6 +179,10 @@ local function currentLoadout()
 		grenade = (player:GetAttribute(Attributes.Grenade) :: string?)
 			or WeaponDefinitions.DEFAULT_GRENADE,
 		callIns = callIns,
+		-- What is fitted (the Loadmaster's EDIT) rides along, so a change here keeps it.
+		attachments = Loadout.decodeFitted(
+			(player:GetAttribute(Attributes.Fitted) :: string?) or ""
+		),
 	}
 end
 

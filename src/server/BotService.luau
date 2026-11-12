@@ -42,6 +42,7 @@ local KitService = require(script.Parent.KitService)
 local PauseService = require(script.Parent.PauseService)
 local PlayerSetup = require(script.Parent.PlayerSetup)
 local ProjectileServer = require(script.Parent.ProjectileServer)
+local EnemyService = require(script.Parent.EnemyService)
 local ReviveAnimService = require(script.Parent.ReviveAnimService)
 local Squad = require(script.Parent.Squad)
 local SupplyDropService = require(script.Parent.SupplyDropService)
@@ -93,6 +94,10 @@ type Bot = {
 	pathGoal: Vector3?,
 	pathFails: number,
 	teleportedAt: number,
+	-- Its own spot round the leader (Config.Bots.Loose) and where the leader stood when it
+	-- was picked.
+	spot: Vector3?,
+	spotAnchor: Vector3?,
 	-- Consumables, per run: what is left, and os.clock times of the last stim and the next
 	-- scan, throw and fire mission.
 	stims: number,
@@ -103,7 +108,6 @@ type Bot = {
 	callInAt: number,
 }
 
-local bots: { Bot } = {}
 local folder: Folder
 local tracerRemote: RemoteEvent
 local noticeRemote: RemoteEvent
@@ -143,9 +147,57 @@ local function behindLeader(leader: BasePart, offset: Vector3): Vector3
 	return CFrame.lookAlong(leader.Position, flatLook(leader)):PointToWorldSpace(offset)
 end
 
+local bots: { Bot } = {}
+
 local function slotPosition(bot: Bot, leader: BasePart): Vector3
 	local slots = Config.Bots.Slots
 	return behindLeader(leader, slots[((bot.slot - 1) % #slots) + 1])
+end
+
+-- Where the bot stands round its leader (Rules/BotBrain: respot, spreadSpot, spaced): its own
+-- spot, kept until the leader moves on, in the open (the leader can see it) and apart from
+-- the other bots. `params` excludes the bodies.
+local function spreadPosition(bot: Bot, leader: BasePart, params: RaycastParams): Vector3
+	local settings = Config.Bots.Loose
+	local at = leader.Position
+	local lead: BotBrain.Point = { x = at.X, z = at.Z }
+	local spot = bot.spot
+	local anchor = bot.spotAnchor
+	local current: BotBrain.Point? = if spot then { x = spot.X, z = spot.Z } else nil
+	local was: BotBrain.Point? = if anchor then { x = anchor.X, z = anchor.Z } else nil
+	if not BotBrain.respot(current, was, lead, settings) and spot then
+		return spot
+	end
+	local others: { BotBrain.Point } = {}
+	for _, other in bots do
+		local otherSpot = other.spot
+		if other ~= bot and otherSpot then
+			table.insert(others, { x = otherSpot.X, z = otherSpot.Z })
+		end
+	end
+	local look = flatLook(leader)
+	local chosen: Vector3? = nil
+	for _ = 1, settings.Tries do
+		local candidate = BotBrain.spreadSpot(
+			lead,
+			look.X,
+			look.Z,
+			bot.slot,
+			math.random(),
+			math.random(),
+			settings
+		)
+		local point = Vector3.new(candidate.x, at.Y, candidate.z)
+		local open = not workspace:Raycast(at, point - at, params)
+		if open and BotBrain.spaced(candidate, others, settings.Spacing) then
+			chosen = point
+			break
+		end
+	end
+	-- Nowhere open and apart: the old slot behind the leader.
+	bot.spot = chosen or slotPosition(bot, leader)
+	bot.spotAnchor = at
+	return bot.spot :: Vector3
 end
 
 local function stopTracks(bot: Bot)
@@ -399,6 +451,7 @@ local function shoot(bot: Bot, origin: Vector3, aim: Vector3, params: RaycastPar
 		end
 	end
 	tracerRemote:FireAllClients(origin, endPoint)
+	EnemyService.noise(origin, WeaponDefinitions.get(WeaponDefinitions.DEFAULT).Noise)
 	local fire = bot.tracks.fire
 	if fire then
 		fire:Play(0.05)
@@ -710,7 +763,7 @@ local function follow(
 )
 	local settings = Config.Bots
 	local here = root.Position
-	local slot = post or slotPosition(bot, leader)
+	local slot = post or spreadPosition(bot, leader, params)
 	local toSlot = flatDistance(slot, here)
 	if toSlot > slack then
 		bot.stuckMark, bot.stuckSince = BotBrain.stall(

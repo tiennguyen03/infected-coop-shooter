@@ -459,7 +459,12 @@ called **Loadout**. Lines by the lore developer (merits, the record, `LobbyDesks
   dialog at a time).
 - **Loadout**: choice 1 opens the match's `LoadoutMenu` (mapped into the lobby project) with
   the lobby's words (`LoadoutMenu.mount` options: title LOADOUT, SIGN FOR IT): primary,
-  sidearm, grenade, up to four call-ins. The soldier is held still (`HoldStill`, shared with
+  sidearm, grenade, up to four call-ins. **EDIT** (2026-11-11, Nova): a gun that takes
+  attachments has an EDIT button on its row (`LoadoutMenu` option `edit`); it opens `GunsmithUI`:
+  the rack's copy of the gun turning in a viewport, a list per slot (`Config.Attachments.Slots`:
+  the Barrel, NONE or the suppressor), the suppressor shown on the muzzle as it is picked, DONE
+  or BACK. The row then reads e.g. "M16A4 +SUP". What is fitted is signed with the rest (the
+  Loadout's `attachments`, saved, flown to the match). The soldier is held still (`HoldStill`, shared with
   the rack); BACK or Backspace steps out. Prototype: the whole catalog may be signed for.
 - **Server** (`LoadmasterService`): checks the request with the match's rules and catalog
   (`Rules/Loadout`, `ArmsRoom`), keeps one signed Loadout per player, answers on the `Loadout`

@@ -34,6 +34,7 @@ The game is **one experience, "Co-op Zombie Shooter"** (group Boomin Dev Studios
 | Co-op Zombie Shooter, 87556879379942 (**start place**: where the app drops you) | the lobby (the Carrier) | `lobby.project.json` | published from `main` only |
 | Checkpoint Delta, 125769854992316 | the match | `default.project.json` | Tien's day-to-day match work |
 | Nova's own experience: ZCS Dev 83558708746036 -> Match Dev 108949482095254 | test copies of both | both | Nova (`Config.Places.Dev`: launches and the trip home stay inside it) |
+| Nova's own experience: Mile 14 Dev 128998815119867 | the match playing Mile 14 | `mile14.project.json` (serve on port 34875) | Nova; the project sets `Workspace.Mission = "mile14"` (`Attributes.Mission`), so `Missions.current()` builds Mile 14 there |
 
 Rules (from the 2026-11-09 mix-up, when the app kept opening the old match):
 1. **A project only connects to its own kind of place.** `default.project.json` never in the

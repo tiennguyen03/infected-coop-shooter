@@ -44,6 +44,18 @@ Hades-style twist (field upgrades). Retired 2026-11-07/08: XP, levels, orbs, sta
 rarity, the class system and the Chosen, Q dash, E breach, Combat Momentum; see
 [HISTORY.md](HISTORY.md).
 
+### Attachments
+
+Nova, 2026-11-11: fitted at the Loadmaster (EDIT on a gun, `GunsmithUI`), kept per gun, signed
+and flown to the match with the Loadout (`Loadout.attachments`, `Attributes.Fitted` on the
+player). One slot so far, the **Barrel**, and one option, the **suppressor**
+(`Config.Attachments`; a gun takes one when its `Config.Weapons` row has `Suppressor`: every gun
+but the revolver and the Goose). With it fitted a shot carries the row's `Suppressor.Noise`
+instead of its `Noise` (pistol 12, MP5 15, M16 25, M110 30, M249 35, Mossberg 40, M2010 45: the
+Infected hear it only close in, [Awareness](#awareness-the-quiet-missions)); the shot plays at
+0.3 volume with no muzzle flash, and a dark cylinder sits on the muzzle (the shot leaves from its
+end) in third and first person. No damage or range cost yet.
+
 ### The soldier
 
 Every player is a Pike soldier; no classes, no hero kit. A soldier carries a primary, the M17
@@ -164,6 +176,12 @@ Numbers in `Config.Weapons.<Gun>`, rows in `WeaponDefinitions`. Semi guns fire o
   along a path, sprinting when far. They teleport only when far from the leader and stalled
   (or out of the world), to a spot no living player faces. Rules in `Rules/BotBrain`,
   numbers in `Config.Bots`.
+- Bots spread out (Nova, 2026-11-11: "clumped up around the player"): each holds a spot of its
+  own 10-18 studs from its leader, in its own sector (behind-left, behind-right, behind, +-40
+  degrees), 9 apart and in the leader's line of sight, and keeps it until the leader has moved
+  18 studs (or it is 28 away, or the leader walks into it); then it picks again round him.
+  `Config.Bots.Loose`, `BotBrain.respot` / `spreadSpot` / `spaced`. The old slots are where a
+  teleport lands.
 - Bots use a soldier's kit through the players' server paths (no kill credit): a stim at
   40% health; a frag (3 carried) at 4+ Infected with no squad member near the blast; one
   fire mission each (Hammer, Anvil, Hammer by slot) at 8+ Infected or a Brute / boss, 180 s
@@ -563,6 +581,34 @@ Mile 14, dawn at Kestrel. The burning skyline is the districts that already got 
 - **Band dressing:** Lost: Gate siren looping. Held: main-road lamps lit, Ridge fire to
   smoke, siren silent. Contained: all lamps, Depot pad permanent, intact humvee with
   headlights at the Gate, wind instead of siren.
+
+### Awareness (the quiet missions)
+
+Nova, 2026-11-11: Mile 14 is played quiet: "we go in quiet, do what we have to, if we mess up
+and it goes loud then its gonna be rough". On a mission in `Config.Awareness.Missions` (Mile
+14) every Infected is in one of five states (`Shared.Rules.Awareness`, `EnemyService`):
+
+| State | Does | Notices |
+|---|---|---|
+| Sleeping | slumped, still | only noise close by (a third of its reach) or a soldier touching it |
+| Idle | stands | a cone in front of its head, and noise |
+| Wandering | shuffles round its post at 0.3 speed | further, and noise |
+| Alerted | walks to what it heard or glimpsed at 0.6 speed, searches 12 s, then wanders there | further still |
+| Chase | the old straight chase | loses the soldier after 8 s out of sight: searches the last spot |
+
+- **Noise:** every shot carries its gun's `Noise` (studs): inside half a body comes for it
+  (Chase), inside all of it goes to look (Alerted). Pistol 45, MP5 70, revolver 75, M16 110,
+  Mossberg 120, M110 130, M249 140, M2010 200, the Goose 300 (the loudest; its blast adds
+  `Explosion` 260 where it lands). Bots' shots too. A soldier running makes footsteps (16).
+- **Sight:** a cone 60 degrees either side, 45 to 90 studs by state, about half at night,
+  0.6 against a crouched soldier and 0.35 against a prone one. Seen builds notice (2.5 s at
+  the edge, faster close in, at once inside 5 studs): any notice sends it to look, full notice
+  is a Chase. A hit is always a Chase. A body that starts a Chase wakes the ones within 30 to
+  look.
+- **Spawning:** the start places `Population.Count` (70) round the map, more than 70 studs
+  from the LZ: about half asleep, a quarter wandering, the rest standing. No roaming spawns
+  while it is quiet; an objective's or a pallet's waves still come chasing. Going loud (the
+  horn, spawns) and the suppressor are next (steps 2 and 4 of the plan).
 
 ### Mile 14 (not built)
 

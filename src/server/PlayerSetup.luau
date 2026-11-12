@@ -11,6 +11,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
 local AvatarLook = require(ReplicatedStorage.Shared.AvatarLook)
 local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
+local Loadout = require(ReplicatedStorage.Shared.Rules.Loadout)
 
 local PlayerSetup = {}
 
@@ -106,9 +107,21 @@ function PlayerSetup.attachRifle(character: Model, humanoid: Humanoid)
 			Color3.fromRGB(28, 28, 28)
 		)
 	end
+	local player = Players:GetPlayerFromCharacter(character)
+	-- What this soldier has on the barrel of gun `id` (the Loadmaster's EDIT; bots: nothing).
+	local function barrelOf(id: string): string?
+		local fitted = player and player:GetAttribute(Attributes.Fitted)
+		if typeof(fitted) ~= "string" then
+			return nil
+		end
+		return Loadout.fitted(Loadout.decodeFitted(fitted), id, "Barrel")
+	end
 	-- Swaps the visible gun for `model`'s mesh, the Muzzle at its barrel tip (WeaponController
-	-- fires from it). Keeps whatever is there when the mesh never loads.
-	local function dress(wanted: string)
+	-- fires from it), a suppressor on the barrel when one is fitted (the Muzzle at its end).
+	-- Keeps whatever is there when the mesh never loads.
+	local function dress(weaponId: string)
+		local weapon = WeaponDefinitions.get(weaponId)
+		local wanted = weapon.Model
 		-- A gun whose mesh is not uploaded yet wears the rifle.
 		local model = if MeshAssets.isUploaded(wanted) then wanted else "wpn_rifle"
 		local body = MeshAssets.waitFor(model, 5)
@@ -131,24 +144,44 @@ function PlayerSetup.attachRifle(character: Model, humanoid: Humanoid)
 		body.Parent = tool
 		local size = MeshAssets.getSize(model) or Vector3.zero
 		local muzzleAt = MeshAssets.getMuzzle(model) or Vector3.new(0, 0, -size.Z)
+		local spec = weapon.Suppressor
+		local option = Config.Attachments.Options[barrelOf(weapon.Id) or ""]
+		if spec and option and option.Slot == "Barrel" then
+			-- A cylinder runs along its X: turned to lie along the barrel (-Z), out from the tip.
+			local can = riflePart(
+				"Suppressor",
+				Vector3.new(spec.Length, spec.Width, spec.Width),
+				CFrame.new(muzzleAt + Vector3.new(0, 0, -spec.Length / 2))
+					* CFrame.Angles(0, math.pi / 2, 0),
+				option.Color,
+				Enum.Material.Metal
+			)
+			local cylinder = can :: Part
+			cylinder.Shape = Enum.PartType.Cylinder
+			muzzleAt += Vector3.new(0, 0, -spec.Length)
+		end
 		local muzzle =
 			riflePart("Muzzle", Vector3.new(0.2, 0.2, 0.14), CFrame.new(muzzleAt), Color3.new())
 		muzzle.Transparency = 1
 	end
 	placeholder()
-	local player = Players:GetPlayerFromCharacter(character)
 	local function current(): string
 		local id = player and player:GetAttribute(Attributes.Weapon)
-		return WeaponDefinitions.get(if typeof(id) == "string" then id else nil).Model
+		return WeaponDefinitions.get(if typeof(id) == "string" then id else nil).Id
 	end
 	task.spawn(dress, current())
 	if player then
-		-- A swap (Q), the Arms Room or the dev panel changes the gun in hand: change the mesh.
+		-- A swap (Q), the Arms Room or the dev panel changes the gun in hand, the Loadmaster's
+		-- EDIT what is on it: dress it again.
 		local changed = player:GetAttributeChangedSignal(Attributes.Weapon):Connect(function()
+			task.spawn(dress, current())
+		end)
+		local refitted = player:GetAttributeChangedSignal(Attributes.Fitted):Connect(function()
 			task.spawn(dress, current())
 		end)
 		tool.Destroying:Once(function()
 			changed:Disconnect()
+			refitted:Disconnect()
 		end)
 	end
 

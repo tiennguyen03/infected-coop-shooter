@@ -49,6 +49,11 @@ type View = {
 	model: Model,
 	gun: BasePart?,
 	gunSource: BasePart?,
+	-- The suppressor on its barrel (PlayerSetup's Suppressor part), copied with it.
+	can: BasePart?,
+	canSource: BasePart?,
+	canFrame: CFrame, -- in the gun's space at full size
+	canFull: Vector3,
 	full: Vector3, -- the held gun's real size
 	muzzle: Vector3, -- its barrel tip, in its own space at full size
 	origin: CFrame, -- the grip (the Tool's Handle, the mesh's design origin) in the gun's space
@@ -142,6 +147,10 @@ local function build(character: Model): View
 		model = model,
 		gun = nil,
 		gunSource = nil,
+		can = nil,
+		canSource = nil,
+		canFrame = CFrame.new(),
+		canFull = Vector3.one,
 		full = Vector3.one,
 		muzzle = Vector3.zero,
 		origin = CFrame.new(),
@@ -156,13 +165,25 @@ end
 -- hand holds the real one.
 local function fitGun(current: View)
 	local source = heldGun(current.character)
-	if source == current.gunSource and (current.gun ~= nil) == (source ~= nil) then
+	local sourceTool = source and source:FindFirstAncestorOfClass("Tool")
+	local found = sourceTool and sourceTool:FindFirstChild("Suppressor")
+	local canSource = if found and found:IsA("BasePart") then found else nil
+	if
+		source == current.gunSource
+		and (current.gun ~= nil) == (source ~= nil)
+		and canSource == current.canSource
+	then
 		return
 	end
 	if current.gun then
 		current.gun:Destroy()
 		current.gun = nil
 	end
+	if current.can then
+		current.can:Destroy()
+		current.can = nil
+	end
+	current.canSource = canSource
 	current.gunSource = source
 	local realHand = current.character:FindFirstChild("RightHand")
 	if not (source and realHand and realHand:IsA("BasePart")) then
@@ -175,6 +196,16 @@ local function fitGun(current: View)
 	copy.Size = source.Size * current.scale
 	copy.Parent = current.model
 	current.gun = copy
+	if canSource then
+		local can = canSource:Clone()
+		can:ClearAllChildren()
+		quiet(can)
+		current.canFull = canSource.Size
+		current.canFrame = source.CFrame:ToObjectSpace(canSource.CFrame)
+		can.Size = canSource.Size * current.scale
+		can.Parent = current.model
+		current.can = can
+	end
 	-- The barrel tip: the tool's Muzzle part (PlayerSetup), else the gun's front end.
 	local tool = source:FindFirstAncestorOfClass("Tool")
 	local muzzle = tool and tool:FindFirstChild("Muzzle", true)
@@ -197,6 +228,9 @@ local function rescale(current: View, scale: number)
 	current.scale = scale
 	if current.gun then
 		current.gun.Size = current.full * scale
+	end
+	if current.can then
+		current.can.Size = current.canFull * scale
 	end
 	for _, hand in current.hands do
 		hand.Size = HAND * scale
@@ -355,6 +389,9 @@ function FirstPersonView.update(
 	-- The gun's own part (its bounds centre) from the grip, then the reload's tilt.
 	local gunCFrame = gripCFrame * active.origin:Inverse() * reloadGun
 	gun.CFrame = world(gunCFrame)
+	if active.can then
+		active.can.CFrame = world(gunCFrame * active.canFrame)
+	end
 	muzzleAt = world(gunCFrame * CFrame.new(active.muzzle)).Position
 
 	-- Hands: the right on the grip; the left on the handguard (under the grip for a sidearm),

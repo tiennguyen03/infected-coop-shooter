@@ -29,6 +29,7 @@ local NV = Config.NightVision
 
 local on = false
 local exposureAdded = 0
+local ambientWas: { Color3 }? = nil -- Lighting's own ambient while the goggles lift it
 local color: ColorCorrectionEffect
 local bloom: BloomEffect
 local edges: ScreenGui
@@ -81,9 +82,18 @@ local function apply(state: boolean)
 	if state then
 		exposureAdded = NV.Exposure
 		Lighting.ExposureCompensation += exposureAdded
+		ambientWas = { Lighting.Ambient, Lighting.OutdoorAmbient }
+		Lighting.Ambient = NV.Ambient
+		Lighting.OutdoorAmbient = NV.OutdoorAmbient
 	else
 		Lighting.ExposureCompensation -= exposureAdded
 		exposureAdded = 0
+		local was = ambientWas
+		if was then
+			Lighting.Ambient = was[1]
+			Lighting.OutdoorAmbient = was[2]
+			ambientWas = nil
+		end
 	end
 end
 

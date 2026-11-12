@@ -92,6 +92,7 @@ end
 -- rocket): a flash, the screen shake, `Damage` to every Infected within `Radius`. No friendly
 -- fire (the call-ins' rule). `player` is nil for a bot's frag (no kill credit, no hit marker).
 function KitService.blast(player: Player?, center: Vector3, settings: BlastSettings)
+	EnemyService.noise(center, Config.Awareness.Explosion)
 	local boom = Instance.new("Explosion")
 	boom.Position = center
 	boom.BlastRadius = 0
