@@ -390,13 +390,16 @@ local function onFireRequest(
 	local spread = if aiming == true and not lastStand then weapon.AdsSpread else weapon.HipSpread
 	-- Bloom (the gun's own numbers): recover what the pause since the previous shot earned,
 	-- add this shot's kick. A swap carries the bloom over, capped at the new gun's max.
-	local previous = math.min(bloom[player] or 0, weapon.BloomMax)
 	local idle = now - (previousShot or now) - Config.Weapon.BloomRecoveryDelay
-	if idle > 0 then
-		previous = math.max(previous - idle * weapon.BloomRecovery, 0)
-	end
+	local previous, nextBloom = Spread.bloom(
+		bloom[player] or 0,
+		weapon.BloomMax,
+		idle,
+		weapon.BloomRecovery,
+		weapon.BloomPerShot
+	)
 	spread += previous
-	bloom[player] = math.min(previous + weapon.BloomPerShot, weapon.BloomMax)
+	bloom[player] = nextBloom
 	player:SetAttribute(Attributes.Bloom, bloom[player])
 	if lastStand then
 		spread *= Config.Upgrades.LastStand.SpreadMultiplier
