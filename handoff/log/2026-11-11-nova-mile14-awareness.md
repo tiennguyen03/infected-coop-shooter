@@ -39,6 +39,9 @@ screen works"): the real cause of the dark, dead screen was ZIndex: the Loadmast
 is Global, the cover (20) sat over the panel (1). Everything in the cover is now lifted above
 it. Played: prompt, "Set up my Loadout", EDIT on the Service Rifle, SUPPRESSOR selected (the can
 on the gun in the viewport), DONE, signed: `Fitted` = `service_rifle.Barrel=suppressor`.
+**Bots spread out** (Nova: "clumped up around the player"): each bot holds its own spot 10-18
+studs out in its sector, 9 apart, in the leader's sight, until the leader moves 18 studs
+(`Config.Bots.Loose`, `BotBrain.respot` / `spreadSpot` / `spaced`, 8 specs). Played: 13-21 apart.
 **Next (the plan's steps):** 2 the suppressor (per gun row, Arms Room pick, muzzle model, quiet
 shot sound); 3 the map proper (the Overpass, night sky, living trees, sleepers placed in buses
 and booths); 4 going loud (the horn, spawns, Kill the Horn) and quiet objectives with a reward;

@@ -398,6 +398,23 @@ local Config = {
 			Vector3.new(7, 0, 6),
 			Vector3.new(0, 0, 10),
 		},
+		-- Loose formation (Nova, 2026-11-11: "clumped up around the player"; Rules/BotBrain
+		-- respot / spreadSpot): each bot holds a spot of its own Near..Far from its leader in its
+		-- sector (degrees from the leader's facing: behind-left, behind-right, behind; +-Arc),
+		-- Spacing from the others and in the leader's line of sight, and keeps it until the
+		-- leader has moved Regroup from where it was picked (or the spot is Leash away, or the
+		-- leader is within TooClose of it). Slots below: the teleport's landing spots.
+		Loose = {
+			Near = 10,
+			Far = 18,
+			Sectors = { -115, 115, 180 },
+			Arc = 40,
+			Spacing = 9,
+			Regroup = 18,
+			Leash = 28,
+			TooClose = 6,
+			Tries = 6, -- candidates tried for one in the open and spaced
+		},
 		FollowSlack = 4, -- closer than this to the slot: stand
 		RunBeyond = 16, -- further than this: run
 		CatchUpBeyond = 45, -- further than this: sprint flat out to catch up

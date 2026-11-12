@@ -211,4 +211,73 @@ function BotBrain.stepOut(here: Point, center: Point, radius: number, margin: nu
 	return { x = center.x + dx / length * reach, z = center.z + dz / length * reach }
 end
 
+-- Loose formation (Nova, 2026-11-11: the bots "feel so clumped up around the player"). Each
+-- bot holds a spot of its own round its leader instead of a slot glued to the leader's back,
+-- and keeps it until the leader has moved on.
+export type SpreadSettings = {
+	Near: number, -- studs from the leader, nearest a spot may be
+	Far: number, -- and furthest
+	Sectors: { number }, -- per bot slot: degrees from the leader's facing (+ to the right)
+	Arc: number, -- degrees either side of its sector a spot may fall
+	Spacing: number, -- studs a spot keeps from the other bots' spots
+	Regroup: number, -- the leader moved this far from where the spot was picked: pick again
+	Leash: number, -- the spot is this far from the leader: pick again
+	TooClose: number, -- the leader stands this close to the spot (walked into it): pick again
+}
+
+-- Whether a bot should pick a new spot: it has none, its leader has moved on, or the spot is
+-- too far from or too close to the leader now.
+function BotBrain.respot(
+	spot: Point?,
+	anchor: Point?,
+	leader: Point,
+	settings: SpreadSettings
+): boolean
+	if not spot or not anchor then
+		return true
+	end
+	if distance(leader, anchor) > settings.Regroup then
+		return true
+	end
+	local away = distance(spot, leader)
+	return away > settings.Leash or away < settings.TooClose
+end
+
+-- A spot for bot `slot` round `leader` facing (lookX, lookZ): in its sector, `turn` (0..1)
+-- across the arc and `reach` (0..1) between Near and Far. The rolls come in so the rule is
+-- testable; the caller passes random numbers.
+function BotBrain.spreadSpot(
+	leader: Point,
+	lookX: number,
+	lookZ: number,
+	slot: number,
+	turn: number,
+	reach: number,
+	settings: SpreadSettings
+): Point
+	local sectors = settings.Sectors
+	local sector = sectors[((slot - 1) % #sectors) + 1]
+	local angle = math.rad(sector + (turn * 2 - 1) * settings.Arc)
+	local length = math.sqrt(lookX * lookX + lookZ * lookZ)
+	local fx, fz = 0, -1
+	if length > 1e-3 then
+		fx, fz = lookX / length, lookZ / length
+	end
+	-- Turned clockwise seen from above by `angle` (Roblox: right of a -Z facing is +X).
+	local cos, sin = math.cos(angle), math.sin(angle)
+	local dx, dz = fx * cos - fz * sin, fz * cos + fx * sin
+	local out = settings.Near + (settings.Far - settings.Near) * reach
+	return { x = leader.x + dx * out, z = leader.z + dz * out }
+end
+
+-- Whether `spot` keeps `spacing` from every one of `others`.
+function BotBrain.spaced(spot: Point, others: { Point }, spacing: number): boolean
+	for _, other in others do
+		if distance(spot, other) < spacing then
+			return false
+		end
+	end
+	return true
+end
+
 return BotBrain

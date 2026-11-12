@@ -176,6 +176,12 @@ Numbers in `Config.Weapons.<Gun>`, rows in `WeaponDefinitions`. Semi guns fire o
   along a path, sprinting when far. They teleport only when far from the leader and stalled
   (or out of the world), to a spot no living player faces. Rules in `Rules/BotBrain`,
   numbers in `Config.Bots`.
+- Bots spread out (Nova, 2026-11-11: "clumped up around the player"): each holds a spot of its
+  own 10-18 studs from its leader, in its own sector (behind-left, behind-right, behind, +-40
+  degrees), 9 apart and in the leader's line of sight, and keeps it until the leader has moved
+  18 studs (or it is 28 away, or the leader walks into it); then it picks again round him.
+  `Config.Bots.Loose`, `BotBrain.respot` / `spreadSpot` / `spaced`. The old slots are where a
+  teleport lands.
 - Bots use a soldier's kit through the players' server paths (no kill credit): a stim at
   40% health; a frag (3 carried) at 4+ Infected with no squad member near the blast; one
   fire mission each (Hammer, Anvil, Hammer by slot) at 8+ Infected or a Brute / boss, 180 s

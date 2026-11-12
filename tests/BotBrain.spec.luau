@@ -16,6 +16,20 @@ local function at(x: number, z: number, heavy: boolean?): BotBrain.Point
 	return { x = x, z = z, heavy = heavy }
 end
 
+local SPREAD: BotBrain.SpreadSettings = {
+	Near = 10,
+	Far = 18,
+	Sectors = { -115, 115, 180 },
+	Arc = 40,
+	Spacing = 9,
+	Regroup = 18,
+	Leash = 26,
+	TooClose = 6,
+}
+local function flat(p: BotBrain.Point, q: BotBrain.Point): number
+	return math.sqrt((p.x - q.x) ^ 2 + (p.z - q.z) ^ 2)
+end
+
 local function stuck(overrides: { [string]: any }): boolean
 	local input = {
 		distance = 60,
@@ -34,6 +48,46 @@ end
 local KNOT = { at(0, 20), at(2, 21), at(-2, 19), at(1, 23) }
 
 return {
+	["a bot with no spot picks one"] = function()
+		expect.equal(BotBrain.respot(nil, nil, at(0, 0), SPREAD), true)
+	end,
+	["a bot keeps its spot while the leader stays near where it was picked"] = function()
+		expect.equal(BotBrain.respot(at(12, 4), at(0, 0), at(5, 3), SPREAD), false)
+	end,
+	["a bot picks again once the leader has moved on"] = function()
+		expect.equal(BotBrain.respot(at(12, 4), at(0, 0), at(20, 0), SPREAD), true)
+	end,
+	["a bot picks again when the leader walks into its spot"] = function()
+		expect.equal(BotBrain.respot(at(12, 4), at(0, 0), at(10, 3), SPREAD), true)
+	end,
+	["spots fall between Near and Far"] = function()
+		for _, reach in { 0, 0.5, 1 } do
+			local spot = BotBrain.spreadSpot(at(0, 0), 0, -1, 1, 0.5, reach, SPREAD)
+			local d = flat(spot, at(0, 0))
+			expect.near(d, 10 + 8 * reach, 1e-6, "distance")
+		end
+	end,
+	["each slot holds its own side"] = function()
+		-- Facing -Z: slot 1 (-115) is behind-left (-X, +Z), slot 2 (+115) behind-right, slot 3 behind.
+		local left = BotBrain.spreadSpot(at(0, 0), 0, -1, 1, 0.5, 0.5, SPREAD)
+		local right = BotBrain.spreadSpot(at(0, 0), 0, -1, 2, 0.5, 0.5, SPREAD)
+		local back = BotBrain.spreadSpot(at(0, 0), 0, -1, 3, 0.5, 0.5, SPREAD)
+		expect.equal(left.x < -5 and left.z > 0, true, "left")
+		expect.equal(right.x > 5 and right.z > 0, true, "right")
+		expect.near(back.x, 0, 1e-6, "back x")
+		expect.equal(back.z > 10, true, "back z")
+	end,
+	["spots turn with the leader"] = function()
+		-- Facing +X: behind is -X.
+		local back = BotBrain.spreadSpot(at(0, 0), 1, 0, 3, 0.5, 0, SPREAD)
+		expect.near(back.x, -10, 1e-6, "x")
+		expect.near(back.z, 0, 1e-6, "z")
+	end,
+	["spacing keeps bots apart"] = function()
+		expect.equal(BotBrain.spaced(at(0, 0), { at(5, 0) }, 9), false)
+		expect.equal(BotBrain.spaced(at(0, 0), { at(10, 0), at(0, -12) }, 9), true)
+		expect.equal(BotBrain.spaced(at(0, 0), {}, 9), true)
+	end,
 	["a bot far behind but still moving walks, never teleports"] = function()
 		expect.equal(stuck({ distance = 200 }), false)
 	end,
