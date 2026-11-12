@@ -21,4 +21,23 @@ function Spread.allowed(angleDegrees: number, halfAngleDegrees: number, toleranc
 	return angleDegrees <= math.max(halfAngleDegrees, 0) + tolerance
 end
 
+-- Bloom for one shot (the gun's Bloom* numbers, degrees). `current` is the bloom left by
+-- the previous shot (it may come from another gun: capped at this gun's `max`); `idle` is
+-- the seconds since that shot beyond the recovery delay (zero or less: none), each of which
+-- takes `recovery` off. Returns the bloom this shot is fired with and the bloom it leaves
+-- (one `perShot` more, never above `max`).
+function Spread.bloom(
+	current: number,
+	max: number,
+	idle: number,
+	recovery: number,
+	perShot: number
+): (number, number)
+	local carried = math.min(current, max)
+	if idle > 0 then
+		carried = math.max(carried - idle * recovery, 0)
+	end
+	return carried, math.min(carried + perShot, max)
+end
+
 return Spread
