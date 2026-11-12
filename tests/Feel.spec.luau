@@ -31,4 +31,10 @@ return {
 		expect.equal(Feel.canFlinch(1.2, 0.5, 0.6), true, "after")
 		expect.equal(Feel.canFlinch(0, nil, 0.6), true, "first")
 	end,
+	["kills in the same instant tick once, spaced kills each tick"] = function()
+		expect.equal(Feel.canKillConfirm(5, nil, 0.07), true, "first kill")
+		expect.equal(Feel.canKillConfirm(5.02, 5, 0.07), false, "same blast")
+		expect.equal(Feel.canKillConfirm(5.07, 5, 0.07), true, "at the gap")
+		expect.equal(Feel.canKillConfirm(5.02, 5, 0), true, "no gap set")
+	end,
 }

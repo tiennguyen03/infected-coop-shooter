@@ -19,7 +19,8 @@ names; modular per-item rows).
   2. The first three minutes have no reason to move: a hidden 180 s timer, Walkers only.
   3. Rewards land when you need nothing (the first pallet at full ammo; the Warden's upgrade
      cards with 30 s of extraction left); one field-upgrade pick per run.
-  4. Solo doesn't feel like a squad: bots never call anything in, the radio is text only.
+  4. Solo doesn't feel like a squad: bots never call anything in (they do since 2026-11-11:
+     frags, stims, Hammer / Anvil), the radio is text only.
   5. The middle of the Warden fight drags (130 s+ solo); extraction (30 s) ends before it builds.
   6. The results screen erases the run: four numbers, nothing that happened.
 
@@ -28,7 +29,7 @@ names; modular per-item rows).
 ```
  LOBBY (the Carrier)           MATCH (one server, one operation, ~40 min)          LOBBY
  kit sheet (B / any desk) ─►  Delta ─ ride ─► Mile 14 ─ ride ─► Kestrel ─► STAND DOWN ─► debrief
- board a Lantern, READY       each ride: tally + CONTINUE / STAND DOWN vote,        Credits paid,
+ board a helo, READY          each ride: tally + CONTINUE / STAND DOWN vote,        merits paid, 
  fade to black + rotor        change loadout, the dead come back                    Service Record,
                               Stand Down after any mission = the 20-30 min session  the board moves
 ```
@@ -36,7 +37,7 @@ names; modular per-item rows).
 - **An operation** is three missions on one match server; players teleport only lobby -> match
   and back ([LOBBY_MATCH_HANDOFF.md](LOBBY_MATCH_HANDOFF.md)). A squad can **Stand Down after
   any mission** (the short session) and keeps what it banked.
-- **Between missions (the ride, 30-40 s):** a tally (outcome, secondaries, Credits earned,
+- **Between missions (the ride, 30-40 s):** a tally (outcome, secondaries, merits earned,
   containment), then CONTINUE or STAND DOWN (majority; solo decides). Ammo, grenades, stims,
   call-ins refill; **field upgrades carry** (the reason to continue); the Resupply pool carries
   up to one pallet's cost; revives and the pallet price reset per mission; the clock starts at
@@ -51,13 +52,21 @@ names; modular per-item rows).
 
 ## Progression (systems designer + lore developer)
 
-- **Credits**, kept on your **Service Record**: earned **only by extracting**, never per kill.
-  Win 120, Partial 60, Loss 0, each Secondary +30, Stand Down +100 (x0.25 in a Secured
-  district). Credited at each extraction to every squad member, dead or alive (bots earn
-  nothing; solo pays the same). A perfect operation ~640, a typical first one ~250.
-- **What Credits buy:** guns, sidearms, grenades and call-ins, bought at the Carrier's desks. Each
-  item's row carries `RecordCost` (default 0 = on issue): no list of names anywhere. **Field
-  upgrades are never sold** (finds inside a run). Cosmetics later, never power.
+- **Merits** (the soft currency; owner 2026-11-10, was "Credits"), kept on your **Service
+  Record**: paid **when a mission ends**, never per kill. Win 120, Partial 60, Loss 0, each
+  Secondary +30 (`Config.Merits`; built 2026-11-10, `MeritService`). Paid to every squad
+  member, dead or alive (bots earn nothing; solo pays the same). Not built yet: Stand Down
+  +100 (x0.25 in a Secured district), and Secondaries (none is tracked, so they pay 0). A
+  perfect operation ~640, a typical first one ~250.
+- **What merits buy:** guns, sidearms, grenades and call-ins, bought at the Carrier's desks. Each
+  item's row carries its `Price` (0 = on issue): no list of names anywhere. **Field
+  upgrades are never sold** (finds inside a run).
+- **Tabs** (the hard currency; owner 2026-11-10): bought with Robux in packs
+  (`Config.Tabs.Products`) or granted by events, kept on the same record next to merits.
+  **Tabs never buy power:** cosmetics and conveniences only. Built so far: the balance on the
+  record and on the Carrier's panels, and the receipt handler that pays a pack once
+  (`TabsService`). Not built: the Roblox products (every `ProductId` is 0), a way to buy a
+  pack, and anything to spend tabs on.
 - **On issue from the start:** M16A4, Mossberg 590, M17, Frag; Hammer, Tripline, Doorman,
   Concertina, Speedball (five call-ins for four slots: a choice from run 1).
 - **Prices:** MP5 100 · revolver 150 · Aid Bag 150 · M110 200 · M249 300 · Anvil 300 ·
@@ -68,7 +77,7 @@ names; modular per-item rows).
   the name tape in the lobby and on the scoreboard only. **Cosmetic: it gates nothing and adds
   nothing.** On the radio you are still "Pike Three".
 - **The Carrier's desks are shops** (owner and Nova, 2026-11-09: there is no ship to upgrade like
-  Helldivers, so the Carrier sells kit instead). A locked item shows its price ("300 CREDITS")
+  Helldivers, so the Carrier sells kit instead). A locked item shows its price ("300 MERITS")
   and a BUY button; bought once, it's yours for good. Only guns, grenades and call-ins are sold:
   no cosmetics and no one-run consumables for now (owner, 2026-11-09).
 
@@ -78,7 +87,7 @@ names; modular per-item rows).
   Held / Contained, which changes the map you play. Needs `PointsPerPercent` tuned to the
   player count and a slow decay ("the Infected push back") so a big player base doesn't
   Secure Delta in an hour.
-- **FRAGO** (daily, per soldier, same for everyone that day, seeded by date; +100 Credits) and
+- **FRAGO** (daily, per soldier, same for everyone that day, seeded by date; +100 merits) and
   **Corridor Order** (weekly, every team, tied to the board; +300). Examples: "Two Secondaries
   on Delta today"; "Mile 14 to Held by Sunday".
 - **Variety:** objective pools (designed in PROGRESSION), then grounded mission modifiers in
@@ -107,7 +116,7 @@ names; modular per-item rows).
   aim"), and Control's radio lines.
 - **Results that tell the run:** STAND DOWN / SQUAD WIPED, mission rows, a squad table (kills,
   revives given, times downed, call-ins, one award each: "Kept the squad up"), containment
-  25% -> 37%, Credits counting up to the next item. Lobby arrival card: what's newly on issue,
+  25% -> 37%, merits counting up to the next item. Lobby arrival card: what's newly on issue,
   OPEN KIT / CARRY ON.
 - **In-match readability:** objective, LZ and pallet world markers; a squad roster with downed
   arrows; "HAMMER · inbound 4s" then "HAMMER · 7 down"; extraction "ON THE PAD 2/3".
@@ -118,13 +127,15 @@ Each step is small and playtestable on its own. **Phase 1 needs no lobby and no 
 feel it this week.**
 
 **Phase 1: make one mission feel great** (Tien + Claude, match side)
-1. Kill burst colour (it is green today, against the owner's rule) + a kill-confirm sound.
+1. Kill burst colour + a kill-confirm sound. **Built 2026-11-10** (dark blood burst; a soft
+   tick for the killer, `Config.Audio.KillConfirm`); needs a listen in a playtest.
 2. The start becomes a choice: the site marker shows early, the squad starts the Primary;
    one of the three laid-out sites picked at random; a Misdrop crate ~0:30.
 3. Rewards that land: starting reserve about half (the first pallet matters); the Warden's
    upgrade cards at the hold's end, not at extraction; Warden chest plate 500 -> 400 (fight
-   100-120 s).
-4. Extraction 30 -> 60 s with a second wave; revives per mission.
+   100-120 s). **Built 2026-11-10, not yet playtested** (PROGRESSION > Guns, Field upgrades).
+4. Extraction 30 -> 60 s with a second wave; revives per mission. **Built 2026-11-10, not
+   yet playtested** (PROGRESSION > Operation).
 5. Readability: world markers, squad roster, call-in inbound/kill cards.
 6. Results that tell the run (squad table, awards).
 7. Voiced Control for five beats (insert, site up, pallet inbound, Index moving, bird inbound),
@@ -142,8 +153,8 @@ feel it this week.**
 11. Publish both places, `Config.Places.Lobby`, the live round trip.
 
 **Phase 4: progression** (Tien + Claude save + match; Nova desks)
-12. Save service (ARCHITECTURE F9, versioned profile), Credits paid at extraction,
-    `RecordCost` on item rows.
+12. Save service (ARCHITECTURE F9, versioned profile), merits paid at mission end (built
+    2026-11-10 on the lobby's record), `Price` on item rows.
 13. Lobby: desks open items, NOT ON ISSUE rows, the saved loadout, grade on the name tape.
 
 **Phase 5: reasons to return**
@@ -156,7 +167,7 @@ feel it this week.**
 1. **Stand Down after any mission** (the short session)? **Yes.**
 2. **The dead come back on the next pallet** (4 per mission)? **Yes.**
 3. **Field upgrades carry across the operation?** **Yes.**
-4. **Credits only from extracting, never per kill?** **Yes.** (Name **Credits** and what they buy: decided by the owner.)
+4. **Merits only from missions, never per kill?** **Yes.** (Two currencies, merits and tabs: decided by the owner, 2026-11-10; `docs/OWNER.md`.)
 5. **Starting kit and prices** as above? **Yes, tune by playtest.**
 6. **Grades cosmetic only** (no levels that add anything)? **Yes.**
 7. **One kit sheet behind every desk and on B** (not four desk menus)? **Yes.**
@@ -165,7 +176,7 @@ feel it this week.**
 9. **No tutorial level, first-time hints instead?** **Yes.**
 10. **The Goose moves from the primary slot to a support call-in before pricing**? **Yes**
     (a rocket as a primary breaks "sidegrade").
-11. **Names:** the Carrier and Credits (decided by the owner); Service Record, FRAGO, Corridor Order, polearm team callsigns, HRD =
+11. **Names:** the Carrier, merits and tabs (decided by the owner); Service Record, FRAGO, Corridor Order, polearm team callsigns, HRD =
     Harlan Recovery Detachment. **Yes** (lore developer writes the canon once approved).
 
 ## Loose ends found while planning

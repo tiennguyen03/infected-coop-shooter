@@ -1,8 +1,10 @@
 --!strict
 -- Doorman (tripod sentry MG call-in, CallInService; replaced the Magpie drones' code): a
--- Part-built tripod gun stands where it lands for Config.CallIns.Doorman.Duration seconds,
--- turns to the nearest Infected in Range it can see (a ray from the muzzle) and fires every
--- FireInterval. The round hits the first Infected on the line (DamageService.dealDamage
+-- tripod gun stands where it lands for Config.CallIns.Doorman.Duration seconds, turns to
+-- the nearest Infected in Range it can see (a ray from the gun's pivot) and fires every
+-- FireInterval. The body is the modelled gun (Config Model 2: MeshAssets dep_doorman_base
+-- stands still, _cradle yaws, _gun pitches at the trunnion) or the Part tripod (Model 1, and
+-- whenever the meshes are not loaded). The round hits the first Infected on the line (DamageService.dealDamage
 -- with the part struck, so the Warden's plates still count); the world blocks it, squad
 -- members never take it. Server-simulated anchored parts; a short tracer per shot.
 
@@ -15,11 +17,14 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local DamageService = require(script.Parent.DamageService)
 local PauseService = require(script.Parent.PauseService)
 local Lifecycle = require(script.Parent.Lifecycle)
+local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
 local SoundBanks = require(ReplicatedStorage.Shared.SoundBanks)
 
 local ENEMY_TAG = "Enemy"
 local RETARGET_INTERVAL = 0.25
-local MUZZLE_HEIGHT = 3.2
+local MUZZLE_HEIGHT = 3.2 -- the Part body's pivot above the ground
+local PART_MUZZLE_REACH = 1.8 -- and its muzzle ahead of that pivot
+local BASE_MESH, CRADLE_MESH, GUN_MESH = "dep_doorman_base", "dep_doorman_cradle", "dep_doorman_gun"
 local SHOT_SOUND = "rbxassetid://95252334560110" -- the rifle report (SoundFX "shoot")
 local GUN_COLOR = Color3.fromRGB(52, 56, 48)
 local TRACER_COLOR = Color3.fromRGB(255, 214, 140)
@@ -41,7 +46,10 @@ local PASS_THROUGH = {
 type Sentry = {
 	model: Model,
 	head: BasePart, -- the turning gun
-	base: Vector3, -- the pivot the head turns around
+	cradle: BasePart?, -- the modelled body's yaw piece (nil on the Part body)
+	base: Vector3, -- the pivot the head turns around (the trunnion); it sees from here
+	aim: CFrame, -- at `base`, looking down the barrel
+	reach: number, -- the muzzle's distance ahead of `base`
 	owner: Player,
 	expiresAt: number,
 	nextFireAt: number,
@@ -99,6 +107,70 @@ local function build(at: Vector3, facing: Vector3): (Model, BasePart)
 	model.PrimaryPart = head
 	model.Parent = folder
 	return model, head
+end
+
+-- The modelled body (doorman.py): the base where it stands, the cradle on the tripod head,
+-- the gun on its trunnion. Nil while any of the three meshes is missing.
+local function buildModelled(at: Vector3, facing: Vector3): (Model?, BasePart?, BasePart?)
+	local cfg = Config.CallIns.Doorman
+	local base = MeshAssets.clone(BASE_MESH)
+	local cradle = if base then MeshAssets.clone(CRADLE_MESH) else nil
+	local gun = if cradle then MeshAssets.clone(GUN_MESH) else nil
+	if not (base and cradle and gun) then
+		if base then
+			base:Destroy()
+		end
+		if cradle then
+			cradle:Destroy()
+		end
+		return nil, nil, nil
+	end
+	local stand = CFrame.lookAt(at, at + facing)
+	local model = Instance.new("Model")
+	model.Name = "Doorman"
+	base.Name = "Base"
+	base.CFrame = stand * CFrame.new(MeshAssets.getOffset(BASE_MESH))
+	cradle.Name = "Cradle"
+	cradle.CFrame = (stand + Vector3.new(0, cfg.YawHeight, 0))
+		* CFrame.new(MeshAssets.getOffset(CRADLE_MESH))
+	gun.Name = "Gun"
+	gun.CFrame = (stand + Vector3.new(0, cfg.PitchHeight, 0))
+		* CFrame.new(MeshAssets.getOffset(GUN_MESH))
+	for _, piece in { base, cradle, gun } do
+		piece.Parent = model
+	end
+	model.PrimaryPart = gun
+	model.Parent = folder
+	return model, gun, cradle
+end
+
+-- Turns the sentry to `target`: the Part gun looks straight at it; the modelled cradle
+-- yaws and its gun pitches at the trunnion, no further than PitchLimit.
+local function aimAt(sentry: Sentry, target: Vector3)
+	local cradle = sentry.cradle
+	if not cradle then
+		sentry.aim = CFrame.lookAt(sentry.base, target)
+		sentry.head.CFrame = sentry.aim
+		for _, child in sentry.head:GetChildren() do
+			if child:IsA("BasePart") then
+				child.CFrame = sentry.aim * CFrame.new(0.5, -0.1, 0.2)
+			end
+		end
+		return
+	end
+	local cfg = Config.CallIns.Doorman
+	local offset = target - sentry.base
+	local flat = Vector3.new(offset.X, 0, offset.Z)
+	if flat.Magnitude < 0.01 then
+		return
+	end
+	local limit = math.rad(cfg.PitchLimit)
+	local pitch = math.clamp(math.atan2(offset.Y, flat.Magnitude), -limit, limit)
+	local yaw = CFrame.lookAt(sentry.base, sentry.base + flat)
+	sentry.aim = yaw * CFrame.Angles(pitch, 0, 0)
+	cradle.CFrame = (yaw + Vector3.new(0, cfg.YawHeight - cfg.PitchHeight, 0))
+		* CFrame.new(MeshAssets.getOffset(CRADLE_MESH))
+	sentry.head.CFrame = sentry.aim * CFrame.new(MeshAssets.getOffset(GUN_MESH))
 end
 
 local function exclusions(): { Instance }
@@ -202,7 +274,19 @@ function SentryService.deploy(owner: Player, point: Vector3, facing: Vector3): b
 	end
 	local flat = Vector3.new(facing.X, 0, facing.Z)
 	flat = if flat.Magnitude > 0.01 then flat.Unit else Vector3.zAxis
-	local model, head = build(point, flat)
+	local model: Model, head: BasePart
+	local cradle: BasePart? = nil
+	local meshModel: Model?, meshGun: BasePart?, meshCradle: BasePart? = nil, nil, nil
+	if cfg.Model == 2 then
+		meshModel, meshGun, meshCradle = buildModelled(point, flat)
+	end
+	if meshModel and meshGun and meshCradle then
+		model, head, cradle = meshModel, meshGun, meshCradle
+	else
+		model, head = build(point, flat)
+	end
+	local pivotHeight = if cradle then cfg.PitchHeight else MUZZLE_HEIGHT
+	local pivot = point + Vector3.new(0, pivotHeight, 0)
 	local sound = Instance.new("Sound")
 	sound.Name = "Shot"
 	sound.SoundId = SHOT_SOUND
@@ -214,7 +298,10 @@ function SentryService.deploy(owner: Player, point: Vector3, facing: Vector3): b
 	table.insert(sentries, {
 		model = model,
 		head = head,
-		base = point + Vector3.new(0, MUZZLE_HEIGHT, 0),
+		cradle = cradle,
+		base = pivot,
+		aim = CFrame.lookAt(pivot, pivot + flat),
+		reach = if cradle then cfg.MuzzleReach else PART_MUZZLE_REACH,
 		owner = owner,
 		expiresAt = os.clock() + cfg.Duration,
 		nextFireAt = os.clock() + 0.6,
@@ -266,17 +353,12 @@ local function step()
 		if not root then
 			continue
 		end
-		sentry.head.CFrame = CFrame.lookAt(sentry.base, root.Position)
-		for _, child in sentry.head:GetChildren() do
-			if child:IsA("BasePart") then
-				child.CFrame = sentry.head.CFrame * CFrame.new(0.5, -0.1, 0.2)
-			end
-		end
+		aimAt(sentry, root.Position)
 		if now < sentry.nextFireAt then
 			continue
 		end
 		sentry.nextFireAt = now + cfg.FireInterval
-		local muzzle = sentry.head.CFrame * Vector3.new(0, 0, -1.8)
+		local muzzle = sentry.aim * Vector3.new(0, 0, -sentry.reach)
 		local hitModel, hitPart, hitAt = lineOfFire(muzzle, root.Position, params)
 		tracer(muzzle, hitAt)
 		sentry.sound.PlaybackSpeed = 1.1 + math.random() * 0.1

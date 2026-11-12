@@ -167,6 +167,7 @@ function StanceService.init()
 		if humanoid.Health <= 0 then
 			return
 		end
+		character:SetAttribute(Attributes.Crouching, stance == Messages.Stance.Crouch)
 		if stance == Messages.Stance.Prone then
 			-- Downed bodies crawl on hands and knees (DownedController) at the standing hip
 			-- height: the crawl clip is authored for a standing root, so dropping the hip

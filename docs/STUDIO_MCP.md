@@ -34,6 +34,7 @@ The game is **one experience, "Co-op Zombie Shooter"** (group Boomin Dev Studios
 | Co-op Zombie Shooter, 87556879379942 (**start place**: where the app drops you) | the lobby (the Carrier) | `lobby.project.json` | published from `main` only |
 | Checkpoint Delta, 125769854992316 | the match | `default.project.json` | Tien's day-to-day match work |
 | Nova's own experience: ZCS Dev 83558708746036 -> Match Dev 108949482095254 | test copies of both | both | Nova (`Config.Places.Dev`: launches and the trip home stay inside it) |
+| Nova's own experience: Mile 14 Dev 128998815119867 | the match playing Mile 14 | `mile14.project.json` (serve on port 34875) | Nova; the project sets `Workspace.Mission = "mile14"` (`Attributes.Mission`), so `Missions.current()` builds Mile 14 there |
 
 Rules (from the 2026-11-09 mix-up, when the app kept opening the old match):
 1. **A project only connects to its own kind of place.** `default.project.json` never in the
@@ -117,14 +118,19 @@ Hard-won gotchas:
   module copy — calling service functions from eval hits nil remotes. Drive the real game by
   firing the `DevCommand` RemoteEvent from `client-1`; use eval only to read Instance/
   attribute state. Stateless modules (GroundUtil) are fine in eval.
-- **Dev tools v2 (2026-11-07).** In game, F1 opens the dev panel (cursor freed; grouped
-  Player / Run / Infected / Squad / Teleport / Checks) with a live info line (fps, RunState,
-  Infected, GOD, SPAWNS OFF). Hotkeys with the panel closed: F2 god, F3 clear Infected, F4
-  10 Walkers, F5 restart, F6 fill Resupply, F7 spawning on/off. Teleports run client-side.
+- **Dev tools v3 (2026-11-11).** In game, F1 opens the dev panel (cursor freed): tabs RUN /
+  PLAYER / INFECTED / GUNS / CALL-INS / UPGRADES / TELEPORT. A call-in is one row (slot 1-4,
+  FIRE), an Infected form one row (1 / 5 / 10 / 25); god mode, spawning stopped and pause
+  light up while on; a line under the title repeats the last command. Live info line (fps,
+  RunState, Infected, GOD, SPAWNS OFF, PAUSED). Hotkeys with the panel closed: F2 god, F3
+  clear Infected, F4 10 Walkers, F5 restart, F6 fill Resupply, F7 spawning on/off, F8 refill
+  ammo, F9 Warden here. Teleports run client-side.
 - DevCommand commands (fire from `client-1`): God (toggle; player attribute DevGod skips
   enemy damage), Heal (also revives), DownPlayer(botName?), RevivePlayer(botName?),
   KillPlayer, DownBot, KillBots, SetBots(n), ToggleSpawns (workspace DevSpawnsOff),
-  ActivateObjective (hold zone now), ForceObjectiveComplete, ForceMissionSuccess, ForceWipe,
+  ActivateObjective (start the main objective now), SetMainObjective <id> [site] /
+  SetSideObjective <id> [site] / RedrawObjectives / ListObjectives (the objective pools: ids in
+  `ObjectiveDefinitions`; every side objective shows at once after one), ForceObjectiveComplete, ForceMissionSuccess, ForceWipe,
   RestartRun, FillResupply, SpawnEnemy(type, count), ClearEnemies, SetCallIn(slot, id),
   GiveUpgrade(id), ClearUpgrades, RefillAmmo, RestockCallIns, SetWeapon(id),
   DropUpgradeCrate, DropSupplyCrate, PrintRunState, VerifyCleanup (expects a dead run: in a

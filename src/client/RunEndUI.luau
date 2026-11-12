@@ -5,7 +5,8 @@
 --   * Dead while the run is live (squadmates or bots still fighting): a small K.I.A. banner,
 --     no restart; the squad finishes the operation.
 --   * RunState "Ended": the results screen for everyone, OPERATION COMPLETE (RunResult
---     "Extracted") or SQUAD WIPED ("Wiped"), the player's own stats, a READY button and the
+--     "Extracted") or SQUAD WIPED ("Wiped"), the player's own stats, the merits paid and the
+--     wallet they went into (shared WalletReadout), a READY button and the
 --     ready count / countdown (RunManager: ReadyCount, ReadyNeeded, ReadyUpEndsAt).
 --   * The screen goes away when the next run leaves Ended.
 
@@ -17,6 +18,8 @@ local RunService = game:GetService("RunService")
 local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attributes"))
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
+local WalletReadout =
+	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("WalletReadout"))
 local HudTheme = require(script.Parent.HudTheme)
 local SoundFX = require(script.Parent.SoundFX)
 
@@ -28,6 +31,9 @@ local results: ScreenGui? = nil
 local banner: ScreenGui? = nil
 local statusLabel: TextLabel? = nil
 local readyButton: TextButton? = nil
+local meritsLabel: TextLabel? = nil
+local walletRow: Frame? = nil
+local wallet: WalletReadout.Readout? = nil
 
 local function formatTime(totalSeconds: number): string
 	local minutes = math.floor(totalSeconds / 60)
@@ -41,6 +47,51 @@ local function hideResults()
 		results = nil
 		statusLabel = nil
 		readyButton = nil
+		meritsLabel = nil
+		walletRow = nil
+		wallet = nil
+	end
+end
+
+-- The wallet under the merits line: what the record holds after this mission's pay
+-- (MeritService writes MeritsHeld and TabsHeld once the save is back). It opens on the
+-- balance before the pay and counts up to it; hidden while the record is unread.
+local function refreshWallet()
+	local row, readout = walletRow, wallet
+	if not row or not readout then
+		return
+	end
+	local player = Players.LocalPlayer
+	local merits = player:GetAttribute(Attributes.MeritsHeld)
+	local tabs = player:GetAttribute(Attributes.TabsHeld)
+	if typeof(merits) ~= "number" or typeof(tabs) ~= "number" then
+		row.Visible = false
+		return
+	end
+	if not row.Visible then
+		local earned = player:GetAttribute(Attributes.MeritsEarned)
+		local paid = if typeof(earned) == "number" then math.max(earned, 0) else 0
+		readout.set(math.max(merits - paid, 0), tabs, false)
+		row.Visible = true
+	end
+	readout.set(merits, tabs)
+end
+
+-- The merits this mission paid (MeritService writes the player's MeritsEarned attribute).
+local function refreshMerits()
+	local label = meritsLabel
+	if not label then
+		return
+	end
+	local earned = Players.LocalPlayer:GetAttribute(Attributes.MeritsEarned)
+	if typeof(earned) ~= "number" then
+		label.Text = ""
+	elseif earned < 0 then
+		label.Text = "MERITS NOT SAVED"
+		label.TextColor3 = C.RedLight
+	else
+		label.Text = `+{earned} MERITS`
+		label.TextColor3 = C.Yellow
 	end
 end
 
@@ -70,9 +121,9 @@ local function refreshStatus()
 	local returnsHome = workspace:GetAttribute(Attributes.ReturnsHome) == true
 	local homebound = workspace:GetAttribute(Attributes.Homebound) == true
 	if homebound then
-		text = "Lantern inbound · back to the Carrier"
+		text = "Helo inbound · back to the Carrier"
 	elseif returnsHome then
-		text = string.gsub(text, "next deployment", "Lantern lifts")
+		text = string.gsub(text, "next deployment", "Helo lifts")
 	end
 	status.Text = text
 	local button = readyButton
@@ -176,8 +227,32 @@ local function showResults()
 		value.Position = UDim2.new(1, -20, 0, y + 3)
 	end
 
+	local merits = HudTheme.label(column, { font = HudTheme.Font.Headline, size = 22 })
+	merits.LayoutOrder = 3
+	meritsLabel = merits
+
+	local held = Instance.new("Frame")
+	held.Name = "Wallet"
+	held.BackgroundTransparency = 1
+	held.AutomaticSize = Enum.AutomaticSize.XY
+	held.LayoutOrder = 4
+	held.Visible = false
+	held.Parent = column
+	local heldLayout = Instance.new("UIListLayout")
+	heldLayout.FillDirection = Enum.FillDirection.Horizontal
+	heldLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+	heldLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	heldLayout.Padding = UDim.new(0, 14)
+	heldLayout.Parent = held
+	local heldName = HudTheme.label(held, { text = "ON YOUR RECORD", size = 14, color = C.TextDim })
+	heldName.LayoutOrder = 1
+	local readout = WalletReadout.new(held)
+	readout.frame.LayoutOrder = 2
+	walletRow = held
+	wallet = readout
+
 	local button = Instance.new("TextButton")
-	button.LayoutOrder = 3
+	button.LayoutOrder = 5
 	button.Size = UDim2.fromOffset(240, 48)
 	button.BackgroundColor3 = C.MenuSelect
 	button.BorderSizePixel = 0
@@ -198,12 +273,14 @@ local function showResults()
 
 	local status =
 		HudTheme.label(column, { font = HudTheme.Font.Body, size = 16, color = C.TextDim })
-	status.LayoutOrder = 4
+	status.LayoutOrder = 6
 	statusLabel = status
 	readyButton = button
 	HudTheme.parent(gui)
 	results = gui
 	refreshStatus()
+	refreshMerits()
+	refreshWallet()
 end
 
 local downedBanner: ScreenGui? = nil
@@ -342,6 +419,10 @@ function RunEndUI.init()
 		workspace:GetAttributeChangedSignal(name):Connect(refreshStatus)
 	end
 	player:GetAttributeChangedSignal(Attributes.Ready):Connect(refreshStatus)
+	player:GetAttributeChangedSignal(Attributes.MeritsEarned):Connect(refreshMerits)
+	for _, name in { Attributes.MeritsHeld, Attributes.TabsHeld } do
+		player:GetAttributeChangedSignal(name):Connect(refreshWallet)
+	end
 	player.CharacterAdded:Connect(onCharacterAdded)
 	if player.Character then
 		task.spawn(onCharacterAdded, player.Character)

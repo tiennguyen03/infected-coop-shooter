@@ -14,6 +14,9 @@ local RunService = game:GetService("RunService")
 
 local Animations = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Animations"))
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
+local LoopPhase = require(
+	ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Rules"):WaitForChild("LoopPhase")
+)
 local SoundBanks = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("SoundBanks"))
 
 local BANK = "player_steps"
@@ -58,14 +61,6 @@ local function collectLocomotionClips()
 	end
 end
 
-local function crossed(from: number, to: number, mark: number): boolean
-	if to >= from then
-		return from < mark and mark <= to
-	end
-	-- The loop wrapped between frames.
-	return mark > from or mark <= to
-end
-
 local function surfaceOf(humanoid: Humanoid): string
 	return if SOFT_MATERIALS[humanoid.FloorMaterial] then "step_soft" else "step_hard"
 end
@@ -106,7 +101,7 @@ local function update(walker: Walker, now: number)
 	end
 	local phases = settings.Phases[bestClip] or DEFAULT_PHASES
 	for _, mark in phases do
-		if crossed(lastPhase, phase, mark) then
+		if LoopPhase.crossed(lastPhase, phase, mark) then
 			walker.lastStepAt = now
 			local running = bestClip:find("run") ~= nil
 			local volume = SoundBanks.volume(surfaceOf(humanoid))
