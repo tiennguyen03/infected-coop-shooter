@@ -1617,6 +1617,15 @@ local Config = {
 				Chute = 8,
 			},
 		},
+		-- Landing on the crowd (Rules/StrikeLanding; owner 2026-11-16: the Infected walked out
+		-- of strikes, chasing the thrower). A row's own `Landing` block overrides these.
+		-- Hold: Infected within that many studs of a fire mission's mark are drawn to the
+		-- marker until HoldAfter seconds after the first impact (0 = none). Height: a blast
+		-- (fire missions, Tripline) is measured flat and reaches this far up or down.
+		Landing = {
+			Enabled = true, -- false: no hold, and blasts are the old sphere from their centre
+			Defaults = { Hold = 0, HoldAfter = 0.5, Height = 8 },
+		},
 		-- Hammer (81 mm mortar section, AirStrikeService): marks a point; the first shell lands
 		-- Delay seconds after the throw, then one every ShellInterval, each Scatter studs off
 		-- the mark at most. Walk It In steps them Config.Upgrades.WalkingBarrage.Step apart.
@@ -1634,6 +1643,7 @@ local Config = {
 			BlastDamage = 80,
 			Scatter = 4,
 			Aim = { Shape = "ring", Radius = 16 }, -- Scatter + BlastRadius: where shells can land
+			Landing = { Hold = 16, HoldAfter = 2 }, -- the aim ring, held through the first 3 shells
 			-- A cross where each round will land; the tubes thump far off, then each round
 			-- drops near straight down with a short high whistle: a quick pale flash, low dust.
 			Arrival = {
@@ -1675,6 +1685,7 @@ local Config = {
 			BlastDamage = 500,
 			Scatter = 0,
 			Aim = { Shape = "ring", Radius = 20 }, -- the blast
+			Landing = { Hold = 20, HoldAfter = 0.3 }, -- the blast ring, until the round is in
 			-- One ring closing on the mark; a long falling whistle, one heavy round on a flat
 			-- line from behind the spotter, a tall column of dark earth, smoke and burnt ground.
 			Arrival = {
@@ -1726,6 +1737,7 @@ local Config = {
 			GunMuzzle = Vector3.new(0, -1.75, -11.4),
 			RotorSpin = 1440,
 			Aim = { Shape = "strip", Length = 46, Width = 10 }, -- the run: Step x (Bursts - 1) + 2 x BlastRadius
+			Landing = { Hold = 16, HoldAfter = 1.4 }, -- drawn to the middle of the lane until the run has passed
 			-- A lane of arrows running the way the gunship flies; the cannon is heard from the
 			-- air, a rake of tracers walks the lane and each burst kicks up a spurt of dust.
 			Arrival = {
