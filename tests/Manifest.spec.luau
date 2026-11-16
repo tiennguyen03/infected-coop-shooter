@@ -121,4 +121,20 @@ return {
 		expect.equal(before.squad, nil, "squad")
 		expect.equal(before.liftAt, 20, "liftAt")
 	end,
+	-- The boarding zone is the painted ring round the bird (owner 2026-11-16): a circle, not a box.
+	["standing anywhere inside the ring counts as on the spot"] = function()
+		expect.equal(Manifest.onSpot(0, 3, 0, 14, 8), true, "centre")
+		expect.equal(Manifest.onSpot(13.9, 3, 0, 14, 8), true, "the ring's edge, side")
+		expect.equal(Manifest.onSpot(0, 3, -14, 14, 8), true, "on the ring line")
+		expect.equal(Manifest.onSpot(-9, 3, 9, 14, 8), true, "the far side of the bird")
+	end,
+	["outside the ring is off the spot, even inside the ring's square"] = function()
+		expect.equal(Manifest.onSpot(14.1, 3, 0, 14, 8), false, "just past the edge")
+		expect.equal(Manifest.onSpot(11, 3, 11, 14, 8), false, "the square's corner")
+	end,
+	["too high or under the deck is off the spot"] = function()
+		expect.equal(Manifest.onSpot(2, 8.5, 2, 14, 8), false, "too high")
+		expect.equal(Manifest.onSpot(2, -0.5, 2, 14, 8), false, "under the deck")
+		expect.equal(Manifest.onSpot(2, 8, 2, 14, 8), true, "at the height limit")
+	end,
 }

@@ -67,18 +67,20 @@ FallowLayout.Spawn = CFrame.lookAt(spawnAt, spawnAt - Vector3.new(0, 0, 1))
 
 export type Spot = {
 	index: number,
-	helo: Vector3, -- the bird, on the spot's centre
-	board: Vector3, -- the boarding box beside its door, on the deck surface
+	helo: Vector3, -- the bird, on the spot's centre: also the boarding ring's centre
+	sign: Vector3, -- the HELO · SPOT n sign's foot: on the ring's edge at the bird's door
 }
 
--- Numbered Lantern spots down the deck aft of the ramp's top, spot 4 nearest it.
+-- Numbered Lantern spots down the deck aft of the ramp's top, spot 4 nearest it. The ring
+-- round each bird (Config.Lobby.Launch.BoardRadius) is where you stand to board.
 local spots: { Spot } = {}
 for index = 1, Config.Lobby.Launch.Spots do
 	local z = -150 + (index - 1) * 45
+	local helo = Vector3.new(-12, FallowLayout.DeckY, z)
 	table.insert(spots, {
 		index = index,
-		helo = Vector3.new(-12, FallowLayout.DeckY, z),
-		board = Vector3.new(1, FallowLayout.DeckY, z),
+		helo = helo,
+		sign = helo + Vector3.new(Config.Lobby.Launch.BoardRadius, 0, 0),
 	})
 end
 FallowLayout.Spots = spots

@@ -6,7 +6,7 @@ last one. **End of a session:** edit this page in place (never append history he
 one note to `handoff/log/` (format in `handoff/log/README.md`). History lives in
 `docs/HISTORY.md`; this page is only "now".
 
-Last updated: 2026-11-11 by Tien + Claude.
+Last updated: 2026-11-16 by Claude (lobby: boarding ring).
 
 ## The game today (on `main`)
 
@@ -51,7 +51,10 @@ that restocks the squad.
   or call-in's own Config row.
 - **Lobby (Nova):** the Carrier (still "the Fallow" in code), `lobby.project.json` +
   `src/lobby/`: hangar desks, the Loadmaster's saved Loadout, helicopter spots that lift a squad
-  into one reserved match server (`docs/sprints/LOBBY_V1_FALLOW.md`). The soldier on the ship
+  into one reserved match server (`docs/sprints/LOBBY_V1_FALLOW.md`). You board by standing anywhere
+  inside the yellow ring round a helicopter (2026-11-16, owner; **not yet seen in game**; **Nova:**
+  the square box is gone, `Spot.board` is now `Spot.sign`, `BoardHalfSize` is now `BoardRadius`,
+  the check is `Manifest.onSpot`). The soldier on the ship
   uses the match's idle and walk and carries the signed primary (2026-11-11, **not yet seen in
   game**; **Nova:** small edits in your `PikeBody`, `LoadmasterService`, lobby `Main.client`,
   new `SoldierMoves`; off with `Config.Lobby.Soldier.Enabled = false`; what to check is in

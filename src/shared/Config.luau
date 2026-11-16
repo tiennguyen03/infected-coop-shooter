@@ -2834,8 +2834,10 @@ local Config = {
 			Capacity = 4, -- soldiers per bird (one squad)
 			Countdown = 20, -- seconds from the first soldier aboard to lift
 			FullCountdown = 3, -- seconds to lift once the bird is full (all 4, or the squad size picked)
-			BoardHalfSize = 6, -- the boarding box beside each bird's door, half-extent in studs
-			BoardHeight = 8, -- studs above the deck a soldier still counts as on the box
+			-- The boarding zone is the yellow ring round each bird (owner 2026-11-16): its outer
+			-- radius, studs. The painted ring and the server's check (Manifest.onSpot) both read it.
+			BoardRadius = 14,
+			BoardHeight = 8, -- studs above the deck a soldier still counts as inside the ring
 			ScanInterval = 0.25, -- seconds between manifest checks
 			Retries = 2, -- extra teleport attempts after a failure
 			RetryDelay = 2,
