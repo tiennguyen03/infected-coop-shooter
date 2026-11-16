@@ -196,12 +196,12 @@ how the other teams are called is open, for the lore developer.
   (the **Quartermaster** behind a wire cage: guns, sidearms, grenades, bought off the rack),
   the **Loadmaster** (the helicopter crew chief: he makes up each soldier's **Loadout**, what they
   carry and what is kicked out of the door, and they sign for it before they walk up the
-  ramp), **Fires** (a fire support officer: your callsign on the
-  Hammer, Anvil and Shrike nets), the **Engineers** (a sapper sergeant: Doorman, Tripline,
-  Concertina). Desk crew wear ship or Army working dress, never Pike grey. The four desks
-  are run by the same four people every visit: the Quartermaster (a sergeant first class,
-  thirty years in arms rooms), the Loadmaster (the helicopter crew chief, who rides the door),
-  Fires (a lieutenant) and the Engineers (a staff sergeant, a sapper). Voices and lines in
+  ramp), and **Call-ins** (a sapper sergeant: every call-in, from the fire missions to the
+  Doorman, the wire and the supply drops; owner 2026-11-16 folded the Fires desk into it).
+  Desk crew wear ship or Army working dress, never Pike grey. The desks are run by the same
+  people every visit: the Quartermaster (a sergeant first class, thirty years in arms rooms),
+  the Loadmaster (the helicopter crew chief, who rides the door) and the sapper sergeant (a
+  staff sergeant). Voices and lines in
   [lore/desk_crew.md](lore/desk_crew.md).
 - **The Plot.** Control's map room under the island, lit red. The corridor chart is a paper
   map on the table under tape and grease pencil (what it shows:

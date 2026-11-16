@@ -1,7 +1,8 @@
 --!strict
 -- The Arms Room's displays (owner, 2026-11-09: "somewhere to store the guns"; Nova, 2026-11-10:
 -- the whole port fore corner, a wall for long guns, a glass counter for the rest;
--- FallowLayout.ArmsRoom): every gun, sidearm and grenade the Arms Room catalog lists, in
+-- FallowLayout.ArmsRoom): every gun, sidearm and grenade the Arms Room catalog lists that this
+-- desk sells (KitPrices.deskOf), in
 -- catalog order (ArmsRoom.catalog), and the corner's fence. Each piece is a Model named by its
 -- weapon id with the attributes RackDisplay ("wall" or "counter"), RackFace (the way it faces,
 -- toward whoever looks at it) and RackSpan (its length and height, studs). Each place also has
@@ -18,6 +19,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ArmsRoom = require(ReplicatedStorage.Shared.ArmsRoom)
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
+local KitPrices = require(ReplicatedStorage.Shared.KitPrices)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
 local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
 local Build = require(script.Parent.Build)
@@ -511,15 +513,17 @@ local function buildFence(folder: Instance)
 end
 
 -- Builds the corner (FallowLayout.ArmsRoom); DeskService stands the Quartermaster in it.
-function ArmsRack.build(parent: Instance)
+-- Only what `deskId` sells goes up (KitPrices.deskOf: each row's own `Desk`, or the default
+-- Config.Lobby.Sellers, the Quartermaster for every gun and grenade).
+function ArmsRack.build(parent: Instance, deskId: string)
 	local folder = Build.folder(parent, "ArmsRack")
 	local hits = Build.folder(folder, "Hits")
 	local catalog = ArmsRoom.catalog()
-	buildWall(folder, hits, catalog.primaries)
+	buildWall(folder, hits, KitPrices.only(deskId, catalog.primaries))
 	buildCounter(folder, hits, {
-		sidearms = catalog.secondaries,
+		sidearms = KitPrices.only(deskId, catalog.secondaries),
 		melee = {}, -- no melee weapons in the game yet: their section waits for them
-		grenades = catalog.grenades,
+		grenades = KitPrices.only(deskId, catalog.grenades),
 	})
 	buildFence(folder)
 end

@@ -39,14 +39,8 @@ local DRESS: { [string]: NpcBody.Dress } = {
 		trousers = SHIP.trousers,
 		items = { 105079389547650, 15946756199 },
 	},
-	-- Woodland shirt and pants, a headset (A3 A4 E3), short black hair (R3).
-	fires = {
-		shirt = ARMY.shirt,
-		trousers = ARMY.trousers,
-		items = { 16125110410, 16125087437, 15987281035, 14763641985 },
-	},
-	-- Woodland top and pants, tan patrol cap (A1 A2 K2).
-	engineers = {
+	-- The sapper sergeant at Call-ins: woodland top and pants, tan patrol cap (A1 A2 K2).
+	callins = {
 		shirt = ARMY.shirt,
 		trousers = ARMY.trousers,
 		items = { 9482682978, 9482717204, 13418356502 },
@@ -73,7 +67,7 @@ local function props(folder: Folder, id: string, frame: CFrame)
 	if id == "arms_room" then
 		-- The whole corner: the glass counter, the long-gun wall, the fence (ArmsRack,
 		-- FallowLayout.ArmsRoom).
-		ArmsRack.build(folder)
+		ArmsRack.build(folder, id)
 	elseif id == "loadmaster" then
 		-- Slung cases waiting for the door.
 		prop("Case", Vector3.new(4, 3, 3), Vector3.new(-5, 1.5, 5), CRATE)
@@ -86,15 +80,15 @@ local function props(folder: Folder, id: string, frame: CFrame)
 			Color3.fromRGB(150, 130, 60),
 			{ collide = false }
 		)
-	elseif id == "fires" then
+	elseif id == "callins" then
+		-- The fire-mission radio on the counter (it came over from the Fires desk) and spools
+		-- of wire.
 		prop(
 			"RadioSet",
 			Vector3.new(2.4, 1.6, 1.2),
-			Vector3.new(0, 4.2, 2),
+			Vector3.new(2, 4.2, -2.4),
 			Color3.fromRGB(60, 64, 50)
 		)
-	elseif id == "engineers" then
-		-- Spools of wire.
 		for index, x in { -4.5, -2, 4 } do
 			prop(
 				"Spool",

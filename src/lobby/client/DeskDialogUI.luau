@@ -1,8 +1,8 @@
 --!strict
--- Talking to Fires or the Engineers (DeskService, LobbyDesks; the Quartermaster and the
+-- Talking to the Call-ins desk (DeskService, LobbyDesks; the Quartermaster and the
 -- Loadmaster have their own screens, ArmsRackUI and LoadmasterUI). F on the desk's prompt opens
 -- the same talk as every desk: a greeting picked at random, then 1 their kit (the DeskShop with
--- what the desk sells, KitPrices.soldAt: the call-in rows' `Desk`), 2 a question, 3 leave; by
+-- what the desk sells, KitPrices.soldAt: each call-in row's `Desk` or the default), 2 a question, 3 leave; by
 -- click or the keys 1-3. It stays up while you stand there (Config.Lobby.DialogSeconds x3 after
 -- the last choice, unless the shop is open) and closes when you walk out of reach.
 

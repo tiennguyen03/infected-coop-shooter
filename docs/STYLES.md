@@ -507,8 +507,8 @@ Helicopter lamps are the warm notes. The hangar desks must still read at a glanc
 
 ### The Carrier's buying panels (2026-11-10)
 
-The Quartermaster's rack card (above) and `DeskShop` (call-ins at Fires, the Engineers and
-the Loadmaster) share one look: the HUD track panel and outline, the item name in GothamBlack
+The Quartermaster's rack card (above) and `DeskShop` (call-ins at the Call-ins desk; the
+Fires desk and the Loadmaster's drops folded into it 2026-11-16) share one look: the HUD track panel and outline, the item name in GothamBlack
 with its designation dim under it, ON YOUR RECORD in yellow, or a BUY · N MERITS button
 (outlined, dimmed with "(SHORT)" when the soldier cannot pay), the merits in yellow at the
 top. In the Loadout, kit not on the record is dimmed with its price in yellow where the

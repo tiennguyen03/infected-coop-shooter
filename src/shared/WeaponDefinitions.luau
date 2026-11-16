@@ -56,6 +56,7 @@ export type WeaponDefinition = {
 	ReloadClip: string?, -- its own reload clip; nil = Config.Animations.Assault.reload
 	Model: string, -- the held mesh (MeshAssets wpn_*); default wpn_rifle
 	Price: number?, -- merits at the lobby's Quartermaster (Rules/Record): 0 = issued free, nil = not for sale
+	Desk: string?, -- the Carrier desk that sells it (LobbyDesks id); nil = Config.Lobby.Sellers.Gun
 	Sound: string?, -- its clips in the `guns` bank: <Sound>_shot, <Sound>_reload; nil = the shared rifle shot and gear reload
 	Explosive: Explosive?, -- a launcher: the round is a visible rocket that blows at impact
 	ProjectileSpeed: number?, -- studs/s of that rocket (Explosive only)
@@ -107,6 +108,7 @@ type Tuning = {
 	ReloadClip: string?,
 	Model: string?,
 	Price: number?,
+	Desk: string?,
 	Sound: string?,
 	Explosive: Explosive?,
 	ProjectileSpeed: number?,
@@ -158,6 +160,7 @@ local function row(
 		ReloadClip = tuning.ReloadClip,
 		Model = tuning.Model or DEFAULT_MODEL,
 		Price = tuning.Price,
+		Desk = tuning.Desk,
 		Sound = tuning.Sound,
 		Explosive = tuning.Explosive,
 		ProjectileSpeed = tuning.ProjectileSpeed,
