@@ -45,9 +45,9 @@ match place.
   Keep to this when adding pieces.
 - **The loop** (Nova: walking past the birds to the desks and back every run made no
   sense): everyone spawns at the fore end of the hangar facing aft, passes the desks (Arms
-  Room and Engineers face each other across the walk, the Loadmaster at the ramp's foot),
+  Room and Call-ins face each other across the walk, the Loadmaster at the ramp's foot),
   climbs the ramp, which rises aft, and comes up on the deck facing the spots, spot 4 nearest.
-  Fires and the Plot are a short detour aft past the ramp's foot. The screening lane stays as
+  The Plot is a short detour aft past the ramp's foot. The screening lane stays as
   scenery where recovered teams will walk off (nobody spawns there).
 - **The Pike body** (`PikeBody`): soldiers wear the match's body, the same limb swap as the
   match (`MeshAssets.dressModel` with `PlayerSetup.BODY`; the match's `PlayerSetup` and the
@@ -86,15 +86,17 @@ match place.
   retries, then "Lantern couldn't lift". In Studio teleports can't run: the panel says so and
   the spot resets after 6 s. Screen: `LaunchUI` (spot, who is aboard against the squad size, countdown, the picker for the
   first aboard).
-- **Four hangar desks** (`DeskService`, data `LobbyDesks`): Arms Room (the port fore corner),
-  Engineers (wire spools, starboard), Loadmaster (slung cases at the foot of the ramp), Fires
-  (at the Plot door). R15 crew figures in working dress, a counter, a sign, an F "Talk" prompt. The
+- **Three hangar desks** (`DeskService`, data `LobbyDesks`): Arms Room (the port fore corner),
+  Call-ins (the sapper sergeant among wire spools, starboard; was the Engineers), Loadmaster
+  (slung cases at the foot of the ramp). The Fires desk was folded into Call-ins (owner
+  2026-11-16: "we don't need the Fire Support office... the Quartermaster is the main guy who
+  sells stuff"; not yet seen in game). R15 crew figures in working dress, a counter, a sign, an F "Talk" prompt. The
   **Every desk talks the same way** (dialog rewrite 2026-11-10, Nova and Tien: "too cryptic,
   no personality"; lines and voices by the lore developer, `LobbyDesks` `talk`, voice sheets
   in docs/lore/desk_crew.md): a greeting picked at random from four, then 1 their kit, 2 a
   question, 3 leave (click or keys 1-3), plus their own bought / short / refused lines. The
-  Quartermaster talks through `ArmsRackUI`, the Loadmaster through `LoadmasterUI`, Fires and
-  the Engineers through `DeskDialogUI` (1 opens their `DeskShop`).
+  Quartermaster talks through `ArmsRackUI`, the Loadmaster through `LoadmasterUI`, Call-ins
+  through `DeskDialogUI` (1 opens its `DeskShop`).
 - **The Plot** (`PlotService`, `ContainmentBoard`, rule `Rules/Containment`): the red-lit
   map room under the island with the Containment Board on a lit perspex panel (five
   districts: percent and band word). It rereads the board every 60 s and wipes and rewrites a
@@ -113,7 +115,7 @@ match place.
   across it (26.8, -3) and her prompt reaches 18 studs (`DeskPlace.reach`) to cover the table.
   A white light set flush in the deckhead over the table lights the paper (a hanging lamp
   blocked the map view). While the map is up the talk panel moves to the left edge and the
-  map to the right of the screen (the panel covered the map). Fires moved out to (1, 18), beside the door. **The numbers are placeholders**
+  map to the right of the screen (the panel covered the map).  **The numbers are placeholders**
   (`Config.Containment.Districts`: Delta 25, the rest 0) until the save service.
 
 - **The walking crew** (2026-11-10, Nova: "give the fallow some life"; roles and lines by the
@@ -142,7 +144,7 @@ match place.
   list of named block accessories (`KIT` in NpcBody). The Quartermaster: reading glasses (two
   lenses on a thin frame; the old solid bar read as a unibrow and the cord hung in the air), a
   clipboard, keys. The Loadmaster: flight helmet pushed up with the visor raised, harness and
-  tether, a grease pencil. Fires: a headset round her neck, a notebook. The Engineers: belt
+  tether, a grease pencil. The sapper sergeant at Call-ins: belt
   gloves, red wire cutters, a wire coil. The watch officer: one-cup headset, a steel mug, a
   rank tab. Lantern's crew chief: gloves and harness. The walking crew: ear defenders, a
   chock and chain, a rag, a clipboard, a mask and blue gloves, a helmet with a slung rifle and
@@ -260,11 +262,14 @@ The rack is where guns are **bought** (merits, onto the soldier's record; owner 
   Anvil, Shrike, Tripline 0; Concertina 250, Speedball 300, Aid Bag 300, Doorman 400). No
   Price = not for sale. A Loadout is allowed only when both guns, the grenade and every
   call-in are on the record.
-- **Where:** guns and grenades on the Quartermaster's rack; call-ins at the desk on their row
-  (`Desk`): Fires (Hammer, Anvil, Shrike), the Engineers (Doorman, Tripline, Concertina), the
-  Loadmaster (Speedball, Aid Bag, under "What can you drop me?"). `DeskShop` is the panel: each
+- **Where** (owner 2026-11-16: the Quartermaster is the main seller, one desk for call-ins, the
+  Loadmaster only signs Loadouts): the desk is each item's own row, `Desk = "<LobbyDesks id>"`,
+  or with none the default for its kind, `Config.Lobby.Sellers` (`KitPrices.deskOf`): every gun
+  and grenade on the Quartermaster's rack (`ArmsRack` and `ArmsRackUI` show only what his desk
+  sells), every call-in at Call-ins (Hammer, Anvil, Shrike, Doorman, Tripline, Concertina,
+  Speedball, Aid Bag). No row names a desk today; a desk that sells nothing shows no panel. `DeskShop` is the panel: each
   call-in with what it is, ON YOUR RECORD or BUY · N MERITS (dim "(SHORT)"), the merits, a
-  refusal note; Fires and the Engineers stay up while you stand at the desk.
+  refusal note; it stays up while you stand at the desk.
 - **Server** (`RecordService`): loads the record on join (`SaveSlot`, DataStore
   `PikeRecords`, key `r_<UserId>`), sends it on the `Record` remote (`Messages.Record`), checks
   each BUY with the rule and saves. `SaveSlot` is the shared save helper (spaced writes, flush
@@ -330,13 +335,15 @@ The rack is where guns are **bought** (merits, onto the soldier's record; owner 
     140  ── hangar bulkhead (fore) ──
     125  HANGAR: spawn (0, 125), facing aft
     124  Arms Room: the port fore corner, counter at X -23.6 (Quartermaster -26)
-    105  Engineers (27)
+    105  Call-ins (27)
      88  Loadmaster (-2), facing the spawn
      80  ┌ramp foot (hangar)┐ well X -30..-10
      20  └ramp top (deck)───┘ comes up facing aft
      50..-10                        ┌island┐ X 22..34 (deck); Plot under it (hangar,
                                     └──────┘  X 4..33, Z -10..30), Fires (1, 18) at its door
     -15  spot 4 (helo X -12, ring radius 14, sign X 2)
+                                    └──────┘  X 4..33, Z -10..30)
+    -15  spot 4 (helo X -12, box X 1)
     -60  spot 3
    -100  ── hangar bulkhead (aft) ──
    -105  spot 2

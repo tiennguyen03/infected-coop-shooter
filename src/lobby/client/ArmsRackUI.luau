@@ -22,6 +22,7 @@ local ArmsRoom = require(ReplicatedStorage.Shared.ArmsRoom)
 local ArmsStats = require(ReplicatedStorage.Shared.Rules.ArmsStats)
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
+local KitPrices = require(ReplicatedStorage.Shared.KitPrices)
 local LobbyDesks = require(ReplicatedStorage.Lobby.LobbyDesks)
 local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
 local HoldStill = require(script.Parent.HoldStill)
@@ -484,17 +485,25 @@ local function statsOf(id: string): ArmsStats.Stats
 	}
 end
 
+-- What the rack shows: the catalog's kit that its desk sells (KitPrices.deskOf), the same
+-- filter ArmsRack builds with.
+local rackDesk = ""
+for _, entry in LobbyDesks do
+	if entry.rack then
+		rackDesk = entry.id
+	end
+end
 local catalog = ArmsRoom.catalog()
 local guns: { [string]: boolean } = {}
 local gunStats: { ArmsStats.Stats } = {}
 for _, list in { catalog.primaries, catalog.secondaries } do
-	for _, id in list do
+	for _, id in KitPrices.only(rackDesk, list) do
 		table.insert(order, id)
 		guns[id] = true
 		table.insert(gunStats, statsOf(id))
 	end
 end
-for _, id in catalog.grenades do
+for _, id in KitPrices.only(rackDesk, catalog.grenades) do
 	table.insert(order, id)
 end
 

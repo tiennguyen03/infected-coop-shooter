@@ -4,7 +4,7 @@
 -- way: a greeting picked at random, then 1 their kit, 2 a question, 3 leave. Lines by the
 -- lore developer (2026-11-10, Nova and Tien: "too cryptic, no personality").
 
--- What the person behind a desk says (the same shape at all four desks).
+-- What the person behind a desk says (the same shape at every desk).
 export type Talk = {
 	greetings: { string }, -- one picked at random each time you talk
 	open: string, -- choice 1: see / buy this desk's kit (the Loadmaster: the Loadout)
@@ -79,7 +79,7 @@ local LobbyDesks: { Desk } = {
 		id = "loadmaster",
 		title = "LOADMASTER",
 		who = "Helicopter crew chief",
-		issues = "Your Loadout, plus ammo and medical drops",
+		issues = "Your Loadout: what you fly with",
 		talk = {
 			greetings = {
 				"Loadmaster. Pick what you carry, sign for it, then up the ramp to your bird.",
@@ -89,7 +89,7 @@ local LobbyDesks: { Desk } = {
 			},
 			open = "Set up my Loadout.",
 			ask = "What can you drop me?",
-			answer = "Ammo and medical, kicked out of my door when you throw for it. Buy it here first.",
+			answer = "Ammo and medical, kicked out of my door when you throw for it. Buy them at Call-ins.",
 			leave = "That's all.",
 			openLine = "Main gun, sidearm, grenade, four different call-ins. Dimmed ones you still have to buy.",
 			bought = "Bought. Throw for it out there and I'll kick it out the door.",
@@ -101,29 +101,7 @@ local LobbyDesks: { Desk } = {
 			confirm = "SIGN FOR IT",
 			confirmLine = "Signed. That's what you fly with. Up the ramp, find a bird with a seat.",
 			reject = "That won't go. You need four call-ins, and no two the same.",
-			notOnRecord = "That's not yours yet. Buy it first: guns at the Arms Room, call-ins at their desk.",
-		},
-	},
-	{
-		id = "fires",
-		title = "FIRES",
-		who = "Fire support officer",
-		issues = "Fire missions: Hammer, Anvil, Shrike",
-		talk = {
-			greetings = {
-				"Fires. I put you on the mortar, artillery and gunship nets. Throw the marker, they shoot.",
-				"Hammer, Anvil and Shrike are free. You're already cleared on all three nets.",
-				"The guns can't see you. They only see your marker. So throw it where you mean it.",
-				"Quiet on the net. It never stays quiet. What do you need?",
-			},
-			open = "Show me the fire missions.",
-			ask = "How do I call one in?",
-			answer = "Press its number and throw the marker. The guns fire where it lands. Simple.",
-			leave = "That's all.",
-			openLine = "Hammer: six mortar rounds. Anvil: one big shell. Shrike: a gun run along your throw.",
-			bought = "You're on that net now. Your callsign's in the book.",
-			short = "You're short on merits. Come back when you can cover it.",
-			refused = "The net's busy. Try that again in a minute.",
+			notOnRecord = "That's not yours yet. Guns at the Arms Room, call-ins at the Call-ins desk.",
 		},
 	},
 	{
@@ -149,22 +127,24 @@ local LobbyDesks: { Desk } = {
 		},
 	},
 	{
-		id = "engineers",
-		title = "ENGINEERS",
+		-- Every call-in (owner 2026-11-16: one desk for them; the Fires desk is gone). What it
+		-- sells is each call-in row's own `Desk`, or Config.Lobby.Sellers.CallIn (KitPrices).
+		id = "callins",
+		title = "CALL-INS",
 		who = "Sapper sergeant",
-		issues = "Sentry gun, mines and wire",
+		issues = "Every call-in: fire missions, the sentry gun, mines, wire and supply drops",
 		talk = {
 			greetings = {
-				"Engineers. Wire, mines and the Doorman gun. Things that hold ground when you can't.",
+				"Call-ins. Mortars, artillery, a gunship, mines, wire, ammo and med drops. All here.",
 				"Mind the coils on your way past. That wire bites, and it doesn't let go.",
-				"Nine fingers and counting. Ask me anything about mines.",
-				"Tripline comes free. The gun and the wire cost merits. Worth every one.",
+				"Nine fingers and counting. Ask me anything about mines. Or mortars, these days.",
+				"Hammer, Anvil, Shrike and Tripline come free. The rest cost merits. Worth every one.",
 			},
-			open = "Show me the kit.",
-			ask = "Any advice?",
-			answer = "Lay wire across their path, not yours. Nothing climbs over it. Nothing.",
+			open = "Show me the call-ins.",
+			ask = "How do I call one in?",
+			answer = "Press its number and throw. It comes down where your marker lands.",
 			leave = "That's all.",
-			openLine = "Doorman's a gun that shoots on its own. Tripline's six mines. Concertina's the wire.",
+			openLine = "Buy it here, then sign for it with the Loadmaster. Four go with you.",
 			bought = "It's yours. Set it, step back, let it work.",
 			short = "You're short. I'd do you a deal, but the Quartermaster counts my wire.",
 			refused = "Paperwork's jammed. Give it a minute.",

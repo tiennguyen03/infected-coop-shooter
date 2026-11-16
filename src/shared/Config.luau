@@ -1631,7 +1631,6 @@ local Config = {
 		-- the mark at most. Walk It In steps them Config.Upgrades.WalkingBarrage.Step apart.
 		Hammer = {
 			Price = 0, -- merits on the Carrier (Rules/Record, KitPrices); issued free
-			Desk = "fires", -- the Carrier desk that sells it (DeskShop)
 			Charges = 1,
 			Cooldown = 120,
 			ThrowDistance = 35,
@@ -1671,7 +1670,6 @@ local Config = {
 		-- line of sight; one heavy shell Delay seconds after the mark.
 		Anvil = {
 			Price = 0, -- merits on the Carrier (Rules/Record, KitPrices); issued free
-			Desk = "fires", -- the Carrier desk that sells it (DeskShop)
 			Charges = 1,
 			Cooldown = 180,
 			AimMode = "Binoculars", -- "Throw" puts it back in the hand (then add ThrowDistance = 35)
@@ -1716,7 +1714,6 @@ local Config = {
 		-- impacts centred on the mark, Step studs apart along the throw, BurstInterval apart.
 		Shrike = {
 			Price = 0, -- merits on the Carrier (Rules/Record, KitPrices); issued free
-			Desk = "fires", -- the Carrier desk that sells it (DeskShop)
 			Charges = 1,
 			Cooldown = 150,
 			ThrowDistance = 35,
@@ -1753,7 +1750,6 @@ local Config = {
 		-- FireInterval it shoots the nearest Infected in Range it can see.
 		Doorman = {
 			Price = 400, -- merits on the Carrier (Rules/Record, KitPrices)
-			Desk = "engineers", -- the Carrier desk that sells it (DeskShop)
 			Charges = 1,
 			Cooldown = 150,
 			ThrowDistance = 25,
@@ -1790,7 +1786,6 @@ local Config = {
 		-- when an Infected steps within TriggerRadius.
 		Tripline = {
 			Price = 0, -- merits on the Carrier (Rules/Record, KitPrices); issued free
-			Desk = "engineers", -- the Carrier desk that sells it (DeskShop)
 			Charges = 2,
 			Cooldown = 60,
 			ThrowDistance = 35,
@@ -1818,7 +1813,6 @@ local Config = {
 		-- DamagePerSecond (dealt every TickInterval).
 		Concertina = {
 			Price = 250, -- merits on the Carrier (Rules/Record, KitPrices)
-			Desk = "engineers", -- the Carrier desk that sells it (DeskShop)
 			Charges = 2,
 			Cooldown = 90,
 			ThrowDistance = 30,
@@ -1846,7 +1840,6 @@ local Config = {
 		-- times in all. A player re-arms again only after stepping out of the radius.
 		Speedball = {
 			Price = 300, -- merits on the Carrier (Rules/Record, KitPrices)
-			Desk = "loadmaster", -- the Carrier desk that sells it (DeskShop)
 			Charges = 1,
 			Cooldown = 180,
 			ThrowDistance = 25,
@@ -1872,7 +1865,6 @@ local Config = {
 		-- full heal, stims refilled, +Plate shield (Config.Crates.ShieldCap still caps it).
 		AidBag = {
 			Price = 300, -- merits on the Carrier (Rules/Record, KitPrices)
-			Desk = "loadmaster", -- the Carrier desk that sells it (DeskShop)
 			Charges = 1,
 			Cooldown = 180,
 			ThrowDistance = 25,
@@ -2841,6 +2833,11 @@ local Config = {
 			Retries = 2, -- extra attempts after a failed DataStore call
 			RetryDelay = 1,
 		},
+		-- Which Carrier desk (LobbyDesks id) sells an item whose own Config row names no `Desk`
+		-- (KitPrices.deskOf). Owner 2026-11-16: the Quartermaster is the main seller (guns, grenades,
+		-- any kit that is not a call-in), one desk sells every call-in, the Loadmaster only signs
+		-- Loadouts. `Desk = "<id>"` on a gun, grenade or call-in row moves just that item.
+		Sellers = { Gun = "arms_room", Grenade = "arms_room", CallIn = "callins" },
 		Launch = {
 			Spots = 4, -- numbered Lantern spots on the flight deck
 			Capacity = 4, -- soldiers per bird (one squad)
