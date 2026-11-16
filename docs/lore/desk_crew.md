@@ -148,7 +148,7 @@ the supply drops that were the Loadmaster's). Desk id `callins`, sign CALL-INS.
 | 2 (ask) | How do I call one in? |
 | Answer | "Press its number and throw. It comes down where your marker lands." |
 | 3 (leave) | That's all. |
-| Kit opens | "Buy it here, then sign for it with the Loadmaster. Four go with you." |
+| Kit opens | "It's all laid out behind me. Pick one, buy it, sign for it with the Loadmaster." |
 | Bought | "It's yours. Set it, step back, let it work." |
 | Short | "You're short. I'd do you a deal, but the Quartermaster counts my wire." |
 | Refused | "Paperwork's jammed. Give it a minute." |

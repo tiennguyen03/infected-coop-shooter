@@ -42,6 +42,7 @@ export type Desk = {
 	issues: string, -- what the desk deals in
 	talk: Talk,
 	rack: Rack?,
+	display: Rack?, -- the Call-ins display behind the desk (CallInDisplayUI): its labels
 	kit: Kit?,
 }
 
@@ -144,10 +145,17 @@ local LobbyDesks: { Desk } = {
 			ask = "How do I call one in?",
 			answer = "Press its number and throw. It comes down where your marker lands.",
 			leave = "That's all.",
-			openLine = "Buy it here, then sign for it with the Loadmaster. Four go with you.",
+			openLine = "It's all laid out behind me. Pick one, buy it, sign for it with the Loadmaster.",
 			bought = "It's yours. Set it, step back, let it work.",
 			short = "You're short. I'd do you a deal, but the Quartermaster counts my wire.",
 			refused = "Paperwork's jammed. Give it a minute.",
+		},
+		display = {
+			header = "THE KIT",
+			onIssue = "ON YOUR RECORD",
+			notOnIssue = "NOT ON YOUR RECORD",
+			currency = "MERITS",
+			buy = "BUY",
 		},
 	},
 }

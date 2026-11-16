@@ -1622,6 +1622,7 @@ local Config = {
 		-- the mark at most. Walk It In steps them Config.Upgrades.WalkingBarrage.Step apart.
 		Hammer = {
 			Price = 0, -- merits on the Carrier (Rules/Record, KitPrices); issued free
+			Display = { Prop = "shells", Width = 3 }, -- how the Call-ins display shows it (CallInDisplay)
 			Charges = 1,
 			Cooldown = 120,
 			ThrowDistance = 35,
@@ -1660,6 +1661,7 @@ local Config = {
 		-- line of sight; one heavy shell Delay seconds after the mark.
 		Anvil = {
 			Price = 0, -- merits on the Carrier (Rules/Record, KitPrices); issued free
+			Display = { Prop = "maptable", Width = 4 }, -- how the Call-ins display shows it (CallInDisplay)
 			Charges = 1,
 			Cooldown = 180,
 			AimMode = "Binoculars", -- "Throw" puts it back in the hand (then add ThrowDistance = 35)
@@ -1703,6 +1705,7 @@ local Config = {
 		-- impacts centred on the mark, Step studs apart along the throw, BurstInterval apart.
 		Shrike = {
 			Price = 0, -- merits on the Carrier (Rules/Record, KitPrices); issued free
+			Display = { Prop = "gunship", Width = 4.2 }, -- how the Call-ins display shows it (CallInDisplay)
 			Charges = 1,
 			Cooldown = 150,
 			ThrowDistance = 35,
@@ -1738,6 +1741,7 @@ local Config = {
 		-- FireInterval it shoots the nearest Infected in Range it can see.
 		Doorman = {
 			Price = 400, -- merits on the Carrier (Rules/Record, KitPrices)
+			Display = { Prop = "doorman", Width = 4.6 }, -- how the Call-ins display shows it (CallInDisplay)
 			Charges = 1,
 			Cooldown = 150,
 			ThrowDistance = 25,
@@ -1774,6 +1778,7 @@ local Config = {
 		-- when an Infected steps within TriggerRadius.
 		Tripline = {
 			Price = 0, -- merits on the Carrier (Rules/Record, KitPrices); issued free
+			Display = { Prop = "mines", Width = 3.4 }, -- how the Call-ins display shows it (CallInDisplay)
 			Charges = 2,
 			Cooldown = 60,
 			ThrowDistance = 35,
@@ -1801,6 +1806,7 @@ local Config = {
 		-- DamagePerSecond (dealt every TickInterval).
 		Concertina = {
 			Price = 250, -- merits on the Carrier (Rules/Record, KitPrices)
+			Display = { Prop = "wire", Width = 3.4 }, -- how the Call-ins display shows it (CallInDisplay)
 			Charges = 2,
 			Cooldown = 90,
 			ThrowDistance = 30,
@@ -1828,6 +1834,7 @@ local Config = {
 		-- times in all. A player re-arms again only after stepping out of the radius.
 		Speedball = {
 			Price = 300, -- merits on the Carrier (Rules/Record, KitPrices)
+			Display = { Prop = "ammo", Width = 3.4 }, -- how the Call-ins display shows it (CallInDisplay)
 			Charges = 1,
 			Cooldown = 180,
 			ThrowDistance = 25,
@@ -1853,6 +1860,7 @@ local Config = {
 		-- full heal, stims refilled, +Plate shield (Config.Crates.ShieldCap still caps it).
 		AidBag = {
 			Price = 300, -- merits on the Carrier (Rules/Record, KitPrices)
+			Display = { Prop = "medbag", Width = 3 }, -- how the Call-ins display shows it (CallInDisplay)
 			Charges = 1,
 			Cooldown = 180,
 			ThrowDistance = 25,
@@ -2877,6 +2885,18 @@ local Config = {
 			InspectHeightShare = 0.4, -- a framed piece is at most this share of the screen's height
 			Margin = 0.08, -- air round what the camera frames, a share of its size
 			PlayFov = 70, -- restored when you step away
+		},
+		-- The Call-ins display (CallInDisplay, CallInDisplayUI; owner 2026-11-16: "like the
+		-- Quartermaster, where you can see the guns behind him"): each call-in laid out on its own
+		-- pallet in a row behind the sergeant (FallowLayout.CallInDisplay). How a call-in shows is
+		-- its row's `Display = { Prop, Width }`; a row without one gets a stencilled crate. Camera
+		-- glide, glow and fields of view are the rack's (Lobby.Rack).
+		CallInDisplay = {
+			DefaultProp = "crate", -- CallInDisplay's plain stand-in: a crate with the name on it
+			DefaultWidth = 3, -- studs of the row a call-in takes
+			Gap = 0.2, -- studs between two pallets
+			Lift = 0.3, -- studs a hovered or framed piece rises off its pallet
+			ModelScale = 0.13, -- the Shrike's scale model, a share of the real gunship mesh
 		},
 		DeskPromptDistance = 10, -- studs a soldier can talk to a desk from
 		DialogSeconds = 8, -- a desk's line stays up this long
