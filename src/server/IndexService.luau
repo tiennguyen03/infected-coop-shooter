@@ -30,6 +30,11 @@
 -- Riot Call at 60% and 25% (EnemyService.spawnWave round him). On death: the priority
 -- pallet (RequisitionService crate, Drop.Cards), a full heal and re-arm for the squad.
 -- docs/PROGRESSION.md "Index kit: the Warden"; docs/sprints/SPRINT_19_WARDEN.md.
+--
+-- Two entrances: `start` (the old order, Config.Objectives.Boss.Enabled = false: after the
+-- main objective, from the Gate up the lane) and `arrive` (ObjectiveService, the main
+-- objective's last act: from a point near the objective, walking to it, optionally hunting
+-- one member first). `position` tells the objective where he stands.
 
 local Debris = game:GetService("Debris")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -90,8 +95,19 @@ type Charge = {
 	hit: { [Humanoid]: boolean },
 }
 
+-- How he comes in and whom he hunts (`arrive`); `start` is the Gate lane.
+export type Arrival = {
+	route: { Vector3 }, -- points he walks before the hunt
+	routeRadio: { [number]: string }, -- Radio key read on reaching route point n
+	target: (() -> Squad.Member?)?, -- whom he hunts first (nil or no answer: the nearest)
+	healthFactor: number?,
+}
+
 type Fight = {
 	generation: number,
+	route: { Vector3 },
+	routeRadio: { [number]: string },
+	target: (() -> Squad.Member?)?,
 	handle: EnemyService.BossHandle,
 	plates: { Plate },
 	platesBroken: number,
@@ -331,7 +347,15 @@ local function faceToward(root: BasePart, target: Vector3)
 	end
 end
 
+-- Whom he goes for: the arrival's target when it names a living one, else the nearest.
 local function nearestTarget(current: Fight): Squad.Member?
+	local pick = current.target
+	if pick then
+		local member = pick()
+		if member and member.root and Squad.isAlive(member) then
+			return member
+		end
+	end
 	local member = Squad.nearestLiving(current.handle.root.Position)
 	return member
 end
@@ -1245,7 +1269,7 @@ local function step()
 
 	if current.walking then
 		-- The walk in: the lane's waypoints, then the hunt. A body in reach still gets bashed.
-		local waypoint = settings.Waypoints[current.waypointIndex]
+		local waypoint = current.route[current.waypointIndex]
 		if not waypoint or now - current.walkStartedAt > settings.WalkTimeout then
 			current.walking = false
 		else
@@ -1267,7 +1291,7 @@ local function step()
 				return
 			end
 			if flat(handle.root.Position - waypoint).Magnitude <= settings.WaypointReach then
-				local line = settings.WaypointRadio[current.waypointIndex]
+				local line = current.routeRadio[current.waypointIndex]
 				if line then
 					radio(line)
 				end
@@ -1276,7 +1300,7 @@ local function step()
 			end
 			if now >= current.nextRepathAt then
 				current.nextRepathAt = now + REPATH_INTERVAL
-				local next = settings.Waypoints[current.waypointIndex]
+				local next = current.route[current.waypointIndex]
 				if next then
 					handle.humanoid:MoveTo(GroundUtil.GetGroundPosition(next, 0))
 				end
@@ -1301,7 +1325,7 @@ local function step()
 	end
 end
 
-local function spawnWarden(groundPosition: Vector3, walk: boolean): boolean
+local function spawnWarden(groundPosition: Vector3, walk: boolean, arrival: Arrival?): boolean
 	if fight then
 		return false
 	end
@@ -1312,13 +1336,18 @@ local function spawnWarden(groundPosition: Vector3, walk: boolean): boolean
 	end
 	generation += 1
 	local settings = cfg()
-	local healthMultiplier = 1 + settings.HealthPerExtraPlayer * DifficultyService.getExtraPlayers()
+	local healthMultiplier = (
+		1 + settings.HealthPerExtraPlayer * DifficultyService.getExtraPlayers()
+	) * (if arrival then arrival.healthFactor or 1 else 1)
 	local humanoid = handle.humanoid
 	humanoid.MaxHealth = humanoid.MaxHealth * healthMultiplier
 	humanoid.Health = humanoid.MaxHealth
 
 	local current: Fight = {
 		generation = generation,
+		route = if arrival then arrival.route else settings.Waypoints,
+		routeRadio = if arrival then arrival.routeRadio else settings.WaypointRadio,
+		target = if arrival then arrival.target else nil,
 		handle = handle,
 		plates = {},
 		platesBroken = 0,
@@ -1326,7 +1355,8 @@ local function spawnWarden(groundPosition: Vector3, walk: boolean): boolean
 		walking = walk,
 		waypointIndex = 1,
 		walkStartedAt = os.clock(),
-		sighted = not walk,
+		-- The sighting line belongs to the Gate walk; an arrival has Control's own line.
+		sighted = not walk or arrival ~= nil,
 		action = nil,
 		pending = nil,
 		resolveAt = 0,
@@ -1385,6 +1415,21 @@ function IndexService.start(): boolean
 		end)
 	end
 	return ok
+end
+
+-- ObjectiveService, the main objective's last act: he spawns at `groundPosition` (no Gate
+-- lines), walks the arrival's route and hunts. Returns false when he could not spawn.
+function IndexService.arrive(groundPosition: Vector3, arrival: Arrival): boolean
+	return spawnWarden(groundPosition, #arrival.route > 0, arrival)
+end
+
+-- Where he stands now (nil when he is not up).
+function IndexService.position(): Vector3?
+	local current = fight
+	if not current or current.handle.humanoid.Health <= 0 then
+		return nil
+	end
+	return current.handle.root.Position
 end
 
 -- Dev: the Warden at `position`, hunting at once (no walk in).

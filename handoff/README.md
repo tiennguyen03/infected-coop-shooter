@@ -13,7 +13,9 @@ Last updated: 2026-11-16 by Claude (lobby: boarding ring; lobby: one main seller
 The full loop works in solo with bots: drop on Checkpoint Delta → fight the Infected →
 Resupply flare and pallet cards → the main objective, one of five drawn per drop and started
 by reaching it (field upgrades at its start and end), with two side objectives to find
-(`docs/PROGRESSION.md` > Objective pools; unplayed) → the Warden (boss) → extraction by helicopter → OPERATION COMPLETE → ready up.
+(`docs/PROGRESSION.md` > Objective pools; unplayed), with the Warden (boss) coming partway
+through it as its last act (on `claude/boss-in-objectives`, unplayed; `Config.Objectives.Boss.Enabled
+= false` is the old order) → extraction by helicopter → OPERATION COMPLETE → ready up.
 On `claude/reward-pick` (stacked on `claude/rewards-extraction`, unplayed): cards are picked
 from a panel opened at the crate (hold E), and the hold's end drops an objective reward crate
 that restocks the squad.
@@ -106,7 +108,7 @@ The plan beyond this table, in phases, with the owner's open decisions: [docs/RO
 | 5 | Support weapons (Gun, Thumper, Kettle), incendiary + stun grenades | open | the revolver, sniper and Goose are in the Arms Room and on the lobby's rack (2026-11-09); a new gun shows up by having a row with `ArmsOrder`; guns are modelled in Blender (`guns.py`) when no free model is in hand |
 | 6 | Performance measurements | open | 2-client network + MicroProfiler during an Anvil into 20, low-end device at low health (`docs/STUDIO_MCP.md`) |
 | 7 | Owner calls waiting | Tien | generator to 4.8, light-tower collision as two boxes (movement keys decided 2026-11-11: Shift twice rolls, hold C or Ctrl slides) |
-| 8 | Objective pools: **play the first slice** (2026-11-11, unplayed; checklist in the PR and `handoff/log/2026-11-11-tien-objective-pools.md`; dev `SetMainObjective <id>`), then Open the Gate and the unbuilt side objectives, then Mile 14 + its boss | Tien + Claude | `docs/PROGRESSION.md` > Objective pools; the dev panel has no buttons for the new commands yet (`claude/dev-menu`) |
+| 8 | Objective pools: **play the first slice** (2026-11-11, unplayed; checklist in the PR and `handoff/log/2026-11-11-tien-objective-pools.md`; dev `SetMainObjective <id>`), and the Warden inside each main objective (2026-11-16, unplayed; per-objective checklist in `handoff/log/2026-11-16-claude-boss-in-objectives.md`; dev `WardenNow`), then Open the Gate and the unbuilt side objectives, then Mile 14 + its boss | Tien + Claude | `docs/PROGRESSION.md` > Objective pools; the dev panel has no buttons for the new commands yet (`claude/dev-menu`) |
 | 9 | Warden follow-ups | open | time the fight with the chest plate at 400 (target 100-120 s), Gate dressing, insert/wipe radio lines (`docs/sprints/SPRINT_19_WARDEN.md`) |
 | 10 | Housekeeping | Tien | rotate the group Open Cloud key (it was pasted in chat); archive the old CZS and "Shooterr" experiences |
 

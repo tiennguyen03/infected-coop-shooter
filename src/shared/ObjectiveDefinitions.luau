@@ -18,6 +18,9 @@
 --   Done    Control's line when it is finished: what changed because of it
 --   Failed  (side objectives with a timer) Control's line when the time runs out
 -- "{place}" in a line is the drawn site's Name, "{to}" its ToName.
+--
+-- A main objective's `Boss` block: how the Warden plays its last act (docs/PROGRESSION.md >
+-- The Warden in the main objective). Any field left out comes from Config.Objectives.Boss.
 
 export type Vec = { number } -- { x, y, z } in studs
 
@@ -31,6 +34,20 @@ export type Site = {
 	Spawns: { Vec }?, -- where marked Infected stand
 	To: Vec?, -- where a carried item goes
 	ToName: string?,
+	BossFrom: Vec?, -- main objectives: where the Warden walks in from (default: open ground nearby)
+}
+
+-- Fields as in Config.Objectives.Boss; each one optional here.
+export type Boss = {
+	At: number?, -- share of the objective's progress when he comes
+	Contest: number?, -- studs: he stops it while he stands this close (0 = never)
+	Target: string?, -- "nearest" | "carrier"
+	EnterMin: number?,
+	EnterMax: number?,
+	HealthFactor: number?,
+	Arrive: string?, -- Control, when he comes
+	Contested: string?, -- Control, the first time he stands on it
+	Blocked: string?, -- the HUD step while he stands on it
 }
 
 export type Row = {
@@ -62,6 +79,7 @@ export type Row = {
 	MaxLamps: number?,
 	LampRange: number?,
 	LampBrightness: number?,
+	Boss: Boss?, -- main only: the Warden's last act (defaults Config.Objectives.Boss)
 }
 
 export type Pick = { Id: string, Weight: number }
@@ -85,6 +103,14 @@ local ROWS: { [string]: Row } = {
 		Needs = { "Size" },
 		StartRadius = 34,
 		Seconds = 45, -- accumulated inside the zone
+		-- He comes halfway through the hold and the hold stops while he stands in the zone.
+		Boss = {
+			At = 0.5,
+			Contest = 1, -- on: the zone itself is the area
+			Arrive = "That woke the Warden. He still holds this perimeter, and he's coming to take {place} back.",
+			Contested = "He's inside the perimeter. The hold stops while he stands in it. Pull him out.",
+			Blocked = "The Warden is in the zone: pull him out",
+		},
 	},
 	restore_comms = {
 		Kind = "shared",
@@ -100,6 +126,14 @@ local ROWS: { [string]: Row } = {
 		Seconds = 60, -- then held, accumulated while a living member is within Radius
 		Radius = 20,
 		SurviveWave = { Hocker = 2, Walker = 6, Runner = 3 },
+		-- He comes 30 s into the 60 s hold and the signal stops while he is at the mast.
+		Boss = {
+			At = 0.5,
+			Contest = 1, -- on: the hold's Radius is the area
+			Arrive = "That signal woke the Warden. He still answers this net, and he's coming for the mast.",
+			Contested = "He's at the mast and the signal is dropping. Pull him away from it.",
+			Blocked = "The Warden is at the mast: pull him away",
+		},
 	},
 	confirm_casualties = {
 		Kind = "shared",
@@ -115,6 +149,11 @@ local ROWS: { [string]: Row } = {
 		Form = "Brute",
 		Count = 3,
 		PerExtraPlayer = 1,
+		-- He comes when half the heavies are down: they were his reserve.
+		Boss = {
+			At = 0.5,
+			Arrive = "Those heavies were his reserve. The Warden is coming to {place} to lead the rest.",
+		},
 	},
 	recover_record = {
 		Kind = "shared",
@@ -128,6 +167,12 @@ local ROWS: { [string]: Row } = {
 		StartRadius = 40,
 		Hold = 1, -- seconds of the interact key to pick it up
 		DeliverRadius = 9,
+		-- He comes a third of the way and hunts whoever carries the record.
+		Boss = {
+			At = 0.3,
+			Target = "carrier",
+			Arrive = "That record is his. The Warden kept the count, and he's coming for whoever carries it.",
+		},
 	},
 
 	-- Checkpoint Delta's signature main objective: the screening tents at the Pens.
@@ -144,6 +189,15 @@ local ROWS: { [string]: Row } = {
 		StartRadius = 45,
 		Hold = 3, -- seconds of F at each tent
 		BurnWave = { Runner = 4, Walker = 3 }, -- flushed out by each fire
+		-- He comes when the second tent burns, goes to the last fuel can and it will not
+		-- light while he stands at it.
+		Boss = {
+			At = 0.6,
+			Contest = 14,
+			Arrive = "The fires woke the Warden. Those were his pens. He's coming to guard the last tent.",
+			Contested = "He's standing over the last fuel can. Pull him off it, then burn it.",
+			Blocked = "The Warden is at the fuel can: pull him off",
+		},
 	},
 
 	-- Shared side objectives: optional, failing one costs nothing.
