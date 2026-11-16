@@ -83,6 +83,16 @@ stamina bar; shove is free; the Open Cloud key stays.
 - Do not press Publish in a Studio window connected to the test mix. Publish only from `main`.
 - Archive the old CZS and "Shooterr" experiences.
 
+## Owner ideas to discuss later (2026-11-16)
+
+- **Squads by invite, not by standing on a pad.** Invite friends from a party UI in the lobby;
+  the party picks the mission (and objective); everyone is sent into that mission together,
+  and the trip plays as a cutscene of the squad flying off in the helicopter. Replaces
+  forming a squad by standing on a shared helipad.
+- **A real map of where the Infected are.** The lobby's coverage board shows only
+  percentages; it should show a visual map with where the Infected are thickest and what
+  still needs clearing.
+
 ## 6. Later (not started), in the order I would do them
 
 1. Phone and controller: sprint button, call-ins, the Anvil, crate and objective prompts.
