@@ -131,5 +131,5 @@ with the body down and the run moving on; no errors on the server or client. Not
 player knockdown (the owner had God on), which is the same resolver as the bots' one.
 
 Open from the expansion: the lore developer's handset lines for Pound / Sweep / Slam /
-Stomp (placeholders in `BossBarUI.TELL_TEXT`); measure the fight length (over 130 s solo:
-`Plates.Chest.Health` 500 → 400 first); the Sweep's shove on a client with high latency.
+Stomp (placeholders in `BossBarUI.TELL_TEXT`); measure the fight length (over 130 s solo;
+`Plates.Chest.Health` 500 → 400 done 2026-11-10, not yet timed in a playtest); the Sweep's shove on a client with high latency.

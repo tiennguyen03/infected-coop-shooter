@@ -101,6 +101,15 @@ return {
 		expect.equal(result.missions[2].outcome, "loss", "unknown outcome")
 		expect.equal(result.standDown, true, "standDown")
 	end,
+	["a main objective the lobby picked rides along; none is the usual case"] = function()
+		local sent = Handoff.departure("harlan_corridor", { 111 }, nil, "sanitize")
+		expect.equal(Handoff.readJoin(sent, 111, check).objective, "sanitize", "sent")
+		local plain = Handoff.departure("harlan_corridor", { 111 }, nil)
+		expect.equal(Handoff.readJoin(plain, 111, check).objective, nil, "not sent")
+		local forged = Handoff.departure("harlan_corridor", { 111 }, nil)
+		forged.objective = 12
+		expect.equal(Handoff.readJoin(forged, 111, check).objective, nil, "not a string")
+	end,
 	["what the lobby builds is what the match reads"] = function()
 		local sent = Handoff.departure("harlan_corridor", { 111, 222 }, { [111] = good })
 		local first = Handoff.readJoin(sent, 111, check)

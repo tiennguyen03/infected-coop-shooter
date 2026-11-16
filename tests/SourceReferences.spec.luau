@@ -1,7 +1,8 @@
 --!strict
 -- Cross-file references the type checker cannot see, read from the source text: remote names
 -- (Remotes.get takes a string, and a misspelt one waits forever for a remote that never
--- appears), require paths, the server BOOT list, and modules whose init() nobody calls.
+-- appears), require paths, the server BOOT list, modules whose init() nobody calls, and
+-- keyboard keys written into code instead of read from Config.Keys.
 -- Not a Rules spec: it guards the wiring between modules (docs/ARCHITECTURE.md F5).
 
 local fs = require("@lune/fs")
@@ -58,7 +59,53 @@ local function declaredRemotes(): { [string]: boolean }
 	return names
 end
 
+-- Keys the match's client and server code may name directly: the dev panel's function
+-- keys, gamepad buttons, and the keys of a text box or a menu. Every other key is a gameplay
+-- binding and belongs in Config.Keys (src/shared/Config.luau), so its hint follows it.
+local KEY_LITERALS_ALLOWED = {
+	"^F%d+$",
+	"^Button",
+	"^DPad",
+	"^Thumbstick",
+	"^Return$",
+	"^Escape$",
+	"^Backspace$",
+	"^Tab$",
+	"^Unknown$",
+}
+
 return {
+	["no keyboard key is written into client or server code (Config.Keys holds them)"] = function()
+		local problems = {}
+		for _, file in files do
+			if string.find(file.path, "^src/shared") then
+				continue
+			end
+			local number = 0
+			for line in string.gmatch(file.text .. "\n", "([^\n]*)\n") do
+				number += 1
+				local code = string.gsub(line, "%-%-.*$", "")
+				for key in string.gmatch(code, "Enum%.KeyCode%.(%w+)") do
+					local allowed = false
+					for _, pattern in KEY_LITERALS_ALLOWED do
+						allowed = allowed or string.find(key, pattern) ~= nil
+					end
+					if not allowed then
+						table.insert(
+							problems,
+							`{file.path}:{number}: Enum.KeyCode.{key}: read it from Config.Keys`
+						)
+					end
+				end
+				-- Reserved for a ping button (owner 2026-11-11).
+				if string.find(code, "MouseButton3", 1, true) then
+					table.insert(problems, `{file.path}:{number}: middle mouse is reserved`)
+				end
+			end
+		end
+		fail(problems)
+	end,
+
 	["every remote used is declared, and every declared remote is used"] = function()
 		local declared = declaredRemotes()
 		local used: { [string]: boolean } = {}

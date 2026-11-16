@@ -1,7 +1,7 @@
 --!strict
 -- The mission line (HUD language: HudTheme; after Prototype 2's objective line): one white
 -- line at lower centre, verbs and targets in caps with the key word coloured, a smaller
--- second line and a thin progress bar under it. No panel. ObjectiveUI and ExtractionUI both
+-- second line, an optional dim third line (what to do now) and a thin progress bar under it. No panel. ObjectiveUI and ExtractionUI both
 -- write it; extraction outranks the objective, so while extraction shows, the objective
 -- waits underneath. On touch devices it sits at top centre, clear of the thumbstick.
 
@@ -14,12 +14,19 @@ local MissionLine = {}
 local C = HudTheme.Color
 local PRIORITY: { [string]: number } = { objective = 1, extraction = 2 }
 
-type Entry = { line1: string, line2: string, progress: number?, color: Color3? }
+type Entry = {
+	line1: string,
+	line2: string,
+	line3: string,
+	progress: number?,
+	color: Color3?,
+}
 
 local entries: { [string]: Entry } = {}
 local root: Frame = nil :: any
 local line1: TextLabel = nil :: any
 local line2: TextLabel = nil :: any
+local line3: TextLabel = nil :: any
 local bar: Frame = nil :: any
 local barFill: Frame = nil :: any
 local shownOwner: string? = nil
@@ -58,6 +65,8 @@ local function render()
 	line1.TextColor3 = entry.color or C.Text
 	line2.Text = entry.line2
 	line2.Visible = entry.line2 ~= ""
+	line3.Text = entry.line3
+	line3.Visible = entry.line3 ~= ""
 	bar.Visible = entry.progress ~= nil
 	if entry.progress then
 		barFill.Size = UDim2.fromScale(math.clamp(entry.progress, 0, 1), 1)
@@ -74,14 +83,22 @@ local function render()
 end
 
 -- Shows (or updates) `owner`'s line. `progress` 0..1 shows the bar; nil hides it.
+-- `detail` is the dim third line (the objective's step, progress and distance).
 function MissionLine.set(
 	owner: string,
 	text: string,
 	sub: string,
 	progress: number?,
-	color: Color3?
+	color: Color3?,
+	detail: string?
 )
-	entries[owner] = { line1 = text, line2 = sub, progress = progress, color = color }
+	entries[owner] = {
+		line1 = text,
+		line2 = sub,
+		line3 = detail or "",
+		progress = progress,
+		color = color,
+	}
 	render()
 end
 
@@ -121,8 +138,16 @@ function MissionLine.init()
 	line1.LayoutOrder = 1
 	line2 = HudTheme.label(root, { font = HudTheme.Font.Body, size = 18, rich = true })
 	line2.LayoutOrder = 2
+	line3 = HudTheme.label(root, {
+		font = HudTheme.Font.Body,
+		size = 14,
+		color = C.TextDim,
+		rich = true,
+	})
+	line3.LayoutOrder = 3
+	line3.Visible = false
 	bar = HudTheme.rect(root, UDim2.fromOffset(300, 3), C.Track, HudTheme.TrackTransparency)
-	bar.LayoutOrder = 3
+	bar.LayoutOrder = 4
 	barFill = HudTheme.rect(bar, UDim2.fromScale(0, 1), C.White)
 
 	HudTheme.parent(gui)

@@ -66,7 +66,7 @@ Rectangles are `{x0, y0, x1, y1}`; points are `{x, y}`. Labels are short for Sur
 | border2 | district border | 3.1,3.6 7.1,3.6 | (none) |
 | border3 | district border | 3.2,4.9 7.2,4.9 | (none) |
 | border4 | district border | 3.4,5.9 7.2,5.9 | (none) |
-| lantern | grease-pencil track | 6.8,0.4 5.6,1.2 5.1,1.6 | LANTERN |
+| lantern | grease-pencil track | 6.8,0.4 5.6,1.2 5.1,1.6 | HELO |
 
 **Title, legend, stamp**
 
@@ -75,7 +75,7 @@ Rectangles are `{x0, y0, x1, y1}`; points are `{x, y}`. Labels are short for Sur
 - North arrow: N, top right.
 - Stamp (bottom corner, red): HARLAN CONTROL - PLOT COPY - DO NOT REMOVE.
 - Grease pencil on the paper (the map is used, not printed clean): the five district names
-  are the printed map's; the cordon, the district borders, BURNED, the Lantern track and the
+  are the printed map's; the cordon, the district borders, BURNED, the helicopter track and the
   CARRIER mark are grease pencil over it. One pencilled note in the margin: CONTAINED IS NOT
   CLEAN.
 

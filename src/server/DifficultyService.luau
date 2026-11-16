@@ -52,26 +52,24 @@ function DifficultyService.getElapsed(): number
 	return elapsed
 end
 
-local function elapsedMinutes(): number
-	return DifficultyService.getElapsed() / 60
-end
-
 -- Living players beyond the first (the Infected scale with people, not with bots).
 function DifficultyService.getExtraPlayers(): number
 	return math.max(#Squad.livingOwners() - 1, 0)
 end
 
 function DifficultyService.getHealthMultiplier(): number
-	return math.min(
-		1 + elapsedMinutes() * Config.Difficulty.HealthPerMinute,
-		Config.Difficulty.HealthCap
+	return DifficultyCurve.multiplier(
+		Config.Difficulty.HealthPerMinute,
+		Config.Difficulty.HealthCap,
+		DifficultyService.getElapsed()
 	)
 end
 
 function DifficultyService.getDamageMultiplier(): number
-	return math.min(
-		1 + elapsedMinutes() * Config.Difficulty.DamagePerMinute,
-		Config.Difficulty.DamageCap
+	return DifficultyCurve.multiplier(
+		Config.Difficulty.DamagePerMinute,
+		Config.Difficulty.DamageCap,
+		DifficultyService.getElapsed()
 	)
 end
 

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+<circle cx="40" cy="104" r="17" fill="#07090b" opacity="0.8"/>
+<circle cx="30" cy="72" r="17" fill="#07090b" opacity="0.8"/>
+<circle cx="40" cy="40" r="17" fill="#07090b" opacity="0.8"/>
+<circle cx="66" cy="20" r="17" fill="#07090b" opacity="0.8"/>
+<circle cx="40" cy="104" r="10" fill="#c9ced4" />
+<circle cx="30" cy="72" r="10" fill="#9aa4ae" />
+<circle cx="40" cy="40" r="10" fill="#c9ced4" />
+<circle cx="66" cy="20" r="10" fill="#9aa4ae" />
+<g transform="translate(130 146) rotate(-18)"><polygon points="-72,-68 72,-68 98,-42 98,42 72,68 -72,68 -98,42 -98,-42" fill="#07090b" stroke="#07090b" stroke-width="20" stroke-linejoin="round" opacity="0.8"/>
+<polygon points="-72,-68 72,-68 98,-42 98,42 72,68 -72,68 -98,42 -98,-42" fill="#9aa4ae" />
+<polygon points="-72,-68 72,-68 98,-42 98,-30 -98,-30 -98,-42" fill="#c9ced4" />
+<polygon points="-98,42 98,42 72,68 -72,68" fill="#636d77" />
+<circle cx="-64" cy="0" r="15" fill="#07090b" />
+<rect x="-36" y="-22" width="112" height="16" fill="#3d454d" />
+<rect x="-36" y="6" width="112" height="16" fill="#3d454d" />
+<rect x="-36" y="34" width="68" height="16" fill="#3d454d" /></g>
+</svg>

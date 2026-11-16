@@ -73,5 +73,7 @@ architecture > visual polish. Smooth on low-end devices is playability, not poli
 - Never print or commit API keys or tokens.
 - A commit that touches `src/` or `assets/` carries its docs: `handoff/README.md` edited in
   place, one `docs/HISTORY.md` row, and the feature's own doc (facts that changed only).
+  Work that opens, finishes or needs an owner decision also moves its line in
+  `docs/BACKLOG.md` (the owner's one page; plain words).
   End each work session with one note in `handoff/log/` (format there). State each fact
   once and link to it; keep this file and the handoff short.

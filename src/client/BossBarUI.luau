@@ -1,7 +1,7 @@
 --!strict
 -- The Index boss bar (Sprint 19): top right while the Warden is up (HudTheme language). The body bar, six
 -- plate pips (full -> cracked at Config.Index.Warden.CrackFraction -> gone) and the tell
--- line: the handset's words before each attack (BossUpdate "tell"). Driven entirely by the
+-- line: the Warden's words before each attack (BossUpdate "tell"). Driven entirely by the
 -- BossUpdate remote: ("show", name, plateNames) | ("state", bodyFraction, plateFractions,
 -- phase) | ("tell", kind) | ("hide"). Asks the server for the state on boot (late join).
 
@@ -116,13 +116,13 @@ local function state(bodyFraction: number, plateFractions: { number }, _phase: n
 	end
 end
 
--- The handset's words before each attack, as a subtitle under the mission line; a stun
+-- The Warden's words before each attack, as a subtitle under the mission line; a stun
 -- turns the emblem blue for its length.
 local function tell(kind: string)
 	local stun = kind == Messages.BossTell.Stun
 	local text = TELL_TEXT[kind] or string.upper(kind)
 	local hold = if stun then Config.Index.Warden.Charge.WallStun else Config.Index.Warden.TellHold
-	local speaker = if string.sub(text, 1, 3) == "..." then "Handset" else nil
+	local speaker = if string.sub(text, 1, 3) == "..." then "Warden" else nil
 	BuffNoticeUI.subtitle(speaker, text, if stun then STUN_COLOR else TELL_COLOR, hold)
 	if stun then
 		stunUntil = os.clock() + hold

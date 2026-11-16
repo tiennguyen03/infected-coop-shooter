@@ -47,6 +47,8 @@ export type EnemyDefinition = {
 	-- Tallest cover top (studs above the feet) this form climbs when it is pressed against
 	-- it (EnemyService; Config.Movement.Infected). nil = never climbs.
 	ClimbHeight: number?,
+	-- Personal space in studs (EnemySpacing); defaults to Config.Enemies.Spacing.Radius x Scale.
+	SpacingRadius: number?,
 	Boss: boolean?, -- an Index host: spawned by IndexService, never by the director
 }
 

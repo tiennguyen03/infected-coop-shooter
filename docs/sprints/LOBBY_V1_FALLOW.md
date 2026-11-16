@@ -52,10 +52,25 @@ match place.
 - **The Pike body** (`PikeBody`): soldiers wear the match's body, the same limb swap as the
   match (`MeshAssets.dressModel` with `PlayerSetup.BODY`; the match's `PlayerSetup` and the
   client `PaletteController` are mapped into the lobby, not copied), no avatar clothing or
-  accessories, no rifle. The match's animation set is not in the lobby yet: the body moves
-  with Roblox's default R15 animations. Roblox's default walking sound (the "Running" Sound
-  the engine puts in each root part) is muted for every character (`DefaultStepMute`), so
-  the ship has no footsteps until the match's synced ones come with its animations.
+  accessories. Roblox's default walking sound (the "Running" Sound the engine puts in each
+  root part) is muted for every character (`DefaultStepMute`); the match's synced footsteps
+  (`FootstepController`) are not in the lobby yet.
+- **The soldier moves and is armed like the match's** (owner, 2026-11-11; built, static checks
+  only, **not yet seen in game**). Client `SoldierMoves` plays the match's rifle idle and
+  four-way walk blend (`Config.Animations.Assault`) through `src/shared/SoldierLocomotion`,
+  the same code the match's `AnimationController` now drives (rule `Rules/MoveBlend`); each
+  client animates its own character on the Animator, so everyone sees it. `PikeBody` calls
+  the match's `PlayerSetup.attachRifle` after the limb swap, and `LoadmasterService` sets the
+  player's `Weapon` attribute to the signed primary, so the gun in the hands follows the
+  Loadout (the default rifle until one is signed). The pose is the match's own rifle idle
+  (no separate slung or low-ready clip). No sprint, aim, stances, roll or vault on the ship;
+  a jump holds the pose it left the deck in. If the idle or walk clip does not load within
+  `Config.Lobby.Soldier.ClipWait` seconds (a place the group does not own), the stock
+  Animate script stays. Switches: `Config.Lobby.Soldier.Enabled`, `.CarryRifle`.
+  **To check in the lobby place:** the idle and walk play and other clients see them; the
+  rifle sits in the hands as in the match and changes after signing a different primary;
+  no hotbar slot; the rifle does not get in the way at the rack or the Loadout screen; a
+  respawn (fall off the deck) comes back armed and animated.
 - **Known warning**: `rbxassetid://203785492 … Asset type does not match requested type`
   shows in the lobby's output as it does in the match's (handoff "Minor loose ends"). No file
   in the repo names that id; it is not from lobby code and does not affect play.
@@ -113,13 +128,9 @@ match place.
   checked clear of walls and desks in a playtest.
 - **R15 crew** (2026-11-10, Nova: "all the npcs to have r15 models like the player instead of
   just being regular blocks"): every desk figure, walker and Lantern's crew chief is a real R15
-  rig (`Players:CreateHumanoidModelFromDescription`, one cached rig cloned) wearing the crew
-  body (`npc_crew_` limbs, `assets/3d/build/crew.py`: the player's limb boxes, tapered forearms
-  and shins, elbow and knee caps, in plain working dress: collar, placket, breast pockets,
-  boots). The body is worn untextured and coloured per figure (shirt, trousers, skin, gloves,
-  boots), so one 9-mesh upload dresses everyone; skin and hair are picked from the name. A face
-  (eyes, brows, mouth), hair, a belt, the cap or flight helmet and the kit are small welded
-  parts. The joints are rigid Motor6Ds (NpcBody `joint`): the stock rig now ships physics
+  rig (`Players:CreateHumanoidModelFromDescription`, one cached rig cloned). Since the second
+  pass of 2026-11-11 it is Roblox's default R15 avatar dressed per figure (see Figures and how
+  they move); the crew limb meshes of 2026-11-10 are retired. The joints are rigid Motor6Ds (NpcBody `joint`): the stock rig now ships physics
   joints (AnimationConstraint + BallSocket), which made every limb a body the server simulated
   while each client moved only the walker's root, dragging and correcting limbs every frame
   (lag, fixed the same day). The root is anchored and the Humanoid's state machine is off, so
@@ -268,9 +279,19 @@ The rack is where guns are **bought** (merits, onto the soldier's record; owner 
   `LoadoutMenu.mount` option `locked`, `handle.refresh`), the server refuses a forged one ("not
   on record"), and a saved Loadout naming anything no longer on the record falls back to the
   default.
-- **Not built:** earning merits (only the starting grant): a run's pay is the systems
-  designer's call and the match would save it (the record is per UserId in the same
-  experience). The match's B Arms Room still offers every gun.
+- **Earning merits** (2026-11-10): the match pays them onto this record when a mission ends
+  (docs/LOBBY_MATCH_HANDOFF.md > Merits). The match's B Arms Room still offers every gun.
+- **Tabs** (2026-11-10, the hard currency; docs/OWNER.md): the record is version 2 and also
+  holds `tabs` and the last 50 Robux receipt ids (a version 1 save reads with 0 tabs). The
+  rack header and the desk panels show "N MERITS  ·  N TABS". `TabsService` answers
+  `MarketplaceService.ProcessReceipt`: a pack from `Config.Tabs.Products` is paid through
+  `RecordService.grantReceipt` (`SaveSlot.update`, UpdateAsync; the receipt id is saved with
+  the tabs, so a repeat pays nothing) and only then answered PurchaseGranted. While a receipt
+  is being paid the soldier's waiting save is written first and a BUY is refused, so no other
+  save lands over the tabs. A record that could not be **read** on join (a DataStore error) is
+  never saved over: the soldier can buy for that visit, none of it is kept. Every
+  `ProductId` is 0 (no product exists on Roblox), nothing prompts a purchase and nothing is
+  sold for tabs.
 
 - **Talk** (F on the Quartermaster, `ArmsRackUI` for a desk with a `rack` in `LobbyDesks`): a
   greeting, then 1 "Show me the guns." (the rack), 2 "How do I get merits?", 3 "That's all." Wording by the lore developer: BUY and a price in
@@ -336,13 +357,70 @@ tracks, a 4 s fade in on arrival, a 2.5 s fade out when your Lantern lifts (the 
 over before the teleport's fade), back on a failed lift. Tracks were picked by name and mood,
 not by ear: swap them in `Config.Lobby.Music.Tracks`.
 
+
+## Ship sounds (2026-11-11)
+
+Nova: "noises that one would hear on a boat. people moving around, crew mumbling, give some
+life to it". `ShipAmbience` (client) plays Pro Sound Effects clips from Roblox's audio library
+(licensed for any experience; all real aircraft-carrier and crew recordings), every one a row
+of `Config.Lobby.Ambience`, low in the mix in an `Ambience` SoundGroup that fades in on arrival
+and out with the music when the Lantern lifts. Nothing replicates.
+- **Beds**, one per area, everywhere in it: the hangar plays a carrier hallway loop (movement,
+  distant voices), the flight deck a motor idle with wind and water. Roblox sound passes through
+  walls, so the beds cross-fade over 2.5 s by height (root above Y 36: the deck), and every
+  other sound belongs to an area and is silent outside it.
+- **Spots**, loops at anchors (`FallowLayout.Ambience`, invisible parts FallowBuilder puts in
+  `Fallow.Ambience`): the carrier bridge's radio chatter and voices in the Plot; crew talking
+  low by the desks and aft past the ramp. Each starts at a random point in its clip.
+- **One-shots** every 9 to 22 s from a random anchor of their area: a steel door, lockers,
+  latches, a carrier's interior horn in the hangar; the flight-deck loudspeaker on the island.
+- **Crew footsteps**: the walking crew (`CrewWalk`) step on the deck every 2.4 studs with the
+  match's Footsteps bank (hard surface).
+Picked by description, not by ear: swap a clip in `Config.Lobby.Ambience`.
+
+## Figures and how they move (2026-11-11)
+
+Nova: the crew's walk "looks silly and dont fit the vibe", the soldier's lobby walk is hunched
+and a hand floats off the SMG; "standing up straight with the gun at a resting position in a
+sling across his chest"; the crew's block eyes "dont look right" on the R15 bodies.
+- **Clips**: Roblox's Rthro idle and walk (owner's pick over a Mixamo download), for the crew
+  (`Config.Lobby.Crew.Animations`) and the soldier (`Config.Lobby.Soldier.Animations`, plus the
+  Rthro run above 12 studs/s). Measured on our rig: the stock walk is made for 14 studs/s (the
+  crew played it at 0.45, slow motion), the Rthro walk for 5.7 and the run for 10.5. The crew
+  walk at 5.5 studs/s at rate 0.96; the soldier's rate is kept within 0.6 to 1.6.
+- **The sling**: PikeBody moves the Tool's `RightGrip` weld onto the upper torso
+  (`Soldier.Sling`: grip low right, muzzle down past the left hip, the top toward the face);
+  `SlingHands` (client, every soldier) solves both arms onto the carried gun after the
+  Animator each frame: the right palm on the grip, the left on the handguard part-way to the
+  muzzle, so it fits any gun. Two-bone IK, the method of Tien's revive arms, kept separate.
+- **The crew are Roblox's default R15 avatar** (Nova, second pass: "just make them default r15
+  models and then we can just change clothing/attributes as needed on each"; the crew limb
+  meshes, the face/hair/headgear meshes and the block kit are gone). `NpcBody.Dress` per figure
+  (`DeskService`, `CrewService`, `LanternBird`): body colours (head and arms skin, picked by
+  name; torso the shirt; legs the trousers) and optional catalog ids `shirtId`, `pantsId`,
+  any catalog `items`, applied with `Humanoid:ApplyDescriptionAsync` through `Shared.AvatarLook`
+  (each id's kind is looked up once: layered shirt, pants, jacket; hat, hair, face, front,
+  shoulder accessory; classic 2D shirt or pants). First outfits are the suggestions from the
+  picks page (https://claude.ai/artifact/EmC4Vf5rWuvPCBAZDoGRZ7): coveralls and ear
+  defenders on the deck crew, woodland uniforms and patrol caps on the Army desks, flight
+  suits on the Loadmaster and crew chief, a plate carrier and helmet on the lane sentry.
+- **The soldier's look** (Nova: "not really a fan of how he looks"; "the new look should change
+  in match as well"): `Config.Player.Look`, catalog items on the default R15 body for players
+  and bots in the match (`PlayerSetup`, `BotService`) and on the ship (`PikeBody`): a tactical
+  vest over an olive shirt, combat pants and a black FAST helmet (the AVS plate carrier is
+  out: rigid, it poked through the shirt's vest; shirts layer over pants), a
+  buzzcut (dropped: that catalog piece covers the face). Each player wears their own avatar's
+  head, face and skin tone (`Look.PlayerFace`; bots keep the default face). `Look.Enabled = false`
+  puts the Pike limb body back.
+- **Slow stride, sprint on Shift** (second pass): `Soldier.WalkSpeed` 6.5, `SprintSpeed` 15
+  while `Keys.Sprint` or `Soldier.SprintPad` is held (the Rthro run above 9 studs/s).
 ## Files
 
 | Place | File |
 |---|---|
 | Project | `lobby.project.json` (shares `src/shared`; `src/lobby/shared` as `ReplicatedStorage.Lobby`; maps the match's `src/server/PlayerSetup.luau` into the lobby server and `src/client/HudTheme.luau`, `PaletteController.luau`, `LoadoutMenu.luau` into the lobby client; sets `Lighting.Technology`) |
 | Server | `src/lobby/server/`: `Main.server`, `FallowLayout`, `Build`, `FallowBuilder`, `FallowArt`, `PikeBody`, `NpcBody`, `DeskService`, `ContainmentBoard`, `PlotService`, `LaunchService`, `LanternBird`, `ArmsRack`, `LoadmasterService` |
-| Client | `src/lobby/client/`: `Main.client`, `LaunchUI`, `DeskDialogUI`, `ArmsRackUI`, `LoadmasterUI`, `DeskShop`, `RecordClient`, `LobbyMusic`, `HoldStill`, `RadarSpin`, `LanternSpool` |
+| Client | `src/lobby/client/`: `Main.client`, `LaunchUI`, `DeskDialogUI`, `ArmsRackUI`, `LoadmasterUI`, `DeskShop`, `RecordClient`, `LobbyMusic`, `ShipAmbience`, `SlingHands`, `HoldStill`, `RadarSpin`, `LanternSpool`, `SoldierMoves` |
 | Art | `assets/3d/build/fallow.py` (12 `env_fallow_*` meshes), `lantern.py` (4 `veh_lantern_*`); `MeshAssets` entries; `Config.Lobby.Ship`, `Config.Lobby.Lantern`; attribute `LiftAt`; rule `Rules/ArmsStats` (+ spec), `Config.Lobby.Rack` |
 | Shared | `src/lobby/shared/LobbyDesks`; rules `src/shared/Rules/Manifest`, `Rules/Containment`, `Rules/Handoff` (main's, the teleport data both places share); `Config.Lobby`, `Config.Places`, `Config.Containment`; remotes `Launch` + `Messages.Launch`, `Loadout` (shared with the match); attribute `DeskId` |
 | Match side | `HandoffService` reads the teleport data and `RunManager.receive` applies the signed Loadout (2026-11-09; `JoinData` retired); `LoadoutMenu.mount` options (title, hint, confirm) |
@@ -381,7 +459,12 @@ called **Loadout**. Lines by the lore developer (merits, the record, `LobbyDesks
   dialog at a time).
 - **Loadout**: choice 1 opens the match's `LoadoutMenu` (mapped into the lobby project) with
   the lobby's words (`LoadoutMenu.mount` options: title LOADOUT, SIGN FOR IT): primary,
-  sidearm, grenade, up to four call-ins. The soldier is held still (`HoldStill`, shared with
+  sidearm, grenade, up to four call-ins. **EDIT** (2026-11-11, Nova): a gun that takes
+  attachments has an EDIT button on its row (`LoadoutMenu` option `edit`); it opens `GunsmithUI`:
+  the rack's copy of the gun turning in a viewport, a list per slot (`Config.Attachments.Slots`:
+  the Barrel, NONE or the suppressor), the suppressor shown on the muzzle as it is picked, DONE
+  or BACK. The row then reads e.g. "M16A4 +SUP". What is fitted is signed with the rest (the
+  Loadout's `attachments`, saved, flown to the match). The soldier is held still (`HoldStill`, shared with
   the rack); BACK or Backspace steps out. Prototype: the whole catalog may be signed for.
 - **Server** (`LoadmasterService`): checks the request with the match's rules and catalog
   (`Rules/Loadout`, `ArmsRoom`), keeps one signed Loadout per player, answers on the `Loadout`
@@ -404,9 +487,7 @@ called **Loadout**. Lines by the lore developer (merits, the record, `LobbyDesks
   the match place directly (docs/LOBBY_MATCH_HANDOFF.md > Decisions).
 - **The debrief panel** (`DebriefUI`, docs/LOBBY_MATCH_HANDOFF.md > Nova step 5): the result
   of a run, shown once when the squad flies home (BACK TO THE CARRIER is built match side).
-- **Earning merits** (the record only has the starting grant): how many a run pays is the
-  systems designer's; the match would add them to the record. **Real board numbers** wait for
-  the save service (F9).
+- **Real board numbers** wait for the save service (F9).
 - **Ship and Lantern art: full check** (uploaded and wired 2026-11-09; v2 the same day: the first
   upload showed every mesh mirrored left-right, so the island raft rack hung over the HRD patch
   and one-sided trim sat on the wrong side; `build_assets.MIRROR_X_COLLECTIONS` pre-mirrors
@@ -441,6 +522,6 @@ called **Loadout**. Lines by the lore developer (merits, the record, `LobbyDesks
   (a few burst emitters, inside the STYLES particle budget).
 - **The Plot's launch and recovery radio lines** (LORE.md > The Fallow) are not played yet.
 - **Other teams' callsigns** (not all Pike) are open with the lore developer.
-- **The match's animations in the lobby** (unarmed idle and walk): the Pike body uses Roblox's
-  default R15 set on the ship today.
+- **The lobby soldier, after a look in game**: a relaxed carry (slung or low-ready clip) if
+  the match's rifle idle reads too ready for the ship, a jump clip, the match's footsteps.
 - `Config` split by domain (F10) is not done: the lobby loads the match's tuning too.

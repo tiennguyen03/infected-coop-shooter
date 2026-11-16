@@ -3,7 +3,8 @@
 -- routes on this client only, with the stock R15 walk and idle (their joints swing the
 -- limbs; only the anchored root moves), a pause at each end, and a line over their head when
 -- you come close (LobbyCrew). One BulkMoveTo a frame for all the roots; nothing replicates
--- (the server never moves them again).
+-- (the server never moves them again). Walking, their boots sound on the deck: the match's
+-- Footsteps bank, one step every Config.Lobby.Ambience.CrewStepLength studs.
 
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
@@ -14,10 +15,12 @@ local Workspace = game:GetService("Workspace")
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local LobbyCrew = require(ReplicatedStorage.Lobby.LobbyCrew)
+local SoundBanks = require(ReplicatedStorage.Shared.SoundBanks)
 
 local CrewWalk = {}
 
 local CREW = Config.Lobby.Crew
+local AMB = Config.Lobby.Ambience
 
 type Walker = {
 	model: Model,
@@ -35,6 +38,8 @@ type Walker = {
 	hideAt: number,
 	nextLine: number,
 	lines: { string },
+	steps: Sound,
+	stepDist: number, -- studs walked since the last footstep
 }
 
 local walkers: { Walker } = {}
@@ -52,9 +57,15 @@ local function decode(text: string): { Vector3 }
 	return route
 end
 
+-- The line over a crew member's head. It lives in the PlayerGui, pointed at the head: dressing
+-- the body (NpcBody) replaces the head after CrewWalk first sees it, and a bubble parented to
+-- the old head went with it (every frame near that figure then raised: the lobby's lag,
+-- 2026-11-11). bubbleOf finds the current head again.
 local function bubbleOn(head: BasePart): TextLabel
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "CrewLine"
+	gui.ResetOnSpawn = false
+	gui.Adornee = head
 	gui.Size = UDim2.fromOffset(260, 60)
 	gui.StudsOffset = Vector3.new(0, 2.2, 0)
 	gui.MaxDistance = CREW.BubbleDistance * 2
@@ -76,8 +87,21 @@ local function bubbleOn(head: BasePart): TextLabel
 	pad.PaddingRight = UDim.new(0, 8)
 	pad.Parent = text
 	text.Parent = gui
-	gui.Parent = head
+	gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
 	return text
+end
+
+local function bubbleOf(w: Walker): BillboardGui?
+	local gui = w.bubble.Parent
+	if not (gui and gui:IsA("BillboardGui")) then
+		return nil
+	end
+	local head = gui.Adornee
+	if not (head and head:IsDescendantOf(w.model)) then
+		local fresh = w.model:FindFirstChild("Head")
+		gui.Adornee = if fresh and fresh:IsA("BasePart") then fresh else nil :: any
+	end
+	return gui
 end
 
 local function add(model: Model)
@@ -99,6 +123,8 @@ local function add(model: Model)
 			lines = crew.lines
 		end
 	end
+	local steps = SoundBanks.create("CrewSteps", 6, AMB.CrewStepFar)
+	steps.Parent = root
 	table.insert(walkers, {
 		model = model,
 		root = root,
@@ -115,6 +141,8 @@ local function add(model: Model)
 		hideAt = 0,
 		nextLine = 0,
 		lines = lines,
+		steps = steps,
+		stepDist = random:NextNumber(0, AMB.CrewStepLength),
 	})
 end
 
@@ -187,6 +215,10 @@ local function frame(dt: number)
 	for i = #walkers, 1, -1 do
 		local w = walkers[i]
 		if not w.model.Parent then
+			local gui = w.bubble.Parent
+			if gui then
+				gui:Destroy()
+			end
 			table.remove(walkers, i)
 			continue
 		end
@@ -204,6 +236,13 @@ local function frame(dt: number)
 				walk:Stop(0.25)
 			end
 		end
+		if walking then
+			w.stepDist += CREW.WalkSpeed * dt
+			if w.stepDist >= AMB.CrewStepLength then
+				w.stepDist -= AMB.CrewStepLength
+				SoundBanks.play(w.steps, "Footsteps", "step_hard", AMB.CrewStepVolume)
+			end
+		end
 		-- A line when a soldier walks close, then quiet for a while.
 		if
 			me
@@ -211,15 +250,19 @@ local function frame(dt: number)
 			and now >= w.nextLine
 			and (feet.Position - me).Magnitude <= CREW.BubbleDistance
 		then
-			w.bubble.Text = w.lines[random:NextInteger(1, #w.lines)]
-			local gui = w.bubble.Parent :: BillboardGui
-			gui.Enabled = true
 			w.hideAt = now + CREW.BubbleSeconds
 			w.nextLine = now + CREW.BubbleCooldown
+			local gui = bubbleOf(w)
+			if gui then
+				w.bubble.Text = w.lines[random:NextInteger(1, #w.lines)]
+				gui.Enabled = true
+			end
 		elseif w.hideAt > 0 and now >= w.hideAt then
 			w.hideAt = 0
-			local gui = w.bubble.Parent :: BillboardGui
-			gui.Enabled = false
+			local gui = bubbleOf(w)
+			if gui then
+				gui.Enabled = false
+			end
 		end
 	end
 	if #parts > 0 then

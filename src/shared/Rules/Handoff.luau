@@ -16,7 +16,13 @@ Handoff.OUTCOMES = { win = true, partial = true, loss = true }
 -- The loadout shape (Rules/Loadout) and the two checks the caller passes in, so this rule
 -- needs no other module: `default` is Loadout.default(catalog), `isValid` wraps
 -- Loadout.validate(loadout, catalog).
-export type Loadout = { primary: string, secondary: string, grenade: string, callIns: { string } }
+export type Loadout = {
+	primary: string,
+	secondary: string,
+	grenade: string,
+	callIns: { string },
+	attachments: { [string]: { [string]: string } }?,
+}
 export type LoadoutCheck = { default: Loadout, isValid: (loadout: unknown) -> boolean }
 
 -- What a joining player brings, after checking.
@@ -25,6 +31,9 @@ export type Join = {
 	operation: string,
 	partySize: number, -- players the lobby sent (1 when unknown); late or missing ones are normal
 	slot: number?, -- the squad slot the lobby gave this player (1-4)
+	-- The main objective the squad picked in the lobby (an ObjectiveDefinitions id), when
+	-- the lobby sends one. The match plays it only if that map's pool offers it.
+	objective: string?,
 	loadout: Loadout,
 }
 
@@ -52,6 +61,7 @@ function Handoff.readJoin(data: unknown, userId: number, check: LoadoutCheck): J
 		operation = Handoff.DEFAULT_OPERATION,
 		partySize = 1,
 		slot = nil,
+		objective = nil,
 		loadout = check.default,
 	}
 	if typeof(data) ~= "table" then
@@ -64,6 +74,9 @@ function Handoff.readJoin(data: unknown, userId: number, check: LoadoutCheck): J
 	join.fromLobby = true
 	if typeof(raw.operation) == "string" then
 		join.operation = raw.operation
+	end
+	if typeof(raw.objective) == "string" then
+		join.objective = raw.objective
 	end
 	local party = raw.party :: { [string]: unknown }
 	join.partySize = math.clamp(count(party), 1, 4)
@@ -102,11 +115,13 @@ end
 
 -- The lobby's side of the trip in: the teleport data for the soldiers aboard one Lantern, in
 -- boarding order (slot 1 first), at most four. `loadouts` by UserId is optional: a member
--- without one gets the match's default (the lobby issues none yet).
+-- without one gets the match's default (the lobby issues none yet). `objective` is
+-- optional: the main objective the squad chose (nothing in the lobby sets it yet).
 function Handoff.departure(
 	operation: string,
 	aboard: { number },
-	loadouts: { [number]: Loadout }?
+	loadouts: { [number]: Loadout }?,
+	objective: string?
 ): { [string]: any }
 	local party: { [string]: any } = {}
 	for index, userId in aboard do
@@ -120,7 +135,12 @@ function Handoff.departure(
 		end
 		party[tostring(userId)] = member
 	end
-	return { version = Handoff.VERSION, operation = operation, party = party }
+	return {
+		version = Handoff.VERSION,
+		operation = operation,
+		party = party,
+		objective = objective,
+	}
 end
 
 -- A mission's outcome from how its run ended (RunStates result) and whether the Primary was

@@ -82,10 +82,10 @@ A running playtest never picks up synced code: **Stop → Play** after every cha
 
 ## Controls (current build)
 
-WASD move, Shift sprint, LeftCtrl crouch, C prone, Space vault/climb, Shift+LeftCtrl roll,
+WASD move, Shift sprint, C or LeftCtrl crouch, Z prone, Space vault/climb, Shift+LeftCtrl roll,
 Shift+C slide, hold left-click shoot, R reload, **Q** swap primary/pistol, **G** frag,
-**V** shove, **E** stim, **1-4** call-ins, **5** Resupply flare, **B** Arms Room (loadout),
-hold **F** revive. F1 dev panel; F2 god, F3 clear Infected, F4 ten Walkers, F5 restart.
+**F** shove, **V** stim, **1-4** call-ins, **X** Resupply flare, **B** Arms Room (loadout),
+hold **E** revive. F1 dev panel; F2 god, F3 clear Infected, F4 ten Walkers, F5 restart.
 
 ## Read next (in this order)
 

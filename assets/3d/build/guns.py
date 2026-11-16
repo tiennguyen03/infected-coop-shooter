@@ -28,9 +28,12 @@ MUZZLE = {
     "wpn_m17": (0.0, -0.485, 0.32),
 }
 
-# The iron sights' line, Blender (x, y, z) from the grip: the centre of the rear aperture (the
-# front post's tip sits at the same height). MeshAssets takes it in Roblox order (x, z, y) as
-# `sight`; first person looks through it down the sights.
+# The rear sight, Blender (x, y, z) from the grip: the centre of the rear aperture or the top
+# of the notch (the front post's tip sits at the same height), a scope's eyepiece on its axis.
+# The gun's row takes it in Roblox order (x, z, y) as Config.Weapons.<id>.Sight.Rear, with the
+# front sight's tip (a scope's objective) as Sight.Front; first person puts the eye on the line
+# through the two (Rules/Sight). tests/Sight.spec.luau checks every row against its mesh.
+# A gun changed here: update its row's Sight.
 SIGHT = {
     "wpn_m16": (0.0, 0.04, 0.615),
     "wpn_m17": (0.0, 0.11, 0.45),  # the rear sight's tops, level with the front post's
@@ -38,11 +41,10 @@ SIGHT = {
     "wpn_mp5": (0.0, 0.05, 0.585),
     "wpn_m249": (0.0, 0.03, 0.68),
     "wpn_mossberg": (0.0, 0.1, 0.5),  # along the receiver's top channel to the bead
-    # Scopes: on the tube's axis, 0.85 ahead of the eyepiece, so first person (which puts the
-    # eye Config.Camera.FirstPerson.SightEye behind this point) ends just behind it.
-    "wpn_m110": (0.0, 0.17 - 0.85, 0.64),
-    "wpn_sniper": (0.0, 0.23 - 0.85, 0.62),
-    "wpn_goose": (-0.3, -0.23 - 0.85, 0.54),
+    # Scopes: the eyepiece (look_through_scope's y_eye), on the tube's axis.
+    "wpn_m110": (0.0, 0.17, 0.64),
+    "wpn_sniper": (0.0, 0.23, 0.62),
+    "wpn_goose": (-0.3, -0.23, 0.54),
 }
 
 

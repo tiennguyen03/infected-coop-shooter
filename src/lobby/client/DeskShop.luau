@@ -67,7 +67,7 @@ local function clearRows()
 end
 
 local function paint()
-	merits.Text = `{RecordClient.merits()} MERITS`
+	merits.Text = RecordClient.balanceText()
 	clearRows()
 	for index, id in shown do
 		local def = CallInDefinitions.get(id)

@@ -37,10 +37,24 @@ mine, sentry and wire caps, every `PlayerRemoving` handler, kill credit via
   or extraction completes; start and restart use the ready-up (decision 4) and reset every
   player. Run-end screens follow `RunState` / `RunResult`, not respawn.
 - **Hold:** any living member (player or bot) in the zone runs it; the HUD shows `n / living`.
+- **Objectives:** drawn once per run for the whole squad (`ObjectiveService`; state per run,
+  never per player). A living member (player or bot) reaching one starts or reveals it; a
+  hold-F prompt takes any living player; only a player carries an item (`Carrying` on that
+  player: no sprint), and it drops where they went down for anyone to take. Marked Infected
+  scale with living players, not bots. The board goes to every client and to one that loads late.
 - **Extraction:** runs only while every living player is on the pad (downed players and bots
   do not hold it up); otherwise "WAITING FOR SQUAD (n / m)". One helper, `Squad.zoneCount`.
+- **Crate cards:** each player has their own offer on a crate and picks once, from a panel
+  they open at the crate (`Requisition.Pick`); the game does not pause and the panel closes
+  when they walk off or go down. Bots take a supply card by need, no panel. The Main
+  objective's squad restock reaches every living member.
 - **Hits:** `DamageDealt` goes to the attacking player only; a bot's hit to nobody; kills to
   everyone.
+- **Bots:** each follows the nearest living player on foot (a path when the straight line is
+  blocked); a teleport is the last resort and lands where no living player faces. Their
+  stims, frags and fire missions run through the players' server functions with no owner
+  (`KitService.dose` / `throwFrag`, `CallInService.fireMissionFor`), and are never thrown
+  with any squad member, player or bot, inside the blast.
 - **Clock:** `DifficultyService.getElapsed` adds time only while the field is not paused
   (the HUD timer stays wall-clock). `GamePaused` is only the run-end freeze.
 - **Spawns:** the Infected spawn around living players only; four spawn pads, one per member.
@@ -65,9 +79,10 @@ Planned shape | Fix when`.
 3. **Death: downed, revivable, respawn at the start of the next mission.** At 0 HP a member
    is *Downed*: bleed-out timer, the Infected ignore them and they take no damage (a rescue
    target, not a snack); the pressure is the timer and the teammate having to stop shooting.
-   A teammate holds F next to them to revive (bots revive on their own). Timer out = *Dead*,
+   A teammate holds E next to them to revive (bots revive on their own). Timer out = *Dead*,
    spectate; the dead respawn when the next mission starts. Until missions chain, dead =
-   spectate to run end. Numbers in `Config.Downed` (max revives per run included).
+   spectate to run end. Numbers in `Config.Downed` (max revives per mission included: `Squad` resets the count on
+   the Lifecycle `onMissionStart` hook as well as on a fresh run).
 4. **Run ownership: anyone can request, short ready-up timer.** The first request opens a
    countdown; the run starts when it expires or everyone readies. Restart works the same way.
 5. **Items are per owner.** Inventories stay per player. A world pickup that a player's own
@@ -99,9 +114,9 @@ Planned shape | Fix when`.
      spot launches: `docs/sprints/LOBBY_V1_FALLOW.md`); it is the start place and sends
      `Rules/Handoff` (`docs/LOBBY_MATCH_HANDOFF.md`).
    Server flow and scaling: [ARCHITECTURE.md](ARCHITECTURE.md) > Sessions.
-8. **Keys (2026-11-07, updated 2026-11-08).** F = interact (revive, pickups, prompts); 1-4
-   call-ins, 5 the Resupply flare. Movement chords are undecided; do not change them without
-   the owner ([OWNER.md](OWNER.md)).
+8. **Keys (2026-11-11).** E = interact (revive, pickups, prompts); the full table is in
+   [OWNER.md](OWNER.md) > Rules already decided, the code in `Config.Keys`. A new key goes
+   there, never into a controller (`tests/SourceReferences.spec.luau` fails otherwise).
 
 Verification for co-op work: the `multiplayer_playtest` Studio MCP tool (2+ clients);
 single-player must keep working throughout.

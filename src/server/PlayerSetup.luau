@@ -9,7 +9,9 @@ local StarterPlayer = game:GetService("StarterPlayer")
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
+local AvatarLook = require(ReplicatedStorage.Shared.AvatarLook)
 local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
+local Loadout = require(ReplicatedStorage.Shared.Rules.Loadout)
 
 local PlayerSetup = {}
 
@@ -105,9 +107,21 @@ function PlayerSetup.attachRifle(character: Model, humanoid: Humanoid)
 			Color3.fromRGB(28, 28, 28)
 		)
 	end
+	local player = Players:GetPlayerFromCharacter(character)
+	-- What this soldier has on the barrel of gun `id` (the Loadmaster's EDIT; bots: nothing).
+	local function barrelOf(id: string): string?
+		local fitted = player and player:GetAttribute(Attributes.Fitted)
+		if typeof(fitted) ~= "string" then
+			return nil
+		end
+		return Loadout.fitted(Loadout.decodeFitted(fitted), id, "Barrel")
+	end
 	-- Swaps the visible gun for `model`'s mesh, the Muzzle at its barrel tip (WeaponController
-	-- fires from it). Keeps whatever is there when the mesh never loads.
-	local function dress(wanted: string)
+	-- fires from it), a suppressor on the barrel when one is fitted (the Muzzle at its end).
+	-- Keeps whatever is there when the mesh never loads.
+	local function dress(weaponId: string)
+		local weapon = WeaponDefinitions.get(weaponId)
+		local wanted = weapon.Model
 		-- A gun whose mesh is not uploaded yet wears the rifle.
 		local model = if MeshAssets.isUploaded(wanted) then wanted else "wpn_rifle"
 		local body = MeshAssets.waitFor(model, 5)
@@ -130,31 +144,44 @@ function PlayerSetup.attachRifle(character: Model, humanoid: Humanoid)
 		body.Parent = tool
 		local size = MeshAssets.getSize(model) or Vector3.zero
 		local muzzleAt = MeshAssets.getMuzzle(model) or Vector3.new(0, 0, -size.Z)
+		local spec = weapon.Suppressor
+		local option = Config.Attachments.Options[barrelOf(weapon.Id) or ""]
+		if spec and option and option.Slot == "Barrel" then
+			-- A cylinder runs along its X: turned to lie along the barrel (-Z), out from the tip.
+			local can = riflePart(
+				"Suppressor",
+				Vector3.new(spec.Length, spec.Width, spec.Width),
+				CFrame.new(muzzleAt + Vector3.new(0, 0, -spec.Length / 2))
+					* CFrame.Angles(0, math.pi / 2, 0),
+				option.Color,
+				Enum.Material.Metal
+			)
+			local cylinder = can :: Part
+			cylinder.Shape = Enum.PartType.Cylinder
+			muzzleAt += Vector3.new(0, 0, -spec.Length)
+		end
 		local muzzle =
 			riflePart("Muzzle", Vector3.new(0.2, 0.2, 0.14), CFrame.new(muzzleAt), Color3.new())
 		muzzle.Transparency = 1
-		-- The irons' sight line, for first person down the sights (FirstPersonView).
-		local sightAt = MeshAssets.getSight(model)
-		if sightAt then
-			local sight =
-				riflePart("Sight", Vector3.new(0.05, 0.05, 0.05), CFrame.new(sightAt), Color3.new())
-			sight.Transparency = 1
-		end
 	end
 	placeholder()
-	local player = Players:GetPlayerFromCharacter(character)
 	local function current(): string
 		local id = player and player:GetAttribute(Attributes.Weapon)
-		return WeaponDefinitions.get(if typeof(id) == "string" then id else nil).Model
+		return WeaponDefinitions.get(if typeof(id) == "string" then id else nil).Id
 	end
 	task.spawn(dress, current())
 	if player then
-		-- A swap (Q), the Arms Room or the dev panel changes the gun in hand: change the mesh.
+		-- A swap (Q), the Arms Room or the dev panel changes the gun in hand, the Loadmaster's
+		-- EDIT what is on it: dress it again.
 		local changed = player:GetAttributeChangedSignal(Attributes.Weapon):Connect(function()
+			task.spawn(dress, current())
+		end)
+		local refitted = player:GetAttributeChangedSignal(Attributes.Fitted):Connect(function()
 			task.spawn(dress, current())
 		end)
 		tool.Destroying:Once(function()
 			changed:Disconnect()
+			refitted:Disconnect()
 		end)
 	end
 
@@ -175,6 +202,30 @@ function PlayerSetup.attachRifle(character: Model, humanoid: Humanoid)
 	humanoid.Died:Connect(function()
 		tool:Destroy()
 	end)
+end
+
+-- The soldier's look as catalog items (Config.Player.Look), for AvatarLook; `player` (nil for a
+-- bot) wears their own face when Look.PlayerFace is on.
+function PlayerSetup.look(player: Player?): AvatarLook.Look
+	local look = Config.Player.Look
+	return {
+		items = look.Items,
+		skin = look.Skin,
+		shirt = look.Shirt,
+		trousers = look.Trousers,
+		faceOf = if player and look.PlayerFace then player.UserId else nil,
+	}
+end
+
+-- No floating health bar or name over a squad body (players and bots): squadmates' status
+-- is the squad panel (Config.SquadPanel, whose switches bring Roblox's own back).
+function PlayerSetup.hideOverhead(humanoid: Humanoid)
+	if not Config.SquadPanel.OverheadBars then
+		humanoid.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOff
+	end
+	if not Config.SquadPanel.OverheadNames then
+		humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+	end
 end
 
 -- The playable class body (assets/3d pc_<class>_*). One class for now.
@@ -246,6 +297,7 @@ local function onCharacterAdded(character: Model)
 	humanoid.MaxHealth = Config.Player.MaxHealth
 	humanoid.Health = Config.Player.MaxHealth
 	humanoid.WalkSpeed = Config.Player.WalkSpeed
+	PlayerSetup.hideOverhead(humanoid)
 	-- No jump: cover is vaulted or climbed instead (client MovementController).
 	humanoid.UseJumpPower = true
 	humanoid.JumpPower = 0
@@ -254,10 +306,13 @@ local function onCharacterAdded(character: Model)
 
 	character:WaitForChild("HumanoidRootPart")
 	character:WaitForChild("RightHand")
-	-- Swap the stock R15 limbs for the class body before the rifle welds to the hand.
+	-- The soldier's look: catalog items on the default R15 body (Config.Player.Look); else
+	-- swap the stock R15 limbs for the class body before the rifle welds to the hand.
 	-- Templates build asynchronously at boot; a character that beats them keeps the stock body.
 	-- A skinned StarterCharacter already is the body: only its gear goes on.
-	if character:FindFirstChild(SKIN_PART) then
+	if Config.Player.Look.Enabled then
+		AvatarLook.apply(humanoid, PlayerSetup.look(Players:GetPlayerFromCharacter(character)))
+	elseif character:FindFirstChild(SKIN_PART) then
 		attachGear(character)
 	elseif MeshAssets.waitFor(PLAYER_BODY .. "head", 10) then
 		MeshAssets.dressModel(character, PLAYER_BODY)
@@ -276,6 +331,9 @@ function PlayerSetup.init()
 	-- Characters spawn as bare R15 rigs (no avatar clothing/accessories) so the class body
 	-- is the whole look and every player is the same silhouette.
 	StarterPlayer.LoadCharacterAppearance = false
+	if Config.Player.Look.Enabled then
+		AvatarLook.prefetch(Config.Player.Look.Items)
+	end
 	if Config.Player.SkinnedBody then
 		installSkinnedBody() -- yields on the asset fetch
 	end

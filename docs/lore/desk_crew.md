@@ -29,12 +29,12 @@ He talks in short, flat sentences, and everything is a signature, a count or a p
 is the price."). He never raises his voice and never jokes about the dead. The one detail
 for art: reading glasses on a cord and a clipboard he never puts down.
 
-## The Loadmaster (Lantern's crew chief)
+## The Loadmaster (the helicopter crew chief)
 
 Early thirties, male. He rides the door on every flight. Quick and loud from years of
 shouting over rotors; impatient, not unkind. He thinks in minutes and kit and talks in
 bursts. He says "my bird" and "my door" and calls the squad "Pike". He keeps the tally on the
-door frame ([LORE.md > Lantern](../LORE.md#lantern)) and is the one person who talks about it
+door frame ([LORE.md > The helicopter](../LORE.md#the-helicopter)) and is the one person who talks about it
 plainly. The one detail for art: a flight helmet pushed up, the monkey-strap harness still on
 over his working dress.
 
@@ -76,8 +76,8 @@ Simple low-poly accessories that make each body read as a person. Pike grey is o
 |---|---|---|
 | Pike (every player and bot) | Pike grey, black carrier, seat square | the Carrier's **screening band** on the left wrist (white paper, one yellow stripe; Delta's was white with red); a chemlight taped to the left shoulder strap; the tourniquet on the carrier (already canon) |
 | The Quartermaster | Army working dress | reading glasses on a cord; the clipboard; the cage keys on a ring at his belt |
-| The Loadmaster | Lantern aircrew flight suit | flight helmet pushed up on his head, visor up; monkey-strap harness on over the suit, tether hanging; a grease pencil in the sleeve pocket (the tally) |
-| Lantern crew chief (on each bird) | aircrew flight suit | helmet on, visor down; tether clipped to the kick rail; flight gloves |
+| The Loadmaster | aircrew flight suit | flight helmet pushed up on his head, visor up; monkey-strap harness on over the suit, tether hanging; a grease pencil in the sleeve pocket (the tally) |
+| Helicopter crew chief (on each bird) | aircrew flight suit | helmet on, visor down; tether clipped to the kick rail; flight gloves |
 | Fires | Army working dress | headset round her neck, its cord to the radio on her desk; a small notebook in the sleeve pocket |
 | The Engineers | Army working dress | work gloves tucked in his belt; wire cutters on the belt; a short coil of wire over one shoulder |
 | Control's watch officer | Army working dress | headset, one earcup on, one pushed back; a steel mug (the coffee is cold); rank on the chest tab |

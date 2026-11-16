@@ -5,6 +5,7 @@
 //   node assets/icons/build/icons.js            -> writes all 24 svg + png
 //   node assets/icons/build/icons.js sheet      -> also writes build/contact_sheet.png
 //   node assets/icons/build/icons.js <id> ...   -> only those ids
+//   node assets/icons/build/icons.js merits tabs glyphs -> the HUD glyphs + build/glyph_preview.png
 //
 // PNG rendering needs @resvg/resvg-js; resolved from ~/svg2png-tmp or the local node path.
 
@@ -745,9 +746,145 @@ ICONS.cheap_drone_parts = (acc) => {
 	].join("\n");
 };
 
+// ---------------------------------------------------------------- glyphs
+// Small marks that sit beside a number on the HUD (the wallet readout: merits, tabs), drawn
+// at 16-20 px. Unlike the item icons they have no plate and no ground shadow: a transparent
+// canvas, one bold silhouette filling it, a dark backing so they hold over a bright world,
+// fixed materials (no accent). docs/STYLES.md > Icons > Glyphs.
+const GLYPHS = {};
+
+// The dark backing: the silhouette again, grown by a round stroke.
+const backing = (arr) =>
+	poly(arr, P.shadow, `stroke="${P.shadow}" stroke-width="20" stroke-linejoin="round" opacity="0.8"`);
+
+// Merits — a medal: a striped service ribbon (brass, red centre) folding to a point, a
+// faceted brass star hanging from it. Warm, upright, pointed.
+GLYPHS.merits = () => {
+	const cx = 128;
+	const cy = 176;
+	const outer = 72;
+	const inner = 31;
+	const star = [];
+	for (let i = 0; i < 10; i++) {
+		const a = -Math.PI / 2 + (i * Math.PI) / 5;
+		const r = i % 2 === 0 ? outer : inner;
+		star.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]);
+	}
+	const facets = [];
+	for (let i = 0; i < 10; i += 2) {
+		const tip = star[i];
+		const before = star[(i + 9) % 10];
+		const after = star[(i + 1) % 10];
+		facets.push(poly([[cx, cy], before, tip], P.brass.l));
+		facets.push(poly([[cx, cy], tip, after], P.brass.d));
+	}
+	const ribbon = [
+		[72, 12],
+		[184, 12],
+		[184, 92],
+		[128, 128],
+		[72, 92],
+	];
+	return [
+		backing(ribbon),
+		backing(star),
+		rect(72, 12, 38, 80, P.brass.l),
+		rect(110, 12, 36, 80, P.red.m),
+		rect(146, 12, 38, 80, P.brass.m),
+		poly([[72, 92], [110, 92], [128, 128]], P.brass.m),
+		poly([[110, 92], [146, 92], [128, 128]], P.red.d),
+		poly([[146, 92], [184, 92], [128, 128]], P.brass.d),
+		rect(72, 12, 112, 10, P.white.m, 'opacity="0.35"'),
+		...facets,
+	].join("\n");
+};
+
+// Tabs — a stamped steel tag on its ball chain: a chamfered slab, tilted, a punched hole,
+// three stamped bars. Cool, wide, flat.
+GLYPHS.tabs = () => {
+	const w = 196;
+	const h = 136;
+	const c = 26; // chamfer
+	const x0 = -w / 2;
+	const y0 = -h / 2;
+	const slab = [
+		[x0 + c, y0],
+		[x0 + w - c, y0],
+		[x0 + w, y0 + c],
+		[x0 + w, y0 + h - c],
+		[x0 + w - c, y0 + h],
+		[x0 + c, y0 + h],
+		[x0, y0 + h - c],
+		[x0, y0 + c],
+	];
+	const tag = g(
+		[
+			backing(slab),
+			poly(slab, P.gun.l),
+			// the lit upper facet and the shaded lower edge
+			poly([[x0 + c, y0], [x0 + w - c, y0], [x0 + w, y0 + c], [x0 + w, y0 + 38], [x0, y0 + 38], [x0, y0 + c]], P.white.m),
+			poly([[x0, y0 + h - c], [x0 + w, y0 + h - c], [x0 + w - c, y0 + h], [x0 + c, y0 + h]], P.gun.m),
+			// the punched hole
+			circle(x0 + 34, 0, 15, P.shadow),
+			// stamped lines
+			rect(x0 + 62, -22, 112, 16, P.gun.d),
+			rect(x0 + 62, 6, 112, 16, P.gun.d),
+			rect(x0 + 62, 34, 68, 16, P.gun.d),
+		],
+		'transform="translate(130 146) rotate(-18)"'
+	);
+	const chain = [
+		[40, 104],
+		[30, 72],
+		[40, 40],
+		[66, 20],
+	];
+	return [
+		...chain.map(([x, y]) => circle(x, y, 17, P.shadow, 'opacity="0.8"')),
+		...chain.map(([x, y], i) => circle(x, y, 10, i % 2 ? P.gun.l : P.white.m)),
+		tag,
+	].join("\n");
+};
+
+function wrapGlyph(inner) {
+	return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZE} ${SIZE}">\n${inner}\n</svg>\n`;
+}
+
+// build/glyph_preview.png: every glyph at 160, 40, 20 and 16 px beside a number-sized bar, on
+// a dark and a bright ground (the Carrier's hangar and a lit sky).
+function glyphPreview() {
+	const ids = Object.keys(GLYPHS);
+	const sizes = [160, 40, 20, 16];
+	const rowH = 190;
+	const width = 20 + ids.length * 330;
+	const grounds = ["#16181c", "#8f9aa6"];
+	const parts = [];
+	grounds.forEach((ground, gi) => {
+		const top = gi * rowH;
+		parts.push(rect(0, top, width, rowH, ground));
+		ids.forEach((id, i) => {
+			let x = 20 + i * 330;
+			for (const size of sizes) {
+				parts.push(
+					`<g transform="translate(${x} ${top + (rowH - size) / 2}) scale(${size / SIZE})">${GLYPHS[id]()}</g>`
+				);
+				x += size + 18;
+			}
+		});
+	});
+	const sheet = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${grounds.length * rowH}">${parts.join("\n")}</svg>`;
+	const png = new Resvg(sheet, { fitTo: { mode: "width", value: width * 2 } }).render().asPng();
+	fs.writeFileSync(path.join(__dirname, "glyph_preview.png"), png);
+	console.log("glyph preview written");
+}
+
 // ---------------------------------------------------------------- item accent colors (from ItemDefinitions.luau)
+// ItemDefinitions went with the item economy: without it the item icons cannot be
+// re-rendered (their svgs stay as committed) and only the glyphs are.
 function readAccents() {
-	const src = fs.readFileSync(path.join(__dirname, "..", "..", "..", "src", "shared", "ItemDefinitions.luau"), "utf8");
+	const file = path.join(__dirname, "..", "..", "..", "src", "shared", "ItemDefinitions.luau");
+	if (!fs.existsSync(file)) return {};
+	const src = fs.readFileSync(file, "utf8");
 	const out = {};
 	const re = /Id = "([a-z_]+)"[\s\S]*?Color = Color3\.fromRGB\((\d+),\s*(\d+),\s*(\d+)\)/g;
 	let m;
@@ -759,14 +896,19 @@ function readAccents() {
 function main() {
 	const args = process.argv.slice(2);
 	const wantSheet = args.includes("sheet");
-	const ids = args.filter((a) => a !== "sheet");
+	const wantPreview = args.includes("glyphs");
+	const ids = args.filter((a) => a !== "sheet" && a !== "glyphs");
 	const accents = readAccents();
-	const todo = ids.length ? ids : Object.keys(ICONS);
+	const todo = ids.length ? ids : [...Object.keys(ICONS), ...Object.keys(GLYPHS)];
 	const rendered = [];
 	for (const id of todo) {
-		if (!ICONS[id]) throw new Error("unknown icon " + id);
-		if (!accents[id]) throw new Error("no Color in ItemDefinitions for " + id);
-		const svg = wrap(ICONS[id](tone(accents[id])));
+		if (!ICONS[id] && !GLYPHS[id]) throw new Error("unknown icon " + id);
+		if (ICONS[id] && !accents[id]) {
+			if (ids.length) throw new Error("no Color in ItemDefinitions for " + id);
+			console.log("skip " + id + " (no Color: ItemDefinitions is gone)");
+			continue;
+		}
+		const svg = GLYPHS[id] ? wrapGlyph(GLYPHS[id]()) : wrap(ICONS[id](tone(accents[id])));
 		fs.writeFileSync(path.join(OUT, id + ".svg"), svg);
 		if (Resvg) {
 			const png = new Resvg(svg, { fitTo: { mode: "width", value: SIZE } }).render().asPng();
@@ -796,6 +938,7 @@ function main() {
 		fs.writeFileSync(path.join(__dirname, "contact_sheet.png"), png);
 		console.log("sheet written");
 	}
+	if (wantPreview && Resvg) glyphPreview();
 	console.log(`DONE ${rendered.length} icons${Resvg ? "" : " (svg only, resvg missing)"}`);
 }
 

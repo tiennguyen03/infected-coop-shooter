@@ -26,4 +26,16 @@ function PauseService.isPaused(): boolean
 	return workspace:GetAttribute(Attributes.GamePaused) == true
 end
 
+-- Yields for `seconds` of unpaused time (a shell in the air, a case on its chute hold
+-- while the field is frozen).
+function PauseService.wait(seconds: number)
+	local remaining = seconds
+	while remaining > 0 do
+		local dt = task.wait()
+		if not PauseService.isPaused() then
+			remaining -= dt
+		end
+	end
+end
+
 return PauseService

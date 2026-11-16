@@ -7,7 +7,7 @@
 -- MCP runtime eval, e.g.:
 --   require(game.ServerScriptService.Server.DevTestService).spawnEnemy("Brute", 1)
 -- Loadout rework: SetCallIn / FireCallIn / GiveUpgrade / ClearUpgrades / RefillAmmo /
--- RestockCallIns / SetWeapon / DropUpgradeCrate / DropSupplyCrate drive LoadoutService,
+-- RestockCallIns / SetWeapon / DropUpgradeCrate / DropSupplyCrate / DropObjectiveCrate drive LoadoutService,
 -- CallInService and RequisitionService directly.
 
 local CollectionService = game:GetService("CollectionService")
@@ -159,7 +159,7 @@ function DevTestService.restartRun(player: Player)
 end
 
 -- Drops a crate of `kind` in front of the player (quiet: no wave).
-function DevTestService.dropCrate(player: Player, kind: "supply" | "upgrade")
+function DevTestService.dropCrate(player: Player, kind: RequisitionService.CrateKind)
 	local character = player.Character
 	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
 	if not root then
@@ -371,6 +371,9 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 	DropUpgradeCrate = function(player)
 		DevTestService.dropCrate(player, "upgrade")
 	end,
+	DropObjectiveCrate = function(player)
+		DevTestService.dropCrate(player, "objective")
+	end,
 	DropSupplyCrate = function(player)
 		DevTestService.dropCrate(player, "supply")
 	end,
@@ -489,6 +492,31 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 	ActivateObjective = function()
 		require(script.Parent.ObjectiveService).activateNow()
 		print("[DevTest] ActivateObjective")
+	end,
+	-- The objective pools (ObjectiveService.redraw): pick the main objective, or one side
+	-- objective, by its ObjectiveDefinitions id and optionally its site (1, 2, ...); draw
+	-- everything again at random; print the ids this map offers. Works any time before
+	-- the main objective is done; side objectives are all shown at once after any of them.
+	SetMainObjective = function(_player, id, site)
+		local ObjectiveService = require(script.Parent.ObjectiveService)
+		print(
+			"[DevTest] SetMainObjective ->",
+			ObjectiveService.redraw(tostring(id), nil, tonumber(site))
+		)
+	end,
+	SetSideObjective = function(_player, id, site)
+		local ObjectiveService = require(script.Parent.ObjectiveService)
+		print(
+			"[DevTest] SetSideObjective ->",
+			ObjectiveService.redraw(nil, tostring(id), tonumber(site))
+		)
+	end,
+	RedrawObjectives = function()
+		local ObjectiveService = require(script.Parent.ObjectiveService)
+		print("[DevTest] RedrawObjectives ->", ObjectiveService.redraw(nil, nil, nil))
+	end,
+	ListObjectives = function()
+		print("[DevTest] ListObjectives ->", require(script.Parent.ObjectiveService).list())
 	end,
 	ForceWipe = function()
 		require(script.Parent.RunManager).endRun("Wiped")

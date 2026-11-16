@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+<polygon points="72,12 184,12 184,92 128,128 72,92" fill="#07090b" stroke="#07090b" stroke-width="20" stroke-linejoin="round" opacity="0.8"/>
+<polygon points="128,104 146.2,150.9 196.5,153.8 157.5,185.6 170.3,234.2 128,207 85.7,234.2 98.5,185.6 59.5,153.8 109.8,150.9" fill="#07090b" stroke="#07090b" stroke-width="20" stroke-linejoin="round" opacity="0.8"/>
+<rect x="72" y="12" width="38" height="80" fill="#e6bd60" />
+<rect x="110" y="12" width="36" height="80" fill="#b93434" />
+<rect x="146" y="12" width="38" height="80" fill="#bf9136" />
+<polygon points="72,92 110,92 128,128" fill="#bf9136" />
+<polygon points="110,92 146,92 128,128" fill="#7e2020" />
+<polygon points="146,92 184,92 128,128" fill="#845f20" />
+<rect x="72" y="12" width="112" height="10" fill="#c9ced4" opacity="0.35"/>
+<polygon points="128,176 109.8,150.9 128,104" fill="#e6bd60" />
+<polygon points="128,176 128,104 146.2,150.9" fill="#845f20" />
+<polygon points="128,176 146.2,150.9 196.5,153.8" fill="#e6bd60" />
+<polygon points="128,176 196.5,153.8 157.5,185.6" fill="#845f20" />
+<polygon points="128,176 157.5,185.6 170.3,234.2" fill="#e6bd60" />
+<polygon points="128,176 170.3,234.2 128,207" fill="#845f20" />
+<polygon points="128,176 128,207 85.7,234.2" fill="#e6bd60" />
+<polygon points="128,176 85.7,234.2 98.5,185.6" fill="#845f20" />
+<polygon points="128,176 98.5,185.6 59.5,153.8" fill="#e6bd60" />
+<polygon points="128,176 59.5,153.8 109.8,150.9" fill="#845f20" />
+</svg>

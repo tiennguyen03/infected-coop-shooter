@@ -33,4 +33,30 @@ return {
 		expect.equal(Spread.allowed(6, 5, 0.5), false, "outside")
 		expect.equal(Spread.allowed(0.2, 0, 0.5), true, "no cone, tiny wobble")
 	end,
+	["the first shot has no bloom and leaves one shot's worth"] = function()
+		local carried, after = Spread.bloom(0, 3, 0, 6, 0.5)
+		expect.equal(carried, 0, "carried")
+		expect.equal(after, 0.5, "after")
+	end,
+	["held fire stacks bloom up to the gun's max"] = function()
+		local carried, after = Spread.bloom(1, 3, -0.1, 6, 0.5)
+		expect.equal(carried, 1, "no recovery inside the delay")
+		expect.equal(after, 1.5, "one more shot")
+		carried, after = Spread.bloom(2.8, 3, 0, 6, 0.5)
+		expect.equal(carried, 2.8, "carried")
+		expect.equal(after, 3, "capped")
+	end,
+	["a pause past the delay recovers bloom, never below none"] = function()
+		local carried, after = Spread.bloom(2, 3, 0.25, 6, 0.5)
+		expect.equal(near(carried, 0.5), true, "a quarter second at 6 a second")
+		expect.equal(near(after, 1), true, "after")
+		carried, after = Spread.bloom(2, 3, 10, 6, 0.5)
+		expect.equal(carried, 0, "fully recovered")
+		expect.equal(after, 0.5, "after")
+	end,
+	["a swap to a tighter gun caps the carried bloom at its max"] = function()
+		local carried, after = Spread.bloom(3, 1, 0, 6, 0.5)
+		expect.equal(carried, 1, "carried")
+		expect.equal(after, 1, "after")
+	end,
 }

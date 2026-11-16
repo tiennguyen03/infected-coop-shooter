@@ -22,6 +22,15 @@ function ArmsRoom.catalog(): Loadout.Catalog
 			table.insert(callIns, id)
 		end
 	end
+	local attachments: { [string]: { [string]: { string } } } = {}
+	for _, list in { WeaponDefinitions.PRIMARIES, WeaponDefinitions.SECONDARIES } do
+		for _, id in list do
+			local options = WeaponDefinitions.options(id)
+			if next(options) then
+				attachments[id] = options
+			end
+		end
+	end
 	return {
 		primaries = table.clone(WeaponDefinitions.PRIMARIES),
 		secondaries = table.clone(WeaponDefinitions.SECONDARIES),
@@ -29,6 +38,7 @@ function ArmsRoom.catalog(): Loadout.Catalog
 		callIns = callIns,
 		preferredCallIns = ArmsRoom.PREFERRED_CALL_INS,
 		slots = Config.CallIns.Slots,
+		attachments = attachments,
 	}
 end
 

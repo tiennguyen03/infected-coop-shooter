@@ -13,6 +13,13 @@ One Blender project holds every asset: **`arena_survivor.blend`**. Collections i
 | `Infected` | enemy limb sets `inf_<walker|runner|brute|hocker>_<limb>` (one builder per form in `INFECTED_TYPES`, from `docs/CHARACTERS.md`), the Warden (`build/warden.py`) |
 | `_Reference` | a 5-stud human block for scale; never exported |
 
+**The remade Infected** (in game since 2026-11-11): `build/infected_v2.py` holds the Walker,
+Runner, Brute and Hocker the game wears (`inf_v2_<form>_<limb>`, 45 meshes,
+[STYLES.md](../../docs/STYLES.md) §7 "Infected v2"), built with everything else. The first
+bodies (`inf_<form>_<limb>`) stay built and uploaded: `Config.Enemies.BodyVersion = 1` puts
+them back. `blender --background --python assets/3d/build/infected_v2.py` renders the two
+side by side into `build/previews/infected_v2_<form>.png` and `lineup_infected_v2.png`.
+
 The `.blend` is **generated** by `build/build_assets.py`. Every asset is described in code
 (boxes, cylinders, icospheres painted with palette swatches), so edits made by hand in Blender
 are overwritten by the next build. **One file per singular asset** (owner): a boss or a body
@@ -23,9 +30,10 @@ new bodies in live Blender first (below) so the owner can direct the shape befor
 ported into a build file.
 
 **Roblox mirrors an imported mesh in X** about its bounds centre (found 2026-11-09 on the
-Fallow): the `Fallow` and `Vehicles` collections export pre-mirrored (`MIRROR_X_COLLECTIONS`;
-previews and offsets unchanged). An asymmetric mesh in another collection needs the same
-before upload. The lobby's art: `build/fallow.py` (12 `env_fallow_*`, the ship) and
+Fallow): the `Fallow`, `Vehicles` and `Deployables` collections export pre-mirrored (`MIRROR_X_COLLECTIONS`;
+previews and offsets unchanged), and so does every `inf_v2_*` mesh (`MIRROR_X_PREFIXES`). An
+asymmetric mesh in another collection needs the same before upload; the first Infected
+bodies and the Warden went up unmirrored. The lobby's art: `build/fallow.py` (12 `env_fallow_*`, the ship) and
 `build/lantern.py` (4 `veh_lantern_*`, the lift bird); ids in `ASSET_IDS.md`, budgets in
 `docs/STYLES.md`.
 
@@ -81,6 +89,7 @@ and the lineups with only those assets; run a full build afterwards.
 | env_bus | 712 | bottom | 42-stud transit bus, 12.5 tall (Hocker-proof cover) |
 | env_city_* (+ `_lit`) | 960-1,870 a tower | bottom (`_lit`: the tower origin) | the skyline (`city.py`, [STYLES.md](../../docs/STYLES.md) §7) |
 | veh_lantern_body / _trim / _rotor / _tail_rotor | 240 / 1,436 / 172 / 64 | helo frame (body, trim: origin at the mast foot on the deck); hubs (rotors) | Lantern, the lift bird (`build/lantern.py`, collection `Vehicles`): shell, trim (interior, door, tally, tide line), four-blade main rotor, tail rotor. Uploaded 2026-11-09 (ids in `ASSET_IDS.md`) |
+| dep_doorman_base / _cradle / _gun | 860 / 304 / 1,136 | ground under the traverse axis (base); top of the tripod head (cradle, yaws); the trunnion (gun, pitches) | the Doorman sentry gun (`build/doorman.py`, collection `Deployables`, exported pre-mirrored): tripod with spade feet, sandbags, battery box; yoke; belt-fed gun with its ammo can and sensor head. Pivots and muzzle are constants in the file and on `Config.CallIns.Doorman`. Previews `doorman_v2_*.png`. Uploaded 2026-11-11 (ids in `ASSET_IDS.md`) |
 | env_fallow_* (12) | 3,302 unique; ~8,000 placed | ship (no shift: `offset` is the position on the ship) | the Fallow, the lobby ship (`build/fallow.py`, collection `Fallow`): hull shells bow / mid_port / mid_stbd / stern + their trims, island + trim, radar (pivot on its axis), catwalk / catwalk_rafts bays (pivot at the hull face, instanced 18x). Uploaded 2026-11-09 (ids in `ASSET_IDS.md`) |
 | prop_cot | 108 | bottom | field cot 6.5 x 2.1 x 3 |
 | prop_generator | 172 | bottom | towed generator 8 x 5.2 x 4.5 |
@@ -99,6 +108,7 @@ and the lineups with only those assets; run a full build afterwards.
 | prop_chainlink_panel | 268 | bottom | fence panel 12 x 7 x 0.3 (see-through) |
 | prop_concertina | 288 | bottom | razor wire coil 12.1 x 2.9 x 2.9 |
 | inf_walker_* / inf_runner_* / inf_brute_* / inf_hocker_* | per body in [STYLES.md](../../docs/STYLES.md) §7 (caps `BODY_TRI_CAP`) | center | the 15 R15 limb MeshParts of each Infected (`MeshAssets.dressInfected`) |
+| inf_v2_walker_* / _runner_* / _brute_* / _hocker_* | 1,792 / 2,100 / 2,088 / 1,632 a body | center | the remade bodies the game wears (`infected_v2.py`; `Config.Enemies.BodyVersion`), exported mirrored in X; Walker arms and legs and Brute arms are `_l` / `_r` |
 | inf_warden_* / inf_warden_plate_* | STYLES §7 (cap 5,000) | center | the Warden: 12 limb meshes with sided upper arm / lower arm / hand (`warden.SIDED`, `MeshAssets.limbMeshName`) plus six plates welded on by `IndexService.buildPlates` (helmet, chest, back, shoulder `_l` / `_r`, shield) |
 | inf_gore_stump, inf_gore_chunk_a/b/c | small | origin / center | stump welded at a joint when a limb comes off (GoreService); chunks thrown at body hits (client GoreFX). `gore.py`, a small `loft` kit |
 | pc_assault_* | ~650 per body | center | the Pike soldier's 15 R15 limb MeshParts (`PlayerSetup` -> `MeshAssets.dressModel`); tapered forearms and shins with joint caps (`PC_TAPER`) |
@@ -172,6 +182,14 @@ Builder, service-spawned items, structures and landmarks (ruin, guard tower, com
 tent, sandbag bunker, dead tree, lamp post) and the bodies. `props.profile()` extrudes a side
 silhouette (the cars); `props.panel()` lays glass on a sloped edge. Cars are built to the
 5-stud figure (roof 4.4-7.2) with composite colliders.
+
+## Trees and brush live in `build/trees.py`
+
+Mile 14's woods (2026-11-11): `env_pine_tall` (24), `env_pine_small` (13), `env_tree_leafy`
+(15, a broadleaf) and `env_shrub` (3.4), 100-192 tris each, registered with
+`trees.register(ba)`. Pines are stacked 8-sided cones alternating `foliage_d` / `olive_d` over
+a `rust_d` trunk; shapes are jittered from fixed seeds. In game only the trunk collides
+(`MeshAssets` colliders); the shrub collides with nothing and stops rays (`hides`).
 
 ## The distant city lives in `build/city.py`
 

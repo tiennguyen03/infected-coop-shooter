@@ -1,7 +1,7 @@
 --!strict
 -- This soldier's record on the client (RecordService sends it on the `Record` remote): the
--- merits held and the kit bought, for the Quartermaster's rack (ArmsRackUI: price, BUY), the
--- desks that sell call-ins (DeskShop) and the Loadmaster's Loadout (LoadmasterUI: kit not on
+-- merits and tabs held and the kit bought, for the Quartermaster's rack (ArmsRackUI: price,
+-- BUY), the desks that sell call-ins (DeskShop) and the Loadmaster's Loadout (LoadmasterUI: kit not on
 -- the record is locked). Display only;
 -- the server decides every buy and every signature.
 
@@ -36,6 +36,16 @@ function RecordClient.merits(): number
 	return if record then record.merits else 0
 end
 
+-- Tabs held (the hard currency; nothing is bought with them yet).
+function RecordClient.tabs(): number
+	return if record then record.tabs else 0
+end
+
+-- The balances as one line for a panel: "1000 MERITS  ·  0 TABS".
+function RecordClient.balanceText(): string
+	return `{RecordClient.merits()} MERITS  ·  {RecordClient.tabs()} TABS`
+end
+
 -- On the record: bought or issued free.
 function RecordClient.owns(id: string): boolean
 	return record ~= nil and Record.owns(record, id, RecordClient.priceOf)
@@ -46,9 +56,15 @@ function RecordClient.buy(id: string)
 end
 
 function RecordClient.init()
-	Remotes.get("Record").OnClientEvent:Connect(function(kind: string, a: any, b: any)
+	Remotes.get("Record").OnClientEvent:Connect(function(kind: string, a: any, b: any, c: any)
 		if kind == Messages.Record.State and typeof(a) == "number" and typeof(b) == "table" then
-			record = { merits = a, owned = b }
+			-- Receipts stay on the server.
+			record = {
+				merits = a,
+				owned = b,
+				tabs = if typeof(c) == "number" then c else 0,
+				receipts = {},
+			}
 			changed:Fire()
 		elseif kind == Messages.Record.Refused then
 			refused:Fire(a, b)

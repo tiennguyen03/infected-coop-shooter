@@ -16,6 +16,7 @@ export type Loadout = {
 	secondary: string,
 	grenade: string,
 	callIns: { string },
+	attachments: { [string]: { [string]: string } }?,
 }
 
 export type Saved = {
@@ -24,11 +25,20 @@ export type Saved = {
 }
 
 local function copy(loadout: Loadout): Loadout
+	local attachments: { [string]: { [string]: string } }? = nil
+	if loadout.attachments then
+		local copied = {}
+		for gun, slots in loadout.attachments do
+			copied[gun] = table.clone(slots)
+		end
+		attachments = copied
+	end
 	return {
 		primary = loadout.primary,
 		secondary = loadout.secondary,
 		grenade = loadout.grenade,
 		callIns = table.clone(loadout.callIns),
+		attachments = attachments,
 	}
 end
 

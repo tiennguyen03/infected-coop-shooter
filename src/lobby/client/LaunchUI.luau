@@ -136,7 +136,7 @@ function LaunchUI.init()
 		if kind == Messages.Launch.Manifest then
 			local spot, names, secondsLeft, squad, isLead = ...
 			local wanted = if typeof(squad) == "number" and squad > 0 then squad else CAPACITY
-			title.Text = `LANTERN · SPOT {spot}`
+			title.Text = `HELO · SPOT {spot}`
 			crew.Text = `Aboard {#names}/{wanted}: {table.concat(names, ", ")}`
 			status.TextColor3 = HudTheme.Color.Text
 			liftAt = os.clock() + (secondsLeft :: number)

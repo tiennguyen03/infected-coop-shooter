@@ -38,6 +38,10 @@ that was done to help it (a screening band, a bandage over the bite, cut restrai
 
 ### Walker (scale 1.0, ~1,800 tris)
 - **Was:** a civilian from the pens, screened at Delta and held. The strain's first day.
+- **In game since 2026-11-11 (owner's choice):** the remade Walker (`docs/STYLES.md` §7
+  "Infected v2") is more wounded than this first-day sheet: the whole right side is bare, the
+  chest open over ribs, the jaw hanging, a bare foot. The sheet below is the first body
+  (`Config.Enemies.BodyVersion = 1`); the same holds for the Runner, Brute and Hocker sheets.
 - **Silhouette:** the only Infected that stands upright. One shoulder dropped (old wound,
   on the torso mesh), arms hanging, head down and slightly forward. Flat shuffle.
 - **Head:** bare; hair a flat `dark.m` cap cut short on one side; `infected skin` face;
