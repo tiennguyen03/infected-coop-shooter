@@ -130,7 +130,7 @@ local ROWS: { [string]: Row } = {
 		Boss = {
 			At = 0.5,
 			Contest = 1, -- on: the hold's Radius is the area
-			Arrive = "That signal woke the Warden. He still answers this net, and he's coming for the mast.",
+			Arrive = "That signal woke the Warden. He still answers this radio, and he's coming for the mast.",
 			Contested = "He's at the mast and the signal is dropping. Pull him away from it.",
 			Blocked = "The Warden is at the mast: pull him away",
 		},

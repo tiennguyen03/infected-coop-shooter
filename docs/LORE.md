@@ -142,7 +142,7 @@ site; the insert and wipe lines are written but not yet placed):
 | He comes to the main objective (default) | "That woke the Gate sergeant. He still guards this post. The Warden is coming to {place}." |
 | ... Sanitize the Pens | "The fires woke the Warden. Those were his pens. He's coming to guard the last tent." |
 | ... Secure the Site | "That woke the Warden. He still holds this perimeter, and he's coming to take {place} back." |
-| ... Restore Comms | "That signal woke the Warden. He still answers this net, and he's coming for the mast." |
+| ... Restore Comms | "That signal woke the Warden. He still answers this radio, and he's coming for the mast." |
 | ... Confirm Casualties | "Those heavies were his reserve. The Warden is coming to {place} to lead the rest." |
 | ... Recover the Record | "That record is his. The Warden kept the count, and he's coming for whoever carries it." |
 | He stands on it (once) | Pens: "He's standing over the last fuel can. Pull him off it, then burn it." Site: "He's inside the perimeter. The hold stops while he stands in it. Pull him out." Comms: "He's at the mast and the signal is dropping. Pull him away from it." |
