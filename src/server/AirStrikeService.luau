@@ -9,8 +9,11 @@
 --   Shrike (helicopter gun run, Config.CallIns.Shrike): after Delay a gunship passes along
 --     the throw; Bursts impacts centred on the mark, Step studs apart, BurstInterval apart.
 -- Every impact is a BlastRadius area hit on the Infected only (DamageService.dealDamage; no
--- friendly fire); a blast kill throws limbs (GoreService.blast). Geometry and timing come
--- from Rules/StrikePattern.
+-- friendly fire), measured flat with the row's Landing.Height; a blast kill throws limbs
+-- (GoreService.blast). Geometry and timing come from Rules/StrikePattern.
+-- Landing (Rules/StrikeLanding, Config.CallIns.Landing): the Infected within a row's
+-- Landing.Hold of the mark are drawn to it (EnemyService.setLure) until Landing.HoldAfter
+-- seconds after the first impact, so the crowd the mark is on is still there when it lands.
 -- What leads up to an impact (marks on the ground, the whistle, the round coming in, the
 -- dust) is drawn on the clients by CallInArrivalFX from the impact points returned here;
 -- this service keeps the damage, the blast sound and the flash that shakes the camera, each
@@ -27,8 +30,10 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local GroundUtil = require(ReplicatedStorage.Shared.GroundUtil)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
 local Arrival = require(ReplicatedStorage.Shared.Rules.Arrival)
+local StrikeLanding = require(ReplicatedStorage.Shared.Rules.StrikeLanding)
 local StrikePattern = require(ReplicatedStorage.Shared.Rules.StrikePattern)
 local DamageService = require(script.Parent.DamageService)
+local EnemyService = require(script.Parent.EnemyService)
 local GoreService = require(script.Parent.GoreService)
 local PauseService = require(script.Parent.PauseService)
 local Lifecycle = require(script.Parent.Lifecycle)
@@ -64,20 +69,41 @@ local function arrivalOf(cfg: any): Arrival.Resolved
 	)
 end
 
+-- A call-in row's landing: its own Landing block over Config.CallIns.Landing.Defaults.
+local function landingOf(cfg: any): StrikeLanding.Resolved
+	local landing = Config.CallIns.Landing
+	return StrikeLanding.resolve(landing.Enabled, landing.Defaults, cfg.Landing)
+end
+
+-- The Infected round `point` are drawn to the mark until the hold ends (the first impact,
+-- `firstImpact` seconds away, plus the row's HoldAfter).
+local function hold(point: Vector3, cfg: any, firstImpact: number)
+	local landing = landingOf(cfg)
+	local seconds = StrikeLanding.holdSeconds(landing, firstImpact)
+	if seconds > 0 then
+		EnemyService.setLure(point, landing.Hold, seconds)
+	end
+end
+
 local AirStrikeService = {}
 
 local effectFolder: Folder
 -- Bumped on reset so a mission from the last run never lands in the next.
 local generation = 0
 
-local function enemyRootsNear(position: Vector3, range: number): { BasePart }
+local function enemyRootsNear(
+	position: Vector3,
+	range: number,
+	landing: StrikeLanding.Resolved
+): { BasePart }
 	local roots = {}
 	for _, model in CollectionService:GetTagged(ENEMY_TAG) do
 		if model:IsA("Model") then
 			local humanoid = model:FindFirstChildOfClass("Humanoid")
 			local root = model:FindFirstChild("HumanoidRootPart") :: BasePart?
 			if humanoid and humanoid.Health > 0 and root then
-				if (root.Position - position).Magnitude <= range then
+				local offset = root.Position - position
+				if StrikeLanding.inBlast(landing, offset.X, offset.Y, offset.Z, range) then
 					table.insert(roots, root)
 				end
 			end
@@ -126,7 +152,7 @@ end
 
 -- Area damage on the Infected around `center` (the one place a fire mission hurts).
 local function hurtAround(player: Player?, center: Vector3, shell: Shell)
-	for _, root in enemyRootsNear(center, shell.BlastRadius) do
+	for _, root in enemyRootsNear(center, shell.BlastRadius, landingOf(shell)) do
 		local model = root.Parent :: Model
 		local humanoid = model:FindFirstChildOfClass("Humanoid")
 		if humanoid and humanoid.Health > 0 then
@@ -218,6 +244,7 @@ function AirStrikeService.fireMission(
 		end
 	end
 
+	hold(point, cfg, cfg.Delay)
 	local thisGeneration = generation
 	local lead = Config.Audio.AnvilIncomingLead
 	for index, at in StrikePattern.impactTimes(cfg.Shells, cfg.Delay, cfg.ShellInterval) do
@@ -387,6 +414,7 @@ function AirStrikeService.gunRun(
 		strip = flatStrip
 	end
 
+	hold(point, cfg, cfg.Delay)
 	local thisGeneration = generation
 	task.spawn(function()
 		-- The gunship comes in from behind the throw so it is overhead for the bursts.

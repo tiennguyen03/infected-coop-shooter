@@ -243,9 +243,9 @@ out of the door; fire missions are someone on the net. HUD names and radio: [LOR
 | Support | **Goose** (M3 recoilless) | 2 single shots; 400 direct, 120 in 6 studs | 1 / 120 | no |
 | Support | **Thumper** (M32) | 6-round drum, 0.5 s apart, 70 in 7 studs, 24 rounds | 1 / 180 | no |
 | Support | **Kettle** (M9 projector) | 15-stud cone, 10 per 0.1 s, fire pools, 20 s of fuel | 1 / 180 | no |
-| Fire mission | **Hammer** (81 mm mortar) | 6 shells 1 s apart, 80 in 12 studs, scatter 4 | 1 / 120 | yes |
-| Fire mission | **Anvil** (105 mm battery) | marked through binoculars on any ground in the line of sight, up to 400 studs; one shell 5 s later, 500 in 20 studs, shake felt map-wide | 1 / 180 | yes |
-| Fire mission | **Shrike** (helicopter gun run) | 10 bursts stepping 4 studs along the throw, 120 in 5 studs each, 4 s delay | 1 / 150 | yes |
+| Fire mission | **Hammer** (81 mm mortar) | 6 shells 1 s apart, 80 in 12 studs, scatter 4; holds the Infected within 16 until 2 s after the first shell | 1 / 120 | yes |
+| Fire mission | **Anvil** (105 mm battery) | marked through binoculars on any ground in the line of sight, up to 400 studs; one shell 5 s later, 500 in 20 studs, shake felt map-wide; holds the Infected within 20 until it lands | 1 / 180 | yes |
+| Fire mission | **Shrike** (helicopter gun run) | 10 bursts stepping 4 studs along the throw, 120 in 5 studs each, 4 s delay; holds the Infected within 16 of the middle through the run | 1 / 150 | yes |
 | Emplacement | **Doorman** (tripod sentry MG) | 45 s, 20 dmg every 0.15 s, range 70, one per player | 1 / 150 | yes |
 | Emplacement | **Tripline** (AP mines) | 6 mines on an arc, 80 in 10 studs, 90 s, 12 per player | 2 / 60 | yes |
 | Emplacement | **Concertina** (wire) | 16 x 3 strip for 60 s: 0.4x slow, 5 dps; never vaultable | 2 / 90 | yes |
@@ -262,6 +262,21 @@ the modelled gun whose pivot is 2.6 up, 1 = the Part tripod at 3.2), `MineServic
 need the support-weapon carry and the explosive projectile hook (ARCHITECTURE F7). Dev:
 `SetCallIn <slot> <id>`, `FireCallIn <id>` (20 studs ahead, no slot or charge).
 Retired 2026-11-08: Magpie (drones) and Pen Coil (shock pulse), too sci-fi; see HISTORY.md.
+
+**Landing on the crowd** (owner 2026-11-16: "the zombies move out of the way most of the
+time"; `Rules/StrikeLanding`, `Config.CallIns.Landing`, switch `Enabled`). Nothing dodged:
+the Infected keep chasing the nearest soldier, and from the key to the first impact (Hammer
+0.5 s throw + 3 s, Anvil 0.4 s raise + 5 s, Shrike 0.5 + 4 s) a Walker (9.5 studs/s) walks
+33-51 studs, a Runner (17) 60-92, a Brute (6.5) 23-35, against blasts of 12, 20 and 5 studs.
+So a fire mission's mark now **holds** the Infected within its row's `Landing.Hold` (Hammer
+16, the aim ring; Anvil 20; Shrike 16 round the lane's middle): they walk to the marker (the
+lure the Resupply flare uses) until `HoldAfter` seconds after the first impact (Hammer 2,
+three shells; Anvil 0.3; Shrike 1.4, the whole run), then chase again. Only what the mark is
+on or walks into is held: the player still has to put it on a crowd. Blasts (fire missions,
+Tripline trigger and blast) are measured flat along the ground and reach `Landing.Height`
+(8) studs up or down: the old sphere from a centre 1-2 studs off the ground missed a
+Brute's root (about 6 up) under a Shrike burst and never let a Brute trip a mine. Damage
+has no falloff (flat inside the radius, as before). `Enabled = false`: no hold, the sphere.
 
 ### Binoculars
 

@@ -37,6 +37,7 @@ published from `main`.
 | #37 | Objectives: 5 main, 4 side, each with a reason | dev menu, RUN tab; props may float or sink |
 | #38 | Roll is Shift twice; slide is holding C or Ctrl | accidental rolls when re-sprinting |
 | #39 | Revive animation: kneel, treat, pull up | hands on the chest; the casualty not in the floor |
+| #56 | Call-ins hold the crowd they land on (Hammer, Anvil, Shrike) | spawn 25 Walkers, call each strike, count kills; does it look like a magnet |
 
 Merge order when you are happy: #18 before #25 and #28; #16 before #32; #15 before #36 and
 #37; #21 before #38; #17 is replaced by #24. Several of these touch the same files; Claude
