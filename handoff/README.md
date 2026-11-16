@@ -57,8 +57,7 @@ that restocks the squad.
   into one reserved match server (`docs/sprints/LOBBY_V1_FALLOW.md`). You board by standing anywhere
   inside the yellow ring round a helicopter (2026-11-16, owner; **not yet seen in game**; **Nova:**
   the square box is gone, `Spot.board` is now `Spot.sign`, `BoardHalfSize` is now `BoardRadius`,
-  the check is `Manifest.onSpot`). The soldier on the ship
-  into one reserved match server (`docs/sprints/LOBBY_V1_FALLOW.md`). Three desks since 2026-11-16
+  the check is `Manifest.onSpot`). Three desks since 2026-11-16
   (owner; **not yet seen in game**): the Quartermaster sells every gun and grenade, the Call-ins
   desk (the sapper sergeant, was the Engineers) every call-in, the Loadmaster only signs Loadouts;
   the Fires desk is gone (**Nova:** desk id `engineers` is now `callins`; `LoadmasterUI`'s

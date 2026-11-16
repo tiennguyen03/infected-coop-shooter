@@ -340,10 +340,8 @@ The rack is where guns are **bought** (merits, onto the soldier's record; owner 
      80  ┌ramp foot (hangar)┐ well X -30..-10
      20  └ramp top (deck)───┘ comes up facing aft
      50..-10                        ┌island┐ X 22..34 (deck); Plot under it (hangar,
-                                    └──────┘  X 4..33, Z -10..30), Fires (1, 18) at its door
-    -15  spot 4 (helo X -12, ring radius 14, sign X 2)
                                     └──────┘  X 4..33, Z -10..30)
-    -15  spot 4 (helo X -12, box X 1)
+    -15  spot 4 (helo X -12, ring radius 14, sign X 2)
     -60  spot 3
    -100  ── hangar bulkhead (aft) ──
    -105  spot 2
