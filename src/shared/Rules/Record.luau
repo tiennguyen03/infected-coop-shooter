@@ -220,4 +220,24 @@ function Record.decode(data: unknown, startMerits: number): Record
 	}
 end
 
+-- A buy applied to the record as it is stored (the lobby's UpdateAsync transform), so merits
+-- the match paid since the lobby read the record are kept: (the value to store, nil), or
+-- (nil, "unreadable" | "owned" | "unknown" | "short") and nothing is written. A save this code
+-- cannot read (junk, a newer version) is never written over.
+function Record.buyStored(
+	stored: unknown,
+	id: string,
+	priceOf: PriceOf,
+	startMerits: number
+): (Saved?, string?)
+	if not Record.canUpdate(stored) then
+		return nil, "unreadable"
+	end
+	local after, ok, reason = Record.buy(Record.decode(stored, startMerits), id, priceOf)
+	if not ok then
+		return nil, reason
+	end
+	return Record.encode(after), nil
+end
+
 return Record

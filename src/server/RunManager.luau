@@ -48,6 +48,9 @@ local readyGeneration = 0
 local expected = 1
 local stagingStarted = false
 local primaryDone = false
+-- The insertion cutscene: who skipped it this run, and how to cut Insert short (beginRun).
+local insertSkips: { [Player]: boolean } = {}
+local skipInsert: (() -> ())? = nil
 -- Bumped whenever a trip home is planned or called off, so a stale timer never fires.
 local homeGeneration = 0
 
@@ -96,19 +99,48 @@ local function beginRun()
 	-- drawn and read out as it ends, so the card is not under the letterbox; else at once.
 	local insertion = Config.Insertion
 	local cutscene = if insertion.Enabled then insertion.LeadSeconds + insertion.Seconds else 0
-	task.delay(cutscene, function()
-		if generation == runGeneration and RunStates.current() == "Insert" then
+	local briefed = false
+	local function brief()
+		if generation == runGeneration and RunStates.current() == "Insert" and not briefed then
+			briefed = true
 			ObjectiveService.brief(HandoffService.objective())
 		end
-	end)
-	task.delay(cutscene + Config.Run.InsertSeconds, function()
+	end
+	local function land()
 		if generation ~= runGeneration or RunStates.current() ~= "Insert" then
 			return
 		end
 		setState("Explore")
 		EnemyService.startMission()
 		ObjectiveService.arm()
-	end)
+	end
+	task.delay(cutscene, brief)
+	task.delay(cutscene + Config.Run.InsertSeconds, land)
+	-- Every player skipped the cutscene (InsertSkip): the brief now, the landing after the
+	-- usual Run.InsertSeconds, instead of waiting out the flight on the pad.
+	table.clear(insertSkips)
+	skipInsert = function()
+		skipInsert = nil
+		brief()
+		task.delay(Config.Run.InsertSeconds, land)
+	end
+end
+
+-- InsertSkip: this player skipped the insertion cutscene; the last one to skip cuts it short.
+local function onInsertSkip(player: Player)
+	if RunStates.current() ~= "Insert" or not skipInsert then
+		return
+	end
+	insertSkips[player] = true
+	for _, other in Players:GetPlayers() do
+		if not insertSkips[other] then
+			return
+		end
+	end
+	local skip = skipInsert
+	if skip then
+		skip()
+	end
 end
 
 -- Freezes the field (stops spawns, frees the cursor for the results screen) and clears the
@@ -387,6 +419,10 @@ function RunManager.init()
 	clearReady()
 
 	Remotes.get("RestartRun").OnServerEvent:Connect(onRestartRequest)
+	Remotes.get("InsertSkip").OnServerEvent:Connect(onInsertSkip)
+	Players.PlayerRemoving:Connect(function(player: Player)
+		insertSkips[player] = nil
+	end)
 end
 
 return RunManager

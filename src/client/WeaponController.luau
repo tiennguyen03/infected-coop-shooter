@@ -198,6 +198,10 @@ local function tryFire()
 	if character and character:GetAttribute(Attributes.KnockedUntil) ~= nil then
 		return -- knocked down (Squad.knock): the server refuses the shot too
 	end
+	local reviveRole = character and character:GetAttribute(Attributes.ReviveRole)
+	if reviveRole == "treat" or reviveRole == "finish" then
+		return -- kneeling over a revive, the rifle slung on the back (ReviveAnimation)
+	end
 
 	local aimPoint = getAimPoint()
 	if not aimPoint then

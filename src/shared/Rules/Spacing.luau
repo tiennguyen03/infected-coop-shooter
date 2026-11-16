@@ -55,6 +55,13 @@ function Spacing.cellKey(x: number, z: number, cellSize: number): number
 	return math.floor(x / cellSize) * 65536 + math.floor(z / cellSize)
 end
 
+-- How far along the ground `attackRange` still reaches when the target's centre is `dy`
+-- studs above or below (the attack check measures the real distance, height included): the
+-- ring is laid at this reach, so a tall Brute stands close enough to hit a prone player.
+function Spacing.flatReach(attackRange: number, dy: number): number
+	return math.sqrt(math.max(attackRange * attackRange - dy * dy, 0))
+end
+
 -- The move goal for one body, and whether its neighbours are holding it (waiting).
 -- `xs`, `zs`, `radii` hold `count` neighbours (the body itself left out).
 function Spacing.steer(

@@ -311,7 +311,14 @@ local function stepSpits(now: number)
 			then workspace:Raycast(spit.lastPosition, delta, spit.params)
 			else nil
 		if hit then
-			impact(spit, hit.Position, hit.Normal)
+			-- A body is not a wall: a direct hit draws the ground pool only, never a blotch
+			-- stuck in the air where the soldier stood (SpitFX).
+			local normal = hit.Normal
+			local model = hit.Instance:FindFirstAncestorOfClass("Model")
+			if model and model:FindFirstChildOfClass("Humanoid") then
+				normal = Vector3.yAxis
+			end
+			impact(spit, hit.Position, normal)
 			table.remove(spits, index)
 		elseif now >= spit.expiresAt or position.Y < workspace.FallenPartsDestroyHeight + 50 then
 			removeSpit(spit)

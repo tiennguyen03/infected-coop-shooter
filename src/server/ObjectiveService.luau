@@ -279,7 +279,9 @@ local function build(slot: Slot): boolean
 	folder.Name = `Objective_{slot.slot}`
 	folder.Parent = workspace
 	slot.folder = folder
-	slot.objective = module.new({
+	-- A module that errors while it is built never freezes the mission (review PR-37): it is
+	-- reported and treated like a missing one.
+	local built, objective = pcall(module.new, {
 		role = slot.role,
 		label = if slot.role == "main" then "MAIN OBJECTIVE" else "SIDE OBJECTIVE",
 		color = if slot.role == "main" then MARKER_MAIN else MARKER_SIDE,
@@ -294,15 +296,28 @@ local function build(slot: Slot): boolean
 			finish(slot, "failed")
 		end,
 	})
+	if not built then
+		warn(`[ObjectiveService] {slot.id} ({slot.row.Module}) failed to build: {objective}`)
+		return false
+	end
+	slot.objective = objective
 	slot.state = "pending"
 	return true
 end
 
 -- The squad reached it: its fight begins. The main objective brings the pressure the hold
 -- always did (faster spawns, a wave, the field-upgrade crate) and moves the run to Primary.
+-- A main objective whose module failed to build or begin counts as done when it is reached
+-- (as a failure in `step` does): a broken objective never holds the run up.
 local function start(slot: Slot)
 	local objective = slot.objective
-	if slot.state ~= "pending" or not objective then
+	if slot.state ~= "pending" then
+		return
+	end
+	if not objective then
+		slot.state = "active"
+		slot.started = true
+		finish(slot, if slot.role == "main" then "done" else "failed")
 		return
 	end
 	slot.state = "active"
@@ -322,7 +337,11 @@ local function start(slot: Slot)
 		end
 	end
 	print(`[ObjectiveService] {slot.row.Name} ({slot.slot}) started at {slot.site.Name}`)
-	objective.begin()
+	local begun, err = (pcall :: any)(objective.begin)
+	if not begun then
+		warn(`[ObjectiveService] {slot.id} failed to begin: {err}`)
+		finish(slot, if slot.role == "main" then "done" else "failed")
+	end
 	sync(true)
 end
 
@@ -418,7 +437,11 @@ local function draw(requested: string?)
 	if mainId then
 		lastMain = mainId
 		local slot = newSlot("main", "main", 0, mainId, if forcedMain then forcedSite else nil)
-		if slot and build(slot) then
+		if slot then
+			if not build(slot) then
+				-- Broken: kept on the board so reaching its site still calls the Warden.
+				slot.state = "pending"
+			end
 			table.insert(board, slot)
 		end
 	end

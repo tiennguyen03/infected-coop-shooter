@@ -106,8 +106,12 @@ tracks Secondaries yet, so they pay 0.
 
 - **Where:** the lobby's own record, DataStore `PikeRecords`, key `Rules/Record.key(userId)`
   (`r_<UserId>`), the versioned `Rules/Record` shape. The match uses `UpdateAsync` (read,
-  credit, write in one step) and leaves a save it cannot read alone (`Record.canUpdate`). A
-  player is in the lobby or in a match, never both, so the two never write one record at once.
+  credit, write in one step) and leaves a save it cannot read alone (`Record.canUpdate`). The
+  lobby buys the same way (`RecordService.buy` -> `SaveSlot.update` -> `Record.buyStored`,
+  2026-11-16), so a pay that lands after the soldier is back in the lobby is kept, and a save
+  either side cannot read (junk, a newer version) is never written over: the two places can be
+  published in either order once both run this code. (Before it, lobby first.) A
+  player is in the lobby or in a match, never both.
 - **Shown:** one line on the results screen, "+120 MERITS" (player attribute `MeritsEarned`;
   "MERITS NOT SAVED" when the save failed). The result table above is unchanged. Under it,
   "ON YOUR RECORD" and the wallet (medal + merits, tag + tabs; shared `WalletReadout`),

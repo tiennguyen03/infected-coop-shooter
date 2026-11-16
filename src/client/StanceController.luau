@@ -122,9 +122,13 @@ function StanceController.init()
 		end
 		local keys = Config.Keys
 		local key = input.KeyCode
-		-- While sprinting the Crouch keys slide instead (MovementController).
+		-- While sprinting the Crouch keys slide instead (MovementController); with the sprint key
+		-- held and the bar empty they do nothing, never a surprise crouch or prone in a run.
 		local lowKey = table.find(keys.Crouch, key) ~= nil
-		if lowKey and SprintController.isSprinting() then
+		if
+			lowKey
+			and (SprintController.isSprinting() or UserInputService:IsKeyDown(keys.Sprint))
+		then
 			return
 		end
 		local character = Players.LocalPlayer.Character

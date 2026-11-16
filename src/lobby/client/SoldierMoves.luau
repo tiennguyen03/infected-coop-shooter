@@ -88,7 +88,8 @@ local function setup(character: Model)
 	end
 
 	-- Retire the stock Animate script and whatever it started (disabled, not destroyed).
-	local animate = character:FindFirstChild("Animate")
+	-- Waited for: after a respawn it can arrive after this runs, and would then play on top.
+	local animate = character:FindFirstChild("Animate") or character:WaitForChild("Animate", 3)
 	if animate and animate:IsA("LocalScript") then
 		animate.Disabled = true
 	end
