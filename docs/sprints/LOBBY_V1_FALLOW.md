@@ -41,7 +41,7 @@ match place.
   one red in the Plot; the deck floodlights are unlit housings by day.
 - **No shared planes.** Two faces in one plane flicker (z-fighting): the hangar floor plate
   sits on the hull block (`FLOOR` 0.2), the centre line breaks at each spot circle, and the
-  spot ring, its inner disc, the number and the boarding box each have their own height.
+  spot ring, its inner disc, the number and the spot sign each have their own height.
   Keep to this when adding pieces.
 - **The loop** (Nova: walking past the birds to the desks and back every run made no
   sense): everyone spawns at the fore end of the hangar facing aft, passes the desks (Arms
@@ -75,11 +75,11 @@ match place.
   shows in the lobby's output as it does in the match's (handoff "Minor loose ends"). No file
   in the repo names that id; it is not from lobby code and does not affect play.
 - **Four Lantern spots** (`LaunchService`, rule `Rules/Manifest`): a Lantern (`LanternBird`,
-  see Lantern below) on each numbered spot and a yellow boarding box beside its starboard door. Stand in the box
-  to board. The first aboard starts a 20 s countdown and gets a squad-size picker (SOLO / 2 /
+  see Lantern below) on each numbered spot and a yellow ring round it. **The ring is the boarding zone** (owner 2026-11-16: "the area should be within the circle, not a random square"): stand anywhere inside it, round the bird, to board (`Config.Lobby.Launch.BoardRadius` 14, read by the painted ring and by the server's radius test `Manifest.onSpot`, so they match exactly; the bird's collider fills only its own body, so the ring stays walkable round it; the `HELO · SPOT n` sign stands on the ring's edge by the door, `FallowLayout.Spots[n].sign`; not yet seen in game).
+  The first aboard starts a 20 s countdown and gets a squad-size picker (SOLO / 2 /
   3 / FULL, `Messages.Launch.Squad`, `Manifest.setSquad`; owner 2026-11-10): once that many
   are aboard (4 if nobody picks) the countdown drops to 3 s (`FullCountdown`), so a solo soldier
-  lifts 3 s after picking SOLO. The box empty clears it and the pick, a fifth soldier is left off. At zero the server teleports everyone
+  lifts 3 s after picking SOLO. The ring empty clears it and the pick, a fifth soldier is left off. At zero the server teleports everyone
   aboard together (`TeleportAsync` into one server reserved per lift, `ReserveServer`, reused
   by every retry; teleport data `Handoff.departure`: slot = boarding order, each soldier's
   signed Loadout, plus `spot`), two
@@ -203,7 +203,7 @@ unchanged.
 The lift bird on each spot, from the lore developer's canon (docs/LORE.md > Lantern, owner
 approved) and the art director's sheet, in `assets/3d/build/lantern.py` (collection
 `Vehicles`, new prefix `veh_`). Placed by `LanternBird` on `spot.helo`, nose to the bow, the
-open door facing the boarding box; no layout change.
+open door facing out of the ring; no layout change.
 
 - **Meshes** (1,912 tris a bird with both rotors; vehicle cap 5,000): `veh_lantern_body`
   (shell, Metal (104,110,80), Precise: boxy cabin with a 7.5-stud door opening, cockpit and
@@ -220,7 +220,7 @@ open door facing the boarding box; no layout change.
   lamp behind the mast with a PointLight (Range 12, off at rest); the bird's number stencilled
   on both nose doors and the fin, HARLAN on the boom and the port cabin side (SurfaceGui); two
   blur discs, hidden at rest; the crew chief (`NpcBody.Aircrew`: sage flight suit, helmet, visor
-  down) at the aft edge of the door facing the box. Numbers per spot are fixed and out of order
+  down) at the aft edge of the door facing out of the door. Numbers per spot are fixed and out of order
   (`Config.Lobby.Lantern.BirdNumbers` 22, 24, 21, 23: a bird and a spot are not tied).
 - **Turning** (owner: still on deck, spool on countdown): `LaunchService` publishes
   `Attributes.LiftAt` (server time) on the counting bird; `LanternSpool` on every client lights
@@ -336,7 +336,7 @@ The rack is where guns are **bought** (merits, onto the soldier's record; owner 
      20  └ramp top (deck)───┘ comes up facing aft
      50..-10                        ┌island┐ X 22..34 (deck); Plot under it (hangar,
                                     └──────┘  X 4..33, Z -10..30), Fires (1, 18) at its door
-    -15  spot 4 (helo X -12, box X 1)
+    -15  spot 4 (helo X -12, ring radius 14, sign X 2)
     -60  spot 3
    -100  ── hangar bulkhead (aft) ──
    -105  spot 2
@@ -434,7 +434,7 @@ sling across his chest"; the crew's block eyes "dont look right" on the R15 bodi
 2. `rojo serve lobby.project.json --port 34873` (a different port from the match's 34872),
    Rojo plugin > set the port > Connect, Play.
 3. Check: spawn in the hangar in the Pike body, talk to each desk (F), read the board in the
-   Plot, climb the ramp to the spots, stand in a boarding box (panel + countdown; in Studio it ends with the
+   Plot, climb the ramp to the spots, stand inside a spot's ring (panel + countdown; in Studio it ends with the
    "Teleports don't run in Studio" line).
 4. Test places: Nova's own test experience, start place ZCS Dev (83558708746036), launches
    into Match Dev (108949482095254) and that match flies home to ZCS Dev (`Config.Places.Dev`).
