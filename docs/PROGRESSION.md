@@ -482,9 +482,10 @@ Each drop draws one **main objective** and two **side objectives** from the map'
   (on the HUD the whole time, 8 words at most), `Done` (Control, what changed). The reward is
   the consequence. Plain words only (OWNER.md).
 - **The frame**, once at insert: "Clear this checkpoint so the helicopter can land and we can
-  hold the district." Finishing the main objective pays 500 Resupply, drops the field-upgrade
-  crate and wakes the Warden: "That woke the Gate sergeant. He still guards this post. The
-  Warden is coming up the road." Side objectives are optional; failing one costs nothing.
+  hold the district." The Warden comes partway through the main objective and is its last
+  act; finishing both pays 500 Resupply, drops the objective reward crate and calls the
+  helicopter (below, The Warden in the main objective). Side objectives are optional;
+  failing one costs nothing.
 - **Bots** follow their leader as always, so they stand in a hold with them and shoot marked
   Infected; they never press E and never carry.
 - Dev: `SetMainObjective <id> [site]`, `SetSideObjective <id> [site]`, `RedrawObjectives`,
@@ -557,6 +558,56 @@ Never on Delta: Evacuate ("CLEARED 0").
 | Lights On | You are fighting blind and the helicopter needs light to find you. The generator at {place} still works. Start it. | The helicopter needs light to find you | Lights are on. The helicopter can see you, so supplies come sooner. |
 | Misdrop | The helicopter put a supply pallet down in the wrong place: {place}. Get to it before the Infected swarm it. | Your supplies landed in the wrong place | Pallet is yours. Take what you need. (Late: "Too late. The Infected swarmed the pallet. It is gone.") |
 | Clear the Spitters | Spitters at {place} are shelling the landing pad, so the helicopter can't drop supplies. Kill them fast. | Spitters are shelling the helicopter's landing pad | Spitters are down. The supply drop we were holding is yours. (Late: "Out of time. The Spitters dug in. No supply drop.") |
+
+### The Warden in the main objective (built 2026-11-16, not played)
+
+Owner, 2026-11-16: "I want the boss to be more a part of the objectives, because right now
+it just feels like a separate event." The Warden is now the main objective's last act, at
+its site (`Config.Objectives.Boss`, each main row's `Boss` block in `ObjectiveDefinitions`,
+`Rules/BossAct`, `ObjectiveService`, `IndexService.arrive`).
+
+- **When.** He comes when the objective reaches `At` of its progress, and at the latest
+  when its work is done. Once per run.
+- **Where.** He walks in from open ground 55-70 studs from the objective's point
+  (`EnterMin` / `EnterMax`, `EnemyService.groundNear`), or from the site's `BossFrom` when
+  a site names one (a map that moves its sites moves him too: nothing is hard-coded). He
+  walks to the objective, then fights as always (kit, phases, Riot Calls unchanged).
+- **What he does to it** (one rule per objective, below): `Contest` stops the objective
+  while he stands on it (the HUD says so and Control says it once); `Target = "carrier"`
+  makes him hunt whoever carries the item.
+- **Done.** The mission completes when the work is done **and** he is down, in either
+  order. Work first: "That's done. The Warden is all that's left. Put him down." and the HUD
+  reads "Kill the Warden" (its marker follows him). Him first: "The Warden is down. Finish the
+  job." Then the objective's Done line, 500 Resupply and the objective reward crate at the
+  objective, and the run goes straight to extraction. His own pallet, heal and re-arm at the
+  corpse are unchanged. The run stays in Primary while he is up (no Index state).
+- **Off switch.** `Config.Objectives.Boss.Enabled = false` restores the old order: work done
+  -> reward -> the Warden from the Gate -> extraction. The single hold (pools off) always
+  plays the old order.
+- **Dev.** "Warden now (objective)" (RUN tab) and "To the objective" (THE WARDEN): DevCommand
+  `WardenNow` brings him to the main objective now, starting it if the squad has not reached
+  it. "Complete hold" finishes the work (he comes if he has not); "Kill the Warden" kills him.
+
+| Objective | He comes | What he does |
+|---|---|---|
+| Sanitize the Pens | when the second tent burns (`At` 0.6) | walks to the last fuel can; it will not light while he is within 14 studs of it (its prompt goes off) |
+| Secure the Site | halfway through the hold (0.5) | the hold stops while he stands in the zone (half its smaller side) |
+| Restore Comms | 30 s into the 60 s hold (0.5) | the signal stops while he is within the hold's 20 studs of the mast |
+| Confirm Casualties | when half the heavies are down (0.5) | comes to lead the rest; no other rule |
+| Recover the Record | a third of the way carried (0.3) | hunts the carrier first (nearest member when nobody carries it) |
+
+**Balance (systems pass).** He keeps his body and plates (`HealthFactor` 1): the Gate walk-in
+(up to 75 s) is gone, so the mission is shorter even with the contest; the target fight
+stays 100-120 s. A contest is never a reset: holds pause, never drain. Bots stand off 32
+studs from him (`Config.Bots.Boss.StandOff`), outside a 20-stud mast radius and most of a
+zone, so in solo the player pulls him off while the bots hold or the player kills him first;
+with 4 players one kites, the rest work. While he is up both the objective's faster spawns
+and his lighter field (`Config.Index.Warden.Pressure`) apply, as before.
+
+**Later (not built):** he puts out a burning tent; he damages the mast (progress lost, not
+paused); he walks in from the Gate lane to the site (needs pathing past buildings); a
+per-objective arena (cover he can charge into near each site, Delta v2's level pass);
+Mile 14's boss in its own objectives.
 
 ## Missions
 
@@ -673,10 +724,12 @@ Patient reuse the frame. Index hosts never dismember: their plates are the mecha
 
 ### The Warden (built; `Config.Index.Warden`, `IndexService`, [SPRINT_19_WARDEN.md](sprints/SPRINT_19_WARDEN.md))
 
-- **Entry.** He spawns beyond the Gate, the Gate opens (radio) and he walks the screening
-  route: Gate lane, bus line, Inner Gate, under the bridge, the Apron, then the hunt (walk
-  times out after 75 s). A member within 90 studs during the walk gets the sighting line.
-  Radio lines: LORE.md.
+- **Entry.** Since 2026-11-16 he comes to the main objective partway through it (Objective
+  pools > The Warden in the main objective). With `Config.Objectives.Boss.Enabled = false`
+  he comes after it instead: he spawns beyond the Gate, the Gate opens (radio) and he walks
+  the screening route: Gate lane, bus line, Inner Gate, under the bridge, the Apron, then the
+  hunt (walk times out after 75 s). A member within 90 studs during the walk gets the
+  sighting line. Radio lines: LORE.md.
 - **Body.** 7,000 hp at scale 1.9, +33% per extra living player (the one exception to "more
   Infected, not tougher": one body cannot be more bodies). Headshot x2 once the helmet is off.
 - **Plates** (one rule): helmet 300, chest 400 (was 500 until 2026-11-10), back 400 (the flank), shoulders 300 each,
@@ -700,8 +753,8 @@ Patient reuse the frame. Index hosts never dismember: their plates are the mecha
 - **Phases** by body health: below 60% the **Riot Call** (6 Walkers + 2 Runners, +3 Walkers
   per extra player); below 25% a second call, charges every 5 s, walk 11. While he is up the
   wave loop spawns at x1.5 interval, 8 fewer alive, no Brutes.
-- **Kill.** Priority pallet at the corpse, everyone alive healed and re-armed, extraction
-  opens. Corpse stays 8 s.
+- **Kill.** Priority pallet at the corpse, everyone alive healed and re-armed; extraction
+  opens (with him in the objective: once its work is done too). Corpse stays 8 s.
 - **Target fight** 100-120 s for a squad that works the plates; retune plate health first.
 
 ## The Infected roster

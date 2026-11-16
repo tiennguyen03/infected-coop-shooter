@@ -4,10 +4,12 @@
 -- sprint (the Carrying attribute, read by SprintController). Downed, dead or gone, the
 -- carrier drops it where they stood and anyone can pick it up again. Carrying is for
 -- players only: bots escort the carrier (they follow their leader) and never pick it up.
+-- `share` is the way carried (when the Warden comes, row Boss.At; he hunts the carrier).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
+local BossAct = require(ReplicatedStorage.Shared.Rules.BossAct)
 local Kit = require(script.Parent.Kit)
 local Types = require(script.Parent.Types)
 
@@ -169,6 +171,12 @@ function RecoverRecord.new(context: Types.Context): Types.Objective
 		end,
 		cleanup = function()
 			release()
+		end,
+		share = function()
+			if delivered then
+				return 1
+			end
+			return BossAct.carried((from - to).Magnitude, (rest - to).Magnitude)
 		end,
 	}
 end

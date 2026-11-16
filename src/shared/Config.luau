@@ -1950,6 +1950,32 @@ local Config = {
 		LampColor = Color3.fromRGB(255, 176, 64), -- Lights On: sodium
 		-- Said once at insert, before the main objective's brief.
 		Frame = "Pike, Control. Clear this checkpoint so the helicopter can land and we can hold the district.",
+		-- The Warden as the main objective's last act (docs/PROGRESSION.md > The Warden in the
+		-- main objective; Rules/BossAct). He comes partway through, at the objective, and the
+		-- mission is complete (reward, crate, extraction) only when the work is done and he is
+		-- down, in either order. A main objective's row may override any field below in its
+		-- own `Boss` block (ObjectiveDefinitions). Enabled = false restores the old order:
+		-- objective done -> reward -> the Warden from the Gate -> extraction.
+		Boss = {
+			Enabled = true,
+			At = 0.5, -- share of the objective's progress when he comes (always by its end)
+			-- Studs: while he stands this close to the objective's point it does not progress
+			-- (a hold pauses, a fuel can will not light). 0 = he never blocks it. A zone or a
+			-- hold radius uses its own size; any number above 0 switches it on.
+			Contest = 0,
+			Target = "nearest", -- "carrier": he hunts whoever carries the objective's item
+			EnterMin = 55, -- he walks in from open ground this far from the objective's point
+			EnterMax = 70, -- (or from the site's BossFrom when it has one)
+			HealthFactor = 1, -- on top of Config.Index.Warden's health and per-player scaling
+			ContestShow = 0.6, -- seconds the HUD keeps "blocked" after he steps off
+			-- Control's lines (lore developer). `{place}` = the drawn site's Name.
+			Arrive = "That woke the Gate sergeant. He still guards this post. The Warden is coming to {place}.",
+			Contested = "", -- said once, the first time he stands on it (rows set their own)
+			Blocked = "The Warden is on it: pull him off", -- the HUD step while he blocks it
+			WorkDone = "That's done. The Warden is all that's left. Put him down.",
+			BossFirst = "The Warden is down. Finish the job.",
+			KillStep = "Kill the Warden", -- the HUD step once only he is left
+		},
 		Rows = ObjectiveDefinitions.Rows,
 		Maps = ObjectiveDefinitions.Maps,
 	},
