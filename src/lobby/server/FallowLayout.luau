@@ -123,7 +123,35 @@ FallowLayout.Desks = {
 		facing = Vector3.new(-1, 0, 0),
 		counter = false,
 	},
+	-- The motor sergeant at Vehicles, at the aft end of the hangar beside the parked ATV,
+	-- facing the soldiers coming round the Plot (Nova 2026-11-17; MotorPool).
+	{
+		id = "vehicles",
+		feet = Vector3.new(9, FallowLayout.HangarY, -48),
+		facing = Vector3.new(0, 0, 1),
+	},
 } :: { DeskPlace }
+
+-- The motor pool (Nova 2026-11-17: "the open space on the other side of the hangar"; plan
+-- by the level designer; MotorPool builds it): three painted bays across the aft hangar, the
+-- ATV parked in the middle one on the spawn's centre line (seen down the aisle past the
+-- Loadmaster), the other two kept for later vehicles. Tool chests behind the sergeant, a
+-- tyre rack in the starboard aft corner, a fuel point in the port one, one light over it all.
+FallowLayout.MotorPool = {
+	bays = { { x0 = -20, x1 = -8 }, { x0 = -6, x1 = 6 }, { x0 = 12, x1 = 24 } },
+	bayZ0 = -78,
+	bayZ1 = -52,
+	parked = {
+		bay = 2,
+		vehicle = "atv",
+		centre = Vector3.new(0, H, -64),
+		facing = Vector3.new(0, 0, 1),
+	},
+	chests = { Vector3.new(9, H, -56), Vector3.new(9, H, -60) },
+	tyreRack = { x = 30.3, z0 = -96, z1 = -82 },
+	fuel = Vector3.new(-28, H, -90),
+	light = Vector3.new(0, 37, -64),
+}
 
 -- The Call-ins display (owner 2026-11-16: "like the Quartermaster, where you can see the guns
 -- behind him"; CallInDisplay builds it, CallInDisplayUI looks at it): a row of pallets on the

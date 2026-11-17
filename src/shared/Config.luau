@@ -25,6 +25,15 @@ local Config = {
 		CallIns = { Enum.KeyCode.One, Enum.KeyCode.Two, Enum.KeyCode.Three, Enum.KeyCode.Four },
 		Loadout = Enum.KeyCode.B, -- the Arms Room menu
 		NightVision = Enum.KeyCode.N, -- the helmet's night vision goggles, on and off
+		-- Driving a vehicle (VehicleController): read when the VehicleSeat has no reading of
+		-- its own. Getting on and off is Interact (E); GetOffPad on a gamepad.
+		Drive = {
+			Forward = { Enum.KeyCode.W, Enum.KeyCode.Up },
+			Back = { Enum.KeyCode.S, Enum.KeyCode.Down },
+			Left = { Enum.KeyCode.A, Enum.KeyCode.Left },
+			Right = { Enum.KeyCode.D, Enum.KeyCode.Right },
+		},
+		GetOffPad = Enum.KeyCode.ButtonB,
 		-- Roll and slide have no key of their own (owner 2026-11-11): Sprint twice rolls, and
 		-- holding a Crouch key while sprinting slides (MovementController; StanceController
 		-- does not crouch then).
@@ -1537,6 +1546,10 @@ local Config = {
 		-- the throw, Width; Across = true lays it across). A row without Aim shows a small ring.
 		AimArc = { Beads = 18, Rise = 0.3, MinRise = 3 }, -- the arc: beads, apex height per stud of reach
 		Slots = 4, -- call-in slots per soldier (keys 1-4; the flare is key 5)
+		-- Studio only (Nova 2026-11-17, testing vehicles): this call-in takes the last slot of the
+		-- starting loadout when nothing was signed for (LoadoutService). Never in the live game;
+		-- nil turns it off.
+		StudioCallIn = "atv" :: string?,
 		-- Binoculars (Rules/Spotting, SpotUtil; docs/PROGRESSION.md > Binoculars): a row with
 		-- `AimMode = "Binoculars"` (default "Throw") is not thrown. Its key raises binoculars
 		-- (BinocularController: the view, the mark on the ground, the range; BinocularPose: the
@@ -1912,6 +1925,124 @@ local Config = {
 				Height = 38,
 				Sway = 0.8,
 				Streamer = 9,
+			},
+		},
+		-- ATV (the first vehicle; Nova and Tien 2026-11-17; docs/PROGRESSION.md > The ATV). A
+		-- call-in like any other: bought at the Vehicles desk, signed into a slot, thrown. Any
+		-- row with a `Vehicle` block is a vehicle (VehicleService spawns it, VehicleBody builds
+		-- it from the block's `Body`); nothing lists vehicle names. Two seats: the driver (no
+		-- gun) and the back seat, who fires their primary.
+		ATV = {
+			Price = 400, -- merits on the Carrier (Rules/Record, KitPrices)
+			Desk = "vehicles", -- sold by the motor sergeant (LobbyDesks), not the Call-ins desk
+			Charges = 1,
+			Cooldown = 180, -- a wrecked or scrapped ATV comes back when the charge does
+			ThrowDistance = 30,
+			Aim = { Shape = "ring", Radius = 5 }, -- where it is set down
+			-- Slung under the helicopter (Nova 2026-11-17): the helo comes in at Height over the
+			-- mark with the ATV on a Line studs long, lowers it to the ground, drops the hook and
+			-- climbs away. Approach and Depart are the flight in and out; the lowering lasts from
+			-- the end of the approach to Time (from the throw), when the server's ATV appears.
+			Arrival = {
+				Style = "sling",
+				Time = 7.5,
+				Smoke = Color3.fromRGB(214, 196, 92),
+				SmokeTime = 8,
+				Approach = 4.5, -- in from Distance studs out to the hover
+				Depart = 3.5, -- the helo climbs away after the hook is dropped
+				Distance = 260,
+				Height = 34, -- the helo's frame above the mark during the hover
+				Line = 16, -- the sling line, studs, from the belly to the ATV's roll bar
+				Climb = 70, -- studs it gains on the way out
+				RotorVolume = 0.55,
+			},
+			Vehicle = {
+				Body = "atv", -- VehicleBody's build (blocky parts; a mesh later)
+				PerPlayer = 1, -- a second call replaces your empty one (Rules/Vehicle.callCheck)
+				PerSquad = 2, -- two ATVs carry the whole squad
+				Clear = Vector3.new(6, 4, 9), -- the landing box that must be free of walls (no charge spent)
+				-- Driving (Rules/Vehicle.driveAccel / steerAngle): studs/s and studs/s². Sprint is 24,
+				-- a Runner 17. Maps are getting bigger (Nova 2026-11-17): it is transport too.
+				-- Nova 2026-11-17, first drive: "slower than walking". Measured in Studio at Accel 16:
+				-- 13 studs/s after 1 s, 22 after 2 (the accel tapers to 0 at TopSpeed), so on Delta's
+				-- short runs it rarely beat a sprint. Now about 25 after 1 s, 38 after 2.
+				TopSpeed = 55,
+				Reverse = 16,
+				Accel = 32,
+				Brake = 45,
+				Coast = 6,
+				SteerAngle = 35, -- degrees at a standstill
+				SteerAtTop = 15, -- degrees at top speed
+				Grip = 9, -- how hard the tyres stop a slide (share of sideways speed per second)
+				MaxClimb = 30, -- degrees: steeper ground gives no drive (pallet ramps are 33)
+				-- The wheels: a spring per wheel, measured per unit of the whole assembly's mass
+				-- (riders included), so it rides the same with one or two aboard.
+				-- Travel: studs a wheel moves; at rest it sits Gravity / Stiffness (about 0.47) into
+				-- it, which is the height VehicleBody's `rest` assumes (change both together).
+				Suspension = { Travel = 1, Stiffness = 420, Damping = 22 },
+				Upright = 6, -- how hard it levels itself in the air (it lands on its wheels)
+				-- Health (Rules/Vehicle.stage). The Infected that can hurt it carry
+				-- `VehicleDamage` on their row (EnemyDefinitions); our own fire never does.
+				Health = 400,
+				SmokeAt = 0.5,
+				FireAt = 0.25,
+				-- At 0 it burns for Burn seconds and blows: Damage to the Infected within Radius;
+				-- anyone still aboard is thrown off with RiderDamage and knocked down Knock seconds.
+				Wreck = { Burn = 3, Damage = 120, Radius = 10, RiderDamage = 20, Knock = 1.2 },
+				-- Running the Infected down (Rules/Vehicle.ramDamage): damage = speed x PerSpeed
+				-- above MinSpeed; each body costs Slow of the speed and SelfDamage health. An
+				-- Infected with `RamStop` (Brute, Warden) stops it dead: StopDamage to the ATV,
+				-- the ram's damage to them and a Stagger.
+				Ram = {
+					MinSpeed = 12,
+					PerSpeed = 2.5,
+					Slow = 0.15,
+					SelfDamage = 4,
+					StopDamage = 40,
+					Stagger = 1,
+					Reach = 3, -- studs ahead of the bumper a body counts as hit
+					ShakePower = 0.4,
+				},
+				-- The back seat: fires its primary all round except BlockedArc degrees either
+				-- side of straight ahead (the driver); hip spread x MovingBloom above MovingSpeed.
+				Gunner = { BlockedArc = 25, MovingBloom = 1.5, MovingSpeed = 8 },
+				-- On its side or roof and slower than Slow: hold Interact Hold seconds to right it.
+				Right = { Tilt = 70, Hold = 1.5, Slow = 2 },
+				-- Solo: while a player drives with the back seat free, the nearest free bot this close
+				-- (to the ATV) walks over and gets on once the ATV is nearly stopped.
+				BotRideRange = 40,
+				-- How a player sits on it (client VehiclePose, laid over the clip, degrees): hips and
+				-- knees for both seats; the driver's arms reach the bars (shoulders forward by
+				-- ArmRaise, elbows bent ElbowBend, turned in ArmIn) and the gun is put away.
+				Pose = { Hip = 85, Knee = 85, ArmRaise = 62, ElbowBend = 28, ArmIn = 8 },
+				-- The engine, while someone drives (client VehicleController): a licensed library loop
+				-- (Pro Sound Effects "Go Kart Engine Constant 2", a small 4-stroke), pitched from
+				-- IdlePitch standing to TopPitch at top speed. The Infected hear it (EnemyService.noise,
+				-- like a shot): NoiseIdle studs standing, Noise at top speed (guns carry 70-140).
+				-- Radio (lore developer, approved by Nova 2026-11-17; docs/lore/desk_crew.md), shown as
+				-- radio notices: to the squad when it is called, set down and lost; to the caller
+				-- when a call is refused; to the riders when it is about to blow.
+				Radio = {
+					Inbound = "Pike, Control. Helo bringing your ATV in under it. Clear the drop.",
+					Down = "Helo. ATV's on the ground. Hook's clear.",
+					Lost = "Pike, Control. Lost your ATV. You're on foot.",
+					Burning = "It's going up! Get off!",
+					Occupied = "Your ATV's still got people on it.",
+					SquadFull = "Squad's got all the ATVs it can have.",
+					NoRoom = "No room to set it down there.",
+				},
+				Engine = {
+					SoundId = "rbxassetid://9112787518",
+					Volume = 0.45,
+					IdlePitch = 0.75,
+					TopPitch = 1.35,
+					RollOffMin = 12,
+					RollOffMax = 220,
+					NoiseIdle = 35,
+					Noise = 85,
+				},
+				SpeedSlack = 1.25, -- the server takes the drive back above TopSpeed x this
+				PromptReach = 9, -- studs a soldier can get on from
 			},
 		},
 		-- The supply drops' old fall (server-side), used only while Arrivals.Enabled is false.

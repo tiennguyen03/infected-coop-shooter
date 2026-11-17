@@ -208,11 +208,14 @@ how the other teams are called is open, for the lore developer.
   the **Loadmaster** (the helicopter crew chief: he makes up each soldier's **Loadout**, what they
   carry and what is kicked out of the door, and they sign for it before they walk up the
   ramp), and **Call-ins** (a sapper sergeant: every call-in, from the fire missions to the
-  Doorman, the wire and the supply drops; owner 2026-11-16 folded the Fires desk into it).
+  Doorman, the wire and the supply drops; owner 2026-11-16 folded the Fires desk into it),
+  and **Vehicles** (2026-11-17, Nova approved: the motor pool at the hangar's aft end, three
+  painted bays, a parked ATV lashed to the deck, tool chests, a tyre rack and a fuel point; the
+  **motor sergeant** sells the ATV, which is signed into a call-in slot at the Loadmaster).
   Desk crew wear ship or Army working dress, never Pike grey. The desks are run by the same
   people every visit: the Quartermaster (a sergeant first class, thirty years in arms rooms),
-  the Loadmaster (the helicopter crew chief, who rides the door) and the sapper sergeant (a
-  staff sergeant). Voices and lines in
+  the Loadmaster (the helicopter crew chief, who rides the door), the sapper sergeant (a
+  staff sergeant) and the motor sergeant (a staff sergeant). Voices and lines in
   [lore/desk_crew.md](lore/desk_crew.md).
 - **The Plot.** Control's map room under the island, lit red. The corridor chart is a paper
   map on the table under tape and grease pencil (what it shows:
@@ -268,6 +271,18 @@ feet.
 - **No door gun.** The pintle mount is still on the door frame, empty, its arm swung inboard
   and tied off. The helicopter does not fight for its LZ. Pike holds it. When the squad needs a gun
   from the air, it calls Shrike.
+- **The ATV.** (2026-11-17.) The helicopter can carry one two-seat military ATV slung under
+  it on a line: it sets the ATV down where the call-in lands, drops the hook and goes. The ATV
+  wears HARLAN stencilled like every airframe. The driver has no gun; the one on the back seat
+  fires their main gun all round except through the driver. It runs Infected down, and on
+  the bigger maps it is how Pike gets about. Radio notices (in game,
+  `Config.CallIns.ATV.Vehicle.Radio`):
+
+  | Cue | Line |
+  |---|---|
+  | Inbound (on the call) | "Pike, Control. Helo bringing your ATV in under it. Clear the drop." |
+  | Down (touchdown) | "Helo. ATV's on the ground. Hook's clear." |
+  | Lost (destroyed) | "Pike, Control. Lost your ATV. You're on foot." |
 - **The lamp.** A single amber lamp sits on the housing behind the rotor mast. It is lit
   whenever the rotor turns, day or night. Soldiers say it is what you look for when you have
   thrown green smoke and cannot see the smoke.

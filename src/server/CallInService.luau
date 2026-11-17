@@ -40,6 +40,7 @@ local PauseService = require(script.Parent.PauseService)
 local SentryService = require(script.Parent.SentryService)
 local SupplyDropService = require(script.Parent.SupplyDropService)
 local ThrowWindUp = require(script.Parent.ThrowWindUp)
+local VehicleService = require(script.Parent.VehicleService)
 local Squad = require(script.Parent.Squad)
 local Lifecycle = require(script.Parent.Lifecycle)
 local WorldSounds = require(script.Parent.WorldSounds)
@@ -201,7 +202,16 @@ local function fire(
 	local impacts: { Vector3 }? = nil
 	local fired = false
 	local id = definition.Id
-	if id == "hammer" then
+	if cfg.Vehicle then
+		-- A vehicle (any row with a Vehicle block): refused before the charge is spent when
+		-- the squad has its share out or the ground is not clear; the sling sets it down.
+		fired = VehicleService.check(player, id, landing)
+		if fired then
+			deployAfter(holdFor, player, function()
+				VehicleService.deliver(player, id, landing, direction)
+			end)
+		end
+	elseif id == "hammer" then
 		local walking = LoadoutService.hasUpgrade(player, "walking_barrage")
 		local step = if walking then Config.Upgrades.WalkingBarrage.Step else 0
 		fired, impacts =
@@ -383,6 +393,9 @@ local function onCallIn(player: Player, slot: unknown, requested: unknown)
 		-- A knocked soldier's click still takes the binoculars down (no stuck pose).
 		lower(player)
 		return
+	end
+	if VehicleService.seatOf(player.Character) then
+		return -- no call-ins from a vehicle's seat
 	end
 	local slotIndex = slot :: number
 	local definition = CallInDefinitions.get(LoadoutService.getCallIn(player, slotIndex))

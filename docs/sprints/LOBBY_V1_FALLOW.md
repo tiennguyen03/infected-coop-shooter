@@ -355,6 +355,8 @@ The rack is where guns are **bought** (merits, onto the soldier's record; owner 
      50..-10                        ┌island┐ X 22..34 (deck); Plot under it (hangar,
                                     └──────┘  X 4..33, Z -10..30)
     -15  spot 4 (helo X -12, ring radius 14, sign X 2)
+    -48  Vehicles: motor sergeant (9), facing the spawn (hangar)
+    -52..-78  motor pool bays X -20..-8, -6..6 (the ATV, 0,-64), 12..24
     -60  spot 3
    -100  ── hangar bulkhead (aft) ──
    -105  spot 2
@@ -363,6 +365,26 @@ The rack is where guns are **bought** (merits, onto the soldier's record; owner 
 ```
 
 Deck surface y 40, hangar floor y 20, sea y 0. Every position is in `FallowLayout`.
+
+## Motor pool (2026-11-17: built, seen in a Studio playtest)
+
+Nova: "the NPC in charge of vehicles in the open space on the other side of the hangar".
+Layout by the level designer (`FallowLayout.MotorPool`; `MotorPool` builds it from
+`DeskService` for the desk `vehicles`):
+
+- **The motor sergeant** (desk VEHICLES, `LobbyDesks`; lines in docs/lore/desk_crew.md)
+  stands at (9, -48) behind the standard counter, facing the soldiers coming round the Plot.
+  She sells every row with `Desk = "vehicles"` (today the ATV, 400 merits) on the plain desk
+  panel (`DeskShop`); it is signed into a call-in slot at the Loadmaster.
+- **Three painted bays** across the aft hangar, Z -78..-52: X -20..-8 and 12..24 empty for
+  later vehicles, and the ATV in the middle one on the spawn's centre line (0, -64), nose to
+  the spawn, so it shows down the aisle past the Loadmaster. It is the match's own build
+  (`Shared.VehicleBody`, anchored). Lashing chains were tried and taken out: four straight
+  bars from the deck to the fenders read as legs, the ATV on stilts.
+- **Dressing:** two red tool chests behind her (9, -56) and (9, -60); a tyre rack of eight in
+  the starboard aft corner (X 28..32.6, Z -96..-82); a fuel point on a pallet with six jerry
+  cans and an extinguisher in the port aft corner (-28, -90); one hangar light over the bays
+  (0, 37, -64; the lobby's 13th light). About 50 Parts and the ATV's 30.
 
 ## Music (2026-11-10)
 

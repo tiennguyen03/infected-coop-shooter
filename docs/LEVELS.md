@@ -296,6 +296,23 @@ player never touches empty air. No soft out-of-bounds warning: there is no way o
 - The Studio Baseplate is hidden at once and destroyed after 5 s (deleting it at boot
   dropped the first player through the world).
 
+## A16. Vehicles (the ATV, 2026-11-17; level designer)
+
+The ATV (PROGRESSION.md > The ATV) drives level 0 only. Delta does not need it for distance
+(LZ to the Pens is 11 s at a sprint); it is the test bed, and bigger maps are coming.
+
+- **Drives:** the LZ road; the main road x = -30; under the bridge (10.5 underside, the only
+  level-0 way across the highway); the Apron; the north road z = 200 to the Suburb; the Depot
+  pad and aisles; into the Shed through its 12 x 10 vehicle door; the Inner Gate and the Gate
+  lanes (24 wide) once open.
+- **Cannot:** hill slopes (about 40 degrees), the highway deck, the Compound, the Ridge, the
+  Overlook and the Pens terrace; pallet ramps and stairs (33 degrees; it drives nothing past
+  `MaxClimb` 30); building doors (4 wide); the Scrapes; ladders. Concertina stops it.
+- **Collision:** the chassis is group `Vehicle` (passes through gore); the wheel rays are
+  `VehicleRay` (pass through the Infected and gore). No Delta cover needs moving.
+- **Mile 14** is its real home once the off-ramp (17 degrees) is built: the Jam's centre gap
+  (x -8.5..8.5) runs the full 600 studs. Its engine on a quiet night mission is the trade.
+
 ## A12. Ground
 
 `ArenaService.PATCHES`: thin (0.24) no-collision, no-query sheets (colours in

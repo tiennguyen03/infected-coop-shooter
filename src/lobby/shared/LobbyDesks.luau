@@ -102,7 +102,7 @@ local LobbyDesks: { Desk } = {
 			confirm = "SIGN FOR IT",
 			confirmLine = "Signed. That's what you fly with. Up the ramp, find a bird with a seat.",
 			reject = "That won't go. You need four call-ins, and no two the same.",
-			notOnRecord = "That's not yours yet. Guns at the Arms Room, call-ins at the Call-ins desk.",
+			notOnRecord = "That's not yours yet. Guns at the Arms Room, call-ins at Call-ins, ATVs at Vehicles.",
 		},
 	},
 	{
@@ -156,6 +156,31 @@ local LobbyDesks: { Desk } = {
 			notOnIssue = "NOT ON YOUR RECORD",
 			currency = "MERITS",
 			buy = "BUY",
+		},
+	},
+	{
+		-- The motor pool at the hangar's aft end (Nova and Tien 2026-11-17; lines by the lore
+		-- developer, docs/lore/desk_crew.md). She sells every row with Desk = "vehicles": the
+		-- ATV today (Config.CallIns.ATV); it is signed into a call-in slot at the Loadmaster.
+		id = "vehicles",
+		title = "VEHICLES",
+		who = "Motor sergeant",
+		issues = "The ATVs: one drives, one rides the back and shoots",
+		talk = {
+			greetings = {
+				"Vehicles. I keep the ATVs running. You bring them back. That's the deal.",
+				"Two seats. One drives, one rides the back and shoots. Nobody rides the roof.",
+				"Roads up there are full of dead cars. An ATV fits between them. A truck doesn't.",
+				"Every ATV goes down hanging under a helo. I write down which ones come back.",
+			},
+			open = "Show me the vehicles.",
+			ask = "Who does what on it?",
+			answer = "Driver steers. Whoever's on the back shoots their main gun. Get on and off with E.",
+			leave = "That's all.",
+			openLine = "That's what's running. Buy it here, then sign it into a call-in slot with the Loadmaster.",
+			bought = "It's on your record. Bring it back. You too, ideally.",
+			short = "Not enough merits. Fuel's free. The ATV isn't.",
+			refused = "That one's in bits right now. Give me a minute.",
 		},
 	},
 }

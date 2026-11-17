@@ -46,6 +46,7 @@ local EnemyService = require(script.Parent.EnemyService)
 local ReviveAnimService = require(script.Parent.ReviveAnimService)
 local Squad = require(script.Parent.Squad)
 local SupplyDropService = require(script.Parent.SupplyDropService)
+local VehicleService = require(script.Parent.VehicleService)
 
 local ENEMY_TAG = "Enemy"
 local MAX_SQUAD = 4
@@ -63,6 +64,7 @@ type Tracks = {
 	downed: AnimationTrack?,
 	knockdown: AnimationTrack?,
 	getup: AnimationTrack?,
+	sit: AnimationTrack?, -- on a vehicle's back seat (VehicleService)
 }
 
 type Bot = {
@@ -237,7 +239,15 @@ local function loadTracks(bot: Bot, humanoid: Humanoid)
 		knockdown = Animations.load(found, clips.knockdown, Enum.AnimationPriority.Action3),
 		getup = Animations.load(found, clips.getup, Enum.AnimationPriority.Action3),
 	}
-	for _, track in { bot.tracks.idle, bot.tracks.walk, bot.tracks.run, bot.tracks.downed } do
+	-- Seated on a vehicle: Roblox's stock R15 sit (the one the insertion cutscene's bench uses).
+	local sit = Instance.new("Animation")
+	sit.AnimationId = Config.Insertion.Animations.Sit
+	local sitTrack = found:LoadAnimation(sit)
+	sitTrack.Priority = Enum.AnimationPriority.Action
+	bot.tracks.sit = sitTrack
+	for _, track in
+		{ bot.tracks.idle, bot.tracks.walk, bot.tracks.run, bot.tracks.downed, sitTrack }
+	do
 		if track then
 			track.Looped = true
 		end
@@ -1132,9 +1142,24 @@ local function think(bot: Bot, now: number, params: RaycastParams)
 	if kitFree then
 		tryStim(bot, humanoid, now, if boss then settings.Boss.StimBelow else settings.StimBelow)
 	end
+	-- In a vehicle's back seat (VehicleService): no walking, dodging, reviving or throwing,
+	-- and the body never turns (that would drag the vehicle); it only shoots.
+	local riding = model:GetAttribute(Attributes.Riding) ~= nil
+	-- Seated: the walk clips stop (animate does not run while riding) and the sit plays.
+	local sitTrack = bot.tracks.sit
+	if riding and sitTrack and not sitTrack.IsPlaying then
+		for _, track in { bot.tracks.idle, bot.tracks.walk, bot.tracks.run } do
+			if track and track.IsPlaying then
+				track:Stop(0.15)
+			end
+		end
+		sitTrack:Play(0.15)
+	elseif not riding and sitTrack and sitTrack.IsPlaying then
+		sitTrack:Stop(0.15)
+	end
 	-- The Warden's ground attacks (IndexService danger attributes): step out of the ring or
 	-- the line while he winds up, nothing else.
-	if dodgeDanger(humanoid, root, now) then
+	if not riding and dodgeDanger(humanoid, root, now) then
 		breakFollow(bot)
 		stopReviving(bot)
 		animate(
@@ -1143,7 +1168,7 @@ local function think(bot: Bot, now: number, params: RaycastParams)
 		)
 		return
 	end
-	if tryRevive(bot, humanoid, root, boss) then
+	if not riding and tryRevive(bot, humanoid, root, boss) then
 		breakFollow(bot)
 		humanoid.AutoRotate = true
 		local velocity = root.AssemblyLinearVelocity
@@ -1151,7 +1176,7 @@ local function think(bot: Bot, now: number, params: RaycastParams)
 		return
 	end
 
-	if leader then
+	if leader and not riding then
 		-- Where to stand: out of a caustic puddle first, then the boss stand-off ring
 		-- (BotBrain.standOff: spread, out of his reach), else the formation slot.
 		local here: BotBrain.Point = { x = root.Position.X, z = root.Position.Z }
@@ -1168,6 +1193,12 @@ local function think(bot: Bot, now: number, params: RaycastParams)
 				)
 				slack = 1
 			end
+		end
+		-- Called to a vehicle's back seat (VehicleService BoardAt): walk to it; it seats us.
+		local boardAt = model:GetAttribute(Attributes.BoardAt)
+		if not post and typeof(boardAt) == "Vector3" then
+			post = { x = boardAt.X, z = boardAt.Z }
+			slack = 1
 		end
 		if not post and boss then
 			post = BotBrain.standOff(
@@ -1199,7 +1230,7 @@ local function think(bot: Bot, now: number, params: RaycastParams)
 		bot.target = enemy
 		bot.nextShot = math.max(bot.nextShot, now + Config.Bots.ReactionTime)
 	end
-	if enemy and kitFree then
+	if enemy and kitFree and not riding then
 		tryThrow(bot, model, root, now)
 	end
 	-- The magazine: a bot reloads like the player (WeaponDefinitions), from an infinite reserve.
@@ -1213,8 +1244,11 @@ local function think(bot: Bot, now: number, params: RaycastParams)
 	end
 	if enemy and aim then
 		humanoid.AutoRotate = false
-		root.CFrame = CFrame.lookAt(root.Position, Vector3.new(aim.X, root.Position.Y, aim.Z))
-		if now >= bot.nextShot and not bot.reloadUntil and bot.rounds > 0 then
+		if not riding then
+			root.CFrame = CFrame.lookAt(root.Position, Vector3.new(aim.X, root.Position.Y, aim.Z))
+		end
+		local clear = not riding or VehicleService.gunnerMayFire(model, aim - root.Position)
+		if clear and now >= bot.nextShot and not bot.reloadUntil and bot.rounds > 0 then
 			bot.nextShot = now + Config.Bots.FireCooldown * (0.85 + math.random() * 0.3)
 			bot.rounds -= 1
 			local origin = if bot.muzzle
@@ -1222,12 +1256,14 @@ local function think(bot: Bot, now: number, params: RaycastParams)
 				else root.Position + Vector3.new(0, 1.5, 0)
 			shoot(bot, origin, aim, params)
 		end
-	else
+	elseif not riding then
 		humanoid.AutoRotate = true
 	end
 
-	local velocity = root.AssemblyLinearVelocity
-	animate(bot, Vector3.new(velocity.X, 0, velocity.Z).Magnitude)
+	if not riding then
+		local velocity = root.AssemblyLinearVelocity
+		animate(bot, Vector3.new(velocity.X, 0, velocity.Z).Magnitude)
+	end
 end
 
 local function step()

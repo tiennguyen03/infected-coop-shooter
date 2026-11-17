@@ -61,6 +61,8 @@ local Lifecycle = require(script.Parent.Lifecycle)
 local IndexService = {}
 
 local TYPE_NAME = "Warden"
+-- What each of his blows on a rider also takes off the vehicle under them (VehicleService).
+local VEHICLE_DAMAGE = EnemyDefinitions[TYPE_NAME].VehicleDamage
 local ENEMY_COLLISION_GROUP = "Enemy"
 local REPATH_INTERVAL = 0.25
 
@@ -677,7 +679,7 @@ local function resolveArc(current: Fight, kind: "bash" | "sweep")
 			distance <= settings.Range * cfg().ScaleReach
 			and (distance < 0.5 or forward:Dot(offset.Unit) >= cosHalfArc)
 		then
-			EnemyProjectileService.damagePlayer(humanoid, settings.Damage, "melee")
+			EnemyProjectileService.damagePlayer(humanoid, settings.Damage, "melee", VEHICLE_DAMAGE)
 			if kind == "sweep" and humanoid.Health > 0 then
 				shove(current, member, settings.Pushback)
 			end
@@ -708,7 +710,7 @@ local function resolveSlam(current: Fight)
 			and along <= settings.Length * reach
 			and side <= settings.Width * reach / 2
 		then
-			EnemyProjectileService.damagePlayer(humanoid, settings.Damage, "melee")
+			EnemyProjectileService.damagePlayer(humanoid, settings.Damage, "melee", VEHICLE_DAMAGE)
 		end
 	end
 	WorldSounds.at(root.Position + forward * 6, "warden", "warden_impact")
@@ -739,7 +741,8 @@ local function resolveDisc(current: Fight, kind: "pound" | "stomp")
 			EnemyProjectileService.damagePlayer(
 				humanoid,
 				settings.Damage,
-				if kind == "stomp" then "melee" else nil
+				if kind == "stomp" then "melee" else nil,
+				VEHICLE_DAMAGE
 			)
 			-- A missed stomp (the roll) is no knockdown either; a Pound always is.
 			if humanoid.Health > 0 and (kind == "pound" or humanoid.Health < before) then
@@ -840,7 +843,7 @@ local function stepCharge(current: Fight, charge: Charge, now: number)
 			and math.abs(offset.Y) <= settings.HitHeight
 		then
 			charge.hit[humanoid] = true
-			EnemyProjectileService.damagePlayer(humanoid, settings.Damage)
+			EnemyProjectileService.damagePlayer(humanoid, settings.Damage, nil, VEHICLE_DAMAGE)
 		end
 	end
 	if elapsed >= charge.duration then

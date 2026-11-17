@@ -14,6 +14,7 @@ local ArmsRack = require(script.Parent.ArmsRack)
 local CallInDisplay = require(script.Parent.CallInDisplay)
 local Build = require(script.Parent.Build)
 local Layout = require(script.Parent.FallowLayout)
+local MotorPool = require(script.Parent.MotorPool)
 local NpcBody = require(script.Parent.NpcBody)
 
 local DeskService = {}
@@ -44,6 +45,14 @@ local DRESS: { [string]: NpcBody.Dress } = {
 		shirt = ARMY.shirt,
 		trousers = ARMY.trousers,
 		items = { 9482682978, 9482717204, 13418356502 },
+	},
+	-- The motor sergeant at Vehicles: the sapper's woodland top and pants, bareheaded (her
+	-- look by the lore developer: sleeves rolled, grease to the elbows, a log book; the
+	-- grease and the book wait for the art pass).
+	vehicles = {
+		shirt = ARMY.shirt,
+		trousers = ARMY.trousers,
+		items = { 9482682978, 9482717204 },
 	},
 	-- Military shirt, combat pants, a headset (A6 A9 E5).
 	plot = {
@@ -90,6 +99,9 @@ local function props(folder: Folder, id: string, frame: CFrame)
 			Color3.fromRGB(60, 64, 50)
 		)
 		CallInDisplay.build(folder, id)
+	elseif id == "vehicles" then
+		-- The motor pool behind her: the bays, the parked ATV, chests, tyres, fuel, a light.
+		MotorPool.build(folder)
 	end
 end
 

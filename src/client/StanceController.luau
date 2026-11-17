@@ -135,6 +135,9 @@ function StanceController.init()
 		if character and character:GetAttribute(Attributes.SquadState) == "Downed" then
 			return -- stays prone until revived
 		end
+		if character and character:GetAttribute(Attributes.Riding) ~= nil then
+			return -- seated on a vehicle (VehicleService)
+		end
 		if lowKey then
 			toggle("crouch")
 		elseif key == keys.Prone then

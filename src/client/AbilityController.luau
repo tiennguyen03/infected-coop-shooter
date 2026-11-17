@@ -341,6 +341,15 @@ function AbilityController.init()
 			return
 		end
 		local key = input.KeyCode
+		-- On a vehicle (VehicleService) only the stim works: no call-ins, throws or swaps.
+		local character = Players.LocalPlayer.Character
+		if
+			character
+			and character:GetAttribute(Attributes.Riding) ~= nil
+			and key ~= Config.Keys.Stim
+		then
+			return
+		end
 		local slot = CALL_IN_KEYS[key]
 		if slot and slot <= Config.CallIns.Slots then
 			pressCallIn(key, slot)
