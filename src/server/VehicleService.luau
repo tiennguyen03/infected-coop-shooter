@@ -82,6 +82,7 @@ type Ride = {
 local rides: { Ride } = {}
 local pending: { [Player]: number } = {} -- called in, not yet set down
 local folder: Folder
+local effects: Folder
 local vehicleRemote: RemoteEvent
 local noticeRemote: RemoteEvent
 local nextCheck = 0
@@ -182,7 +183,7 @@ local function shake(position: Vector3, power: number)
 	marker.Position = position
 	marker:SetAttribute(Attributes.BlastPower, power)
 	CollectionService:AddTag(marker, Attributes.BlastTag)
-	marker.Parent = folder
+	marker.Parent = effects
 	Debris:AddItem(marker, 0.5)
 end
 
@@ -437,7 +438,7 @@ local function flash(position: Vector3, radius: number)
 	ball.Color = defaults.Flash
 	ball:SetAttribute(Attributes.BlastPower, 3)
 	CollectionService:AddTag(ball, Attributes.BlastTag)
-	ball.Parent = folder
+	ball.Parent = effects
 	TweenService:Create(
 		ball,
 		TweenInfo.new(defaults.FlashTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
@@ -958,8 +959,11 @@ end
 
 function VehicleService.init()
 	folder = Instance.new("Folder")
-	folder.Name = "Vehicles"
+	folder.Name = "Vehicles" -- vehicle Models only (VehicleController walks it)
 	folder.Parent = Workspace
+	effects = Instance.new("Folder")
+	effects.Name = "VehicleEffects" -- shake markers and the wreck's flash
+	effects.Parent = Workspace
 	registerGroups()
 	vehicleRemote = Remotes.get("Vehicle")
 	noticeRemote = Remotes.get("BuffNotice")

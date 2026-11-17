@@ -64,6 +64,7 @@ type Tracks = {
 	downed: AnimationTrack?,
 	knockdown: AnimationTrack?,
 	getup: AnimationTrack?,
+	sit: AnimationTrack?, -- on a vehicle's back seat (VehicleService)
 }
 
 type Bot = {
@@ -238,7 +239,15 @@ local function loadTracks(bot: Bot, humanoid: Humanoid)
 		knockdown = Animations.load(found, clips.knockdown, Enum.AnimationPriority.Action3),
 		getup = Animations.load(found, clips.getup, Enum.AnimationPriority.Action3),
 	}
-	for _, track in { bot.tracks.idle, bot.tracks.walk, bot.tracks.run, bot.tracks.downed } do
+	-- Seated on a vehicle: Roblox's stock R15 sit (the one the insertion cutscene's bench uses).
+	local sit = Instance.new("Animation")
+	sit.AnimationId = Config.Insertion.Animations.Sit
+	local sitTrack = found:LoadAnimation(sit)
+	sitTrack.Priority = Enum.AnimationPriority.Action
+	bot.tracks.sit = sitTrack
+	for _, track in
+		{ bot.tracks.idle, bot.tracks.walk, bot.tracks.run, bot.tracks.downed, sitTrack }
+	do
 		if track then
 			track.Looped = true
 		end
@@ -1136,6 +1145,18 @@ local function think(bot: Bot, now: number, params: RaycastParams)
 	-- In a vehicle's back seat (VehicleService): no walking, dodging, reviving or throwing,
 	-- and the body never turns (that would drag the vehicle); it only shoots.
 	local riding = model:GetAttribute(Attributes.Riding) ~= nil
+	-- Seated: the walk clips stop (animate does not run while riding) and the sit plays.
+	local sitTrack = bot.tracks.sit
+	if riding and sitTrack and not sitTrack.IsPlaying then
+		for _, track in { bot.tracks.idle, bot.tracks.walk, bot.tracks.run } do
+			if track and track.IsPlaying then
+				track:Stop(0.15)
+			end
+		end
+		sitTrack:Play(0.15)
+	elseif not riding and sitTrack and sitTrack.IsPlaying then
+		sitTrack:Stop(0.15)
+	end
 	-- The Warden's ground attacks (IndexService danger attributes): step out of the ring or
 	-- the line while he winds up, nothing else.
 	if not riding and dodgeDanger(humanoid, root, now) then

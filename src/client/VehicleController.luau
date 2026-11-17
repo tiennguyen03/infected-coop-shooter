@@ -188,7 +188,10 @@ local function animateWheels(dt: number)
 	local camera = Workspace.CurrentCamera
 	local eye = if camera then camera.CFrame.Position else Vector3.zero
 	for _, child in folder:GetChildren() do
-		local model = child :: Model
+		if not child:IsA("Model") then
+			continue -- only vehicles live here, but never trust that
+		end
+		local model = child
 		local root = model.PrimaryPart
 		local cfg = if root then cfgOf(model) else nil
 		local body = cfg and VehicleBody.get(cfg.Body)
