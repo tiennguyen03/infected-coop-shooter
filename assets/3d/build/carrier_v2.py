@@ -40,7 +40,7 @@ import build_assets as ba  # noqa: E402
 import carrier_kit  # noqa: E402
 import lantern  # noqa: E402
 
-carrier_kit.register(ba)
+carrier_kit.register(ba, npcs=True)
 
 ROOT_DIR = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
 BLEND = os.path.join(ROOT_DIR, "assets", "3d", "carrier_v2.blend")
@@ -93,8 +93,12 @@ KINDS = {
     "fire": ((255, 96, 24), 1.6), "glow": ((255, 110, 40), 0.9), "glow2": ((200, 90, 56), 0.6), "glow3": ((150, 84, 70), 0.5), "ember": ((255, 60, 18), 2.5), "chem": ((120, 255, 150), 4.0),
     "scope": ((90, 230, 120), 2.5), "board": ((70, 100, 112), 0.5), "window": ((255, 214, 150), 5.0),
     "label": ((255, 236, 150), 2.0), "label_d": ((10, 10, 10), 0),
+    # each vendor corner's own light (docs/sprints/CARRIER_V2.md > Vendor corners)
+    "tungsten": ((255, 178, 102), 3.0), "amber": ((255, 140, 50), 3.0), "cabin": ((110, 170, 255), 3.0),
+    "worklamp": ((236, 244, 255), 3.0), "cold": ((170, 214, 226), 3.0), "card": ((236, 196, 120), 0.0),
+    "sky": ((120, 170, 210), 0.0), "cage": ((52, 56, 58), 0.0),
 }
-ALPHA = {"glass": 0.35, "wire": 0.45, "glow": 0.6, "glow2": 0.34, "glow3": 0.16}
+ALPHA = {"glass": 0.35, "wire": 0.45, "cage": 0.32, "glow": 0.6, "glow2": 0.34, "glow3": 0.16}
 HAZE = (0.33, 0.36, 0.40)
 
 
@@ -211,13 +215,12 @@ def deck_slabs(s):
 
 def plot_room(s, v2):
     x0, x1, z0, z1, d0, d1 = PLOT
-    wk = "wall_lo" if v2 else "plot"
-    wins = ((-6.0, 2.0, HY + 3.4, HY + 8.4),) if v2 else ()
-    s.wall_x("plot", wk, x0, x0 + 1, HY, DB, z0, d0, openings=wins)
-    s.B("plot", wk, x0, x0 + 1, HY, DB, d1, z1)
-    s.B("plot", wk, x0, x0 + 1, HY + 10, DB, d0, d1)
-    s.B("plot", wk, x0 + 1, x1, HY, DB, z0, z0 + 1)
-    s.B("plot", wk, x0 + 1, x1, HY, DB, z1 - 1, z1)
+    if not v2:  # v2: no walls (owner 2026-11-17: "too awkward to walk in and out of... cramped")
+        s.wall_x("plot", "plot", x0, x0 + 1, HY, DB, z0, d0)
+        s.B("plot", "plot", x0, x0 + 1, HY, DB, d1, z1)
+        s.B("plot", "plot", x0, x0 + 1, HY + 10, DB, d0, d1)
+        s.B("plot", "plot", x0 + 1, x1, HY, DB, z0, z0 + 1)
+        s.B("plot", "plot", x0 + 1, x1, HY, DB, z1 - 1, z1)
     # the map table (WorldMap: 9.8 x 14 of paper on an 11.4 x 15.6 table) and the board
     s.B("plot", "counter", 13.3, 24.7, HY + 2.6, HY + 3.1, -7.8, 7.8)
     for x in (13.8, 24.2):
@@ -229,7 +232,8 @@ def plot_room(s, v2):
     s.B("plot", "board", 29.3, 29.7, HY + 2, HY + 12, -6, 26)
     for i in range(5):
         s.B("plot", "black", 29.2, 29.3, HY + 2, HY + 12, -6 + i * 6.4 + 6.2, -6 + i * 6.4 + 6.4)
-    figure(s, 26.8, HY, -3)
+    if not v2:
+        figure(s, 26.8, HY, -3)
     s.B("plot", "redlamp", (x0 + x1) / 2 - 1, (x0 + x1) / 2 + 1, DB - 0.7, DB - 0.3, 9, 11)
     s.B("plot", "lamp", 17.5, 20.5, DB - 0.2, DB - 0.02, -1.5, 1.5)
     s.light((x0 + x1) / 2, DB - 2, 10, "redlamp", 2600)
@@ -369,16 +373,12 @@ def hangar_v2(s):
             cuts = []
             if z0 - 1 < z < z1 + 1:
                 cuts.append((-W + 2, x1 + 0.3))
-            if PLOT[2] <= z <= PLOT[3]:
-                cuts.append((PLOT[0], PLOT[0] + 1))
             a = -W + 2 + 4.4
             for c0, c1 in sorted(cuts):
                 s.B("beams", "steel", a, c0, DB - 1.5, DB, z - 0.35, z + 0.35)
                 a = max(a, c1)
             s.B("beams", "steel", a, W - 2 - 4.4, DB - 1.5, DB, z - 0.35, z + 0.35)
-    for x in (12.0,):  # one fore-and-aft girder, broken at the map room's walls
-        for a, c in ((HA + 0.2, PLOT[2]), (PLOT[2] + 1, PLOT[3] - 1), (PLOT[3], HF - 0.2)):
-            s.B("beams", "steel", x - 0.4, x + 0.4, DB - 2.2, DB - 1.5, a, c)
+    s.B("beams", "steel", 11.6, 12.4, DB - 2.2, DB - 1.5, HA + 0.2, HF - 0.2)  # one fore-and-aft girder
     # services between the frames
     for z in range(int(HA) + 6, int(HF), 12):
         if not (PLOT[2] < z < PLOT[3]):
@@ -393,6 +393,9 @@ def hangar_v2(s):
                 continue
             if x > 0 and PLOT[2] < z < PLOT[3]:
                 continue
+            if x < 0 and z == -64:  # the dead lamp over the restricted cage (its bulb is gone)
+                s.B("lamps", "black", x - 1.4, x + 1.4, DB - 2.2, DB - 1.9, z - 0.7, z + 0.7)
+                continue
             s.B("lamps", "black", x - 1.4, x + 1.4, DB - 2.2, DB - 1.9, z - 0.7, z + 0.7)
             s.B("lamps", "sodium", x - 1.2, x + 1.2, DB - 2.45, DB - 2.2, z - 0.5, z + 0.5)
             n += 1
@@ -405,7 +408,7 @@ def hangar_v2(s):
     s.D("env_carrier_door", 28, HY, HA, yaw=90)
     s.D("env_carrier_door", -W + 2, HY, -70, yaw=0)
     s.D("env_carrier_door", W - 2, HY, 60, yaw=180)
-    for x, z, yaw in ((W - 2, 84, 180), (W - 2, -18, 180), (-W + 2, -52, 0), (-W + 2, 96, 0), (W - 2, -80, 180)):
+    for x, z, yaw in ((W - 2, 84, 180), (W - 2, -18, 180), (-W + 2, 96, 0), (W - 2, -80, 180)):
         s.D("env_carrier_firestation", x, HY, z + 3, yaw=yaw)
     s.T("hangar", "HANGAR BAY 1", (10, HY + 14, HA + 0.2), 3.0, "+z", "yellow")
     s.T("hangar", "FR 100", (W - 2.2, HY + 8.2, 98), 0.8, "-x", "black")
@@ -503,8 +506,12 @@ def flight_deck_v2(s):
 
 
 def desks_v2(s):
-    # ---- the Quartermaster: the main seller, his whole corner a cage to the deckhead
-    figure(s, -26, HY, 124)
+    # ---- the Quartermaster: the main seller, his whole corner a cage to the deckhead. He sits on
+    # his stool leaning on the glass, under his reading lamp (vendor corners, owner 2026-11-17)
+    s.D("npc_carrier_quartermaster", -26.6, HY, 124, layer="crew")
+    s.D("prop_vendor_quartermaster", -26.6, HY, 124)
+    s.T("arms", "RING ONCE", (-23.0, HY + 3.42, 126.4), 0.22, "up", "black", yaw=-90)
+    s.light(-23.6, HY + 4.4, 122.9, "tungsten", 220)
     arms_room(s, True)
     s.B("arms", "black", -24.4, -22.9, HY + 10, HY + 12.2, 111, 140)
     s.T("arms", "ARMS ROOM", (-22.85, HY + 11.1, 125.5), 1.5, "+x", "yellow")
@@ -516,9 +523,14 @@ def desks_v2(s):
     s.T("arms", "NOT ON ISSUE", (-28.4, HY + 4.6, 113.2), 0.42, "+z", "paint")
     s.light(-27, DB - 4, 125, "flood", 5000)
     # ---- call-ins: one seller, his kit stood out on the deck like the gun wall
+    # no counter: he sits on a mortar-bomb crate among his kit, smoking, his crate-table at his
+    # right hand (vendor corners, owner 2026-11-17)
     fx, fz = 27, 105
-    figure(s, fx, HY, fz)
-    s.B("callins", "counter", 23.9, 25.3, HY, HY + 3.4, fz - 3.5, fz + 3.5)
+    s.D("npc_carrier_sapper", fx, HY, fz, yaw=180, layer="crew")
+    s.D("prop_vendor_callins", fx, HY, fz, yaw=180)
+    s.T("callins", "MIND THE", (fx - 3.05, HY + 1.75, fz + 3.8), 0.36, "-x", "red")
+    s.T("callins", "COILS", (fx - 3.05, HY + 1.2, fz + 3.8), 0.42, "-x", "red")
+    s.light(fx - 0.6, HY + 6.5, fz + 0.8, "amber", 420)
     s.B("callins", "black", 23.2, 23.5, HY + 10, HY + 12.2, 96, 114)
     s.B("callins", "steel", 23.25, 23.45, HY + 12.2, DB - 1.5, 97, 97.3)
     s.B("callins", "steel", 23.25, 23.45, HY + 12.2, DB - 1.5, 112.7, 113)
@@ -555,9 +567,14 @@ def desks_v2(s):
         s.T("callins", name, (W - 2.1, y + 0.9, zc + 2.6), 0.7, "-x", "black")
         s.T("callins", " ".join(["IIII"] * (n // 5) + ["I" * (n % 5)]), (W - 2.1, y - 0.1, zc), 0.62, "-x", "black")
     s.light(24, DB - 4, 122, "flood", 6000)
-    # ---- the Loadmaster: his desk at the ramp's foot, a rigging rail and slung cases
-    figure(s, -2, HY, 88)
-    s.B("loadout", "counter", -5.5, 1.5, HY, HY + 3.4, 89.7, 91.1)
+    # ---- the Loadmaster at the ramp's foot: no counter; his hammock between two stanchions, the
+    # rigging rail and slung cases behind (vendor corners, owner 2026-11-17)
+    s.D("npc_carrier_loadmaster", -2, HY, 88, yaw=90, layer="crew")
+    s.D("prop_vendor_loadmaster", -2, HY, 88, yaw=90)
+    for i, line in enumerate(("IIII IIII IIII IIII", "IIII IIII IIII II")):
+        s.T("loadout", line, (2.8, HY + 2.3 - i * 0.55, 89.3), 0.3, "+z", "paint")
+    s.T("loadout", "FLOWN BACK", (2.8, HY + 2.85, 89.25), 0.26, "+z", "yellow")
+    s.light(3.2, HY + 6.4, 89.4, "cabin", 320)
     s.D("prop_carrier_hoist", 3.5, HY, 84.0, yaw=0)
     s.D("prop_carrier_scale_cases", -7.5, HY, 84.5, yaw=180)
     s.B("loadout", "black", -6, 2, HY + 10, HY + 12.2, 90.3, 90.6)
@@ -572,21 +589,28 @@ def desks_v2(s):
     s.T("loadout", "TODAY'S LIFTS", (7.15, HY + 5.8, 87), 0.45, "-x", "paint")
     for i, n in enumerate(BIRDS):
         s.T("loadout", "HELO %d   SPOT %d   %s" % (sorted(BIRDS)[i], BIRDS.index(sorted(BIRDS)[i]) + 1, ("TURNING", "READY", "READY", "FUEL")[i]), (7.15, HY + 5.0 - i * 0.7, 87), 0.34, "-x", "paint")
-    s.T("loadout", "HELO 20   HANGAR   NO PARTS", (7.15, HY + 2.2, 87), 0.34, "-x", "red")
-    # ---- the map room (was "THE PLOT"): mission choice stays here
+    s.T("loadout", "ATV   MOTOR POOL   ASK HER", (7.15, HY + 2.2, 87), 0.34, "-x", "red")
+    # ---- the map room (was "THE PLOT"): mission choice stays here. Open floor, no walls (owner
+    # 2026-11-17): a painted deck and a border line say where it is; walk in from any side.
     x0, x1, z0, z1, d0, d1 = PLOT
-    s.stripes("plot", x0 - 0.1, x0 + 1.1, HY, HY + 0.3, d0, d1, 8, axis="z")  # the coaming, stepped over
-    s.B("plot", "black", x0 - 0.5, x0 - 0.1, HY + 10.2, HY + 12.6, d0 - 1, d1 + 1)
-    s.T("plot", "MAP ROOM", (x0 - 0.55, HY + 11.6, 10), 1.4, "-x", "yellow")
-    s.T("plot", "PICK YOUR MISSION", (x0 - 0.55, HY + 10.7, 10), 0.45, "-x", "paint")
-    s.B("plot", "redlamp", x0 - 0.3, x0 - 0.1, HY + 12.8, HY + 13.2, 9, 11)
-    for z in (-7, 0, 21):
-        s.D("prop_carrier_console", 7.0 + (0 if z < 5 else 4), HY, z0 + 2.2 if z < 0 else z1 - 2.2, yaw=180 if z > 5 else 0)
-    s.D("prop_carrier_console", 13, HY, z1 - 2.2, yaw=180)
-    s.D("prop_carrier_console", 20, HY, z1 - 2.2, yaw=180)
-    s.D("prop_carrier_console", 20, HY, z0 + 2.2)
-    for x, z in ((11.5, 27.35), (18.5, 27.35), (25.5, 27.35), (18.5, -7.35)):
-        s.B("plot", "scope", x - 0.7, x + 0.7, HY + 3.9, HY + 4.9, z - 0.03, z + 0.03)
+    s.B("plot", "plot", x0, x1, HY, HY + 0.03, z0, z1)
+    for a, c, e, f in ((x0, x0 + 0.3, z0, z1), (x0, x1, z0, z0 + 0.3), (x0, x1, z1 - 0.3, z1)):
+        s.B("plot", "yellow", a, c, HY + 0.03, HY + 0.05, e, f)
+    s.T("floorpaint", "MAP ROOM", (x0 + 2.2, HY + 0.06, 10), 1.6, "up", "yellow", yaw=-90)
+    for z in (5.0, 15.0):  # the sign hangs from the deckhead on the room's walk-side edge
+        s.B("plot", "steel", x0 - 0.05, x0 + 0.15, HY + 12.6, DB - 1.5, z - 0.1, z + 0.1)
+    s.B("plot", "black", x0 - 0.15, x0 + 0.25, HY + 10.2, HY + 12.6, 4.5, 15.5)
+    for face, xx in (("-x", x0 - 0.2), ("+x", x0 + 0.3)):
+        s.T("plot", "MAP ROOM", (xx, HY + 11.6, 10), 1.4, face, "yellow")
+        s.T("plot", "PICK YOUR MISSION", (xx, HY + 10.7, 10), 0.45, face, "paint")
+    for x, z, yaw in ((8, z0 + 2.2, 0), (20, z0 + 2.2, 0), (12, z1 - 2.2, 180), (20, z1 - 2.2, 180)):
+        s.D("prop_carrier_console", x, HY, z, yaw=yaw)
+    # Control's watch officer, tipped back with her boots on the table's end (vendor corners)
+    s.D("npc_carrier_watch_officer", 26.8, HY, -3, yaw=180, layer="crew")
+    s.D("prop_vendor_watch", 26.8, HY, -3, yaw=180)
+    s.B("plot", "card", 29.1, 29.2, HY + 7.2, HY + 8.0, -5.5, -4.4)  # the postcard of her street
+    s.B("plot", "sky", 29.08, 29.1, HY + 7.62, HY + 7.95, -5.45, -4.45)
+    s.light(26.4, HY + 3.4, -0.3, "tungsten", 120)
     # the board now shows where the Infected are: the city in districts, red where they are thick
     for a, c, y0, y1, k in ((-3, 0.5, 6.5, 9.5, "red"), (5, 7.5, 4.5, 6.5, "red"), (11, 15, 7.5, 10.5, "ember"), (19, 21, 4, 6, "red"), (14.5, 17, 3.5, 5, "scope")):
         s.B("plot", k, 29.22, 29.3, HY + y0, HY + y1, a, c)
@@ -594,11 +618,14 @@ def desks_v2(s):
         s.B("plot", "paint", 29.24, 29.3, HY + y, HY + y + 0.08, -5.6, 25.6)
     s.B("plot", "redlamp", 8, 10, DB - 0.7, DB - 0.3, -3, -1)
     s.B("plot", "redlamp", 26, 28, DB - 0.7, DB - 0.3, 21, 23)
-    s.D("egg_carrier_clocks", 10, HY + 6.5, z0 + 1, yaw=90)
-    s.T("plot", "CITY", (8.4, HY + 6.95, z0 + 1.12), 0.3, "+z", "black")
-    s.T("plot", "SHIP", (11.6, HY + 6.95, z0 + 1.12), 0.3, "+z", "black")
-    s.light(10, HY + 9, z0 + 4, "redlamp", 260)
-    # where the Fires desk stood: the districts' tally board
+    s.D("egg_carrier_clocks", W - 2, HY + 14.5, 14, yaw=180)  # on the hull over the board
+    s.T("plot", "CITY", (W - 2.12, HY + 14.95, 12.4), 0.3, "-x", "black")
+    s.T("plot", "SHIP", (W - 2.12, HY + 14.95, 15.6), 0.3, "-x", "black")
+    s.light(30, HY + 15, 14, "redlamp", 200)
+    # where the Fires desk stood: the districts' tally board, free-standing on two posts
+    for z in (17.0, 27.0):
+        s.B("plot", "steel", x0, x0 + 0.4, HY, HY + 11.2, z - 0.2, z + 0.2)
+        s.B("plot", "steel", x0 - 0.6, x0 + 1.0, HY, HY + 0.2, z - 0.5, z + 0.5)
     s.D("egg_carrier_scoreboard", x0, HY + 2.6, 22, yaw=180)
     s.T("plot", "MISSIONS HOME", (x0 - 0.3, HY + 10.2, 22), 0.6, "-x", "paint")
     for r, name in enumerate(("DELTA", "MILE 14", "KESTREL", "THE YARD", "RESERVOIR")):
@@ -614,23 +641,51 @@ def hangar_life_v2(s):
     for x, y, text in ((-2, 9.2, "HARLAN  14"), (8.5, 12.8, "CHECKPOINT DELTA")):
         s.D("egg_carrier_roadsign", x, HY + y, HF - 0.14, yaw=-90, tilt=-4 if x < 0 else 3)
         s.T("eggs", text, (x, HY + y + 1.6, HF - 0.34), 0.9 if len(text) < 12 else 0.62, "-z", "paint")
-    # ---- the aft hangar: helicopter 20 stripped for parts, the workshop, the net, the hoop
-    qx, qz = -6, -62
-    for name in ("veh_lantern_body", "veh_lantern_trim", "egg_carrier_queen_marks"):
-        s.D(name, qx, HY + 1.2, qz)
-    for dx, dz in ((-4.4, 5), (4.4, 5), (-4.4, -5), (4.4, -5)):
-        s.D("prop_carrier_jack", qx + dx, HY, qz + dz)
-    s.T("eggs", "20", (qx + 4.0, HY + 7.5, qz + 8.6), 1.3, "+x", "paint")
-    s.T("eggs", "DO NOT ROB PARTS", (qx, HY + 5.3, qz + 10.0), 0.3, "+z", "paint")
-    s.D("prop_carrier_engine_stand", qx + 10, HY, qz + 2, yaw=20)
-    s.D("prop_carrier_toolchest", qx + 9, HY, qz - 7, yaw=90)
-    s.D("prop_carrier_toolchest", qx - 9, HY, qz + 6, yaw=-90)
-    s.D("veh_carrier_tractor", 14, HY, -34, yaw=75)
-    s.D("prop_carrier_blade_rack", W - 2, HY, -42, yaw=180)
-    s.D("prop_carrier_crates", 28, HY, -62, yaw=90)
-    s.D("prop_carrier_drums", 29, HY, -72)
-    s.stripes("floorpaint", -16, -15.6, HY, HY + 0.04, -94, -44, 25, axis="z")
-    s.stripes("floorpaint", 4, 4.4, HY, HY + 0.04, -94, -44, 25, axis="z")
+    # ---- the aft hangar: Nova's motor pool (FallowLayout.MotorPool, 2026-11-17) took helicopter
+    # 20's floor; the motor sergeant's corner at its front, the net, the hoop
+    for x0b, x1b in ((-20, -8), (-6, 6), (12, 24)):  # three painted bays
+        for a, c, e, f in ((x0b, x0b + 0.3, -78, -52), (x1b - 0.3, x1b, -78, -52), (x0b, x1b, -78, -77.7)):
+            s.B("floorpaint", "yellow", a, c, HY, HY + 0.04, e, f)
+    s.D("ref_carrier_atv", 0, HY, -64, yaw=90, layer="crew")  # the game's own ATV (VehicleBody)
+    s.T("floorpaint", "ATV", (0, HY + 0.05, -74.5), 1.6, "up", "yellow", yaw=90)
+    for z in (-56, -60):
+        s.D("prop_carrier_toolchest", 9, HY, z, yaw=-90)
+    s.D("prop_carrier_engine_stand", 18, HY, -66, yaw=90)  # bay 3: an engine out for the next one
+    s.D("prop_carrier_drums", -28, HY, -90)  # the fuel point
+    s.D("prop_carrier_blade_rack", W - 2, HY, -89, yaw=180)  # tyre rack stand-in along the hull
+    s.D("npc_carrier_motor_sergeant", 9, HY, -48, yaw=90, layer="crew")
+    s.D("prop_vendor_motor_pool", 9, HY, -48, yaw=90)
+    s.light(7.2, HY + 5.0, -47.5, "worklamp", 380)
+    s.B("motor", "black", 3, 15, HY + 10, HY + 12.2, -46.6, -46.3)
+    for x in (3.4, 14.6):
+        s.B("motor", "steel", x - 0.1, x + 0.1, HY + 12.2, DB - 1.5, -46.55, -46.35)
+    s.T("motor", "VEHICLES", (9, HY + 11.1, -46.25), 1.5, "+z", "yellow")
+    s.T("motor", "MOTOR POOL", (9, HY + 10.4, -46.25), 0.42, "+z", "paint")
+    s.D("veh_carrier_tractor", 24, HY, -26, yaw=75)
+    # ---- FUTURE: the restricted cage, port aft (owner idea: a visitor who sells experimental
+    # government weapons now and then). The hangar's one dead lamp is over it.
+    cx0, cx1, cz0, cz1, gate = -W + 2, -25.0, -73.0, -45.0, (-61.0, -57.0)
+    top = HY + 10.5  # under the hull pipes (from 10.9)
+    for z in range(int(cz0), int(cz1) + 1, 4):
+        s.B("restricted", "gunmetal", cx1 - 0.15, cx1 + 0.15, HY, top, z - 0.15, z + 0.15)
+    for x in (cx0 + 4, cx1):
+        for z in (cz0, cz1):
+            s.B("restricted", "gunmetal", x - 0.15, x + 0.15, HY, top, z - 0.15, z + 0.15)
+    s.B("restricted", "gunmetal", cx1 - 0.15, cx1 + 0.15, top - 0.3, top, cz0, cz1)
+    s.B("restricted", "cage", cx1 - 0.05, cx1 + 0.05, HY, top - 0.3, cz0, gate[0])
+    s.B("restricted", "cage", cx1 - 0.05, cx1 + 0.05, HY, top - 0.3, gate[1], cz1)
+    s.B("restricted", "cage", cx1 - 0.05, cx1 + 0.05, HY + 8.0, top - 0.3, gate[0], gate[1])
+    s.B("restricted", "cage", cx1 + 0.2, cx1 + 0.3, HY + 0.2, HY + 8.0, gate[1] + 0.2, gate[1] + 4.0)  # the gate, swung back open
+    for z in (cz0, cz1):
+        s.B("restricted", "cage", cx0, cx1, HY, top - 0.3, z - 0.05, z + 0.05)
+    s.B("restricted", "yellow", cx1 + 0.15, cx1 + 0.2, HY + 4.6, HY + 6.2, -69, -65)
+    s.T("restricted", "RESTRICTED", (cx1 + 0.25, HY + 5.65, -67), 0.5, "+x", "black")
+    s.T("restricted", "KEEP CLEAR", (cx1 + 0.25, HY + 5.0, -67), 0.4, "+x", "black")
+    s.B("floorpaint", "yellow", cx1 + 0.3, cx1 + 3.3, HY, HY + 0.04, gate[0], gate[0] + 0.3)
+    s.B("floorpaint", "yellow", cx1 + 0.3, cx1 + 3.3, HY, HY + 0.04, gate[1] - 0.3, gate[1])
+    s.D("prop_vendor_restricted", cx1, HY, (gate[0] + gate[1]) / 2)
+    s.D("npc_carrier_contractor", cx1 - 0.6, HY, (gate[0] + gate[1]) / 2, layer="crew")
+    s.light(cx1 - 3.0, HY + 8.6, -60.0, "cold", 160)
     s.D("egg_carrier_memorial", -22, HY + 1.0, HA + 0.14, yaw=90)
     for i, (dx, y) in enumerate(((-6.4, 4.2), (-2.9, 7.9), (0.8, 5.6), (4.6, 9.8), (6.9, 3.6))):
         s.B("eggs", "chem", -22 + dx - 0.1, -22 + dx + 0.1, HY + 1 + y, HY + 1 + y + 0.9, HA + 0.5, HA + 0.7)
@@ -732,10 +787,12 @@ def v2():
     eggs_deck_v2(s)
     shore_v2(s)
     s.labels = [
-        ("SPAWN", 0, 125, "h"), ("ARMS ROOM: Quartermaster (guns, grenades, kit)", -29.5, 106, "h"),
-        ("CALL-INS: one seller, kit on show", 30.5, 104, "h"), ("LOADOUT: Loadmaster", 9.5, 84, "h"),
-        ("RAMP up to the flight deck", -20, 50, "h"), ("MAP ROOM (pick the mission)", 18, 34, "h"),
-        ("Crew corner, arcade", -10.5, 126, "h"), ("Tally board", -3, 22, "h"), ("Helicopter 20, in for parts", -6, -40, "h"),
+        ("SPAWN", 0, 125, "h"), ("ARMS ROOM: Quartermaster on his stool", -29.5, 106, "h"),
+        ("CALL-INS: sapper on his crate, smoking", 30.5, 98, "h"), ("LOADOUT: Loadmaster in his hammock", 10.5, 80, "h"),
+        ("RAMP up to the flight deck", -20, 50, "h"), ("MAP ROOM: open floor, watch officer", 18, 34, "h"),
+        ("Crew corner, arcade", -10.5, 126, "h"), ("Tally board", -3, 22, "h"),
+        ("VEHICLES: motor sergeant, her dog", 9, -38, "h"), ("Motor pool: 3 bays, the ATV", 0, -82, "h"),
+        ("FUTURE: restricted cage", -29, -40, "h"),
         ("The net", -22, -92, "h"), ("Hoop", 17, -82, "h"), ("Lift balcony: the city view", -41, -20, "h"), ("Stores", 28, 58, "h"),
         ("SPOT 1", -12, -150, "d"), ("SPOT 2", -12, -105, "d"), ("SPOT 3", -12, -60, "d"), ("SPOT 4", -12, -15, "d"),
         ("Board inside the yellow circle", 10.5, -105, "d"), ("RAMP", -20, 50, "d"), ("ISLAND", 28, 20, "d"),
@@ -1126,13 +1183,24 @@ EGGS = {
     "egg_04_count_board": ((23, D, -120), (24, DECK + 4.6, -133), 24),
     "egg_05_arcade": ((-9, H, 128.5), (-14.5, HY + 4.2, 137.4), 22),
     "egg_06_callin_tallies": ((20, H, 127), (33, HY + 10, 128), 18),
-    "egg_07_helicopter_20": ((14, H, -46), (-7, HY + 6, -66), 18),
     "egg_08_road_signs": ((3, H, 118), (3, HY + 9.5, 140), 20),
     "egg_09_not_on_issue": ((-28.0, H + 1.0, 118.5), (-28.4, HY + 5.2, 111.1), 20),
     "egg_10_lookout": ((-22, D, 104), (-34, DECK + 3.6, 97.5), 22),
     "egg_11_hoop": ((14, H, -74), (17, HY + 8, -100), 18),
     "egg_12_stopped_clock": ((10, H, 0), (10, HY + 8.4, -9), 24),
     "egg_10b_signal_tower": ((-34, D, -60), (-640, 236, -205), 150),
+}
+VENDORS = {  # vendor corners (owner 2026-11-17): render_vendors() writes vendor_<name>.png
+    "quartermaster": ((-16, H + 0.5, 118), (-27, HY + 3, 125), 20),
+    "callins": ((12, H + 0.5, 100), (26, HY + 2.5, 106), 20),
+    "callins_close": ((18.5, HY + 4.0, 106), (26, HY + 2.6, 105.5), 24),
+    "loadmaster": ((-3, H + 0.5, 101), (-1, HY + 2.2, 88), 20),
+    "motor_pool": ((4, H + 1.0, -35), (7, HY + 2.0, -52), 18),
+    "motor_pool_close": ((5, H + 0.5, -40), (8, HY + 2.5, -48.5), 22),
+    "map_room": ((15, HY + 10.5, 13), (26.5, HY + 2.3, -3.5), 22),
+    "map_room_open": ((-8, H + 3.0, 8), (20, HY + 2, 2), 16),
+    "restricted": ((-15, H + 0.5, -52), (-27.5, HY + 2.5, -59.5), 22),
+    "hangar_walk": ((-2, HY + 14, 136), (2, HY + 2, 40), 16),
 }
 PAIRS = ("oblique", "oblique_island", "spawn", "arms_room", "callins", "loadout", "map_room_door", "hangar_aft", "lift_view", "ramp_top", "flight_deck", "island", "shore")
 
@@ -1258,6 +1326,27 @@ def render_previews():
     aim("oblique")
 
 
+def render_vendors(out_dir=None):
+    """The vendor corners' pictures: vendor_<view>.png and vendor_overview.png (the hangar from
+    above, labelled), into build/previews or `out_dir`."""
+    out_dir = out_dir or PREVIEWS
+    os.makedirs(out_dir, exist_ok=True)
+    sc = scene()
+    setup_look(sc)
+    show("v2")
+    _labels(None)
+    for name in VENDORS:
+        aim(eye=VENDORS[name][0], target=VENDORS[name][1], lens=VENDORS[name][2])
+        sc.render.filepath = os.path.join(out_dir, "vendor_" + name + ".png")
+        bpy.ops.render.render(write_still=True, scene=sc.name)
+    aim_top("h")
+    _labels("h")
+    sc.render.filepath = os.path.join(out_dir, "vendor_overview.png")
+    bpy.ops.render.render(write_still=True, scene=sc.name)
+    _labels(None)
+    aim("oblique")
+
+
 if __name__ == "__main__":
     argv = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
     if bpy.app.background:
@@ -1265,6 +1354,7 @@ if __name__ == "__main__":
     build_all()
     if "--no-render" not in argv:
         render_previews()
+        render_vendors()
     if bpy.app.background:
         bpy.ops.wm.save_as_mainfile(filepath=BLEND)
         print("saved", BLEND)

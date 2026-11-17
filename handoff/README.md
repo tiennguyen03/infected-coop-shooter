@@ -75,8 +75,10 @@ that restocks the squad.
   new `SoldierMoves`; off with `Config.Lobby.Soldier.Enabled = false`; what to check is in
   the lobby doc > What v1 has).
   **Carrier v2** (proposal, 2026-11-16, pictures only, not in game): the ship revamp and the
-  burning city on the shore, PR off `claude/carrier-v2`; **Nova:** once the owner approves,
-  `docs/sprints/CARRIER_V2.md` > Putting it in the lobby is the step list (builds on #55, #57, #61).
+  burning city on the shore, PR off `claude/carrier-v2`; 2026-11-17 adds a corner, pose and light
+  for every seller (and a restricted cage for a future visitor), and the map room as open floor
+  (doc > Vendor corners); **Nova:** once the owner approves,
+  `docs/sprints/CARRIER_V2.md` > Putting it in the lobby is the step list (builds on #55, #57, #61, #65).
   **Nova:** the Loadout screen (`LoadoutMenu`) was rebuilt
   bigger with each item turning in 3D and its stats (2026-11-16, not yet seen in game; what to
   check: `handoff/log/2026-11-16-claude-loadmaster-screen.md`).

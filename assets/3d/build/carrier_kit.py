@@ -901,8 +901,446 @@ def waterfront(b):
     rbc(b, (52, 21, 110), (0.6, 7, 40), "dark_d", rot=(0, 9, -11))  # burnt-out window band
 
 
+# ------------------------------------------------------------------ vendor corners (owner 2026-11-17)
+# "There needs to be sections for the vendors... their own little corner and they're sitting there
+# chilling... make them feel like real characters trying to help you." One mesh a corner, in the
+# frame of the person's desk: origin at their feet, +x the way they face (toward the soldiers),
+# +z their left. carrier_v2 places them on FallowLayout.Desks. The people themselves are the
+# npc_* stand-ins below (pictures only; the game uses its own rigs).
+def obox(b, p0, p1, w, d, sw, side=(0, 0, 1)):
+    """A box from Roblox point p0 to p1, `w` wide along `side`, `d` deep across both (posed limbs,
+    tilted boards)."""
+    a = Vector((p0[0], p0[2], p0[1]))
+    c = Vector((p1[0], p1[2], p1[1]))
+    ax = c - a
+    ln = ax.length
+    if ln < 1e-4:
+        return
+    ax.normalize()
+    s = Vector((side[0], side[2], side[1]))
+    s = s - ax * s.dot(ax)
+    if s.length < 1e-4:
+        s = Vector((0, 1, 0)) - ax * ax.y
+    s.normalize()
+    t = ax.cross(s)
+    verts = bmesh.ops.create_cube(b.bm, size=1.0)["verts"]
+    m = Matrix((s * w, t * d, ax * ln)).transposed().to_4x4()
+    m.translation = (a + c) / 2
+    bmesh.ops.transform(b.bm, matrix=m, verts=verts)
+    b._paint(verts, sw)
+
+
+def caged_bulb(b, x, z, y_top, y_bulb):
+    """A work bulb in a wire cage on its cord from the deckhead (the light itself is a PointLight)."""
+    R(b, x - 0.04, x + 0.04, y_bulb + 0.5, y_top, z - 0.04, z + 0.04, "dark_d")
+    R(b, x - 0.3, x + 0.3, y_bulb + 0.35, y_bulb + 0.55, z - 0.3, z + 0.3, "gun_d")
+    R(b, x - 0.2, x + 0.2, y_bulb - 0.2, y_bulb + 0.35, z - 0.2, z + 0.2, "white_l")
+    for dx, dz in ((-0.3, 0), (0.3, 0), (0, -0.3), (0, 0.3)):
+        R(b, x + dx - 0.03, x + dx + 0.03, y_bulb - 0.3, y_bulb + 0.45, z + dz - 0.03, z + dz + 0.03, "gun_d")
+
+
+def mug(b, x, y, z, sw="gun_l"):
+    cyl_up(b, x, y, y + 0.42, z, 0.2, sw, segs=6)
+    R(b, x - 0.04, x + 0.04, y + 0.1, y + 0.32, z + 0.2, z + 0.32, sw)
+
+
+def vendor_quartermaster(b):
+    """The Arms Room behind the glass: his high stool, a reading lamp on the counter's end, the bell
+    he wishes you wouldn't ring, and on the side table his kettle on a hot plate and the old
+    radio playing low. On the gun wall, low down, the photo of his first arms room and a calendar
+    with the days crossed off. (Counter and gun wall are ArmsRack's; his feet at (0, 0, 0).)"""
+    # the stool: a round seat on four legs with a foot ring
+    cyl_up(b, -0.6, 2.55, 2.8, 0, 0.85, "dark", segs=8)
+    for dx, dz in ((-0.55, -0.55), (0.55, -0.55), (-0.55, 0.55), (0.55, 0.55)):
+        rod(b, (-0.6 + dx * 0.6, 2.55, dz * 0.6), (-0.6 + dx * 1.2, 0, dz * 1.2), 0.14, "gun_l")
+    for dz in (-0.75, 0.75):
+        R(b, -1.4, 0.2, 1.1, 1.22, dz - 0.06, dz + 0.06, "gun_l")
+    # the reading lamp on the counter's end, its shade turned onto his clipboard
+    R(b, 2.5, 3.3, 3.4, 3.5, -3.4, -2.6, "dark_d")
+    rod(b, (2.9, 3.5, -3.0), (2.6, 5.0, -2.5), 0.1, "brass")
+    rod(b, (2.6, 5.0, -2.5), (2.9, 5.2, -1.5), 0.1, "brass")
+    obox(b, (2.9, 5.4, -1.5), (3.0, 4.8, -1.1), 0.75, 0.75, "olive_d", side=(1, 0, 0))
+    # the bell on the glass
+    cyl_up(b, 2.4, 3.4, 3.48, 2.4, 0.35, "dark_d", segs=6)
+    cyl_up(b, 2.4, 3.48, 3.75, 2.4, 0.28, "brass_l", segs=6, r2=0.08)
+    # the side table behind him: hot plate and kettle, his tin mug, the radio
+    R(b, -3.6, -1.8, 2.4, 2.6, 2.0, 4.6, "tan_d")
+    for x in (-3.4, -2.0):
+        for z in (2.2, 4.4):
+            R(b, x - 0.1, x + 0.1, 0, 2.4, z - 0.1, z + 0.1, "gun_d")
+    R(b, -3.4, -2.4, 2.6, 2.8, 3.4, 4.4, "dark_d")
+    cyl_up(b, -2.9, 2.8, 3.55, 3.9, 0.38, "gun_l", segs=8, r2=0.26)
+    rod(b, (-2.6, 3.2, 3.9), (-2.25, 3.55, 3.9), 0.1, "gun_l")
+    R(b, -3.15, -2.65, 3.6, 3.68, 3.86, 3.94, "dark_d")
+    mug(b, -2.2, 2.6, 2.7)
+    R(b, -3.5, -2.0, 2.6, 3.5, 2.05, 3.1, "tan")
+    R(b, -2.02, -1.96, 2.75, 3.35, 2.15, 2.75, "dark")
+    R(b, -1.98, -1.94, 3.0, 3.1, 2.85, 2.95, "brass")
+    rod(b, (-3.3, 3.5, 2.3), (-3.7, 5.2, 2.0), 0.05, "gun_l")  # its aerial
+    # low on the gun wall: the photo of his first arms room, the calendar
+    R(b, -6.75, -6.6, 3.0, 4.6, -1.4, 0.8, "dark_d")
+    R(b, -6.6, -6.56, 3.2, 4.4, -1.2, 0.6, "tan_l")
+    R(b, -6.56, -6.54, 3.25, 3.75, -1.15, 0.55, "olive")  # a row of soldiers in front of a cage
+    R(b, -6.75, -6.62, 2.0, 4.6, 1.6, 3.4, "white_l")
+    R(b, -6.62, -6.58, 4.0, 4.5, 1.6, 3.4, "red")
+    for i in range(14):
+        r, c = divmod(i, 5)
+        R(b, -6.62, -6.57, 3.55 - r * 0.45, 3.7 - r * 0.45, 1.75 + c * 0.32, 1.95 + c * 0.32, "red_d")
+
+
+def vendor_callins(b):
+    """The sapper sergeant's corner among his call-ins: he sits on an upturned mortar-bomb crate
+    (no counter), his crate-table at his right hand with the ashtray he made from a shell case,
+    the hand-cranked field telephone and his wire cutters; a hand-painted MIND THE COILS board
+    leant against it; one caged bulb on a cord over him."""
+    R(b, -1.0, 1.0, 0, 1.6, -1.3, 1.3, "olive")  # the seat
+    R(b, -1.02, 1.02, 1.1, 1.25, -1.32, 1.32, "olive_d")
+    R(b, 1.0, 1.04, 0.5, 1.0, -0.6, 0.6, "white_d")  # its stencil
+    # the table: two crates stacked at his right
+    R(b, 0.2, 2.6, 0, 1.4, -4.4, -2.4, "olive_d")
+    R(b, 0.4, 2.4, 1.4, 2.4, -4.2, -2.6, "olive")
+    R(b, 0.38, 2.42, 1.85, 1.95, -4.22, -2.58, "tan_d")
+    # the ashtray: a 105 shell case cut down, cigarette ends round it and in it
+    cyl_up(b, 1.6, 2.4, 2.9, -3.0, 0.38, "brass", segs=8)
+    cyl_up(b, 1.6, 2.9, 2.92, -3.0, 0.3, "dark_d", segs=8)
+    for dx, dz, ang in ((0.05, 0.1, 20), (-0.12, -0.08, 75), (0.1, -0.15, 130), (-0.05, 0.16, 160), (0.6, 0.35, 40), (0.85, -0.2, 100)):
+        x, z = 1.6 + dx, -3.0 + dz
+        a = math.radians(ang)
+        y = 2.95 if abs(dx) < 0.3 else 2.42
+        rod(b, (x, y, z), (x + math.cos(a) * 0.35, y + 0.02, z + math.sin(a) * 0.35), 0.07, "white_l")
+        R(b, x - 0.04, x + 0.04, y - 0.03, y + 0.04, z - 0.04, z + 0.04, "tan")
+    # the field telephone: a canvas case, a handset on the hook, a crank
+    R(b, 0.6, 1.4, 2.4, 3.1, -4.1, -3.3, "olive_d")
+    R(b, 0.65, 1.35, 3.1, 3.3, -4.0, -3.4, "dark_d")
+    R(b, 0.95, 1.05, 2.6, 2.9, -3.3, -3.2, "dark")
+    rod(b, (1.0, 2.75, -3.2), (1.0, 2.6, -2.95), 0.06, "dark")
+    # wire cutters on the table
+    rod(b, (2.0, 2.44, -3.9), (2.25, 2.44, -3.2), 0.1, "red")
+    rod(b, (2.15, 2.44, -3.9), (2.25, 2.44, -3.2), 0.1, "red")
+    rod(b, (2.25, 2.46, -3.2), (2.3, 2.46, -2.85), 0.08, "gun")
+    # MIND THE COILS: a board leant against the table (lettering in carrier_v2 / a SurfaceGui)
+    obox(b, (2.75, 0, -3.8), (2.95, 2.6, -3.8), 2.4, 0.12, "tan_l", side=(0, 0, 1))
+    # his caged bulb on its cord
+    caged_bulb(b, 0.6, -0.8, 16.0, 7.0)
+
+
+def vendor_loadmaster(b):
+    """The Loadmaster's corner at the ramp's foot: a cargo-net hammock slung between two stanchions
+    (he sleeps between lifts and wakes up loud), his flight bag under it, a cool box he uses as a
+    desk with his mug and the clipboard, and a cabin door off a dead helicopter leant on the post
+    with the tally of everyone he has flown back in grease pencil. One blue cabin lamp clipped to
+    the post."""
+    for z in (-5.2, 5.2):
+        R(b, -0.3, 0.3, 0, 7.0, z - 0.3, z + 0.3, "objective_yellow")
+        R(b, -0.8, 0.8, 0, 0.25, z - 0.8, z + 0.8, "dark_d")
+        R(b, -0.4, 0.4, 6.6, 6.8, z - 0.4, z + 0.4, "dark_d")
+    # the hammock: a sagging net in four runs, its ropes to the posts
+    pts = ((-4.9, 4.4), (-3.2, 2.7), (-1.2, 1.75), (1.2, 1.75), (3.2, 2.7), (4.9, 4.4))
+    for (z0, y0), (z1, y1) in zip(pts, pts[1:]):
+        w = 2.4 if abs(z0) < 4 and abs(z1) < 4 else 1.2
+        obox(b, (-0.2, y0, z0), (-0.2, y1, z1), w, 0.18, "olive_l", side=(1, 0, 0))
+    for sx in (-1, 1):
+        for z0, z1 in ((-4.9, -3.2), (3.2, 4.9)):
+            yy = {-4.9: 4.4, -3.2: 2.7, 3.2: 2.7, 4.9: 4.4}
+            obox(b, (-0.2 + sx * 0.6, yy[z0], z0), (-0.2 + sx * 1.2, yy[z1], z1), 0.08, 0.08, "tan_l")
+    for z in (-1.6, 0.0, 1.6):
+        R(b, -1.42, 1.02, 1.6, 1.72, z - 0.05, z + 0.05, "tan_l")
+    # flight bag under the hammock, a helmet bag on top
+    R(b, -1.4, 0.4, 0, 1.0, 1.8, 4.0, "olive_d")
+    R(b, -1.2, 0.2, 1.0, 1.12, 2.4, 3.4, "dark_d")
+    # the cool box he uses as a desk: mug, clipboard
+    R(b, 1.0, 2.8, 0, 1.6, 2.4, 4.4, "white_d")
+    R(b, 0.95, 2.85, 1.6, 1.85, 2.35, 4.45, "friendly_blue")
+    R(b, 1.2, 2.7, 0.7, 0.9, 2.38, 2.42, "white_l")
+    mug(b, 1.6, 1.85, 4.0, "olive_d")
+    obox(b, (1.6, 1.88, 2.7), (2.5, 1.88, 3.3), 1.0, 0.06, "tan", side=(0, 0, 1))
+    R(b, 1.8, 2.3, 1.9, 1.95, 2.85, 3.15, "white_l")
+    # the cabin door off a dead helicopter, leant on the post, scored with the tally
+    obox(b, (0.6, 0.05, -5.0), (1.5, 5.6, -4.6), 3.4, 0.25, "olive_d", side=(0, 0, 1))
+    obox(b, (0.85, 3.0, -4.9), (1.25, 5.1, -4.7), 2.0, 0.27, "glass", side=(0, 0, 1))
+    R(b, 0.5, 1.5, 0, 0.2, -6.8, -3.2, "dark_d")
+    # the blue cabin lamp on the post
+    R(b, 0.3, 0.7, 5.9, 6.3, -5.5, -4.9, "dark_d")
+    R(b, 0.7, 0.76, 5.95, 6.25, -5.45, -4.95, "friendly_blue")
+
+
+def vendor_motor_pool(b):
+    """The motor sergeant's corner at the motor pool's front: two tyres she sits on, the bench at
+    her left with a vice, a clamp work lamp bent over it, her log book and a thermos; at her right
+    the dog asleep on a folded tarp, its water in a hubcap."""
+    for i in range(2):
+        cyl_up(b, -0.2, i * 1.0, i * 1.0 + 0.96, 0, 1.25, "dark_d", segs=8)
+        cyl_up(b, -0.2, i * 1.0 + 0.96, i * 1.0 + 0.98, 0, 0.7, "dark", segs=8)
+    # the bench
+    R(b, -1.2, 1.2, 2.8, 3.1, 1.8, 6.4, "tan_d")
+    R(b, -1.2, 1.2, 0.6, 0.75, 1.9, 6.3, "gun_d")
+    for x in (-1.0, 1.0):
+        for z in (2.0, 6.2):
+            R(b, x - 0.12, x + 0.12, 0, 2.8, z - 0.12, z + 0.12, "gun_d")
+    R(b, 0.6, 1.2, 3.1, 3.7, 5.2, 6.0, "friendly_blue")  # the vice
+    R(b, 0.9, 1.4, 3.3, 3.5, 5.5, 5.7, "gun_l")
+    R(b, -0.9, 0.3, 3.1, 3.3, 2.4, 3.4, "tan")  # the log book
+    R(b, -0.85, 0.25, 3.3, 3.32, 2.45, 3.35, "white_l")
+    cyl_up(b, -0.6, 3.1, 4.0, 4.4, 0.22, "olive", segs=6)  # the thermos
+    cyl_up(b, -0.6, 4.0, 4.15, 4.4, 0.24, "dark", segs=6)
+    R(b, 0.2, 0.9, 3.1, 3.25, 3.9, 4.6, "gun_l")  # a stripped carburettor
+    # the clamp lamp: clamp on the bench's back edge, a bent arm, the shade over her lap
+    R(b, -1.3, -0.9, 2.6, 3.3, 5.6, 6.0, "dark")
+    rod(b, (-1.1, 3.3, 5.8), (-1.0, 6.2, 5.0), 0.12, "gun_l")
+    rod(b, (-1.0, 6.2, 5.0), (0.3, 6.0, 2.1), 0.12, "gun_l")
+    obox(b, (0.3, 6.0, 2.0), (0.5, 5.4, 1.7), 0.6, 0.6, "olive_d", side=(1, 0, 0))
+    R(b, 0.3, 0.6, 5.3, 5.4, 1.6, 1.9, "white_l")  # the bulb
+    # the dog: a big brown shepherd-ish mutt asleep on a tarp, chin on its paws
+    R(b, -1.6, 1.4, 0, 0.2, -4.9, -2.1, "olive")
+    R(b, -1.2, 0.8, 0.2, 1.25, -3.9, -2.7, "tan_d")  # body, lying down
+    R(b, -1.0, 0.6, 1.25, 1.35, -3.8, -2.8, "dark_d")  # the dark saddle
+    R(b, 0.8, 1.7, 0.2, 0.75, -3.75, -2.85, "tan")  # head, chin down
+    R(b, 1.7, 2.0, 0.2, 0.5, -3.5, -3.1, "dark_d")  # nose
+    for z in (-3.7, -2.9):
+        R(b, 0.85, 1.15, 0.75, 1.15, z - 0.12, z + 0.12, "tan_d")  # ears
+    R(b, 0.8, 1.6, 0.2, 0.42, -2.75, -2.45, "tan")  # paws out in front
+    rod(b, (-1.2, 0.4, -3.0), (-2.0, 0.25, -2.0), 0.22, "tan_d")  # tail
+    R(b, 0.75, 0.82, 0.55, 0.8, -3.45, -3.15, "red")  # the red collar
+    cyl_up(b, 0.4, 0, 0.18, -5.6, 0.55, "gun_l", segs=8)  # the hubcap of water
+    cyl_up(b, 0.4, 0.18, 0.2, -5.6, 0.45, "friendly_blue", segs=8)
+
+
+def vendor_watch(b):
+    """Control's watch officer in the open map room: tipped back in a swivel chair, boots on the
+    map table's end; a stool at her right with three steel mugs (all cold) and the sound-powered
+    phone; a folded camp cot against the board's foot because she sleeps here; a gooseneck lamp
+    on the stool. The postcard of her street is a separate Part on the board (carrier_v2)."""
+    # swivel chair: five feet, a post, the seat, a back leaning away
+    for k in range(5):
+        a = k * 2 * math.pi / 5
+        rod(b, (0, 0.25, 0), (math.cos(a) * 1.1, 0.12, math.sin(a) * 1.1), 0.18, "dark_d")
+    cyl_up(b, 0, 0.25, 1.4, 0, 0.12, "gun_l", segs=6)
+    R(b, -0.9, 0.9, 1.4, 1.7, -0.9, 0.9, "dark")
+    obox(b, (-1.0, 1.7, 0), (-1.7, 3.9, 0), 1.7, 0.25, "dark", side=(0, 0, 1))
+    # the stool with the mugs and the phone, her right side
+    R(b, -0.8, 0.8, 1.8, 2.0, -3.2, -1.8, "gun_d")
+    for dx in (-0.6, 0.6):
+        for dz in (-3.0, -2.0):
+            R(b, dx - 0.07, dx + 0.07, 0, 1.8, dz - 0.07, dz + 0.07, "gun_d")
+    for dx, dz in ((-0.45, -2.2), (0.0, -2.75), (0.45, -2.2)):
+        mug(b, dx, 2.0, dz)
+    R(b, -0.5, 0.3, 2.0, 2.5, -3.15, -2.8, "olive_d")  # the phone box
+    rod(b, (-0.3, 2.6, -2.95), (0.2, 2.6, -2.95), 0.12, "dark_d")
+    rod(b, (0.55, 2.0, -3.1), (0.55, 3.2, -3.1), 0.06, "dark_d")  # the gooseneck lamp
+    rod(b, (0.55, 3.2, -3.1), (0.3, 3.5, -2.7), 0.06, "dark_d")
+    R(b, 0.1, 0.5, 3.3, 3.55, -2.9, -2.5, "olive")
+    # the folded cot against the board's foot, behind her
+    obox(b, (-1.95, 0, 3.3), (-2.15, 3.6, 3.3), 4.6, 0.3, "olive_d", side=(0, 0, 1))
+    obox(b, (-1.75, 0, 3.3), (-1.95, 3.6, 3.3), 4.8, 0.08, "gun_l", side=(0, 0, 1))
+    R(b, -1.5, -0.7, 0, 0.6, 2.9, 3.9, "olive")  # her pack
+
+
+def vendor_restricted(b):
+    """FUTURE (owner idea, not built): the corner for a visitor who sells experimental government
+    weapons now and then. Inside the wire cage: two sealed cases under seal tape, a folding chair
+    with a raincoat over its back, a drum with a chessboard (a game half played against nobody),
+    a locked document case. Origin: the cage's gate on the hangar side, +x out into the hangar."""
+    # sealed cases, the long one on trestles
+    R(b, -6.5, -3.5, 0, 1.6, -5.8, -1.6, "dark")
+    for z in (-4.8, -2.6):
+        R(b, -6.55, -3.45, 0.2, 1.62, z - 0.12, z + 0.12, "objective_yellow")
+    R(b, -6.4, -3.6, 1.6, 2.2, -5.3, -2.0, "gun_d")
+    R(b, -3.52, -3.48, 0.6, 1.1, -4.2, -3.2, "white_l")  # the seal tag
+    R(b, -6.6, -5.0, 0, 2.6, 1.2, 4.6, "dark_d")  # the tall locker case
+    R(b, -5.02, -4.96, 0.4, 2.3, 2.6, 2.7, "objective_yellow")
+    R(b, -4.96, -4.9, 1.2, 1.6, 2.5, 2.8, "brass")  # padlock
+    # the folding chair, his raincoat over its back
+    R(b, -2.6, -1.2, 1.5, 1.62, -0.7, 0.7, "gun_l")
+    for dx in (-2.5, -1.3):
+        for dz in (-0.65, 0.65):
+            rod(b, (dx, 1.5, dz), (dx + (0.3 if dx < -2 else -0.3), 0, dz), 0.1, "gun_l")
+    obox(b, (-2.65, 1.6, 0), (-2.8, 3.4, 0), 1.4, 0.1, "gun_l", side=(0, 0, 1))
+    obox(b, (-2.55, 3.45, 0), (-2.4, 1.0, 0), 1.6, 0.3, "concrete_d", side=(0, 0, 1))
+    # the drum and the chessboard
+    cyl_up(b, -2.2, 0, 2.6, 2.6, 0.9, "gun_d", segs=8)
+    R(b, -2.75, -1.65, 2.6, 2.66, 2.05, 3.15, "white_l")
+    for i in range(8):
+        r, c = divmod(i, 4)
+        R(b, -2.7 + c * 0.27, -2.57 + c * 0.27, 2.66, 2.68, 2.1 + r * 0.54, 2.37 + r * 0.54, "dark_d")
+    for dx, dz, sw in ((-2.5, 2.3, "white_l"), (-2.2, 2.4, "dark_d"), (-1.9, 2.9, "white_l"), (-2.4, 3.0, "dark_d")):
+        R(b, dx - 0.05, dx + 0.05, 2.68, 2.9, dz - 0.05, dz + 0.05, sw)
+    # the document case at the chair's foot
+    R(b, -1.4, -0.4, 0, 0.75, -1.5, -1.3, "dark_d")
+    R(b, -1.05, -0.75, 0.75, 0.85, -1.45, -1.35, "gun_l")
+    caged_bulb(b, -3.0, -1.0, 16.0, 9.0)
+
+
+# ------------------------------------------------------------------ the people (pictures only)
+def npc(b, pose, shirt, pants, skin="flesh", sleeves=None, boots="dark_d", hands=None):
+    """A blocky stand-in body in the game's 5-stud proportions (the game uses its own rigs; this
+    shows the pose in pictures). Faces +x, its left +z. `pose` holds Roblox points: pelvis, neck,
+    and per side l / r an elbow, hand, knee and ankle. Returns the head's centre for hats."""
+    P, N = Vector(pose["pelvis"]), Vector(pose["neck"])
+    up = (N - P).normalized()
+    obox(b, P, N, 2.0, 1.0, shirt)
+    hc = N + up * 0.6 + Vector(pose.get("head", (0, 0, 0)))
+    obox(b, hc - up * 0.55, hc + up * 0.55, 1.1, 1.1, skin)
+    for side, sg in (("l", 1), ("r", -1)):
+        sh = N - up * 0.45 + Vector((0, 0, sg * 1.5))
+        el, hd = Vector(pose[side + "_elbow"]), Vector(pose[side + "_hand"])
+        obox(b, sh + up * 0.4, el, 0.9, 0.9, shirt)
+        fa = (hd - el).normalized()
+        obox(b, el - fa * 0.3, hd - fa * 0.4, 0.86, 0.86, sleeves or shirt)
+        obox(b, hd - fa * 0.42, hd + fa * 0.1, 0.8, 0.8, hands or skin)
+        hip = P + Vector((0, 0, sg * 0.5))
+        kn, an = Vector(pose[side + "_knee"]), Vector(pose[side + "_ankle"])
+        obox(b, hip, kn, 0.95, 0.95, pants)
+        obox(b, kn, an, 0.92, 0.92, pants)
+        fw = Vector(pose.get(side + "_foot", (1, 0, 0)))
+        obox(b, an - fw * 0.3 - Vector((0, 0.2, 0)), an + fw * 0.65 - Vector((0, 0.2, 0)), 0.95, 0.55, boots, side=(0, 0, 1))
+    return hc
+
+
+def npc_quartermaster(b):
+    """Perched on his stool, leaning on the glass on both elbows, reading glasses low, clipboard
+    flat under his left hand, a pencil in his right."""
+    pose = {
+        "pelvis": (0.0, 3.3, 0), "neck": (1.15, 4.85, 0), "head": (0.15, -0.05, 0),
+        "l_elbow": (1.9, 3.9, 1.1), "l_hand": (2.8, 3.62, 0.5),
+        "r_elbow": (1.9, 3.9, -1.1), "r_hand": (2.85, 3.7, -0.4),
+        "l_knee": (1.0, 3.05, 0.55), "l_ankle": (0.8, 1.6, 0.6),
+        "r_knee": (1.0, 3.05, -0.55), "r_ankle": (0.6, 1.6, -0.6),
+    }
+    h = npc(b, pose, "olive_d", "olive_d", skin="flesh_l")
+    R(b, h.x - 0.6, h.x + 0.55, h.y + 0.45, h.y + 0.75, -0.6, 0.6, "olive_d")  # patrol cap
+    R(b, h.x + 0.4, h.x + 0.95, h.y + 0.45, h.y + 0.55, -0.55, 0.55, "olive_d")
+    R(b, h.x + 0.55, h.x + 0.6, h.y - 0.2, h.y - 0.02, -0.45, 0.45, "dark_d")  # glasses, low
+    R(b, h.x - 0.1, h.x + 0.55, h.y + 0.05, h.y + 0.09, 0.55, 0.6, "gun_l")  # their cord
+    R(b, h.x + 0.56, h.x + 0.6, h.y - 0.5, h.y - 0.3, -0.35, 0.35, "concrete")  # grey moustache
+    R(b, 2.2, 3.4, 3.5, 3.56, -0.2, 1.2, "tan")  # the clipboard
+    R(b, 2.3, 3.3, 3.56, 3.58, -0.1, 1.1, "white_l")
+    rod(b, (2.9, 3.85, -0.4), (3.3, 3.62, -0.6), 0.07, "objective_yellow")
+    R(b, 0.3, 0.7, 2.2, 2.6, 1.0, 1.06, "brass_l")  # cage keys on the belt
+
+
+def npc_sapper(b):
+    """On the crate, forearms on his knees, a cigarette in the hand with the short finger,
+    waving you over with the other; beanie, sleeves rolled, work gloves tucked in his belt."""
+    pose = {
+        "pelvis": (0.0, 2.1, 0), "neck": (0.75, 3.9, 0), "head": (0.1, 0, 0),
+        "l_elbow": (1.0, 3.7, 1.75), "l_hand": (1.45, 4.85, 1.6),
+        "r_elbow": (1.35, 2.75, -0.95), "r_hand": (2.2, 2.85, -0.55),
+        "l_knee": (1.5, 1.95, 0.75), "l_ankle": (1.75, 0.4, 0.85),
+        "r_knee": (1.5, 1.95, -0.75), "r_ankle": (1.6, 0.4, -0.95),
+    }
+    h = npc(b, pose, "olive_l", "tan_d", skin="flesh_d", sleeves="flesh_d")
+    R(b, h.x - 0.58, h.x + 0.58, h.y + 0.3, h.y + 0.78, -0.58, 0.58, "olive_d")  # beanie
+    R(b, h.x + 0.55, h.x + 0.59, h.y - 0.55, h.y - 0.15, -0.5, 0.5, "pallor_d")  # stubble
+    rod(b, (2.3, 2.95, -0.45), (2.75, 3.05, -0.3), 0.08, "white_l")  # the cigarette
+    R(b, 2.72, 2.84, 2.98, 3.1, -0.36, -0.24, "warning_orange")
+    for (x0, y0, z0), (x1, y1, z1) in (((2.8, 3.15, -0.3), (2.9, 3.7, -0.2)), ((2.9, 3.7, -0.2), (2.75, 4.2, -0.05)), ((2.75, 4.2, -0.05), (2.95, 4.6, 0.1))):
+        obox(b, (x0, y0, z0), (x1, y1, z1), 0.07, 0.07, "white_d")  # a thread of smoke (particles in game)
+    R(b, 0.2, 0.9, 1.7, 2.3, -1.1, -1.0, "warning_orange")  # gloves tucked in the belt
+
+
+def npc_loadmaster(b):
+    """Sitting sideways in his hammock, one boot on the deck, one arm behind his head, pointing
+    you to the board with the grease pencil; flight helmet pushed up, harness on."""
+    pose = {
+        "pelvis": (-0.2, 2.2, 0), "neck": (-1.0, 3.95, 0), "head": (0, 0, 0),
+        "l_elbow": (-0.6, 5.3, 1.6), "l_hand": (-1.6, 4.9, 0.6),
+        "r_elbow": (-0.3, 3.2, -1.75), "r_hand": (0.9, 3.5, -1.5),
+        "l_knee": (1.2, 2.3, 0.7), "l_ankle": (1.5, 0.4, 0.9),
+        "r_knee": (1.3, 2.7, -0.5), "r_ankle": (2.0, 1.5, -0.6),
+    }
+    h = npc(b, pose, "olive_l", "olive_l", skin="rebuilt")
+    R(b, h.x - 0.85, h.x + 0.2, h.y + 0.35, h.y + 0.95, -0.68, 0.68, "olive")  # helmet, pushed up
+    R(b, h.x - 0.1, h.x + 0.35, h.y + 0.55, h.y + 0.95, -0.6, 0.6, "glass_l")  # visor up
+    for z in (-0.6, 0.6):  # harness straps
+        obox(b, (-0.2, 2.3, z), (-1.0, 3.95, z), 0.25, 1.08, "dark_d")
+    rod(b, (1.0, 3.55, -1.5), (1.5, 3.7, -1.45), 0.08, "red")  # grease pencil
+
+
+def npc_motor_sergeant(b):
+    """On her tyres, bent over the part in her lap, wrench in hand, looking up at you; grease to the
+    elbows, sleeves rolled, hair tied back, a rag in her back pocket."""
+    pose = {
+        "pelvis": (-0.2, 2.5, 0), "neck": (0.45, 4.3, 0), "head": (0.05, 0.05, 0),
+        "l_elbow": (0.7, 3.2, 1.45), "l_hand": (1.45, 3.15, 0.45),
+        "r_elbow": (0.75, 3.15, -1.45), "r_hand": (1.5, 3.3, -0.4),
+        "l_knee": (1.25, 2.45, 0.75), "l_ankle": (1.55, 0.4, 0.95),
+        "r_knee": (1.25, 2.45, -0.75), "r_ankle": (1.45, 0.4, -1.0),
+    }
+    h = npc(b, pose, "olive", "olive_d", skin="flesh", sleeves="dark_l", hands="dark")
+    R(b, h.x - 0.58, h.x + 0.4, h.y + 0.35, h.y + 0.6, -0.58, 0.58, "red_d")  # bandana
+    R(b, h.x - 0.9, h.x - 0.55, h.y - 0.3, h.y + 0.35, -0.2, 0.2, "rust_d")  # hair tied back
+    R(b, 1.1, 1.9, 3.0, 3.55, -0.3, 0.3, "gun_l")  # the part in her lap
+    rod(b, (1.5, 3.4, -0.4), (2.3, 3.8, -0.5), 0.12, "gun_l")  # wrench
+    R(b, -1.05, -0.65, 1.9, 2.5, -0.7, -0.3, "red")  # rag
+
+
+def npc_watch_officer(b):
+    """Tipped back in her chair, boots crossed on the map table's end, a steel mug resting on her
+    chest; one earcup on, one pushed back; the other arm hanging over the chair."""
+    pose = {
+        "pelvis": (0.0, 2.2, 0), "neck": (-0.95, 3.85, 0), "head": (0, 0, 0),
+        "l_elbow": (-0.4, 3.0, 1.25), "l_hand": (0.1, 3.55, 0.5),
+        "r_elbow": (-1.3, 3.0, -1.75), "r_hand": (-1.2, 2.0, -1.85),
+        "l_knee": (1.2, 2.75, 0.4), "l_ankle": (2.5, 3.5, -0.15),
+        "r_knee": (1.2, 2.75, -0.4), "r_ankle": (2.55, 3.85, 0.2),
+    }
+    h = npc(b, pose, "olive_d", "olive_d", skin="rebuilt_d", boots="dark_d")
+    R(b, h.x - 0.95, h.x - 0.5, h.y - 0.2, h.y + 0.3, -0.25, 0.25, "dark_d")  # hair in a bun
+    R(b, h.x - 0.2, h.x + 0.2, h.y + 0.55, h.y + 0.62, -0.62, 0.62, "dark_d")  # headset band
+    R(b, h.x - 0.3, h.x + 0.3, h.y - 0.3, h.y + 0.3, -0.75, -0.55, "dark")  # the cup on
+    R(b, h.x - 0.85, h.x - 0.35, h.y - 0.05, h.y + 0.45, 0.55, 0.75, "dark")  # the cup pushed back
+    cyl_up(b, 0.35, 3.45, 3.95, 0.35, 0.22, "gun_l", segs=6)  # the steel mug
+
+
+def npc_contractor(b):
+    """FUTURE: the visitor, standing in his cage's gate, hands in his raincoat's pockets; no rank,
+    no unit, a plain lanyard pass."""
+    pose = {
+        "pelvis": (0.0, 2.0, 0), "neck": (0.05, 3.9, 0), "head": (0.05, 0, 0.1),
+        "l_elbow": (-0.15, 3.05, 1.6), "l_hand": (0.35, 2.4, 1.2),
+        "r_elbow": (-0.15, 3.05, -1.6), "r_hand": (0.35, 2.4, -1.2),
+        "l_knee": (0.1, 1.2, 0.55), "l_ankle": (0.0, 0.4, 0.55),
+        "r_knee": (0.05, 1.2, -0.5), "r_ankle": (-0.05, 0.4, -0.55),
+    }
+    h = npc(b, pose, "concrete_d", "dark", skin="pallor_l", hands="dark_d", boots="dark_d")
+    R(b, -0.62, 0.62, 0.75, 2.2, -1.12, 1.12, "concrete_d")  # the coat's skirt
+    R(b, -0.55, 0.55, 3.7, 4.2, -1.05, 1.05, "concrete_d")  # collar up
+    R(b, h.x - 0.6, h.x + 0.6, h.y + 0.35, h.y + 0.6, -0.6, 0.6, "pallor_d")  # grey, cropped
+    R(b, 0.5, 0.56, 2.9, 3.3, 0.2, 0.55, "white_l")  # the pass
+
+
+def ref_atv(b):
+    """Stand-in for the game's own ATV (VehicleBody builds it in game): faces +x."""
+    for x in (-2.2, 2.2):
+        for z in (-1.9, 1.9):
+            b.cyl(1.05, 0.9, (x, z, 1.05), segs=8, rot=(90, 0, 0), swatch="dark_d")
+    R(b, -3.2, 3.2, 1.4, 2.6, -1.3, 1.3, "olive_d")
+    R(b, -1.4, 1.2, 2.6, 3.4, -0.7, 0.7, "dark")  # seat
+    R(b, -3.6, -1.4, 2.8, 3.0, -1.6, 1.6, "gun_d")  # rear rack
+    R(b, 1.6, 3.6, 2.8, 3.0, -1.6, 1.6, "gun_d")  # front rack
+    rod(b, (1.4, 2.6, 0), (1.8, 4.0, 0), 0.3, "gun_d")
+    R(b, 1.7, 1.95, 3.9, 4.1, -1.3, 1.3, "dark_d")  # bars
+    R(b, 3.2, 3.3, 1.8, 2.4, -0.9, 0.9, "white_l")  # lamps
+
+
 # ------------------------------------------------------------------ registration
+NPCS = {
+    "ref_carrier_atv": ref_atv,
+    "npc_carrier_quartermaster": npc_quartermaster,
+    "npc_carrier_sapper": npc_sapper,
+    "npc_carrier_loadmaster": npc_loadmaster,
+    "npc_carrier_motor_sergeant": npc_motor_sergeant,
+    "npc_carrier_watch_officer": npc_watch_officer,
+    "npc_carrier_contractor": npc_contractor,
+}
+
 KIT = {
+    "prop_vendor_quartermaster": vendor_quartermaster,
+    "prop_vendor_callins": vendor_callins,
+    "prop_vendor_loadmaster": vendor_loadmaster,
+    "prop_vendor_motor_pool": vendor_motor_pool,
+    "prop_vendor_watch": vendor_watch,
+    "prop_vendor_restricted": vendor_restricted,
     "env_carrier_rib": rib,
     "env_carrier_pipes": pipes,
     "env_carrier_door": door,
@@ -957,8 +1395,9 @@ KIT = {
 NAMES = tuple(KIT)
 
 
-def register(ba):
+def register(ba, npcs=False):
     """Adds the kit to build_assets' ASSETS table (collection "Fallow": the z-fight pass and the
-    export mirror apply, as for the ship's other meshes). Pivot "ship": no re-seat."""
-    for name, fn in KIT.items():
+    export mirror apply, as for the ship's other meshes). Pivot "ship": no re-seat. `npcs` adds
+    the posed stand-in people too (carrier_v2's pictures only; never exported)."""
+    for name, fn in list(KIT.items()) + (list(NPCS.items()) if npcs else []):
         ba.ASSETS[name] = (fn, "Fallow", "ship")
