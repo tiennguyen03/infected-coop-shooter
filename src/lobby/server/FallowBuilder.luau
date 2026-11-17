@@ -212,7 +212,8 @@ local function buildDeck(ship: Folder)
 	for z = -L + 6, well.z0 - 6, 12 do
 		local onSpot = false
 		for _, spot in Layout.Spots do
-			if z + 6 > spot.helo.Z - 15 and z < spot.helo.Z + 15 then
+			local clear = Config.Lobby.Launch.BoardRadius + 1
+			if z + 6 > spot.helo.Z - clear and z < spot.helo.Z + clear then
 				onSpot = true
 			end
 		end

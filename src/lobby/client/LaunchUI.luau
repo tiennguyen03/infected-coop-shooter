@@ -1,5 +1,5 @@
 --!strict
--- Your seat on a Lantern spot (LaunchService): while you stand in a boarding box, the lower
+-- Your seat on a Lantern spot (LaunchService): while you stand inside a spot's ring, the lower
 -- middle of the screen shows the spot, who is aboard and the countdown to lift; "LIFTING"
 -- when it goes, and the reason when a teleport does not happen. HUD style per HudTheme.
 -- The first soldier aboard also gets the squad-size buttons (1-4): once that many are
