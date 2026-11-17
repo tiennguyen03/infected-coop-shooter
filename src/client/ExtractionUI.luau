@@ -1,8 +1,8 @@
 --!strict
--- Extraction on the mission line (MissionLine, lower centre; it outranks the objective
--- while it shows), driven by the ExtractionUpdate remote: available "REACH the LZ",
--- progress "HOLD the LZ" over a bar, waiting "WAITING FOR SQUAD n/m" (some of the squad on
--- the pad), returning a red "RETURN to the LZ", complete "EXTRACTED", hide.
+-- Extraction on the mission line (MissionLine; it outranks the objective while it shows),
+-- driven by the ExtractionUpdate remote: available "REACH the LZ", progress "HOLD the LZ"
+-- over the meter, waiting "WAITING FOR SQUAD n/m" (some of the squad on the pad),
+-- returning a red "RETURN to the LZ" with the meter paused, complete "EXTRACTED", hide.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -23,20 +23,31 @@ local function onUpdate(kind: string, progress: number, playersIn: number?, play
 	local held = `{math.floor(progress)} of {required}s`
 	local fraction = progress / math.max(required, 1)
 	if kind == Messages.ExtractionUpdate.Available then
-		MissionLine.set(OWNER, `REACH the {LZ}`, "The helicopter is inbound", nil)
+		MissionLine.set(OWNER, { text = `REACH the {LZ}`, sub = "The helicopter is inbound" })
 	elseif kind == Messages.ExtractionUpdate.Progress then
-		MissionLine.set(OWNER, `HOLD the {LZ}`, held, fraction)
+		MissionLine.set(OWNER, {
+			text = `HOLD the {LZ}`,
+			progress = fraction,
+			readout = `{HudTheme.tint("HOLDING", C.Yellow)}  {held}`,
+		})
 	elseif kind == Messages.ExtractionUpdate.Waiting then
-		MissionLine.set(
-			OWNER,
-			`WAITING FOR SQUAD {playersIn or 0}/{playersLiving or 0}`,
-			`everyone on the {LZ} · {held}`,
-			fraction
-		)
+		MissionLine.set(OWNER, {
+			text = `WAITING FOR SQUAD {playersIn or 0}/{playersLiving or 0}`,
+			sub = `everyone on the {LZ}`,
+			progress = fraction,
+			readout = `{HudTheme.tint("PAUSED", C.RedLight)}  {held}`,
+			paused = true,
+		})
 	elseif kind == Messages.ExtractionUpdate.Returning then
-		MissionLine.set(OWNER, `RETURN to the {LZ}`, held, fraction, C.RedLight)
+		MissionLine.set(OWNER, {
+			text = `RETURN to the {LZ}`,
+			color = C.RedLight,
+			progress = fraction,
+			readout = `{HudTheme.tint("PAUSED", C.RedLight)}  {held}`,
+			paused = true,
+		})
 	elseif kind == Messages.ExtractionUpdate.Complete then
-		MissionLine.set(OWNER, "EXTRACTED", "", nil)
+		MissionLine.set(OWNER, { text = "EXTRACTED" })
 	elseif kind == Messages.ExtractionUpdate.Hide then
 		MissionLine.clear(OWNER)
 	end
