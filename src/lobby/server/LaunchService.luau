@@ -1,6 +1,6 @@
 --!strict
 -- Lantern spots on the Fallow's flight deck (docs/MULTIPLAYER_READINESS.md decision 7): a
--- bird on each numbered spot and a boarding box beside its door. Whoever stands in the box is
+-- bird on each numbered spot inside a yellow ring. Whoever stands inside the ring is
 -- aboard (Rules/Manifest: boarding order, up to Config.Lobby.Launch.Capacity); the first
 -- aboard starts the countdown and may pick the squad size (LaunchUI); a full bird (all four,
 -- or the size picked) shortens it to Config.Lobby.Launch.FullCountdown. When it runs out, the server reserves
@@ -38,6 +38,7 @@ local SETTINGS: Manifest.Settings = {
 
 local YELLOW = Color3.fromRGB(230, 189, 96)
 local PAINT = Color3.fromRGB(214, 214, 208)
+local RING_BAND = 0.8 -- studs of yellow paint at the ring's edge
 
 type SpotState = {
 	spot: Layout.Spot,
@@ -53,11 +54,13 @@ local launchRemote: RemoteEvent
 
 local function buildSpot(parent: Instance, spot: Layout.Spot): Model
 	local deck = Layout.DeckY
-	-- The painted spot circle and its number.
+	local radius = LAUNCH.BoardRadius
+	-- The painted spot circle and its number. The ring is the boarding zone (owner
+	-- 2026-11-16): stand anywhere inside it, round the bird, to board (Manifest.onSpot).
 	Build.part(
 		parent,
 		"SpotRing",
-		Vector3.new(0.1, 28, 28),
+		Vector3.new(0.1, radius * 2, radius * 2),
 		CFrame.new(spot.helo + Vector3.new(0, 0.06, 0)) * CFrame.Angles(0, 0, math.pi / 2),
 		YELLOW,
 		{ shape = Enum.PartType.Cylinder, material = Enum.Material.SmoothPlastic, collide = false }
@@ -65,7 +68,7 @@ local function buildSpot(parent: Instance, spot: Layout.Spot): Model
 	Build.part(
 		parent,
 		"SpotInner",
-		Vector3.new(0.1, 26.4, 26.4),
+		Vector3.new(0.1, radius * 2 - RING_BAND * 2, radius * 2 - RING_BAND * 2),
 		CFrame.new(spot.helo + Vector3.new(0, 0.14, 0)) * CFrame.Angles(0, 0, math.pi / 2),
 		Color3.fromRGB(50, 52, 55),
 		{ shape = Enum.PartType.Cylinder, material = Enum.Material.Asphalt, collide = false }
@@ -74,7 +77,7 @@ local function buildSpot(parent: Instance, spot: Layout.Spot): Model
 		parent,
 		"SpotNumber",
 		Vector3.new(8, 0.05, 8),
-		CFrame.new(spot.helo.X, deck + 0.3, spot.helo.Z + 18) * CFrame.Angles(0, math.pi, 0),
+		CFrame.new(spot.helo.X, deck + 0.3, spot.helo.Z + radius + 4) * CFrame.Angles(0, math.pi, 0),
 		PAINT,
 		{ transparency = 1, collide = false }
 	)
@@ -82,36 +85,37 @@ local function buildSpot(parent: Instance, spot: Layout.Spot): Model
 
 	local bird = LanternBird.build(parent, spot.helo, Config.Lobby.Lantern.BirdNumbers[spot.index])
 
-	-- The boarding box beside the door.
-	local half = LAUNCH.BoardHalfSize
-	local box = Build.part(
+	-- The sign on the ring's edge by the bird's door, where soldiers walk up to it.
+	local sign = Build.part(
 		parent,
-		"BoardingBox",
-		Vector3.new(half * 2, 0.1, half * 2),
-		-- Above the spot ring it overlaps at the door side (ring top 0.11, inner 0.19).
-		CFrame.new(spot.board + Vector3.new(0, 0.3, 0)),
+		"SpotSign",
+		Vector3.new(1, 0.1, 1),
+		CFrame.new(spot.sign + Vector3.new(0, 0.3, 0)),
 		YELLOW,
-		{ material = Enum.Material.SmoothPlastic, transparency = 0.6, collide = false }
+		{ transparency = 1, collide = false }
 	)
-	Build.sign(box, `HELO · SPOT {spot.index}`, "Stand here to board", 5)
+	sign.CanQuery = false
+	Build.sign(sign, `HELO · SPOT {spot.index}`, "Stand in the circle to board", 5)
 	return bird
 end
 
--- Soldiers standing in a spot's boarding box right now, as UserIds.
+-- Soldiers standing inside a spot's ring right now, as UserIds.
 local function present(spot: Layout.Spot): { number }
-	local half = LAUNCH.BoardHalfSize
 	local ids: { number } = {}
 	for _, player in Players:GetPlayers() do
 		local character = player.Character
 		local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
 		local humanoid = character and character:FindFirstChildOfClass("Humanoid")
 		if root and humanoid and humanoid.Health > 0 then
-			local offset = root.Position - spot.board
+			local offset = root.Position - spot.helo
 			if
-				math.abs(offset.X) <= half
-				and math.abs(offset.Z) <= half
-				and offset.Y >= 0
-				and offset.Y <= LAUNCH.BoardHeight
+				Manifest.onSpot(
+					offset.X,
+					offset.Y,
+					offset.Z,
+					LAUNCH.BoardRadius,
+					LAUNCH.BoardHeight
+				)
 			then
 				table.insert(ids, player.UserId)
 			end

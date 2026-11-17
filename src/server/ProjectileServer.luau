@@ -25,6 +25,7 @@ local LoadoutService = require(script.Parent.LoadoutService)
 local PauseService = require(script.Parent.PauseService)
 local Squad = require(script.Parent.Squad)
 local Lifecycle = require(script.Parent.Lifecycle)
+local VehicleService = require(script.Parent.VehicleService)
 local WorldSounds = require(script.Parent.WorldSounds)
 
 local ENEMY_TAG = "Enemy"
@@ -37,6 +38,7 @@ local PASS_THROUGH_FOLDERS = {
 	"ResupplyCards",
 	"InfectedProjectiles",
 	"SquadBots",
+	"Vehicles", -- the squad's ATVs (VehicleService): the gunner never shoots their own roll bar
 	"Drones",
 	"Mines",
 	"FirePools",
@@ -383,6 +385,11 @@ local function onFireRequest(
 	if direction.Magnitude < 0.001 then
 		return
 	end
+	-- A vehicle: the driver has no gun; the back seat fires all round but through the driver.
+	local seat = VehicleService.seatOf(character)
+	if seat == "driver" or not VehicleService.gunnerMayFire(character, direction) then
+		return
+	end
 	-- The magazine: an empty one refuses the shot (the client asks for a reload).
 	if not LoadoutService.consumeRound(player) then
 		return
@@ -412,6 +419,9 @@ local function onFireRequest(
 	player:SetAttribute(Attributes.Bloom, bloom[player])
 	if lastStand then
 		spread *= Config.Upgrades.LastStand.SpreadMultiplier
+	end
+	if seat == "gunner" and aiming ~= true then
+		spread *= VehicleService.gunnerBloom(character) -- the hip on a moving ATV
 	end
 	local baseDamage = weapon.Damage
 	local pierce = weapon.Pierce or 0

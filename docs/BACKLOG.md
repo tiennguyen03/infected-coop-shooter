@@ -37,6 +37,9 @@ published from `main`.
 | #37 | Objectives: 5 main, 4 side, each with a reason | dev menu, RUN tab; props may float or sink |
 | #38 | Roll is Shift twice; slide is holding C or Ctrl | accidental rolls when re-sprinting |
 | #39 | Revive animation: kneel, treat, pull up | hands on the chest; the casualty not in the floor |
+| #56 | Call-ins hold the crowd they land on (Hammer, Anvil, Shrike) | spawn 25 Walkers, call each strike, count kills; does it look like a magnet |
+| #58 | The Warden comes partway through the main objective and is its last act | each objective's checklist in the PR; is he too much on top of the objective |
+| ATV PR | The ATV: a call-in from the new Vehicles desk at the back of the hangar, slung in by the helicopter; one drives, one shoots off the back; runs the Infected down | Nova played the match side; the motor pool in the lobby is unseen |
 
 Merge order when you are happy: #18 before #25 and #28; #16 before #32; #15 before #36 and
 #37; #21 before #38; #17 is replaced by #24. Several of these touch the same files; Claude
@@ -54,6 +57,7 @@ joins them at merge time (already done once in the test mix).
 | What | Notes |
 |---|---|
 | New key layout: E interact, V stim, F shove, C/Ctrl crouch, Z prone, X flare | one table for all keys; follow-ups on the open PRs |
+| Vehicles: the ATV, follow-ups (Nova) | driver's hands on the bars, faster, engine sound, the motor sergeant's radio lines, a real model, more vehicles as maps grow |
 | Checkpoint Delta revamp in Blender (proposal, pictures first) | layers along the highway, multi-storey buildings, consistent vehicles; Desktop `Delta_v2` when done |
 
 ## 4. Your call

@@ -7,6 +7,10 @@
 -- First pass (built with the stealth Infected as the test bed): the deck, the Jam, the Toll
 -- booths, the Rest Stop's diner and the woods (pines, some broadleaf, brush: build/trees.py). Still to come from C1: the Overpass span, the off-ramp, pumps and canopy, the
 -- water tower, the sleepers' places and the objectives.
+-- TODO(Nova, review PR-52 finding 3): this file only builds the scenery. Until Mile 14 has its
+-- own row in Config.Objectives.Maps, its own Warden spawn and route, and its own landing zone,
+-- a run here falls back to Checkpoint Delta's: the hold at (50, 8.5, 50) cuts into the road
+-- embankment, and the Warden uses Delta's gate and route. Nothing launches into Mile 14 yet.
 
 local MissionTypes = require(script.Parent.MissionTypes)
 

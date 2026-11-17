@@ -91,6 +91,20 @@ function Manifest.setSquad(
 	return { aboard = table.clone(manifest.aboard), liftAt = liftAt, squad = size }, true
 end
 
+-- Whether a soldier is on the spot: `dx`, `dy`, `dz` their root's offset from the spot's
+-- centre on the deck. The zone is the painted ring round the bird (owner 2026-11-16: the
+-- circle, not a square beside it): within `radius` across the deck, from the deck up to
+-- `height` above it.
+function Manifest.onSpot(
+	dx: number,
+	dy: number,
+	dz: number,
+	radius: number,
+	height: number
+): boolean
+	return dx * dx + dz * dz <= radius * radius and dy >= 0 and dy <= height
+end
+
 function Manifest.isAboard(manifest: Manifest, id: number): boolean
 	return table.find(manifest.aboard, id) ~= nil
 end

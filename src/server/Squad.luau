@@ -511,6 +511,10 @@ local function addPrompt(member: Member)
 		if not reviver or reviver == member or not isAlive(reviver) then
 			return
 		end
+		-- Nobody revives from a vehicle's seat (VehicleService); get off first.
+		if reviver.character and reviver.character:GetAttribute(Attributes.Riding) then
+			return
+		end
 		local reviverRoot = reviver.root :: BasePart
 		local downedRoot = member.root
 		if

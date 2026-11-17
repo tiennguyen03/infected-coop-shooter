@@ -312,12 +312,14 @@ local function release(key: Enum.KeyCode)
 end
 
 -- The flare key: the flare goes at the crosshair at once. The clip plays when the squad can pay for
--- a pallet and none is inbound (the server's own gates, RequisitionService).
+-- a pallet, none is inbound and the flare cooldown is over (the server's own gates,
+-- RequisitionService).
 local function throwFlare()
 	local pool = (workspace:GetAttribute(Attributes.ResupplyPool) :: number?) or 0
 	local cost = (workspace:GetAttribute(Attributes.ResupplyCost) :: number?) or 1
 	local dropIn = (workspace:GetAttribute(Attributes.ResupplyDropIn) :: number?) or -1
-	if pool < cost or dropIn >= 0 or not beginThrow() then
+	local cooling = workspace:GetAttribute(Attributes.ResupplyFlareCooling) == true
+	if pool < cost or dropIn >= 0 or cooling or not beginThrow() then
 		return
 	end
 	Remotes.get("Resupply")
@@ -339,6 +341,15 @@ function AbilityController.init()
 			return
 		end
 		local key = input.KeyCode
+		-- On a vehicle (VehicleService) only the stim works: no call-ins, throws or swaps.
+		local character = Players.LocalPlayer.Character
+		if
+			character
+			and character:GetAttribute(Attributes.Riding) ~= nil
+			and key ~= Config.Keys.Stim
+		then
+			return
+		end
 		local slot = CALL_IN_KEYS[key]
 		if slot and slot <= Config.CallIns.Slots then
 			pressCallIn(key, slot)

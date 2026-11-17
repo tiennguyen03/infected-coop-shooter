@@ -126,7 +126,7 @@ function EnemySpacing.goal(
 		here.Z,
 		target.X,
 		target.Z,
-		attackRange,
+		Spacing.flatReach(attackRange, target.Y - here.Y),
 		body.radius,
 		body.seed,
 		now,

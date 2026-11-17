@@ -41,6 +41,7 @@ local GroundUtil = require(Shared:WaitForChild("GroundUtil"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 local SoundBanks = require(Shared:WaitForChild("SoundBanks"))
 local ThrowUtil = require(Shared:WaitForChild("ThrowUtil"))
+local VehicleBody = require(Shared:WaitForChild("VehicleBody"))
 
 local UP = Vector3.yAxis
 local SMOKE_TEXTURE = "rbxasset://textures/particles/smoke_main.dds"
@@ -699,6 +700,190 @@ STYLES.case = function(ctx: Ctx)
 		puff(ctx.point + UP, CORD, 4, 3, 8, 0.5)
 		sound(ctx.point, "callins", "tripline_arm", 1, 0.6, false)
 	end)
+end
+
+-- ------------------------------------------------------------------ vehicles
+
+-- A vehicle slung under the helicopter (Config.CallIns.<Key>.Arrival "sling"; the row's
+-- Vehicle.Body is what hangs): the helo (the insertion's InsertLantern, nose +Z) flies in
+-- low along the throw, hovers over the mark while the vehicle comes down on its line, drops
+-- the hook at Time (the server's vehicle appears there) and climbs away ahead.
+STYLES.sling = function(ctx: Ctx)
+	local arrival, cfg = ctx.arrival, ctx.cfg
+	local bodyId = cfg.Vehicle and cfg.Vehicle.Body
+	local body = bodyId and VehicleBody.get(bodyId)
+	local marker = thrown(ctx)
+	if not body then
+		return
+	end
+	local landed = arrival.Throw :: number
+	local hoverAt = landed + arrival.Approach
+	local down = math.max(arrival.Time, hoverAt + 0.5)
+	local goneAt = down + arrival.Depart
+	local height = arrival.Height :: number
+	local hover = ctx.point + UP * height
+	local start = hover - ctx.flat * arrival.Distance + UP * 25
+	local away = hover + ctx.flat * arrival.Distance + UP * arrival.Climb
+	local ground = ctx.point + UP * body.rest
+
+	-- The vehicle (anchored parts from the same build the server uses) and its line.
+	local vehicle = VehicleBody.build(bodyId, CFrame.new(start), true) :: Model
+	vehicle.Parent = ctx.model
+	local vehicleParts: { BasePart } = {}
+	local vehicleRest: { CFrame } = {}
+	local vehicleRoot = vehicle.PrimaryPart :: BasePart
+	for _, piece in vehicle:GetDescendants() do
+		if piece:IsA("BasePart") then
+			piece.CanQuery = false
+			table.insert(vehicleParts, piece)
+			table.insert(vehicleRest, vehicleRoot.CFrame:ToObjectSpace(piece.CFrame))
+		end
+	end
+	local hookEnd = Instance.new("Attachment")
+	hookEnd.Position = body.hook
+	hookEnd.Parent = vehicleRoot
+
+	-- The helicopter: a local copy of the insertion's, every part placed from its frame.
+	local template = ReplicatedStorage:FindFirstChild("InsertLantern")
+	local heli: Model? = if template and template:IsA("Model") then template:Clone() else nil
+	local heliParts: { BasePart } = {}
+	local heliRest: { CFrame } = {}
+	local heliNames: { string } = {}
+	local hub = Config.Insertion.Hub
+	local tailHub = Config.Insertion.TailHub
+	local belly = Instance.new("Attachment")
+	if heli then
+		for _, piece in heli:GetDescendants() do
+			if piece:IsA("BasePart") then
+				table.insert(heliParts, piece)
+				table.insert(heliRest, piece.CFrame) -- built around the identity frame
+				table.insert(heliNames, piece.Name)
+			end
+		end
+		heli.Parent = ctx.model
+		local bodyPart = heli:FindFirstChild("Body")
+		if bodyPart and bodyPart:IsA("BasePart") then
+			belly.Parent = bodyPart
+			local rotor = SoundBanks.create("SlingRotor", 30, 600)
+			rotor.Parent = bodyPart
+			SoundBanks.loop(rotor, "ambience", "lantern_rotor", arrival.RotorVolume)
+		end
+	end
+	local line = Instance.new("Beam")
+	line.Attachment0 = belly
+	line.Attachment1 = hookEnd
+	line.Width0 = 0.15
+	line.Width1 = 0.15
+	line.FaceCamera = true
+	line.Segments = 1
+	line.Color = ColorSequence.new(CORD)
+	line.Parent = vehicleRoot
+
+	local function heliFrame(t: number): CFrame
+		local position: Vector3
+		local pitch = 0
+		if t < hoverAt then
+			local u = Arrival.progress(t, landed, hoverAt)
+			position = start:Lerp(hover, Arrival.easeOut(u))
+			pitch = -10 * (1 - u)
+		elseif t < down then
+			local u = Arrival.progress(t, hoverAt, down)
+			position = hover + UP * (0.4 * math.sin(u * math.pi * 2))
+		else
+			local u = Arrival.progress(t, down, goneAt)
+			position = hover:Lerp(away, u * u)
+			pitch = -12 * math.min(u * 3, 1)
+		end
+		return CFrame.lookAlong(position, -ctx.flat) * CFrame.Angles(math.rad(-pitch), 0, 0)
+	end
+
+	local spin = 0
+	local lastT = landed
+	local hookY = body.hook.Y
+	track(ctx, landed, goneAt, function(t)
+		local dt = math.max(t - lastT, 0)
+		lastT = t
+		local frame = heliFrame(t)
+		-- Every part placed in one bulk move a frame (as InsertionCutscene does).
+		local parts: { BasePart } = {}
+		local frames: { CFrame } = {}
+		if heli then
+			spin += math.rad(Config.Insertion.RotorSpin) * dt
+			local hubFrame = frame * CFrame.new(hub)
+			local tailFrame = frame * CFrame.new(tailHub)
+			for i, piece in heliParts do
+				local name = heliNames[i]
+				table.insert(parts, piece)
+				if name == "Rotor" then
+					table.insert(
+						frames,
+						hubFrame * CFrame.Angles(0, spin, 0) * CFrame.new(-hub) * heliRest[i]
+					)
+				elseif name == "TailRotor" then
+					table.insert(
+						frames,
+						tailFrame
+							* CFrame.Angles(spin * 3, 0, 0)
+							* CFrame.new(-tailHub)
+							* heliRest[i]
+					)
+				else
+					table.insert(frames, frame * heliRest[i])
+				end
+			end
+		end
+		if t < down and vehicle.Parent then
+			-- Hanging on the line, then paid out to the ground.
+			local hang = frame.Position - UP * (arrival.Line + hookY)
+			local centre = if t < hoverAt
+				then hang
+				else hang:Lerp(ground, Arrival.easeOut(Arrival.progress(t, hoverAt, down)))
+			local sway = if t < hoverAt then math.sin(t * 2.2) * 0.06 else 0
+			local at = CFrame.lookAlong(centre, ctx.flat) * CFrame.Angles(sway, 0, 0)
+			for i, piece in vehicleParts do
+				table.insert(parts, piece)
+				table.insert(frames, at * vehicleRest[i])
+			end
+		end
+		workspace:BulkMoveTo(parts, frames, Enum.BulkMoveMode.FireCFrameChanged)
+	end)
+	-- Rotor wash on the mark while it comes down.
+	for k = 0, 3 do
+		cue(ctx, hoverAt + k * (down - hoverAt) / 4, function()
+			puff(ctx.point + UP * 0.5, CORD, 5, 5, 16, 0.7)
+		end)
+	end
+	-- Touchdown: the hook drops, the server's vehicle stands where this one did. Whichever
+	-- comes first, this clock or the server's vehicle arriving on the mark, ends the stand-in,
+	-- so the two never stand in each other.
+	local landedOnce = false
+	local function touchdown()
+		if landedOnce then
+			return
+		end
+		landedOnce = true
+		marker:Destroy()
+		line.Enabled = false
+		vehicle:Destroy()
+		puff(ctx.point + UP * 0.5, CORD, 10, 5, 14, 0.9)
+		sound(ctx.point, "callins", "pallet_land", 0.9, 0.6, false)
+	end
+	local vehicles = workspace:FindFirstChild("Vehicles")
+	if vehicles then
+		local watch: RBXScriptConnection
+		watch = vehicles.ChildAdded:Connect(function(child)
+			local real: BasePart? = if child:IsA("Model") then child.PrimaryPart else nil
+			if real and (real.Position - ground).Magnitude < 6 then
+				watch:Disconnect()
+				touchdown()
+			end
+		end)
+		ctx.model.Destroying:Connect(function()
+			watch:Disconnect()
+		end)
+	end
+	cue(ctx, down, touchdown)
+	hold(ctx, goneAt)
 end
 
 STYLES.scatter = function(ctx: Ctx)

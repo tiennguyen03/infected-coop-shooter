@@ -264,6 +264,28 @@ return {
 		expect.equal(Record.canUpdate({ version = 3, merits = 5 }), false, "a newer version")
 		expect.equal(Record.canUpdate({ version = 2, merits = "x" }), false, "bad merits")
 	end,
+	["a buy is applied to the stored record, keeping merits the match paid meanwhile"] = function()
+		-- The lobby read 600 merits on join; the match then paid 120 onto the saved record.
+		local stored = Record.encode(Record.earn(Record.new(600), 120))
+		local saved, reason = Record.buyStored(stored, "smg", priceOf, 1000)
+		expect.equal(reason, nil, "bought")
+		local after = Record.decode(saved, 1000)
+		expect.equal(after.merits, 420, "600 + 120 - 300")
+		expect.equal(Record.owns(after, "smg", priceOf), true, "on the record")
+	end,
+	["a stored buy is refused like a held one and never touches an unreadable save"] = function()
+		local stored = Record.encode(Record.new(100))
+		local saved, reason = Record.buyStored(stored, "smg", priceOf, 1000)
+		expect.equal(saved, nil, "nothing written when short")
+		expect.equal(reason, "short", "short")
+		local _, owned = Record.buyStored(stored, "pistol", priceOf, 1000)
+		expect.equal(owned, "owned", "free kit")
+		local newer, why = Record.buyStored({ version = 3, merits = 9000 }, "smg", priceOf, 1000)
+		expect.equal(newer, nil, "a newer version is left alone")
+		expect.equal(why, "unreadable", "reason")
+		local fresh = Record.buyStored(nil, "smg", priceOf, 1000)
+		expect.equal(Record.decode(fresh, 1000).merits, 700, "no save yet: start merits")
+	end,
 	["the DataStore key is the same for the lobby and the match"] = function()
 		expect.equal(Record.key(12345), "r_12345", "key")
 		expect.equal(Record.KEY_PREFIX, "r_", "prefix")

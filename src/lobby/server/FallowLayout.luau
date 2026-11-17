@@ -56,7 +56,7 @@ FallowLayout.Crew = {
 		Vector3.new(-4, H, 12),
 		Vector3.new(-4, H, 40),
 		Vector3.new(-6, H, 78),
-	}, -- Plot door to the ramp, outside the Fires counter
+	}, -- Plot door to the ramp
 	medic = { Vector3.new(24, D, -166), Vector3.new(24, D, -142) }, -- up and down the screening lane
 	sentry = { Vector3.new(32, D, -170), Vector3.new(32, D, -136) }, -- the deck edge over the lane
 } :: { [string]: { Vector3 } }
@@ -67,18 +67,20 @@ FallowLayout.Spawn = CFrame.lookAt(spawnAt, spawnAt - Vector3.new(0, 0, 1))
 
 export type Spot = {
 	index: number,
-	helo: Vector3, -- the bird, on the spot's centre
-	board: Vector3, -- the boarding box beside its door, on the deck surface
+	helo: Vector3, -- the bird, on the spot's centre: also the boarding ring's centre
+	sign: Vector3, -- the HELO · SPOT n sign's foot: on the ring's edge at the bird's door
 }
 
--- Numbered Lantern spots down the deck aft of the ramp's top, spot 4 nearest it.
+-- Numbered Lantern spots down the deck aft of the ramp's top, spot 4 nearest it. The ring
+-- round each bird (Config.Lobby.Launch.BoardRadius) is where you stand to board.
 local spots: { Spot } = {}
 for index = 1, Config.Lobby.Launch.Spots do
 	local z = -150 + (index - 1) * 45
+	local helo = Vector3.new(-12, FallowLayout.DeckY, z)
 	table.insert(spots, {
 		index = index,
-		helo = Vector3.new(-12, FallowLayout.DeckY, z),
-		board = Vector3.new(1, FallowLayout.DeckY, z),
+		helo = helo,
+		sign = helo + Vector3.new(Config.Lobby.Launch.BoardRadius, 0, 0),
 	})
 end
 FallowLayout.Spots = spots
@@ -92,9 +94,9 @@ export type DeskPlace = {
 }
 
 -- Hangar desks (LobbyDesks), between the spawn and the ramp's foot: the Arms Room cage on the
--- port side and the Engineers among the wire to starboard, facing each other across the
--- walk; the Loadmaster among the slung cases at the foot of the ramp, facing the spawn; Fires
--- at the Plot door, further aft past the ramp.
+-- port side and Call-ins (the sapper sergeant among the wire) to starboard, facing each other
+-- across the walk; the Loadmaster among the slung cases at the foot of the ramp, facing the
+-- spawn. (The Fires desk by the Plot door was folded into Call-ins, owner 2026-11-16.)
 FallowLayout.Desks = {
 	{
 		id = "arms_room",
@@ -103,7 +105,7 @@ FallowLayout.Desks = {
 		counter = false, -- his counter is the glass case (ArmsRack, FallowLayout.ArmsRoom)
 	},
 	{
-		id = "engineers",
+		id = "callins",
 		feet = Vector3.new(27, FallowLayout.HangarY, 105),
 		facing = Vector3.new(-1, 0, 0),
 	},
@@ -111,11 +113,6 @@ FallowLayout.Desks = {
 		id = "loadmaster",
 		feet = Vector3.new(-2, FallowLayout.HangarY, 88),
 		facing = Vector3.new(0, 0, 1),
-	},
-	{
-		id = "fires",
-		feet = Vector3.new(1, FallowLayout.HangarY, 18),
-		facing = Vector3.new(-1, 0, 0),
 	},
 	-- Control's watch officer at the map table in the Plot, between the table and the board,
 	-- facing the door (owner 2026-11-10: someone real in the Plot).
@@ -126,7 +123,48 @@ FallowLayout.Desks = {
 		facing = Vector3.new(-1, 0, 0),
 		counter = false,
 	},
+	-- The motor sergeant at Vehicles, at the aft end of the hangar beside the parked ATV,
+	-- facing the soldiers coming round the Plot (Nova 2026-11-17; MotorPool).
+	{
+		id = "vehicles",
+		feet = Vector3.new(9, FallowLayout.HangarY, -48),
+		facing = Vector3.new(0, 0, 1),
+	},
 } :: { DeskPlace }
+
+-- The motor pool (Nova 2026-11-17: "the open space on the other side of the hangar"; plan
+-- by the level designer; MotorPool builds it): three painted bays across the aft hangar, the
+-- ATV parked in the middle one on the spawn's centre line (seen down the aisle past the
+-- Loadmaster), the other two kept for later vehicles. Tool chests behind the sergeant, a
+-- tyre rack in the starboard aft corner, a fuel point in the port one, one light over it all.
+FallowLayout.MotorPool = {
+	bays = { { x0 = -20, x1 = -8 }, { x0 = -6, x1 = 6 }, { x0 = 12, x1 = 24 } },
+	bayZ0 = -78,
+	bayZ1 = -52,
+	parked = {
+		bay = 2,
+		vehicle = "atv",
+		centre = Vector3.new(0, H, -64),
+		facing = Vector3.new(0, 0, 1),
+	},
+	chests = { Vector3.new(9, H, -56), Vector3.new(9, H, -60) },
+	tyreRack = { x = 30.3, z0 = -96, z1 = -82 },
+	fuel = Vector3.new(-28, H, -90),
+	light = Vector3.new(0, 37, -64),
+}
+
+-- The Call-ins display (owner 2026-11-16: "like the Quartermaster, where you can see the guns
+-- behind him"; CallInDisplay builds it, CallInDisplayUI looks at it): a row of pallets on the
+-- hangar floor along the starboard hull behind the sapper sergeant, one call-in on each, in
+-- CallInDisplay order from the soldier's left. `origin` is the row's centre on the floor,
+-- looking out toward the soldier; `length` along the row, `depth` front to back. The plates
+-- with each name hang on a board on the hull behind, `boardY` up from the floor.
+FallowLayout.CallInDisplay = {
+	origin = CFrame.lookAt(Vector3.new(30.8, H, 105), Vector3.new(0, H, 105)),
+	length = 31,
+	depth = 3.6,
+	boardY = 4.2,
+}
 
 -- The Arms Room fills the hangar's port fore corner (Nova, 2026-11-10: "use that entire corner
 -- for him"; ArmsRack builds it, ArmsRackUI looks at it). The Quartermaster stands behind a glass

@@ -7,10 +7,12 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local ObjectiveDefinitions = require(ReplicatedStorage.Shared.ObjectiveDefinitions)
+local RunStates = require(ReplicatedStorage.Shared.RunStates)
 local Types = require(script.Parent.Types)
 
 local Server = script.Parent.Parent
 local EnemyService = require(Server.EnemyService)
+local PauseService = require(Server.PauseService)
 local Squad = require(Server.Squad)
 
 local Kit = {}
@@ -89,6 +91,8 @@ end
 
 -- A hold-to-interact prompt on `part` (Kit.InteractKey: MULTIPLAYER_READINESS decision 8).
 -- `onTriggered` runs with the living player who finished the hold; letting go starts over.
+-- The server checks the body is really at the prompt (a client can fire any prompt from
+-- anywhere) and that the run is live and not paused.
 function Kit.prompt(
 	part: BasePart,
 	action: string,
@@ -108,7 +112,15 @@ function Kit.prompt(
 	prompt.Style = Enum.ProximityPromptStyle.Default
 	prompt.Triggered:Connect(function(player)
 		local member = Squad.fromPlayer(player)
-		if member and Squad.isAlive(member) then
+		local root = member and member.root
+		if
+			member
+			and root
+			and Squad.isAlive(member)
+			and (root.Position - part.Position).Magnitude <= prompt.MaxActivationDistance + Config.Objectives.PromptSlack + part.Size.Magnitude / 2
+			and RunStates.isLive()
+			and not PauseService.isPaused()
+		then
 			onTriggered(player)
 		end
 	end)

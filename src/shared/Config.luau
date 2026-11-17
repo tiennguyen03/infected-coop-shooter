@@ -25,6 +25,15 @@ local Config = {
 		CallIns = { Enum.KeyCode.One, Enum.KeyCode.Two, Enum.KeyCode.Three, Enum.KeyCode.Four },
 		Loadout = Enum.KeyCode.B, -- the Arms Room menu
 		NightVision = Enum.KeyCode.N, -- the helmet's night vision goggles, on and off
+		-- Driving a vehicle (VehicleController): read when the VehicleSeat has no reading of
+		-- its own. Getting on and off is Interact (E); GetOffPad on a gamepad.
+		Drive = {
+			Forward = { Enum.KeyCode.W, Enum.KeyCode.Up },
+			Back = { Enum.KeyCode.S, Enum.KeyCode.Down },
+			Left = { Enum.KeyCode.A, Enum.KeyCode.Left },
+			Right = { Enum.KeyCode.D, Enum.KeyCode.Right },
+		},
+		GetOffPad = Enum.KeyCode.ButtonB,
 		-- Roll and slide have no key of their own (owner 2026-11-11): Sprint twice rolls, and
 		-- holding a Crouch key while sprinting slides (MovementController; StanceController
 		-- does not crouch then).
@@ -35,7 +44,8 @@ local Config = {
 	-- is in Insert every client plays it locally (client InsertionCutscene): the helicopter
 	-- comes in low over the city, flares over the LZ pad, hovers in its own dust while the squad
 	-- drops, and climbs away; letterbox bars, the HUD hidden, the soldier held still. Three
-	-- shots, timed by the phases below (seconds). SkipKeys end it at once for that player. The
+	-- shots, timed by the phases below (seconds). SkipKeys end it at once for that player; when
+	-- every player in the server has skipped, the server cuts Insert short (InsertSkip). The
 	-- server holds Insert for Seconds plus Run.InsertSeconds and reads the brief at the end.
 	Insertion = {
 		Enabled = true,
@@ -89,6 +99,9 @@ local Config = {
 		Fov = 50,
 		RotorVolume = 1,
 		SkipKeys = { Enum.KeyCode.Space, Enum.KeyCode.ButtonA },
+		-- Seconds past Seconds after which a cutscene still running (an error) is torn down and
+		-- the view, the HUD and the controls are given back.
+		FailsafeSeconds = 3,
 	},
 
 	-- What can be fitted to a gun (Nova, 2026-11-11: at the Loadmaster "a button next to each gun
@@ -151,7 +164,10 @@ local Config = {
 		-- The sleepers and wanderers placed at the start (until the map places its own): spread
 		-- over open ground at least MinDistance from the LZ.
 		Population = {
-			Count = 70,
+			-- Placed at the start; never more alive than PlayerCountScaling.MaxAliveHardCap (44), so
+			-- 30 leaves room for objective and extraction waves (was 70, review PR-52).
+			Count = 30,
+			PerFrame = 5, -- spawned a few a frame, not all at once
 			MinDistance = 70,
 			Sleeping = 0.55, -- shares; the rest stand Idle
 			Wandering = 0.25,
@@ -414,6 +430,9 @@ local Config = {
 			Leash = 28,
 			TooClose = 6,
 			Tries = 6, -- candidates tried for one in the open and spaced
+			-- A spot needs floor under it, at most this far below the leader's root (their own
+			-- floor is ~3 below): no spot off a roof, tower or ledge.
+			MaxDrop = 6,
 		},
 		FollowSlack = 4, -- closer than this to the slot: stand
 		RunBeyond = 16, -- further than this: run
@@ -1177,6 +1196,18 @@ local Config = {
 		LzRadius = 30,
 		CalmSeconds = 5,
 	},
+	-- The Loadout screen's look (LoadoutMenu; docs/STYLES.md section 5 > Loadout screen): the
+	-- inspected item turns SpinSpeed radians a second in its view; stat bars have Cells
+	-- segments; RowSilhouettes draws each row's small dark shape of the item (false: names
+	-- only, for a slow phone); a screen smaller than Compact (pixels) gets the tabbed layout.
+	-- The models come from Shared.Showcase, which waits TemplateWait s per mesh on the server.
+	LoadoutScreen = {
+		SpinSpeed = 0.45,
+		Cells = 10,
+		RowSilhouettes = true,
+		Compact = Vector2.new(1180, 680),
+		TemplateWait = 20,
+	},
 
 	-- Body animations: clip names from assets/animations (Mixamo, retargeted by
 	-- assets/animations/build/retarget.py). Ids are the published Roblox animations
@@ -1515,6 +1546,10 @@ local Config = {
 		-- the throw, Width; Across = true lays it across). A row without Aim shows a small ring.
 		AimArc = { Beads = 18, Rise = 0.3, MinRise = 3 }, -- the arc: beads, apex height per stud of reach
 		Slots = 4, -- call-in slots per soldier (keys 1-4; the flare is key 5)
+		-- Studio only (Nova 2026-11-17, testing vehicles): this call-in takes the last slot of the
+		-- starting loadout when nothing was signed for (LoadoutService). Never in the live game;
+		-- nil turns it off.
+		StudioCallIn = "atv" :: string?,
 		-- Binoculars (Rules/Spotting, SpotUtil; docs/PROGRESSION.md > Binoculars): a row with
 		-- `AimMode = "Binoculars"` (default "Throw") is not thrown. Its key raises binoculars
 		-- (BinocularController: the view, the mark on the ground, the range; BinocularPose: the
@@ -1617,12 +1652,21 @@ local Config = {
 				Chute = 8,
 			},
 		},
+		-- Landing on the crowd (Rules/StrikeLanding; owner 2026-11-16: the Infected walked out
+		-- of strikes, chasing the thrower). A row's own `Landing` block overrides these.
+		-- Hold: Infected within that many studs of a fire mission's mark are drawn to the
+		-- marker until HoldAfter seconds after the first impact (0 = none). Height: a blast
+		-- (fire missions, Tripline) is measured flat and reaches this far up or down.
+		Landing = {
+			Enabled = true, -- false: no hold, and blasts are the old sphere from their centre
+			Defaults = { Hold = 0, HoldAfter = 0.5, Height = 8 },
+		},
 		-- Hammer (81 mm mortar section, AirStrikeService): marks a point; the first shell lands
 		-- Delay seconds after the throw, then one every ShellInterval, each Scatter studs off
 		-- the mark at most. Walk It In steps them Config.Upgrades.WalkingBarrage.Step apart.
 		Hammer = {
 			Price = 0, -- merits on the Carrier (Rules/Record, KitPrices); issued free
-			Desk = "fires", -- the Carrier desk that sells it (DeskShop)
+			Display = { Prop = "shells", Width = 3 }, -- how the Call-ins display shows it (CallInDisplay)
 			Charges = 1,
 			Cooldown = 120,
 			ThrowDistance = 35,
@@ -1634,6 +1678,7 @@ local Config = {
 			BlastDamage = 80,
 			Scatter = 4,
 			Aim = { Shape = "ring", Radius = 16 }, -- Scatter + BlastRadius: where shells can land
+			Landing = { Hold = 16, HoldAfter = 2 }, -- the aim ring, held through the first 3 shells
 			-- A cross where each round will land; the tubes thump far off, then each round
 			-- drops near straight down with a short high whistle: a quick pale flash, low dust.
 			Arrival = {
@@ -1661,7 +1706,7 @@ local Config = {
 		-- line of sight; one heavy shell Delay seconds after the mark.
 		Anvil = {
 			Price = 0, -- merits on the Carrier (Rules/Record, KitPrices); issued free
-			Desk = "fires", -- the Carrier desk that sells it (DeskShop)
+			Display = { Prop = "maptable", Width = 4 }, -- how the Call-ins display shows it (CallInDisplay)
 			Charges = 1,
 			Cooldown = 180,
 			AimMode = "Binoculars", -- "Throw" puts it back in the hand (then add ThrowDistance = 35)
@@ -1675,6 +1720,7 @@ local Config = {
 			BlastDamage = 500,
 			Scatter = 0,
 			Aim = { Shape = "ring", Radius = 20 }, -- the blast
+			Landing = { Hold = 20, HoldAfter = 0.3 }, -- the blast ring, until the round is in
 			-- One ring closing on the mark; a long falling whistle, one heavy round on a flat
 			-- line from behind the spotter, a tall column of dark earth, smoke and burnt ground.
 			Arrival = {
@@ -1705,7 +1751,7 @@ local Config = {
 		-- impacts centred on the mark, Step studs apart along the throw, BurstInterval apart.
 		Shrike = {
 			Price = 0, -- merits on the Carrier (Rules/Record, KitPrices); issued free
-			Desk = "fires", -- the Carrier desk that sells it (DeskShop)
+			Display = { Prop = "gunship", Width = 4.2 }, -- how the Call-ins display shows it (CallInDisplay)
 			Charges = 1,
 			Cooldown = 150,
 			ThrowDistance = 35,
@@ -1726,6 +1772,7 @@ local Config = {
 			GunMuzzle = Vector3.new(0, -1.75, -11.4),
 			RotorSpin = 1440,
 			Aim = { Shape = "strip", Length = 46, Width = 10 }, -- the run: Step x (Bursts - 1) + 2 x BlastRadius
+			Landing = { Hold = 16, HoldAfter = 1.4 }, -- drawn to the middle of the lane until the run has passed
 			-- A lane of arrows running the way the gunship flies; the cannon is heard from the
 			-- air, a rake of tracers walks the lane and each burst kicks up a spurt of dust.
 			Arrival = {
@@ -1741,7 +1788,7 @@ local Config = {
 		-- FireInterval it shoots the nearest Infected in Range it can see.
 		Doorman = {
 			Price = 400, -- merits on the Carrier (Rules/Record, KitPrices)
-			Desk = "engineers", -- the Carrier desk that sells it (DeskShop)
+			Display = { Prop = "doorman", Width = 4.6 }, -- how the Call-ins display shows it (CallInDisplay)
 			Charges = 1,
 			Cooldown = 150,
 			ThrowDistance = 25,
@@ -1778,7 +1825,7 @@ local Config = {
 		-- when an Infected steps within TriggerRadius.
 		Tripline = {
 			Price = 0, -- merits on the Carrier (Rules/Record, KitPrices); issued free
-			Desk = "engineers", -- the Carrier desk that sells it (DeskShop)
+			Display = { Prop = "mines", Width = 3.4 }, -- how the Call-ins display shows it (CallInDisplay)
 			Charges = 2,
 			Cooldown = 60,
 			ThrowDistance = 35,
@@ -1806,7 +1853,7 @@ local Config = {
 		-- DamagePerSecond (dealt every TickInterval).
 		Concertina = {
 			Price = 250, -- merits on the Carrier (Rules/Record, KitPrices)
-			Desk = "engineers", -- the Carrier desk that sells it (DeskShop)
+			Display = { Prop = "wire", Width = 3.4 }, -- how the Call-ins display shows it (CallInDisplay)
 			Charges = 2,
 			Cooldown = 90,
 			ThrowDistance = 30,
@@ -1834,7 +1881,7 @@ local Config = {
 		-- times in all. A player re-arms again only after stepping out of the radius.
 		Speedball = {
 			Price = 300, -- merits on the Carrier (Rules/Record, KitPrices)
-			Desk = "loadmaster", -- the Carrier desk that sells it (DeskShop)
+			Display = { Prop = "ammo", Width = 3.4 }, -- how the Call-ins display shows it (CallInDisplay)
 			Charges = 1,
 			Cooldown = 180,
 			ThrowDistance = 25,
@@ -1860,7 +1907,7 @@ local Config = {
 		-- full heal, stims refilled, +Plate shield (Config.Crates.ShieldCap still caps it).
 		AidBag = {
 			Price = 300, -- merits on the Carrier (Rules/Record, KitPrices)
-			Desk = "loadmaster", -- the Carrier desk that sells it (DeskShop)
+			Display = { Prop = "medbag", Width = 3 }, -- how the Call-ins display shows it (CallInDisplay)
 			Charges = 1,
 			Cooldown = 180,
 			ThrowDistance = 25,
@@ -1878,6 +1925,124 @@ local Config = {
 				Height = 38,
 				Sway = 0.8,
 				Streamer = 9,
+			},
+		},
+		-- ATV (the first vehicle; Nova and Tien 2026-11-17; docs/PROGRESSION.md > The ATV). A
+		-- call-in like any other: bought at the Vehicles desk, signed into a slot, thrown. Any
+		-- row with a `Vehicle` block is a vehicle (VehicleService spawns it, VehicleBody builds
+		-- it from the block's `Body`); nothing lists vehicle names. Two seats: the driver (no
+		-- gun) and the back seat, who fires their primary.
+		ATV = {
+			Price = 400, -- merits on the Carrier (Rules/Record, KitPrices)
+			Desk = "vehicles", -- sold by the motor sergeant (LobbyDesks), not the Call-ins desk
+			Charges = 1,
+			Cooldown = 180, -- a wrecked or scrapped ATV comes back when the charge does
+			ThrowDistance = 30,
+			Aim = { Shape = "ring", Radius = 5 }, -- where it is set down
+			-- Slung under the helicopter (Nova 2026-11-17): the helo comes in at Height over the
+			-- mark with the ATV on a Line studs long, lowers it to the ground, drops the hook and
+			-- climbs away. Approach and Depart are the flight in and out; the lowering lasts from
+			-- the end of the approach to Time (from the throw), when the server's ATV appears.
+			Arrival = {
+				Style = "sling",
+				Time = 7.5,
+				Smoke = Color3.fromRGB(214, 196, 92),
+				SmokeTime = 8,
+				Approach = 4.5, -- in from Distance studs out to the hover
+				Depart = 3.5, -- the helo climbs away after the hook is dropped
+				Distance = 260,
+				Height = 34, -- the helo's frame above the mark during the hover
+				Line = 16, -- the sling line, studs, from the belly to the ATV's roll bar
+				Climb = 70, -- studs it gains on the way out
+				RotorVolume = 0.55,
+			},
+			Vehicle = {
+				Body = "atv", -- VehicleBody's build (blocky parts; a mesh later)
+				PerPlayer = 1, -- a second call replaces your empty one (Rules/Vehicle.callCheck)
+				PerSquad = 2, -- two ATVs carry the whole squad
+				Clear = Vector3.new(6, 4, 9), -- the landing box that must be free of walls (no charge spent)
+				-- Driving (Rules/Vehicle.driveAccel / steerAngle): studs/s and studs/s². Sprint is 24,
+				-- a Runner 17. Maps are getting bigger (Nova 2026-11-17): it is transport too.
+				-- Nova 2026-11-17, first drive: "slower than walking". Measured in Studio at Accel 16:
+				-- 13 studs/s after 1 s, 22 after 2 (the accel tapers to 0 at TopSpeed), so on Delta's
+				-- short runs it rarely beat a sprint. Now about 25 after 1 s, 38 after 2.
+				TopSpeed = 55,
+				Reverse = 16,
+				Accel = 32,
+				Brake = 45,
+				Coast = 6,
+				SteerAngle = 35, -- degrees at a standstill
+				SteerAtTop = 15, -- degrees at top speed
+				Grip = 9, -- how hard the tyres stop a slide (share of sideways speed per second)
+				MaxClimb = 30, -- degrees: steeper ground gives no drive (pallet ramps are 33)
+				-- The wheels: a spring per wheel, measured per unit of the whole assembly's mass
+				-- (riders included), so it rides the same with one or two aboard.
+				-- Travel: studs a wheel moves; at rest it sits Gravity / Stiffness (about 0.47) into
+				-- it, which is the height VehicleBody's `rest` assumes (change both together).
+				Suspension = { Travel = 1, Stiffness = 420, Damping = 22 },
+				Upright = 6, -- how hard it levels itself in the air (it lands on its wheels)
+				-- Health (Rules/Vehicle.stage). The Infected that can hurt it carry
+				-- `VehicleDamage` on their row (EnemyDefinitions); our own fire never does.
+				Health = 400,
+				SmokeAt = 0.5,
+				FireAt = 0.25,
+				-- At 0 it burns for Burn seconds and blows: Damage to the Infected within Radius;
+				-- anyone still aboard is thrown off with RiderDamage and knocked down Knock seconds.
+				Wreck = { Burn = 3, Damage = 120, Radius = 10, RiderDamage = 20, Knock = 1.2 },
+				-- Running the Infected down (Rules/Vehicle.ramDamage): damage = speed x PerSpeed
+				-- above MinSpeed; each body costs Slow of the speed and SelfDamage health. An
+				-- Infected with `RamStop` (Brute, Warden) stops it dead: StopDamage to the ATV,
+				-- the ram's damage to them and a Stagger.
+				Ram = {
+					MinSpeed = 12,
+					PerSpeed = 2.5,
+					Slow = 0.15,
+					SelfDamage = 4,
+					StopDamage = 40,
+					Stagger = 1,
+					Reach = 3, -- studs ahead of the bumper a body counts as hit
+					ShakePower = 0.4,
+				},
+				-- The back seat: fires its primary all round except BlockedArc degrees either
+				-- side of straight ahead (the driver); hip spread x MovingBloom above MovingSpeed.
+				Gunner = { BlockedArc = 25, MovingBloom = 1.5, MovingSpeed = 8 },
+				-- On its side or roof and slower than Slow: hold Interact Hold seconds to right it.
+				Right = { Tilt = 70, Hold = 1.5, Slow = 2 },
+				-- Solo: while a player drives with the back seat free, the nearest free bot this close
+				-- (to the ATV) walks over and gets on once the ATV is nearly stopped.
+				BotRideRange = 40,
+				-- How a player sits on it (client VehiclePose, laid over the clip, degrees): hips and
+				-- knees for both seats; the driver's arms reach the bars (shoulders forward by
+				-- ArmRaise, elbows bent ElbowBend, turned in ArmIn) and the gun is put away.
+				Pose = { Hip = 85, Knee = 85, ArmRaise = 62, ElbowBend = 28, ArmIn = 8 },
+				-- The engine, while someone drives (client VehicleController): a licensed library loop
+				-- (Pro Sound Effects "Go Kart Engine Constant 2", a small 4-stroke), pitched from
+				-- IdlePitch standing to TopPitch at top speed. The Infected hear it (EnemyService.noise,
+				-- like a shot): NoiseIdle studs standing, Noise at top speed (guns carry 70-140).
+				-- Radio (lore developer, approved by Nova 2026-11-17; docs/lore/desk_crew.md), shown as
+				-- radio notices: to the squad when it is called, set down and lost; to the caller
+				-- when a call is refused; to the riders when it is about to blow.
+				Radio = {
+					Inbound = "Pike, Control. Helo bringing your ATV in under it. Clear the drop.",
+					Down = "Helo. ATV's on the ground. Hook's clear.",
+					Lost = "Pike, Control. Lost your ATV. You're on foot.",
+					Burning = "It's going up! Get off!",
+					Occupied = "Your ATV's still got people on it.",
+					SquadFull = "Squad's got all the ATVs it can have.",
+					NoRoom = "No room to set it down there.",
+				},
+				Engine = {
+					SoundId = "rbxassetid://9112787518",
+					Volume = 0.45,
+					IdlePitch = 0.75,
+					TopPitch = 1.35,
+					RollOffMin = 12,
+					RollOffMax = 220,
+					NoiseIdle = 35,
+					Noise = 85,
+				},
+				SpeedSlack = 1.25, -- the server takes the drive back above TopSpeed x this
+				PromptReach = 9, -- studs a soldier can get on from
 			},
 		},
 		-- The supply drops' old fall (server-side), used only while Arrivals.Enabled is false.
@@ -1935,6 +2100,7 @@ local Config = {
 		InteractKey = Enum.KeyCode.E, -- becomes Config.Keys.Interact once claude/keybinds merges
 		SideCount = 2,
 		GraceSeconds = 0, -- after the squad lands, before reaching the main objective starts it
+		PromptSlack = 4, -- studs past a prompt's reach the server still accepts its hold (Kit.prompt)
 		SiteCrateOffset = 6, -- studs from the main objective to the field-upgrade crate it brings
 		-- A side objective shows (HUD, marker, Control's brief) when a living squad member
 		-- comes this close to it, or when Control calls it out: the first RevealAfter seconds
@@ -1950,6 +2116,32 @@ local Config = {
 		LampColor = Color3.fromRGB(255, 176, 64), -- Lights On: sodium
 		-- Said once at insert, before the main objective's brief.
 		Frame = "Pike, Control. Clear this checkpoint so the helicopter can land and we can hold the district.",
+		-- The Warden as the main objective's last act (docs/PROGRESSION.md > The Warden in the
+		-- main objective; Rules/BossAct). He comes partway through, at the objective, and the
+		-- mission is complete (reward, crate, extraction) only when the work is done and he is
+		-- down, in either order. A main objective's row may override any field below in its
+		-- own `Boss` block (ObjectiveDefinitions). Enabled = false restores the old order:
+		-- objective done -> reward -> the Warden from the Gate -> extraction.
+		Boss = {
+			Enabled = true,
+			At = 0.5, -- share of the objective's progress when he comes (always by its end)
+			-- Studs: while he stands this close to the objective's point it does not progress
+			-- (a hold pauses, a fuel can will not light). 0 = he never blocks it. A zone or a
+			-- hold radius uses its own size; any number above 0 switches it on.
+			Contest = 0,
+			Target = "nearest", -- "carrier": he hunts whoever carries the objective's item
+			EnterMin = 55, -- he walks in from open ground this far from the objective's point
+			EnterMax = 70, -- (or from the site's BossFrom when it has one)
+			HealthFactor = 1, -- on top of Config.Index.Warden's health and per-player scaling
+			ContestShow = 0.6, -- seconds the HUD keeps "blocked" after he steps off
+			-- Control's lines (lore developer). `{place}` = the drawn site's Name.
+			Arrive = "That woke the Gate sergeant. He still guards this post. The Warden is coming to {place}.",
+			Contested = "", -- said once, the first time he stands on it (rows set their own)
+			Blocked = "The Warden is on it: pull him off", -- the HUD step while he blocks it
+			WorkDone = "That's done. The Warden is all that's left. Put him down.",
+			BossFirst = "The Warden is down. Finish the job.",
+			KillStep = "Kill the Warden", -- the HUD step once only he is left
+		},
 		Rows = ObjectiveDefinitions.Rows,
 		Maps = ObjectiveDefinitions.Maps,
 	},
@@ -2636,13 +2828,13 @@ local Config = {
 			Radio = {
 				PrimaryComplete = "That woke the Gate sergeant. He still guards this post. The Warden is coming up the road.",
 				GateOpen = "Gate's open. Contact in the lane, big. It's wearing riot plate.",
-				Sighting = "Eyes on. That's the Gate NCOIC. Control, Index confirmed.",
+				Sighting = "Eyes on. That's the Gate NCOIC. Control, the Warden confirmed.",
 				BusLine = "Bus line. He's checking buses. Plates first, then the body.",
 				InnerGate = "Inner Gate. He's working his second checkpoint. Flank when he guards.",
 				FirstPlate = "Plate's off. That's bone under it. Keep working the seams.",
 				LastPlate = "Last plate. He's just a man again. Put him down.",
 				RiotCall = "...all posts, Gate. Crowd at the wire. Send the reserve...",
-				Kill = "Index down. Control copies. Gate's yours, Pike. Pallet inbound.",
+				Kill = "The Warden is down. Control copies. Gate's yours, Pike. Pallet inbound.",
 			},
 		},
 	},
@@ -2829,13 +3021,20 @@ local Config = {
 			Retries = 2, -- extra attempts after a failed DataStore call
 			RetryDelay = 1,
 		},
+		-- Which Carrier desk (LobbyDesks id) sells an item whose own Config row names no `Desk`
+		-- (KitPrices.deskOf). Owner 2026-11-16: the Quartermaster is the main seller (guns, grenades,
+		-- any kit that is not a call-in), one desk sells every call-in, the Loadmaster only signs
+		-- Loadouts. `Desk = "<id>"` on a gun, grenade or call-in row moves just that item.
+		Sellers = { Gun = "arms_room", Grenade = "arms_room", CallIn = "callins" },
 		Launch = {
 			Spots = 4, -- numbered Lantern spots on the flight deck
 			Capacity = 4, -- soldiers per bird (one squad)
 			Countdown = 20, -- seconds from the first soldier aboard to lift
 			FullCountdown = 3, -- seconds to lift once the bird is full (all 4, or the squad size picked)
-			BoardHalfSize = 6, -- the boarding box beside each bird's door, half-extent in studs
-			BoardHeight = 8, -- studs above the deck a soldier still counts as on the box
+			-- The boarding zone is the yellow ring round each bird (owner 2026-11-16): its outer
+			-- radius, studs. The painted ring and the server's check (Manifest.onSpot) both read it.
+			BoardRadius = 14,
+			BoardHeight = 8, -- studs above the deck a soldier still counts as inside the ring
 			ScanInterval = 0.25, -- seconds between manifest checks
 			Retries = 2, -- extra teleport attempts after a failure
 			RetryDelay = 2,
@@ -2880,6 +3079,18 @@ local Config = {
 			InspectHeightShare = 0.4, -- a framed piece is at most this share of the screen's height
 			Margin = 0.08, -- air round what the camera frames, a share of its size
 			PlayFov = 70, -- restored when you step away
+		},
+		-- The Call-ins display (CallInDisplay, CallInDisplayUI; owner 2026-11-16: "like the
+		-- Quartermaster, where you can see the guns behind him"): each call-in laid out on its own
+		-- pallet in a row behind the sergeant (FallowLayout.CallInDisplay). How a call-in shows is
+		-- its row's `Display = { Prop, Width }`; a row without one gets a stencilled crate. Camera
+		-- glide, glow and fields of view are the rack's (Lobby.Rack).
+		CallInDisplay = {
+			DefaultProp = "crate", -- CallInDisplay's plain stand-in: a crate with the name on it
+			DefaultWidth = 3, -- studs of the row a call-in takes
+			Gap = 0.2, -- studs between two pallets
+			Lift = 0.3, -- studs a hovered or framed piece rises off its pallet
+			ModelScale = 0.13, -- the Shrike's scale model, a share of the real gunship mesh
 		},
 		DeskPromptDistance = 10, -- studs a soldier can talk to a desk from
 		DialogSeconds = 8, -- a desk's line stays up this long

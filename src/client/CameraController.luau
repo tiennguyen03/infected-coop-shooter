@@ -426,8 +426,8 @@ local function onRenderStep(deltaTime: number)
 		for _, part in hiddenParts do
 			part.LocalTransparencyModifier = 1
 		end
-		if eyeScoped then
-			FirstPersonView.hide() -- the gun is slung while the binoculars are up
+		if eyeScoped or (character and character:GetAttribute(Attributes.Riding) == "driver") then
+			FirstPersonView.hide() -- the gun is slung: binoculars up, or hands on a vehicle's bars
 		else
 			-- The gun gives way to the scope picture at the blink's darkest moment.
 			FirstPersonView.update(character, camera.CFrame, sight, raise, shade >= 0.5, deltaTime)

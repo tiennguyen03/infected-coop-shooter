@@ -4,8 +4,10 @@
 -- outcome (Rules/Economy.missionMerits, Config.Merits; never per kill, bots earn nothing).
 -- The pay goes onto the record the lobby reads (DataStore Config.Lobby.Save.RecordStore, key
 -- Rules/Record.key, the versioned Rules/Record shape) with UpdateAsync: the stored record is
--- read, credited and written back in one step, never overwritten blind. A player is in the
--- lobby or in a match, never both, so the two servers never write the same record at once.
+-- read, credited and written back in one step, never overwritten blind. The lobby buys the same
+-- way (RecordService, Rules/Record.buyStored), so a pay that lands after the soldier is back in
+-- the lobby is kept, and neither server writes over a save it cannot read (`canUpdate`), so the
+-- two places can be published in either order.
 -- RunManager is the only caller: `pay` at run end, `settle` before the trip home.
 --
 -- The amount is shown on the results screen through the player attribute MeritsEarned
@@ -32,6 +34,9 @@ local store: DataStore? = nil
 local storeTried = false
 local warned = false
 local pending = 0 -- saves still in flight
+-- Counts pays and run starts: a save that returns after READY restarted the run in place is
+-- not shown on the new run's results screen (its merits are saved all the same).
+local payRun = 0
 
 local function recordStore(): DataStore?
 	if not storeTried then
@@ -119,6 +124,8 @@ end
 function MeritService.pay(outcome: string, secondaries: number)
 	local amount = Economy.missionMerits(outcome, secondaries, PAY)
 	local players = Players:GetPlayers()
+	payRun += 1
+	local run = payRun
 	print(`[MeritService] {outcome}: {amount} merits each to {#players} player(s)`)
 	for _, player in players do
 		player:SetAttribute(Attributes.MeritsEarned, amount)
@@ -127,7 +134,7 @@ function MeritService.pay(outcome: string, secondaries: number)
 			-- Nothing to save: the record is only read, for the wallet on the results screen.
 			task.spawn(function()
 				local ok, record = pcall(held, userId)
-				if ok and record then
+				if ok and record and run == payRun then
 					publish(player, record)
 				end
 			end)
@@ -137,12 +144,15 @@ function MeritService.pay(outcome: string, secondaries: number)
 		task.spawn(function()
 			local ok, saved = pcall(credit, userId, amount)
 			pending -= 1
+			if not ok then
+				warn(`[MeritService] paying {userId} failed: {saved}`)
+			end
+			if run ~= payRun then
+				return
+			end
 			if ok and saved then
 				publish(player, saved)
 				return
-			end
-			if not ok then
-				warn(`[MeritService] paying {userId} failed: {saved}`)
 			end
 			if player.Parent then
 				player:SetAttribute(Attributes.MeritsEarned, -1)
@@ -162,6 +172,9 @@ end
 
 function MeritService.init()
 	Lifecycle.register("MeritService", {
+		onRunStart = function()
+			payRun += 1
+		end,
 		onPlayerReset = function(player: Player)
 			player:SetAttribute(Attributes.MeritsEarned, nil)
 			player:SetAttribute(Attributes.MeritsHeld, nil)

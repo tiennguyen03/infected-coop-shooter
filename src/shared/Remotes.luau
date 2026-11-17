@@ -32,6 +32,8 @@ local REMOTE_NAMES = {
 	"Record", -- lobby place, client -> server: ("buy", gunId); server -> client: ("state", merits, ownedIds, tabs) | ("refused", gunId, reason)
 	"EnemySpit", -- server -> client (Messages.EnemySpit; client SpitFX draws it): ("windup", model, seconds) | ("launch", id, origin: Vector3, velocity: Vector3, size) | ("impact", id, position, normal, splashRadius, poolGround: CFrame?, poolRadius?, poolSeconds?) | ("gone", id) | ("reset")
 	"NightVision", -- client -> server: (on: boolean) this soldier's goggles went down or up (NightVisionService sets the character's NightVision attribute)
+	"Vehicle", -- client -> server: ("exit") off the vehicle this soldier rides; server -> client: ("ram", keep: number) the driver's client scales the ATV's speed by keep after a ram
+	"InsertSkip", -- client -> server: () this player skipped the insertion cutscene (RunManager cuts Insert short once every player has)
 	"Launch", -- lobby place, server -> client: ("manifest", spot, names, secondsLeft, squad, isLead) | ("lifting", spot) | ("failed", reason) | ("cleared"); client -> server: ("squad", size)
 }
 
