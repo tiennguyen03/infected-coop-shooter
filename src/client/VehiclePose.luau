@@ -2,7 +2,7 @@
 -- How a soldier sits on a vehicle, for everyone to see (docs/PROGRESSION.md > The ATV). The
 -- match's clips have no seated pose, so a rider kept standing with the gun up (Nova
 -- 2026-11-17). Every client lays a pose over each riding player's clip after the Animator
--- (Motor6D.Transform on Stepped, as BinocularPose does), angles from the vehicle row's
+-- (Motor6D.Transform at render, after the Animator), angles from the vehicle row's
 -- `Pose` (Config.CallIns.<Key>.Vehicle.Pose):
 --   * both seats: hips and knees bent, sitting;
 --   * the driver: both arms forward onto the handlebars, the gun hidden (put away);
@@ -30,8 +30,10 @@ local function joint(character: Model, partName: string, motorName: string): Mot
 	return if motor and motor:IsA("Motor6D") then motor else nil
 end
 
+-- Written every frame while hidden: Roblox's camera scripts reset LocalTransparencyModifier
+-- on our own body's parts each frame (we run after them, RENDER_PRIORITY).
 local function setGunHidden(character: Model, hidden: boolean)
-	if (gunHidden[character] == true) == hidden then
+	if not hidden and not gunHidden[character] then
 		return
 	end
 	gunHidden[character] = if hidden then true else nil
@@ -112,8 +114,12 @@ local function step()
 	end
 end
 
+-- At render, after the Animator and the camera scripts: measured in Studio 2026-11-17, a
+-- Transform written on Stepped is overwritten before the frame is drawn.
+local RENDER_PRIORITY = Enum.RenderPriority.Character.Value + 1
+
 function VehiclePose.init()
-	RunService.Stepped:Connect(step)
+	RunService:BindToRenderStep("VehiclePose", RENDER_PRIORITY, step)
 end
 
 return VehiclePose

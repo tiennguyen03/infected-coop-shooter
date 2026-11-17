@@ -251,7 +251,8 @@ local function buildPanel()
 		true
 	)
 	panel.AnchorPoint = Vector2.new(0.5, 1)
-	panel.Position = UDim2.new(0.5, 0, 1, -150)
+	-- At the bottom edge: the objective banner sits just above the middle of the bottom.
+	panel.Position = UDim2.new(0.5, 0, 1, -34)
 	panel.Visible = false
 	seatLabel = HudTheme.label(panel, { text = "", font = HudTheme.Font.Headline, size = 18 })
 	seatLabel.Position = UDim2.fromOffset(12, 6)
