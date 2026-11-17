@@ -39,4 +39,11 @@ function DifficultyCurve.maxAlive(
 	return math.min(base + perExtraPlayer * extraPlayers, hardCap)
 end
 
+-- Infected health or damage multiplier after `seconds` of unpaused run time: 1 at the
+-- start, growing by `perMinute` each minute, never above `cap`. Flat (0 per minute, cap 1)
+-- since the loadout rework.
+function DifficultyCurve.multiplier(perMinute: number, cap: number, seconds: number): number
+	return math.min(1 + seconds / 60 * perMinute, cap)
+end
+
 return DifficultyCurve

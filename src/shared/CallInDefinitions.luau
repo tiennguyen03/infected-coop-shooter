@@ -5,6 +5,8 @@
 -- Config.CallIns, the effect lives in the owning service (AirStrikeService: Hammer, Anvil,
 -- Shrike; SentryService: Doorman; MineService: Tripline; ConcertinaService: Concertina;
 -- SupplyDropService: Speedball, Aid Bag) fired by CallInService.
+-- A row whose Config block says AimMode "Binoculars" (the Anvil) is marked through binoculars
+-- instead, anywhere in the line of sight (Rules/Spotting). Otherwise:
 -- Kind "throw": aimed at the crosshair and clamped to ThrowDistance (ThrowUtil, like the
 -- flare). Kind "self": fires where the user stands. Icons reuse the uploaded item set.
 -- Retired 2026-11-08 (too sci-fi): Magpie (drones), Pen Coil (shock pulse; its slow is the
@@ -48,7 +50,7 @@ local ROWS: { [string]: CallInDefinition } = {
 		Id = "anvil",
 		Name = "Anvil",
 		Codename = "105 mm battery",
-		Description = "Mark a point: one 105 mm shell lands there five seconds later. Stand clear.",
+		Description = "Raise the binoculars and mark any ground you can see: one 105 mm shell lands there five seconds later.",
 		Kind = "throw",
 		ConfigKey = "Anvil",
 		Abbrev = "AV",

@@ -14,6 +14,7 @@ local StagingUI = {}
 
 function StagingUI.init()
 	local gui = Instance.new("ScreenGui")
+	gui.DisplayOrder = 110 -- over the insertion cutscene's black cover (InsertionCutscene)
 	gui.Name = "StagingUI"
 	gui.ResetOnSpawn = false
 	gui.IgnoreGuiInset = true

@@ -278,7 +278,7 @@ local rackSay = HudTheme.label(
 	{ size = 17, font = HudTheme.Font.Body, color = HudTheme.Color.TextDim }
 )
 rackSay.LayoutOrder = 3
--- The soldier's merits (RecordClient), under the Quartermaster's line.
+-- The soldier's merits and tabs (RecordClient), under the Quartermaster's line.
 local rackMerits = HudTheme.label(
 	rackHeader,
 	{ size = 20, font = HudTheme.Font.Headline, color = HudTheme.Color.Yellow }
@@ -690,7 +690,7 @@ local function enterRack()
 	showing = "wall"
 	rackTitle.Text = rack.header
 	rackSay.Text = `"{(desk :: LobbyDesks.Desk).talk.openLine}"`
-	rackMerits.Text = `{RecordClient.merits()} {rack.currency}`
+	rackMerits.Text = `{RecordClient.merits()} {rack.currency}  ·  {RecordClient.tabs()} TABS`
 	hint.Text = if HudTheme.isTouch()
 		then "Tap a weapon to look closer"
 		else "Click a weapon to look closer   ·   Q for the other display   ·   Backspace to step back"
@@ -857,7 +857,7 @@ function ArmsRackUI.init()
 		if not rack or (mode ~= "rack" and mode ~= "inspect") then
 			return
 		end
-		rackMerits.Text = `{RecordClient.merits()} {rack.currency}`
+		rackMerits.Text = `{RecordClient.merits()} {rack.currency}  ·  {RecordClient.tabs()} TABS`
 		if RecordClient.merits() < meritsBefore and desk then
 			rackSay.Text = `"{desk.talk.bought}"`
 		end

@@ -14,6 +14,7 @@ local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local GroundUtil = require(ReplicatedStorage.Shared.GroundUtil)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
+local Arrival = require(ReplicatedStorage.Shared.Rules.Arrival)
 local DamageService = require(script.Parent.DamageService)
 local GoreService = require(script.Parent.GoreService)
 local PauseService = require(script.Parent.PauseService)
@@ -138,11 +139,8 @@ function MineService.layArc(owner: Player, point: Vector3, facing: Vector3): boo
 	local cfg = Config.CallIns.Tripline
 	local forward = Vector3.new(facing.X, 0, facing.Z)
 	forward = if forward.Magnitude > 0.01 then forward.Unit else Vector3.zAxis
-	local count = cfg.Mines
-	local span = math.rad(cfg.ArcDegrees)
-	for index = 1, count do
-		local t = if count > 1 then (index - 1) / (count - 1) - 0.5 else 0
-		local angle = t * span
+	-- The same angles CallInArrivalFX tosses the charges along (Rules/Arrival).
+	for _, angle in Arrival.arcAngles(cfg.Mines, cfg.ArcDegrees) do
 		local direction = CFrame.fromAxisAngle(Vector3.yAxis, angle):VectorToWorldSpace(forward)
 		placeMine(owner, point + direction * cfg.ArcRadius)
 	end

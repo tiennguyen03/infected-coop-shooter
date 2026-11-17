@@ -41,4 +41,10 @@ function Feel.canFlinch(now: number, lastAt: number?, cooldown: number): boolean
 	return lastAt == nil or now - lastAt >= cooldown
 end
 
+-- The kill-confirm tick: one blast killing several Infected in the same instant ticks once,
+-- kills at least `gap` seconds apart each tick.
+function Feel.canKillConfirm(now: number, lastAt: number?, gap: number): boolean
+	return lastAt == nil or now - lastAt >= gap
+end
+
 return Feel

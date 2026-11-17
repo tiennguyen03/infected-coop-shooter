@@ -26,10 +26,10 @@ single-player; every system is written for four.
 3. Press **Play** (F5).
 
 Controls: WASD move (the body has weight: it speeds up and slows down), **Shift** sprint,
-**LeftControl** crouch, **C** prone, **Space** vault or climb cover, **Shift + LeftControl**
+**C** or **LeftControl** crouch, **Z** prone, **Space** vault or climb cover, **Shift + LeftControl**
 roll, **Shift + C** slide, **hold left-click** to shoot (over-the-shoulder aim, mouse wheel
-zooms), **T** first person (or the wheel in past the closest zoom), **R** reload, **Q** swap primary/pistol, **G** frag, **V** shove, **E** stim, **1-4**
-call-ins, **5** Resupply flare, **B** Arms Room (loadout), **hold F** revive a downed squadmate.
+zooms), **T** first person (or the wheel in past the closest zoom), **N** night vision, **R** reload, **Q** swap primary/pistol, **G** frag, **F** shove, **V** stim, **1-4**
+call-ins, **X** Resupply flare, **B** Arms Room (loadout), **hold E** revive a downed squadmate.
 
 The loop: you drop with a squad of four; in solo, three bot squadmates (Pike Two to Four)
 fill it. The Infected hunt you and the pressure climbs on a clock you can read. Kills earn

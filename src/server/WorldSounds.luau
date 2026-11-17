@@ -59,8 +59,15 @@ function WorldSounds.stop(part: BasePart, slot: string)
 	end
 end
 
--- A one-shot at `position`; `volume` scales the group's volume.
-function WorldSounds.at(position: Vector3, bank: string, group: string, volume: number?): number?
+-- A one-shot at `position`; `volume` scales the group's volume, `speed` is the playback
+-- speed (pitch; 1 when nil).
+function WorldSounds.at(
+	position: Vector3,
+	bank: string,
+	group: string,
+	volume: number?,
+	speed: number?
+): number?
 	if not SoundBanks.has(bank) then
 		return nil
 	end
@@ -70,6 +77,7 @@ function WorldSounds.at(position: Vector3, bank: string, group: string, volume: 
 	attachment.WorldPosition = position
 	attachment.Parent = workspace.Terrain
 	local sound = SoundBanks.create(group, rolloff.RollOffMin, rolloff.RollOffMax)
+	sound.PlaybackSpeed = speed or 1
 	sound.Parent = attachment
 	local duration = SoundBanks.play(sound, bank, group, SoundBanks.volume(group) * (volume or 1))
 	task.delay((duration or 0) + 0.2, function()

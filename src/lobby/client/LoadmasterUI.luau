@@ -20,6 +20,7 @@ local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local LobbyDesks = require(ReplicatedStorage.Lobby.LobbyDesks)
 local KitPrices = require(ReplicatedStorage.Shared.KitPrices)
 local DeskShop = require(script.Parent.DeskShop)
+local GunsmithUI = require(script.Parent.GunsmithUI)
 local HoldStill = require(script.Parent.HoldStill)
 local HudTheme = require(script.Parent.HudTheme)
 local LoadoutMenu = require(script.Parent.LoadoutMenu)
@@ -221,6 +222,10 @@ local function openLoadout()
 			end
 			local price = RecordClient.priceOf(id)
 			return if price then `{price} MERITS` else "NOT FOR ISSUE"
+		end,
+		-- EDIT on a gun: what goes on it (GunsmithUI), signed with the rest.
+		edit = function(gunId, fitted, done)
+			GunsmithUI.open(menuGui, gunId, fitted, done)
 		end,
 	})
 	if signed then

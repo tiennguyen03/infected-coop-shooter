@@ -12,7 +12,13 @@ export type Loadout = {
 	secondary: string,
 	grenade: string,
 	callIns: { string }, -- [slot] = call-in id
+	-- What is fitted to each gun (the Loadmaster's EDIT, Nova 2026-11-11): [gun id][slot] =
+	-- option ("service_rifle" -> "Barrel" -> "suppressor"). Kept per gun, carried or not; nil
+	-- or missing = bare.
+	attachments: Attachments?,
 }
+
+export type Attachments = { [string]: { [string]: string } }
 
 export type Catalog = {
 	primaries: { string }, -- the first is the default
@@ -21,6 +27,8 @@ export type Catalog = {
 	callIns: { string }, -- every call-in on offer, in menu order
 	preferredCallIns: { string }?, -- the default's first slots (unknown ids are skipped)
 	slots: number,
+	-- What each gun can take: [gun id][slot] = the options (WeaponDefinitions.options).
+	attachments: { [string]: { [string]: { string } } }?,
 }
 
 export type GateState = {
@@ -70,6 +78,57 @@ function Loadout.default(catalog: Catalog): Loadout
 	}
 end
 
+-- A copy that shares no tables with `loadout`.
+function Loadout.copy(loadout: Loadout): Loadout
+	local attachments: Attachments? = nil
+	if loadout.attachments then
+		local copied: Attachments = {}
+		for gun, slots in loadout.attachments do
+			copied[gun] = table.clone(slots)
+		end
+		attachments = copied
+	end
+	return {
+		primary = loadout.primary,
+		secondary = loadout.secondary,
+		grenade = loadout.grenade,
+		callIns = table.clone(loadout.callIns),
+		attachments = attachments,
+	}
+end
+
+-- What is fitted to `gun` in `slot`, or nil.
+function Loadout.fitted(attachments: Attachments?, gun: string, slot: string): string?
+	local slots = attachments and attachments[gun]
+	return slots and slots[slot]
+end
+
+-- The attachments as one attribute string ("gun.Slot=option;..."), sorted, and back. The
+-- player's Fitted attribute (LoadoutService) carries it to every client.
+function Loadout.encodeFitted(attachments: Attachments?): string
+	local parts = {}
+	local list: Attachments = attachments or {}
+	for gun, slots in list do
+		for slot, option in slots do
+			table.insert(parts, `{gun}.{slot}={option}`)
+		end
+	end
+	table.sort(parts)
+	return table.concat(parts, ";")
+end
+
+function Loadout.decodeFitted(text: string): Attachments
+	local attachments: Attachments = {}
+	for entry in string.gmatch(text, "[^;]+") do
+		local gun, slot, option = string.match(entry, "^([^.=]+)%.([^.=]+)=(.+)$")
+		if gun and slot and option then
+			attachments[gun] = attachments[gun] or {}
+			attachments[gun][slot] = option
+		end
+	end
+	return attachments
+end
+
 -- (true, nil) or (false, reason). `loadout` is untrusted (it comes off a remote).
 function Loadout.validate(loadout: unknown, catalog: Catalog): (boolean, string?)
 	if typeof(loadout) ~= "table" then
@@ -112,6 +171,26 @@ function Loadout.validate(loadout: unknown, catalog: Catalog): (boolean, string?
 			return false, "duplicate call-in"
 		end
 		seen[id] = true
+	end
+	-- Attachments: only options the catalog lists for that gun and slot.
+	local attachments = candidate.attachments
+	if attachments ~= nil then
+		if typeof(attachments) ~= "table" then
+			return false, "attachments"
+		end
+		local offered = catalog.attachments or {}
+		for gun, slots in attachments :: { [unknown]: unknown } do
+			local gunOffers = typeof(gun) == "string" and offered[gun]
+			if not gunOffers or typeof(slots) ~= "table" then
+				return false, "attachments"
+			end
+			for slot, option in slots :: { [unknown]: unknown } do
+				local options = typeof(slot) == "string" and gunOffers[slot]
+				if not options or typeof(option) ~= "string" or not table.find(options, option) then
+					return false, "attachments"
+				end
+			end
+		end
 	end
 	return true, nil
 end

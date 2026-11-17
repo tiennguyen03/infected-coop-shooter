@@ -1,7 +1,8 @@
 --!strict
 -- Abilities, top left under the health stack (HUD language: HudTheme; after Prototype 2's
--- power circles): seven circles, G grenade, V shove, E stim, then 1-4 the call-ins (Q swap
--- reads beside the ammo counter, LoadoutUI; 5 flare on the resupply meter). Ready: a white
+-- power circles): seven circles, grenade, shove, stim, then the call-ins, each with its
+-- key from Config.Keys (the swap key reads beside the ammo counter, LoadoutUI; the flare
+-- key on the resupply meter). Ready: a white
 -- outline and the key letter. Cooling: a white fill rises from the bottom and the seconds
 -- show under the circle. Grenades, stims and call-in charges show as small squares under
 -- the circle (yellow on, dim off) and the circle dims out when empty. A small white diamond
@@ -18,6 +19,7 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local CallInDefinitions = require(Shared:WaitForChild("CallInDefinitions"))
 local Attributes = require(Shared:WaitForChild("Attributes"))
 local Config = require(Shared:WaitForChild("Config"))
+local KeyBindings = require(Shared:WaitForChild("Rules"):WaitForChild("KeyBindings"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 local UpgradeDefinitions = require(Shared:WaitForChild("UpgradeDefinitions"))
 local WeaponDefinitions = require(Shared:WaitForChild("WeaponDefinitions"))
@@ -264,11 +266,15 @@ function AbilityUI.init()
 	row.Parent = gui
 
 	local grenade = WeaponDefinitions.grenade(nil)
-	circles.grenade = makeCircle(row, "G", grenade.Name, 0)
-	circles.shove = makeCircle(row, "V", "Shove", 1)
-	circles.stim = makeCircle(row, "E", "Stim", 2)
+	local keys = Config.Keys
+	local function label(key: Enum.KeyCode): string
+		return KeyBindings.label(key.Name)
+	end
+	circles.grenade = makeCircle(row, label(keys.Grenade), grenade.Name, 0)
+	circles.shove = makeCircle(row, label(keys.Shove), "Shove", 1)
+	circles.stim = makeCircle(row, label(keys.Stim), "Stim", 2)
 	for slot = 1, Config.CallIns.Slots do
-		circles[`callin{slot}`] = makeCircle(row, tostring(slot), "", 2 + slot)
+		circles[`callin{slot}`] = makeCircle(row, label(keys.CallIns[slot]), "", 2 + slot)
 	end
 
 	HudTheme.parent(gui)

@@ -17,6 +17,8 @@ local UserInputService = game:GetService("UserInputService")
 local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attributes"))
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
+local Loadout =
+	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Rules"):WaitForChild("Loadout"))
 local ShotCone = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("ShotCone"))
 local WeaponDefinitions =
 	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("WeaponDefinitions"))
@@ -30,11 +32,14 @@ local WeaponController = {}
 
 local isFiring = false
 local isAiming = false
+local aimButton = false -- the right mouse button is down
+local aimHeld = false -- a dev tool holds the sights up (WeaponController.holdAim)
 local triggerSpent = false -- a semi-auto round went out on this press
 local lastFireTime = 0
 local lastReloadRequest = 0
 local tracerFolder: Folder? = nil
 local RELOAD_REQUEST_GAP = 0.5 -- seconds between automatic reload requests on an empty mag
+local blocked = false -- the hands are full (binoculars up): no shot, no sights
 
 -- A thin bright line from the muzzle to where the round went, gone in a few frames. Drawn
 -- locally for our own shots (instant) and for other players' shots via ShotTracer.
@@ -107,6 +112,17 @@ local function getAimPoint(): Vector3?
 	return ray.Origin + ray.Direction * Config.Weapon.MaxAimDistance
 end
 
+-- The hands are busy with something else (BinocularController): the trigger and the sights
+-- do nothing until it lets go. The mouse buttons are then that thing's to read.
+function WeaponController.setBlocked(on: boolean)
+	blocked = on
+	if on then
+		isFiring = false
+		setAiming(false)
+		AnimationController.setAiming(false)
+	end
+end
+
 -- The magazine as the server published it.
 function WeaponController.isReloading(): boolean
 	local until_ = (Players.LocalPlayer:GetAttribute(Attributes.ReloadUntil) :: number?) or 0
@@ -121,7 +137,10 @@ function WeaponController.requestReload()
 	if WeaponController.isReloading() or mag >= weapon.MagazineSize or reserve <= 0 then
 		return
 	end
-	if workspace:GetAttribute(Attributes.GamePaused) == true then
+	if
+		workspace:GetAttribute(Attributes.GamePaused) == true
+		or player:GetAttribute(Attributes.Cinematic) == true
+	then
 		return
 	end
 	lastReloadRequest = os.clock()
@@ -129,7 +148,10 @@ function WeaponController.requestReload()
 end
 
 local function tryFire()
-	if workspace:GetAttribute(Attributes.GamePaused) == true then
+	if
+		workspace:GetAttribute(Attributes.GamePaused) == true
+		or Players.LocalPlayer:GetAttribute(Attributes.Cinematic) == true
+	then
 		return
 	end
 
@@ -225,15 +247,36 @@ local function tryFire()
 	Remotes.get("FireWeapon"):FireServer(origin, direction.Unit, isAiming, pellets)
 	AnimationController.onShot()
 	if not pellets then
-		drawTracer(origin, aimPoint)
+		-- Behind a scope picture the tracer starts well out (Sights.Scope.TracerStart).
+		local from = origin
+		if shown and FirstPersonView.isHidden() then
+			local out = math.min(direction.Magnitude / 2, Config.Weapon.Sights.Scope.TracerStart)
+			from = origin + direction.Unit * out
+		end
+		drawTracer(from, aimPoint)
 	end
 
-	-- Local-only muzzle flash and shot sound for instant feedback.
-	SoundFX.gunshot(weapon.Sound)
+	-- Local-only muzzle flash and shot sound for instant feedback. A suppressor (the
+	-- Loadmaster's EDIT, Config.Attachments) quiets the shot and hides the flash.
+	local fitted = Players.LocalPlayer:GetAttribute(Attributes.Fitted)
+	local barrel = Loadout.fitted(
+		Loadout.decodeFitted(if typeof(fitted) == "string" then fitted else ""),
+		weapon.Id,
+		"Barrel"
+	)
+	local option = barrel and Config.Attachments.Options[barrel]
+	SoundFX.gunshot(weapon.Sound, nil, if option then option.Volume else nil)
+	if option then
+		return
+	end
 	local flash = Instance.new("Part")
 	flash.Shape = Enum.PartType.Ball
-	-- In first person the flash shrinks with the gun on screen (Config.Camera.FirstPerson.Scale).
-	local flashScale = if shown then Config.Camera.FirstPerson.Scale else 1
+	-- In first person the flash shrinks with the gun on screen (FirstPersonView.scale); behind
+	-- a scope picture only its light shows, not a ball across the magnified lens.
+	local flashScale = if shown then FirstPersonView.scale() else 1
+	if shown and FirstPersonView.isHidden() then
+		flash.Transparency = 1
+	end
 	flash.Size = Vector3.new(0.7, 0.7, 0.7) * flashScale
 	flash.Position = origin + direction.Unit * 1.5 * flashScale
 	flash.Anchored = true
@@ -253,6 +296,12 @@ local function tryFire()
 	end)
 end
 
+-- Holds the sights up without the mouse button (the dev sight tour, SightTour).
+function WeaponController.holdAim(on: boolean)
+	aimHeld = on
+	setAiming(on or aimButton)
+end
+
 function WeaponController.init()
 	-- The rifle is a Tool, but it's always equipped — hide the backpack hotbar.
 	local StarterGui = game:GetService("StarterGui")
@@ -266,13 +315,27 @@ function WeaponController.init()
 	tracerFolder = folder
 	-- Another squad member's shot (a player or a bot): the tracer plus a 3D gunshot.
 	Remotes.get("ShotTracer").OnClientEvent
-		:Connect(function(origin: Vector3, endPoint: Vector3, sound: string?)
+		:Connect(function(origin: Vector3, endPoint: Vector3, sound: string?, barrel: string?)
 			drawTracer(origin, endPoint)
-			SoundFX.gunshot(if typeof(sound) == "string" then sound else nil, origin, 0.8)
+			local option = if typeof(barrel) == "string"
+				then Config.Attachments.Options[barrel]
+				else nil
+			local volume = if option then 0.8 * option.Volume else 0.8
+			SoundFX.gunshot(if typeof(sound) == "string" then sound else nil, origin, volume)
 		end)
 
 	UserInputService.InputBegan:Connect(function(input, gameProcessed)
 		if gameProcessed then
+			return
+		end
+		local button = input.UserInputType
+		if
+			blocked
+			and (
+				button == Enum.UserInputType.MouseButton1
+				or button == Enum.UserInputType.MouseButton2
+			)
+		then
 			return
 		end
 		if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -280,8 +343,9 @@ function WeaponController.init()
 			triggerSpent = false
 			AnimationController.setAiming(true)
 		elseif input.UserInputType == Enum.UserInputType.MouseButton2 then
+			aimButton = true
 			setAiming(true)
-		elseif input.KeyCode == Enum.KeyCode.R then
+		elseif input.KeyCode == Config.Keys.Reload then
 			WeaponController.requestReload()
 		end
 	end)
@@ -291,7 +355,8 @@ function WeaponController.init()
 			isFiring = false
 			AnimationController.setAiming(isAiming)
 		elseif input.UserInputType == Enum.UserInputType.MouseButton2 then
-			setAiming(false)
+			aimButton = false
+			setAiming(aimHeld)
 		end
 	end)
 
