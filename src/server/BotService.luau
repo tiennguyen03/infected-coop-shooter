@@ -1173,6 +1173,12 @@ local function think(bot: Bot, now: number, params: RaycastParams)
 				slack = 1
 			end
 		end
+		-- Called to a vehicle's back seat (VehicleService BoardAt): walk to it; it seats us.
+		local boardAt = model:GetAttribute(Attributes.BoardAt)
+		if not post and typeof(boardAt) == "Vector3" then
+			post = { x = boardAt.X, z = boardAt.Z }
+			slack = 1
+		end
 		if not post and boss then
 			post = BotBrain.standOff(
 				{ x = boss.Position.X, z = boss.Position.Z },

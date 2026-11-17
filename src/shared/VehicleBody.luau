@@ -208,7 +208,7 @@ function VehicleBody.build(bodyId: string, frame: CFrame, anchored: boolean): Mo
 	piece(
 		model,
 		root,
-		"GunnerSeat",
+		"BackCushion", -- never "GunnerSeat": that name is the Seat itself (VehicleService finds it)
 		Vector3.new(1.5, 0.6, 1.4),
 		at(0, 1.55, -2),
 		POLYMER,

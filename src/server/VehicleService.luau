@@ -50,6 +50,8 @@ local CHECK_INTERVAL = 0.25 -- seconds between the slow checks (righting prompt,
 local TAKE_BACK = 1 -- seconds the server holds a chassis that went too fast
 local WRECK_LINGER = 8 -- seconds the burnt-out wreck stays
 local EXIT_SIDE = 3.4 -- studs out from the centre a rider steps off
+local BOARD_REACH = 6 -- studs from the ATV a bot gets on from
+local BOARD_SPEED = 4 -- studs/s: the ATV must be about this slow for a bot to get on
 local PARK_SPEED = 0.5 -- studs/s: slower than this, empty and grounded, it settles
 local PARK_AFTER = 1 -- seconds settled before it is parked (anchored)
 local SMOKE_TEXTURE = "rbxasset://textures/particles/smoke_main.dds"
@@ -67,8 +69,9 @@ type Ride = {
 	stage: Vehicle.Stage,
 	seats: { driver: Seat | VehicleSeat, gunner: Seat | VehicleSeat },
 	riders: { [string]: Squad.Member }, -- by SeatName
-	getOn: ProximityPrompt,
+	prompts: { [string]: ProximityPrompt }, -- by SeatName: get on that seat
 	right: ProximityPrompt,
+	boarding: Squad.Member?, -- the bot walking over to take the back seat
 	rammed: { [Model]: number },
 	heldUntil: number, -- the server holds the chassis until (over-speed)
 	wreckAt: number?, -- burning: blows at this os.clock
@@ -185,10 +188,13 @@ end
 
 -- ------------------------------------------------------------------ seats
 
+-- Each seat has its own prompt at its own place (the driver's at the tank, the back seat's
+-- at the rack), shown while that seat is free: a soldier picks a seat by where they stand
+-- (one prompt per key shows at a time, the nearer).
 local function refreshPrompt(ride: Ride)
-	local seatName = Vehicle.seatFor(ride.riders.driver ~= nil, ride.riders.gunner ~= nil)
-	ride.getOn.Enabled = seatName ~= nil and ride.wreckAt == nil
-	ride.getOn.ActionText = if seatName == "driver" then "Drive" else "Ride"
+	for seatName, prompt in ride.prompts do
+		prompt.Enabled = ride.riders[seatName] == nil and ride.wreckAt == nil
+	end
 end
 
 local function setOwner(ride: Ride)
@@ -265,9 +271,21 @@ local function seatMember(ride: Ride, seatName: SeatName, member: Squad.Member):
 	return true
 end
 
--- Solo: when a player drives with the back seat free, the nearest free bot gets on.
-local function fetchBotGunner(ride: Ride)
-	if ride.riders.gunner or not ride.riders.driver then
+local function stopBoarding(ride: Ride)
+	local bot = ride.boarding
+	ride.boarding = nil
+	if bot and bot.character then
+		bot.character:SetAttribute(Attributes.BoardAt, nil)
+	end
+end
+
+-- Solo: while a player drives with the back seat free, the nearest free bot within
+-- BotRideRange walks to the ATV (BotService reads BoardAt as where to stand) and gets on
+-- once it is within BOARD_REACH and the ATV is nearly stopped. Checked every CHECK_INTERVAL.
+local function boardBot(ride: Ride)
+	local driver = ride.riders.driver
+	if ride.riders.gunner or not driver or driver.kind ~= "player" or ride.wreckAt then
+		stopBoarding(ride)
 		return
 	end
 	local best: Squad.Member? = nil
@@ -286,22 +304,36 @@ local function fetchBotGunner(ride: Ride)
 			end
 		end
 	end
-	if best then
+	if best ~= ride.boarding then
+		stopBoarding(ride)
+	end
+	if not best then
+		return
+	end
+	if bestDistance <= BOARD_REACH and flatSpeed(ride) <= BOARD_SPEED then
+		stopBoarding(ride)
 		seatMember(ride, "gunner", best)
+		return
+	end
+	ride.boarding = best
+	local character = best.character
+	if character then
+		-- Beside the back seat, on the ground.
+		local beside = ride.root.CFrame * CFrame.new(-EXIT_SIDE, 0, 2)
+		character:SetAttribute(Attributes.BoardAt, beside.Position)
 	end
 end
 
-local function onGetOn(ride: Ride, player: Player)
+local function onGetOn(ride: Ride, player: Player, seatName: SeatName)
 	local member = Squad.fromPlayer(player)
 	if not member or not Squad.canAct(member) or VehicleService.seatOf(member.character) then
 		return
 	end
-	local seatName = Vehicle.seatFor(ride.riders.driver ~= nil, ride.riders.gunner ~= nil)
-	if not seatName then
-		return
+	if ride.boarding == member then
+		stopBoarding(ride)
 	end
-	if seatMember(ride, seatName :: any, member) and seatName == "driver" then
-		fetchBotGunner(ride)
+	if seatMember(ride, seatName, member) and seatName == "driver" then
+		boardBot(ride)
 	end
 end
 
@@ -415,6 +447,7 @@ local function flash(position: Vector3, radius: number)
 end
 
 local function destroyRide(ride: Ride)
+	stopBoarding(ride)
 	for seatName in ride.riders do
 		getOff(ride, seatName :: SeatName)
 	end
@@ -461,7 +494,10 @@ local function blowUp(ride: Ride)
 		table.remove(rides, index)
 	end
 	ride.root.Anchored = true
-	ride.getOn:Destroy()
+	stopBoarding(ride)
+	for _, prompt in ride.prompts do
+		prompt:Destroy()
+	end
 	ride.right:Destroy()
 	local fire = ride.root:FindFirstChild("Engine")
 		and (ride.root:FindFirstChild("Engine") :: Instance):FindFirstChild("Fire")
@@ -570,7 +606,12 @@ local function ram(ride: Ride, now: number)
 		shake(ride.root.Position, cfg.ShakePower)
 	end
 	if keep < 1 then
-		if driver and driver.owner and ride.root:GetNetworkOwner() == driver.owner then
+		if
+			driver
+			and driver.owner
+			and not ride.root.Anchored
+			and ride.root:GetNetworkOwner() == driver.owner
+		then
 			vehicleRemote:FireClient(driver.owner, Messages.Vehicle.Ram, keep)
 		else
 			ride.root.AssemblyLinearVelocity *= keep
@@ -687,18 +728,30 @@ function VehicleService.deliver(
 	model:SetAttribute(Attributes.VehicleHealth, cfg.Health)
 	model:SetAttribute(Attributes.VehicleMaxHealth, cfg.Health)
 
-	local getOn = Instance.new("ProximityPrompt")
-	getOn.Name = "GetOn"
-	getOn.ObjectText = (CallInDefinitions.get(callInId) :: any).Name
-	getOn.ActionText = "Drive"
-	getOn.KeyboardKeyCode = Config.Keys.Interact
-	getOn.HoldDuration = 0
-	getOn.MaxActivationDistance = cfg.PromptReach
-	getOn.RequiresLineOfSight = false
-	getOn.Parent = root
+	local name = (CallInDefinitions.get(callInId) :: any).Name
+	-- One prompt per seat, at that seat (Nova 2026-11-17: pick the back seat yourself).
+	local prompts: { [string]: ProximityPrompt } = {}
+	local spots: { [string]: Vector3 } =
+		{ driver = body.driver, gunner = body.gunner + Vector3.new(0, 0, 0.8) }
+	for seatName, spot in spots do
+		local anchor = Instance.new("Attachment")
+		anchor.Name = "GetOn_" .. seatName
+		anchor.Position = spot
+		anchor.Parent = root
+		local prompt = Instance.new("ProximityPrompt")
+		prompt.Name = "GetOn"
+		prompt.ObjectText = name
+		prompt.ActionText = if seatName == "driver" then "Drive" else "Ride in back"
+		prompt.KeyboardKeyCode = Config.Keys.Interact
+		prompt.HoldDuration = 0
+		prompt.MaxActivationDistance = cfg.PromptReach
+		prompt.RequiresLineOfSight = false
+		prompt.Parent = anchor
+		prompts[seatName] = prompt
+	end
 	local right = Instance.new("ProximityPrompt")
 	right.Name = "Right"
-	right.ObjectText = getOn.ObjectText
+	right.ObjectText = name
 	right.ActionText = "Flip it over"
 	right.KeyboardKeyCode = Config.Keys.Interact
 	right.HoldDuration = cfg.Right.Hold
@@ -717,20 +770,24 @@ function VehicleService.deliver(
 		health = cfg.Health,
 		stage = "ok",
 		seats = {
-			driver = model:FindFirstChild("DriverSeat") :: VehicleSeat,
-			gunner = model:FindFirstChild("GunnerSeat") :: Seat,
+			-- By class, never by name: a body piece can share a seat's name.
+			driver = model:FindFirstChildOfClass("VehicleSeat") :: VehicleSeat,
+			gunner = model:FindFirstChildOfClass("Seat") :: Seat,
 		},
 		riders = {},
-		getOn = getOn,
+		prompts = prompts,
 		right = right,
+		boarding = nil,
 		rammed = {},
 		heldUntil = 0,
 		wreckAt = nil,
 		effects = {},
 	}
-	getOn.Triggered:Connect(function(who)
-		onGetOn(ride, who)
-	end)
+	for seatName, prompt in prompts do
+		prompt.Triggered:Connect(function(who)
+			onGetOn(ride, who, seatName :: SeatName)
+		end)
+	end
 	right.Triggered:Connect(function(who)
 		onRight(ride, who)
 	end)
@@ -771,7 +828,8 @@ local function physicsStep(dt: number)
 	local now = os.clock()
 	for _, ride in rides do
 		local root = ride.root
-		if root:GetNetworkOwner() == nil and not root.Anchored then
+		-- Anchored (parked) first: asking an anchored part for its owner is an error.
+		if not root.Anchored and root:GetNetworkOwner() == nil then
 			if not serverParams or now - paramsAt > 1 then
 				local list: { Instance } = { folder }
 				for _, member in Squad.members() do
@@ -841,15 +899,22 @@ local function step()
 		if slow then
 			checkRiders(ride)
 			setOwner(ride)
+			boardBot(ride)
 			local frame = ride.root.CFrame
-			ride.right.Enabled = ride.wreckAt == nil
-				and next(ride.riders) == nil
-				and Vehicle.needsRighting(
-					frame.UpVector.Y,
-					flatSpeed(ride),
-					ride.cfg.Right.Tilt,
-					ride.cfg.Right.Slow
-				)
+			local tipped = Vehicle.needsRighting(
+				frame.UpVector.Y,
+				flatSpeed(ride),
+				ride.cfg.Right.Tilt,
+				ride.cfg.Right.Slow
+			)
+			ride.right.Enabled = ride.wreckAt == nil and next(ride.riders) == nil and tipped
+			-- On its side: only the flip prompt shows (the seats' would hide it, same key).
+			refreshPrompt(ride)
+			if tipped then
+				for _, prompt in ride.prompts do
+					prompt.Enabled = false
+				end
+			end
 			-- Fell off the map.
 			if frame.Position.Y < Workspace.FallenPartsDestroyHeight + 5 then
 				destroyRide(ride)

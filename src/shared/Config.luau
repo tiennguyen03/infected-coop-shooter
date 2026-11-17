@@ -2001,7 +2001,9 @@ local Config = {
 				Gunner = { BlockedArc = 25, MovingBloom = 1.5, MovingSpeed = 8 },
 				-- On its side or roof and slower than Slow: hold Interact Hold seconds to right it.
 				Right = { Tilt = 70, Hold = 1.5, Slow = 2 },
-				BotRideRange = 25, -- solo: the nearest free bot this close takes the back seat
+				-- Solo: while a player drives with the back seat free, the nearest free bot this close
+				-- (to the ATV) walks over and gets on once the ATV is nearly stopped.
+				BotRideRange = 40,
 				SpeedSlack = 1.25, -- the server takes the drive back above TopSpeed x this
 				PromptReach = 9, -- studs a soldier can get on from
 			},
