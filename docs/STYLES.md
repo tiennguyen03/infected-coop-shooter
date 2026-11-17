@@ -554,6 +554,11 @@ with its designation dim under it, ON YOUR RECORD in yellow, or a BUY · N MERIT
 top. In the Loadout, kit not on the record is dimmed with its price in yellow where the
 designation was. Words: BUY, MERITS, ON YOUR RECORD; never shop, store, wares, sell, lock
 or unlock.
+The Call-ins display (2026-11-16, `CallInDisplayUI`) is the rack's screen for call-ins: the same
+header top left (desk, THE KIT, his line, the merits), hint and Back bar at the bottom, the same
+card on the right; in the world each pallet's plate carries the name in dark stencil and, for
+this soldier only, ON YOUR RECORD in yellow or the price in white (GothamBlack, scaled to the
+plate).
 
 ### Mission 1 "Checkpoint Delta"
 
