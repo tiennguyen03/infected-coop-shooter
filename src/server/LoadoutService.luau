@@ -80,7 +80,20 @@ local function pickFor(player: Player): Loadout.Loadout
 	if not pick then
 		-- The default; the Loadout signed for at the lobby's Loadmaster replaces it on arrival
 		-- (RunManager.receive -> LoadoutService.apply, read by HandoffService).
-		pick = ArmsRoom.default()
+		local fresh = ArmsRoom.default()
+		pick = fresh
+		-- Studio testing: Config.CallIns.StudioCallIn in the last slot (never live).
+		local studio = Config.CallIns.StudioCallIn
+		if RunService:IsStudio() and studio and CallInDefinitions.get(studio) then
+			local callIns = fresh.callIns
+			local had = table.find(callIns, studio)
+			if had then
+				table.remove(callIns, had)
+			elseif #callIns >= Config.CallIns.Slots then
+				table.remove(callIns, #callIns)
+			end
+			table.insert(callIns, studio)
+		end
 		picks[player] = pick
 	end
 	return pick

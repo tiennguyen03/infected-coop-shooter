@@ -1546,6 +1546,10 @@ local Config = {
 		-- the throw, Width; Across = true lays it across). A row without Aim shows a small ring.
 		AimArc = { Beads = 18, Rise = 0.3, MinRise = 3 }, -- the arc: beads, apex height per stud of reach
 		Slots = 4, -- call-in slots per soldier (keys 1-4; the flare is key 5)
+		-- Studio only (Nova 2026-11-17, testing vehicles): this call-in takes the last slot of the
+		-- starting loadout when nothing was signed for (LoadoutService). Never in the live game;
+		-- nil turns it off.
+		StudioCallIn = "atv" :: string?,
 		-- Binoculars (Rules/Spotting, SpotUtil; docs/PROGRESSION.md > Binoculars): a row with
 		-- `AimMode = "Binoculars"` (default "Throw") is not thrown. Its key raises binoculars
 		-- (BinocularController: the view, the mark on the ground, the range; BinocularPose: the

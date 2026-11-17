@@ -386,6 +386,9 @@ Built, **not played**.
   through, folder `Vehicles`). At 0 it burns 3 s and blows: 120 to the Infected within 10;
   anyone still aboard is thrown off, takes 20 and is knocked down 1.2 s.
 - **HUD:** while riding, a panel over the bottom: the seat, the keys, the ATV's health.
+- **Testing:** in Studio the starting loadout carries the ATV in its last slot (key 4) when
+  nothing was signed for (`Config.CallIns.StudioCallIn`; never in the live game, nil turns
+  it off). Dev `FireCallIn atv` drops one with no slot or charge.
 - **Not in v1:** an engine sound (none in the banks yet), swapping seats, the driver's
   sidearm, grenades from the back, bots driving, the motor sergeant's radio lines, a mesh
   (the body is Parts, `VehicleBody`), other vehicles.
