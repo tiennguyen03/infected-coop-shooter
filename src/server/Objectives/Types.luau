@@ -28,6 +28,11 @@ export type Context = {
 	folder: Folder,
 	complete: () -> (), -- call once: it is done
 	fail: () -> (), -- call once: it can no longer be done (side objectives only)
+	-- Whether the Warden stands on `point` now (within `radius`, else the row's Boss.Contest
+	-- studs), so the objective must not progress there. Always false unless the row's
+	-- Boss.Contest is above 0 and he is up (docs/PROGRESSION.md > The Warden in the main
+	-- objective).
+	contested: (point: Vector3, radius: number?) -> boolean,
 }
 
 export type Objective = {
@@ -40,6 +45,9 @@ export type Objective = {
 	position: () -> Vector3,
 	-- The run is resetting: undo anything left outside `folder` (attributes, lights, sounds).
 	cleanup: () -> (),
+	-- 0..1 of the work done, when progress() has nothing to count (a carried record); when
+	-- the Warden comes (row Boss.At). Left out: progress().done / total.
+	share: (() -> number)?,
 }
 
 -- `new` builds the objective's props and marker at the site. State lives in the closure:

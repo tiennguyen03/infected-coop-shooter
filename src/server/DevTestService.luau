@@ -399,6 +399,10 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 	SpawnWarden = function()
 		print("[DevTest] SpawnWarden (the Gate) ->", IndexService.start())
 	end,
+	-- The main objective's last act now: the Warden comes to it (ObjectiveService.wardenNow).
+	WardenNow = function()
+		print("[DevTest] WardenNow ->", require(script.Parent.ObjectiveService).wardenNow())
+	end,
 	WardenHere = function(player)
 		local character = player.Character
 		local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?

@@ -48,6 +48,7 @@ local Attributes = table.freeze({
 	ResupplyCost = "ResupplyCost",
 	ResupplyPool = "ResupplyPool",
 	ResupplyDropIn = "ResupplyDropIn",
+	ResupplyFlareCooling = "ResupplyFlareCooling", -- workspace: true while the flare cooldown runs (RequisitionService)
 	DevSpawnsOff = "DevSpawnsOff",
 	-- lobby: a Lantern bird model's lift time (server time, workspace:GetServerTimeNow()) while
 	-- its spot counts down; nil otherwise (LaunchService writes, LanternSpool reads)
@@ -117,6 +118,18 @@ local Attributes = table.freeze({
 	ReviveKneel = "ReviveKneel", -- CFrame: the kneel point and heading
 	ReviveChest = "ReviveChest", -- Vector3: the casualty's chest, to face again after a step
 	KnockedUntil = "KnockedUntil",
+	-- a soldier's character (players and bots): the seat they ride in, "driver" or "gunner"
+	-- (VehicleService writes it; the client controllers stand still while it is set)
+	Riding = "Riding",
+	-- a bot's character: where to walk to take a vehicle's back seat (Vector3; VehicleService
+	-- writes it while a player drives with the back seat free, BotService walks there)
+	BoardAt = "BoardAt",
+	-- a vehicle Model (VehicleService, Config.CallIns.<Key>.Vehicle): its call-in id, the
+	-- UserId of the soldier who called it (0 = none), and its health now and full
+	VehicleId = "VehicleId",
+	VehicleOwner = "VehicleOwner",
+	VehicleHealth = "VehicleHealth",
+	VehicleMaxHealth = "VehicleMaxHealth",
 	KnockGraceUntil = "KnockGraceUntil",
 	CoverMoveUntil = "CoverMoveUntil",
 	RootDrop = "RootDrop",

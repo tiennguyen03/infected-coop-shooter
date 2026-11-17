@@ -18,6 +18,11 @@ local Messages = table.freeze({
 		Taken = "taken", -- (crateId, names): the callsigns that have taken a card from the crate
 		Closed = "closed",
 	}),
+	-- Vehicle (VehicleService, client VehicleController)
+	Vehicle = table.freeze({
+		Exit = "exit",
+		Ram = "ram",
+	}),
 	-- UseAbility (client -> server) and AbilityUsed (server -> client): the soldier's kit
 	-- (KitService) and the call-in report (CallInService)
 	Ability = table.freeze({

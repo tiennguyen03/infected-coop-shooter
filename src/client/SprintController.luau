@@ -125,6 +125,7 @@ local function stepStamina(dt: number)
 			and not humanoid.RootPart.Anchored -- a vault or climb carries the body: free
 			and character:GetAttribute(Attributes.KnockedUntil) == nil
 			and character:GetAttribute(Attributes.SquadState) ~= "Downed"
+			and character:GetAttribute(Attributes.Riding) == nil
 	end
 	local wasWinded = stamina.winded
 	Stamina.step(stamina, dt, draining, Config.Stamina)

@@ -46,6 +46,7 @@ local EnemyService = require(script.Parent.EnemyService)
 local ReviveAnimService = require(script.Parent.ReviveAnimService)
 local Squad = require(script.Parent.Squad)
 local SupplyDropService = require(script.Parent.SupplyDropService)
+local VehicleService = require(script.Parent.VehicleService)
 
 local ENEMY_TAG = "Enemy"
 local MAX_SQUAD = 4
@@ -63,6 +64,7 @@ type Tracks = {
 	downed: AnimationTrack?,
 	knockdown: AnimationTrack?,
 	getup: AnimationTrack?,
+	sit: AnimationTrack?, -- on a vehicle's back seat (VehicleService)
 }
 
 type Bot = {
@@ -189,7 +191,10 @@ local function spreadPosition(bot: Bot, leader: BasePart, params: RaycastParams)
 		)
 		local point = Vector3.new(candidate.x, at.Y, candidate.z)
 		local open = not workspace:Raycast(at, point - at, params)
-		if open and BotBrain.spaced(candidate, others, settings.Spacing) then
+		-- Floor under it near the leader's level: never a spot past the edge of a roof.
+		local floored = open
+			and workspace:Raycast(point, Vector3.new(0, -settings.MaxDrop, 0), params) ~= nil
+		if floored and BotBrain.spaced(candidate, others, settings.Spacing) then
 			chosen = point
 			break
 		end
@@ -234,7 +239,15 @@ local function loadTracks(bot: Bot, humanoid: Humanoid)
 		knockdown = Animations.load(found, clips.knockdown, Enum.AnimationPriority.Action3),
 		getup = Animations.load(found, clips.getup, Enum.AnimationPriority.Action3),
 	}
-	for _, track in { bot.tracks.idle, bot.tracks.walk, bot.tracks.run, bot.tracks.downed } do
+	-- Seated on a vehicle: Roblox's stock R15 sit (the one the insertion cutscene's bench uses).
+	local sit = Instance.new("Animation")
+	sit.AnimationId = Config.Insertion.Animations.Sit
+	local sitTrack = found:LoadAnimation(sit)
+	sitTrack.Priority = Enum.AnimationPriority.Action
+	bot.tracks.sit = sitTrack
+	for _, track in
+		{ bot.tracks.idle, bot.tracks.walk, bot.tracks.run, bot.tracks.downed, sitTrack }
+	do
 		if track then
 			track.Looped = true
 		end
@@ -906,17 +919,34 @@ local function scan(from: Vector3, reach: number): ({ BotBrain.Point }, { BotBra
 	return enemies, friends
 end
 
+-- What a thrown frag (KitService.throwFrag) and fire mission (CallInService) fly through.
+local FRAG_PASS_THROUGH = { "KitEffects" }
+local MISSION_PASS_THROUGH = CallInService.ThrowPassThrough
+
 -- The point to throw at for `target`, or nil when the throw would not get there: a throw
 -- stops at the first thing in its way (ThrowUtil), so a wall refuses it, and so does an
--- Infected so close that it would land inside `minDistance`.
+-- Infected so close that it would land inside `minDistance`. The ray skips only what the real
+-- throw skips (`passThrough`: the bot itself and those workspace folders), so a player or
+-- another bot in the way refuses it too: the throw would stop at their feet and be wasted.
 local function throwPoint(
+	model: Model,
 	root: BasePart,
 	target: BotBrain.Point,
 	minDistance: number,
-	params: RaycastParams
+	passThrough: { string }
 ): Vector3?
 	local here = root.Position
 	local point = Vector3.new(target.x, target.y or here.Y, target.z)
+	local exclude: { Instance } = { model }
+	for _, name in passThrough do
+		local found = workspace:FindFirstChild(name)
+		if found then
+			table.insert(exclude, found)
+		end
+	end
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances = exclude
 	local hit = workspace:Raycast(here, Vector3.new(point.X - here.X, 0, point.Z - here.Z), params)
 	if hit and flatDistance(hit.Position, point) > 3 then
 		if
@@ -931,7 +961,7 @@ end
 
 -- Every ScanInterval while it has a target: a fire mission at a big knot or a heavy, else
 -- a frag at a knot (Config.Bots.CallIn / Grenade).
-local function tryThrow(bot: Bot, model: Model, root: BasePart, now: number, params: RaycastParams)
+local function tryThrow(bot: Bot, model: Model, root: BasePart, now: number)
 	local settings = Config.Bots
 	if now < bot.nextScanAt or not Squad.canAct(bot.member) then
 		return
@@ -967,7 +997,7 @@ local function tryThrow(bot: Bot, model: Model, root: BasePart, now: number, par
 			SafeRadius = safe,
 			HeavyCounts = true,
 		})
-		local point = target and throwPoint(root, target, safe, params)
+		local point = target and throwPoint(model, root, target, safe, MISSION_PASS_THROUGH)
 		if point and CallInService.fireMissionFor(bot.member, definition.Id, point) then
 			bot.callInAt = now + callIn.Cooldown
 			squadCallInAt = now + callIn.SquadGap
@@ -988,7 +1018,7 @@ local function tryThrow(bot: Bot, model: Model, root: BasePart, now: number, par
 			MaxDistance = frag.ThrowDistance,
 			SafeRadius = safe,
 		})
-		local point = target and throwPoint(root, target, safe, params)
+		local point = target and throwPoint(model, root, target, safe, FRAG_PASS_THROUGH)
 		if point then
 			bot.grenades -= 1
 			bot.grenadeAt = now + settings.Grenade.Cooldown
@@ -1068,6 +1098,7 @@ local function think(bot: Bot, now: number, params: RaycastParams)
 	local knockedUntil = model:GetAttribute(Attributes.KnockedUntil) :: number?
 	if knockedUntil then
 		breakFollow(bot)
+		stopReviving(bot) -- knocked over mid-revive: the label must not stick on REVIVING
 		if not bot.knocked then
 			bot.knocked = true
 			humanoid:MoveTo(root.Position)
@@ -1111,17 +1142,33 @@ local function think(bot: Bot, now: number, params: RaycastParams)
 	if kitFree then
 		tryStim(bot, humanoid, now, if boss then settings.Boss.StimBelow else settings.StimBelow)
 	end
+	-- In a vehicle's back seat (VehicleService): no walking, dodging, reviving or throwing,
+	-- and the body never turns (that would drag the vehicle); it only shoots.
+	local riding = model:GetAttribute(Attributes.Riding) ~= nil
+	-- Seated: the walk clips stop (animate does not run while riding) and the sit plays.
+	local sitTrack = bot.tracks.sit
+	if riding and sitTrack and not sitTrack.IsPlaying then
+		for _, track in { bot.tracks.idle, bot.tracks.walk, bot.tracks.run } do
+			if track and track.IsPlaying then
+				track:Stop(0.15)
+			end
+		end
+		sitTrack:Play(0.15)
+	elseif not riding and sitTrack and sitTrack.IsPlaying then
+		sitTrack:Stop(0.15)
+	end
 	-- The Warden's ground attacks (IndexService danger attributes): step out of the ring or
 	-- the line while he winds up, nothing else.
-	if dodgeDanger(humanoid, root, now) then
+	if not riding and dodgeDanger(humanoid, root, now) then
 		breakFollow(bot)
+		stopReviving(bot)
 		animate(
 			bot,
 			Vector3.new(root.AssemblyLinearVelocity.X, 0, root.AssemblyLinearVelocity.Z).Magnitude
 		)
 		return
 	end
-	if tryRevive(bot, humanoid, root, boss) then
+	if not riding and tryRevive(bot, humanoid, root, boss) then
 		breakFollow(bot)
 		humanoid.AutoRotate = true
 		local velocity = root.AssemblyLinearVelocity
@@ -1129,7 +1176,7 @@ local function think(bot: Bot, now: number, params: RaycastParams)
 		return
 	end
 
-	if leader then
+	if leader and not riding then
 		-- Where to stand: out of a caustic puddle first, then the boss stand-off ring
 		-- (BotBrain.standOff: spread, out of his reach), else the formation slot.
 		local here: BotBrain.Point = { x = root.Position.X, z = root.Position.Z }
@@ -1146,6 +1193,12 @@ local function think(bot: Bot, now: number, params: RaycastParams)
 				)
 				slack = 1
 			end
+		end
+		-- Called to a vehicle's back seat (VehicleService BoardAt): walk to it; it seats us.
+		local boardAt = model:GetAttribute(Attributes.BoardAt)
+		if not post and typeof(boardAt) == "Vector3" then
+			post = { x = boardAt.X, z = boardAt.Z }
+			slack = 1
 		end
 		if not post and boss then
 			post = BotBrain.standOff(
@@ -1177,8 +1230,8 @@ local function think(bot: Bot, now: number, params: RaycastParams)
 		bot.target = enemy
 		bot.nextShot = math.max(bot.nextShot, now + Config.Bots.ReactionTime)
 	end
-	if enemy and kitFree then
-		tryThrow(bot, model, root, now, params)
+	if enemy and kitFree and not riding then
+		tryThrow(bot, model, root, now)
 	end
 	-- The magazine: a bot reloads like the player (WeaponDefinitions), from an infinite reserve.
 	local weapon = WeaponDefinitions.get(WeaponDefinitions.DEFAULT)
@@ -1191,8 +1244,11 @@ local function think(bot: Bot, now: number, params: RaycastParams)
 	end
 	if enemy and aim then
 		humanoid.AutoRotate = false
-		root.CFrame = CFrame.lookAt(root.Position, Vector3.new(aim.X, root.Position.Y, aim.Z))
-		if now >= bot.nextShot and not bot.reloadUntil and bot.rounds > 0 then
+		if not riding then
+			root.CFrame = CFrame.lookAt(root.Position, Vector3.new(aim.X, root.Position.Y, aim.Z))
+		end
+		local clear = not riding or VehicleService.gunnerMayFire(model, aim - root.Position)
+		if clear and now >= bot.nextShot and not bot.reloadUntil and bot.rounds > 0 then
 			bot.nextShot = now + Config.Bots.FireCooldown * (0.85 + math.random() * 0.3)
 			bot.rounds -= 1
 			local origin = if bot.muzzle
@@ -1200,12 +1256,14 @@ local function think(bot: Bot, now: number, params: RaycastParams)
 				else root.Position + Vector3.new(0, 1.5, 0)
 			shoot(bot, origin, aim, params)
 		end
-	else
+	elseif not riding then
 		humanoid.AutoRotate = true
 	end
 
-	local velocity = root.AssemblyLinearVelocity
-	animate(bot, Vector3.new(velocity.X, 0, velocity.Z).Magnitude)
+	if not riding then
+		local velocity = root.AssemblyLinearVelocity
+		animate(bot, Vector3.new(velocity.X, 0, velocity.Z).Magnitude)
+	end
 end
 
 local function step()
@@ -1237,6 +1295,7 @@ local function removeBot(bot: Bot)
 	if index then
 		table.remove(bots, index)
 	end
+	stopReviving(bot) -- removed mid-revive: the downed soldier's label must not stick
 	despawn(bot)
 	Squad.removeBot(bot.member)
 end

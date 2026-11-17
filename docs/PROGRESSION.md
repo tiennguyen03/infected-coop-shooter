@@ -243,14 +243,15 @@ out of the door; fire missions are someone on the net. HUD names and radio: [LOR
 | Support | **Goose** (M3 recoilless) | 2 single shots; 400 direct, 120 in 6 studs | 1 / 120 | no |
 | Support | **Thumper** (M32) | 6-round drum, 0.5 s apart, 70 in 7 studs, 24 rounds | 1 / 180 | no |
 | Support | **Kettle** (M9 projector) | 15-stud cone, 10 per 0.1 s, fire pools, 20 s of fuel | 1 / 180 | no |
-| Fire mission | **Hammer** (81 mm mortar) | 6 shells 1 s apart, 80 in 12 studs, scatter 4 | 1 / 120 | yes |
-| Fire mission | **Anvil** (105 mm battery) | marked through binoculars on any ground in the line of sight, up to 400 studs; one shell 5 s later, 500 in 20 studs, shake felt map-wide | 1 / 180 | yes |
-| Fire mission | **Shrike** (helicopter gun run) | 10 bursts stepping 4 studs along the throw, 120 in 5 studs each, 4 s delay | 1 / 150 | yes |
+| Fire mission | **Hammer** (81 mm mortar) | 6 shells 1 s apart, 80 in 12 studs, scatter 4; holds the Infected within 16 until 2 s after the first shell | 1 / 120 | yes |
+| Fire mission | **Anvil** (105 mm battery) | marked through binoculars on any ground in the line of sight, up to 400 studs; one shell 5 s later, 500 in 20 studs, shake felt map-wide; holds the Infected within 20 until it lands | 1 / 180 | yes |
+| Fire mission | **Shrike** (helicopter gun run) | 10 bursts stepping 4 studs along the throw, 120 in 5 studs each, 4 s delay; holds the Infected within 16 of the middle through the run | 1 / 150 | yes |
 | Emplacement | **Doorman** (tripod sentry MG) | 45 s, 20 dmg every 0.15 s, range 70, one per player | 1 / 150 | yes |
 | Emplacement | **Tripline** (AP mines) | 6 mines on an arc, 80 in 10 studs, 90 s, 12 per player | 2 / 60 | yes |
 | Emplacement | **Concertina** (wire) | 16 x 3 strip for 60 s: 0.4x slow, 5 dps; never vaultable | 2 / 90 | yes |
 | Supply | **Speedball** (ammo bundle) | 4 re-arms (a player again only after stepping out), no lure wave | 1 / 180 | yes |
 | Supply | **Aid Bag** (medical drop) | every soldier within 6 studs: full heal, stims refilled, +25 plate; once each | 1 / 180 | yes |
+| Vehicle | **ATV** (two-seat military ATV) | slung in under the helo; a driver and a back-seat gunner; runs the Infected down ([The ATV](#the-atv-vehicle-call-in)) | 1 / 180 | yes, not played |
 
 Every built call-in is thrown (`Kind "throw"`, `ThrowUtil` clamp) except the Anvil, which is
 marked through binoculars (below). Services:
@@ -262,6 +263,21 @@ the modelled gun whose pivot is 2.6 up, 1 = the Part tripod at 3.2), `MineServic
 need the support-weapon carry and the explosive projectile hook (ARCHITECTURE F7). Dev:
 `SetCallIn <slot> <id>`, `FireCallIn <id>` (20 studs ahead, no slot or charge).
 Retired 2026-11-08: Magpie (drones) and Pen Coil (shock pulse), too sci-fi; see HISTORY.md.
+
+**Landing on the crowd** (owner 2026-11-16: "the zombies move out of the way most of the
+time"; `Rules/StrikeLanding`, `Config.CallIns.Landing`, switch `Enabled`). Nothing dodged:
+the Infected keep chasing the nearest soldier, and from the key to the first impact (Hammer
+0.5 s throw + 3 s, Anvil 0.4 s raise + 5 s, Shrike 0.5 + 4 s) a Walker (9.5 studs/s) walks
+33-51 studs, a Runner (17) 60-92, a Brute (6.5) 23-35, against blasts of 12, 20 and 5 studs.
+So a fire mission's mark now **holds** the Infected within its row's `Landing.Hold` (Hammer
+16, the aim ring; Anvil 20; Shrike 16 round the lane's middle): they walk to the marker (the
+lure the Resupply flare uses) until `HoldAfter` seconds after the first impact (Hammer 2,
+three shells; Anvil 0.3; Shrike 1.4, the whole run), then chase again. Only what the mark is
+on or walks into is held: the player still has to put it on a crowd. Blasts (fire missions,
+Tripline trigger and blast) are measured flat along the ground and reach `Landing.Height`
+(8) studs up or down: the old sphere from a centre 1-2 studs off the ground missed a
+Brute's root (about 6 up) under a Shrike burst and never let a Brute trip a mine. Damage
+has no falloff (flat inside the radius, as before). `Enabled = false`: no hold, the sphere.
 
 ### Binoculars
 
@@ -311,6 +327,7 @@ start on the mark at once).
 | **Concertina** | `unroll` | no smoke | the coil splits into two drums that roll out to the ends paying out a strand, with dust | three rattles | the wire stands at 1.05 s |
 | **Speedball** | `tumble` | yellow smoke | the bundle tumbles down from 50 studs with no chute in 0.75 s | the landing thump | one bounce, dust, ready at 1.5 s |
 | **Aid Bag** | `streamer` | pink smoke | the bag comes down steadily from 38 studs under a 9-stud red and white streamer | the landing thump | the streamer falls across the ground; ready at 1.8 s |
+| **ATV** | `sling` | yellow smoke; rotor wash puffs while it comes down | the helicopter (the insertion's) flies in low along the throw with the ATV on a 16-stud line, hovers 34 up and lowers it | the rotor loop | the hook drops at 7.5 s, the real ATV stands there; the helo climbs away ahead |
 
 - **Where the values live:** each call-in's row has an `Arrival` block (`Style` plus any
   value it changes) over `Config.CallIns.Arrivals.Defaults`; `Rules/Arrival` merges them and
@@ -330,6 +347,60 @@ start on the mark at once).
 - **Switch:** `Config.CallIns.Arrivals.Enabled = false` puts back the flat red discs, the
   stock blast, the one shared whistle and the instant kit.
 - **Needs an in-game look (none of it has been seen running):** `handoff/log/2026-11-10-tien-callin-arrivals.md`.
+
+### The ATV (vehicle call-in)
+
+Nova and Tien, 2026-11-17: the first vehicle. Design by the systems, level and lore agents;
+Nova's picks: a call-in slot (not a free ride or its own slot), slung under the helo. Maps
+are going to get much bigger, so it is transport as well as a gun platform and a getaway.
+Built, **not played**.
+
+- **Getting it:** bought once (400 merits) from the motor sergeant at **Vehicles**, the aft
+  end of the Carrier's hangar (docs/sprints/LOBBY_V1_FALLOW.md > Motor pool); signed into a
+  call-in slot at the Loadmaster; thrown like any call-in. Its row is `Config.CallIns.ATV`;
+  any row with a `Vehicle` block is a vehicle (`VehicleService`), no list of vehicle names.
+- **Limits:** one per player, two per squad (two seats each carry the whole squad). Calling
+  again scraps your own empty one; refused, with a radio line and no charge spent, when yours
+  has people on it, the squad has two out, or the 6 x 4 x 9 landing box is not clear.
+  `Rules/Vehicle.callCheck`. Cooldown 180 s from the throw.
+- **Seats:** E (Keys.Interact) on its prompt: driver first, then the back. E again (B on a
+  gamepad) gets off, to the side that is clear. The driver has no gun (stim only). The back
+  seat fires their primary (put in hand when they sit) all round except 25 degrees either
+  side of straight ahead; hip spread x1.5 above 8 studs/s. No grenades, call-ins, shove,
+  flare, swap or reviving from a seat; a downed, knocked-down or dead rider falls off. In
+  solo the nearest free bot within 25 studs takes the back seat when a player drives (bots
+  never drive) and gets off with the driver.
+- **Driving** (`VehiclePhysics`, `Rules/Vehicle`): ray suspension on four wheels and arcade
+  tyres on one chassis; the driver's client simulates it (network owner), the server while
+  nobody drives, and the server takes it back for 1 s above 1.25 x top speed. Top 55 studs/s
+  (sprint 24, a Runner 17), reverse 16; measured in Studio 26 studs/s after 1 s, 39 after 2,
+  46 after 3 (Nova's first drive at half that accel: "slower than walking"); steering 35
+  degrees standing to 15 at top speed; no drive up ground steeper than 30 degrees (pallet ramps are 33). In the
+  air it levels itself. Tipped past 70 degrees and stopped: hold E 1.5 s to flip it back.
+- **Rams:** above 12 studs/s an Infected in front of the bumper (behind when reversing)
+  takes 2.5 x speed (100 at 40 studs/s: a Walker, Runner or Hocker dies and is thrown limp,
+  `EnemyService.noteBlast`); each costs 15% speed and 4 health. A row with `RamStop` (Brute,
+  Warden) stops it dead: the ram's damage, a 1 s stagger, 40 to the ATV.
+- **Health 400:** smoke at half, fire at a quarter. The Infected hurt it only through its
+  riders: each hit on a rider also takes the attacker's `VehicleDamage` (Hocker spit 15,
+  Brute 60, Warden 150; Walker and Runner 0). Our own fire never hurts it (rounds pass
+  through, folder `Vehicles`). At 0 it burns 3 s and blows: 120 to the Infected within 10;
+  anyone still aboard is thrown off, takes 20 and is knocked down 1.2 s.
+- **HUD:** while riding, a panel over the bottom: the seat, the keys, the ATV's health.
+- **How riders look** (client `VehiclePose`, the row's `Pose`; a placeholder until a riding
+  clip is authored): both seats sit (hips and knees bent over the clip); the driver's hands
+  reach the bars and the gun is put away (hidden on every client, and the first-person gun
+  too); the back seat keeps the gun up. Bots in the back play the stock sit clip.
+- **Testing:** in Studio the starting loadout carries the ATV in its last slot (key 4) when
+  nothing was signed for (`Config.CallIns.StudioCallIn`; never in the live game, nil turns
+  it off). Dev `FireCallIn atv` drops one with no slot or charge.
+- **Engine:** while someone drives, a licensed library loop (Pro Sound Effects "Go Kart
+  Engine Constant 2", asset 9112787518, a small 4-stroke) plays on the chassis, pitched 0.75
+  standing to 1.35 at top speed, in the world sound group. The Infected hear it like a shot
+  (`EnemyService.noise`): 35 studs standing, 85 at top speed (guns carry 70-140), so on a
+  quiet mission driving trades stealth for speed. The row's `Engine` block.
+- **Not in v1:** swapping seats, the driver's sidearm, grenades from the back, bots driving,
+  a mesh (the body is Parts, `VehicleBody`), other vehicles.
 
 ### Pallets (Resupply)
 
@@ -482,9 +553,10 @@ Each drop draws one **main objective** and two **side objectives** from the map'
   (on the HUD the whole time, 8 words at most), `Done` (Control, what changed). The reward is
   the consequence. Plain words only (OWNER.md).
 - **The frame**, once at insert: "Clear this checkpoint so the helicopter can land and we can
-  hold the district." Finishing the main objective pays 500 Resupply, drops the field-upgrade
-  crate and wakes the Warden: "That woke the Gate sergeant. He still guards this post. The
-  Warden is coming up the road." Side objectives are optional; failing one costs nothing.
+  hold the district." The Warden comes partway through the main objective and is its last
+  act; finishing both pays 500 Resupply, drops the objective reward crate and calls the
+  helicopter (below, The Warden in the main objective). Side objectives are optional;
+  failing one costs nothing.
 - **Bots** follow their leader as always, so they stand in a hold with them and shoot marked
   Infected; they never press E and never carry.
 - Dev: `SetMainObjective <id> [site]`, `SetSideObjective <id> [site]`, `RedrawObjectives`,
@@ -557,6 +629,56 @@ Never on Delta: Evacuate ("CLEARED 0").
 | Lights On | You are fighting blind and the helicopter needs light to find you. The generator at {place} still works. Start it. | The helicopter needs light to find you | Lights are on. The helicopter can see you, so supplies come sooner. |
 | Misdrop | The helicopter put a supply pallet down in the wrong place: {place}. Get to it before the Infected swarm it. | Your supplies landed in the wrong place | Pallet is yours. Take what you need. (Late: "Too late. The Infected swarmed the pallet. It is gone.") |
 | Clear the Spitters | Spitters at {place} are shelling the landing pad, so the helicopter can't drop supplies. Kill them fast. | Spitters are shelling the helicopter's landing pad | Spitters are down. The supply drop we were holding is yours. (Late: "Out of time. The Spitters dug in. No supply drop.") |
+
+### The Warden in the main objective (built 2026-11-16, not played)
+
+Owner, 2026-11-16: "I want the boss to be more a part of the objectives, because right now
+it just feels like a separate event." The Warden is now the main objective's last act, at
+its site (`Config.Objectives.Boss`, each main row's `Boss` block in `ObjectiveDefinitions`,
+`Rules/BossAct`, `ObjectiveService`, `IndexService.arrive`).
+
+- **When.** He comes when the objective reaches `At` of its progress, and at the latest
+  when its work is done. Once per run.
+- **Where.** He walks in from open ground 55-70 studs from the objective's point
+  (`EnterMin` / `EnterMax`, `EnemyService.groundNear`), or from the site's `BossFrom` when
+  a site names one (a map that moves its sites moves him too: nothing is hard-coded). He
+  walks to the objective, then fights as always (kit, phases, Riot Calls unchanged).
+- **What he does to it** (one rule per objective, below): `Contest` stops the objective
+  while he stands on it (the HUD says so and Control says it once); `Target = "carrier"`
+  makes him hunt whoever carries the item.
+- **Done.** The mission completes when the work is done **and** he is down, in either
+  order. Work first: "That's done. The Warden is all that's left. Put him down." and the HUD
+  reads "Kill the Warden" (its marker follows him). Him first: "The Warden is down. Finish the
+  job." Then the objective's Done line, 500 Resupply and the objective reward crate at the
+  objective, and the run goes straight to extraction. His own pallet, heal and re-arm at the
+  corpse are unchanged. The run stays in Primary while he is up (no Index state).
+- **Off switch.** `Config.Objectives.Boss.Enabled = false` restores the old order: work done
+  -> reward -> the Warden from the Gate -> extraction. The single hold (pools off) always
+  plays the old order.
+- **Dev.** "Warden now (objective)" (RUN tab) and "To the objective" (THE WARDEN): DevCommand
+  `WardenNow` brings him to the main objective now, starting it if the squad has not reached
+  it. "Complete hold" finishes the work (he comes if he has not); "Kill the Warden" kills him.
+
+| Objective | He comes | What he does |
+|---|---|---|
+| Sanitize the Pens | when the second tent burns (`At` 0.6) | walks to the last fuel can; it will not light while he is within 14 studs of it (its prompt goes off) |
+| Secure the Site | halfway through the hold (0.5) | the hold stops while he stands in the zone (half its smaller side) |
+| Restore Comms | 30 s into the 60 s hold (0.5) | the signal stops while he is within the hold's 20 studs of the mast |
+| Confirm Casualties | when half the heavies are down (0.5) | comes to lead the rest; no other rule |
+| Recover the Record | a third of the way carried (0.3) | hunts the carrier first (nearest member when nobody carries it) |
+
+**Balance (systems pass).** He keeps his body and plates (`HealthFactor` 1): the Gate walk-in
+(up to 75 s) is gone, so the mission is shorter even with the contest; the target fight
+stays 100-120 s. A contest is never a reset: holds pause, never drain. Bots stand off 32
+studs from him (`Config.Bots.Boss.StandOff`), outside a 20-stud mast radius and most of a
+zone, so in solo the player pulls him off while the bots hold or the player kills him first;
+with 4 players one kites, the rest work. While he is up both the objective's faster spawns
+and his lighter field (`Config.Index.Warden.Pressure`) apply, as before.
+
+**Later (not built):** he puts out a burning tent; he damages the mast (progress lost, not
+paused); he walks in from the Gate lane to the site (needs pathing past buildings); a
+per-objective arena (cover he can charge into near each site, Delta v2's level pass);
+Mile 14's boss in its own objectives.
 
 ## Missions
 
@@ -673,10 +795,12 @@ Patient reuse the frame. Index hosts never dismember: their plates are the mecha
 
 ### The Warden (built; `Config.Index.Warden`, `IndexService`, [SPRINT_19_WARDEN.md](sprints/SPRINT_19_WARDEN.md))
 
-- **Entry.** He spawns beyond the Gate, the Gate opens (radio) and he walks the screening
-  route: Gate lane, bus line, Inner Gate, under the bridge, the Apron, then the hunt (walk
-  times out after 75 s). A member within 90 studs during the walk gets the sighting line.
-  Radio lines: LORE.md.
+- **Entry.** Since 2026-11-16 he comes to the main objective partway through it (Objective
+  pools > The Warden in the main objective). With `Config.Objectives.Boss.Enabled = false`
+  he comes after it instead: he spawns beyond the Gate, the Gate opens (radio) and he walks
+  the screening route: Gate lane, bus line, Inner Gate, under the bridge, the Apron, then the
+  hunt (walk times out after 75 s). A member within 90 studs during the walk gets the
+  sighting line. Radio lines: LORE.md.
 - **Body.** 7,000 hp at scale 1.9, +33% per extra living player (the one exception to "more
   Infected, not tougher": one body cannot be more bodies). Headshot x2 once the helmet is off.
 - **Plates** (one rule): helmet 300, chest 400 (was 500 until 2026-11-10), back 400 (the flank), shoulders 300 each,
@@ -700,8 +824,8 @@ Patient reuse the frame. Index hosts never dismember: their plates are the mecha
 - **Phases** by body health: below 60% the **Riot Call** (6 Walkers + 2 Runners, +3 Walkers
   per extra player); below 25% a second call, charges every 5 s, walk 11. While he is up the
   wave loop spawns at x1.5 interval, 8 fewer alive, no Brutes.
-- **Kill.** Priority pallet at the corpse, everyone alive healed and re-armed, extraction
-  opens. Corpse stays 8 s.
+- **Kill.** Priority pallet at the corpse, everyone alive healed and re-armed; extraction
+  opens (with him in the objective: once its work is done too). Corpse stays 8 s.
 - **Target fight** 100-120 s for a squad that works the plates; retune plate health first.
 
 ## The Infected roster

@@ -74,6 +74,14 @@ function AllyOutline.init()
 	for _, player in Players:GetPlayers() do
 		onPlayer(player)
 	end
+	-- Streaming: a squadmate's body that went out of range and comes back arrives again
+	-- without CharacterAdded (and without the outline made on this client): outline it again.
+	workspace.ChildAdded:Connect(function(child)
+		local owner = Players:GetPlayerFromCharacter(child)
+		if owner and owner ~= Players.LocalPlayer and child:IsA("Model") then
+			outline(child)
+		end
+	end)
 	-- The bots' folder is made by the server at boot; it may arrive after this client starts.
 	local folder = workspace:FindFirstChild(BOT_FOLDER)
 	if folder then

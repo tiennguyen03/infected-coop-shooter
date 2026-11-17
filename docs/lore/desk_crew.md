@@ -38,20 +38,28 @@ door frame ([LORE.md > The helicopter](../LORE.md#the-helicopter)) and is the on
 plainly. The one detail for art: a flight helmet pushed up, the monkey-strap harness still on
 over his working dress.
 
-## Fires (fire support officer)
+## Fires (fire support officer; retired 2026-11-16, see Lines)
 
 Lieutenant, late twenties, female. Calm, precise, polite, a natural teacher. She is a
 little unnerving about how calmly she describes a 105 mm shell. She speaks in complete,
 ordered sentences, explains in steps and ends on "Simple." She respects the net. The one
 detail for art: a headset round her neck, its cord running back to a radio on the desk.
 
-## The Engineers (sapper sergeant)
+## Call-ins (sapper sergeant; was the Engineers)
 
 Staff Sergeant, forties, male, a sapper. Slow and patient, fond of his wire, with the
 gallows humour of a man who handles mines for a living. He never hurries. He says "my wire"
 and "mind the coils" and jokes about the fingertip he lost ("Nine fingers and counting"). He
 thinks the Quartermaster counts everything, which is true. The one detail for art: the tip
 of one finger missing, work gloves and wire cutters on his belt.
+
+## The motor sergeant (Vehicles)
+
+Canon 2026-11-17 (Nova approved). Staff Sergeant, late thirties, female, Army, the motor
+sergeant; she runs the motor pool at the hangar's aft end. Practical and dry, machine first:
+she worries about the ATV, then about the soldier ("Bring it back. You too, ideally."). She
+writes down which ATVs come back. The one detail for art: grease to the elbows and a log book
+under one arm.
 
 ## Control's watch officer (the Plot)
 
@@ -80,6 +88,7 @@ Simple low-poly accessories that make each body read as a person. Pike grey is o
 | Helicopter crew chief (on each bird) | aircrew flight suit | helmet on, visor down; tether clipped to the kick rail; flight gloves |
 | Fires | Army working dress | headset round her neck, its cord to the radio on her desk; a small notebook in the sleeve pocket |
 | The Engineers | Army working dress | work gloves tucked in his belt; wire cutters on the belt; a short coil of wire over one shoulder |
+| The motor sergeant | Army working dress, sleeves rolled | grease to the elbows and the log book under one arm (neither modelled yet); a shop rag |
 | Control's watch officer | Army working dress | headset, one earcup on, one pushed back; a steel mug (the coffee is cold); rank on the chest tab |
 | The plotter | ship's dark blue | sound-powered phone headset with a chest mouthpiece; a grease pencil in hand |
 | Ship's company walkers | see [ship_company.md](ship_company.md) | the jersey colour is the read; one prop each (ear defenders, chain, rag, clipboard, smock, rifle) |
@@ -117,7 +126,7 @@ more when your team gets the job done."
 | Greeting | "I tally every seat out and every seat back on my door. Come back, Pike." |
 | 1 (open) | Set up my Loadout. |
 | 2 (ask) | What can you drop me? |
-| Answer (with his supply panel) | "Ammo and medical, kicked out of my door when you throw for it. Buy it here first." |
+| Answer | "Ammo and medical, kicked out of my door when you throw for it. Buy them at Call-ins." |
 | 3 (leave) | That's all. |
 | Loadout opens | "Main gun, sidearm, grenade, four different call-ins. Dimmed ones you still have to buy." |
 | Bought | "Bought. Throw for it out there and I'll kick it out the door." |
@@ -125,45 +134,59 @@ more when your team gets the job done."
 | Refused | "Couldn't sign that over. Give it a minute and try again." |
 | Signed | "Signed. That's what you fly with. Up the ramp, find a bird with a seat." |
 | Rules refused | "That won't go. You need four call-ins, and no two the same." |
-| Not bought | "That's not yours yet. Buy it first: guns at the Arms Room, call-ins at their desk." |
+| Not bought | "That's not yours yet. Guns at the Arms Room, call-ins at Call-ins, ATVs at Vehicles." |
 | Loadout labels | LOADOUT; SIGN FOR IT |
 
-### Fires
+### Fires (retired)
+
+Owner, 2026-11-16: one desk sells every call-in, so the Fires desk is gone and her lines
+with it (git history has them). Her radio stands on the Call-ins counter.
+
+### Call-ins (the sapper sergeant; was the Engineers)
+
+Owner, 2026-11-16: he sells every call-in now (fire missions, the Doorman, mines, wire and
+the supply drops that were the Loadmaster's). Desk id `callins`, sign CALL-INS.
 
 | Field | Line |
 |---|---|
-| Greeting | "Fires. I put you on the mortar, artillery and gunship nets. Throw the marker, they shoot." |
-| Greeting | "Hammer, Anvil and Shrike are free. You're already cleared on all three nets." |
-| Greeting | "The guns can't see you. They only see your marker. So throw it where you mean it." |
-| Greeting | "Quiet on the net. It never stays quiet. What do you need?" |
-| 1 (open) | Show me the fire missions. |
-| 2 (ask) | How do I call one in? |
-| Answer | "Press its number and throw the marker. The guns fire where it lands. Simple." |
-| 3 (leave) | That's all. |
-| Kit opens | "Hammer: six mortar rounds. Anvil: one big shell. Shrike: a gun run along your throw." |
-| Bought | "You're on that net now. Your callsign's in the book." |
-| Short | "You're short on merits. Come back when you can cover it." |
-| Refused | "The net's busy. Try that again in a minute." |
-
-Hammer, Anvil and Shrike are issued free, so her Bought and Short lines wait for a paid fire
-mission.
-
-### The Engineers
-
-| Field | Line |
-|---|---|
-| Greeting | "Engineers. Wire, mines and the Doorman gun. Things that hold ground when you can't." |
+| Greeting | "Call-ins. Mortars, artillery, a gunship, mines, wire, ammo and med drops. All here." |
 | Greeting | "Mind the coils on your way past. That wire bites, and it doesn't let go." |
-| Greeting | "Nine fingers and counting. Ask me anything about mines." |
-| Greeting | "Tripline comes free. The gun and the wire cost merits. Worth every one." |
-| 1 (open) | Show me the kit. |
-| 2 (ask) | Any advice? |
-| Answer | "Lay wire across their path, not yours. Nothing climbs over it. Nothing." |
+| Greeting | "Nine fingers and counting. Ask me anything about mines. Or mortars, these days." |
+| Greeting | "Hammer, Anvil, Shrike and Tripline come free. The rest cost merits. Worth every one." |
+| 1 (open) | Show me the call-ins. |
+| 2 (ask) | How do I call one in? |
+| Answer | "Press its number and throw. It comes down where your marker lands." |
 | 3 (leave) | That's all. |
-| Kit opens | "Doorman's a gun that shoots on its own. Tripline's six mines. Concertina's the wire." |
+| Kit opens | "It's all laid out behind me. Pick one, buy it, sign for it with the Loadmaster." |
 | Bought | "It's yours. Set it, step back, let it work." |
 | Short | "You're short. I'd do you a deal, but the Quartermaster counts my wire." |
 | Refused | "Paperwork's jammed. Give it a minute." |
+
+### The motor sergeant (Vehicles)
+
+Desk id `vehicles`, sign VEHICLES. She sells the ATV; it is signed into a call-in slot at the
+Loadmaster.
+
+| Field | Line |
+|---|---|
+| Greeting | "Vehicles. I keep the ATVs running. You bring them back. That's the deal." |
+| Greeting | "Two seats. One drives, one rides the back and shoots. Nobody rides the roof." |
+| Greeting | "Roads up there are full of dead cars. An ATV fits between them. A truck doesn't." |
+| Greeting | "Every ATV goes down hanging under a helo. I write down which ones come back." |
+| 1 (open) | Show me the vehicles. |
+| 2 (ask) | Who does what on it? |
+| Answer | "Driver steers. Whoever's on the back shoots their main gun. Get on and off with E." |
+| 3 (leave) | That's all. |
+| Kit opens | "That's what's running. Buy it here, then sign it into a call-in slot with the Loadmaster." |
+| Bought | "It's on your record. Bring it back. You too, ideally." |
+| Short | "Not enough merits. Fuel's free. The ATV isn't." |
+| Refused | "That one's in bits right now. Give me a minute." |
+
+Walk-close bubbles (approved 2026-11-17, written, not in game yet):
+
+- "Mind the oil. That's my oil."
+- "Two seats. I've seen people try three."
+- "Don't lean on it. It's been through enough."
 
 ### Control's watch officer (the Plot)
 

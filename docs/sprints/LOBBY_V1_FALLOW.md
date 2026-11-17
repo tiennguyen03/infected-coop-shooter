@@ -41,13 +41,13 @@ match place.
   one red in the Plot; the deck floodlights are unlit housings by day.
 - **No shared planes.** Two faces in one plane flicker (z-fighting): the hangar floor plate
   sits on the hull block (`FLOOR` 0.2), the centre line breaks at each spot circle, and the
-  spot ring, its inner disc, the number and the boarding box each have their own height.
+  spot ring, its inner disc, the number and the spot sign each have their own height.
   Keep to this when adding pieces.
 - **The loop** (Nova: walking past the birds to the desks and back every run made no
   sense): everyone spawns at the fore end of the hangar facing aft, passes the desks (Arms
-  Room and Engineers face each other across the walk, the Loadmaster at the ramp's foot),
+  Room and Call-ins face each other across the walk, the Loadmaster at the ramp's foot),
   climbs the ramp, which rises aft, and comes up on the deck facing the spots, spot 4 nearest.
-  Fires and the Plot are a short detour aft past the ramp's foot. The screening lane stays as
+  The Plot is a short detour aft past the ramp's foot. The screening lane stays as
   scenery where recovered teams will walk off (nobody spawns there).
 - **The Pike body** (`PikeBody`): soldiers wear the match's body, the same limb swap as the
   match (`MeshAssets.dressModel` with `PlayerSetup.BODY`; the match's `PlayerSetup` and the
@@ -75,26 +75,41 @@ match place.
   shows in the lobby's output as it does in the match's (handoff "Minor loose ends"). No file
   in the repo names that id; it is not from lobby code and does not affect play.
 - **Four Lantern spots** (`LaunchService`, rule `Rules/Manifest`): a Lantern (`LanternBird`,
-  see Lantern below) on each numbered spot and a yellow boarding box beside its starboard door. Stand in the box
-  to board. The first aboard starts a 20 s countdown and gets a squad-size picker (SOLO / 2 /
+  see Lantern below) on each numbered spot and a yellow ring round it. **The ring is the boarding zone** (owner 2026-11-16: "the area should be within the circle, not a random square"): stand anywhere inside it, round the bird, to board (`Config.Lobby.Launch.BoardRadius` 14, read by the painted ring and by the server's radius test `Manifest.onSpot`, so they match exactly; the bird's collider fills only its own body, so the ring stays walkable round it; the `HELO · SPOT n` sign stands on the ring's edge by the door, `FallowLayout.Spots[n].sign`; not yet seen in game).
+  The first aboard starts a 20 s countdown and gets a squad-size picker (SOLO / 2 /
   3 / FULL, `Messages.Launch.Squad`, `Manifest.setSquad`; owner 2026-11-10): once that many
   are aboard (4 if nobody picks) the countdown drops to 3 s (`FullCountdown`), so a solo soldier
-  lifts 3 s after picking SOLO. The box empty clears it and the pick, a fifth soldier is left off. At zero the server teleports everyone
+  lifts 3 s after picking SOLO. The ring empty clears it and the pick, a fifth soldier is left off. At zero the server teleports everyone
   aboard together (`TeleportAsync` into one server reserved per lift, `ReserveServer`, reused
   by every retry; teleport data `Handoff.departure`: slot = boarding order, each soldier's
   signed Loadout, plus `spot`), two
   retries, then "Lantern couldn't lift". In Studio teleports can't run: the panel says so and
   the spot resets after 6 s. Screen: `LaunchUI` (spot, who is aboard against the squad size, countdown, the picker for the
   first aboard).
-- **Four hangar desks** (`DeskService`, data `LobbyDesks`): Arms Room (the port fore corner),
-  Engineers (wire spools, starboard), Loadmaster (slung cases at the foot of the ramp), Fires
-  (at the Plot door). R15 crew figures in working dress, a counter, a sign, an F "Talk" prompt. The
+- **Three hangar desks** (`DeskService`, data `LobbyDesks`): Arms Room (the port fore corner),
+  Call-ins (the sapper sergeant, starboard; was the Engineers), Loadmaster
+  (slung cases at the foot of the ramp). The Fires desk was folded into Call-ins (owner
+  2026-11-16: "we don't need the Fire Support office... the Quartermaster is the main guy who
+  sells stuff"; not yet seen in game). **The Call-ins display** (2026-11-16, owner: "similar to how the
+  Quartermaster is... the Doorman laying on the floor"; `CallInDisplay`, `CallInDisplayUI`; not
+  yet seen in game): behind the sergeant, every call-in he sells on its own pallet in a row along
+  the starboard hull (`FallowLayout.CallInDisplay`, data only: origin, length, depth): a crate of
+  Hammer shells, the Anvil's binoculars on a map table, a scale model of the Shrike on a stand,
+  the Doorman tripod gun, Tripline's six charges by their satchel, a coil of Concertina wire, the
+  Speedball ammo bundle, the Aid Bag. Each comes from its Config row's `Display = { Prop, Width }`
+  (no Display: a stencilled crate, `Config.Lobby.CallInDisplay.DefaultProp`), using the uploaded
+  meshes where they exist (`dep_doorman_*`, `prop_ammo_crate`, `prop_repulsor_mine`,
+  `veh_shrike_*` shrunk) and Parts otherwise. A plate over each on a lit board gives its name and,
+  for each soldier, ON YOUR RECORD or its price. "Show me the call-ins." turns the camera onto the
+  row like the rack: hover lifts and glows, click (or the arrows) frames a piece with its card
+  (name, designation, status, BUY, what it does, uses and recharge); Backspace steps back. The
+  `DeskShop` list stays as the fallback while the row is not built. R15 crew figures in working dress, a counter, a sign, an F "Talk" prompt. The
   **Every desk talks the same way** (dialog rewrite 2026-11-10, Nova and Tien: "too cryptic,
   no personality"; lines and voices by the lore developer, `LobbyDesks` `talk`, voice sheets
   in docs/lore/desk_crew.md): a greeting picked at random from four, then 1 their kit, 2 a
   question, 3 leave (click or keys 1-3), plus their own bought / short / refused lines. The
-  Quartermaster talks through `ArmsRackUI`, the Loadmaster through `LoadmasterUI`, Fires and
-  the Engineers through `DeskDialogUI` (1 opens their `DeskShop`).
+  Quartermaster talks through `ArmsRackUI`, the Loadmaster through `LoadmasterUI`, Call-ins
+  through `DeskDialogUI` (1 opens its `DeskShop`).
 - **The Plot** (`PlotService`, `ContainmentBoard`, rule `Rules/Containment`): the red-lit
   map room under the island with the Containment Board on a lit perspex panel (five
   districts: percent and band word). It rereads the board every 60 s and wipes and rewrites a
@@ -113,7 +128,7 @@ match place.
   across it (26.8, -3) and her prompt reaches 18 studs (`DeskPlace.reach`) to cover the table.
   A white light set flush in the deckhead over the table lights the paper (a hanging lamp
   blocked the map view). While the map is up the talk panel moves to the left edge and the
-  map to the right of the screen (the panel covered the map). Fires moved out to (1, 18), beside the door. **The numbers are placeholders**
+  map to the right of the screen (the panel covered the map).  **The numbers are placeholders**
   (`Config.Containment.Districts`: Delta 25, the rest 0) until the save service.
 
 - **The walking crew** (2026-11-10, Nova: "give the fallow some life"; roles and lines by the
@@ -142,7 +157,7 @@ match place.
   list of named block accessories (`KIT` in NpcBody). The Quartermaster: reading glasses (two
   lenses on a thin frame; the old solid bar read as a unibrow and the cord hung in the air), a
   clipboard, keys. The Loadmaster: flight helmet pushed up with the visor raised, harness and
-  tether, a grease pencil. Fires: a headset round her neck, a notebook. The Engineers: belt
+  tether, a grease pencil. The sapper sergeant at Call-ins: belt
   gloves, red wire cutters, a wire coil. The watch officer: one-cup headset, a steel mug, a
   rank tab. Lantern's crew chief: gloves and harness. The walking crew: ear defenders, a
   chock and chain, a rag, a clipboard, a mask and blue gloves, a helmet with a slung rifle and
@@ -203,7 +218,7 @@ unchanged.
 The lift bird on each spot, from the lore developer's canon (docs/LORE.md > Lantern, owner
 approved) and the art director's sheet, in `assets/3d/build/lantern.py` (collection
 `Vehicles`, new prefix `veh_`). Placed by `LanternBird` on `spot.helo`, nose to the bow, the
-open door facing the boarding box; no layout change.
+open door facing out of the ring; no layout change.
 
 - **Meshes** (1,912 tris a bird with both rotors; vehicle cap 5,000): `veh_lantern_body`
   (shell, Metal (104,110,80), Precise: boxy cabin with a 7.5-stud door opening, cockpit and
@@ -220,7 +235,7 @@ open door facing the boarding box; no layout change.
   lamp behind the mast with a PointLight (Range 12, off at rest); the bird's number stencilled
   on both nose doors and the fin, HARLAN on the boom and the port cabin side (SurfaceGui); two
   blur discs, hidden at rest; the crew chief (`NpcBody.Aircrew`: sage flight suit, helmet, visor
-  down) at the aft edge of the door facing the box. Numbers per spot are fixed and out of order
+  down) at the aft edge of the door facing out of the door. Numbers per spot are fixed and out of order
   (`Config.Lobby.Lantern.BirdNumbers` 22, 24, 21, 23: a bird and a spot are not tied).
 - **Turning** (owner: still on deck, spool on countdown): `LaunchService` publishes
   `Attributes.LiftAt` (server time) on the counting bird; `LanternSpool` on every client lights
@@ -260,11 +275,14 @@ The rack is where guns are **bought** (merits, onto the soldier's record; owner 
   Anvil, Shrike, Tripline 0; Concertina 250, Speedball 300, Aid Bag 300, Doorman 400). No
   Price = not for sale. A Loadout is allowed only when both guns, the grenade and every
   call-in are on the record.
-- **Where:** guns and grenades on the Quartermaster's rack; call-ins at the desk on their row
-  (`Desk`): Fires (Hammer, Anvil, Shrike), the Engineers (Doorman, Tripline, Concertina), the
-  Loadmaster (Speedball, Aid Bag, under "What can you drop me?"). `DeskShop` is the panel: each
+- **Where** (owner 2026-11-16: the Quartermaster is the main seller, one desk for call-ins, the
+  Loadmaster only signs Loadouts): the desk is each item's own row, `Desk = "<LobbyDesks id>"`,
+  or with none the default for its kind, `Config.Lobby.Sellers` (`KitPrices.deskOf`): every gun
+  and grenade on the Quartermaster's rack (`ArmsRack` and `ArmsRackUI` show only what his desk
+  sells), every call-in at Call-ins (Hammer, Anvil, Shrike, Doorman, Tripline, Concertina,
+  Speedball, Aid Bag). No row names a desk today; a desk that sells nothing shows no panel. `DeskShop` is the panel: each
   call-in with what it is, ON YOUR RECORD or BUY · N MERITS (dim "(SHORT)"), the merits, a
-  refusal note; Fires and the Engineers stay up while you stand at the desk.
+  refusal note; it stays up while you stand at the desk.
 - **Server** (`RecordService`): loads the record on join (`SaveSlot`, DataStore
   `PikeRecords`, key `r_<UserId>`), sends it on the `Record` remote (`Messages.Record`), checks
   each BUY with the rule and saves. `SaveSlot` is the shared save helper (spaced writes, flush
@@ -330,13 +348,15 @@ The rack is where guns are **bought** (merits, onto the soldier's record; owner 
     140  ── hangar bulkhead (fore) ──
     125  HANGAR: spawn (0, 125), facing aft
     124  Arms Room: the port fore corner, counter at X -23.6 (Quartermaster -26)
-    105  Engineers (27)
+    105  Call-ins (27)
      88  Loadmaster (-2), facing the spawn
      80  ┌ramp foot (hangar)┐ well X -30..-10
      20  └ramp top (deck)───┘ comes up facing aft
      50..-10                        ┌island┐ X 22..34 (deck); Plot under it (hangar,
-                                    └──────┘  X 4..33, Z -10..30), Fires (1, 18) at its door
-    -15  spot 4 (helo X -12, box X 1)
+                                    └──────┘  X 4..33, Z -10..30)
+    -15  spot 4 (helo X -12, ring radius 14, sign X 2)
+    -48  Vehicles: motor sergeant (9), facing the spawn (hangar)
+    -52..-78  motor pool bays X -20..-8, -6..6 (the ATV, 0,-64), 12..24
     -60  spot 3
    -100  ── hangar bulkhead (aft) ──
    -105  spot 2
@@ -345,6 +365,26 @@ The rack is where guns are **bought** (merits, onto the soldier's record; owner 
 ```
 
 Deck surface y 40, hangar floor y 20, sea y 0. Every position is in `FallowLayout`.
+
+## Motor pool (2026-11-17: built, seen in a Studio playtest)
+
+Nova: "the NPC in charge of vehicles in the open space on the other side of the hangar".
+Layout by the level designer (`FallowLayout.MotorPool`; `MotorPool` builds it from
+`DeskService` for the desk `vehicles`):
+
+- **The motor sergeant** (desk VEHICLES, `LobbyDesks`; lines in docs/lore/desk_crew.md)
+  stands at (9, -48) behind the standard counter, facing the soldiers coming round the Plot.
+  She sells every row with `Desk = "vehicles"` (today the ATV, 400 merits) on the plain desk
+  panel (`DeskShop`); it is signed into a call-in slot at the Loadmaster.
+- **Three painted bays** across the aft hangar, Z -78..-52: X -20..-8 and 12..24 empty for
+  later vehicles, and the ATV in the middle one on the spawn's centre line (0, -64), nose to
+  the spawn, so it shows down the aisle past the Loadmaster. It is the match's own build
+  (`Shared.VehicleBody`, anchored). Lashing chains were tried and taken out: four straight
+  bars from the deck to the fenders read as legs, the ATV on stilts.
+- **Dressing:** two red tool chests behind her (9, -56) and (9, -60); a tyre rack of eight in
+  the starboard aft corner (X 28..32.6, Z -96..-82); a fuel point on a pallet with six jerry
+  cans and an extinguisher in the port aft corner (-28, -90); one hangar light over the bays
+  (0, 37, -64; the lobby's 13th light). About 50 Parts and the ATV's 30.
 
 ## Music (2026-11-10)
 
@@ -434,7 +474,7 @@ sling across his chest"; the crew's block eyes "dont look right" on the R15 bodi
 2. `rojo serve lobby.project.json --port 34873` (a different port from the match's 34872),
    Rojo plugin > set the port > Connect, Play.
 3. Check: spawn in the hangar in the Pike body, talk to each desk (F), read the board in the
-   Plot, climb the ramp to the spots, stand in a boarding box (panel + countdown; in Studio it ends with the
+   Plot, climb the ramp to the spots, stand inside a spot's ring (panel + countdown; in Studio it ends with the
    "Teleports don't run in Studio" line).
 4. Test places: Nova's own test experience, start place ZCS Dev (83558708746036), launches
    into Match Dev (108949482095254) and that match flies home to ZCS Dev (`Config.Places.Dev`).
@@ -466,6 +506,13 @@ called **Loadout**. Lines by the lore developer (merits, the record, `LobbyDesks
   or BACK. The row then reads e.g. "M16A4 +SUP". What is fitted is signed with the rest (the
   Loadout's `attachments`, saved, flown to the match). The soldier is held still (`HoldStill`, shared with
   the rack); BACK or Backspace steps out. Prototype: the whole catalog may be signed for.
+  **Bigger, with the item in 3D** (2026-11-16, owner; not yet seen in game): the screen fills
+  most of the display (1560x880 at 1080p, a tabbed layout on a phone), each row shows the
+  item's shape, and an inspect panel shows the hovered or picked item turning in 3D over its
+  stat bars (guns, call-ins, grenades); Enter or gamepad Y signs. Models from
+  `Shared.Showcase` (booted in both places), numbers from `Rules/ArmsStats` and
+  `Rules/KitCard`; layout in `docs/STYLES.md` §5 > The Loadout screen. Stand-ins: the Hammer,
+  Anvil and Aid Bag (a case in their colour) and the frag (a plain grenade) have no model yet.
 - **Server** (`LoadmasterService`): checks the request with the match's rules and catalog
   (`Rules/Loadout`, `ArmsRoom`), keeps one signed Loadout per player, answers on the `Loadout`
   remote. **Kept between visits** (2026-11-10): saved in the DataStore `LoadmasterLoadouts`

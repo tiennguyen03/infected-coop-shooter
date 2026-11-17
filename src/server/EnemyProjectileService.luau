@@ -41,6 +41,7 @@ type Spit = {
 	lastPosition: Vector3,
 	spec: Projectile,
 	damage: number,
+	vehicleDamage: number?, -- what it takes off a vehicle under a rider it splashes
 	params: RaycastParams,
 }
 
@@ -87,7 +88,16 @@ end
 -- player's Armour Plate shield takes the hit before health. `kind` "melee" is a limb or a
 -- claw: a body inside its roll / vault / climb window (CoverMoveService, CoverMoveUntil)
 -- is missed. Ground attacks, projectiles and puddles pass no kind and always land.
-function EnemyProjectileService.damagePlayer(humanoid: Humanoid, amount: number, kind: string?)
+-- `vehicleDamage` (the attacker's EnemyDefinitions VehicleDamage): a soldier riding a
+-- vehicle shares the hit with it (VehicleService sets `vehicleHit`).
+EnemyProjectileService.vehicleHit = nil :: ((humanoid: Humanoid, amount: number) -> ())?
+
+function EnemyProjectileService.damagePlayer(
+	humanoid: Humanoid,
+	amount: number,
+	kind: string?,
+	vehicleDamage: number?
+)
 	if humanoid.Health <= 0 then
 		return
 	end
@@ -97,6 +107,16 @@ function EnemyProjectileService.damagePlayer(humanoid: Humanoid, amount: number,
 		if coverUntil and os.clock() < coverUntil then
 			return
 		end
+	end
+	local onVehicle = EnemyProjectileService.vehicleHit
+	if
+		vehicleDamage
+		and vehicleDamage > 0
+		and onVehicle
+		and character
+		and character:GetAttribute(Attributes.Riding)
+	then
+		onVehicle(humanoid, vehicleDamage)
 	end
 	local member = Squad.fromHumanoid(humanoid)
 	-- A downed body takes no damage (decision #3: a rescue, not a snack).
@@ -145,10 +165,10 @@ local function livePlayerHumanoids(): { { humanoid: Humanoid, root: BasePart } }
 	return result
 end
 
-local function splash(position: Vector3, radius: number, damage: number)
+local function splash(position: Vector3, radius: number, damage: number, vehicleDamage: number?)
 	for _, target in livePlayerHumanoids() do
 		if (target.root.Position - position).Magnitude <= radius then
-			EnemyProjectileService.damagePlayer(target.humanoid, damage)
+			EnemyProjectileService.damagePlayer(target.humanoid, damage, nil, vehicleDamage)
 		end
 	end
 end
@@ -207,7 +227,7 @@ end
 
 local function impact(spit: Spit, position: Vector3, normal: Vector3)
 	local spec = spit.spec
-	splash(position, spec.SplashRadius, spit.damage)
+	splash(position, spec.SplashRadius, spit.damage, spit.vehicleDamage)
 	local ground = spawnPuddle(position, spec)
 	removeSpit(spit)
 	if fxOn() then
@@ -241,7 +261,8 @@ function EnemyProjectileService.fire(
 	targetPosition: Vector3,
 	targetVelocity: Vector3?,
 	spec: Projectile,
-	damage: number
+	damage: number,
+	vehicleDamage: number?
 )
 	local flat = Vector3.new(targetPosition.X - origin.X, 0, targetPosition.Z - origin.Z)
 	local flightTime = math.max(0.45, flat.Magnitude / spec.Speed)
@@ -295,6 +316,7 @@ function EnemyProjectileService.fire(
 		lastPosition = origin,
 		spec = spec,
 		damage = damage,
+		vehicleDamage = vehicleDamage,
 		params = params,
 	}
 	table.insert(spits, spit)
@@ -311,7 +333,14 @@ local function stepSpits(now: number)
 			then workspace:Raycast(spit.lastPosition, delta, spit.params)
 			else nil
 		if hit then
-			impact(spit, hit.Position, hit.Normal)
+			-- A body is not a wall: a direct hit draws the ground pool only, never a blotch
+			-- stuck in the air where the soldier stood (SpitFX).
+			local normal = hit.Normal
+			local model = hit.Instance:FindFirstAncestorOfClass("Model")
+			if model and model:FindFirstChildOfClass("Humanoid") then
+				normal = Vector3.yAxis
+			end
+			impact(spit, hit.Position, normal)
 			table.remove(spits, index)
 		elseif now >= spit.expiresAt or position.Y < workspace.FallenPartsDestroyHeight + 50 then
 			removeSpit(spit)

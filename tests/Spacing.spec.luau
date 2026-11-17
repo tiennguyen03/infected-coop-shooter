@@ -258,4 +258,12 @@ return {
 		local x = Spacing.steer(STILL, 50, 0, 0, 0, 4, 1.6, 0.3, 0, NONE, NONE, NONE, 0)
 		expect.near(x, 42, 1e-6)
 	end,
+	["the ring uses the reach left on the ground once the height gap is taken off"] = function()
+		expect.near(Spacing.flatReach(5, 0), 5, 1e-6)
+		-- A Brute's centre about 4.7 studs above a prone player: only ~2.9 studs of reach on
+		-- the ground, so it must stand much closer than its 5.5 range to hit.
+		expect.near(Spacing.flatReach(5.5, 4.7), math.sqrt(5.5 * 5.5 - 4.7 * 4.7), 1e-6)
+		expect.near(Spacing.flatReach(5.5, -4.7), math.sqrt(5.5 * 5.5 - 4.7 * 4.7), 1e-6)
+		expect.equal(Spacing.flatReach(4, 6), 0, "out of reach above: walk right up")
+	end,
 }

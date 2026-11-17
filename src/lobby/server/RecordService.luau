@@ -34,6 +34,8 @@ local records: { [Player]: Record.Record } = {}
 local unread: { [Player]: boolean } = {}
 -- Soldiers with a Robux receipt being paid right now: one at a time, and no buy meanwhile.
 local granting: { [Player]: boolean } = {}
+-- Soldiers with a buy being saved right now: one at a time.
+local buying: { [Player]: boolean } = {}
 local remote: RemoteEvent
 local slot: SaveSlot.Slot
 
@@ -73,7 +75,9 @@ local function load(player: Player)
 	local data, answered = slot:load(player)
 	local record = Record.decode(data, SAVE.StartMerits)
 	if player.Parent and not records[player] then
-		if not answered then
+		-- A save this code cannot read (junk, a newer version) is treated like one that could
+		-- not be read: never written over.
+		if not answered or not Record.canUpdate(data) then
 			unread[player] = true
 			warn(
 				`[RecordService] {player.Name}'s record could not be read: this visit is not saved`
@@ -84,37 +88,50 @@ local function load(player: Player)
 	end
 end
 
--- Saves the record held here, unless the saved one was never read (see `unread`).
-local function save(player: Player, record: Record.Record)
-	if not unread[player] then
-		slot:save(player, Record.encode(record))
-	end
-end
-
 local function buy(player: Player, id: unknown)
 	local record = records[player]
-	-- No buy while a receipt is being paid: its save must not land over the tabs.
-	if not record or typeof(id) ~= "string" or granting[player] then
+	-- One buy at a time, and none while a receipt is being paid.
+	if not record or typeof(id) ~= "string" or granting[player] or buying[player] then
 		remote:FireClient(player, Messages.Record.Refused, id, "loading")
 		return
 	end
-	local after, ok, reason = Record.buy(record, id, RecordService.priceOf)
-	if not ok then
-		remote:FireClient(player, Messages.Record.Refused, id, reason)
+	if unread[player] or not slot.store then
+		-- Nothing is saved this visit (see `unread`; Studio without API access): the buy is
+		-- made on the record held here only.
+		local after, ok, reason = Record.buy(record, id, RecordService.priceOf)
+		if not ok then
+			remote:FireClient(player, Messages.Record.Refused, id, reason)
+			return
+		end
+		records[player] = after
+		send(player, after)
 		return
 	end
-	records[player] = after
-	save(player, after)
-	print(`[RecordService] {player.Name} bought {id}: {after.merits} merits left`)
-	send(player, after)
+	-- The buy is applied to the record as it is stored, in one step (UpdateAsync), never by
+	-- writing the copy read on join over it: merits the match paid after the soldier joined
+	-- (a slow save at mission end) are kept, and a save this lobby cannot read is left alone.
+	buying[player] = true
+	local refused: string? = nil
+	local ok, written = pcall(slot.update, slot, player, function(old: unknown): any
+		local saved, reason = Record.buyStored(old, id, RecordService.priceOf, SAVE.StartMerits)
+		refused = reason
+		return saved
+	end)
+	buying[player] = nil
+	if not ok or written == nil then
+		remote:FireClient(player, Messages.Record.Refused, id, refused or "busy")
+		return
+	end
+	local after = Record.decode(written, SAVE.StartMerits)
+	if player.Parent then
+		records[player] = after
+		print(`[RecordService] {player.Name} bought {id}: {after.merits} merits left`)
+		send(player, after)
+	end
 end
 
 local function grant(player: Player, purchaseId: string, tabs: number): boolean
 	local keep = Config.Tabs.ReceiptsKept
-	-- A buy still waiting to be saved goes out first. From here to the end no other save of
-	-- this record can start (buys are refused, receipts go one at a time, nothing is left
-	-- waiting for the soldier leaving to flush), so none can land over the tabs.
-	slot:write(player)
 	local written = slot:update(player, function(old: unknown): any
 		if not Record.canUpdate(old) then
 			return nil
@@ -129,16 +146,12 @@ local function grant(player: Player, purchaseId: string, tabs: number): boolean
 	if written == nil then
 		return false
 	end
-	local held = records[player]
-	if held then
-		local after, granted = Record.grantReceipt(held, purchaseId, tabs, keep)
-		if granted then
-			records[player] = after
-			-- The record held here can be ahead of the saved one (a buy whose save failed):
-			-- save it again so the newest write has both.
-			save(player, after)
-			send(player, after)
-		end
+	-- The record held here becomes the stored one (with the tabs, and anything the match
+	-- paid meanwhile).
+	if records[player] then
+		local after = Record.decode(written, SAVE.StartMerits)
+		records[player] = after
+		send(player, after)
 	end
 	print(`[RecordService] {player.Name} paid {tabs} tabs for receipt {purchaseId}`)
 	return true
@@ -149,10 +162,10 @@ end
 -- the receipt is on the saved record (paid now or on an earlier try); false when it could not
 -- be saved, and Roblox will offer the receipt again.
 function RecordService.grantReceipt(player: Player, purchaseId: string, tabs: number): boolean
-	while granting[player] and player.Parent do
+	while (granting[player] or buying[player]) and player.Parent do
 		task.wait(0.1)
 	end
-	if granting[player] or not RecordService.waitFor(player) then
+	if granting[player] or buying[player] or not RecordService.waitFor(player) then
 		return false
 	end
 	granting[player] = true
@@ -182,6 +195,7 @@ function RecordService.init()
 	Players.PlayerRemoving:Connect(function(player: Player)
 		records[player] = nil
 		unread[player] = nil
+		buying[player] = nil
 	end)
 end
 

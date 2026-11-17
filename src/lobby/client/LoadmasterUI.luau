@@ -213,7 +213,7 @@ local function openLoadout()
 		remote:FireServer(Messages.Loadout.Request, loadout)
 	end, {
 		title = kit.header,
-		hint = "CLICK TO PICK   ·   CALL-INS FILL KEYS 1-4 IN ORDER   ·   [BACKSPACE] STEP AWAY",
+		hint = "POINT TO LOOK, CLICK TO PICK   ·   CALL-INS FILL KEYS 1-4 IN ORDER   ·   [ENTER] SIGN   ·   [BACKSPACE] STEP AWAY",
 		confirm = kit.confirm,
 		-- Only guns on the record (bought at the Quartermaster's rack, or issued free).
 		locked = function(id: string): string?
@@ -236,7 +236,7 @@ local function openLoadout()
 	back.Name = "Back"
 	back.AnchorPoint = Vector2.new(1, 0)
 	back.Position = UDim2.new(1, -24, 0, 16)
-	back.Size = UDim2.fromOffset(120, 36)
+	back.Size = UDim2.fromOffset(120, 36) -- design pixels: LoadoutMenu scales its frame to the screen
 	back.BackgroundColor3 = HudTheme.Color.Track
 	back.BorderSizePixel = 0
 	back.Font = HudTheme.Font.Headline
