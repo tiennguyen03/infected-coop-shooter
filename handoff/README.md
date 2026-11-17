@@ -32,7 +32,8 @@ that restocks the squad.
   Bag, Tripline; thrown ones are held to aim with an arc and a landing marker, every throw leaves the
   hand at the throw clip's release 0.5 s after the key, the Anvil is
   marked through binoculars anywhere in the line of sight (arms and prop are stand-ins), the Shrike is a
-  modelled attack helicopter, the Doorman a modelled tripod gun not yet seen in game:
+  modelled attack helicopter, a fire mission's mark holds the Infected on it until the rounds land
+  (`Config.CallIns.Landing`, 2026-11-16, **not yet played**), the Doorman a modelled tripod gun not yet seen in game:
   `Config.CallIns.Doorman.Model = 1` puts the old one back), flare on X, the Arms Room on B (stand-in until Nova's lobby screen).
 - **Keys:** every key is a row of `Config.Keys` and every hint reads it (table: `docs/OWNER.md`);
   a key written into client or server code fails the tests. E interact, C or Ctrl crouch, Z prone.
@@ -73,7 +74,7 @@ that restocks the squad.
 - **Roblox:** the group Boomin Dev Studios (270506601) owns the game "Co-op Zombie Shooter" and
   every sound and animation. Its start place 87556879379942 holds the **lobby**; the match is
   "Checkpoint Delta" 125769854992316 (`Config.Places`).
-- **Checks:** stylua, selene, rojo build, 440 Lune tests (rules plus the source-wiring spec, which also reads the lobby's remotes and refuses key literals), luau-lsp, CI on every push.
+- **Checks:** stylua, selene, rojo build, 450 Lune tests (rules plus the source-wiring spec, which also reads the lobby's remotes and refuses key literals), luau-lsp, CI on every push.
 
 ## Who owns what
 
