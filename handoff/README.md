@@ -6,7 +6,7 @@ last one. **End of a session:** edit this page in place (never append history he
 one note to `handoff/log/` (format in `handoff/log/README.md`). History lives in
 `docs/HISTORY.md`; this page is only "now".
 
-Last updated: 2026-11-17 by Nova + Claude (vehicles: the ATV and the motor pool, on `nova/vehicles-atv`).
+Last updated: 2026-11-17 by Claude (the map room opened up, on `claude/open-map-room`).
 
 ## The game today (on `main`)
 
@@ -75,7 +75,12 @@ that restocks the squad.
   new `SoldierMoves`; off with `Config.Lobby.Soldier.Enabled = false`; what to check is in
   the lobby doc > What v1 has). **Nova:** the Loadout screen (`LoadoutMenu`) was rebuilt
   bigger with each item turning in 3D and its stats (2026-11-16, not yet seen in game; what to
-  check: `handoff/log/2026-11-16-claude-loadmaster-screen.md`).
+  check: `handoff/log/2026-11-16-claude-loadmaster-screen.md`). The map room (the Plot in
+  code) has no walls since 2026-11-17 (owner: awkward to walk in and out of, cramped with a
+  full lobby; on `claude/open-map-room`, **not yet seen in game**): the map table stands in open
+  hangar floor, the board on two posts, and players read "MAP ROOM" (**Nova:** the walls are
+  gone from `FallowBuilder.buildPlot`, `FallowLayout.Plot` lost its door fields, the desk
+  title and the runner's role/lines in `LobbyDesks`/`LobbyCrew` changed).
 - **Economy:** merits (soft) are paid when a mission ends (Win 120, Partial 60, Loss 0) onto
   the record the Carrier's desks spend from; tabs (hard, Robux or events, never power) are a
   balance on the same record with nothing to buy yet (`docs/OWNER.md`, `docs/ROADMAP.md` >
