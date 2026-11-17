@@ -6,7 +6,7 @@ last one. **End of a session:** edit this page in place (never append history he
 one note to `handoff/log/` (format in `handoff/log/README.md`). History lives in
 `docs/HISTORY.md`; this page is only "now".
 
-Last updated: 2026-11-16 by Claude (lobby: boarding ring, one main seller).
+Last updated: 2026-11-16 by Claude (lobby: boarding ring, one main seller; Loadmaster screen).
 
 ## The game today (on `main`)
 
@@ -65,7 +65,9 @@ that restocks the squad.
   uses the match's idle and walk and carries the signed primary (2026-11-11, **not yet seen in
   game**; **Nova:** small edits in your `PikeBody`, `LoadmasterService`, lobby `Main.client`,
   new `SoldierMoves`; off with `Config.Lobby.Soldier.Enabled = false`; what to check is in
-  the lobby doc > What v1 has).
+  the lobby doc > What v1 has). **Nova:** the Loadout screen (`LoadoutMenu`) was rebuilt
+  bigger with each item turning in 3D and its stats (2026-11-16, not yet seen in game; what to
+  check: `handoff/log/2026-11-16-claude-loadmaster-screen.md`).
 - **Economy:** merits (soft) are paid when a mission ends (Win 120, Partial 60, Loss 0) onto
   the record the Carrier's desks spend from; tabs (hard, Robux or events, never power) are a
   balance on the same record with nothing to buy yet (`docs/OWNER.md`, `docs/ROADMAP.md` >
