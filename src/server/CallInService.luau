@@ -68,6 +68,9 @@ type Slot = {
 
 local CallInService = {}
 
+-- The same list, for a bot checking its throw line (BotService.throwPoint).
+CallInService.ThrowPassThrough = THROW_PASS_THROUGH
+
 -- How many call-in slots a loadout has (the soldier kit owns the number).
 local function slotCount(): number
 	return ((Config.CallIns :: { [string]: any }).Slots :: number?) or 2
@@ -377,6 +380,8 @@ local function onCallIn(player: Player, slot: unknown, requested: unknown)
 	end
 	local member = Squad.fromPlayer(player)
 	if not member or not Squad.canAct(member) then
+		-- A knocked soldier's click still takes the binoculars down (no stuck pose).
+		lower(player)
 		return
 	end
 	local slotIndex = slot :: number

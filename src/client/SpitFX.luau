@@ -97,7 +97,7 @@ type Splat = {
 type Windup = {
 	model: Model,
 	head: BasePart,
-	neck: Motor6D?,
+	neck: Instance?, -- the Motor6D or AnimationConstraint holding the head (neckFrame)
 	base: CFrame,
 	seconds: number,
 	startedAt: number,
@@ -612,15 +612,59 @@ local function smearIfSplashed(position: Vector3, splashRadius: number)
 end
 
 ---------------------------------------------------------------------------------------------
--- The tell: the spitter's head through its windup. The neck's C0 is changed on this client
--- only (the server and the body's clips never touch it) and put back when the tell ends.
+-- The tell: the spitter's head through its windup. The neck is turned on this client only
+-- (the server and the body's clips never touch it) and put back when the tell ends. The
+-- Infected rigs are rebuilt at spawn (MeshAssets, BuildRigFromAttachments), so the neck is
+-- an AnimationConstraint, turned through its torso-side attachment (as StanceService.liftRig
+-- does for the root); an older rig's Motor6D is turned through its C0.
+
+-- The joint holding `head` to the body: a Motor6D or an AnimationConstraint.
+local function neckOf(model: Model, head: BasePart): Instance?
+	for _, joint in model:GetDescendants() do
+		if joint:IsA("Motor6D") and joint.Part1 == head then
+			return joint
+		elseif
+			joint:IsA("AnimationConstraint")
+			and joint.Attachment0
+			and joint.Attachment1
+			and (joint.Attachment1 :: Attachment).Parent == head
+		then
+			return joint
+		end
+	end
+	return nil
+end
+
+local function neckFrame(neck: Instance): CFrame
+	if neck:IsA("Motor6D") then
+		return neck.C0
+	elseif neck:IsA("AnimationConstraint") and neck.Attachment0 then
+		return (neck.Attachment0 :: Attachment).CFrame
+	end
+	return CFrame.identity
+end
+
+local function setNeckFrame(neck: Instance, frame: CFrame)
+	if neck:IsA("Motor6D") then
+		neck.C0 = frame
+	elseif neck:IsA("AnimationConstraint") and neck.Attachment0 then
+		(neck.Attachment0 :: Attachment).CFrame = frame
+	end
+end
+
+local function neckOn(neck: Instance): boolean
+	if neck:IsA("Motor6D") or neck:IsA("Constraint") then
+		return neck.Enabled
+	end
+	return false
+end
 
 local function endWindup(index: number)
 	local windup = windups[index]
 	table.remove(windups, index)
 	local neck = windup.neck
 	if neck and neck.Parent then
-		neck.C0 = windup.base
+		setNeckFrame(neck, windup.base)
 	end
 end
 
@@ -635,14 +679,13 @@ local function startWindup(model: Model, seconds: number)
 			endWindup(index)
 		end
 	end
-	local neck = head:FindFirstChild("Neck")
-	local joint: Motor6D? = if neck and neck:IsA("Motor6D") then neck else nil
+	local joint = neckOf(model, head)
 	local now = os.clock()
 	table.insert(windups, {
 		model = model,
 		head = head,
 		neck = joint,
-		base = if joint then joint.C0 else CFrame.identity,
+		base = if joint then neckFrame(joint) else CFrame.identity,
 		seconds = seconds,
 		startedAt = now,
 		nextDroolAt = now + CFG.Tell.DroolInterval,
@@ -657,14 +700,14 @@ local function stepWindups(now: number)
 		-- Killed mid-windup: the ragdoll switches the joint off (EnemyService) and the body goes.
 		local gone = windup.head.Parent == nil
 			or not windup.model:IsDescendantOf(workspace)
-			or (neck ~= nil and (neck.Parent == nil or not neck.Enabled))
+			or (neck ~= nil and (neck.Parent == nil or not neckOn(neck)))
 		if gone or age >= windup.seconds + CFG.Tell.Recover then
 			endWindup(index)
 			continue
 		end
 		if neck then
 			local degrees = SpitShape.rear(age, windup.seconds, REAR_SHAPE)
-			neck.C0 = windup.base * CFrame.Angles(math.rad(degrees), 0, 0)
+			setNeckFrame(neck, windup.base * CFrame.Angles(math.rad(degrees), 0, 0))
 		end
 		if age < windup.seconds and now >= windup.nextDroolAt then
 			windup.nextDroolAt = now + CFG.Tell.DroolInterval

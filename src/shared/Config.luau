@@ -35,7 +35,8 @@ local Config = {
 	-- is in Insert every client plays it locally (client InsertionCutscene): the helicopter
 	-- comes in low over the city, flares over the LZ pad, hovers in its own dust while the squad
 	-- drops, and climbs away; letterbox bars, the HUD hidden, the soldier held still. Three
-	-- shots, timed by the phases below (seconds). SkipKeys end it at once for that player. The
+	-- shots, timed by the phases below (seconds). SkipKeys end it at once for that player; when
+	-- every player in the server has skipped, the server cuts Insert short (InsertSkip). The
 	-- server holds Insert for Seconds plus Run.InsertSeconds and reads the brief at the end.
 	Insertion = {
 		Enabled = true,
@@ -89,6 +90,9 @@ local Config = {
 		Fov = 50,
 		RotorVolume = 1,
 		SkipKeys = { Enum.KeyCode.Space, Enum.KeyCode.ButtonA },
+		-- Seconds past Seconds after which a cutscene still running (an error) is torn down and
+		-- the view, the HUD and the controls are given back.
+		FailsafeSeconds = 3,
 	},
 
 	-- What can be fitted to a gun (Nova, 2026-11-11: at the Loadmaster "a button next to each gun
@@ -151,7 +155,10 @@ local Config = {
 		-- The sleepers and wanderers placed at the start (until the map places its own): spread
 		-- over open ground at least MinDistance from the LZ.
 		Population = {
-			Count = 70,
+			-- Placed at the start; never more alive than PlayerCountScaling.MaxAliveHardCap (44), so
+			-- 30 leaves room for objective and extraction waves (was 70, review PR-52).
+			Count = 30,
+			PerFrame = 5, -- spawned a few a frame, not all at once
 			MinDistance = 70,
 			Sleeping = 0.55, -- shares; the rest stand Idle
 			Wandering = 0.25,
@@ -414,6 +421,9 @@ local Config = {
 			Leash = 28,
 			TooClose = 6,
 			Tries = 6, -- candidates tried for one in the open and spaced
+			-- A spot needs floor under it, at most this far below the leader's root (their own
+			-- floor is ~3 below): no spot off a roof, tower or ledge.
+			MaxDrop = 6,
 		},
 		FollowSlack = 4, -- closer than this to the slot: stand
 		RunBeyond = 16, -- further than this: run
@@ -1951,6 +1961,7 @@ local Config = {
 		InteractKey = Enum.KeyCode.E, -- becomes Config.Keys.Interact once claude/keybinds merges
 		SideCount = 2,
 		GraceSeconds = 0, -- after the squad lands, before reaching the main objective starts it
+		PromptSlack = 4, -- studs past a prompt's reach the server still accepts its hold (Kit.prompt)
 		SiteCrateOffset = 6, -- studs from the main objective to the field-upgrade crate it brings
 		-- A side objective shows (HUD, marker, Control's brief) when a living squad member
 		-- comes this close to it, or when Control calls it out: the first RevealAfter seconds
@@ -2678,13 +2689,13 @@ local Config = {
 			Radio = {
 				PrimaryComplete = "That woke the Gate sergeant. He still guards this post. The Warden is coming up the road.",
 				GateOpen = "Gate's open. Contact in the lane, big. It's wearing riot plate.",
-				Sighting = "Eyes on. That's the Gate NCOIC. Control, Index confirmed.",
+				Sighting = "Eyes on. That's the Gate NCOIC. Control, the Warden confirmed.",
 				BusLine = "Bus line. He's checking buses. Plates first, then the body.",
 				InnerGate = "Inner Gate. He's working his second checkpoint. Flank when he guards.",
 				FirstPlate = "Plate's off. That's bone under it. Keep working the seams.",
 				LastPlate = "Last plate. He's just a man again. Put him down.",
 				RiotCall = "...all posts, Gate. Crowd at the wire. Send the reserve...",
-				Kill = "Index down. Control copies. Gate's yours, Pike. Pallet inbound.",
+				Kill = "The Warden is down. Control copies. Gate's yours, Pike. Pallet inbound.",
 			},
 		},
 	},

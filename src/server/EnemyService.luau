@@ -620,7 +620,10 @@ local function spawnZombie(
 			}
 			else nil,
 	}
-	lookParams:AddToFilter(model)
+	-- Only awareness missions look; the list is emptied with every run (clearAll).
+	if awareOn then
+		lookParams:AddToFilter(model)
+	end
 	if definition.ClimbHeight then
 		pcall(function()
 			local animator = humanoid:FindFirstChildOfClass("Animator") :: Animator
@@ -1478,8 +1481,14 @@ function EnemyService.aware(): boolean
 	return awareOn
 end
 
+-- Bumped on every reset so a pending first wave (or the start population) never lands in the
+-- next run.
+local missionGeneration = 0
+
 -- The start of an awareness mission: the population placed round the map, asleep, standing
--- or wandering (Config.Awareness.Population), none near the LZ.
+-- or wandering (Config.Awareness.Population), none near the LZ. Never more alive than
+-- Config.PlayerCountScaling.MaxAliveHardCap (the waves still get the room the cap leaves), and a few
+-- a frame (PerFrame), not all in one.
 local function populate()
 	local settings = AW.Population
 	local lz = Config.Extraction.ZonePosition
@@ -1487,7 +1496,17 @@ local function populate()
 	for _, weight in settings.Types do
 		total += weight
 	end
-	for _ = 1, settings.Count do
+	local generation = missionGeneration
+	for index = 1, settings.Count do
+		if #zombies >= Config.PlayerCountScaling.MaxAliveHardCap then
+			break
+		end
+		if index % settings.PerFrame == 0 then
+			task.wait()
+			if generation ~= missionGeneration or not RunStates.isLive() then
+				return
+			end
+		end
 		local roll = math.random() * total
 		local typeName = "Walker"
 		for name, weight in settings.Types do
@@ -1669,9 +1688,6 @@ local function spawnLoop()
 	end
 end
 
--- Bumped on every reset so a pending first wave never lands in the next run.
-local missionGeneration = 0
-
 -- RunManager, on Explore: first contact within seconds (Sprint 8 pacing).
 function EnemyService.startMission()
 	missionGeneration += 1
@@ -1693,6 +1709,8 @@ function EnemyService.clearAll()
 		zombie.model:Destroy()
 	end
 	table.clear(zombies)
+	-- The sight filter held every body this run spawned: start it empty again.
+	lookParams.FilterDescendantsInstances = {}
 end
 
 -- Count of currently alive enemies, optionally of one type (dev tools).

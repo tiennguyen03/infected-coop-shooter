@@ -34,6 +34,12 @@ export type PickInput = {
 	canAct: boolean, -- alive, not downed, not knocked flat
 	distance: number, -- studs from the crate
 	radius: number, -- studs: the reach, the server's slack included
+	-- Field upgrades, with two crates open at once (review PR-36): the player already holds
+	-- this upgrade (taken from the other crate), and what it would replace now against what
+	-- the card showed when it was sent ("" = nothing; nil = not known, not checked).
+	held: boolean?,
+	replaces: string?,
+	shownReplaces: string?,
 }
 
 local Reward = {}
@@ -110,6 +116,12 @@ function Reward.checkPick(input: PickInput): (boolean, string?)
 	end
 	if input.distance > input.radius then
 		return false, "far"
+	end
+	if input.held then
+		return false, "held"
+	end
+	if input.shownReplaces ~= nil and (input.replaces or "") ~= input.shownReplaces then
+		return false, "changed"
 	end
 	return true, nil
 end

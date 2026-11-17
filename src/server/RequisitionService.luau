@@ -68,6 +68,7 @@ type Crate = {
 	position: Vector3,
 	cardPositions: { Vector3 },
 	offers: { [Player]: { string } },
+	shown: { [Player]: { string } }, -- per card: the upgrade it said it would replace, or ""
 	picked: { [Player]: boolean },
 	botPicked: { [string]: boolean }, -- Squad member ids of the bots that took a card
 	taken: { string }, -- callsigns that have taken a card, in order
@@ -117,6 +118,8 @@ local function publish()
 		Attributes.ResupplyDropIn,
 		if pending then math.max(pending.landAt - os.clock(), 0) else -1
 	)
+	-- The flare's own cooldown, so the flare key does not play an empty throw during it.
+	workspace:SetAttribute(Attributes.ResupplyFlareCooling, os.clock() < flareReadyAt)
 end
 
 -- The one way in: a kill's SupplyValue (once, not once per player) and the objective reward.
@@ -322,6 +325,7 @@ local function sendCards(player: Player, crate: Crate)
 	for index, cardId in choices do
 		replaces[index] = LoadoutService.replacedBy(player, cardId) or ""
 	end
+	crate.shown[player] = replaces
 	resupplyRemote:FireClient(
 		player,
 		Messages.Resupply.Cards,
@@ -415,6 +419,7 @@ function RequisitionService.dropCrate(
 		position = ground,
 		cardPositions = cardPositions(ground, forward),
 		offers = {},
+		shown = {},
 		picked = {},
 		botPicked = {},
 		taken = {},
@@ -567,6 +572,9 @@ local function onPick(player: Player, crateId: unknown, cardId: unknown)
 	local distance = if root
 		then Vector3.new(root.Position.X - target.X, 0, root.Position.Z - target.Z).Magnitude
 		else math.huge
+	-- Field upgrades: two crates can be open at once, with cards chosen when each landed.
+	local shownList = if crate then crate.shown[player] else nil
+	local cardIndex = if offer then table.find(offer, cardId) else nil
 	local ok, reason = Reward.checkPick({
 		open = crate ~= nil and os.clock() < crate.expiresAt,
 		offer = offer,
@@ -575,6 +583,9 @@ local function onPick(player: Player, crateId: unknown, cardId: unknown)
 		canAct = member ~= nil and root ~= nil and Squad.canAct(member),
 		distance = distance,
 		radius = radius,
+		held = LoadoutService.hasUpgrade(player, cardId),
+		replaces = LoadoutService.replacedBy(player, cardId),
+		shownReplaces = if shownList and cardIndex then shownList[cardIndex] else nil,
 	})
 	local notice = if ok and member then applyCard(member, cardId) else nil
 	if not crate or not member or not root or not notice then

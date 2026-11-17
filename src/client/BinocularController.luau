@@ -392,9 +392,23 @@ function BinocularController.init()
 	end)
 	RunService.RenderStepped:Connect(update)
 
-	-- A respawn, going down, the freeze or a slot that changed under them: they come down.
+	-- A respawn, going down, a knockdown, the freeze or a slot that changed under them: they
+	-- come down (and the server hears it, so nobody sees the pose stuck).
 	local player = Players.LocalPlayer
-	player.CharacterAdded:Connect(BinocularController.cancel)
+	local function watchKnock(character: Model)
+		character:GetAttributeChangedSignal(Attributes.KnockedUntil):Connect(function()
+			if character:GetAttribute(Attributes.KnockedUntil) ~= nil then
+				BinocularController.cancel()
+			end
+		end)
+	end
+	if player.Character then
+		watchKnock(player.Character)
+	end
+	player.CharacterAdded:Connect(function(character: Model)
+		BinocularController.cancel()
+		watchKnock(character)
+	end)
 	player:GetAttributeChangedSignal(Attributes.SquadState):Connect(function()
 		if player:GetAttribute(Attributes.SquadState) ~= "Alive" then
 			BinocularController.cancel()
