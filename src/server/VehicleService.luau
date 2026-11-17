@@ -488,6 +488,7 @@ local function blowUp(ride: Ride)
 	end
 	flash(position, wreck.Radius)
 	WorldSounds.at(position, "callins", "anvil_blast", 0.8, 1.1)
+	noticeRemote:FireAllClients(ride.cfg.Radio.Lost, Messages.Notice.Radio)
 	-- The burnt-out wreck stays a while, then goes; it no longer counts as a vehicle. It is
 	-- anchored where it stands (no suspension runs on it now), smoking, the fire out.
 	local index = table.find(rides, ride)
@@ -531,7 +532,7 @@ local function hurt(ride: Ride, amount: number)
 			showStage(ride)
 			refreshPrompt(ride)
 			for _, member in ride.riders do
-				notice(member.owner, "It's going up! Get off!")
+				notice(member.owner, ride.cfg.Radio.Burning)
 			end
 		else
 			showStage(ride)
@@ -666,9 +667,7 @@ function VehicleService.check(
 		own ~= nil and next(own.riders) ~= nil
 	)
 	if verdict == "refuse" then
-		local why = if own and next(own.riders)
-			then "Your ATV's still got people on it."
-			else "Squad's got all the ATVs it can have."
+		local why = if own and next(own.riders) then cfg.Radio.Occupied else cfg.Radio.SquadFull
 		notice(player, why)
 		return false, why
 	end
@@ -687,7 +686,7 @@ function VehicleService.check(
 	local box = CFrame.new(landing + Vector3.new(0, clear.Y / 2 + 0.4, 0))
 	for _, part in Workspace:GetPartBoundsInBox(box, clear, overlap) do
 		if part.CanCollide and part.Transparency < 1 then
-			notice(player, "No room to set it down there.")
+			notice(player, cfg.Radio.NoRoom)
 			return false, "blocked"
 		end
 	end
@@ -695,6 +694,7 @@ function VehicleService.check(
 		destroyRide(own)
 	end
 	pending[player] = (pending[player] or 0) + 1
+	noticeRemote:FireAllClients(cfg.Radio.Inbound, Messages.Notice.Radio)
 	return true, nil
 end
 
@@ -796,6 +796,7 @@ function VehicleService.deliver(
 	root:SetNetworkOwner(nil)
 	table.insert(rides, ride)
 	WorldSounds.at(landing, "callins", "pallet_land", 1, 0.6)
+	noticeRemote:FireAllClients(cfg.Radio.Down, Messages.Notice.Radio)
 	print(`[Vehicle] {player.Name}'s {callInId} set down`)
 end
 

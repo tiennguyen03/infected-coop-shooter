@@ -2019,6 +2019,18 @@ local Config = {
 				-- (Pro Sound Effects "Go Kart Engine Constant 2", a small 4-stroke), pitched from
 				-- IdlePitch standing to TopPitch at top speed. The Infected hear it (EnemyService.noise,
 				-- like a shot): NoiseIdle studs standing, Noise at top speed (guns carry 70-140).
+				-- Radio (lore developer, approved by Nova 2026-11-17; docs/lore/desk_crew.md), shown as
+				-- radio notices: to the squad when it is called, set down and lost; to the caller
+				-- when a call is refused; to the riders when it is about to blow.
+				Radio = {
+					Inbound = "Pike, Control. Helo bringing your ATV in under it. Clear the drop.",
+					Down = "Helo. ATV's on the ground. Hook's clear.",
+					Lost = "Pike, Control. Lost your ATV. You're on foot.",
+					Burning = "It's going up! Get off!",
+					Occupied = "Your ATV's still got people on it.",
+					SquadFull = "Squad's got all the ATVs it can have.",
+					NoRoom = "No room to set it down there.",
+				},
 				Engine = {
 					SoundId = "rbxassetid://9112787518",
 					Volume = 0.45,
