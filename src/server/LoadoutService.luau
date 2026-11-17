@@ -287,6 +287,19 @@ function LoadoutService.swap(player: Player): boolean
 	return true
 end
 
+-- The long gun in hand (VehicleService: the back seat fires the primary only). A swap,
+-- as Q would do it, when the sidearm was out; nothing when the primary already is.
+function LoadoutService.usePrimary(player: Player)
+	local state = get(player)
+	if state.active == "primary" then
+		return
+	end
+	LoadoutService.cancelReload(player)
+	state.active = "primary"
+	state.swapUntil = os.clock() + Config.Weapon.SwapTime
+	publishAmmo(player, state)
+end
+
 -- A pallet's ammo box: both guns full (magazine and reserve) and the grenades back.
 function LoadoutService.refillAmmo(player: Player)
 	local state = get(player)

@@ -165,6 +165,7 @@ local function onSpace(_name: string, state: Enum.UserInputState): Enum.ContextA
 		or not root
 		or model:GetAttribute(Attributes.SquadState) == "Downed"
 		or model:GetAttribute(Attributes.KnockedUntil) ~= nil
+		or model:GetAttribute(Attributes.Riding) ~= nil -- seated on a vehicle (VehicleService)
 	then
 		return Enum.ContextActionResult.Sink
 	end
@@ -284,6 +285,7 @@ function MovementController.tryDash(kind: "roll" | "slide"): boolean
 		or not root
 		or model:GetAttribute(Attributes.SquadState) == "Downed"
 		or model:GetAttribute(Attributes.KnockedUntil) ~= nil
+		or model:GetAttribute(Attributes.Riding) ~= nil -- seated on a vehicle (VehicleService)
 	then
 		return false
 	end

@@ -39,6 +39,7 @@ local LoadoutService = require(script.Parent.LoadoutService)
 local PauseService = require(script.Parent.PauseService)
 local Squad = require(script.Parent.Squad)
 local Lifecycle = require(script.Parent.Lifecycle)
+local VehicleService = require(script.Parent.VehicleService)
 local WorldSounds = require(script.Parent.WorldSounds)
 
 local FLARE_COLOR = Color3.fromRGB(255, 60, 40)
@@ -455,7 +456,7 @@ local function canThrowFlare(player: Player): boolean
 		return false
 	end
 	local member = Squad.fromPlayer(player)
-	if not member or not Squad.canAct(member) then
+	if not member or not Squad.canAct(member) or VehicleService.seatOf(player.Character) then
 		return false
 	end
 	return os.clock() >= flareReadyAt and pool >= currentCost()

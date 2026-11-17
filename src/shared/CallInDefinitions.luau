@@ -139,6 +139,17 @@ local ROWS: { [string]: CallInDefinition } = {
 		Color = Color3.fromRGB(210, 130, 130),
 		IconId = "rbxassetid://137643580128142",
 	},
+	-- The first vehicle (Config.CallIns.ATV.Vehicle; VehicleService).
+	atv = {
+		Id = "atv",
+		Name = "ATV",
+		Codename = "two-seat military ATV",
+		Description = "Slung in under the helo: one drives, one rides the back and fires their main gun. Runs the Infected down.",
+		Kind = "throw",
+		ConfigKey = "ATV",
+		Abbrev = "AT",
+		Color = Color3.fromRGB(122, 128, 74),
+	},
 }
 
 -- The starting loadout, one id per slot (Config.CallIns.Slots, 2 until the Arms Room).
@@ -155,6 +166,7 @@ CallInDefinitions.Order = {
 	"concertina",
 	"speedball",
 	"aid_bag",
+	"atv",
 }
 
 function CallInDefinitions.get(id: string?): CallInDefinition?

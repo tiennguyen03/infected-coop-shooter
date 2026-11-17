@@ -46,6 +46,7 @@ local EnemyService = require(script.Parent.EnemyService)
 local ReviveAnimService = require(script.Parent.ReviveAnimService)
 local Squad = require(script.Parent.Squad)
 local SupplyDropService = require(script.Parent.SupplyDropService)
+local VehicleService = require(script.Parent.VehicleService)
 
 local ENEMY_TAG = "Enemy"
 local MAX_SQUAD = 4
@@ -1132,9 +1133,12 @@ local function think(bot: Bot, now: number, params: RaycastParams)
 	if kitFree then
 		tryStim(bot, humanoid, now, if boss then settings.Boss.StimBelow else settings.StimBelow)
 	end
+	-- In a vehicle's back seat (VehicleService): no walking, dodging, reviving or throwing,
+	-- and the body never turns (that would drag the vehicle); it only shoots.
+	local riding = model:GetAttribute(Attributes.Riding) ~= nil
 	-- The Warden's ground attacks (IndexService danger attributes): step out of the ring or
 	-- the line while he winds up, nothing else.
-	if dodgeDanger(humanoid, root, now) then
+	if not riding and dodgeDanger(humanoid, root, now) then
 		breakFollow(bot)
 		stopReviving(bot)
 		animate(
@@ -1143,7 +1147,7 @@ local function think(bot: Bot, now: number, params: RaycastParams)
 		)
 		return
 	end
-	if tryRevive(bot, humanoid, root, boss) then
+	if not riding and tryRevive(bot, humanoid, root, boss) then
 		breakFollow(bot)
 		humanoid.AutoRotate = true
 		local velocity = root.AssemblyLinearVelocity
@@ -1151,7 +1155,7 @@ local function think(bot: Bot, now: number, params: RaycastParams)
 		return
 	end
 
-	if leader then
+	if leader and not riding then
 		-- Where to stand: out of a caustic puddle first, then the boss stand-off ring
 		-- (BotBrain.standOff: spread, out of his reach), else the formation slot.
 		local here: BotBrain.Point = { x = root.Position.X, z = root.Position.Z }
@@ -1199,7 +1203,7 @@ local function think(bot: Bot, now: number, params: RaycastParams)
 		bot.target = enemy
 		bot.nextShot = math.max(bot.nextShot, now + Config.Bots.ReactionTime)
 	end
-	if enemy and kitFree then
+	if enemy and kitFree and not riding then
 		tryThrow(bot, model, root, now)
 	end
 	-- The magazine: a bot reloads like the player (WeaponDefinitions), from an infinite reserve.
@@ -1213,8 +1217,11 @@ local function think(bot: Bot, now: number, params: RaycastParams)
 	end
 	if enemy and aim then
 		humanoid.AutoRotate = false
-		root.CFrame = CFrame.lookAt(root.Position, Vector3.new(aim.X, root.Position.Y, aim.Z))
-		if now >= bot.nextShot and not bot.reloadUntil and bot.rounds > 0 then
+		if not riding then
+			root.CFrame = CFrame.lookAt(root.Position, Vector3.new(aim.X, root.Position.Y, aim.Z))
+		end
+		local clear = not riding or VehicleService.gunnerMayFire(model, aim - root.Position)
+		if clear and now >= bot.nextShot and not bot.reloadUntil and bot.rounds > 0 then
 			bot.nextShot = now + Config.Bots.FireCooldown * (0.85 + math.random() * 0.3)
 			bot.rounds -= 1
 			local origin = if bot.muzzle
@@ -1222,12 +1229,14 @@ local function think(bot: Bot, now: number, params: RaycastParams)
 				else root.Position + Vector3.new(0, 1.5, 0)
 			shoot(bot, origin, aim, params)
 		end
-	else
+	elseif not riding then
 		humanoid.AutoRotate = true
 	end
 
-	local velocity = root.AssemblyLinearVelocity
-	animate(bot, Vector3.new(velocity.X, 0, velocity.Z).Magnitude)
+	if not riding then
+		local velocity = root.AssemblyLinearVelocity
+		animate(bot, Vector3.new(velocity.X, 0, velocity.Z).Magnitude)
+	end
 end
 
 local function step()

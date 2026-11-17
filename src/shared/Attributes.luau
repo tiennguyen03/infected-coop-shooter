@@ -118,6 +118,15 @@ local Attributes = table.freeze({
 	ReviveKneel = "ReviveKneel", -- CFrame: the kneel point and heading
 	ReviveChest = "ReviveChest", -- Vector3: the casualty's chest, to face again after a step
 	KnockedUntil = "KnockedUntil",
+	-- a soldier's character (players and bots): the seat they ride in, "driver" or "gunner"
+	-- (VehicleService writes it; the client controllers stand still while it is set)
+	Riding = "Riding",
+	-- a vehicle Model (VehicleService, Config.CallIns.<Key>.Vehicle): its call-in id, the
+	-- UserId of the soldier who called it (0 = none), and its health now and full
+	VehicleId = "VehicleId",
+	VehicleOwner = "VehicleOwner",
+	VehicleHealth = "VehicleHealth",
+	VehicleMaxHealth = "VehicleMaxHealth",
 	KnockGraceUntil = "KnockGraceUntil",
 	CoverMoveUntil = "CoverMoveUntil",
 	RootDrop = "RootDrop",

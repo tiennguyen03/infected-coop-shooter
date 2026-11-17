@@ -752,7 +752,12 @@ local function attackIfTouching(zombie: Zombie, now: number)
 		-- which damagePlayer skips inside the window. The swing still plays.
 		local targetHumanoid = character:FindFirstChildOfClass("Humanoid")
 		if targetHumanoid and targetHumanoid.Health > 0 then
-			EnemyProjectileService.damagePlayer(targetHumanoid, zombie.damage, "melee")
+			EnemyProjectileService.damagePlayer(
+				targetHumanoid,
+				zombie.damage,
+				"melee",
+				EnemyDefinitions[zombie.typeName].VehicleDamage
+			)
 			zombie.lastAttackTime = now
 			zombie.nextIdleVoiceAt = math.max(zombie.nextIdleVoiceAt, now + 2)
 			voice(zombie, "attack")
@@ -815,7 +820,8 @@ local function stepProjectileZombie(zombie: Zombie, now: number)
 				targetRoot.Position,
 				targetRoot.AssemblyLinearVelocity,
 				spec,
-				zombie.damage
+				zombie.damage,
+				EnemyDefinitions[zombie.typeName].VehicleDamage
 			)
 		end
 		return

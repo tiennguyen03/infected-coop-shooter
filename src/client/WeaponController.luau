@@ -27,6 +27,7 @@ local AnimationController = require(script.Parent.AnimationController)
 local CameraController = require(script.Parent.CameraController)
 local FirstPersonView = require(script.Parent.FirstPersonView)
 local SprintController = require(script.Parent.SprintController)
+local VehicleController = require(script.Parent.VehicleController)
 
 local WeaponController = {}
 
@@ -205,6 +206,10 @@ local function tryFire()
 
 	local aimPoint = getAimPoint()
 	if not aimPoint then
+		return
+	end
+	-- On a vehicle: the driver has no gun, the back seat does not fire through the driver.
+	if not VehicleController.mayFire(aimPoint - root.Position) then
 		return
 	end
 
