@@ -56,6 +56,9 @@ that restocks the squad.
   game**; **Nova:** small edits in your `PikeBody`, `LoadmasterService`, lobby `Main.client`,
   new `SoldierMoves`; off with `Config.Lobby.Soldier.Enabled = false`; what to check is in
   the lobby doc > What v1 has).
+  **Carrier v2** (proposal, 2026-11-16, pictures only, not in game): the ship revamp and the
+  burning city on the shore, PR off `claude/carrier-v2`; **Nova:** once the owner approves,
+  `docs/sprints/CARRIER_V2.md` > Putting it in the lobby is the step list (builds on #55, #57, #61).
 - **Economy:** merits (soft) are paid when a mission ends (Win 120, Partial 60, Loss 0) onto
   the record the Carrier's desks spend from; tabs (hard, Robux or events, never power) are a
   balance on the same record with nothing to buy yet (`docs/OWNER.md`, `docs/ROADMAP.md` >

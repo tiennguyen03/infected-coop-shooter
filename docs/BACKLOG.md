@@ -47,6 +47,7 @@ joins them at merge time (already done once in the test mix).
 | PR | What | Pictures | Honest state |
 |---|---|---|---|
 | #19 | Bloat, Shedder, Crawler, Kite, Growth | Desktop `Infected_roster` | Bloat good; Shedder reads like an armoured knight and needs another pass; Kite is weak from the front |
+| Carrier v2 | The lobby ship revamped: frames, pipes, desks as places, deck gear, 12 Easter eggs, a burning city off port (`docs/sprints/CARRIER_V2.md`; Nova builds it once approved) | Desktop `Carrier_v2` | reads as a ship; the ship draws about 3x today's triangles (over the cap, cuts listed); the city's fire needs particles in game |
 | #26 | Mile 14 v2: bigger (640 x 900), six-lane interstate, skyline | Desktop `Mile14_v2` | about 3.7x the detail of v1, frame rate not measured; some wrecks clip the median wall; fields are empty |
 
 ## 3. Building now
