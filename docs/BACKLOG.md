@@ -107,7 +107,14 @@ From Tien and Nova's chat. First goal before any of these: **one small game loop
 
 - **Longer missions, 15–20 minutes, mostly travel.** Drop on one side of the map; side
   objective nearby; main objective on the far side; extraction halfway or all the way back.
-  The maps are probably too small for that (ties into Delta v2 / Mile 14 v2).
+  The maps are probably too small for that (ties into Delta v2 / Mile 14 v2). Nova: big maps
+  are what make the running around work; maps may need to grow about 4x. To settle: 4x
+  the ground area (each side about 2x) or 4x each side (16x the area); the second needs
+  streaming and a phone frame-rate check.
+- **Boss parts to build special weapons (Tien, not fully thought out).** Each boss has a
+  rare chance to drop a weapon fragment; collect a full set to build a special item, e.g. a
+  gun that needs the Warden's parts, another that needs another boss's. Lasting reward
+  from a run (fits "rewards should last").
 - **The Warden is a bullet sponge, not thrilling.** Needs a real fight (moves, weak spots,
   phases), not more health.
 - **Find bad collisions on the maps** (stuck spots, invisible walls, floating props) before
