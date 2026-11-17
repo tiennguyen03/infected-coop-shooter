@@ -2,7 +2,8 @@
 -- Sanitize the Pens (Checkpoint Delta's signature main objective): a fuel can at each of
 -- the three screening tents; hold E at one to burn it, in any order. Each fire flushes a
 -- wave out of the tents. The fires burn for the rest of the mission. Bots guard the player
--- at each can; only a player lights one.
+-- at each can; only a player lights one. A can will not light while the Warden stands
+-- within row Boss.Contest of it (its prompt goes off).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -28,13 +29,15 @@ function Sanitize.new(context: Types.Context): Types.Objective
 	local burnt = 0
 	-- The cans not yet lit, by point index.
 	local cans: { [number]: Part } = {}
+	local prompts: { [number]: ProximityPrompt } = {}
 
 	local function burn(index: number)
 		local can = cans[index]
-		if not can then
+		if not can or context.contested(points[index]) then
 			return
 		end
 		cans[index] = nil
+		prompts[index] = nil
 		burnt += 1
 		for _, child in can:GetChildren() do
 			child:Destroy() -- its prompt and its marker
@@ -62,7 +65,7 @@ function Sanitize.new(context: Types.Context): Types.Objective
 		local can = Kit.block(context.folder, "FuelCan", CAN_SIZE, CFrame.new(point), CAN_COLOR)
 		cans[index] = can
 		Kit.marker(can, context, "Burn the tent", 4)
-		Kit.prompt(can, "Burn the tent", "Fuel can", row.Hold or 3, function()
+		prompts[index] = Kit.prompt(can, "Burn the tent", "Fuel can", row.Hold or 3, function()
 			burn(index)
 		end)
 	end
@@ -72,6 +75,9 @@ function Sanitize.new(context: Types.Context): Types.Objective
 		step = function()
 			if total == 0 then
 				context.complete() -- a site with no tents cannot hold the run up
+			end
+			for index, prompt in prompts do
+				prompt.Enabled = not context.contested(points[index])
 			end
 		end,
 		progress = function(): Types.Progress

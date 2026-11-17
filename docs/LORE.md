@@ -130,13 +130,24 @@ carrier hiss and a squelch. He still walks the route, Gate to bus line to Inner 
 the Apron, checking buses that have been empty for a week. Shoot the plates off and he
 is just a man again. Optional name for the roster board: SGT HALE (not used in game).
 
-Radio for the Warden mission (`Config.Index.Warden.Radio`; the insert and wipe lines are
-written but not yet placed):
+Radio for the Warden mission (`Config.Index.Warden.Radio`; the lines for his part in the
+main objective are `Config.Objectives.Boss` and each objective's `Boss` block in
+`ObjectiveDefinitions`, 2026-11-16: he guards his own post, so each line ties him to the
+site; the insert and wipe lines are written but not yet placed):
 
 | Cue | Line |
 |---|---|
 | Insert (not placed) | "Pike, Control. Delta's Index is the Gate NCOIC. He chained it. Expect him to come looking." |
-| Main objective complete | "That woke the Gate sergeant. He still guards this post. The Warden is coming up the road." (plain words, 2026-11-11) |
+| Main objective complete (old order, `Config.Objectives.Boss.Enabled = false`) | "That woke the Gate sergeant. He still guards this post. The Warden is coming up the road." (plain words, 2026-11-11) |
+| He comes to the main objective (default) | "That woke the Gate sergeant. He still guards this post. The Warden is coming to {place}." |
+| ... Sanitize the Pens | "The fires woke the Warden. Those were his pens. He's coming to guard the last tent." |
+| ... Secure the Site | "That woke the Warden. He still holds this perimeter, and he's coming to take {place} back." |
+| ... Restore Comms | "That signal woke the Warden. He still answers this radio, and he's coming for the mast." |
+| ... Confirm Casualties | "Those heavies were his reserve. The Warden is coming to {place} to lead the rest." |
+| ... Recover the Record | "That record is his. The Warden kept the count, and he's coming for whoever carries it." |
+| He stands on it (once) | Pens: "He's standing over the last fuel can. Pull him off it, then burn it." Site: "He's inside the perimeter. The hold stops while he stands in it. Pull him out." Comms: "He's at the mast and the signal is dropping. Pull him away from it." |
+| Work done, he still stands | "That's done. The Warden is all that's left. Put him down." |
+| He is down, work left | "The Warden is down. Finish the job." |
 | Gate open | "Gate's open. Contact in the lane, big. It's wearing riot plate." |
 | Sighting | "Eyes on. That's the Gate NCOIC. Control, Index confirmed." |
 | Bus line | "Bus line. He's checking buses. Plates first, then the body." |

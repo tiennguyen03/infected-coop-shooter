@@ -231,6 +231,7 @@ local function tabs(): { Tab }
 						},
 						{ label = "Hold zone now", send = cmd("ActivateObjective") },
 						{ label = "Complete hold", send = cmd("ForceObjectiveComplete") },
+						{ label = "Warden now (objective)", send = cmd("WardenNow") },
 						{ label = "Warden (from the Gate)", send = cmd("SpawnWarden") },
 						{ label = "Kill the Warden", send = cmd("KillWarden") },
 						{ label = "Extract (win)", send = cmd("ForceMissionSuccess") },
@@ -324,6 +325,10 @@ local function tabs(): { Tab }
 				{
 					title = "THE WARDEN",
 					actions = acts({
+						label = "To the objective",
+						send = cmd("WardenNow"),
+						echo = "Warden now",
+					}, {
 						label = "From the Gate",
 						send = cmd("SpawnWarden"),
 						echo = "Warden (Gate)",

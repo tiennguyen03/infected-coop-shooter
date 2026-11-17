@@ -2,7 +2,8 @@
 -- Restore Comms (shared main objective): hold E on the radio set at the mast for row.Hold
 -- seconds (letting go starts over), then hold the mast: row.Seconds add up while a living
 -- squad member (player or bot) is within row.Radius of it. A wave lands when the set comes
--- on. Bots stand with their leader, so they count while the leader stays.
+-- on. Bots stand with their leader, so they count while the leader stays. While the Warden
+-- is within row.Radius of the mast (row Boss.Contest on) the hold stops.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -53,7 +54,9 @@ function RestoreComms.new(context: Types.Context): Types.Objective
 			if not live then
 				return
 			end
-			held = Rules.hold(held, deltaTime, Kit.squadNear(context.position, radius), total)
+			local blocked = context.contested(context.position, radius)
+			local holding = Kit.squadNear(context.position, radius) and not blocked
+			held = Rules.hold(held, deltaTime, holding, total)
 			if held >= total then
 				marker:Destroy()
 				context.complete()

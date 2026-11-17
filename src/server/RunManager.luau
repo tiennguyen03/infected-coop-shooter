@@ -4,6 +4,8 @@
 --   Lobby -> Insert (squad lands, Config.Run.InsertSeconds) -> Explore (first wave, the
 --   objective timer arms) -> Primary (hold zone up) -> Index (boss; passthrough until the
 --   Warden) -> Extract -> Ended ("Extracted" on extraction, "Wiped" when nobody is alive).
+--   With the Warden inside the main objective (Config.Objectives.Boss.Enabled) Index is
+--   skipped: Primary lasts until he is down and the work done, then Extract.
 -- Auto-respawn is off: death ends a player's run; RestartRun (death or results screen)
 -- starts a fresh one. Every system with run state registers its reset with Lifecycle.
 -- A squad sent by the lobby (HandoffService, docs/LOBBY_MATCH_HANDOFF.md): each player gets
@@ -357,11 +359,18 @@ function RunManager.init()
 			setState("Primary")
 		end
 	end)
-	ObjectiveService.onComplete(function()
+	-- With the Warden inside the main objective (Config.Objectives.Boss) the run stays in
+	-- Primary while he is up and goes straight to Extract when the objective completes.
+	ObjectiveService.onComplete(function(bossDone: boolean)
 		if RunStates.current() == "Ended" then
 			return
 		end
 		primaryDone = true
+		if bossDone then
+			setState("Extract")
+			ExtractionService.start()
+			return
+		end
 		setState("Index")
 		if not IndexService.start() then
 			setState("Extract")
