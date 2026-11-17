@@ -18,6 +18,8 @@ local RunService = game:GetService("RunService")
 local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attributes"))
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
+local RunClock =
+	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Rules"):WaitForChild("RunClock"))
 local WalletReadout =
 	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("WalletReadout"))
 local HudTheme = require(script.Parent.HudTheme)
@@ -34,12 +36,6 @@ local readyButton: TextButton? = nil
 local meritsLabel: TextLabel? = nil
 local walletRow: Frame? = nil
 local wallet: WalletReadout.Readout? = nil
-
-local function formatTime(totalSeconds: number): string
-	local minutes = math.floor(totalSeconds / 60)
-	local seconds = math.floor(totalSeconds % 60)
-	return string.format("%02d:%02d", minutes, seconds)
-end
 
 local function hideResults()
 	if results then
@@ -212,7 +208,7 @@ local function showResults()
 	boxStroke.Thickness = 1
 	boxStroke.Parent = box
 	local rows = {
-		{ "TIME SURVIVED", formatTime(survived) },
+		{ "TIME SURVIVED", RunClock.format(survived) },
 		{ "INFECTED KILLED", tostring(kills) },
 		{ "OBJECTIVE", if objectiveDone then "COMPLETE" else "FAILED" },
 		{ "EXTRACTED", if extracted then "YES" else "NO" },
