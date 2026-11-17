@@ -83,6 +83,7 @@ export type GrenadeDefinition = {
 	Designation: string,
 	Description: string,
 	ConfigKey: string, -- Config.Grenade[ConfigKey]
+	Model: string?, -- its mesh on the Loadout screen (MeshAssets); nil = a stand-in grenade
 }
 
 type Tuning = {

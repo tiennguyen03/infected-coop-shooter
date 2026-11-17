@@ -471,6 +471,13 @@ called **Loadout**. Lines by the lore developer (merits, the record, `LobbyDesks
   or BACK. The row then reads e.g. "M16A4 +SUP". What is fitted is signed with the rest (the
   Loadout's `attachments`, saved, flown to the match). The soldier is held still (`HoldStill`, shared with
   the rack); BACK or Backspace steps out. Prototype: the whole catalog may be signed for.
+  **Bigger, with the item in 3D** (2026-11-16, owner; not yet seen in game): the screen fills
+  most of the display (1560x880 at 1080p, a tabbed layout on a phone), each row shows the
+  item's shape, and an inspect panel shows the hovered or picked item turning in 3D over its
+  stat bars (guns, call-ins, grenades); Enter or gamepad Y signs. Models from
+  `Shared.Showcase` (booted in both places), numbers from `Rules/ArmsStats` and
+  `Rules/KitCard`; layout in `docs/STYLES.md` §5 > The Loadout screen. Stand-ins: the Hammer,
+  Anvil and Aid Bag (a case in their colour) and the frag (a plain grenade) have no model yet.
 - **Server** (`LoadmasterService`): checks the request with the match's rules and catalog
   (`Rules/Loadout`, `ArmsRoom`), keeps one signed Loadout per player, answers on the `Loadout`
   remote. **Kept between visits** (2026-11-10): saved in the DataStore `LoadmasterLoadouts`

@@ -26,13 +26,20 @@ export type CallInDefinition = {
 	Abbrev: string,
 	Color: Color3,
 	IconId: string?,
+	-- What the Loadout screen shows turning in its inspect view (Shared.Showcase): meshes
+	-- (MeshAssets) stacked Height studs up, each at its own offset; nil = a stand-in case in
+	-- the row's Color until the call-in has a model.
+	Show: { ShowPiece }?,
 }
+
+export type ShowPiece = { Mesh: string, Height: number? }
 
 local CallInDefinitions = {}
 
 local FIRE_MISSION = Color3.fromRGB(214, 69, 51)
 local EMPLACEMENT = Color3.fromRGB(96, 150, 220)
 local SUPPLY = Color3.fromRGB(232, 181, 75)
+local DOORMAN = (Config.CallIns :: any).Doorman
 
 local ROWS: { [string]: CallInDefinition } = {
 	hammer = {
@@ -64,6 +71,7 @@ local ROWS: { [string]: CallInDefinition } = {
 		Description = "Mark a line: a gunship rakes ten bursts along your throw four seconds later.",
 		Kind = "throw",
 		ConfigKey = "Shrike",
+		Show = { { Mesh = "veh_shrike_hull" } },
 		Abbrev = "SH",
 		Color = Color3.fromRGB(196, 110, 52),
 		IconId = "rbxassetid://98301242278764",
@@ -75,6 +83,11 @@ local ROWS: { [string]: CallInDefinition } = {
 		Description = "A tripod gun that holds where it lands for 45 s and shoots the nearest Infected it can see.",
 		Kind = "throw",
 		ConfigKey = "Doorman",
+		Show = {
+			{ Mesh = "dep_doorman_base" },
+			{ Mesh = "dep_doorman_cradle", Height = DOORMAN.YawHeight },
+			{ Mesh = "dep_doorman_gun", Height = DOORMAN.PitchHeight },
+		},
 		Abbrev = "DM",
 		Color = EMPLACEMENT,
 		IconId = "rbxassetid://124493023372188",
@@ -86,6 +99,7 @@ local ROWS: { [string]: CallInDefinition } = {
 		Description = "Throw the line: six charges land in an arc and blow when the Infected step on it.",
 		Kind = "throw",
 		ConfigKey = "Tripline",
+		Show = { { Mesh = "prop_repulsor_mine" } },
 		Abbrev = "TL",
 		Color = EMPLACEMENT,
 		IconId = "rbxassetid://92670564918027",
@@ -97,6 +111,7 @@ local ROWS: { [string]: CallInDefinition } = {
 		Description = "A 16-stud strip of wire across your throw for 60 s: the Infected in it crawl and bleed.",
 		Kind = "throw",
 		ConfigKey = "Concertina",
+		Show = { { Mesh = "prop_concertina" } },
 		Abbrev = "CW",
 		Color = Color3.fromRGB(150, 160, 170),
 		IconId = "rbxassetid://124919143174637",
@@ -108,6 +123,7 @@ local ROWS: { [string]: CallInDefinition } = {
 		Description = "An ammo bundle kicked out of the door: four re-arms, and it lands quiet.",
 		Kind = "throw",
 		ConfigKey = "Speedball",
+		Show = { { Mesh = "prop_ammo_crate" } },
 		Abbrev = "SB",
 		Color = SUPPLY,
 		IconId = "rbxassetid://127917945022019",

@@ -13,6 +13,7 @@ local Server = script.Parent
 
 local BOOT: { ModuleScript } = {
 	Shared.MeshAssets, -- the Pike body's limb meshes (PikeBody)
+	Shared.Showcase, -- the Loadmaster's Loadout screen's turning models (LoadoutMenu)
 	Server.FallowBuilder,
 	Server.PikeBody,
 	Server.DeskService,

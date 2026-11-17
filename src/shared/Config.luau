@@ -1187,6 +1187,18 @@ local Config = {
 		LzRadius = 30,
 		CalmSeconds = 5,
 	},
+	-- The Loadout screen's look (LoadoutMenu; docs/STYLES.md section 5 > Loadout screen): the
+	-- inspected item turns SpinSpeed radians a second in its view; stat bars have Cells
+	-- segments; RowSilhouettes draws each row's small dark shape of the item (false: names
+	-- only, for a slow phone); a screen smaller than Compact (pixels) gets the tabbed layout.
+	-- The models come from Shared.Showcase, which waits TemplateWait s per mesh on the server.
+	LoadoutScreen = {
+		SpinSpeed = 0.45,
+		Cells = 10,
+		RowSilhouettes = true,
+		Compact = Vector2.new(1180, 680),
+		TemplateWait = 20,
+	},
 
 	-- Body animations: clip names from assets/animations (Mixamo, retargeted by
 	-- assets/animations/build/retarget.py). Ids are the published Roblox animations
