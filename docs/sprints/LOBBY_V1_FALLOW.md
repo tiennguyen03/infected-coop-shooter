@@ -366,7 +366,7 @@ The rack is where guns are **bought** (merits, onto the soldier's record; owner 
 
 Deck surface y 40, hangar floor y 20, sea y 0. Every position is in `FallowLayout`.
 
-## Motor pool (2026-11-17: built, not seen in game)
+## Motor pool (2026-11-17: built, seen in a Studio playtest)
 
 Nova: "the NPC in charge of vehicles in the open space on the other side of the hangar".
 Layout by the level designer (`FallowLayout.MotorPool`; `MotorPool` builds it from
@@ -379,8 +379,8 @@ Layout by the level designer (`FallowLayout.MotorPool`; `MotorPool` builds it fr
 - **Three painted bays** across the aft hangar, Z -78..-52: X -20..-8 and 12..24 empty for
   later vehicles, and the ATV in the middle one on the spawn's centre line (0, -64), nose to
   the spawn, so it shows down the aisle past the Loadmaster. It is the match's own build
-  (`Shared.VehicleBody`, anchored), lashed by four chains from pad-eyes past the wheels to
-  the fender edges.
+  (`Shared.VehicleBody`, anchored). Lashing chains were tried and taken out: four straight
+  bars from the deck to the fenders read as legs, the ATV on stilts.
 - **Dressing:** two red tool chests behind her (9, -56) and (9, -60); a tyre rack of eight in
   the starboard aft corner (X 28..32.6, Z -96..-82); a fuel point on a pallet with six jerry
   cans and an extinguisher in the port aft corner (-28, -90); one hangar light over the bays

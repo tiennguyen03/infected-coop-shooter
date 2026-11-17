@@ -2,8 +2,8 @@
 -- The motor pool at the aft end of the hangar (Nova 2026-11-17; FallowLayout.MotorPool; plan
 -- by the level designer; docs/sprints/LOBBY_V1_FALLOW.md > Motor pool). The motor sergeant
 -- (DeskService, desk "vehicles") stands at its front; behind her three painted bays, the ATV
--- parked in the middle one (the same VehicleBody build the match drives, anchored), lashed
--- to the deck; tool chests, a tyre rack, a fuel point and one light. Nothing overlaps:
+-- parked in the middle one (the same VehicleBody build the match drives, anchored); tool
+-- chests, a tyre rack, a fuel point and one light. Nothing overlaps:
 -- pieces touch or stand apart (docs/OWNER.md, nothing clips).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -17,7 +17,6 @@ local MotorPool = {}
 
 local PAINT = Color3.fromRGB(214, 196, 92) -- deck-marking yellow
 local STEEL = Color3.fromRGB(61, 69, 77)
-local CHAIN = Color3.fromRGB(120, 124, 128)
 local CHEST = Color3.fromRGB(150, 46, 40)
 local RUBBER = Color3.fromRGB(32, 34, 36)
 local PALLET = Color3.fromRGB(122, 98, 66)
@@ -63,24 +62,6 @@ local function bayLines(
 	end
 end
 
--- A chain from `from` to `to` (a thin bar; looks only).
--- Each end is pulled in by half the bar's thickness, so it meets the pad-eye and the fender
--- edge without sinking into either.
-local function chain(folder: Folder, from: Vector3, to: Vector3)
-	local along = (to - from).Unit
-	from += along * 0.08
-	to -= along * 0.08
-	local length = (to - from).Magnitude
-	Build.part(
-		folder,
-		"Chain",
-		Vector3.new(0.15, 0.15, length),
-		CFrame.lookAt((from + to) / 2, to),
-		CHAIN,
-		{ collide = false, material = Enum.Material.Metal, shadow = false }
-	)
-end
-
 local function parkedVehicle(folder: Folder, floor: number)
 	local spot = Layout.MotorPool.parked
 	local body = VehicleBody.get(spot.vehicle)
@@ -95,29 +76,8 @@ local function parkedVehicle(folder: Folder, floor: number)
 	end
 	model.Name = "ParkedATV"
 	model.Parent = folder
-	-- Lashed down at sea: a pad-eye on the deck off each corner, past the wheels, and a chain
-	-- up to the bottom edge of that end's fender (VehicleBody: the fenders end 3.4 from the
-	-- centre, their undersides 0.95 up; the wheels stop 3.35 out, so no chain passes through one).
-	local eyeY = floor + 0.06
-	for _, side in { -1, 1 } do
-		for _, ahead in { -1, 1 } do -- -1: the front (the frame's -Z)
-			local eye = frame * CFrame.new(side * 3.5, 0, ahead * 4.2)
-			local at = Vector3.new(eye.Position.X, eyeY, eye.Position.Z)
-			Build.part(
-				folder,
-				"PadEye",
-				Vector3.new(0.6, 0.12, 0.6),
-				CFrame.new(at),
-				STEEL,
-				{ collide = false, material = Enum.Material.Metal, shadow = false }
-			)
-			chain(
-				folder,
-				at + Vector3.new(0, 0.06, 0),
-				(frame * CFrame.new(side * 1.8, 0.95, ahead * 3.4)).Position
-			)
-		end
-	end
+	-- No lashing chains: seen in the lobby (2026-11-17) four straight bars from the deck to the
+	-- fenders read as legs, the ATV standing on stilts.
 end
 
 local function chests(folder: Folder, floor: number)
