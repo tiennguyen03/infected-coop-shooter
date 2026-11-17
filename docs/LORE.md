@@ -275,7 +275,14 @@ feet.
   it on a line: it sets the ATV down where the call-in lands, drops the hook and goes. The ATV
   wears HARLAN stencilled like every airframe. The driver has no gun; the one on the back seat
   fires their main gun all round except through the driver. It runs Infected down, and on
-  the bigger maps it is how Pike gets about.
+  the bigger maps it is how Pike gets about. Radio notices (in game,
+  `Config.CallIns.ATV.Vehicle.Radio`):
+
+  | Cue | Line |
+  |---|---|
+  | Inbound (on the call) | "Pike, Control. Helo bringing your ATV in under it. Clear the drop." |
+  | Down (touchdown) | "Helo. ATV's on the ground. Hook's clear." |
+  | Lost (destroyed) | "Pike, Control. Lost your ATV. You're on foot." |
 - **The lamp.** A single amber lamp sits on the housing behind the rotor mast. It is lit
   whenever the rotor turns, day or night. Soldiers say it is what you look for when you have
   thrown green smoke and cannot see the smoke.

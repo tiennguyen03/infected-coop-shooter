@@ -182,6 +182,12 @@ Loadmaster.
 | Short | "Not enough merits. Fuel's free. The ATV isn't." |
 | Refused | "That one's in bits right now. Give me a minute." |
 
+Walk-close bubbles (approved 2026-11-17, written, not in game yet):
+
+- "Mind the oil. That's my oil."
+- "Two seats. I've seen people try three."
+- "Don't lean on it. It's been through enough."
+
 ### Control's watch officer (the Plot)
 
 Desk id `plot`; she sells nothing, so her BUY lines are only fallbacks.
