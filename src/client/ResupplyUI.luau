@@ -64,6 +64,8 @@ local REFUSALS: { [string]: string } = {
 	not_offered = "THAT CARD IS NOT ON THIS CRATE.",
 	down = "YOU CANNOT PICK WHILE DOWN.",
 	far = "TOO FAR FROM THE CRATE. STEP CLOSER.",
+	held = "YOU ALREADY HAVE THAT UPGRADE. PICK ANOTHER.",
+	changed = "YOUR UPGRADES CHANGED SINCE THIS CRATE LANDED. PICK ANOTHER.",
 }
 
 local ResupplyUI = {}

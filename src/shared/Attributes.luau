@@ -48,6 +48,7 @@ local Attributes = table.freeze({
 	ResupplyCost = "ResupplyCost",
 	ResupplyPool = "ResupplyPool",
 	ResupplyDropIn = "ResupplyDropIn",
+	ResupplyFlareCooling = "ResupplyFlareCooling", -- workspace: true while the flare cooldown runs (RequisitionService)
 	DevSpawnsOff = "DevSpawnsOff",
 	-- lobby: a Lantern bird model's lift time (server time, workspace:GetServerTimeNow()) while
 	-- its spot counts down; nil otherwise (LaunchService writes, LanternSpool reads)

@@ -11,7 +11,9 @@
 -- bodies stand on the pad, hidden, and each shows the moment its stand-in lands on its spot.
 -- A black cover is up from the moment this client starts while the run waits for the squad or
 -- for the cutscene, so nobody sees the squad on the pad before they arrive. Letterbox bars; the
--- HUD hidden; the soldier held (Attributes.Cinematic). SkipKeys end it for this player.
+-- HUD hidden; the soldier held (Attributes.Cinematic). SkipKeys end it for this player and tell
+-- the server (InsertSkip), which lands the squad at once when every player has skipped. A
+-- failsafe (FailsafeSeconds, and any error) always gives the view and controls back.
 
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
@@ -23,6 +25,7 @@ local Workspace = game:GetService("Workspace")
 
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
+local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local SoundBanks = require(ReplicatedStorage.Shared.SoundBanks)
 local CameraController = require(script.Parent.CameraController)
 
@@ -52,6 +55,10 @@ type Jumper = {
 
 local playing = false
 local skipRequested = false
+local playGeneration = 0 -- bumped per play: a late failsafe never tears down the next one
+local stepConnection: RBXScriptConnection? = nil
+local hiddenGuis: { ScreenGui } = {}
+local skipSent = false -- InsertSkip already sent for this run
 local screen: ScreenGui
 local black: Frame
 local bars: { Frame } = {}
@@ -337,13 +344,59 @@ local function padFrames(): { CFrame }
 	return list
 end
 
+-- Tells the server this player is done with the cutscene (skipped it, or never had one to
+-- watch): once every player has, Insert is cut short. Once per run.
+local function sendSkip()
+	if not skipSent then
+		skipSent = true
+		Remotes.get("InsertSkip"):FireServer()
+	end
+end
+
+-- The failsafe (review PR-49): gives back the view, the HUD and the controls whatever state
+-- the cutscene was left in (an error, or it overran), so no player is left on a black screen.
+local function release()
+	local connection = stepConnection
+	stepConnection = nil
+	if connection then
+		connection:Disconnect()
+	end
+	pcall(function()
+		for _, model in squadModels() do
+			setHidden(model, false)
+		end
+		for _, gui in hiddenGuis do
+			if gui.Parent then
+				gui.Enabled = true
+			end
+		end
+		for _, bar in bars do
+			bar.Visible = false
+		end
+	end)
+	CameraController.setCinematic(false)
+	holdControls(false)
+	Players.LocalPlayer:SetAttribute(Attributes.Cinematic, nil)
+	playing = false
+	cover(false)
+end
+
 local function play()
 	if playing then
 		return
 	end
 	playing = true
 	skipRequested = false
+	playGeneration += 1
+	local generation = playGeneration
 	cover(true)
+	-- However it goes, the view comes back shortly after the cutscene should have ended.
+	task.delay(CUT.LeadSeconds + CUT.Seconds + CUT.FailsafeSeconds, function()
+		if playing and playGeneration == generation then
+			warn("[InsertionCutscene] the cutscene did not end on time; giving the view back")
+			release()
+		end
+	end)
 	-- The server's start time for this run's cutscene; a client that is late (slow to load)
 	-- joins it where it has got to, and one that missed nearly all of it skips it.
 	local startsAt = (Workspace:GetAttribute(Attributes.InsertStartsAt) :: number?) or 0
@@ -359,6 +412,7 @@ local function play()
 		end
 		playing = false
 		cover(false)
+		sendSkip() -- nothing to watch here: do not hold the squad for it
 		return
 	end
 	local player = Players.LocalPlayer
@@ -401,6 +455,7 @@ local function play()
 	SoundBanks.loop(rotor, "ambience", "lantern_rotor", CUT.RotorVolume)
 
 	local hidden = hideHud()
+	hiddenGuis = hidden
 	local dustPart, dust = buildDust(pad + UP * 0.5)
 	player:SetAttribute(Attributes.Cinematic, true)
 	holdControls(true)
@@ -595,9 +650,12 @@ local function play()
 
 	local dustOn = false
 	local angle = 0
-	local connection: RBXScriptConnection
 	local function finish()
-		connection:Disconnect()
+		local connection = stepConnection
+		stepConnection = nil
+		if connection then
+			connection:Disconnect()
+		end
 		rotor:Stop()
 		lantern:Destroy()
 		dustPart:Destroy()
@@ -646,7 +704,7 @@ local function play()
 		black.BackgroundTransparency = 0
 		cover(false)
 	end
-	connection = RunService.RenderStepped:Connect(function(deltaTime)
+	local function step(deltaTime: number)
 		local t = os.clock() - began
 		if skipRequested or t >= tEnd then
 			finish()
@@ -736,6 +794,16 @@ local function play()
 		if t > tEnd - 0.4 then
 			black.BackgroundTransparency = 1 - math.clamp((t - (tEnd - 0.4)) / 0.4, 0, 1)
 		end
+	end
+	-- An error in a frame tears the cutscene down and gives the view back (release), rather
+	-- than leaving the player held on a black screen for the mission.
+	stepConnection = RunService.RenderStepped:Connect(function(deltaTime)
+		local ok, err = (pcall :: any)(step, deltaTime)
+		if not ok then
+			warn(`[InsertionCutscene] error, giving the view back: {err}`)
+			pcall(finish)
+			release()
+		end
 	end)
 end
 
@@ -751,6 +819,7 @@ function InsertionCutscene.init()
 	UserInputService.InputBegan:Connect(function(input)
 		if playing and table.find(CUT.SkipKeys, input.KeyCode) then
 			skipRequested = true
+			sendSkip()
 		end
 	end)
 	-- Black while the run waits for the squad (Lobby) or for the cutscene (Insert), from the
@@ -760,7 +829,18 @@ function InsertionCutscene.init()
 		if state == "Lobby" then
 			cover(true)
 		elseif state == "Insert" then
-			task.spawn(play)
+			if not playing then
+				skipSent = false -- a new run's cutscene
+			end
+			task.spawn(function()
+				-- An error while it is being set up gives the view back too (release).
+				local ok, err = (pcall :: any)(play)
+				if not ok then
+					warn(`[InsertionCutscene] could not play, giving the view back: {err}`)
+					release()
+					sendSkip()
+				end
+			end)
 		else
 			cover(false)
 		end

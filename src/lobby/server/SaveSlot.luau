@@ -120,8 +120,8 @@ end
 -- Changes the saved value in one step (UpdateAsync, yields): `transform` gets what is stored
 -- and returns what to store, or nil to leave it alone. Returns the value written, or nil when
 -- nothing was written (the store is unavailable, every try failed, or `transform` said nil).
--- For changes that must not be lost or doubled (a Robux receipt); `save` stays the everyday
--- path.
+-- For changes that must not be lost or doubled (a buy, a Robux receipt: RecordService); `save`
+-- stays the path for values only this server writes (the Loadout).
 function SaveSlot.update(self: Slot, player: Player, transform: (old: unknown) -> any): any
 	local key = self.prefix .. player.UserId
 	local userId = player.UserId

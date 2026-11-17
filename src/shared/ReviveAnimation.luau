@@ -211,6 +211,11 @@ local function stepDriver(driver: Driver, now: number)
 	end
 	driver.moving = isMoving(driver.root, driver.moving)
 	local phase: Rules.Phase = Rules.phase(role, now - driver.since, driver.moving, times)
+	-- A reviver who walked during the hold may be round a corner from where the server
+	-- checked the line to the kneel point: no slide (it has no collision), only the turn.
+	if phase == "walk" then
+		driver.nudged = true
+	end
 	if phase ~= driver.phase then
 		local old: Rules.Phase = driver.phase
 		driver.phase = phase

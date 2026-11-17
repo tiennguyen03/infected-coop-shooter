@@ -189,7 +189,10 @@ local function spreadPosition(bot: Bot, leader: BasePart, params: RaycastParams)
 		)
 		local point = Vector3.new(candidate.x, at.Y, candidate.z)
 		local open = not workspace:Raycast(at, point - at, params)
-		if open and BotBrain.spaced(candidate, others, settings.Spacing) then
+		-- Floor under it near the leader's level: never a spot past the edge of a roof.
+		local floored = open
+			and workspace:Raycast(point, Vector3.new(0, -settings.MaxDrop, 0), params) ~= nil
+		if floored and BotBrain.spaced(candidate, others, settings.Spacing) then
 			chosen = point
 			break
 		end
@@ -906,17 +909,34 @@ local function scan(from: Vector3, reach: number): ({ BotBrain.Point }, { BotBra
 	return enemies, friends
 end
 
+-- What a thrown frag (KitService.throwFrag) and fire mission (CallInService) fly through.
+local FRAG_PASS_THROUGH = { "KitEffects" }
+local MISSION_PASS_THROUGH = CallInService.ThrowPassThrough
+
 -- The point to throw at for `target`, or nil when the throw would not get there: a throw
 -- stops at the first thing in its way (ThrowUtil), so a wall refuses it, and so does an
--- Infected so close that it would land inside `minDistance`.
+-- Infected so close that it would land inside `minDistance`. The ray skips only what the real
+-- throw skips (`passThrough`: the bot itself and those workspace folders), so a player or
+-- another bot in the way refuses it too: the throw would stop at their feet and be wasted.
 local function throwPoint(
+	model: Model,
 	root: BasePart,
 	target: BotBrain.Point,
 	minDistance: number,
-	params: RaycastParams
+	passThrough: { string }
 ): Vector3?
 	local here = root.Position
 	local point = Vector3.new(target.x, target.y or here.Y, target.z)
+	local exclude: { Instance } = { model }
+	for _, name in passThrough do
+		local found = workspace:FindFirstChild(name)
+		if found then
+			table.insert(exclude, found)
+		end
+	end
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances = exclude
 	local hit = workspace:Raycast(here, Vector3.new(point.X - here.X, 0, point.Z - here.Z), params)
 	if hit and flatDistance(hit.Position, point) > 3 then
 		if
@@ -931,7 +951,7 @@ end
 
 -- Every ScanInterval while it has a target: a fire mission at a big knot or a heavy, else
 -- a frag at a knot (Config.Bots.CallIn / Grenade).
-local function tryThrow(bot: Bot, model: Model, root: BasePart, now: number, params: RaycastParams)
+local function tryThrow(bot: Bot, model: Model, root: BasePart, now: number)
 	local settings = Config.Bots
 	if now < bot.nextScanAt or not Squad.canAct(bot.member) then
 		return
@@ -967,7 +987,7 @@ local function tryThrow(bot: Bot, model: Model, root: BasePart, now: number, par
 			SafeRadius = safe,
 			HeavyCounts = true,
 		})
-		local point = target and throwPoint(root, target, safe, params)
+		local point = target and throwPoint(model, root, target, safe, MISSION_PASS_THROUGH)
 		if point and CallInService.fireMissionFor(bot.member, definition.Id, point) then
 			bot.callInAt = now + callIn.Cooldown
 			squadCallInAt = now + callIn.SquadGap
@@ -988,7 +1008,7 @@ local function tryThrow(bot: Bot, model: Model, root: BasePart, now: number, par
 			MaxDistance = frag.ThrowDistance,
 			SafeRadius = safe,
 		})
-		local point = target and throwPoint(root, target, safe, params)
+		local point = target and throwPoint(model, root, target, safe, FRAG_PASS_THROUGH)
 		if point then
 			bot.grenades -= 1
 			bot.grenadeAt = now + settings.Grenade.Cooldown
@@ -1068,6 +1088,7 @@ local function think(bot: Bot, now: number, params: RaycastParams)
 	local knockedUntil = model:GetAttribute(Attributes.KnockedUntil) :: number?
 	if knockedUntil then
 		breakFollow(bot)
+		stopReviving(bot) -- knocked over mid-revive: the label must not stick on REVIVING
 		if not bot.knocked then
 			bot.knocked = true
 			humanoid:MoveTo(root.Position)
@@ -1115,6 +1136,7 @@ local function think(bot: Bot, now: number, params: RaycastParams)
 	-- the line while he winds up, nothing else.
 	if dodgeDanger(humanoid, root, now) then
 		breakFollow(bot)
+		stopReviving(bot)
 		animate(
 			bot,
 			Vector3.new(root.AssemblyLinearVelocity.X, 0, root.AssemblyLinearVelocity.Z).Magnitude
@@ -1178,7 +1200,7 @@ local function think(bot: Bot, now: number, params: RaycastParams)
 		bot.nextShot = math.max(bot.nextShot, now + Config.Bots.ReactionTime)
 	end
 	if enemy and kitFree then
-		tryThrow(bot, model, root, now, params)
+		tryThrow(bot, model, root, now)
 	end
 	-- The magazine: a bot reloads like the player (WeaponDefinitions), from an infinite reserve.
 	local weapon = WeaponDefinitions.get(WeaponDefinitions.DEFAULT)
@@ -1237,6 +1259,7 @@ local function removeBot(bot: Bot)
 	if index then
 		table.remove(bots, index)
 	end
+	stopReviving(bot) -- removed mid-revive: the downed soldier's label must not stick
 	despawn(bot)
 	Squad.removeBot(bot.member)
 end
