@@ -40,7 +40,7 @@ local remote: RemoteEvent
 local riding: string? = nil -- "driver" | "gunner"
 local params: RaycastParams? = nil
 local paramsBuiltAt = 0
-local spin: { [BasePart]: number } = {} -- each wheel's roll angle
+local nextPanelAt = 0 -- the panel is redrawn a few times a second, not every frame
 
 local panel: Frame
 local seatLabel: TextLabel
@@ -153,6 +153,34 @@ end
 
 -- ------------------------------------------------------------------ wheels (looks)
 
+type Wheel = { axle: Weld, mount: Vector3, front: boolean, angle: number, drawn: boolean }
+
+-- Each vehicle's wheels, found once (weak keys: a destroyed vehicle drops out).
+local wheelCache: { [Model]: { Wheel } } = setmetatable({}, { __mode = "k" }) :: any
+
+local function wheelsOf(model: Model): { Wheel }
+	local cached = wheelCache[model]
+	if cached then
+		return cached
+	end
+	local wheels: { Wheel } = {}
+	for _, tyre in model:GetChildren() do
+		local axle = tyre:FindFirstChild("Axle")
+		local mount = tyre:GetAttribute("Mount")
+		if tyre:IsA("BasePart") and axle and axle:IsA("Weld") and typeof(mount) == "Vector3" then
+			table.insert(wheels, {
+				axle = axle,
+				mount = mount,
+				front = tyre:GetAttribute("Front") == true,
+				angle = 0,
+				drawn = false,
+			})
+		end
+	end
+	wheelCache[model] = wheels
+	return wheels
+end
+
 local function animateWheels(dt: number)
 	if not folder then
 		return
@@ -179,15 +207,13 @@ local function animateWheels(dt: number)
 				)
 				else 0
 			local length = cfg.Suspension.Travel + body.wheelRadius
-			for _, tyre in model:GetChildren() do
-				local axle = tyre:FindFirstChild("Axle")
-				local mount = tyre:GetAttribute("Mount")
-				if
-					tyre:IsA("BasePart")
-					and axle
-					and axle:IsA("Weld")
-					and typeof(mount) == "Vector3"
-				then
+			-- Standing still with nothing turning: the wheels stay as they were drawn.
+			local moving = velocity.Magnitude > 0.3 or root.AssemblyAngularVelocity.Magnitude > 0.1
+			local wheels = wheelsOf(model)
+			for _, wheel in wheels do
+				if moving or not wheel.drawn then
+					wheel.drawn = true
+					local mount = wheel.mount
 					local hit = Workspace:Raycast(
 						frame:PointToWorldSpace(mount),
 						-frame.UpVector * length,
@@ -196,13 +222,14 @@ local function animateWheels(dt: number)
 					local drop = if hit
 						then hit.Distance - body.wheelRadius
 						else cfg.Suspension.Travel
-					local angle = (spin[tyre :: BasePart] or 0) + forward / body.wheelRadius * dt
-					spin[tyre :: BasePart] = angle % (math.pi * 2)
+					-- Never drawn higher than the fenders allow (VehicleBody wheelLift).
+					local y = math.min(mount.Y - drop, body.wheelLift)
+					wheel.angle = (wheel.angle + forward / body.wheelRadius * dt) % (math.pi * 2)
 					-- yawRate > 0 turns left; a positive Y turn points the wheel left too.
-					local turn = if tyre:GetAttribute("Front") == true then steer else 0
-					axle.C0 = CFrame.new(mount.X, mount.Y - drop, mount.Z)
+					local turn = if wheel.front then steer else 0
+					wheel.axle.C0 = CFrame.new(mount.X, y, mount.Z)
 						* CFrame.Angles(0, turn, 0)
-						* CFrame.Angles(-angle, 0, 0)
+						* CFrame.Angles(-wheel.angle, 0, 0)
 				end
 			end
 		end
@@ -278,6 +305,7 @@ local function setRiding(seat: string?)
 	riding = seat
 	CameraController.setBodyYawLocked(seat ~= nil)
 	ProximityPromptService.Enabled = seat == nil
+	nextPanelAt = 0 -- show or hide the panel at once
 end
 
 local function watchCharacter(character: Model)
@@ -351,7 +379,11 @@ function VehicleController.init()
 	RunService.PreSimulation:Connect(driveStep)
 	RunService.RenderStepped:Connect(function(dt)
 		animateWheels(dt)
-		updatePanel()
+		local now = os.clock()
+		if now >= nextPanelAt then
+			nextPanelAt = now + 0.2
+			updatePanel()
+		end
 	end)
 end
 

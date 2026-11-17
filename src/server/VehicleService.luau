@@ -20,6 +20,7 @@ local Debris = game:GetService("Debris")
 local PhysicsService = game:GetService("PhysicsService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
@@ -49,6 +50,9 @@ local CHECK_INTERVAL = 0.25 -- seconds between the slow checks (righting prompt,
 local TAKE_BACK = 1 -- seconds the server holds a chassis that went too fast
 local WRECK_LINGER = 8 -- seconds the burnt-out wreck stays
 local EXIT_SIDE = 3.4 -- studs out from the centre a rider steps off
+local PARK_SPEED = 0.5 -- studs/s: slower than this, empty and grounded, it settles
+local PARK_AFTER = 1 -- seconds settled before it is parked (anchored)
+local SMOKE_TEXTURE = "rbxasset://textures/particles/smoke_main.dds"
 
 export type SeatName = Vehicle.Seat
 
@@ -68,6 +72,7 @@ type Ride = {
 	rammed: { [Model]: number },
 	heldUntil: number, -- the server holds the chassis until (over-speed)
 	wreckAt: number?, -- burning: blows at this os.clock
+	stillSince: number?, -- empty and settling since (os.clock); parked after PARK_AFTER
 	effects: { Instance },
 }
 
@@ -77,6 +82,16 @@ local folder: Folder
 local vehicleRemote: RemoteEvent
 local noticeRemote: RemoteEvent
 local nextCheck = 0
+local serverParams: RaycastParams? = nil -- the wheel rays' filter, rebuilt each second
+local paramsAt = 0
+
+-- A parked (anchored) chassis wakes up to be ridden, flipped or knocked about.
+local function unpark(ride: Ride)
+	ride.stillSince = nil
+	if ride.root.Anchored and not ride.wreckAt then
+		ride.root.Anchored = false
+	end
+end
 
 -- ------------------------------------------------------------------ lookups
 
@@ -238,6 +253,7 @@ local function seatMember(ride: Ride, seatName: SeatName, member: Squad.Member):
 	if not humanoid or not character or ride.riders[seatName] or ride.wreckAt then
 		return false
 	end
+	unpark(ride)
 	ride.riders[seatName] = member
 	character:SetAttribute(Attributes.Riding, seatName)
 	ride.seats[seatName]:Sit(humanoid)
@@ -312,6 +328,7 @@ local function onRight(ride: Ride, player: Player)
 	if look.Magnitude < 0.1 then
 		look = Vector3.zAxis
 	end
+	unpark(ride)
 	ride.root:SetNetworkOwner(nil)
 	ride.root.CFrame = CFrame.lookAlong(frame.Position + Vector3.new(0, 2.5, 0), look.Unit)
 	ride.root.AssemblyLinearVelocity = Vector3.zero
@@ -322,34 +339,79 @@ end
 
 -- ------------------------------------------------------------------ health
 
-local function effect(ride: Ride, className: string): Instance
+-- One emitter of the built-in smoke sprite under the tank, made once and retuned per
+-- stage (docs/STYLES.md section 8: palette-tinted sprites, no stock fire textures).
+local function emitter(ride: Ride, name: string): ParticleEmitter
 	local attachment = ride.root:FindFirstChild("Engine") :: Attachment?
 	if not attachment then
 		local made = Instance.new("Attachment")
 		made.Name = "Engine"
-		made.Position = Vector3.new(0, 0.9, -1) -- under the tank
+		made.Position = Vector3.new(0, 0.9, 0) -- under the tank
 		made.Parent = ride.root
 		attachment = made
 	end
-	local instance = Instance.new(className)
-	instance.Parent = attachment
-	table.insert(ride.effects, instance)
-	return instance
+	local existing = (attachment :: Attachment):FindFirstChild(name)
+	if existing and existing:IsA("ParticleEmitter") then
+		return existing
+	end
+	local made = Instance.new("ParticleEmitter")
+	made.Name = name
+	made.Texture = SMOKE_TEXTURE
+	made.SpreadAngle = Vector2.new(15, 15)
+	made.Rotation = NumberRange.new(0, 360)
+	made.RotSpeed = NumberRange.new(-40, 40)
+	made.Parent = attachment
+	table.insert(ride.effects, made)
+	return made
 end
 
 local function showStage(ride: Ride)
 	if ride.stage == "smoke" or ride.stage == "fire" then
-		local smoke = effect(ride, "Smoke") :: Smoke
-		smoke.Color = Color3.fromRGB(70, 70, 68)
-		smoke.Size = if ride.stage == "fire" then 3 else 1.5
-		smoke.RiseVelocity = 4
-		smoke.Opacity = if ride.stage == "fire" then 0.35 else 0.18
+		local burning = ride.stage == "fire"
+		local smoke = emitter(ride, "Smoke")
+		smoke.Color = ColorSequence.new(Color3.fromRGB(70, 70, 68), Color3.fromRGB(40, 40, 40))
+		smoke.Size = NumberSequence.new(if burning then 1.5 else 0.8, if burning then 4 else 2.5)
+		smoke.Transparency = NumberSequence.new(0.35, 1)
+		smoke.Lifetime = NumberRange.new(1.8, 2.6)
+		smoke.Speed = NumberRange.new(3, 5)
+		smoke.Rate = if burning then 9 else 4
 	end
 	if ride.stage == "fire" then
-		local fire = effect(ride, "Fire") :: Fire
-		fire.Size = 4
-		fire.Heat = 6
+		local fire = emitter(ride, "Fire")
+		fire.Color = ColorSequence.new(Color3.fromRGB(255, 170, 60), Color3.fromRGB(200, 60, 30))
+		fire.LightEmission = 1
+		fire.Size = NumberSequence.new(1.6, 0)
+		fire.Transparency = NumberSequence.new(0.1, 1)
+		fire.Lifetime = NumberRange.new(0.4, 0.7)
+		fire.Speed = NumberRange.new(3, 5)
+		fire.Rate = 14
 	end
+end
+
+-- The blast: an expanding ball in the call-ins' flash colour, tagged for the camera shake
+-- (CameraController), as AirStrikeService draws its blasts.
+local function flash(position: Vector3, radius: number)
+	local defaults = Config.CallIns.Arrivals.Defaults
+	local ball = Instance.new("Part")
+	ball.Shape = Enum.PartType.Ball
+	ball.Size = Vector3.one * 2
+	ball.Position = position
+	ball.Anchored = true
+	ball.CanCollide = false
+	ball.CanQuery = false
+	ball.CanTouch = false
+	ball.CastShadow = false
+	ball.Material = Enum.Material.Neon
+	ball.Color = defaults.Flash
+	ball:SetAttribute(Attributes.BlastPower, 3)
+	CollectionService:AddTag(ball, Attributes.BlastTag)
+	ball.Parent = folder
+	TweenService:Create(
+		ball,
+		TweenInfo.new(defaults.FlashTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		{ Size = Vector3.one * radius * 2, Transparency = 1 }
+	):Play()
+	Debris:AddItem(ball, defaults.FlashTime + 0.05)
 end
 
 local function destroyRide(ride: Ride)
@@ -390,22 +452,22 @@ local function blowUp(ride: Ride)
 			DamageService.dealDamage(ride.owner, humanoid, wreck.Damage, root.Position, "blast")
 		end
 	end
-	local explosion = Instance.new("Explosion")
-	explosion.Position = position
-	explosion.BlastRadius = wreck.Radius
-	explosion.BlastPressure = 0
-	explosion.DestroyJointRadiusPercent = 0
-	explosion.ExplosionType = Enum.ExplosionType.NoCraters
-	explosion.Parent = folder
-	shake(position, 3)
+	flash(position, wreck.Radius)
 	WorldSounds.at(position, "callins", "anvil_blast", 0.8, 1.1)
-	-- The burnt-out wreck stays a while, then goes; it no longer counts as a vehicle.
+	-- The burnt-out wreck stays a while, then goes; it no longer counts as a vehicle. It is
+	-- anchored where it stands (no suspension runs on it now), smoking, the fire out.
 	local index = table.find(rides, ride)
 	if index then
 		table.remove(rides, index)
 	end
+	ride.root.Anchored = true
 	ride.getOn:Destroy()
 	ride.right:Destroy()
+	local fire = ride.root:FindFirstChild("Engine")
+		and (ride.root:FindFirstChild("Engine") :: Instance):FindFirstChild("Fire")
+	if fire and fire:IsA("ParticleEmitter") then
+		fire.Enabled = false
+	end
 	for _, part in ride.model:GetDescendants() do
 		if part:IsA("BasePart") then
 			part.Color = part.Color:Lerp(Color3.fromRGB(24, 24, 22), 0.85)
@@ -420,6 +482,7 @@ local function hurt(ride: Ride, amount: number)
 	if amount <= 0 or ride.wreckAt then
 		return
 	end
+	unpark(ride)
 	ride.health = math.max(ride.health - amount, 0)
 	ride.model:SetAttribute(Attributes.VehicleHealth, ride.health)
 	local stage = Vehicle.stage(ride.health, ride.cfg.Health, ride.cfg.SmokeAt, ride.cfg.FireAt)
@@ -468,6 +531,7 @@ local function ram(ride: Ride, now: number)
 	local driver = ride.riders.driver
 	local credit = driver and driver.owner or ride.owner
 	local keep = 1
+	local hitAt: Vector3? = nil
 	for _, tagged in CollectionService:GetTagged(ENEMY_TAG) do
 		local model = tagged :: Model
 		local humanoid = model:FindFirstChildOfClass("Humanoid")
@@ -496,10 +560,14 @@ local function ram(ride: Ride, now: number)
 					hurt(ride, cfg.SelfDamage)
 					keep *= 1 - cfg.Slow
 				end
-				WorldSounds.at(root.Position, "callins", "pallet_land", 0.9, 0.7)
-				shake(ride.root.Position, cfg.ShakePower)
+				hitAt = root.Position
 			end
 		end
+	end
+	if hitAt then
+		-- One thud and one shake for the frame, however many it went through.
+		WorldSounds.at(hitAt, "callins", "pallet_land", 0.9, 0.7)
+		shake(ride.root.Position, cfg.ShakePower)
 	end
 	if keep < 1 then
 		if driver and driver.owner and ride.root:GetNetworkOwner() == driver.owner then
@@ -700,26 +768,40 @@ local function physicsStep(dt: number)
 	if PauseService.isPaused() then
 		return
 	end
-	local exclude: { Instance }? = nil
+	local now = os.clock()
 	for _, ride in rides do
-		if ride.root:GetNetworkOwner() == nil and not ride.root.Anchored then
-			if not exclude then
+		local root = ride.root
+		if root:GetNetworkOwner() == nil and not root.Anchored then
+			if not serverParams or now - paramsAt > 1 then
 				local list: { Instance } = { folder }
 				for _, member in Squad.members() do
 					if member.character then
 						table.insert(list, member.character)
 					end
 				end
-				exclude = list
+				serverParams = VehiclePhysics.params(list)
+				paramsAt = now
 			end
-			VehiclePhysics.step(
+			local grounded = VehiclePhysics.step(
 				ride.model,
 				ride.bodyId,
 				ride.cfg,
 				{ throttle = 0, steer = 0 },
 				dt,
-				VehiclePhysics.params(exclude :: { Instance })
+				serverParams :: RaycastParams
 			)
+			-- Empty, on all its wheels and still for a moment: park it (anchored, nothing to
+			-- simulate or send) until someone gets on, flips it or it is hit.
+			local still = root.AssemblyLinearVelocity.Magnitude < PARK_SPEED
+				and root.AssemblyAngularVelocity.Magnitude < 0.2
+			if still and grounded == 4 and next(ride.riders) == nil and not ride.wreckAt then
+				ride.stillSince = ride.stillSince or now
+				if now - (ride.stillSince :: number) >= PARK_AFTER then
+					root.Anchored = true
+				end
+			else
+				ride.stillSince = nil
+			end
 		end
 	end
 end

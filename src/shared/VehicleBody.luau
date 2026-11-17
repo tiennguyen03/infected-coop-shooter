@@ -26,6 +26,7 @@ export type Body = {
 	size: Vector3, -- the chassis box
 	bumper: number, -- distance from the centre to the front face (-Z)
 	rest: number, -- how high the centre sits over flat ground at rest
+	wheelLift: number, -- the highest a wheel's centre is drawn (chassis frame Y)
 }
 
 -- Palette (docs/STYLES.md section 2).
@@ -52,12 +53,15 @@ VehicleBody.Bodies = {
 			{ mount = Vector3.new(-2, 0.3, 2.25), front = false },
 			{ mount = Vector3.new(2, 0.3, 2.25), front = false },
 		},
-		driver = Vector3.new(0, 1.6, 0.15),
-		gunner = Vector3.new(0, 1.45, 2),
-		hook = Vector3.new(0, 3.2, 3),
+		driver = Vector3.new(0, 1.9, 0.15),
+		gunner = Vector3.new(0, 1.75, 2),
+		hook = Vector3.new(0, 3.5, 3),
 		size = Vector3.new(3, 1.3, 6),
 		bumper = 3.4,
 		rest = 1.33,
+		-- The fenders' undersides (0.95 up) less a hair, less the radius: the highest a
+		-- wheel's centre is drawn, so a compressed spring never pushes a tyre into them.
+		wheelLift = -0.18,
 	},
 } :: { [string]: Body }
 
@@ -85,6 +89,7 @@ local function piece(
 	part.CanCollide = false
 	part.CanTouch = false
 	part.CanQuery = false
+	part.CastShadow = false -- small moving pieces: no shadow (the big panels turn it back on)
 	part.Massless = true
 	part.Anchored = root.Anchored
 	if not root.Anchored then
@@ -104,8 +109,9 @@ local function stencil(root: BasePart, face: Enum.NormalId)
 	gui.LightInfluence = 1
 	local label = Instance.new("TextLabel")
 	label.BackgroundTransparency = 1
-	label.Size = UDim2.fromScale(0.5, 0.5)
-	label.Position = UDim2.fromScale(0.25, 0.25)
+	-- The middle of the side, clear of the wheels.
+	label.Size = UDim2.fromScale(0.36, 0.4)
+	label.Position = UDim2.fromScale(0.32, 0.3)
 	label.Text = "HARLAN"
 	label.TextScaled = true
 	label.Font = Enum.Font.GothamBold
@@ -173,50 +179,63 @@ function VehicleBody.build(bodyId: string, frame: CFrame, anchored: boolean): Mo
 	root.Parent = model
 	model.PrimaryPart = root
 
-	-- Fenders over each axle, the tank between them (the driver's seat on it), the raised
-	-- back seat on the rear deck, the roll bar behind it. Pieces touch, never overlap.
-	piece(model, root, "FrontFender", Vector3.new(4.4, 0.3, 2.4), at(0, 0.8, 2.2), OLIVE)
-	piece(model, root, "RearFender", Vector3.new(4.4, 0.3, 2.5), at(0, 0.8, -2.15), OLIVE)
-	piece(model, root, "Tank", Vector3.new(1.8, 0.8, 1.9), at(0, 1.05, 0.05), OLIVE)
+	-- A riser on the chassis lifts the bodywork clear of the wheels (fender undersides at
+	-- `fenderBottom`); fenders over each axle, the tank between them (the driver's seat on
+	-- it), the raised back seat on the rear deck, the roll bar behind it, a brush guard on the
+	-- front rack. Pieces touch, never overlap. Only the big panels cast a shadow.
+	local shade = piece(model, root, "Riser", Vector3.new(2.8, 0.3, 6), at(0, 0.8, 0), OLIVE_DARK)
+	shade.CastShadow = true
+	for _, panel in
+		{
+			piece(model, root, "FrontFender", Vector3.new(4.4, 0.3, 2.4), at(0, 1.1, 2.2), OLIVE),
+			piece(model, root, "RearFender", Vector3.new(4.4, 0.3, 2.5), at(0, 1.1, -2.15), OLIVE),
+			piece(model, root, "Tank", Vector3.new(1.8, 0.8, 1.9), at(0, 1.35, 0.05), OLIVE),
+		}
+	do
+		panel.CastShadow = true
+	end
 	piece(
 		model,
 		root,
 		"DriverPad",
 		Vector3.new(1.3, 0.25, 1.4),
-		at(0, 1.575, -0.15),
+		at(0, 1.875, -0.15),
 		POLYMER,
 		Enum.Material.Fabric
 	)
-	piece(model, root, "Stem", Vector3.new(0.3, 0.8, 0.3), at(0, 1.35, 1.25), STEEL_DARK)
-	piece(model, root, "Bars", Vector3.new(2.4, 0.2, 0.2), at(0, 1.85, 1.25), STEEL_DARK)
+	piece(model, root, "Stem", Vector3.new(0.3, 0.8, 0.3), at(0, 1.65, 1.25), STEEL_DARK)
+	piece(model, root, "Bars", Vector3.new(2.4, 0.2, 0.2), at(0, 2.15, 1.25), STEEL_DARK)
 	piece(
 		model,
 		root,
 		"GunnerSeat",
 		Vector3.new(1.5, 0.6, 1.4),
-		at(0, 1.25, -2),
+		at(0, 1.55, -2),
 		POLYMER,
 		Enum.Material.Fabric
 	)
-	piece(model, root, "RollBarL", Vector3.new(0.25, 2, 0.25), at(-1.3, 1.95, -3), STEEL_DARK)
-	piece(model, root, "RollBarR", Vector3.new(0.25, 2, 0.25), at(1.3, 1.95, -3), STEEL_DARK)
-	piece(model, root, "RollBarTop", Vector3.new(2.85, 0.25, 0.25), at(0, 3.075, -3), STEEL_DARK)
-	piece(model, root, "RackFront", Vector3.new(3.2, 0.15, 0.15), at(0, 1.025, 3.2), STEEL_DARK)
-	piece(model, root, "RackBack", Vector3.new(3.2, 0.15, 0.15), at(0, 1.025, 2.4), STEEL_DARK)
-	piece(model, root, "RackL", Vector3.new(0.15, 0.15, 0.65), at(-1.525, 1.025, 2.8), STEEL_DARK)
-	piece(model, root, "RackR", Vector3.new(0.15, 0.15, 0.65), at(1.525, 1.025, 2.8), STEEL_DARK)
-	piece(model, root, "JerryCan", Vector3.new(0.5, 0.8, 0.9), at(-1.7, 1.35, -2.7), OLIVE)
+	piece(model, root, "RollBarL", Vector3.new(0.25, 2, 0.25), at(-1.3, 2.25, -3), STEEL_DARK)
+	piece(model, root, "RollBarR", Vector3.new(0.25, 2, 0.25), at(1.3, 2.25, -3), STEEL_DARK)
+	piece(model, root, "RollBarTop", Vector3.new(2.85, 0.25, 0.25), at(0, 3.375, -3), STEEL_DARK)
+	piece(model, root, "RackFront", Vector3.new(3.2, 0.15, 0.15), at(0, 1.325, 3.2), STEEL_DARK)
+	piece(model, root, "RackBack", Vector3.new(3.2, 0.15, 0.15), at(0, 1.325, 2.4), STEEL_DARK)
+	piece(model, root, "RackL", Vector3.new(0.15, 0.15, 0.65), at(-1.525, 1.325, 2.8), STEEL_DARK)
+	piece(model, root, "RackR", Vector3.new(0.15, 0.15, 0.65), at(1.525, 1.325, 2.8), STEEL_DARK)
+	-- The brush guard: two uprights on the front rail and a bar across their tops.
+	piece(model, root, "GuardL", Vector3.new(0.15, 0.6, 0.15), at(-1.1, 1.7, 3.2), STEEL_DARK)
+	piece(model, root, "GuardR", Vector3.new(0.15, 0.6, 0.15), at(1.1, 1.7, 3.2), STEEL_DARK)
+	piece(model, root, "GuardTop", Vector3.new(2.35, 0.15, 0.15), at(0, 2.075, 3.2), STEEL_DARK)
+	piece(model, root, "JerryCan", Vector3.new(0.5, 0.8, 0.9), at(-1.7, 1.65, -2.7), OLIVE)
 	for _, side in { -1, 1 } do
-		local lamp = piece(
+		piece(
 			model,
 			root,
 			"Headlight",
 			Vector3.new(0.5, 0.3, 0.1),
-			at(side * 0.9, 0.8, 3.45),
+			at(side * 0.9, 1.1, 3.45),
 			LAMP,
 			Enum.Material.Neon
 		)
-		lamp.Transparency = 0.2
 	end
 	stencil(root, Enum.NormalId.Left)
 	stencil(root, Enum.NormalId.Right)

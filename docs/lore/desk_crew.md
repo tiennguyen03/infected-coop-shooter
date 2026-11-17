@@ -53,6 +53,14 @@ and "mind the coils" and jokes about the fingertip he lost ("Nine fingers and co
 thinks the Quartermaster counts everything, which is true. The one detail for art: the tip
 of one finger missing, work gloves and wire cutters on his belt.
 
+## The motor sergeant (Vehicles)
+
+Canon 2026-11-17 (Nova approved). Staff Sergeant, late thirties, female, Army, the motor
+sergeant; she runs the motor pool at the hangar's aft end. Practical and dry, machine first:
+she worries about the ATV, then about the soldier ("Bring it back. You too, ideally."). She
+writes down which ATVs come back. The one detail for art: grease to the elbows and a log book
+under one arm.
+
 ## Control's watch officer (the Plot)
 
 Canon 2026-11-10 (replaces the stand-in block figure; owner approved). Major, late forties,
@@ -80,6 +88,7 @@ Simple low-poly accessories that make each body read as a person. Pike grey is o
 | Helicopter crew chief (on each bird) | aircrew flight suit | helmet on, visor down; tether clipped to the kick rail; flight gloves |
 | Fires | Army working dress | headset round her neck, its cord to the radio on her desk; a small notebook in the sleeve pocket |
 | The Engineers | Army working dress | work gloves tucked in his belt; wire cutters on the belt; a short coil of wire over one shoulder |
+| The motor sergeant | Army working dress, sleeves rolled | grease to the elbows and the log book under one arm (neither modelled yet); a shop rag |
 | Control's watch officer | Army working dress | headset, one earcup on, one pushed back; a steel mug (the coffee is cold); rank on the chest tab |
 | The plotter | ship's dark blue | sound-powered phone headset with a chest mouthpiece; a grease pencil in hand |
 | Ship's company walkers | see [ship_company.md](ship_company.md) | the jersey colour is the read; one prop each (ear defenders, chain, rag, clipboard, smock, rifle) |
@@ -125,7 +134,7 @@ more when your team gets the job done."
 | Refused | "Couldn't sign that over. Give it a minute and try again." |
 | Signed | "Signed. That's what you fly with. Up the ramp, find a bird with a seat." |
 | Rules refused | "That won't go. You need four call-ins, and no two the same." |
-| Not bought | "That's not yours yet. Guns at the Arms Room, call-ins at the Call-ins desk." |
+| Not bought | "That's not yours yet. Guns at the Arms Room, call-ins at Call-ins, ATVs at Vehicles." |
 | Loadout labels | LOADOUT; SIGN FOR IT |
 
 ### Fires (retired)
@@ -152,6 +161,26 @@ the supply drops that were the Loadmaster's). Desk id `callins`, sign CALL-INS.
 | Bought | "It's yours. Set it, step back, let it work." |
 | Short | "You're short. I'd do you a deal, but the Quartermaster counts my wire." |
 | Refused | "Paperwork's jammed. Give it a minute." |
+
+### The motor sergeant (Vehicles)
+
+Desk id `vehicles`, sign VEHICLES. She sells the ATV; it is signed into a call-in slot at the
+Loadmaster.
+
+| Field | Line |
+|---|---|
+| Greeting | "Vehicles. I keep the ATVs running. You bring them back. That's the deal." |
+| Greeting | "Two seats. One drives, one rides the back and shoots. Nobody rides the roof." |
+| Greeting | "Roads up there are full of dead cars. An ATV fits between them. A truck doesn't." |
+| Greeting | "Every ATV goes down hanging under a helo. I write down which ones come back." |
+| 1 (open) | Show me the vehicles. |
+| 2 (ask) | Who does what on it? |
+| Answer | "Driver steers. Whoever's on the back shoots their main gun. Get on and off with E." |
+| 3 (leave) | That's all. |
+| Kit opens | "That's what's running. Buy it here, then sign it into a call-in slot with the Loadmaster." |
+| Bought | "It's on your record. Bring it back. You too, ideally." |
+| Short | "Not enough merits. Fuel's free. The ATV isn't." |
+| Refused | "That one's in bits right now. Give me a minute." |
 
 ### Control's watch officer (the Plot)
 

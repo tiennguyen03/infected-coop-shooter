@@ -64,7 +64,12 @@ local function bayLines(
 end
 
 -- A chain from `from` to `to` (a thin bar; looks only).
+-- Each end is pulled in by half the bar's thickness, so it meets the pad-eye and the fender
+-- edge without sinking into either.
 local function chain(folder: Folder, from: Vector3, to: Vector3)
+	local along = (to - from).Unit
+	from += along * 0.08
+	to -= along * 0.08
 	local length = (to - from).Magnitude
 	Build.part(
 		folder,
@@ -92,7 +97,7 @@ local function parkedVehicle(folder: Folder, floor: number)
 	model.Parent = folder
 	-- Lashed down at sea: a pad-eye on the deck off each corner, past the wheels, and a chain
 	-- up to the bottom edge of that end's fender (VehicleBody: the fenders end 3.4 from the
-	-- centre, 0.65 up; the wheels stop 3.35 out, so no chain passes through one).
+	-- centre, their undersides 0.95 up; the wheels stop 3.35 out, so no chain passes through one).
 	local eyeY = floor + 0.06
 	for _, side in { -1, 1 } do
 		for _, ahead in { -1, 1 } do -- -1: the front (the frame's -Z)
@@ -109,7 +114,7 @@ local function parkedVehicle(folder: Folder, floor: number)
 			chain(
 				folder,
 				at + Vector3.new(0, 0.06, 0),
-				(frame * CFrame.new(side * 1.8, 0.65, ahead * 3.4)).Position
+				(frame * CFrame.new(side * 1.8, 0.95, ahead * 3.4)).Position
 			)
 		end
 	end
@@ -188,7 +193,7 @@ local function fuelPoint(folder: Folder, floor: number)
 		Vector3.new(4, 0.57, 4),
 		CFrame.new(at.X, floor + 0.285, at.Z),
 		PALLET,
-		{ material = Enum.Material.Wood }
+		{ material = Enum.Material.WoodPlanks }
 	)
 	for col = 0, 2 do
 		for row = 0, 1 do
