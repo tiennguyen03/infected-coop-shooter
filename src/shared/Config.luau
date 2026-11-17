@@ -1963,10 +1963,13 @@ local Config = {
 				Clear = Vector3.new(6, 4, 9), -- the landing box that must be free of walls (no charge spent)
 				-- Driving (Rules/Vehicle.driveAccel / steerAngle): studs/s and studs/s². Sprint is 24,
 				-- a Runner 17. Maps are getting bigger (Nova 2026-11-17): it is transport too.
-				TopSpeed = 40,
-				Reverse = 12,
-				Accel = 16, -- 0 to full in about 2.5 s
-				Brake = 40,
+				-- Nova 2026-11-17, first drive: "slower than walking". Measured in Studio at Accel 16:
+				-- 13 studs/s after 1 s, 22 after 2 (the accel tapers to 0 at TopSpeed), so on Delta's
+				-- short runs it rarely beat a sprint. Now about 25 after 1 s, 38 after 2.
+				TopSpeed = 55,
+				Reverse = 16,
+				Accel = 32,
+				Brake = 45,
 				Coast = 6,
 				SteerAngle = 35, -- degrees at a standstill
 				SteerAtTop = 15, -- degrees at top speed
@@ -2008,6 +2011,10 @@ local Config = {
 				-- Solo: while a player drives with the back seat free, the nearest free bot this close
 				-- (to the ATV) walks over and gets on once the ATV is nearly stopped.
 				BotRideRange = 40,
+				-- How a player sits on it (client VehiclePose, laid over the clip, degrees): hips and
+				-- knees for both seats; the driver's arms reach the bars (shoulders forward by
+				-- ArmRaise, elbows bent ElbowBend, turned in ArmIn) and the gun is put away.
+				Pose = { Hip = 85, Knee = 85, ArmRaise = 62, ElbowBend = 28, ArmIn = 8 },
 				SpeedSlack = 1.25, -- the server takes the drive back above TopSpeed x this
 				PromptReach = 9, -- studs a soldier can get on from
 			},

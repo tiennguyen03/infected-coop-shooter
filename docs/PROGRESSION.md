@@ -372,12 +372,13 @@ Built, **not played**.
   never drive) and gets off with the driver.
 - **Driving** (`VehiclePhysics`, `Rules/Vehicle`): ray suspension on four wheels and arcade
   tyres on one chassis; the driver's client simulates it (network owner), the server while
-  nobody drives, and the server takes it back for 1 s above 1.25 x top speed. Top 40 studs/s
-  (sprint 24, a Runner 17), reverse 12, 0-40 in about 2.5 s, steering 35 degrees standing to
-  15 at top speed; no drive up ground steeper than 30 degrees (pallet ramps are 33). In the
+  nobody drives, and the server takes it back for 1 s above 1.25 x top speed. Top 55 studs/s
+  (sprint 24, a Runner 17), reverse 16; measured in Studio 26 studs/s after 1 s, 39 after 2,
+  46 after 3 (Nova's first drive at half that accel: "slower than walking"); steering 35
+  degrees standing to 15 at top speed; no drive up ground steeper than 30 degrees (pallet ramps are 33). In the
   air it levels itself. Tipped past 70 degrees and stopped: hold E 1.5 s to flip it back.
 - **Rams:** above 12 studs/s an Infected in front of the bumper (behind when reversing)
-  takes 2.5 x speed (100 at full speed: a Walker, Runner or Hocker dies and is thrown limp,
+  takes 2.5 x speed (100 at 40 studs/s: a Walker, Runner or Hocker dies and is thrown limp,
   `EnemyService.noteBlast`); each costs 15% speed and 4 health. A row with `RamStop` (Brute,
   Warden) stops it dead: the ram's damage, a 1 s stagger, 40 to the ATV.
 - **Health 400:** smoke at half, fire at a quarter. The Infected hurt it only through its
@@ -386,6 +387,10 @@ Built, **not played**.
   through, folder `Vehicles`). At 0 it burns 3 s and blows: 120 to the Infected within 10;
   anyone still aboard is thrown off, takes 20 and is knocked down 1.2 s.
 - **HUD:** while riding, a panel over the bottom: the seat, the keys, the ATV's health.
+- **How riders look** (client `VehiclePose`, the row's `Pose`; a placeholder until a riding
+  clip is authored): both seats sit (hips and knees bent over the clip); the driver's hands
+  reach the bars and the gun is put away (hidden on every client, and the first-person gun
+  too); the back seat keeps the gun up. Bots in the back play the stock sit clip.
 - **Testing:** in Studio the starting loadout carries the ATV in its last slot (key 4) when
   nothing was signed for (`Config.CallIns.StudioCallIn`; never in the live game, nil turns
   it off). Dev `FireCallIn atv` drops one with no slot or charge.
