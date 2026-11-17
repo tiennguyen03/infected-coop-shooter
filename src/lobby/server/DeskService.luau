@@ -1,8 +1,9 @@
 --!strict
 -- The hangar desks (LobbyDesks, placed by FallowLayout.Desks): a crew figure behind a
 -- counter, the desk's stencil over it, its props, and a "Talk" prompt (F). The prompt carries
--- the desk id; the client shows the line (DeskDialogUI), or the desk's own screen (ArmsRackUI,
--- LoadmasterUI). Buying waits for the save service (docs/ARCHITECTURE.md F9).
+-- the desk id; the client shows the talk (DeskTalk, through DeskDialogUI, ArmsRackUI or
+-- LoadmasterUI) and, for a desk that sells kit, the desk screen (DeskScreen). Every buy is
+-- decided by RecordService.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")

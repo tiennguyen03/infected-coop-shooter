@@ -6,7 +6,9 @@
 -- not, stat bars from Rules/ArmsStats) in the screen the card leaves free, arrows step through
 -- every piece, Back steps out. All local: the camera, the slide and the card are this player's alone, so four
 -- soldiers can look at once. The rack is for buying (merits, after F9); equipping is the
--- Loadmaster's (LoadmasterUI).
+-- Loadmaster's (LoadmasterUI). Since 2026-11-17 (owner: every desk like the Loadmaster) "Show me
+-- the guns." opens the desk screen (DeskScreen) instead; the rack view is what
+-- Config.Lobby.DeskScreen.Enabled = false puts back, and the wall stays in the world.
 
 local ContextActionService = game:GetService("ContextActionService")
 local GuiService = game:GetService("GuiService")
@@ -25,6 +27,8 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local KitPrices = require(ReplicatedStorage.Shared.KitPrices)
 local LobbyDesks = require(ReplicatedStorage.Lobby.LobbyDesks)
 local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
+local DeskScreen = require(script.Parent.DeskScreen)
+local DeskTalk = require(script.Parent.DeskTalk)
 local HoldStill = require(script.Parent.HoldStill)
 local HudTheme = require(script.Parent.HudTheme)
 local RecordClient = require(script.Parent.RecordClient)
@@ -50,7 +54,7 @@ local CHOICE_KEYS: { [Enum.KeyCode]: number } = {
 }
 
 type CardRow = { label: string, text: string, fraction: number? }
-type Mode = "closed" | "talk" | "rack" | "inspect"
+type Mode = "closed" | "talk" | "rack" | "inspect" | "screen" -- screen: DeskScreen is up
 
 local player = Players.LocalPlayer
 local mode: Mode = "closed"
@@ -224,42 +228,11 @@ local function pad(parent: Instance, px: number)
 	padding.Parent = parent
 end
 
--- Talk: who, the line, three choices.
-local talk = HudTheme.rect(
-	gui,
-	UDim2.fromOffset(560, 0),
-	HudTheme.Color.Track,
-	HudTheme.TrackTransparency,
-	true
-)
-talk.AnchorPoint = Vector2.new(0.5, 1)
-talk.Position = UDim2.new(0.5, 0, 1, -200)
-talk.AutomaticSize = Enum.AutomaticSize.Y
-talk.Visible = false
-pad(talk, 12)
-column(talk, 8)
-local talkTitle = HudTheme.label(
-	talk,
-	{ size = 22, font = HudTheme.Font.Headline, color = HudTheme.Color.Yellow, rich = true }
-)
-talkTitle.LayoutOrder = 1
-local talkLine = HudTheme.label(talk, { size = 18, font = HudTheme.Font.Body })
-talkLine.LayoutOrder = 2
-talkLine.AutomaticSize = Enum.AutomaticSize.Y
-talkLine.Size = UDim2.fromScale(1, 0)
-talkLine.TextWrapped = true
-local choiceWork = button(talk, "", 528)
-choiceWork.LayoutOrder = 3
-local choiceRack = button(talk, "", 528)
-choiceRack.LayoutOrder = 4
-local choiceLeave = button(talk, "", 528)
-choiceLeave.LayoutOrder = 5
-for _, choice in { choiceWork, choiceRack, choiceLeave } do
-	choice.TextXAlignment = Enum.TextXAlignment.Left
-	local inset = Instance.new("UIPadding")
-	inset.PaddingLeft = UDim.new(0, 14)
-	inset.Parent = choice
-end
+-- Talk: who, the line, three choices (DeskTalk, the same panel at every desk).
+local talkPanel = DeskTalk.new(gui)
+local talk = talkPanel.frame
+local choiceWork, choiceRack, choiceLeave =
+	talkPanel.choices[1], talkPanel.choices[2], talkPanel.choices[3]
 
 -- Rack: the header, the Quartermaster's line, a hint, Back.
 local rackHeader = Instance.new("Frame")
@@ -797,13 +770,10 @@ local function openTalk(chosen: LobbyDesks.Desk, from: ProximityPrompt)
 	desk = chosen
 	prompt = from
 	mode = "talk"
-	talkTitle.Text = `{chosen.title}  {HudTheme.tint(chosen.who, HudTheme.Color.TextDim)}`
 	local said = chosen.talk
-	talkLine.Text = `"{said.greetings[math.random(1, #said.greetings)]}"`
 	-- 1 the guns, 2 the question, 3 leave (the same order at every desk).
-	choiceWork.Text = `1.  {said.open}`
-	choiceRack.Text = `2.  {said.ask}`
-	choiceLeave.Text = `3.  {said.leave}`
+	talkPanel.show(chosen)
+	talkPanel.say(said.greetings[math.random(1, #said.greetings)])
 	talkCloseAt = os.clock() + Config.Lobby.DialogSeconds * 3
 	showOverlay()
 	ContextActionService:BindAction(ACTION_CHOOSE, chooseAction, false, table.unpack(choiceKeyList))
@@ -822,9 +792,26 @@ function choose(index: number)
 		return
 	end
 	if index == 1 then
+		-- The desk screen (the Loadout's look); Back comes back to this talk. Switched off
+		-- (Config.Lobby.DeskScreen), the camera on the rack as before.
+		local chosen, from = desk, prompt
+		if
+			chosen
+			and DeskScreen.open(chosen, from, function()
+				mode = "closed"
+				if from then
+					openTalk(chosen, from)
+				end
+			end)
+		then
+			ContextActionService:UnbindAction(ACTION_CHOOSE)
+			mode = "screen"
+			showOverlay()
+			return
+		end
 		enterRack() -- unbinds the choice keys itself once the rack is really open
 	elseif index == 2 and desk then
-		talkLine.Text = `"{desk.talk.answer}"`
+		talkPanel.say(desk.talk.answer)
 		talkCloseAt = os.clock() + Config.Lobby.DialogSeconds * 3
 	elseif index == 3 then
 		closeTalk()
@@ -841,6 +828,12 @@ function ArmsRackUI.init()
 	ProximityPromptService.PromptTriggered:Connect(function(triggered: ProximityPrompt, who: Player)
 		if who ~= player or mode == "rack" or mode == "inspect" then
 			return
+		end
+		if mode == "screen" then
+			if DeskScreen.isOpen() then
+				return
+			end
+			mode = "closed" -- closed from elsewhere (another desk's prompt)
 		end
 		-- One dialog at a time: talking to another desk closes this one (DeskDialogUI
 		-- hides its own panel when a rack desk opens).
@@ -941,6 +934,8 @@ function ArmsRackUI.init()
 	player.CharacterRemoving:Connect(function()
 		if mode == "rack" or mode == "inspect" then
 			leaveRack()
+		elseif mode == "screen" then
+			mode = "closed" -- DeskScreen closes itself on a respawn
 		end
 		closeTalk()
 	end)

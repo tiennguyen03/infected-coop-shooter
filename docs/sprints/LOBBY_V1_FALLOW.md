@@ -108,8 +108,19 @@ match place.
   no personality"; lines and voices by the lore developer, `LobbyDesks` `talk`, voice sheets
   in docs/lore/desk_crew.md): a greeting picked at random from four, then 1 their kit, 2 a
   question, 3 leave (click or keys 1-3), plus their own bought / short / refused lines. The
-  Quartermaster talks through `ArmsRackUI`, the Loadmaster through `LoadmasterUI`, Call-ins
-  through `DeskDialogUI` (1 opens its `DeskShop`).
+  Quartermaster talks through `ArmsRackUI`, the Loadmaster through `LoadmasterUI`, Call-ins,
+  Vehicles and the Plot through `DeskDialogUI`; all three build the same talk panel
+  (`DeskTalk`, the Loadout's menu dress since 2026-11-17).
+- **The desk screens** (2026-11-17, owner: "any NPC interaction UI should be using the
+  Prototype 2 UI... the same as the Loadmaster"; not yet seen in game): choice 1 at the
+  Quartermaster, Call-ins and Vehicles opens `DeskScreen`, the Loadout screen's look (`KitView`):
+  what the desk sells in the Loadout's columns with each item's shape, the picked one turning
+  in 3D over its stat bars, the person's line under the header in their own voice, and BUY
+  (Enter, gamepad Y) in the footer; Back steps back to the talk. Buying is unchanged: the same
+  `Record` remote, the server decides (`RecordService`). Look: docs/STYLES.md section 5 > The
+  desk screens. `Config.Lobby.DeskScreen.Enabled = false` puts back the camera on the rack, the
+  call-in pallets and the plain `DeskShop` list (the rack and pallets stay in the world either
+  way).
 - **The Plot** (`PlotService`, `ContainmentBoard`, rule `Rules/Containment`): the red-lit
   map room under the island with the Containment Board on a lit perspex panel (five
   districts: percent and band word). It rereads the board every 60 s and wipes and rewrites a
@@ -312,7 +323,8 @@ The rack is where guns are **bought** (merits, onto the soldier's record; owner 
   sold for tabs.
 
 - **Talk** (F on the Quartermaster, `ArmsRackUI` for a desk with a `rack` in `LobbyDesks`): a
-  greeting, then 1 "Show me the guns." (the rack), 2 "How do I get merits?", 3 "That's all." Wording by the lore developer: BUY and a price in
+  greeting, then 1 "Show me the guns." (the desk screen; the rack view when it is switched
+  off), 2 "How do I get merits?", 3 "That's all." Wording by the lore developer: BUY and a price in
   MERITS may show; never shop, store, wares, sell, lock or unlock.
 - **The corner** (`ArmsRack`, `FallowLayout.ArmsRoom`; Nova 2026-11-10: "use that entire
   corner for him", "the glass case would act as the desk, like in GTA"): the Arms Room fills
@@ -374,8 +386,8 @@ Layout by the level designer (`FallowLayout.MotorPool`; `MotorPool` builds it fr
 
 - **The motor sergeant** (desk VEHICLES, `LobbyDesks`; lines in docs/lore/desk_crew.md)
   stands at (9, -48) behind the standard counter, facing the soldiers coming round the Plot.
-  She sells every row with `Desk = "vehicles"` (today the ATV, 400 merits) on the plain desk
-  panel (`DeskShop`); it is signed into a call-in slot at the Loadmaster.
+  She sells every row with `Desk = "vehicles"` (today the ATV, 400 merits) on the desk screen
+  (`DeskScreen`: a VEHICLES list, the ATV turning as its own body); it is signed into a call-in slot at the Loadmaster.
 - **Three painted bays** across the aft hangar, Z -78..-52: X -20..-8 and 12..24 empty for
   later vehicles, and the ATV in the middle one on the spawn's centre line (0, -64), nose to
   the spawn, so it shows down the aisle past the Loadmaster. It is the match's own build

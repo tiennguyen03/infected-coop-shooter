@@ -6,7 +6,7 @@ last one. **End of a session:** edit this page in place (never append history he
 one note to `handoff/log/` (format in `handoff/log/README.md`). History lives in
 `docs/HISTORY.md`; this page is only "now".
 
-Last updated: 2026-11-17 by Nova + Claude (vehicles: the ATV and the motor pool, on `nova/vehicles-atv`).
+Last updated: 2026-11-17 by Claude (every desk on the Loadmaster's look, on `claude/npc-ui-prototype2`).
 
 ## The game today (on `main`)
 
@@ -75,7 +75,15 @@ that restocks the squad.
   new `SoldierMoves`; off with `Config.Lobby.Soldier.Enabled = false`; what to check is in
   the lobby doc > What v1 has). **Nova:** the Loadout screen (`LoadoutMenu`) was rebuilt
   bigger with each item turning in 3D and its stats (2026-11-16, not yet seen in game; what to
-  check: `handoff/log/2026-11-16-claude-loadmaster-screen.md`).
+  check: `handoff/log/2026-11-16-claude-loadmaster-screen.md`). **Every desk now looks like the
+  Loadmaster** (2026-11-17, owner; on `claude/npc-ui-prototype2`, **not yet seen in game**):
+  the Quartermaster's guns, the Call-ins sergeant's call-ins and the motor sergeant's ATV open
+  on the Loadout's look with BUY (`DeskScreen`), and every desk's talk panel is one build in
+  the menu dress (`DeskTalk`); `Config.Lobby.DeskScreen.Enabled = false` is the old views.
+  **Nova:** the Loadout's frame, rows and inspect panel moved out of `LoadoutMenu` into
+  `src/client/KitView.luau` (mapped into the lobby; `LoadoutMenu` behaves the same), the
+  Gunsmith takes its gun from `Showcase` instead of the rack, and `Showcase` shows a vehicle
+  call-in as its `VehicleBody` (what to check: `handoff/log/2026-11-17-claude-npc-ui.md`).
 - **Economy:** merits (soft) are paid when a mission ends (Win 120, Partial 60, Loss 0) onto
   the record the Carrier's desks spend from; tabs (hard, Robux or events, never power) are a
   balance on the same record with nothing to buy yet (`docs/OWNER.md`, `docs/ROADMAP.md` >
@@ -90,7 +98,7 @@ that restocks the squad.
 - **Roblox:** the group Boomin Dev Studios (270506601) owns the game "Co-op Zombie Shooter" and
   every sound and animation. Its start place 87556879379942 holds the **lobby**; the match is
   "Checkpoint Delta" 125769854992316 (`Config.Places`).
-- **Checks:** stylua, selene, rojo build, 492 Lune tests (rules plus the source-wiring spec, which also reads the lobby's remotes and refuses key literals), luau-lsp, CI on every push.
+- **Checks:** stylua, selene, rojo build, 502 Lune tests (rules plus the source-wiring spec, which also reads the lobby's remotes and refuses key literals), luau-lsp, CI on every push.
 
 ## Who owns what
 
