@@ -394,9 +394,13 @@ Built, **not played**.
 - **Testing:** in Studio the starting loadout carries the ATV in its last slot (key 4) when
   nothing was signed for (`Config.CallIns.StudioCallIn`; never in the live game, nil turns
   it off). Dev `FireCallIn atv` drops one with no slot or charge.
-- **Not in v1:** an engine sound (none in the banks yet), swapping seats, the driver's
-  sidearm, grenades from the back, bots driving, the motor sergeant's radio lines, a mesh
-  (the body is Parts, `VehicleBody`), other vehicles.
+- **Engine:** while someone drives, a licensed library loop (Pro Sound Effects "Go Kart
+  Engine Constant 2", asset 9112787518, a small 4-stroke) plays on the chassis, pitched 0.75
+  standing to 1.35 at top speed, in the world sound group. The Infected hear it like a shot
+  (`EnemyService.noise`): 35 studs standing, 85 at top speed (guns carry 70-140), so on a
+  quiet mission driving trades stealth for speed. The row's `Engine` block.
+- **Not in v1:** swapping seats, the driver's sidearm, grenades from the back, bots driving,
+  a mesh (the body is Parts, `VehicleBody`), other vehicles.
 
 ### Pallets (Resupply)
 

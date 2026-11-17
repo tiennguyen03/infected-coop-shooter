@@ -2015,6 +2015,20 @@ local Config = {
 				-- knees for both seats; the driver's arms reach the bars (shoulders forward by
 				-- ArmRaise, elbows bent ElbowBend, turned in ArmIn) and the gun is put away.
 				Pose = { Hip = 85, Knee = 85, ArmRaise = 62, ElbowBend = 28, ArmIn = 8 },
+				-- The engine, while someone drives (client VehicleController): a licensed library loop
+				-- (Pro Sound Effects "Go Kart Engine Constant 2", a small 4-stroke), pitched from
+				-- IdlePitch standing to TopPitch at top speed. The Infected hear it (EnemyService.noise,
+				-- like a shot): NoiseIdle studs standing, Noise at top speed (guns carry 70-140).
+				Engine = {
+					SoundId = "rbxassetid://9112787518",
+					Volume = 0.45,
+					IdlePitch = 0.75,
+					TopPitch = 1.35,
+					RollOffMin = 12,
+					RollOffMax = 220,
+					NoiseIdle = 35,
+					Noise = 85,
+				},
 				SpeedSlack = 1.25, -- the server takes the drive back above TopSpeed x this
 				PromptReach = 9, -- studs a soldier can get on from
 			},

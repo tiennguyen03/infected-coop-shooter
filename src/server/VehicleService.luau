@@ -898,6 +898,15 @@ local function step()
 			warn(`[Vehicle] {ride.id} over speed; the server holds it {TAKE_BACK} s`)
 		end
 		if slow then
+			-- A running engine carries (the quiet missions' awareness): idle to full by speed.
+			local engine = ride.cfg.Engine
+			if engine and ride.riders.driver then
+				local share = math.clamp(flatSpeed(ride) / ride.cfg.TopSpeed, 0, 1)
+				EnemyService.noise(
+					ride.root.Position,
+					engine.NoiseIdle + (engine.Noise - engine.NoiseIdle) * share
+				)
+			end
 			checkRiders(ride)
 			setOwner(ride)
 			boardBot(ride)

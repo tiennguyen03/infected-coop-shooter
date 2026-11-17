@@ -29,6 +29,7 @@ local VehiclePhysics = require(Shared:WaitForChild("VehiclePhysics"))
 
 local CameraController = require(script.Parent.CameraController)
 local HudTheme = require(script.Parent.HudTheme)
+local SoundBanks = require(Shared:WaitForChild("SoundBanks"))
 
 local VehicleController = {}
 
@@ -181,9 +182,56 @@ local function wheelsOf(model: Model): { Wheel }
 	return wheels
 end
 
+-- Each vehicle's running engine on this client (weak keys: a destroyed vehicle drops out).
+local engines: { [Model]: Sound } = setmetatable({}, { __mode = "k" }) :: any
+
+-- The engine runs while someone drives: the row's loop on the chassis, pitched by speed.
+local function engine(model: Model, root: BasePart, cfg: any)
+	local settings = cfg.Engine
+	if not settings then
+		return
+	end
+	local seat = model:FindFirstChildOfClass("VehicleSeat")
+	local running = seat ~= nil and seat.Occupant ~= nil
+	local sound = engines[model]
+	if not running then
+		if sound then
+			sound:Destroy()
+			engines[model] = nil
+		end
+		return
+	end
+	if not sound then
+		local made = Instance.new("Sound")
+		made.Name = "Engine"
+		made.SoundId = settings.SoundId
+		made.Looped = true
+		made.Volume = settings.Volume
+		made.RollOffMode = Enum.RollOffMode.InverseTapered
+		made.RollOffMinDistance = settings.RollOffMin
+		made.RollOffMaxDistance = settings.RollOffMax
+		made.SoundGroup = SoundBanks.worldGroup()
+		made.Parent = root
+		made:Play()
+		engines[model] = made
+		sound = made
+	end
+	local speed = math.abs(root.AssemblyLinearVelocity:Dot(root.CFrame.LookVector))
+	local share = math.clamp(speed / cfg.TopSpeed, 0, 1)
+	local playing = sound :: Sound
+	playing.PlaybackSpeed = settings.IdlePitch + (settings.TopPitch - settings.IdlePitch) * share
+end
+
 local function animateWheels(dt: number)
 	if not folder then
 		return
+	end
+	for _, child in folder:GetChildren() do
+		local root = if child:IsA("Model") then child.PrimaryPart else nil
+		local cfg = if root then cfgOf(child :: Model) else nil
+		if root and cfg then
+			engine(child :: Model, root, cfg)
+		end
 	end
 	local camera = Workspace.CurrentCamera
 	local eye = if camera then camera.CFrame.Position else Vector3.zero
