@@ -56,7 +56,7 @@ FallowLayout.Crew = {
 		Vector3.new(-4, H, 12),
 		Vector3.new(-4, H, 40),
 		Vector3.new(-6, H, 78),
-	}, -- Plot door to the ramp, outside the Fires counter
+	}, -- Plot door to the ramp
 	medic = { Vector3.new(24, D, -166), Vector3.new(24, D, -142) }, -- up and down the screening lane
 	sentry = { Vector3.new(32, D, -170), Vector3.new(32, D, -136) }, -- the deck edge over the lane
 } :: { [string]: { Vector3 } }
@@ -94,9 +94,9 @@ export type DeskPlace = {
 }
 
 -- Hangar desks (LobbyDesks), between the spawn and the ramp's foot: the Arms Room cage on the
--- port side and the Engineers among the wire to starboard, facing each other across the
--- walk; the Loadmaster among the slung cases at the foot of the ramp, facing the spawn; Fires
--- at the Plot door, further aft past the ramp.
+-- port side and Call-ins (the sapper sergeant among the wire) to starboard, facing each other
+-- across the walk; the Loadmaster among the slung cases at the foot of the ramp, facing the
+-- spawn. (The Fires desk by the Plot door was folded into Call-ins, owner 2026-11-16.)
 FallowLayout.Desks = {
 	{
 		id = "arms_room",
@@ -105,7 +105,7 @@ FallowLayout.Desks = {
 		counter = false, -- his counter is the glass case (ArmsRack, FallowLayout.ArmsRoom)
 	},
 	{
-		id = "engineers",
+		id = "callins",
 		feet = Vector3.new(27, FallowLayout.HangarY, 105),
 		facing = Vector3.new(-1, 0, 0),
 	},
@@ -113,11 +113,6 @@ FallowLayout.Desks = {
 		id = "loadmaster",
 		feet = Vector3.new(-2, FallowLayout.HangarY, 88),
 		facing = Vector3.new(0, 0, 1),
-	},
-	{
-		id = "fires",
-		feet = Vector3.new(1, FallowLayout.HangarY, 18),
-		facing = Vector3.new(-1, 0, 0),
 	},
 	-- Control's watch officer at the map table in the Plot, between the table and the board,
 	-- facing the door (owner 2026-11-10: someone real in the Plot).

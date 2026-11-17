@@ -1,9 +1,9 @@
 --!strict
 -- The call-ins a Carrier desk sells (owner, 2026-11-10: grenades and call-ins are bought too):
 -- a panel beside the desk's talk panel listing each call-in the desk sells (KitPrices.soldAt:
--- the row's `Desk`), with what it is, ON YOUR RECORD or its price, and BUY. Fires sells the
--- fire missions, the Engineers the emplacements and wire, the Loadmaster what Lantern kicks
--- (DeskDialogUI, LoadmasterUI). The server decides every buy (RecordService); the panel
+-- the row's `Desk` or Config.Lobby.Sellers), with what it is, ON YOUR RECORD or its price, and
+-- BUY. Call-ins sells every call-in (owner 2026-11-16; DeskDialogUI); a desk that sells none
+-- shows no panel (the Loadmaster's LoadmasterUI asks too). The server decides every buy (RecordService); the panel
 -- repaints when the record changes (RecordClient).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
