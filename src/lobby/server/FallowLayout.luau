@@ -125,6 +125,19 @@ FallowLayout.Desks = {
 	},
 } :: { DeskPlace }
 
+-- The Call-ins display (owner 2026-11-16: "like the Quartermaster, where you can see the guns
+-- behind him"; CallInDisplay builds it, CallInDisplayUI looks at it): a row of pallets on the
+-- hangar floor along the starboard hull behind the sapper sergeant, one call-in on each, in
+-- CallInDisplay order from the soldier's left. `origin` is the row's centre on the floor,
+-- looking out toward the soldier; `length` along the row, `depth` front to back. The plates
+-- with each name hang on a board on the hull behind, `boardY` up from the floor.
+FallowLayout.CallInDisplay = {
+	origin = CFrame.lookAt(Vector3.new(30.8, H, 105), Vector3.new(0, H, 105)),
+	length = 31,
+	depth = 3.6,
+	boardY = 4.2,
+}
+
 -- The Arms Room fills the hangar's port fore corner (Nova, 2026-11-10: "use that entire corner
 -- for him"; ArmsRack builds it, ArmsRackUI looks at it). The Quartermaster stands behind a glass
 -- counter (Nova: "the glass case would act as the desk, like in GTA") holding sidearms, melee and

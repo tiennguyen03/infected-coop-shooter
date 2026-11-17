@@ -6,7 +6,7 @@ last one. **End of a session:** edit this page in place (never append history he
 one note to `handoff/log/` (format in `handoff/log/README.md`). History lives in
 `docs/HISTORY.md`; this page is only "now".
 
-Last updated: 2026-11-16 by Claude (lobby: boarding ring, one main seller; Loadmaster screen).
+Last updated: 2026-11-16 by Claude (lobby: boarding ring, one main seller, the Call-ins display; Loadmaster screen).
 
 ## The game today (on `main`)
 
@@ -61,7 +61,11 @@ that restocks the squad.
   (owner; **not yet seen in game**): the Quartermaster sells every gun and grenade, the Call-ins
   desk (the sapper sergeant, was the Engineers) every call-in, the Loadmaster only signs Loadouts;
   the Fires desk is gone (**Nova:** desk id `engineers` is now `callins`; `LoadmasterUI`'s
-  `soldAt("loadmaster")` now returns nothing, so its drop panel stays hidden). The soldier on the ship
+  `soldAt("loadmaster")` now returns nothing, so its drop panel stays hidden). Behind the Call-ins
+  sergeant every call-in is laid out on a pallet, picked and bought like the rack
+  (`CallInDisplay`, `CallInDisplayUI`, rows' `Display`; **not yet seen in game**; **Nova:** new
+  files in your `src/lobby/`, one line in `Main.client`, a hook in `DeskDialogUI`; the wire
+  spools behind him gave way to it). The soldier on the ship
   uses the match's idle and walk and carries the signed primary (2026-11-11, **not yet seen in
   game**; **Nova:** small edits in your `PikeBody`, `LoadmasterService`, lobby `Main.client`,
   new `SoldierMoves`; off with `Config.Lobby.Soldier.Enabled = false`; what to check is in

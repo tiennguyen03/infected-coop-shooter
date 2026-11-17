@@ -11,6 +11,7 @@ local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local LobbyDesks = require(ReplicatedStorage.Lobby.LobbyDesks)
 local ArmsRack = require(script.Parent.ArmsRack)
+local CallInDisplay = require(script.Parent.CallInDisplay)
 local Build = require(script.Parent.Build)
 local Layout = require(script.Parent.FallowLayout)
 local NpcBody = require(script.Parent.NpcBody)
@@ -19,7 +20,6 @@ local DeskService = {}
 
 local COUNTER = Color3.fromRGB(84, 88, 92)
 local CRATE = Color3.fromRGB(86, 92, 66)
-local WIRE = Color3.fromRGB(120, 124, 126)
 
 -- Each figure's look (NpcBody.Dress): body colours and `items`, Roblox catalog asset ids of any
 -- kind a body wears (layered shirts and pants, hats, hair, vests, glasses...). The codes in the
@@ -81,23 +81,15 @@ local function props(folder: Folder, id: string, frame: CFrame)
 			{ collide = false }
 		)
 	elseif id == "callins" then
-		-- The fire-mission radio on the counter (it came over from the Fires desk) and spools
-		-- of wire.
+		-- The fire-mission radio on the counter (it came over from the Fires desk); behind him
+		-- every call-in he sells, laid out on the floor (CallInDisplay, FallowLayout.CallInDisplay).
 		prop(
 			"RadioSet",
 			Vector3.new(2.4, 1.6, 1.2),
 			Vector3.new(2, 4.2, -2.4),
 			Color3.fromRGB(60, 64, 50)
 		)
-		for index, x in { -4.5, -2, 4 } do
-			prop(
-				"Spool",
-				Vector3.new(2.2, 3, 3),
-				Vector3.new(x, 1.5, 4 + index % 2),
-				WIRE,
-				{ shape = Enum.PartType.Cylinder, material = Enum.Material.DiamondPlate }
-			)
-		end
+		CallInDisplay.build(folder, id)
 	end
 end
 

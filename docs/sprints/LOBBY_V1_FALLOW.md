@@ -87,10 +87,23 @@ match place.
   the spot resets after 6 s. Screen: `LaunchUI` (spot, who is aboard against the squad size, countdown, the picker for the
   first aboard).
 - **Three hangar desks** (`DeskService`, data `LobbyDesks`): Arms Room (the port fore corner),
-  Call-ins (the sapper sergeant among wire spools, starboard; was the Engineers), Loadmaster
+  Call-ins (the sapper sergeant, starboard; was the Engineers), Loadmaster
   (slung cases at the foot of the ramp). The Fires desk was folded into Call-ins (owner
   2026-11-16: "we don't need the Fire Support office... the Quartermaster is the main guy who
-  sells stuff"; not yet seen in game). R15 crew figures in working dress, a counter, a sign, an F "Talk" prompt. The
+  sells stuff"; not yet seen in game). **The Call-ins display** (2026-11-16, owner: "similar to how the
+  Quartermaster is... the Doorman laying on the floor"; `CallInDisplay`, `CallInDisplayUI`; not
+  yet seen in game): behind the sergeant, every call-in he sells on its own pallet in a row along
+  the starboard hull (`FallowLayout.CallInDisplay`, data only: origin, length, depth): a crate of
+  Hammer shells, the Anvil's binoculars on a map table, a scale model of the Shrike on a stand,
+  the Doorman tripod gun, Tripline's six charges by their satchel, a coil of Concertina wire, the
+  Speedball ammo bundle, the Aid Bag. Each comes from its Config row's `Display = { Prop, Width }`
+  (no Display: a stencilled crate, `Config.Lobby.CallInDisplay.DefaultProp`), using the uploaded
+  meshes where they exist (`dep_doorman_*`, `prop_ammo_crate`, `prop_repulsor_mine`,
+  `veh_shrike_*` shrunk) and Parts otherwise. A plate over each on a lit board gives its name and,
+  for each soldier, ON YOUR RECORD or its price. "Show me the call-ins." turns the camera onto the
+  row like the rack: hover lifts and glows, click (or the arrows) frames a piece with its card
+  (name, designation, status, BUY, what it does, uses and recharge); Backspace steps back. The
+  `DeskShop` list stays as the fallback while the row is not built. R15 crew figures in working dress, a counter, a sign, an F "Talk" prompt. The
   **Every desk talks the same way** (dialog rewrite 2026-11-10, Nova and Tien: "too cryptic,
   no personality"; lines and voices by the lore developer, `LobbyDesks` `talk`, voice sheets
   in docs/lore/desk_crew.md): a greeting picked at random from four, then 1 their kit, 2 a

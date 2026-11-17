@@ -18,6 +18,7 @@ local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local KitPrices = require(ReplicatedStorage.Shared.KitPrices)
 local LobbyDesks = require(ReplicatedStorage.Lobby.LobbyDesks)
+local CallInDisplayUI = require(script.Parent.CallInDisplayUI)
 local DeskShop = require(script.Parent.DeskShop)
 local HoldStill = require(script.Parent.HoldStill)
 local HudTheme = require(script.Parent.HudTheme)
@@ -168,6 +169,13 @@ function DeskDialogUI.init()
 			return
 		end
 		if index == 1 then
+			-- A desk with a display (Call-ins) shows its kit laid out behind it; the list is the
+			-- fallback while the display is not built.
+			local from = openPrompt
+			if current.display and from and CallInDisplayUI.open(current, from) then
+				close()
+				return
+			end
 			say(current.talk.openLine)
 			if current.id == "plot" then
 				viewMap()
