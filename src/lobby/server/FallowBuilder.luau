@@ -405,8 +405,7 @@ local function buildPlot(ship: Folder)
 	local top = DECK_BOTTOM
 	-- No walls: the map room is open hangar floor, walked into from any side (owner
 	-- 2026-11-17: the walls were awkward to get in and out of and cramped a full lobby).
-	-- The watch officer's sign (DeskService) names it; with Carrier v2 on, the floor paint,
-	-- the hanging MAP ROOM sign and the consoles come from CarrierV2.
+	-- The watch officer's sign (DeskService) names it.
 
 	-- The chart table: the Harlan Corridor on paper (WorldMap, the lore's world map).
 	WorldMap.build(ship)
