@@ -130,13 +130,24 @@ carrier hiss and a squelch. He still walks the route, Gate to bus line to Inner 
 the Apron, checking buses that have been empty for a week. Shoot the plates off and he
 is just a man again. Optional name for the roster board: SGT HALE (not used in game).
 
-Radio for the Warden mission (`Config.Index.Warden.Radio`; the insert and wipe lines are
-written but not yet placed):
+Radio for the Warden mission (`Config.Index.Warden.Radio`; the lines for his part in the
+main objective are `Config.Objectives.Boss` and each objective's `Boss` block in
+`ObjectiveDefinitions`, 2026-11-16: he guards his own post, so each line ties him to the
+site; the insert and wipe lines are written but not yet placed):
 
 | Cue | Line |
 |---|---|
 | Insert (not placed) | "Pike, Control. Delta's Index is the Gate NCOIC. He chained it. Expect him to come looking." |
-| Main objective complete | "That woke the Gate sergeant. He still guards this post. The Warden is coming up the road." (plain words, 2026-11-11) |
+| Main objective complete (old order, `Config.Objectives.Boss.Enabled = false`) | "That woke the Gate sergeant. He still guards this post. The Warden is coming up the road." (plain words, 2026-11-11) |
+| He comes to the main objective (default) | "That woke the Gate sergeant. He still guards this post. The Warden is coming to {place}." |
+| ... Sanitize the Pens | "The fires woke the Warden. Those were his pens. He's coming to guard the last tent." |
+| ... Secure the Site | "That woke the Warden. He still holds this perimeter, and he's coming to take {place} back." |
+| ... Restore Comms | "That signal woke the Warden. He still answers this radio, and he's coming for the mast." |
+| ... Confirm Casualties | "Those heavies were his reserve. The Warden is coming to {place} to lead the rest." |
+| ... Recover the Record | "That record is his. The Warden kept the count, and he's coming for whoever carries it." |
+| He stands on it (once) | Pens: "He's standing over the last fuel can. Pull him off it, then burn it." Site: "He's inside the perimeter. The hold stops while he stands in it. Pull him out." Comms: "He's at the mast and the signal is dropping. Pull him away from it." |
+| Work done, he still stands | "That's done. The Warden is all that's left. Put him down." |
+| He is down, work left | "The Warden is down. Finish the job." |
 | Gate open | "Gate's open. Contact in the lane, big. It's wearing riot plate." |
 | Sighting | "Eyes on. That's the Gate NCOIC. Control, Index confirmed." |
 | Bus line | "Bus line. He's checking buses. Plates first, then the body." |
@@ -196,12 +207,15 @@ how the other teams are called is open, for the lore developer.
   (the **Quartermaster** behind a wire cage: guns, sidearms, grenades, bought off the rack),
   the **Loadmaster** (the helicopter crew chief: he makes up each soldier's **Loadout**, what they
   carry and what is kicked out of the door, and they sign for it before they walk up the
-  ramp), **Fires** (a fire support officer: your callsign on the
-  Hammer, Anvil and Shrike nets), the **Engineers** (a sapper sergeant: Doorman, Tripline,
-  Concertina). Desk crew wear ship or Army working dress, never Pike grey. The four desks
-  are run by the same four people every visit: the Quartermaster (a sergeant first class,
-  thirty years in arms rooms), the Loadmaster (the helicopter crew chief, who rides the door),
-  Fires (a lieutenant) and the Engineers (a staff sergeant, a sapper). Voices and lines in
+  ramp), and **Call-ins** (a sapper sergeant: every call-in, from the fire missions to the
+  Doorman, the wire and the supply drops; owner 2026-11-16 folded the Fires desk into it),
+  and **Vehicles** (2026-11-17, Nova approved: the motor pool at the hangar's aft end, three
+  painted bays, a parked ATV lashed to the deck, tool chests, a tyre rack and a fuel point; the
+  **motor sergeant** sells the ATV, which is signed into a call-in slot at the Loadmaster).
+  Desk crew wear ship or Army working dress, never Pike grey. The desks are run by the same
+  people every visit: the Quartermaster (a sergeant first class, thirty years in arms rooms),
+  the Loadmaster (the helicopter crew chief, who rides the door), the sapper sergeant (a
+  staff sergeant) and the motor sergeant (a staff sergeant). Voices and lines in
   [lore/desk_crew.md](lore/desk_crew.md).
 - **The Plot.** Control's map room under the island, lit red. The corridor chart is a paper
   map on the table under tape and grease pencil (what it shows:
@@ -257,6 +271,18 @@ feet.
 - **No door gun.** The pintle mount is still on the door frame, empty, its arm swung inboard
   and tied off. The helicopter does not fight for its LZ. Pike holds it. When the squad needs a gun
   from the air, it calls Shrike.
+- **The ATV.** (2026-11-17.) The helicopter can carry one two-seat military ATV slung under
+  it on a line: it sets the ATV down where the call-in lands, drops the hook and goes. The ATV
+  wears HARLAN stencilled like every airframe. The driver has no gun; the one on the back seat
+  fires their main gun all round except through the driver. It runs Infected down, and on
+  the bigger maps it is how Pike gets about. Radio notices (in game,
+  `Config.CallIns.ATV.Vehicle.Radio`):
+
+  | Cue | Line |
+  |---|---|
+  | Inbound (on the call) | "Pike, Control. Helo bringing your ATV in under it. Clear the drop." |
+  | Down (touchdown) | "Helo. ATV's on the ground. Hook's clear." |
+  | Lost (destroyed) | "Pike, Control. Lost your ATV. You're on foot." |
 - **The lamp.** A single amber lamp sits on the housing behind the rotor mast. It is lit
   whenever the rotor turns, day or night. Soldiers say it is what you look for when you have
   thrown green smoke and cannot see the smoke.

@@ -121,6 +121,19 @@ return {
 		expect.equal(reason, "far")
 		expect.equal((pick({ distance = 9 })), true)
 	end,
+	["an upgrade already taken from another crate is refused, not wasted"] = function()
+		local ok, reason = pick({ held = true })
+		expect.equal(ok, false)
+		expect.equal(reason, "held")
+	end,
+	["an upgrade that would now replace something the card did not show is refused"] = function()
+		-- Shown when the crate landed: replaces nothing. Since then another crate filled the slot.
+		local ok, reason = pick({ shownReplaces = "", replaces = "pierce" })
+		expect.equal(ok, false)
+		expect.equal(reason, "changed")
+		expect.equal((pick({ shownReplaces = "pierce", replaces = "pierce" })), true, "as shown")
+		expect.equal((pick({ shownReplaces = "none", replaces = "pierce" })), true, "no record")
+	end,
 
 	["a hurt bot takes the heal"] = function()
 		local need: Reward.Need = { Heal = 0.6 }

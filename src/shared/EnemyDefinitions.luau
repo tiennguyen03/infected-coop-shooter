@@ -50,6 +50,11 @@ export type EnemyDefinition = {
 	-- Personal space in studs (EnemySpacing); defaults to Config.Enemies.Spacing.Radius x Scale.
 	SpacingRadius: number?,
 	Boss: boolean?, -- an Index host: spawned by IndexService, never by the director
+	-- Vehicles (Config.CallIns.<Key>.Vehicle; VehicleService): what each of its hits on a
+	-- rider also takes off the vehicle (nil = 0: its claws only find the soldiers), and
+	-- RamStop = true when it stops a vehicle dead instead of going under it.
+	VehicleDamage: number?,
+	RamStop: boolean?,
 }
 
 local MELEE: Behaviour = { Attack = "melee" }
@@ -99,6 +104,8 @@ local EnemyDefinitions: { [string]: EnemyDefinition } = {
 		Color = Color3.fromRGB(52, 88, 50),
 		Behaviour = MELEE,
 		HeadshotMultiplier = 1.25, -- bone overgrowth: the head is barely a weak point
+		VehicleDamage = 60, -- about seven blows wreck an ATV
+		RamStop = true,
 	},
 	-- Ranged: plants, rears back, lobs caustic fluid that leaves a puddle. The one rule:
 	-- a Hocker that stops moving is about to spit. Numbers: systems designer.
@@ -128,6 +135,7 @@ local EnemyDefinitions: { [string]: EnemyDefinition } = {
 			},
 		},
 		ThroatSac = true,
+		VehicleDamage = 15, -- the spit eats the paint
 	},
 	-- The Index (Delta): the Warden, armoured (Config.Index.Warden: plates, kit, phases).
 	-- IndexService steers him; the director never picks him (FirstSpawnTime huge, Boss).
@@ -146,6 +154,8 @@ local EnemyDefinitions: { [string]: EnemyDefinition } = {
 		Behaviour = { Attack = "boss" },
 		HeadshotMultiplier = 2, -- once the helmet is off (the shell takes the hits until then)
 		Boss = true,
+		VehicleDamage = 150,
+		RamStop = true,
 	},
 }
 

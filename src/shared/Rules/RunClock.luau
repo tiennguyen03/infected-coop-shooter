@@ -1,6 +1,7 @@
 --!strict
 -- The run clock as text: pure, unit-tested with Lune (tests/RunClock.spec.luau).
--- RunTimerUI shows it top centre from the server's RunStartTime.
+-- RunTimerUI shows it top centre from the server's RunStartTime; RunEndUI shows the time
+-- survived with it.
 
 local RunClock = {}
 

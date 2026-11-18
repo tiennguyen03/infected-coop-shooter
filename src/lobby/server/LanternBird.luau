@@ -1,7 +1,7 @@
 --!strict
 -- Lantern, the lift bird on each deck spot (docs/LORE.md > Lantern; meshes in
 -- assets/3d/build/lantern.py, sheet in docs/sprints/LOBBY_V1_FALLOW.md > Lantern). Nose to
--- the bow (+Z), the open door to starboard (+X) facing the boarding box.
+-- the bow (+Z), the open door to starboard (+X), inside the boarding ring.
 --
 -- The v1 block bird is built first and stays until the four meshes have loaded; then the
 -- blocks give way to the meshes, invisible colliders, the amber lamp (off until the rotor
@@ -208,7 +208,7 @@ local function dressMeshes(
 		spray
 	)
 
-	-- The crew chief at the aft edge of the door, strapped in, facing the boarding box.
+	-- The crew chief at the aft edge of the door, strapped in, facing out of the door.
 	local chief = NpcBody.build(
 		model,
 		"CrewChief",

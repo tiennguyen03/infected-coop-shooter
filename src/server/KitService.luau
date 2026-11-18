@@ -26,6 +26,7 @@ local PauseService = require(script.Parent.PauseService)
 local Squad = require(script.Parent.Squad)
 local ThrowWindUp = require(script.Parent.ThrowWindUp)
 local Lifecycle = require(script.Parent.Lifecycle)
+local VehicleService = require(script.Parent.VehicleService)
 local WorldSounds = require(script.Parent.WorldSounds)
 
 local ENEMY_TAG = "Enemy"
@@ -353,6 +354,10 @@ end
 ----------------------------------------------------------------------
 
 local function onUseAbility(player: Player, kind: unknown, target: unknown)
+	-- On a vehicle only the stim works: the back seat keeps the primary in hand, no throws.
+	if kind ~= Messages.Ability.Stim and VehicleService.seatOf(player.Character) then
+		return
+	end
 	if kind == Messages.Ability.Swap then
 		LoadoutService.swap(player)
 	elseif kind == Messages.Ability.Grenade then

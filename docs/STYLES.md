@@ -219,7 +219,7 @@ UIScale) and its text through `HudTheme.label`.
 | Squad panel (`SquadPanelUI`, `Config.SquadPanel`) | left edge (16,176) | one 190x32 row per other squad member (max 3, callsign order): name 14 in friendly blue (a player's display name, a bot's callsign), state 12 right-aligned, 190x6 health bar (red; red.l with a red outline under 30%), 190x3 white Armour Plate bar when plated; downed: "DOWN 23s" on a draining red.l bar, "REVIVING" on a filling blue bar; dead: dim, "DEAD 8s" while a bot's respawn runs; a red.l flash on a hit of 25% or a down. Repaints on attribute changes; a 0.25 s timer only while a countdown shows |
 | Run timer (`RunTimerUI`) | top centre (0,8) | 16 pt, no panel |
 | Ammo (`LoadoutUI`) | crosshair (+40,+40) | the gun in hand 12 pt above it with "[Q] PISTOL" dim (the other gun); magazine GothamBlack 26 + " / reserve" 16 dim; yellow low, "RELOADING" + bar, red "DRY [R]"; attribute-driven |
-| Arms Room (`LoadoutMenu`, hosted by `LoadoutUI` on B) | centre, 760 wide, DisplayOrder 110 (above the results) | menu style: (22,8,8) at 0.08 with a red.m 1 px box, "//ARMS ROOM" 30, a dim 12 pt rule line; columns PRIMARY / SIDEARM + GRENADE / CALL-INS of 26 px rows (name 14 bold left, designation 11 right), the pick in the cream fill with dark text, call-ins badged "[n]" by slot; the hovered item's line under the columns; cream DEPLOY LOADOUT bottom right, the server's refusal in red.l above it; height grows with the longest list |
+| Loadout screen (`LoadoutMenu`: the Loadmaster's LOADOUT, the match's ARMS ROOM on B) | centre, fitted to the screen (below) | three columns of rows with the item's shape, and an inspect panel with the item turning in 3D over its stat bars: "The Loadout screen" below |
 | Reward cards (`RewardPanel`, opened by `ResupplyUI` on a crate's prompt) | centre, DisplayOrder 60 | up to three 300x400 cards 16 apart under "//RESUPPLY" 30 yellow, a 18 pt note and a dim "closes in 0:42"; a card: menu fill (22,8,8) at 0.08 with a red.m 1 px box and a 4 px bar in its kind's colour (supply yellow, field upgrade blue), "[1]" 16 yellow, kind tag 16 right, 88 px icon, name GothamBlack 28, one-line description Gotham 20, red.l "REPLACES ..." 16; hover or gamepad selection: cream 3 px box; taken: cream flash, x1.06, the others shrink and fade, gone in 0.45 s; footer 16: yellow squares + callsigns that have taken theirs, the refusal in red.l, "[E] CLOSE (or walk away)"; black layer behind at 0.8 transparency. On a short screen the panel is held at 0.7 scale or more (name 19 px, description 14 px on 844x390) |
 | Mission line (`MissionLine`, driven by `ObjectiveUI` / `ExtractionUI`) | lower centre (0.5, 0.8) | "MAIN OBJECTIVE  NAME" (name yellow), its reason on the second line the whole time, a dim 14 pt third line (what to do now, progress, timer, distance in metres), a 300x3 bar; "HOLD the LZ" / "WAITING FOR SQUAD n/m" / red "RETURN to the LZ"; extraction outranks the objective |
 | Objective list (`ObjectiveUI`) | top left (16,150) | one row per known objective: a needle that turns toward it (up = ahead), "MAIN OBJECTIVE / SIDE OBJECTIVE  NAME  140 m" 14 pt; a side objective adds its reason and its step, 12 pt; DONE yellow, FAILED red.l for 6 s; refreshed at 4 Hz |
@@ -251,6 +251,46 @@ UIScale) and its text through `HudTheme.label`.
 - UI stays **code-generated** (disk is the single source of truth). No hand edits in Studio.
 - Never block the centre of the screen except for the run-end screens and the reward cards,
   which the player opens on purpose and can walk away from.
+
+### The Loadout screen (2026-11-16)
+
+Owner: "bigger", each item with its gun's shape, the picked one turning in 3D beside its
+stats. After Prototype 2's upgrade menu (`.superpowers/ui-refs/prototype2/17-upgrade-menu.jpg`:
+"//" header, a list of icon rows with the cream selection, a red-boxed DETAILS panel, tiers as
+square cells). Code `src/client/LoadoutMenu.luau`, numbers `Config.LoadoutScreen`.
+
+- **Size:** designed at 1560x880 (wide) or 960x540 (compact, a screen under
+  `Compact` 1180x680); a UIScale on the frame fits it to 96% x 94% of the screen (at most 1.5x).
+  1080p: 1560x880. A phone (844x390): compact at about 0.62 (rows 72 -> ~45 px, the 44 px touch
+  minimum).
+- **Wide:** header 36 + hint 13 dim; columns PRIMARY / SIDEARM + GRENADE / CALL-INS, 272 wide,
+  each a scrolling list; the inspect panel fills the right (~636 wide); footer: YOUR LOADOUT
+  line (call-in keys yellow), the server's answer, the cream confirm 300x56.
+- **Compact:** tabs PRIMARY / SIDEARM / GRENADE / CALL-INS (50 tall; gamepad L1/R1) over one
+  410-wide list; inspect panel on the right (view 180 tall); no hint on touch.
+- **Row:** 64 (72 compact) tall, the item's flat shape 92x48 on the left (a ViewportFrame,
+  unlit white parts tinted by ImageColor3: text white, dark on the cream pick, dim at 0.45 when
+  locked; `RowSilhouettes = false` drops them), name GothamBold 17, designation Gotham 13, a
+  badge top right (call-in key "[1]" yellow, or the price yellow when locked), EDIT red bottom
+  right on a gun that takes attachments. Inspected row: 2 px yellow box; gamepad selection a
+  3 px cream box.
+- **Inspect panel:** track fill with a red.m 1 px box; a dim kicker (section, "IN YOUR
+  LOADOUT" / "ON KEY 1" yellow); one ViewportFrame (dark field, cream corner L-brackets) with
+  the item turning `SpinSpeed` 0.45 rad/s, 12 degrees above, paused under EDIT; the name
+  GothamBlack 32, designation, ON YOUR RECORD yellow or NOT ON YOUR RECORD red.l + price
+  yellow, the row's description, then stat rows: label 15 left, value 15 dim right, a bar of
+  10 square cells (yellow filled, white at 0.85 empty). Guns: damage, fire rate (rpm from the
+  real rate), magazine, reload, range, accuracy (`Rules/ArmsStats`) and stealth (noise, quietest
+  fullest); call-ins: only what the row has of damage, blast radius / radius, length, reach,
+  lasts, charges, cooldown, arrives; grenades: damage, blast radius, fuse, throw
+  (`Rules/KitCard`). Bars compare against the rest of the roster.
+- **Input:** hover (mouse) or gamepad selection inspects; click / tap / A picks (a call-in
+  toggles in slot order); Enter or gamepad Y confirms; Backspace / B back (the host).
+- **Models:** `Shared.Showcase` (server) puts one look-only Model per item in
+  `ReplicatedStorage.Showcase` from the item's own row (gun `Model`, grenade `Model`, call-in
+  `Show` pieces); no model = a stand-in (a frag, or a case banded in the call-in's colour).
+- **Budget:** one turning ViewportFrame (the only per-frame work, only while open) plus about
+  18 static row views; stat rows pooled.
 
 ---
 
@@ -507,13 +547,18 @@ Helicopter lamps are the warm notes. The hangar desks must still read at a glanc
 
 ### The Carrier's buying panels (2026-11-10)
 
-The Quartermaster's rack card (above) and `DeskShop` (call-ins at Fires, the Engineers and
-the Loadmaster) share one look: the HUD track panel and outline, the item name in GothamBlack
+The Quartermaster's rack card (above) and `DeskShop` (call-ins at the Call-ins desk; the
+Fires desk and the Loadmaster's drops folded into it 2026-11-16) share one look: the HUD track panel and outline, the item name in GothamBlack
 with its designation dim under it, ON YOUR RECORD in yellow, or a BUY · N MERITS button
 (outlined, dimmed with "(SHORT)" when the soldier cannot pay), the merits in yellow at the
 top. In the Loadout, kit not on the record is dimmed with its price in yellow where the
 designation was. Words: BUY, MERITS, ON YOUR RECORD; never shop, store, wares, sell, lock
 or unlock.
+The Call-ins display (2026-11-16, `CallInDisplayUI`) is the rack's screen for call-ins: the same
+header top left (desk, THE KIT, his line, the merits), hint and Back bar at the bottom, the same
+card on the right; in the world each pallet's plate carries the name in dark stencil and, for
+this soldier only, ON YOUR RECORD in yellow or the price in white (GothamBlack, scaled to the
+plate).
 
 ### Mission 1 "Checkpoint Delta"
 

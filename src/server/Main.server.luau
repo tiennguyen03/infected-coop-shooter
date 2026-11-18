@@ -15,6 +15,7 @@ local Server = script.Parent
 -- Order matters: a system starts after the systems it reads at init time.
 local BOOT: { ModuleScript } = {
 	Shared.MeshAssets,
+	Shared.Showcase, -- the Arms Room's turning models (LoadoutMenu)
 	Shared.Animations,
 	Server.Lifecycle,
 	Server.SkyService,
@@ -40,6 +41,7 @@ local BOOT: { ModuleScript } = {
 	Server.EnemyService,
 	Server.GoreService,
 	Server.ShockCoilService,
+	Server.VehicleService,
 	Server.ThrowWindUp,
 	Server.KitService,
 	Server.CallInService,

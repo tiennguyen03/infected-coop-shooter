@@ -165,6 +165,7 @@ local function onSpace(_name: string, state: Enum.UserInputState): Enum.ContextA
 		or not root
 		or model:GetAttribute(Attributes.SquadState) == "Downed"
 		or model:GetAttribute(Attributes.KnockedUntil) ~= nil
+		or model:GetAttribute(Attributes.Riding) ~= nil -- seated on a vehicle (VehicleService)
 	then
 		return Enum.ContextActionResult.Sink
 	end
@@ -220,7 +221,15 @@ local function floorSlope(current: Dash): number
 end
 
 local function stepDash(current: Dash, dt: number)
-	if not current.root.Parent or current.humanoid.Health <= 0 then
+	-- Downed (1 health) or knocked over mid-slide: the slide ends, so a ramp cannot drag the
+	-- body down for the rest of its MaxDuration.
+	local model = current.humanoid.Parent
+	if
+		not current.root.Parent
+		or current.humanoid.Health <= 0
+		or (model and model:GetAttribute(Attributes.SquadState) == "Downed")
+		or (model and model:GetAttribute(Attributes.KnockedUntil) ~= nil)
+	then
 		endDash(current)
 		return
 	end
@@ -276,6 +285,7 @@ function MovementController.tryDash(kind: "roll" | "slide"): boolean
 		or not root
 		or model:GetAttribute(Attributes.SquadState) == "Downed"
 		or model:GetAttribute(Attributes.KnockedUntil) ~= nil
+		or model:GetAttribute(Attributes.Riding) ~= nil -- seated on a vehicle (VehicleService)
 	then
 		return false
 	end

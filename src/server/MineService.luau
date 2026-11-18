@@ -2,7 +2,8 @@
 -- Tripline (Mines call-in, CallInService): the thrown line lands and Config.CallIns.Tripline
 -- .Mines charges settle on an arc bulging away from the thrower. A mine blows when an
 -- Infected steps within TriggerRadius (area damage through DamageService.dealDamage;
--- never the squad). Daisy Chain (command_detonation upgrade): CallInService asks
+-- never the squad); trigger and blast are measured flat with the row's Landing.Height
+-- (Rules/StrikeLanding), so a Brute's high root trips and takes them. Daisy Chain (command_detonation upgrade): CallInService asks
 -- detonateAll when the owner presses the Tripline key with mines still armed.
 
 local CollectionService = game:GetService("CollectionService")
@@ -15,6 +16,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local GroundUtil = require(ReplicatedStorage.Shared.GroundUtil)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
 local Arrival = require(ReplicatedStorage.Shared.Rules.Arrival)
+local StrikeLanding = require(ReplicatedStorage.Shared.Rules.StrikeLanding)
 local DamageService = require(script.Parent.DamageService)
 local GoreService = require(script.Parent.GoreService)
 local PauseService = require(script.Parent.PauseService)
@@ -35,6 +37,27 @@ local mineFolder: Folder
 local mines: { Mine } = {}
 local lastStep = 0
 
+-- The Tripline row's Landing over the defaults (resolved once per step or blast).
+local function landingOf(): StrikeLanding.Resolved
+	local landing = Config.CallIns.Landing
+	return StrikeLanding.resolve(
+		landing.Enabled,
+		landing.Defaults,
+		(Config.CallIns.Tripline :: any).Landing
+	)
+end
+
+-- Whether `root` is within `radius` of `center`.
+local function within(
+	resolved: StrikeLanding.Resolved,
+	root: BasePart,
+	center: Vector3,
+	radius: number
+): boolean
+	local offset = root.Position - center
+	return StrikeLanding.inBlast(resolved, offset.X, offset.Y, offset.Z, radius)
+end
+
 local function removeMine(index: number)
 	mines[index].part:Destroy()
 	mines[index] = mines[#mines]
@@ -43,6 +66,7 @@ end
 
 local function detonate(mine: Mine)
 	local cfg = Config.CallIns.Tripline
+	local landing = landingOf()
 	local center = mine.part.Position
 	WorldSounds.at(center, "callins", "tripline_blast")
 
@@ -78,7 +102,7 @@ local function detonate(mine: Mine)
 			local humanoid = model:FindFirstChildOfClass("Humanoid")
 			local root = model:FindFirstChild("HumanoidRootPart") :: BasePart?
 			if humanoid and humanoid.Health > 0 and root then
-				if (root.Position - center).Magnitude <= cfg.BlastRadius then
+				if within(landing, root, center, cfg.BlastRadius) then
 					DamageService.dealDamage(mine.owner, humanoid, cfg.Damage, root.Position, "hit")
 					if humanoid.Health <= 0 then
 						GoreService.blast(humanoid, center)
@@ -185,6 +209,7 @@ local function onHeartbeat()
 	end
 	lastStep = now
 	local cfg = Config.CallIns.Tripline
+	local landing = landingOf()
 	for index = #mines, 1, -1 do
 		local mine = mines[index]
 		if now >= mine.expiresAt or not mine.part.Parent then
@@ -198,7 +223,7 @@ local function onHeartbeat()
 				local humanoid = model:FindFirstChildOfClass("Humanoid")
 				local root = model:FindFirstChild("HumanoidRootPart") :: BasePart?
 				if humanoid and humanoid.Health > 0 and root then
-					if (root.Position - center).Magnitude <= cfg.TriggerRadius then
+					if within(landing, root, center, cfg.TriggerRadius) then
 						triggered = true
 						break
 					end

@@ -7,9 +7,16 @@
 -- squad its card and has Control read the brief. The squad starts it by reaching it. Side
 -- objectives are drawn too but stay unknown until a squad member comes near one or Control
 -- calls it out. Each objective is a module in src/server/Objectives played through one
--- interface (Objectives/Types); this service never names one. Finishing the main objective
--- pays Config.Objective.SupplyReward, drops the field-upgrade crate and calls the Warden
--- (RunManager's onComplete), exactly as the single hold did.
+-- interface (Objectives/Types); this service never names one.
+--
+-- The Warden is the main objective's last act (Config.Objectives.Boss, the row's `Boss`
+-- block, Rules/BossAct): he comes partway through (Boss.At of its progress, at the latest
+-- when its work is done) from open ground near it, may stop it while he stands on it
+-- (Boss.Contest) or hunt its carrier, and the mission is complete only when the work is done
+-- and he is down, in either order. Then it pays Config.Objective.SupplyReward, drops the
+-- objective reward crate and RunManager goes straight to extraction. Boss.Enabled = false
+-- (and the single hold) keep the old order: the work done pays and calls the Warden from the
+-- Gate (RunManager's onComplete).
 --
 -- All state here is per run and shared by the squad (1 to 4 players and their bots);
 -- nothing is per player. The one thing that outlives a run is `lastMain`.
@@ -27,8 +34,10 @@ local ObjectiveDefinitions = require(ReplicatedStorage.Shared.ObjectiveDefinitio
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local RunStates = require(ReplicatedStorage.Shared.RunStates)
 local Rules = require(ReplicatedStorage.Shared.Rules.Objectives)
+local BossAct = require(ReplicatedStorage.Shared.Rules.BossAct)
 local DifficultyService = require(script.Parent.DifficultyService)
 local EnemyService = require(script.Parent.EnemyService)
+local IndexService = require(script.Parent.IndexService)
 local Missions = require(script.Parent.Missions)
 local ObjectiveModules = require(script.Parent.Objectives)
 local ObjectiveTypes = require(script.Parent.Objectives.Types)
@@ -42,11 +51,25 @@ local ObjectiveService = {}
 
 local objectiveRemote: RemoteEvent
 local noticeRemote: RemoteEvent
--- RunManager registers here: Explore -> Primary on activation, the Warden on completion.
-local completionListeners: { () -> () } = {}
+-- RunManager registers here: Explore -> Primary on activation; on completion the Warden
+-- (old order) or extraction (`bossDone`: he fell inside the main objective).
+local completionListeners: { (bossDone: boolean) -> () } = {}
 local activationListeners: { () -> () } = {}
 
 local completed = false -- the main objective (or the single hold) is done this run
+
+-- The Warden's act inside the main objective, this run (Rules/BossAct).
+type Act = {
+	came: boolean, -- he has been brought (or could not be)
+	down: boolean, -- he is dead (or never came: nothing to fight)
+	workDone: boolean, -- the objective's own work is finished
+	contestedAt: number, -- os.clock he last stood on it (0 = never)
+	contestSaid: boolean, -- Control's Contested line has been read
+}
+local function freshAct(): Act
+	return { came = false, down = false, workDone = false, contestedAt = 0, contestSaid = false }
+end
+local act: Act = freshAct()
 -- Bumped on every run reset so a pending timer from a previous run never fires into the
 -- new one.
 local runGeneration = 0
@@ -73,6 +96,8 @@ type Slot = {
 	folder: Folder?,
 	hideAt: number?, -- os.clock when a finished one leaves the HUD
 	gone: boolean, -- finished and off the HUD
+	-- The main objective with the Warden in it: its Boss block over Config.Objectives.Boss.
+	boss: { [string]: any }?,
 }
 
 local board: { Slot } = {}
@@ -139,10 +164,22 @@ end
 local function entryOf(slot: Slot): Rules.Entry
 	local progress: ObjectiveTypes.Progress = { step = "", done = 0, total = 0, unit = "" }
 	local objective = slot.objective
+	local position = positionOf(slot)
 	if slot.state == "pending" or not objective then
 		progress.step = `Go to {slot.site.Name}`
 	else
 		progress = objective.progress()
+	end
+	local boss = slot.boss
+	if boss and slot.state == "active" then
+		local blocked = BossAct.recently(os.clock(), act.contestedAt, boss.ContestShow or 0)
+		local step = BossAct.step(act.workDone, act.down, blocked)
+		if step == "kill" then
+			progress = { step = boss.KillStep, done = 0, total = 0, unit = "" }
+			position = IndexService.position() or position
+		elseif step == "blocked" then
+			progress.step = boss.Blocked
+		end
 	end
 	return {
 		slot = slot.slot,
@@ -157,7 +194,7 @@ local function entryOf(slot: Slot): Rules.Entry
 		unit = progress.unit,
 		timeLeft = progress.timeLeft,
 		state = slot.state :: Rules.State,
-		position = positionOf(slot),
+		position = position,
 	}
 end
 
@@ -221,9 +258,10 @@ local function dropCrate(center: Vector3, offset: number, kind: string)
 	)
 end
 
--- The main objective is done (or the single hold): the reward, the crate, then the Warden.
--- `after` seconds let Control's Done line be heard before his.
-local function finishMain(center: Vector3, crateOffset: number, after: number)
+-- The main objective is done (or the single hold): the reward, the crate, then the Warden,
+-- or extraction when he already fell inside it (`bossDone`). `after` seconds let Control's
+-- Done line be heard before the next one.
+local function finishMain(center: Vector3, crateOffset: number, after: number, bossDone: boolean)
 	if completed then
 		return
 	end
@@ -232,20 +270,141 @@ local function finishMain(center: Vector3, crateOffset: number, after: number)
 	workspace:SetAttribute(Attributes.ObjectiveCompleted, true)
 	RequisitionService.addRequisition(Config.Objective.SupplyReward)
 	dropCrate(center, crateOffset, Config.Objective.CompleteCrate)
-	print("[ObjectiveService] Main objective complete -> the Warden")
+	print(
+		`[ObjectiveService] Main objective complete -> {if bossDone
+			then "extraction"
+			else "the Warden"}`
+	)
 	local generation = runGeneration
 	task.delay(after, function()
 		if generation ~= runGeneration then
 			return
 		end
 		for _, listener in completionListeners do
-			listener()
+			listener(bossDone)
 		end
 	end)
 end
 
+-- Control's next line waits at least RadioGap from now (after a line IndexService read).
+local function holdRadio()
+	radioFreeAt = math.max(radioFreeAt, os.clock() + Config.Objectives.RadioGap)
+end
+
+-- Whoever carries the objective's item (the Warden's target on a carry objective).
+local function carrier(): Squad.Member?
+	for _, member in Squad.living() do
+		local owner = member.owner
+		if owner and owner:GetAttribute(Attributes.Carrying) == true then
+			return member
+		end
+	end
+	return nil
+end
+
+-- The Warden comes to the main objective: from the site's BossFrom, else open ground
+-- EnterMin..EnterMax from its point; he walks to it (a carry objective: he hunts the carrier
+-- at once). If he cannot spawn there is nothing to fight and the work alone completes it.
+local function bringWarden(slot: Slot)
+	local boss = slot.boss
+	if not boss or act.came then
+		return
+	end
+	act.came = true
+	local goal = positionOf(slot)
+	local from = if slot.site.BossFrom
+		then vector(slot.site.BossFrom)
+		else EnemyService.groundNear(
+			goal,
+			math.floor(boss.EnterMin or 55),
+			math.floor(boss.EnterMax or 70)
+		)
+	local hunter = boss.Target == "carrier"
+	local ok = IndexService.arrive(from, {
+		route = if hunter then {} else { goal },
+		routeRadio = {},
+		target = if hunter then carrier else nil,
+		healthFactor = boss.HealthFactor,
+	})
+	if not ok then
+		warn("[ObjectiveService] the Warden could not come: the work alone completes it")
+		act.down = true
+		return
+	end
+	print(`[ObjectiveService] the Warden comes to {slot.site.Name}`)
+	say(line(slot, boss.Arrive))
+	sync(true)
+end
+
+-- Whether the Warden stands on `point` (the module's Context.contested).
+local function contested(slot: Slot, point: Vector3, radius: number?): boolean
+	local boss = slot.boss
+	if not boss or not act.came or act.down or (boss.Contest or 0) <= 0 then
+		return false
+	end
+	local at = IndexService.position()
+	if not at or not BossAct.inside(point.X, point.Z, at.X, at.Z, radius or boss.Contest) then
+		return false
+	end
+	act.contestedAt = os.clock()
+	if not act.contestSaid then
+		act.contestSaid = true
+		say(line(slot, boss.Contested))
+	end
+	return true
+end
+
+-- The main objective is complete: Control's Done line, the reward, and what follows.
+local function completeMain(slot: Slot)
+	slot.state = "done"
+	slot.hideAt = os.clock() + Config.Objectives.DoneSeconds
+	print(`[ObjectiveService] {slot.row.Name} (main) done`)
+	say(line(slot, slot.row.Done))
+	finishMain(
+		positionOf(slot),
+		Config.Objective.CompleteCrateOffset,
+		Config.Objectives.RadioGap,
+		slot.boss ~= nil
+	)
+	sync(true)
+end
+
+-- The Warden fell (IndexService). Inside the main objective's act: the mission completes if
+-- the work is done, else Control sends the squad back to it.
+local function onWardenDown()
+	local main = mainSlot()
+	if not main or not main.boss or not Rules.isOpen(main.state :: Rules.State) or act.down then
+		return
+	end
+	act.came = true -- a Warden brought another way (the dev panel) counts
+	act.down = true
+	holdRadio() -- his Kill line is on the air
+	if act.workDone then
+		completeMain(main)
+	else
+		say(Config.Objectives.Boss.BossFirst)
+		sync(true)
+	end
+end
+
 local function finish(slot: Slot, state: Rules.State)
 	if not Rules.isOpen(slot.state :: Rules.State) then
+		return
+	end
+	if state == "done" and slot.boss then
+		-- The work is done; the mission waits for the Warden (he comes now if he has not).
+		if act.workDone then
+			return
+		end
+		act.workDone = true
+		print(`[ObjectiveService] {slot.row.Name} work done (the Warden down: {act.down})`)
+		bringWarden(slot)
+		if act.down then
+			completeMain(slot)
+		else
+			say(Config.Objectives.Boss.WorkDone)
+			sync(true)
+		end
 		return
 	end
 	slot.state = state
@@ -259,7 +418,8 @@ local function finish(slot: Slot, state: Rules.State)
 			finishMain(
 				positionOf(slot),
 				Config.Objective.CompleteCrateOffset,
-				Config.Objectives.RadioGap
+				Config.Objectives.RadioGap,
+				false
 			)
 		elseif (slot.row.Supply or 0) > 0 then
 			RequisitionService.addRequisition(slot.row.Supply or 0)
@@ -279,7 +439,9 @@ local function build(slot: Slot): boolean
 	folder.Name = `Objective_{slot.slot}`
 	folder.Parent = workspace
 	slot.folder = folder
-	slot.objective = module.new({
+	-- A module that errors while it is built never freezes the mission (review PR-37): it is
+	-- reported and treated like a missing one.
+	local built, objective = pcall(module.new, {
 		role = slot.role,
 		label = if slot.role == "main" then "MAIN OBJECTIVE" else "SIDE OBJECTIVE",
 		color = if slot.role == "main" then MARKER_MAIN else MARKER_SIDE,
@@ -293,16 +455,32 @@ local function build(slot: Slot): boolean
 		fail = function()
 			finish(slot, "failed")
 		end,
+		contested = function(point: Vector3, radius: number?): boolean
+			return contested(slot, point, radius)
+		end,
 	})
+	if not built then
+		warn(`[ObjectiveService] {slot.id} ({slot.row.Module}) failed to build: {objective}`)
+		return false
+	end
+	slot.objective = objective
 	slot.state = "pending"
 	return true
 end
 
 -- The squad reached it: its fight begins. The main objective brings the pressure the hold
 -- always did (faster spawns, a wave, the field-upgrade crate) and moves the run to Primary.
+-- A main objective whose module failed to build or begin counts as done when it is reached
+-- (as a failure in `step` does): a broken objective never holds the run up.
 local function start(slot: Slot)
 	local objective = slot.objective
-	if slot.state ~= "pending" or not objective then
+	if slot.state ~= "pending" then
+		return
+	end
+	if not objective then
+		slot.state = "active"
+		slot.started = true
+		finish(slot, if slot.role == "main" then "done" else "failed")
 		return
 	end
 	slot.state = "active"
@@ -322,7 +500,11 @@ local function start(slot: Slot)
 		end
 	end
 	print(`[ObjectiveService] {slot.row.Name} ({slot.slot}) started at {slot.site.Name}`)
-	objective.begin()
+	local begun, err = (pcall :: any)(objective.begin)
+	if not begun then
+		warn(`[ObjectiveService] {slot.id} failed to begin: {err}`)
+		finish(slot, if slot.role == "main" then "done" else "failed")
+	end
 	sync(true)
 end
 
@@ -359,6 +541,7 @@ local function teardown()
 		end
 	end
 	table.clear(board)
+	act = freshAct()
 	armed = false
 	sinceArm = 0
 	lastSignature = ""
@@ -397,6 +580,9 @@ local function newSlot(
 		folder = nil,
 		hideAt = nil,
 		gone = false,
+		boss = if role == "main" and Config.Objectives.Boss.Enabled
+			then BossAct.resolve(row.Boss :: any, Config.Objectives.Boss :: any)
+			else nil,
 	}
 end
 
@@ -418,7 +604,11 @@ local function draw(requested: string?)
 	if mainId then
 		lastMain = mainId
 		local slot = newSlot("main", "main", 0, mainId, if forcedMain then forcedSite else nil)
-		if slot and build(slot) then
+		if slot then
+			if not build(slot) then
+				-- Broken: kept on the board so reaching its site still calls the Warden.
+				slot.state = "pending"
+			end
 			table.insert(board, slot)
 		end
 	end
@@ -433,6 +623,33 @@ local function draw(requested: string?)
 		if slot then
 			table.insert(board, slot)
 		end
+	end
+end
+
+-- The Warden's act each frame: he comes at Boss.At of the work; a Warden who left the field
+-- without dying (a dev reset) counts as down so the mission can always be finished.
+local function stepAct(slot: Slot)
+	local boss, objective = slot.boss, slot.objective
+	if not boss or not objective or slot.state ~= "active" then
+		return
+	end
+	if not act.came then
+		local share = 0
+		if objective.share then
+			share = objective.share()
+		else
+			local progress = objective.progress()
+			share = BossAct.share(progress.done, progress.total)
+		end
+		if BossAct.shouldCome(boss.At or 0.5, share, act.workDone, act.came) then
+			bringWarden(slot)
+			if act.down and act.workDone then
+				completeMain(slot)
+			end
+		end
+	elseif not act.down and not IndexService.isActive() then
+		warn("[ObjectiveService] the Warden left the field: counted as down")
+		onWardenDown()
 	end
 end
 
@@ -461,7 +678,7 @@ local function stepBoard(deltaTime: number)
 			end
 		elseif slot.state == "active" then
 			local objective = slot.objective
-			if objective then
+			if objective and not (slot.boss and act.workDone) then
 				local ok, err = (pcall :: any)(objective.step, deltaTime)
 				if not ok then
 					-- A broken objective never holds the run up: the main one counts as done.
@@ -469,6 +686,7 @@ local function stepBoard(deltaTime: number)
 					finish(slot, if slot.role == "main" then "done" else "failed")
 				end
 			end
+			stepAct(slot)
 		end
 	end
 	-- A finished objective leaves the HUD after a moment.
@@ -601,7 +819,7 @@ local function completeHold()
 		Config.Objective.RequiredSeconds
 	)
 	-- The second upgrade crate lands beside the site crate, toward the nearest soldier.
-	finishMain(Config.Objective.ZonePosition, Config.Objective.CompleteCrateOffset, 0)
+	finishMain(Config.Objective.ZonePosition, Config.Objective.CompleteCrateOffset, 0, false)
 end
 
 local function onHoldHeartbeat(deltaTime: number)
@@ -661,8 +879,9 @@ end
 -- Both
 --------------------------------------------------------------------------------------------
 
--- RunManager subscribes: Primary -> Index -> Extract when the main objective is done.
-function ObjectiveService.onComplete(listener: () -> ())
+-- RunManager subscribes: Primary -> Index -> Extract when the main objective is done, or
+-- Primary -> Extract when the Warden fell inside it (`bossDone`).
+function ObjectiveService.onComplete(listener: (bossDone: boolean) -> ())
 	table.insert(completionListeners, listener)
 end
 
@@ -677,10 +896,31 @@ function ObjectiveService.forceComplete()
 	if main and Rules.isOpen(main.state :: Rules.State) then
 		finish(main, "done")
 	elseif pooled() then
-		finishMain(Config.Objective.ZonePosition, 0, 0)
+		finishMain(Config.Objective.ZonePosition, 0, 0, false)
 	else
 		completeHold()
 	end
+end
+
+-- Dev: the Warden comes to the main objective now (it starts first if the squad has not
+-- reached it). Returns what happened.
+function ObjectiveService.wardenNow(): string
+	local main = mainSlot()
+	if not pooled() or not main or not main.boss then
+		return "the Warden is not part of the main objective here (Config.Objectives.Boss.Enabled, or no pools): use SpawnWarden"
+	end
+	if not Rules.isOpen(main.state :: Rules.State) then
+		return "the main objective is already done this run: RestartRun first"
+	end
+	if act.came then
+		return "he already came this run"
+	end
+	if main.state == "pending" then
+		armed = true
+		start(main)
+	end
+	bringWarden(main)
+	return `the Warden is coming to {main.site.Name}`
 end
 
 -- Dev: start the main objective now, wherever the squad is (the single hold: bring the
@@ -737,7 +977,11 @@ function ObjectiveService.redraw(mainId: string?, sideId: string?, siteIndex: nu
 		return `no side objective "{sideId}" on this map ({ObjectiveService.list()})`
 	end
 	local live = RunStates.isLive()
+	local wardenCame = act.came
 	teardown()
+	if wardenCame then
+		IndexService.reset() -- the last draw's Warden
+	end
 	EnemyService.setQuiet(nil)
 	runGeneration += 1 -- drops Control's queued lines from the last draw
 	radioFreeAt = 0
@@ -794,6 +1038,7 @@ function ObjectiveService.init()
 	})
 	objectiveRemote = Remotes.get("ObjectiveUpdate")
 	noticeRemote = Remotes.get("BuffNotice")
+	IndexService.onDefeated(onWardenDown)
 	-- A client that has just loaded asks for the board it missed.
 	objectiveRemote.OnServerEvent:Connect(function(player: Player, kind: unknown)
 		if kind == Messages.ObjectiveUpdate.Request and #board > 0 then
