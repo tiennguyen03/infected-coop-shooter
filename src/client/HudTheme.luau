@@ -151,4 +151,32 @@ function HudTheme.facet(frame: Frame, light: Color3, base: Color3)
 	gradient.Parent = frame
 end
 
+-- The left column under the Resupply line (Config.Hud): one top-to-bottom flow, so what
+-- is put in it (the squad panel, then the objective list, by `order`) never overlaps
+-- whatever its neighbour's height. Each caller's frame must size itself to its content.
+local leftColumn: Frame? = nil
+function HudTheme.inLeftColumn(frame: GuiObject, order: number)
+	if not leftColumn then
+		local ReplicatedStorage = game:GetService("ReplicatedStorage")
+		local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
+		local gui = HudTheme.gui("LeftColumn", 9)
+		local column = Instance.new("Frame")
+		column.Name = "Column"
+		column.BackgroundTransparency = 1
+		column.Position = UDim2.fromOffset(HudTheme.Margin, Config.Hud.LeftColumnTop)
+		column.AutomaticSize = Enum.AutomaticSize.XY
+		column.Size = UDim2.fromOffset(0, 0)
+		column.Parent = gui
+		local layout = Instance.new("UIListLayout")
+		layout.SortOrder = Enum.SortOrder.LayoutOrder
+		layout.Padding = UDim.new(0, Config.Hud.LeftColumnGap)
+		layout.Parent = column
+		HudTheme.parent(gui)
+		leftColumn = column
+	end
+	frame.Position = UDim2.fromOffset(0, 0)
+	frame.LayoutOrder = order
+	frame.Parent = leftColumn
+end
+
 return HudTheme

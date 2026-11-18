@@ -45,6 +45,9 @@
           },
           "LoadoutMenu": {
             "$path": "src/client/LoadoutMenu.luau"
+          },
+          "KitView": {
+            "$path": "src/client/KitView.luau"
           }
         }
       }

@@ -11,6 +11,7 @@
 local Config = require(game:GetService("ReplicatedStorage").Shared.Config)
 
 local FallowLayout = {}
+local V2 = Config.Lobby.CarrierV2.Enabled -- Carrier v2 (CarrierV2): the sellers sit in their corners
 -- Players read "the Carrier"; this module keeps the old name (docs/LORE.md > Naming).
 
 FallowLayout.HalfWidth = 35
@@ -28,15 +29,15 @@ FallowLayout.Well = { x0 = -30, x1 = -10, z0 = 20, z1 = 80 }
 -- The island: a block on the starboard edge.
 FallowLayout.Island = { x0 = 22, x1 = 34, z0 = -10, z1 = 50, top = 80 }
 
--- The Plot: Control's map room under the island, on the hangar deck. The door is in its
--- west wall; the board stands across the room in front of the hull. Its west wall moved out
--- from X 14 (Nova, 2026-11-10: "way too cramped", the player should stand in front of the map):
--- the map table sits mid-room with open floor between it and the door.
-FallowLayout.Plot = { x0 = 4, x1 = 33, z0 = -10, z1 = 30, doorZ0 = 6, doorZ1 = 14 }
+-- The Plot (players read "MAP ROOM"): Control's map room under the island, on the hangar
+-- deck. Open floor, no walls (owner 2026-11-17: walls were awkward to walk in and out of and
+-- cramped a full lobby): the map table stands mid-floor, reached from any side, and the board
+-- stands on its own two posts in front of the hull. This box is only the area it covers (the
+-- red lamp hangs over its centre).
+FallowLayout.Plot = { x0 = 4, x1 = 33, z0 = -10, z1 = 30 }
 FallowLayout.Board = {
 	cframe = CFrame.new(29.5, FallowLayout.HangarY + 7, 10), -- centre of the panel
 	size = Vector3.new(0.4, 10, 32), -- the lettering faces -X (Left)
-	plotter = Vector3.new(31.5, FallowLayout.HangarY, 4),
 }
 FallowLayout.ChartTable = CFrame.new(19, FallowLayout.HangarY, 0) -- the paper map (WorldMap)
 
@@ -100,7 +101,8 @@ export type DeskPlace = {
 FallowLayout.Desks = {
 	{
 		id = "arms_room",
-		feet = Vector3.new(-26, FallowLayout.HangarY, 124),
+		-- Carrier v2: on his stool, a little further back behind the glass (CarrierV2).
+		feet = Vector3.new(if V2 then -26.6 else -26, FallowLayout.HangarY, 124),
 		facing = Vector3.new(1, 0, 0),
 		counter = false, -- his counter is the glass case (ArmsRack, FallowLayout.ArmsRoom)
 	},
@@ -108,11 +110,13 @@ FallowLayout.Desks = {
 		id = "callins",
 		feet = Vector3.new(27, FallowLayout.HangarY, 105),
 		facing = Vector3.new(-1, 0, 0),
+		counter = if V2 then false else nil, -- v2: he sits on a crate among his kit
 	},
 	{
 		id = "loadmaster",
 		feet = Vector3.new(-2, FallowLayout.HangarY, 88),
 		facing = Vector3.new(0, 0, 1),
+		counter = if V2 then false else nil, -- v2: his hammock and cool box
 	},
 	-- Control's watch officer at the map table in the Plot, between the table and the board,
 	-- facing the door (owner 2026-11-10: someone real in the Plot).
@@ -129,6 +133,7 @@ FallowLayout.Desks = {
 		id = "vehicles",
 		feet = Vector3.new(9, FallowLayout.HangarY, -48),
 		facing = Vector3.new(0, 0, 1),
+		counter = if V2 then false else nil, -- v2: her bench and tyres
 	},
 } :: { DeskPlace }
 

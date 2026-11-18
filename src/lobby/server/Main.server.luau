@@ -12,6 +12,7 @@ local Shared = ReplicatedStorage.Shared
 local Server = script.Parent
 
 local BOOT: { ModuleScript } = {
+	Server.CarrierV2, -- registers Carrier v2's kit meshes before MeshAssets builds; places them later
 	Shared.MeshAssets, -- the Pike body's limb meshes (PikeBody)
 	Shared.Showcase, -- the Loadmaster's Loadout screen's turning models (LoadoutMenu)
 	Server.FallowBuilder,

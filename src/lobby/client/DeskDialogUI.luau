@@ -1,9 +1,10 @@
 --!strict
--- Talking to the Call-ins desk (DeskService, LobbyDesks; the Quartermaster and the
--- Loadmaster have their own screens, ArmsRackUI and LoadmasterUI). F on the desk's prompt opens
--- the same talk as every desk: a greeting picked at random, then 1 their kit (the DeskShop with
--- what the desk sells, KitPrices.soldAt: each call-in row's `Desk` or the default), 2 a question, 3 leave; by
--- click or the keys 1-3. It stays up while you stand there (Config.Lobby.DialogSeconds x3 after
+-- Talking to the Call-ins, Vehicles and Plot desks (DeskService, LobbyDesks; the Quartermaster
+-- and the Loadmaster have their own hosts, ArmsRackUI and LoadmasterUI). F on the desk's prompt
+-- opens the same talk as every desk (DeskTalk): a greeting picked at random, then 1 their kit
+-- (the desk screen, DeskScreen, with what the desk sells, KitPrices: each row's `Desk` or the
+-- default; Back returns here), 2 a question, 3 leave; by click or the keys 1-3. With
+-- Config.Lobby.DeskScreen off, 1 opens the old views (CallInDisplayUI, DeskShop). It stays up while you stand there (Config.Lobby.DialogSeconds x3 after
 -- the last choice, unless the shop is open) and closes when you walk out of reach.
 
 local ContextActionService = game:GetService("ContextActionService")
@@ -19,7 +20,9 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local KitPrices = require(ReplicatedStorage.Shared.KitPrices)
 local LobbyDesks = require(ReplicatedStorage.Lobby.LobbyDesks)
 local CallInDisplayUI = require(script.Parent.CallInDisplayUI)
+local DeskScreen = require(script.Parent.DeskScreen)
 local DeskShop = require(script.Parent.DeskShop)
+local DeskTalk = require(script.Parent.DeskTalk)
 local HoldStill = require(script.Parent.HoldStill)
 local HudTheme = require(script.Parent.HudTheme)
 
@@ -39,29 +42,6 @@ for key in CHOICE_KEYS do
 	table.insert(choiceKeyList, key)
 end
 
-local function button(parent: Instance, width: number): TextButton
-	local b = Instance.new("TextButton")
-	b.Size = UDim2.fromOffset(width, 40)
-	b.BackgroundColor3 = HudTheme.Color.Track
-	b.BackgroundTransparency = HudTheme.TrackTransparency
-	b.BorderSizePixel = 0
-	b.AutoButtonColor = true
-	b.Font = HudTheme.Font.Line
-	b.TextSize = 18
-	b.TextColor3 = HudTheme.Color.Text
-	b.TextXAlignment = Enum.TextXAlignment.Left
-	local stroke = Instance.new("UIStroke")
-	stroke.Color = HudTheme.Color.White
-	stroke.Transparency = HudTheme.OutlineTransparency
-	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-	stroke.Parent = b
-	local inset = Instance.new("UIPadding")
-	inset.PaddingLeft = UDim.new(0, 14)
-	inset.Parent = b
-	b.Parent = parent
-	return b
-end
-
 function DeskDialogUI.init()
 	local byId: { [string]: LobbyDesks.Desk } = {}
 	for _, desk in LobbyDesks do
@@ -69,42 +49,9 @@ function DeskDialogUI.init()
 	end
 
 	local gui = HudTheme.gui("DeskDialogUI", 6)
-	local panel = HudTheme.rect(
-		gui,
-		UDim2.fromOffset(560, 0),
-		HudTheme.Color.Track,
-		HudTheme.TrackTransparency,
-		true
-	)
-	panel.AnchorPoint = Vector2.new(0.5, 1)
-	panel.Position = UDim2.new(0.5, 0, 1, -200)
-	panel.AutomaticSize = Enum.AutomaticSize.Y
-	panel.Visible = false
-	local padding = Instance.new("UIPadding")
-	padding.PaddingTop = UDim.new(0, 12)
-	padding.PaddingBottom = UDim.new(0, 12)
-	padding.PaddingLeft = UDim.new(0, 16)
-	padding.PaddingRight = UDim.new(0, 16)
-	padding.Parent = panel
-	local list = Instance.new("UIListLayout")
-	list.SortOrder = Enum.SortOrder.LayoutOrder
-	list.Padding = UDim.new(0, 8)
-	list.Parent = panel
-
-	local title = HudTheme.label(
-		panel,
-		{ size = 22, font = HudTheme.Font.Headline, color = HudTheme.Color.Yellow, rich = true }
-	)
-	title.LayoutOrder = 1
-	local line = HudTheme.label(panel, { size = 18, font = HudTheme.Font.Body })
-	line.LayoutOrder = 2
-	line.AutomaticSize = Enum.AutomaticSize.Y
-	line.Size = UDim2.fromScale(1, 0)
-	line.TextWrapped = true
-	local choices = { button(panel, 528), button(panel, 528), button(panel, 528) }
-	for index, choice in choices do
-		choice.LayoutOrder = 2 + index
-	end
+	local talk = DeskTalk.new(gui)
+	local panel = talk.frame
+	local choices = talk.choices
 	HudTheme.parent(gui)
 
 	-- The Plot's map view: the camera looks down on the paper map (WorldMap's sheet) from the
@@ -149,7 +96,7 @@ function DeskDialogUI.init()
 	local closeAt = 0
 
 	local function say(text: string)
-		line.Text = `"{text}"`
+		talk.say(text)
 		closeAt = os.clock() + Config.Lobby.DialogSeconds * 3
 	end
 
@@ -163,15 +110,28 @@ function DeskDialogUI.init()
 		leaveMap()
 	end
 
+	local openTalk: (chosen: LobbyDesks.Desk, prompt: ProximityPrompt) -> ()
+
 	local function choose(index: number)
 		local current = desk
 		if not current or not panel.Visible then
 			return
 		end
 		if index == 1 then
+			-- A desk that hands out kit opens its screen (Back comes back to this talk).
+			local from = openPrompt
+			if
+				DeskScreen.open(current, from, function()
+					if from then
+						openTalk(current, from)
+					end
+				end)
+			then
+				close()
+				return
+			end
 			-- A desk with a display (Call-ins) shows its kit laid out behind it; the list is the
 			-- fallback while the display is not built.
-			local from = openPrompt
 			if current.display and from and CallInDisplayUI.open(current, from) then
 				close()
 				return
@@ -204,6 +164,22 @@ function DeskDialogUI.init()
 		return Enum.ContextActionResult.Sink
 	end
 
+	function openTalk(chosen: LobbyDesks.Desk, prompt: ProximityPrompt)
+		desk = chosen
+		openPrompt = prompt
+		local said = chosen.talk
+		talk.show(chosen)
+		say(said.greetings[math.random(1, #said.greetings)])
+		panel.Visible = true
+		choices[3].Modal = true -- frees the mouse even zoomed into first person
+		ContextActionService:BindAction(
+			ACTION_CHOOSE,
+			chooseAction,
+			false,
+			table.unpack(choiceKeyList)
+		)
+	end
+
 	for index, choice in choices do
 		choice.Activated:Connect(function()
 			choose(index)
@@ -216,28 +192,14 @@ function DeskDialogUI.init()
 		end
 		local id = prompt:GetAttribute(Attributes.DeskId)
 		local chosen = if type(id) == "string" then byId[id] else nil
-		-- One dialog at a time: any desk closes this one; a desk with a rack or a kit talks
+		-- One dialog at a time: any desk closes this one (and its screen); a desk with a rack or a kit talks
 		-- through its own screen (ArmsRackUI, LoadmasterUI).
 		close()
+		DeskScreen.close()
 		if not chosen or chosen.rack or chosen.kit then
 			return
 		end
-		desk = chosen
-		openPrompt = prompt
-		local talk = chosen.talk
-		title.Text = `{chosen.title}  {HudTheme.tint(chosen.who, HudTheme.Color.TextDim)}`
-		choices[1].Text = `1.  {talk.open}`
-		choices[2].Text = `2.  {talk.ask}`
-		choices[3].Text = `3.  {talk.leave}`
-		say(talk.greetings[math.random(1, #talk.greetings)])
-		panel.Visible = true
-		choices[3].Modal = true -- frees the mouse even zoomed into first person
-		ContextActionService:BindAction(
-			ACTION_CHOOSE,
-			chooseAction,
-			false,
-			table.unpack(choiceKeyList)
-		)
+		openTalk(chosen, prompt)
 	end)
 
 	RunService.Heartbeat:Connect(function()

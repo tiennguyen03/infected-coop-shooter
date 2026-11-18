@@ -5,12 +5,15 @@
 --   windup: the spitter's head goes back and bile runs from its mouth, then it snaps forward
 --   launch: a stretched, wobbling glob along its path, a darker clot dragging behind on a
 --           strand, drops falling off
---   impact: a burst of drops off the surface, a blotch on a wall, and on the ground the pool:
---           a core disc of exactly the damage radius over a dark rim, bubbling, fading out as
---           its damage ends. Splashed players get a bile smear at the screen edges.
--- Budget (docs/STYLES.md > Performance budget): every body is pooled and reused; nine
+--   impact: a burst of drops off the surface (and on the floor low droplets skimming out), a
+--           blotch on a wall, and on the ground the pool: an uneven puddle of wet domes (a
+--           core and a ring of lobes, Rules/PuddleShape) about the damage radius over a dark
+--           rim, spreading out, bubbling and fuming, shrinking and fading as its damage ends.
+--           Splashed players get a bile smear at the screen edges.
+-- Budget (docs/STYLES.md > Performance budget): every body is pooled and reused; twelve
 -- emitters in all, burst only (`Emit`), whatever the number of spitters; splats and pools
--- are capped, oldest first. Looks and caps: Config.Enemies.SpitFX; curves: Rules/SpitShape.
+-- are capped, oldest first; a pool is 14 parts, moved only while it spreads and fades.
+-- Looks and caps: Config.Enemies.SpitFX; curves: Rules/SpitShape.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -21,6 +24,7 @@ local Attributes = require(Shared:WaitForChild("Attributes"))
 local Config = require(Shared:WaitForChild("Config"))
 local Messages = require(Shared:WaitForChild("Messages"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
+local PuddleShape = require(Shared:WaitForChild("Rules"):WaitForChild("PuddleShape"))
 local SpitShape = require(Shared:WaitForChild("Rules"):WaitForChild("SpitShape"))
 local HudTheme = require(script.Parent.HudTheme)
 
@@ -39,6 +43,18 @@ local POOL_SHAPE: SpitShape.PoolSettings = {
 	grow = CFG.Pool.Grow,
 	startSize = CFG.Pool.StartSize,
 	fade = CFG.Pool.Fade,
+	shrink = CFG.Pool.Shrink,
+}
+local PUDDLE_SHAPE: PuddleShape.Settings = {
+	lobes = CFG.Pool.Shape.Lobes,
+	coreSize = CFG.Pool.Shape.CoreSize,
+	coreSquash = CFG.Pool.Shape.CoreSquash,
+	lobeMin = CFG.Pool.Shape.LobeMin,
+	lobeMax = CFG.Pool.Shape.LobeMax,
+	lobeSquash = CFG.Pool.Shape.LobeSquash,
+	reachMin = CFG.Pool.Shape.ReachMin,
+	reachMax = CFG.Pool.Shape.ReachMax,
+	spreadLag = CFG.Pool.Shape.SpreadLag,
 }
 local REAR_SHAPE: SpitShape.RearSettings = {
 	back = CFG.Tell.HeadBack,
@@ -50,10 +66,14 @@ local REAR_SHAPE: SpitShape.RearSettings = {
 local DROP_TEXTURE = "rbxasset://textures/particles/smoke_main.dds"
 local GLOB_TIMEOUT = 10 -- seconds a glob flies with no word from the server before it goes
 local DEFAULT_SIZE = 1.4 -- a splat whose glob this client never saw
-local POOL_HEIGHT = 0.12
-local RIM_HEIGHT = 0.1
-local RIM_DROP = 0.03 -- the rim sits this far under the core, so the two never z-fight
+-- A pool's ground CFrame (the server's) is 0.1 studs over the floor; each blob is a flat
+-- ellipsoid centred there (its edge just over the floor, its dome Pool.Depth tall). Each
+-- rim is a flatter ellipsoid sunk RIM_SINK under it, so it shows only round the blob's edge.
+local RIM_SINK = 0.07
+local RIM_DEPTH = 0.14
+local SHEEN_DEPTH = 0.06
 local SPLAT_HEIGHT = 0.05
+local SPLAT_UNDER_POOL = -0.1 -- the floor blotch lies under the rims
 local SPLAT_GROW = 0.12 -- seconds a blotch takes to spread
 local SMEAR_DEPTH = 0.3 -- how far each smeared edge reaches into the screen
 local DROP_BURST = 4 -- drops the shared allowance can save up
@@ -76,14 +96,21 @@ type Glob = {
 	phase: number,
 }
 
+type Dome = { part: Part, mesh: SpecialMesh }
+
 type Pool = {
-	core: Part,
-	rim: Part,
+	blobs: { Dome }, -- the core, then the lobes (PuddleShape.layout's order)
+	rims: { Dome },
+	sheen: Dome,
+	layout: { PuddleShape.Blob },
+	sheenAt: Vector2, -- share of the radius from the middle
+	sheenAngle: number,
 	ground: CFrame,
 	radius: number,
 	duration: number,
 	bornAt: number,
 	nextBubbleAt: number,
+	nextFumeAt: number,
 	settled: boolean, -- full size and solid: nothing to set until the fade
 }
 
@@ -118,6 +145,7 @@ local windups: { Windup } = {}
 local dripHosts: { Host } = {}
 local burstHosts: { Host } = {}
 local bubbleHosts: { Host } = {}
+local fumeHosts: { Host } = {}
 local hostTurn = 0
 local dropAllowance = 0
 
@@ -230,6 +258,22 @@ local function buildHosts()
 			emitter.Speed = NumberRange.new(0.2, 0.6)
 			emitter.SpreadAngle = Vector2.zero
 			emitter.EmissionDirection = Enum.NormalId.Top
+		end)
+		fumeHosts[index] = host("SpitFume", function(emitter)
+			emitter.Color = ColorSequence.new(CFG.Pool.FumeColor)
+			emitter.Size = NumberSequence.new(1.2, 3.2)
+			-- Faint: thickens a little as it rises, then thins out.
+			emitter.Transparency = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 1),
+				NumberSequenceKeypoint.new(0.3, CFG.Pool.FumeTransparency),
+				NumberSequenceKeypoint.new(1, 1),
+			})
+			emitter.Lifetime = NumberRange.new(1.4, 2.2)
+			emitter.Speed = NumberRange.new(0.8, 1.6)
+			emitter.SpreadAngle = Vector2.new(15, 15)
+			emitter.EmissionDirection = Enum.NormalId.Top
+			emitter.RotSpeed = NumberRange.new(-20, 20)
+			emitter.Drag = 0.5
 		end)
 	end
 end
@@ -457,41 +501,94 @@ local function stepSplats(now: number)
 end
 
 ---------------------------------------------------------------------------------------------
--- The damaging pool.
+-- The damaging pool: a puddle of low wet domes (a core and a ring of lobes laid out by
+-- Rules/PuddleShape), each over a darker rim, and a lighter glint on the core.
+
+local function dome(name: string, color: Color3): Dome
+	local part = body(name, color)
+	part.Size = Vector3.one
+	local mesh = Instance.new("SpecialMesh")
+	mesh.MeshType = Enum.MeshType.Sphere
+	mesh.Parent = part
+	return { part = part, mesh = mesh }
+end
 
 local function newPool(): Pool
-	local core = disc("SpitPool", CFG.Pool.Color)
-	core.Reflectance = CFG.Glob.Reflectance
-	local rim = disc("SpitPoolRim", CFG.Pool.EdgeColor)
+	local blobs, rims = {}, {}
+	for index = 1, 1 + CFG.Pool.Shape.Lobes do
+		local blob = dome("SpitPool", CFG.Pool.Color)
+		blob.part.Reflectance = CFG.Pool.Reflectance
+		blobs[index] = blob
+		rims[index] = dome("SpitPoolRim", CFG.Pool.EdgeColor)
+	end
 	return {
-		core = core,
-		rim = rim,
+		blobs = blobs,
+		rims = rims,
+		sheen = dome("SpitPoolSheen", CFG.Pool.SheenColor),
+		layout = {},
+		sheenAt = Vector2.zero,
+		sheenAngle = 0,
 		ground = CFrame.identity,
 		radius = 1,
 		duration = 1,
 		bornAt = 0,
 		nextBubbleAt = 0,
+		nextFumeAt = 0,
 		settled = false,
 	}
+end
+
+local function parentPool(pool: Pool, parent: Instance?)
+	for index, blob in pool.blobs do
+		blob.part.Parent = parent
+		pool.rims[index].part.Parent = parent
+	end
+	pool.sheen.part.Parent = parent
 end
 
 local function releasePool(index: number)
 	local pool = pools[index]
 	table.remove(pools, index)
-	pool.core.Parent = nil
-	pool.rim.Parent = nil
+	parentPool(pool, nil)
 	table.insert(freePools, pool)
 end
 
+-- Each blob spreads on its own clock (a lobe runs up to Shape.SpreadLag behind the core),
+-- its place and size scaling with it; all of them shrink and fade together at the end.
 local function shapePool(pool: Pool, age: number)
-	local share, fade = SpitShape.pool(age, pool.duration, POOL_SHAPE)
-	local across = pool.radius * 2 * share
-	local rimAcross = (pool.radius + CFG.Pool.EdgeWidth) * 2 * share
-	pool.core.Size = Vector3.new(POOL_HEIGHT, across, across)
-	pool.rim.Size = Vector3.new(RIM_HEIGHT, rimAcross, rimAcross)
-	pool.core.Transparency = CFG.Pool.Transparency + (1 - CFG.Pool.Transparency) * fade
-	pool.rim.Transparency = fade
-	pool.settled = share >= 1 and fade <= 0
+	local look = CFG.Pool
+	local radius = pool.radius
+	local settled = true
+	local coreShare, fade = 1, 0
+	for index, blob in pool.layout do
+		local share, blobFade =
+			SpitShape.pool(age - blob.delay, pool.duration - blob.delay, POOL_SHAPE)
+		if index == 1 then
+			coreShare, fade = share, blobFade
+		end
+		settled = settled and share >= 1
+		local out = radius * share
+		local long, short = blob.long * out, blob.short * out
+		local place = pool.ground
+			* CFrame.new(blob.x * out, 0, blob.z * out)
+			* CFrame.Angles(0, -blob.angle, 0)
+		local wet, rim = pool.blobs[index], pool.rims[index]
+		wet.part.CFrame = place
+		wet.mesh.Scale = Vector3.new(long * 2, look.Depth, short * 2)
+		wet.part.Transparency = look.Transparency + (1 - look.Transparency) * fade
+		rim.part.CFrame = place * CFrame.new(0, -RIM_SINK, 0)
+		rim.mesh.Scale =
+			Vector3.new((long + look.EdgeWidth) * 2, RIM_DEPTH, (short + look.EdgeWidth) * 2)
+		rim.part.Transparency = fade
+	end
+	local glint = radius * coreShare
+	pool.sheen.part.CFrame = pool.ground
+		* CFrame.new(pool.sheenAt.X * glint, look.Depth * 0.45, pool.sheenAt.Y * glint)
+		* CFrame.Angles(0, pool.sheenAngle, 0)
+	pool.sheen.mesh.Scale =
+		Vector3.new(look.SheenSize * glint * 2, SHEEN_DEPTH, look.SheenSize * glint * 1.1)
+	pool.sheen.part.Transparency = look.SheenTransparency + (1 - look.SheenTransparency) * fade
+	pool.settled = settled and fade <= 0
 end
 
 local function poolAt(ground: CFrame, radius: number, duration: number)
@@ -506,12 +603,14 @@ local function poolAt(ground: CFrame, radius: number, duration: number)
 	pool.duration = duration
 	pool.bornAt = now
 	pool.nextBubbleAt = now + CFG.Pool.BubbleInterval * math.random()
-	local flat = CFrame.Angles(0, 0, math.rad(90)) -- a Cylinder's axis is X
-	pool.core.CFrame = ground * flat
-	pool.rim.CFrame = ground * CFrame.new(0, -RIM_DROP, 0) * flat
+	pool.nextFumeAt = now + CFG.Pool.FumeInterval * math.random()
+	pool.layout = PuddleShape.layout(math.random(1, 2 ^ 30), PUDDLE_SHAPE)
+	local spot = math.random() * math.pi * 2
+	local off = CFG.Pool.Shape.CoreSize * 0.3 * math.random()
+	pool.sheenAt = Vector2.new(math.cos(spot), math.sin(spot)) * off
+	pool.sheenAngle = math.random() * math.pi
 	shapePool(pool, 0)
-	pool.core.Parent = folder
-	pool.rim.Parent = folder
+	parentPool(pool, folder)
 	table.insert(pools, pool)
 end
 
@@ -529,13 +628,26 @@ local function stepPools(now: number)
 		end
 		if now >= pool.nextBubbleAt and not fading then
 			pool.nextBubbleAt = now + CFG.Pool.BubbleInterval * (0.6 + math.random() * 0.8)
-			-- Toward the rim more than the middle: froth marks the edge.
-			local out = pool.radius * (0.35 + 0.6 * math.random())
+			-- Toward the edge more than the middle (froth marks it), but inside the
+			-- puddle's shortest reach (PuddleShape covers 3/4 of the radius every way).
+			local out = pool.radius * (0.3 + 0.42 * math.random())
 			local angle = math.random() * math.pi * 2
 			local target = nextHost(bubbleHosts)
 			target.part.Position = (pool.ground * CFrame.new(
 				math.cos(angle) * out,
-				POOL_HEIGHT,
+				CFG.Pool.Depth * 0.4,
+				math.sin(angle) * out
+			)).Position
+			target.emitter:Emit(1)
+		end
+		if now >= pool.nextFumeAt and not fading then
+			pool.nextFumeAt = now + CFG.Pool.FumeInterval * (0.7 + math.random() * 0.6)
+			local out = pool.radius * 0.6 * math.random()
+			local angle = math.random() * math.pi * 2
+			local target = nextHost(fumeHosts)
+			target.part.Position = (pool.ground * CFrame.new(
+				math.cos(angle) * out,
+				CFG.Pool.Depth,
 				math.sin(angle) * out
 			)).Position
 			target.emitter:Emit(1)
@@ -735,11 +847,16 @@ local function impact(
 	local blotch = CFG.Impact.SplatSize * size
 	if poolGround and poolRadius and poolSeconds then
 		poolAt(poolGround, poolRadius, poolSeconds)
-		-- On the floor the pool is the blotch: the lobes go round its edge instead, under
-		-- the rim, and are gone before the pool is.
+		-- On the floor the pool is the blotch: a few spatters go round its edge instead,
+		-- under the rims, and are gone before the pool is; low droplets skim out across the
+		-- ground (the burst's spread opened wide for this one Emit only).
 		if normal.Y > 0.7 then
 			local surface = facing(poolGround.Position, poolGround.UpVector)
-			splatAt(surface, 0, poolRadius, poolRadius * 0.4, -RIM_DROP - RIM_HEIGHT * 0.5)
+			splatAt(surface, 0, poolRadius * 0.95, poolRadius * 0.22, SPLAT_UNDER_POOL)
+			local spread = burst.emitter.SpreadAngle
+			burst.emitter.SpreadAngle = Vector2.new(82, 82)
+			burst.emitter:Emit(CFG.Pool.SplashDrops)
+			burst.emitter.SpreadAngle = spread
 		else
 			splatAt(facing(position, normal), blotch, blotch * 0.45, blotch * 0.4, 0.03)
 		end
