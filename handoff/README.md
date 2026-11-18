@@ -38,7 +38,7 @@ that restocks the squad.
   (`Config.CallIns.Landing`, 2026-11-16, **not yet played**), the Doorman a modelled tripod gun not yet seen in game:
   `Config.CallIns.Doorman.Model = 1` puts the old one back), flare on X, the Arms Room on B (stand-in until Nova's lobby screen).
 - **Vehicles** (2026-11-17, Nova; on `nova/vehicles-atv`, **not yet played**): the ATV, a
-  call-in slung in under the helo; a driver and a back-seat gunner on their primary; runs the
+  call-in dropped in a crate by the helo on a fly-over; a driver and a back-seat gunner on their primary; runs the
   Infected down (`docs/PROGRESSION.md` > The ATV). Bought at the new Vehicles desk at the
   hangar's aft end (the motor pool, `docs/sprints/LOBBY_V1_FALLOW.md` > Motor pool). It wears
   Nova's own model (body) and built wheels, ~12k tris (`docs/STYLES.md` §6 > The ATV).

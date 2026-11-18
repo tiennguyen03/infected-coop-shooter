@@ -271,17 +271,18 @@ feet.
 - **No door gun.** The pintle mount is still on the door frame, empty, its arm swung inboard
   and tied off. The helicopter does not fight for its LZ. Pike holds it. When the squad needs a gun
   from the air, it calls Shrike.
-- **The ATV.** (2026-11-17.) The helicopter can carry one two-seat military ATV slung under
-  it on a line: it sets the ATV down where the call-in lands, drops the hook and goes. The ATV
-  wears HARLAN stencilled like every airframe. The driver has no gun; the one on the back seat
+- **The ATV.** (2026-11-17.) The helicopter brings one two-seat military ATV in a crate
+  sized to it. It flies straight over the mark without stopping and drops the crate, which
+  falls straight down; on landing the walls fall open flat and the lid kicks off, and the ATV
+  is standing in the middle. The ATV wears HARLAN stencilled like every airframe. The driver has no gun; the one on the back seat
   fires their main gun all round except through the driver. It runs Infected down, and on
   the bigger maps it is how Pike gets about. Radio notices (in game,
   `Config.CallIns.ATV.Vehicle.Radio`):
 
   | Cue | Line |
   |---|---|
-  | Inbound (on the call) | "Pike, Control. Helo bringing your ATV in under it. Clear the drop." |
-  | Down (touchdown) | "Helo. ATV's on the ground. Hook's clear." |
+  | Inbound (on the call) | "Pike, Control. Helo's coming over with your ATV in a crate. Clear the drop." |
+  | Down (crate lands) | "Helo. Crate's down. ATV's yours." |
   | Lost (destroyed) | "Pike, Control. Lost your ATV. You're on foot." |
 - **The lamp.** A single amber lamp sits on the housing behind the rotor mast. It is lit
   whenever the rotor turns, day or night. Soldiers say it is what you look for when you have
