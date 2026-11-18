@@ -189,6 +189,14 @@ local function step(humanoid: Humanoid, root: BasePart)
 	elseif ladder and ladder.IsPlaying then
 		ladder:Stop(0.15)
 	end
+	-- In a seat (the ATV): no locomotion however fast the seat moves; VehiclePose bends the
+	-- legs (and the driver's arms) over the idle (Nova 2026-11-17: "stuck in the walking
+	-- animation while driving").
+	if humanoid.SeatPart then
+		switchSet(nil)
+		setIdle(true)
+		return
+	end
 	-- Off the ground: hold whatever is playing (no jump clip; cover is vaulted instead).
 	if humanoid.FloorMaterial == Enum.Material.Air then
 		return

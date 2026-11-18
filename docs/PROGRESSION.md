@@ -251,7 +251,7 @@ out of the door; fire missions are someone on the net. HUD names and radio: [LOR
 | Emplacement | **Concertina** (wire) | 16 x 3 strip for 60 s: 0.4x slow, 5 dps; never vaultable | 2 / 90 | yes |
 | Supply | **Speedball** (ammo bundle) | 4 re-arms (a player again only after stepping out), no lure wave | 1 / 180 | yes |
 | Supply | **Aid Bag** (medical drop) | every soldier within 6 studs: full heal, stims refilled, +25 plate; once each | 1 / 180 | yes |
-| Vehicle | **ATV** (two-seat military ATV) | slung in under the helo; a driver and a back-seat gunner; runs the Infected down ([The ATV](#the-atv-vehicle-call-in)) | 1 / 180 | yes, not played |
+| Vehicle | **ATV** (two-seat military ATV) | dropped in a crate by the helo; a driver and a back-seat gunner; runs the Infected down ([The ATV](#the-atv-vehicle-call-in)) | 1 / 180 | yes, not played |
 
 Every built call-in is thrown (`Kind "throw"`, `ThrowUtil` clamp) except the Anvil, which is
 marked through binoculars (below). Services:
@@ -327,7 +327,7 @@ start on the mark at once).
 | **Concertina** | `unroll` | no smoke | the coil splits into two drums that roll out to the ends paying out a strand, with dust | three rattles | the wire stands at 1.05 s |
 | **Speedball** | `tumble` | yellow smoke | the bundle tumbles down from 50 studs with no chute in 0.75 s | the landing thump | one bounce, dust, ready at 1.5 s |
 | **Aid Bag** | `streamer` | pink smoke | the bag comes down steadily from 38 studs under a 9-stud red and white streamer | the landing thump | the streamer falls across the ground; ready at 1.8 s |
-| **ATV** | `sling` | yellow smoke; rotor wash puffs while it comes down | the helicopter (the insertion's) flies in low along the throw with the ATV on a 16-stud line, hovers 34 up and lowers it | the rotor loop | the hook drops at 7.5 s, the real ATV stands there; the helo climbs away ahead |
+| **ATV** | `crate` (Tien and Nova 2026-11-17; was `sling`, still a style) | yellow smoke | the helicopter (the insertion's) flies straight over the mark 46 up at 60 studs/s with the crate under its skids, never stopping; it lets go 1.4 s before the landing and the crate drops straight down | the rotor loop | the crate lands at 7.5 s (the real ATV appears inside), its walls fall open flat and the lid kicks off behind; the boards lie 4 s and fade. The crate is the vehicle's size plus 0.4 room, in half-stud steps (`Rules/Arrival.crateSize`: 5.5 x 4 x 8.5 for the ATV); a `Crate` on a Vehicle block sets one |
 
 - **Where the values live:** each call-in's row has an `Arrival` block (`Style` plus any
   value it changes) over `Config.CallIns.Arrivals.Defaults`; `Rules/Arrival` merges them and
@@ -351,7 +351,8 @@ start on the mark at once).
 ### The ATV (vehicle call-in)
 
 Nova and Tien, 2026-11-17: the first vehicle. Design by the systems, level and lore agents;
-Nova's picks: a call-in slot (not a free ride or its own slot), slung under the helo. Maps
+Nova's picks: a call-in slot (not a free ride or its own slot), slung under the helo (since
+2026-11-17, Tien's idea: dropped in a crate on a fly-over, see the arrivals table). Maps
 are going to get much bigger, so it is transport as well as a gun platform and a getaway.
 Built, **not played**.
 
@@ -387,6 +388,12 @@ Built, **not played**.
   through, folder `Vehicles`). At 0 it burns 3 s and blows: 120 to the Infected within 10;
   anyone still aboard is thrown off, takes 20 and is knocked down 1.2 s.
 - **HUD:** while riding, a panel over the bottom: the seat, the keys, the ATV's health.
+- **Look** (Nova's own model, 2026-11-17; `docs/STYLES.md` §6 > The ATV): a sport quad with
+  a tall cowl over the front axle, a low saddle, a raised back and a rear rack inside a rail.
+  7.5 long, 3.3 tall; tyres of radius 1 on a 4.81 wheelbase and a 3.28 track; the chassis
+  stands 1.23 over the ground (`VehicleBody.Bodies.atv`, measured on the model). It wears the
+  meshes once they load (the server copies them to the clients for the slung stand-in; the
+  motor pool waits up to `Config.VehicleMeshes.Wait`); before that it is the first Part body.
 - **How riders look** (client `VehiclePose`, the row's `Pose`; a placeholder until a riding
   clip is authored): both seats sit (hips and knees bent over the clip); the driver's hands
   reach the bars and the gun is put away (hidden on every client, and the first-person gun
