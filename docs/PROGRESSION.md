@@ -488,7 +488,8 @@ interval x0.8, +3 alive and +1 heavy per extra living player, hard cap 44).
 
 ## Operation: the Burn, extraction, scoring (not built)
 
-- **The Burn** (mission timer, 840 s for 1-4 players; more players split objectives, time is
+- **The Burn** (mission timer, 840 s for 1-4 players, 1,200 s on the big Delta map:
+  `Config.DeltaXL.BurnSeconds`, docs/sprints/DELTA_XL.md; more players split objectives, time is
   the one resource more-not-tougher does not hand out). Only the Burn counts down on the HUD;
   run time stays a plain readout. At 0:00 the incendiaries land: burning dressing, no more
   pallets, spawn interval x0.5, more alive and +2 Brute/Hocker caps (`Config.Overrun`,

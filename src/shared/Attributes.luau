@@ -41,6 +41,14 @@ local Attributes = table.freeze({
 	ObjectiveActive = "ObjectiveActive",
 	ObjectiveCompleted = "ObjectiveCompleted",
 	ExtractionActive = "ExtractionActive",
+	-- workspace: the big map is built (server DeltaXL writes; Config.DeltaXL)
+	DeltaXL = "DeltaXL",
+	-- workspace, Vector3: where this run's squad landed (DeltaXL writes when the draw picks a
+	-- corner; ArenaService's pads and the insertion cutscene read it; none = the LZ)
+	DropPoint = "DropPoint",
+	-- workspace, Vector3: the helicopter's pickup, set when the main objective is done
+	-- (DeltaXL writes; ExtractionService reads; none = the LZ)
+	PickupPoint = "PickupPoint",
 	-- spawn interval multiplier while extracting (ExtractionService writes, EnemyService reads)
 	ExtractionSpawnFactor = "ExtractionSpawnFactor",
 	IndexActive = "IndexActive",

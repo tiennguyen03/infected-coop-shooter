@@ -2,7 +2,7 @@
 
 The one page to open to see what is waiting, what is being built, and what needs you.
 Plain words, newest state. Updated in the same commit as the work that changes it.
-Last updated: 2026-11-17. (Integration 2, #63, was playtested by Tien and merged to main on
+Last updated: 2026-11-18 (the big map). (Integration 2, #63, was playtested by Tien and merged to main on
 2026-11-17: call-ins land, Warden in the objective, the Loadmaster screen, one main
 seller, call-in display, board in the ring, review fixes, Nova's ATV. The "Try it" rows for
 #56, #58 and the ATV are now in main.)
@@ -47,6 +47,7 @@ published from `main`.
 | NPC UI PR | Every desk looks like the Loadmaster: the Quartermaster, Call-ins and Vehicles open the same big screen with the item turning in 3D, its stats and BUY; the talk panels match | lobby place: buy something at each desk; does BUY feel clear; do you miss the camera on the gun wall (one switch brings it back) |
 | ATV PR | The ATV: a call-in from the new Vehicles desk at the back of the hangar, slung in by the helicopter; one drives, one shoots off the back; runs the Infected down | Nova played the match side; the motor pool in the lobby is unseen |
 | Objective meter PR | Objective progress is a big yellow bar under the objective line ("HOLDING 23 of 60s", red "PAUSED" when you step out); the squad panel and objective list no longer cover each other | Restore Comms at the mast: step in and out; a side objective takes the bar while you work on it |
+| Big map PR | Checkpoint Delta grown to 1,800 x 1,800 as grey blocks: today's base in the middle, eight areas round it (farms, truck stop, water works, camp, rail yard, houses, interchange, fuel farm), a river with a ford and two bridges; you drop at a far corner and the helicopter's pickup is only called when the main objective is done | F1 > RUN > "Big map on"; walk or drive the loop; is it too empty, too far, is the river readable; how long a run takes. The Infected are not yet spread for a big map (`docs/sprints/DELTA_XL.md` > What breaks) |
 
 Merge order when you are happy: #18 before #25 and #28; #16 before #32; #15 before #36 and
 #37; #21 before #38; #17 is replaced by #24. Several of these touch the same files; Claude
@@ -66,6 +67,7 @@ joins them at merge time (already done once in the test mix).
 | New key layout: E interact, V stim, F shove, C/Ctrl crouch, Z prone, X flare | one table for all keys; follow-ups on the open PRs |
 | Vehicles: the ATV, follow-ups (Nova) | driver's hands on the bars, faster, engine sound, the motor sergeant's radio lines, a real model, more vehicles as maps grow |
 | Checkpoint Delta revamp in Blender (proposal, pictures first) | layers along the highway, multi-storey buildings, consistent vehicles; Desktop `Delta_v2` when done |
+| The big map, next steps | spawning for a big map (Infected thinned out far away, none stuck in the river), then Delta v2 in the middle, then real art two areas at a time |
 
 ## 4. Your call
 
@@ -83,6 +85,8 @@ joins them at merge time (already done once in the test mix).
 | 10 | Shedder and Kite: another Blender pass before they go in game? | yes |
 | 11 | Mile 14: v1, v2, or v2's skyline on v1's smaller frame? | look at the pictures first |
 | 12 | Generator to 4.8, light-tower collision as two boxes | older calls still open |
+| 13 | Big map: its river runs east-west north of the checkpoint, but the map room's paper map has the river down the west side. Call it a side river that joins it ("the river")? | yes |
+| 14 | Big map: switch it on for everyone after you have played it, or keep it a test until the Infected are spread for it (step 3)? | keep it a test until step 3 |
 
 Decided 2026-11-11 (no longer open): game picks the main objective for now, lobby choice
 later; two side objectives per run; tabs will buy guns and upgrades; keep HARLAN; yellow
