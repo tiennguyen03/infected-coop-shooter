@@ -75,9 +75,18 @@ never tabs or Robux). The rules (buy, fit, the three states, the unlock count) a
 remote, and the Loadmaster refuses to sign an optic not on the record or on a gun it does not
 fit (`RecordService.allows`). On the gun, `Rules/AttachmentMerge` multiplies the gun's zoom and
 its time into the sights (`CameraController`; in third person the shared ADS view narrows by
-the optic's share). The CompM2 is a real 1x sight; 2x here is the owner's call. The optics
-are not drawn on the gun yet: the free models are found (`assets/3d/ASSET_IDS.md` > Optics)
-but not yet downloaded and uploaded; the iron sights stay the sight line until then.
+the optic's share). The CompM2 is a real 1x sight; 2x here is the owner's call (its multiplier
+is 1.48 so the zoom stays at the 2x limit for a sight that is not a scope).
+
+On the gun (2026-11-18): each optic is the free model (`assets/3d/ASSET_IDS.md` > Optics) on
+the M16's rail, one mesh per rifle and optic (`wpn_m16_acog`, `wpn_m16_compm2`,
+`wpn_m16_reddot`, `assets/3d/build/optics.py`): the rifle without its flip-up backup sight, the
+optic's mount on the rail, the glass left open. The red dot sits on a riser so its dot is on
+the irons' line (co-witnessed with the front post); the CompM2 and the ACOG ride a little
+higher. Each row's `Fit` names that mesh and its sight on it; `WeaponDefinitions.dressed`
+gives the gun in hand (`PlayerSetup`), the first-person sight line and zoom
+(`CameraController`, `FirstPersonView`) and the EDIT screen's gun (`Showcase` "<gun>+<optic>").
+The ACOG is a scope: aimed in first person it shows the scope picture, as the M110 does.
 
 ### The soldier
 

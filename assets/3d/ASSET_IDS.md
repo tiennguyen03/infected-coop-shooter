@@ -237,12 +237,21 @@ owned by the group (`upload_models.js`, Open Cloud). Their model ids are in
 `InsertService:LoadAsset` (`modelId`), so no MeshId is recorded. Placed by `CarrierV2`
 (`docs/sprints/CARRIER_V2.md` > In the lobby).
 
-## Optics (found, not yet uploaded)
+## Optics
 
-Free models for the M16A4's optics (`Config.Optics` rows' `Model`), all by **notcplkerry** on
-Sketchfab under **CC BY 4.0** (commercial use allowed; credit the author). Download needs a
-Sketchfab account: save each into `assets/3d/source/`, then they are cut, sized and uploaded
-like the other meshes and their ids go in a row here.
+Free models for the M16A4's optics, all by **notcplkerry** on Sketchfab under **CC BY 4.0**
+(commercial use allowed; credit the author). The downloads (.blend, kept out of git) are cut
+once by `build/optics.py --prepare` into `source/opt_<id>.obj`; the build puts each on the
+M16 (`wpn_m16_<id>`), uploaded as group Model assets (`build/upload_models.js`, ids in
+`build/carrier_uploaded.json`), loaded by MeshAssets `modelId`.
+
+| Mesh | Model asset | Size | Optic |
+|---|---|---|---|
+| wpn_m16_acog | 112543898025888 | 0.25 x 1.23 x 3.08 | ACOG 4x (1,779 tris with the rifle) |
+| wpn_m16_compm2 | 108280623635703 | 0.25 x 1.28 x 3.08 | CompM2 (1,982 tris) |
+| wpn_m16_reddot | 88119224076426 | 0.25 x 1.15 x 3.08 | Red dot, the RMR on a riser (1,150 tris) |
+
+Sources:
 
 | Optic | Model | Licence |
 |---|---|---|

@@ -137,9 +137,11 @@ local Config = {
 	-- multiplies the gun's own Sight.Zoom and the time into the sights (Weapon.ADS.EnterTime;
 	-- Rules/AttachmentMerge, CameraController). Numbers from the systems designer: the named
 	-- magnification is the final zoom on the M16's 1.35 irons; each costs less than the gun it
-	-- competes with (2, 3 and 4 wins at 120 merits). Model: its mesh (MeshAssets) once the free
-	-- model is uploaded (assets/3d/ASSET_IDS.md has the source and licence); nil = not shown on
-	-- the gun yet, only in the menu.
+	-- competes with (2, 3 and 4 wins at 120 merits). Fit: per gun it fits, the mesh of that gun
+	-- with this optic on its rail (assets/3d/build/optics.py, from the free models in
+	-- assets/3d/ASSET_IDS.md > Optics) and its sight on that mesh (Rules/Sight: Rear and Front on
+	-- the optic's axis; the zoom is worked out from ZoomMultiplier). WeaponDefinitions.dressed
+	-- reads it for the gun in hand, first person and the EDIT screen.
 	Optics = {
 		reddot = {
 			Name = "Red dot",
@@ -148,16 +150,33 @@ local Config = {
 			ZoomMultiplier = 1.0, -- 1.35: the irons' picture
 			AdsTimeMultiplier = 0.75, -- 0.11 s
 			Price = 150,
-			Model = nil :: string?, -- the RMR from notcplkerry's ACOG pack (CC-BY 4.0)
+			Fit = {
+				-- The RMR on a riser, its dot on the irons' line, co-witnessed with the front post.
+				service_rifle = {
+					Model = "wpn_m16_reddot",
+					Sight = {
+						Rear = Vector3.new(0, 0.615, -0.01),
+						Front = Vector3.new(0, 0.615, -1.345),
+					},
+				},
+			},
 		},
 		compm2 = {
 			Name = "CompM2 (M68)",
 			Description = "2x and no slower to raise. The general-purpose sight.",
 			Guns = { "service_rifle" },
-			ZoomMultiplier = 1.5, -- 2.0
+			ZoomMultiplier = 1.48, -- 2.0 (a sight that is not a scope stops at 2x, Rules/Sight)
 			AdsTimeMultiplier = 1.0, -- 0.15 s
 			Price = 250,
-			Model = nil :: string?, -- notcplkerry's Aimpoint ECOS-N / CompM2 (CC-BY 4.0)
+			Fit = {
+				service_rifle = {
+					Model = "wpn_m16_compm2",
+					Sight = {
+						Rear = Vector3.new(0, 0.651, 0.04),
+						Front = Vector3.new(0, 0.651, -0.307),
+					},
+				},
+			},
 		},
 		acog = {
 			Name = "ACOG 4x",
@@ -166,7 +185,17 @@ local Config = {
 			ZoomMultiplier = 3.0, -- 4.05
 			AdsTimeMultiplier = 1.6, -- 0.24 s, about a scope's ScopeTime
 			Price = 400,
-			Model = nil :: string?, -- notcplkerry's Trijicon ACOG (CC-BY 4.0)
+			Fit = {
+				-- A scope: aimed, the scope picture (ScopeView) as on the M110.
+				service_rifle = {
+					Model = "wpn_m16_acog",
+					Sight = {
+						Kind = "scope",
+						Rear = Vector3.new(0, 0.643, 0.097),
+						Front = Vector3.new(0, 0.643, -0.325),
+					},
+				},
+			},
 		},
 	} :: {
 		[string]: {
@@ -176,7 +205,12 @@ local Config = {
 			ZoomMultiplier: number,
 			AdsTimeMultiplier: number,
 			Price: number,
-			Model: string?,
+			Fit: {
+				[string]: {
+					Model: string,
+					Sight: { Rear: Vector3, Front: Vector3, Kind: string? },
+				},
+			},
 		},
 	},
 

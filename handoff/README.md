@@ -48,9 +48,11 @@ that restocks the squad.
 - **Optics** (2026-11-18, Nova; on `nova/m16a4-optic-slot`): the M16A4's EDIT at the
   Loadmaster has an Optic slot: Red dot, CompM2, ACOG, bought once with merits and kept on the
   record, fitted on the `Optic` remote (`OpticService`); zoom and ADS time change in the match
-  (`Rules/AttachmentMerge`, `CameraController`; not yet seen aiming in game). The optics are
-  not drawn on the gun until the free models are downloaded and uploaded
-  (`assets/3d/ASSET_IDS.md` > Optics). Other guns: the next PR (`Config.Optics` rows' `Guns`).
+  (`Rules/AttachmentMerge`, `CameraController`; not yet seen aiming in game). Each optic is on
+  the gun: one mesh per rifle and optic from the free models (`wpn_m16_<optic>`,
+  `assets/3d/build/optics.py`), its sight line through the optic (`WeaponDefinitions.dressed`;
+  the ACOG shows the scope picture). Other guns: the next PR (`Config.Optics` rows' `Guns`, a
+  `Fit` and a mesh each).
 - **Keys:** every key is a row of `Config.Keys` and every hint reads it (table: `docs/OWNER.md`);
   a key written into client or server code fails the tests. E interact, C or Ctrl crouch, Z prone.
 - **Movement:** sprint on a stamina bar (8 s; a roll costs 20, a slide 10; winded at zero),

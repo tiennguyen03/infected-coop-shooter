@@ -135,6 +135,29 @@ local MESHES: { [string]: MeshDef } = {
 		offset = Vector3.new(0.012, 0.083, -0.48),
 		muzzle = Vector3.new(0, 0.36, -2.02),
 	},
+	-- The M16A4 with each optic on its rail (assets/3d/build/optics.py; Config.Optics `Fit`),
+	-- uploaded as Model assets (build/upload_models.js). The rifle's muzzle.
+	wpn_m16_acog = {
+		meshId = "",
+		modelId = 112543898025888,
+		size = Vector3.new(0.25, 1.23, 3.08),
+		offset = Vector3.new(0.012, 0.114, -0.48),
+		muzzle = Vector3.new(0, 0.36, -2.02),
+	},
+	wpn_m16_compm2 = {
+		meshId = "",
+		modelId = 108280623635703,
+		size = Vector3.new(0.25, 1.28, 3.08),
+		offset = Vector3.new(0.012, 0.139, -0.48),
+		muzzle = Vector3.new(0, 0.36, -2.02),
+	},
+	wpn_m16_reddot = {
+		meshId = "",
+		modelId = 88119224076426,
+		size = Vector3.new(0.25, 1.15, 3.08),
+		offset = Vector3.new(0.012, 0.075, -0.48),
+		muzzle = Vector3.new(0, 0.36, -2.02),
+	},
 	wpn_mp5 = {
 		meshId = "rbxassetid://97053083297242",
 		size = Vector3.new(0.24, 0.97, 2.2),
