@@ -135,7 +135,7 @@ local function onHeartbeat(deltaTime: number)
 	-- every living player is on the pad. Some of them on it: "waiting for squad". Downed
 	-- players and bots do not hold it up.
 	local _, playersIn, playersLiving = Squad.zoneCount(zone)
-	local everyone = playersLiving > 0 and playersIn >= playersLiving
+	local everyone = ExtractionWaves.squadHolding(playersIn, playersLiving)
 	if everyone then
 		local before = progress
 		progress += deltaTime
