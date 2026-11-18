@@ -387,6 +387,12 @@ Built, **not played**.
   through, folder `Vehicles`). At 0 it burns 3 s and blows: 120 to the Infected within 10;
   anyone still aboard is thrown off, takes 20 and is knocked down 1.2 s.
 - **HUD:** while riding, a panel over the bottom: the seat, the keys, the ATV's health.
+- **Look** (Nova's own model, 2026-11-17; `docs/STYLES.md` §6 > The ATV): a sport quad with
+  a tall cowl over the front axle, a low saddle, a raised back and a rear rack inside a rail.
+  7.5 long, 3.3 tall; tyres of radius 1 on a 4.81 wheelbase and a 3.28 track; the chassis
+  stands 1.23 over the ground (`VehicleBody.Bodies.atv`, measured on the model). It wears the
+  meshes once they load (the server copies them to the clients for the slung stand-in; the
+  motor pool waits up to `Config.VehicleMeshes.Wait`); before that it is the first Part body.
 - **How riders look** (client `VehiclePose`, the row's `Pose`; a placeholder until a riding
   clip is authored): both seats sit (hips and knees bent over the clip); the driver's hands
   reach the bars and the gun is put away (hidden on every client, and the first-person gun

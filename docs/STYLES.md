@@ -613,6 +613,17 @@ transparency on geometry"**: the rotor blur discs (two flat cylinders a bird, fa
 in to 0.8 transparent over the last 6 s before lift while the blades fade to 0.6, never out;
 `Rules/RotorBlur`) are VFX, like the breach ghost.
 
+**The ATV** (`assets/3d/build/atv.py`, prefix `veh_`, collection `Vehicles`; Nova,
+2026-11-17): the body is Nova's own sculpted model (`assets/3d/atvrbx.obj`, 1.7M tris, not in
+git), cut and reduced once into `assets/3d/source/atv_body.obj` and painted by region in the
+build; the wheel is built from primitives at the model's tyre size (cut from the model it was
+an open shell Roblox showed through). Paint follows Nova's colour reference: `olive_d` on the
+upper panels only (cowl, rear fender tops; `olive` read as lime in the sun), `dark` / `dark_d`
+for the lower body, the middle, the grille and the seat, `gun_d` bars (handlebar, bumper, rack
+rail), `dark_d` lugged tyres with a `gun` lip, `dark` rim, `gun_l` hub and bolts. No markings.
+**Budget exception (Nova, 2026-11-17): ~12k tris**, over the 5,000 vehicle cap: the body
+7,946 + four wheels of 564 = 10,202 an ATV, two at most per squad. Only the body casts a shadow.
+
 **The Doorman** (`assets/3d/build/doorman.py`, prefix `dep_`, collection `Deployables`): a
 belt-fed medium machine gun on a squat tripod, run by a sensor head. Read from 25 studs: the
 long barrel with its vented olive heat shield, the olive sensor box above the receiver (blue

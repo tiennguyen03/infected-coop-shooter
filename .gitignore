@@ -30,3 +30,6 @@ __pycache__/
 .claude/worktrees/
 assets/animations/build/out/
 .playwright-mcp/
+
+# The owner's ATV model (70 MB): cut into assets/3d/source/atv_body.obj by build/atv.py prepare
+assets/3d/atvrbx.obj

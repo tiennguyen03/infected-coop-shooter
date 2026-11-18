@@ -100,6 +100,8 @@ Lobby meshes (12 `env_fallow_*`, 4 `veh_lantern_*`) uploaded 2026-11-09 to the g
 | veh_lantern_trim | 120258286814432 | 120432139146773 | 7.94 x 11.65 x 30.05 | Lantern (`LanternBird`); offset in MeshAssets |
 | veh_lantern_rotor | 72210514497412 | 112438582167862 | 38.01 x 1.14 x 38.01 | Lantern (`LanternBird`); offset in MeshAssets |
 | veh_lantern_tail_rotor | 130131221968255 | 134128773314348 | 0.40 x 5.20 x 0.60 | Lantern (`LanternBird`); offset in MeshAssets |
+| veh_atv_body | 104885762277336 | 127745588345820 | 3.70 x 3.29 x 7.55 | the ATV's body (`atv.py`, `VehicleBody`); origin at the chassis centre, offset in MeshAssets; exported pre-mirrored in X (v3, 2026-11-17: panels `olive_d`) |
+| veh_atv_wheel | 112009155792092 | 77549740642291 | 1.09 x 1.99 x 1.98 | its wheel, about the hub, a right-side wheel (VehicleBody turns the left two half round); built from primitives |
 | dep_doorman_base | 88745683715018 | 105696327827016 | 4.05 x 1.93 x 4.13 | the Doorman's tripod (`doorman.py`, `SentryService`, `Config.CallIns.Doorman.Model = 2`); origin on the ground, offset in MeshAssets; exported pre-mirrored in X |
 | dep_doorman_cradle | 70576240552981 | 127041957980191 | 1.36 x 0.96 x 1.09 | its yoke; origin on the traverse axis 1.9 up; yaws |
 | dep_doorman_gun | 75248273049381 | 86670337644554 | 1.95 x 1.53 x 5.54 | its gun, ammo can and sensor head; origin at the trunnion 2.6 up; pitches; muzzle 3.52 ahead |
