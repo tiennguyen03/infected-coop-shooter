@@ -29,6 +29,7 @@ local REMOTE_NAMES = {
 	"BossUpdate", -- server -> client: ("show", name, plateNames) | ("state", body, plates, phase) | ("tell", kind) | ("hide"); client -> server: () resend the state
 	"Impact", -- server -> client: ("knockdown", seconds) the body is knocked down (Squad.knock) | ("push", velocity: Vector3) a shove the client applies to its root
 	"Stance", -- client -> server: (stance: "stand"|"crouch"|"prone"); server -> client: ("prone") stand-up refused under a ceiling
+	"KitMods", -- lobby place, client -> server: ("buy", modId, rank) the next rank of a Kit Mod | ("get"); server -> client: ("state", ranks: { [modId]: rank }) | ("refused", modId, reason) (KitModService, Rules/KitModRules)
 	"Record", -- lobby place, client -> server: ("buy", gunId); server -> client: ("state", merits, ownedIds, tabs) | ("refused", gunId, reason)
 	"EnemySpit", -- server -> client (Messages.EnemySpit; client SpitFX draws it): ("windup", model, seconds) | ("launch", id, origin: Vector3, velocity: Vector3, size) | ("impact", id, position, normal, splashRadius, poolGround: CFrame?, poolRadius?, poolSeconds?) | ("gone", id) | ("reset")
 	"NightVision", -- client -> server: (on: boolean) this soldier's goggles went down or up (NightVisionService sets the character's NightVision attribute)

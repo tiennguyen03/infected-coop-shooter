@@ -6,6 +6,7 @@ last one. **End of a session:** edit this page in place (never append history he
 one note to `handoff/log/` (format in `handoff/log/README.md`). History lives in
 `docs/HISTORY.md`; this page is only "now".
 
+Last updated: 2026-11-18 by Nova + Claude (Kit Mods at the Loadmaster, on `nova/loadmaster-kit-mods`).
 Last updated: 2026-11-17 by Claude (the map room opened up, on `claude/open-map-room`).
 Last updated: 2026-11-17 by Tien + Claude (the Hocker's spit pool as an uneven puddle, on `claude/spit-puddle`).
 Last updated: 2026-11-17 by Tien + Claude (the objective meter and the HUD layout pass, on `claude/objective-progress-visible`).
@@ -44,6 +45,12 @@ that restocks the squad.
   call-in slung in under the helo; a driver and a back-seat gunner on their primary; runs the
   Infected down (`docs/PROGRESSION.md` > The ATV). Bought at the new Vehicles desk at the
   hangar's aft end (the motor pool, `docs/sprints/LOBBY_V1_FALLOW.md` > Motor pool).
+- **Kit Mods** (2026-11-18, Nova; on `nova/loadmaster-kit-mods`, **for Tien to decide**: it
+  breaks OWNER.md "never stat items"): a KIT MODS tab at the Loadmaster sells ranked soldier
+  buffs for merits, kept on the record; Extra stim and Extra roll work, two more are greyed
+  (`docs/PROGRESSION.md` > Kit Mods). **Nova:** `RecordService`'s buy is now
+  `change(player, label, edit)` (the same save), `LoadmasterUI` has the tab bar, new
+  `KitModsTab`; `LoadoutService.freshState` takes the player.
 - **Keys:** every key is a row of `Config.Keys` and every hint reads it (table: `docs/OWNER.md`);
   a key written into client or server code fails the tests. E interact, C or Ctrl crouch, Z prone.
 - **Movement:** sprint on a stamina bar (8 s; a roll costs 20, a slide 10; winded at zero),

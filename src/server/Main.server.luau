@@ -53,6 +53,7 @@ local BOOT: { ModuleScript } = {
 	Server.BotService,
 	Server.HandoffService,
 	Server.MeritService,
+	Server.KitModService, -- the Kit Mod ranks off the record (after MeritService, LoadoutService)
 	Server.InsertionService,
 	Server.NightVisionService,
 	Server.RunManager,

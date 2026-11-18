@@ -88,46 +88,78 @@ local function load(player: Player)
 	end
 end
 
-local function buy(player: Player, id: unknown)
+-- A change to the record: (the new record, true) or (the record unchanged, false, reason).
+export type Edit = (record: Record.Record) -> (Record.Record, boolean, string?)
+
+-- Applies `edit` to the soldier's record and saves it (yields): one at a time, none while a
+-- receipt is being paid, applied to the record as it is stored. (true) or (false, reason;
+-- "loading" | "busy" | "unreadable" | what `edit` said). The record is sent on success.
+local function change(player: Player, label: string, edit: Edit): (boolean, string?)
 	local record = records[player]
-	-- One buy at a time, and none while a receipt is being paid.
-	if not record or typeof(id) ~= "string" or granting[player] or buying[player] then
-		remote:FireClient(player, Messages.Record.Refused, id, "loading")
-		return
+	if granting[player] or buying[player] then
+		return false, "busy"
+	end
+	if not record then
+		return false, "loading"
 	end
 	if unread[player] or not slot.store then
-		-- Nothing is saved this visit (see `unread`; Studio without API access): the buy is
+		-- Nothing is saved this visit (see `unread`; Studio without API access): the change is
 		-- made on the record held here only.
-		local after, ok, reason = Record.buy(record, id, RecordService.priceOf)
+		local after, ok, reason = edit(record)
 		if not ok then
-			remote:FireClient(player, Messages.Record.Refused, id, reason)
-			return
+			return false, reason
 		end
 		records[player] = after
 		send(player, after)
-		return
+		return true, nil
 	end
-	-- The buy is applied to the record as it is stored, in one step (UpdateAsync), never by
+	-- The change is applied to the record as it is stored, in one step (UpdateAsync), never by
 	-- writing the copy read on join over it: merits the match paid after the soldier joined
 	-- (a slow save at mission end) are kept, and a save this lobby cannot read is left alone.
 	buying[player] = true
 	local refused: string? = nil
 	local ok, written = pcall(slot.update, slot, player, function(old: unknown): any
-		local saved, reason = Record.buyStored(old, id, RecordService.priceOf, SAVE.StartMerits)
-		refused = reason
-		return saved
+		if not Record.canUpdate(old) then
+			refused = "unreadable"
+			return nil
+		end
+		local after, done, reason = edit(Record.decode(old, SAVE.StartMerits))
+		if not done then
+			refused = reason
+			return nil
+		end
+		return Record.encode(after)
 	end)
 	buying[player] = nil
 	if not ok or written == nil then
-		remote:FireClient(player, Messages.Record.Refused, id, refused or "busy")
-		return
+		return false, refused or "busy"
 	end
 	local after = Record.decode(written, SAVE.StartMerits)
 	if player.Parent then
 		records[player] = after
-		print(`[RecordService] {player.Name} bought {id}: {after.merits} merits left`)
+		print(`[RecordService] {player.Name} {label}: {after.merits} merits left`)
 		send(player, after)
 	end
+	return true, nil
+end
+
+local function buy(player: Player, id: unknown)
+	if typeof(id) ~= "string" then
+		remote:FireClient(player, Messages.Record.Refused, id, "loading")
+		return
+	end
+	local ok, reason = change(player, `bought {id}`, function(record)
+		return Record.buy(record, id, RecordService.priceOf)
+	end)
+	if not ok then
+		remote:FireClient(player, Messages.Record.Refused, id, reason)
+	end
+end
+
+-- Applies `edit` to the soldier's merit record the way a buy is (the Kit Mods' ranks,
+-- KitModService): same save, same one-at-a-time lock. (true) or (false, reason).
+function RecordService.change(player: Player, label: string, edit: Edit): (boolean, string?)
+	return change(player, label, edit)
 end
 
 local function grant(player: Player, purchaseId: string, tabs: number): boolean
