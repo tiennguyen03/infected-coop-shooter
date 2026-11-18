@@ -2566,18 +2566,47 @@ local Config = {
 				SplatLife = 2.5, -- seconds; fades over the last half
 				MaxSplats = 6, -- alive at once; the oldest goes first
 			},
-			-- The damaging pool: the core disc is exactly the damage radius; a darker rim
-			-- under it marks the edge; it bubbles, and fades out as its damage ends.
+			-- The damaging pool (owner 2026-11-17: the round disc was "a little too perfect,
+			-- it should look like a puddle of liquid"): a core blob and a ring of lobes of
+			-- varied size and turn (Rules/PuddleShape), each a low wet dome over a darker
+			-- rim, so the edge is uneven but stays about the damage radius (Shape: every
+			-- blob inside ReachMax of it, the whole covering at least 3/4 of it every way
+			-- round). It spreads out, the lobes running a little behind; it bubbles and
+			-- fumes; it shrinks and fades out as its damage ends.
 			Pool = {
 				Color = Color3.fromRGB(134, 98, 40),
 				EdgeColor = Color3.fromRGB(72, 28, 24),
-				EdgeWidth = 0.4, -- studs of rim outside the core
-				Transparency = 0.25,
-				Grow = 0.25, -- seconds to spread out
+				EdgeWidth = 0.4, -- studs of rim outside each blob
+				Transparency = 0, -- solid: overlapping blobs read as one liquid
+				Reflectance = 0.22, -- wet
+				Depth = 0.24, -- studs, how tall each blob's dome is in the middle
+				Grow = 0.3, -- seconds to spread out
 				StartSize = 0.3, -- share of full size it lands at
 				Fade = 1, -- seconds, at the end of its life
+				Shrink = 0.3, -- share of its size it loses over the fade
+				Shape = {
+					Lobes = 6,
+					CoreSize = 0.84, -- the core's longer half-axis, of the damage radius
+					CoreSquash = 0.92, -- its shorter half-axis over its longer
+					LobeMin = 0.38, -- a lobe's longer half-axis, of the damage radius
+					LobeMax = 0.52,
+					LobeSquash = 0.72, -- a lobe's shorter half-axis over its longer, from this to 1
+					ReachMin = 0.9, -- the furthest point of each lobe, of the damage radius
+					ReachMax = 1.04,
+					SpreadLag = 0.12, -- seconds a lobe may run behind the core
+				},
+				-- A lighter wet glint on the core.
+				SheenColor = Color3.fromRGB(222, 196, 132),
+				SheenTransparency = 0.45,
+				SheenSize = 0.22, -- longer half-axis, of the damage radius
 				BubbleInterval = 0.28, -- seconds between bubbles in one pool
 				BubbleColor = Color3.fromRGB(206, 186, 112), -- pus
+				-- Faint fumes rising off it while it hurts.
+				FumeInterval = 0.6, -- seconds between puffs in one pool
+				FumeColor = Color3.fromRGB(150, 128, 84),
+				FumeTransparency = 0.8, -- at its thickest
+				-- On a floor hit, extra droplets skim out low across the ground.
+				SplashDrops = 8,
 			},
 			-- Splashed (inside the impact's SplashRadius): the screen edges smear with bile.
 			Smear = {
