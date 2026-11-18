@@ -324,7 +324,9 @@ local function bigBanner(
 	local column = Instance.new("Frame")
 	column.BackgroundTransparency = 1
 	column.AnchorPoint = Vector2.new(0.5, 0)
-	column.Position = UDim2.fromScale(0.5, 0.22)
+	-- On touch the mission stack holds the top centre: the banner sits under it.
+	column.Position =
+		UDim2.fromScale(0.5, if HudTheme.isTouch() then Config.Hud.DownedTopTouch else 0.22)
 	column.Size = UDim2.fromOffset(600, 100)
 	column.Parent = gui
 	local layout = Instance.new("UIListLayout")
