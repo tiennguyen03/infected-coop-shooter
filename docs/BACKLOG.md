@@ -49,6 +49,7 @@ published from `main`.
 | ATV PR | The ATV: a call-in from the new Vehicles desk at the back of the hangar, slung in by the helicopter; one drives, one shoots off the back; runs the Infected down | Nova played the match side; the motor pool in the lobby is unseen |
 | Objective meter PR | Objective progress is a big yellow bar under the objective line ("HOLDING 23 of 60s", red "PAUSED" when you step out); the squad panel and objective list no longer cover each other | Restore Comms at the mast: step in and out; a side objective takes the bar while you work on it |
 | Kit Mods PR | Kit Mods at the Loadmaster: a KIT MODS tab, ranked buffs for merits (Extra stim, Extra roll; two greyed) | **decide first** (Your call 13); then buy a rank, check stims and the stamina bar in a match |
+| Rack PR | The Quartermaster's GTA gun wall is back (the desk screen had replaced it); Call-ins and Vehicles keep the desk screen | talk to the Quartermaster, "Show me the guns.": the camera on the wall, hover, click a gun, Q to the counter |
 
 Merge order when you are happy: #18 before #25 and #28; #16 before #32; #15 before #36 and
 #37; #21 before #38; #17 is replaced by #24. Several of these touch the same files; Claude

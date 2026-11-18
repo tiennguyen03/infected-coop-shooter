@@ -6,7 +6,7 @@ last one. **End of a session:** edit this page in place (never append history he
 one note to `handoff/log/` (format in `handoff/log/README.md`). History lives in
 `docs/HISTORY.md`; this page is only "now".
 
-Last updated: 2026-11-17 by Tien, Nova + Claude (the Hocker's spit pool as an uneven puddle, on `claude/spit-puddle`; the objective meter and the HUD layout pass, on `claude/objective-progress-visible`; every desk on the Loadmaster's look, on `claude/npc-ui-prototype2`; the map room opened up, on `claude/open-map-room`; vehicles: the ATV, the motor pool and the ATV's own model, on `nova/vehicles-atv`; the M16A4 optic slot, on `nova/m16a4-optic-slot`; Kit Mods at the Loadmaster, on `nova/loadmaster-kit-mods`).
+Last updated: 2026-11-17 by Tien, Nova + Claude (the Hocker's spit pool as an uneven puddle, on `claude/spit-puddle`; the objective meter and the HUD layout pass, on `claude/objective-progress-visible`; every desk on the Loadmaster's look, on `claude/npc-ui-prototype2`; the map room opened up, on `claude/open-map-room`; vehicles: the ATV, the motor pool and the ATV's own model, on `nova/vehicles-atv`; the M16A4 optic slot, on `nova/m16a4-optic-slot`; Kit Mods at the Loadmaster, on `nova/loadmaster-kit-mods`; the Quartermaster's GTA gun wall back, on `nova/quartermaster-rack`).
 
 ## The game today (on `main`)
 
@@ -104,6 +104,8 @@ that restocks the squad.
   the Quartermaster's guns, the Call-ins sergeant's call-ins and the motor sergeant's ATV open
   on the Loadout's look with BUY (`DeskScreen`), and every desk's talk panel is one build in
   the menu dress (`DeskTalk`); `Config.Lobby.DeskScreen.Enabled = false` is the old views.
+  **Except the Quartermaster** (2026-11-18, Nova; on `nova/quartermaster-rack`): he keeps the
+  GTA gun wall, the camera on his rack and counter (`Config.Lobby.DeskScreen.KeepOwnView`).
   **Nova:** the Loadout's frame, rows and inspect panel moved out of `LoadoutMenu` into
   `src/client/KitView.luau` (mapped into the lobby; `LoadoutMenu` behaves the same), the
   Gunsmith takes its gun from `Showcase` instead of the rack, and `Showcase` shows a vehicle
