@@ -43,7 +43,8 @@ mine, sentry and wire caps, every `PlayerRemoving` handler, kill credit via
   player: no sprint), and it drops where they went down for anyone to take. Marked Infected
   scale with living players, not bots. The board goes to every client and to one that loads late.
 - **Extraction:** runs only while every living player is on the pad (downed players and bots
-  do not hold it up); otherwise "WAITING FOR SQUAD (n / m)". One helper, `Squad.zoneCount`.
+  do not hold it up); otherwise "WAITING FOR SQUAD (n / m)". `Squad.zoneCount` counts them;
+  `Rules/ExtractionWaves.squadHolding` is the tested check.
 - **Crate cards:** each player has their own offer on a crate and picks once, from a panel
   they open at the crate (`Requisition.Pick`); the game does not pause and the panel closes
   when they walk off or go down. Bots take a supply card by need, no panel. The Main
