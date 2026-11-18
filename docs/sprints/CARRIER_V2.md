@@ -1,8 +1,10 @@
-# Carrier v2: the lobby ship revamp (proposal, 2026-11-16)
+# Carrier v2: the lobby ship revamp (2026-11-16; in the lobby 2026-11-18)
 
-**State:** proposal with pictures, built in Blender only. Nothing in `src/` changed and the lobby
-still loads v1 (`docs/sprints/LOBBY_V1_FALLOW.md`). The owner approves the look first; then
-Nova (or anyone) follows "Putting it in the lobby" below.
+**State:** owner-approved (2026-11-17) and **built into the lobby** (2026-11-18, branch
+`claude/carrier-v2-in-lobby`): `CarrierV2` places everything v2 adds over the existing ship from
+the generated `CarrierV2Data`; the 45 kit meshes are uploaded to the group. **Not yet seen in a
+Studio playtest** (the owner was playing; Studio tools not used). Off with
+`Config.Lobby.CarrierV2.Enabled = false` (the ship as before). See "In the lobby" below.
 
 Owner's ask (2026-11-16): "revamp the lobby map in Blender. Don't completely change it, just
 revamp it. Make it feel more like a ship... right now the Carrier seems too plain... on the shore
@@ -253,14 +255,15 @@ The six vendor corners add 2,812 triangles; dropping helicopter 20 (body, trim, 
 stand and chests moved) gave about the same back, so the ship's total did not grow. The posed
 people are not counted (the game's rigs).
 
-**Honest:** the ship draws about 3x today's triangles and is over STYLES' 18,000 ship cap. The
-biggest share is not new: the four Lantern helicopters on the spots (`veh_lantern_trim` 1,436 a
-copy). New weight: city towers, 31 pipe runs, 32 ribs, 24 rails, the island kit (1,464) and the
-memorial (944). 24 lights in the pictures is over the 20 per place cap; in game use about 8 in
-the hangar: the five vendor lights (small Range, Shadows off) and three sodium lamps, the other
-fittings SurfaceLights or Neon. Run the performance-reviewer and
-measure on a low-end phone before shipping; cuts in order: pipes every other bay, ribs as Parts,
-rails as two Parts per run, city towers to cards past the near row.
+**PC first (owner 2026-11-18: "I don't really care about phone performance").** The detail
+stays: no helicopters dropped, no phone cut list. In the lobby the ship draws about 42,400
+triangles (today's 16,558 plus 25,856 from v2's 206 placed meshes) and the city 24,070, with 335
+new Parts (each hazard band its own Part) and 53 lettering cards. What keeps it sensible on a
+normal PC: every v2 mesh and Part casts no shadow; only 11 floor props collide (a box each);
+seven new lights, all small (Range 14) with Shadows off, so the hangar has nine lights and the
+map room three; the city's fire and smoke are 28 particle emitters at a low rate
+(`Config.Lobby.CarrierV2.FireRate`). If a PC still stutters, the cheapest cuts are the city's
+emitter rate, then the 31 pipe runs (every other bay), then the far skyline cards.
 
 ## Rebuild and export
 
@@ -275,65 +278,58 @@ rails as two Parts per run, city towers to cards past the near row.
   assets/3d/build/build_assets.py -- --carrier-v2` (opt-in flag; add `--only <names>` for some).
   `build_assets` rewrites `assets/3d/palette.png`/`palette.md`; restore them if only line endings changed.
 
-## Putting it in the lobby (step list)
+## In the lobby (2026-11-18)
 
-Land the open lobby PRs first and build on them: **#55** (boarding is the yellow ring,
-`Config.Lobby.Launch.BoardRadius` 14; `Spot.board` is now `Spot.sign`, the `HELO · SPOT n` sign on
-the ring edge), **#57** (Fires desk removed; desk id `engineers` is now `callins`, the
-Quartermaster sells guns, grenades and kit), **#61** (call-in display: `FallowLayout.CallInDisplay`
-origin (30.8, H, 105) facing -X, length 31, depth 3.6; each call-in's Config row has
-`Display = { Prop, Width }`).
+How it is built (`claude/carrier-v2-in-lobby`; the old step list is done as below):
 
-1. Owner approves the pictures (and answers the questions below). Lore developer adds the city to
-   `docs/lore/world_map.md`.
-2. Performance-reviewer on this doc's budgets; agree the cuts.
-3. Move `--carrier-v2` into the normal build (register `carrier_kit` like `lantern`), export the
-   approved pieces, upload to the group (Boomin Dev Studios), record ids in `Config` like the other
-   `env_fallow_*`.
-4. Add the coordinates above to `FallowLayout` as data tables (`Ribs`, `Pipes`, `Doors`,
-   `FireStations`, `DeckGear`, `Eggs`, `Shore`), one row per piece. Do not move anything existing.
-5. `FallowBuilder`: place each table through `FallowArt` meshes (no collision on overhead and
-   wall pieces; collision on floor props players could walk into: tractor, crane, crates, drums,
-   show-floor pieces, the vendor corners).
-6. Call-ins: let #61's `CallInDisplay` place the real call-ins; use the `prop_callin_*` meshes as
-   their `Display.Prop` (Hammer crate, Anvil binoculars, Tripline mines, concertina, Shrike) and
-   the placards as its plates. Drop v2's own show-floor copies so there is one row.
-7. Boarding: keep #55's ring and sign; v2's bigger "BOARD HERE" ring paint must use `BoardRadius`.
-8. Shore: the city STRAIGHT AHEAD in place of the hills and Burn sites at Z 900 (owner 2026-11-17; coordinates in Layout); near row = the uploaded
-   `env_city_*` at 0.62 scale, far rows = the cards; fire as ParticleEmitters on 10-12 towers,
-   smoke as 6 big emitters, 3 searchlight Beams; no lights on the shore.
-9. Lighting: at most 8 lights in the hangar, Shadows off: the five vendor lights (Range 12 or
-   less, their colours in the Vendor corners table) and three sodium lamps (paler orange, Range
-   56 or less); every other fitting a SurfaceLight or Neon.
-9b. Vendor corners (Nova, your files): in `FallowLayout.Desks` move the Quartermaster's `feet`
-   to (-26.6, H, 124) and set `counter = false` on `callins` and `loadmaster` (their crate and
-   cool box stand in); place each `prop_vendor_*` at its desk's `feet` and `facing` (+x of the
-   mesh = facing). Each person's pose is an idle animation on its `NpcBody` (Pose column above;
-   seated poses need the body lowered onto the seat); keep the `ProximityPrompt` reach from where
-   soldiers stand, not from the seat. The motor sergeant's corner goes in front of `MotorPool`'s
-   bays (her bench at X 2.6..7.2, the dog at X 11..14, both Z -49.6..-46). The hidden nook
-   under the ramp needs the ramp built as a wedge from Z 44 to the foot plus a sloped plate from
-   Z 20 to 44 (today it is one WedgePart), two side walls, the tarp and the pallet; it stays
-   empty scenery (the cases) until the future seller exists. Idle clips: Poses and idle
-   animations above (can follow the move into the corners).
-9c. Map room: delete the four `PlotWall` parts in `FallowBuilder.buildPlot` (owner: open floor);
-   paint the floor and border instead; hang the MAP ROOM sign from the deckhead at X 4; put the
-   tally board on two posts and the clocks on the hull over the board.
-10. Text: stencils and signs as SurfaceGui text like today's signs; the tally board and count board
-    stay static text for now (a live mission count is a later idea).
-11. Live check with Studio MCP (`docs/STUDIO_MCP.md`): walk every route, every desk prompt, boarding
-    from each ring, phone frame rate. Then publish the lobby place from `main`.
+- **One generator, one placer.** `carrier_v2.py export_luau()` writes
+  `src/lobby/server/CarrierV2Data.luau` (Parts, kit-mesh placements, lettering, lights, the city's
+  fire and smoke) and `src/shared/CarrierKitMeshes.luau` (each kit mesh's uploaded model, size,
+  bounds offset, `solid`). `src/lobby/server/CarrierV2.luau` builds them into `Workspace.CarrierV2`.
+  Groups and meshes the lobby already builds are left out (`SKIP_GROUPS`, `SKIP_MESHES`: hull
+  shells, deck slabs, the lane, the ArmsRack corner, the desk signs, the call-in show floor,
+  MotorPool's chests and fuel point, the boarding rings, the birds, the chart table and board).
+- **Meshes without Studio.** `build_assets.py -- --carrier-v2 --only <names>` exports the FBX;
+  `node assets/3d/build/upload_models.js <names>` uploads each as a Model to the group (Open Cloud,
+  the key from the robloxstudio MCP entry, never printed) into `build/carrier_uploaded.json`;
+  `MeshAssets.register` + the new `modelId` path load each model's MeshPart with
+  `InsertService:LoadAsset` (no MeshId to read in Studio). CarrierV2 boots before MeshAssets to
+  register them and places them once they load.
+- **FallowBuilder (v2 on):** the Plot's walls and lintel are gone (open map room); the ramp is a
+  wedge from Z 44 to the foot plus a sloped `RampPlate` above, so the hidden nook opens under it;
+  the yellow well rails turn invisible (v2's pipe rails show; the old blocks still hold you);
+  the two flood poles give way to v2's masts; the coast's hills and Burn sites are not built (the
+  city stands there).
+- **Sellers (DeskService, NpcPose):** the same R15 figures and looks; the Quartermaster's feet
+  move to X -26.6 (his stool); Call-ins, Loadout and Vehicles lose their counters (their corners
+  stand in) and the Loadmaster's old cases and the Call-ins radio block go; each seller is posed
+  once by turning its Motor6Ds (`NpcPose`: seated, leaning, feet up), `Config.Lobby.CarrierV2.Poses`.
+  **The idle loops are not made yet** (follow-up: the table above, through
+  `assets/animations/build/`).
+- **Lettering** is SurfaceGui text on invisible cards (53); the days board shows 214 fixed (the
+  count-up is specified in Easter eggs > 4, not built).
+
+To change the ship: edit `carrier_v2.py` / `carrier_kit.py`, run
+`blender --background --python assets/3d/build/carrier_v2.py -- --export-luau`, then `stylua src`;
+a new or changed kit mesh also needs the FBX export and `upload_models.js <name> --force`, then
+`--export-luau` again for its id.
+
+**What to check in Studio (not done yet):** each corner's pose (the angles in `NpcPose` are set
+from the Blender stand-ins, not seen on the R15 rig: a seller sunk into a seat or floating is a
+`root` tweak), that every kit mesh loaded (Output: `MeshAssets: could not build`), the text
+orientation on the floor stencils, the walk into the hidden nook from the port side, the open map
+room, boarding still from every ring, and the city ahead from the deck.
 
 ## Still weak
 
-- The city reads as "burning" from the deck but the fire is flat orange cones and rectangles in
-  Blender; it needs particles in game to sell it. The tower silhouettes repeat (six meshes).
-- Over the triangle cap (above).
+- The city in game uses the palette, not the pictures' haze, so the far towers read sharper and
+  closer; the fire is particles now (untuned, unseen). The tower silhouettes repeat (six meshes).
 - The hangar is still one long hall; no overhead cable trays or hatches.
-- Pictures show v2's own call-in floor, not #61's row; step 6 merges them.
-- The people are blocky stand-ins posed with boxes; the game's NPC bodies and real idle
-  animations will read better. The pictures use flat ambient light, so the vendor lights look
-  softer than they will in game.
+- The call-in show floor is #61's row (`CallInDisplay`); v2's own call-in props and placards
+  are not placed (they could become each row's `Display.Prop` later).
+- The sellers' idle loops are not made; the poses are one-time joint turns, unseen on the rig.
+- The city is not yet in `docs/lore/world_map.md` (the lore developer, now that it is approved).
+- The pictures use flat ambient light, so the vendor lights look softer than they will in game.
 
 ## Owner answers (2026-11-17)
 

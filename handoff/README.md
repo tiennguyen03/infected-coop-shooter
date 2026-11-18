@@ -74,12 +74,12 @@ that restocks the squad.
   game**; **Nova:** small edits in your `PikeBody`, `LoadmasterService`, lobby `Main.client`,
   new `SoldierMoves`; off with `Config.Lobby.Soldier.Enabled = false`; what to check is in
   the lobby doc > What v1 has).
-  **Carrier v2** (proposal, 2026-11-16, pictures only, not in game): the ship revamp and the
-  burning city on the shore, PR off `claude/carrier-v2`; 2026-11-17 adds a corner, pose and light
-  for every seller (R15 figures posed, idles specified), a hidden nook under the ramp for a future
-  seller, the city straight ahead, and the map room as open floor
-  (doc > Vendor corners); **Nova:** once the owner approves,
-  `docs/sprints/CARRIER_V2.md` > Putting it in the lobby is the step list (builds on #55, #57, #61, #65).
+  **Carrier v2 is in the lobby** (2026-11-18, PR off `claude/carrier-v2-in-lobby`, **not yet seen
+  in Studio**): `CarrierV2` dresses the ship from generated data, the kit meshes are uploaded,
+  the map room is open, a hidden nook under the ramp, the city straight ahead, the sellers posed
+  in their corners (idle loops still to make); off with `Config.Lobby.CarrierV2.Enabled = false`.
+  **Nova:** touches your `FallowBuilder`, `FallowLayout`, `DeskService`, lobby `Main`; what to
+  check: `docs/sprints/CARRIER_V2.md` > In the lobby.
   **Nova:** the Loadout screen (`LoadoutMenu`) was rebuilt
   bigger with each item turning in 3D and its stats (2026-11-16, not yet seen in game; what to
   check: `handoff/log/2026-11-16-claude-loadmaster-screen.md`).

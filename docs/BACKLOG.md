@@ -15,6 +15,7 @@ published from `main`.
 
 | PR | What | What to look at |
 |---|---|---|
+| Carrier v2 in the lobby | The revamped ship in the lobby: frames, pipes, deck gear, Easter eggs, every seller posed in their own corner, the map room open, a hidden nook under the ramp, the burning city straight ahead (`docs/sprints/CARRIER_V2.md` > In the lobby; `Config.Lobby.CarrierV2.Enabled` turns it off) | not yet seen in Studio; the poses are set blind and may need nudging; the sellers' idle loops are still to make |
 | #14 | Kill feedback: dark blood burst, soft tick on a kill | does a kill feel better; is the tick annoying |
 | #15 | Rewards crate after the hold, 60 s extraction with a second wave, Warden chest plate 400 | extraction length, the second wave |
 | #16 | Economy: missions pay merits; tabs stored | merits arrive in the lobby after extracting |
@@ -50,7 +51,6 @@ joins them at merge time (already done once in the test mix).
 | PR | What | Pictures | Honest state |
 |---|---|---|---|
 | #19 | Bloat, Shedder, Crawler, Kite, Growth | Desktop `Infected_roster` | Bloat good; Shedder reads like an armoured knight and needs another pass; Kite is weak from the front |
-| #62 Carrier v2 | The lobby ship revamped: frames, pipes, deck gear, Easter eggs, the burning city straight ahead; every seller has a corner with props and a pose, the map room is open floor, a hidden nook under the ramp for the future experimental-weapons seller (`docs/sprints/CARRIER_V2.md`; owner answered the questions 2026-11-17; next: put it in the lobby) | Desktop `Carrier_v2` (`vendor_*.png` first) | reads as a ship; draws about 3x today's triangles; the city's fire needs particles in game; the sellers' idle animations are still to make |
 | #26 | Mile 14 v2: bigger (640 x 900), six-lane interstate, skyline | Desktop `Mile14_v2` | about 3.7x the detail of v1, frame rate not measured; some wrecks clip the median wall; fields are empty |
 
 ## 3. Building now

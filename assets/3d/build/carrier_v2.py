@@ -132,8 +132,8 @@ class Set:
     def T(self, g, text, pos, size, face="up", kind="paint", yaw=0.0):
         self.texts.append((g, text, pos, size, face, kind, yaw))
 
-    def D(self, name, x, y, z, yaw=0.0, scale=None, layer="ship", mat=None, tilt=0.0):
-        self.dress.append({"name": name, "x": x, "y": y, "z": z, "yaw": yaw, "scale": scale, "layer": layer, "mat": mat, "tilt": tilt})
+    def D(self, name, x, y, z, yaw=0.0, scale=None, layer="ship", mat=None, tilt=0.0, export=True):
+        self.dress.append({"name": name, "x": x, "y": y, "z": z, "yaw": yaw, "scale": scale, "layer": layer, "mat": mat, "tilt": tilt, "export": export})
 
     def light(self, x, y, z, kind, power, spot=False):
         self.lights.append((x, y, z, kind, power, spot))
@@ -203,13 +203,13 @@ def deck_slabs(s, hollow=False):
     s.B("balcony", "floor", b[0], b[1], HY - 0.6, HY, b[2], b[3])
     # deck-edge lines and the painted-out deck number at the bow (FallowArt)
     lane, isl = LANE, ISLAND
-    s.B("marks", "paint", -W + 0.9, -W + 1.5, DECK, DECK + 0.05, -180, 210)
+    s.B("marks_v1", "paint", -W + 0.9, -W + 1.5, DECK, DECK + 0.05, -180, 210)
     for a, c in ((-180, lane[2]), (lane[3], isl[2]), (isl[3], 210)):
-        s.B("marks", "paint", W - 1.5, W - 0.9, DECK, DECK + 0.05, a, c)
-    s.B("marks", "black", -14, 14, DECK, DECK + 0.03, 186, 204)
-    s.T("marks", "HARLAN", (0, DECK + 0.06, 195), 9.0, "up", "paint", yaw=180)
-    s.B("marks", "steel", 21.8, 22.0, DECK + 5, DECK + 17, 6, 34)
-    s.T("marks", "HARLAN", (21.75, DECK + 11, 20), 6.5, "-x", "paint")
+        s.B("marks_v1", "paint", W - 1.5, W - 0.9, DECK, DECK + 0.05, a, c)
+    s.B("marks_v1", "black", -14, 14, DECK, DECK + 0.03, 186, 204)
+    s.T("marks_v1", "HARLAN", (0, DECK + 0.06, 195), 9.0, "up", "paint", yaw=180)
+    s.B("marks_v1", "steel", 21.8, 22.0, DECK + 5, DECK + 17, 6, 34)
+    s.T("marks_v1", "HARLAN", (21.75, DECK + 11, 20), 6.5, "-x", "paint")
     # the screening lane (scenery)
     for x in (lane[0], lane[1]):
         s.B("lane", "concrete", x - 0.6, x + 0.6, DECK, DECK + 2.5, lane[2], lane[3])
@@ -293,7 +293,7 @@ def today():
     z = -L + 6
     while z <= z0 - 6:
         if not any(z + 6 > sz - 15 and z < sz + 15 for _, sz in SPOTS):
-            s.B("marks", "paint", -12.3, -11.7, DECK, DECK + 0.05, z, z + 6)
+            s.B("marks_v1", "paint", -12.3, -11.7, DECK, DECK + 0.05, z, z + 6)  # FallowBuilder CentreLine
         z += 12
     for z in (-125, -25):
         s.B("deck", "hull", -W + 0.5, -W + 1.5, DECK, DECK + 12, z - 0.5, z + 0.5)
@@ -454,7 +454,7 @@ def flight_deck_v2(s):
     z = -L + 6
     while z <= z0 - 6:
         if not any(z + 6 > sz - 15.5 and z < sz + 15.5 for _, sz in SPOTS):
-            s.B("marks", "paint", -12.3, -11.7, DECK, DECK + 0.05, z, z + 6)
+            s.B("marks_v1", "paint", -12.3, -11.7, DECK, DECK + 0.05, z, z + 6)  # FallowBuilder CentreLine
         z += 12
     s.B("marks", "red", 5.6, 6.2, DECK, DECK + 0.04, -176, 16)
     for i in range(16):
@@ -516,7 +516,7 @@ def desks_v2(s):
     # his stool leaning on the glass, under his reading lamp (vendor corners, owner 2026-11-17)
     s.D("npc_carrier_quartermaster", -26.6, HY, 124, layer="crew")
     s.D("prop_vendor_quartermaster", -26.6, HY, 124)
-    s.T("arms", "RING ONCE", (-23.0, HY + 3.42, 126.4), 0.22, "up", "black", yaw=-90)
+    s.T("dress", "RING ONCE", (-23.0, HY + 3.42, 126.4), 0.22, "up", "black", yaw=-90)
     s.light(-23.6, HY + 4.4, 122.9, "tungsten", 220)
     arms_room(s, True)
     s.B("arms", "black", -24.4, -22.9, HY + 10, HY + 12.2, 111, 140)
@@ -526,7 +526,7 @@ def desks_v2(s):
     s.D("prop_carrier_ammo_stack", -30.6, HY, 134.5, yaw=90)
     s.D("prop_carrier_ammo_stack", -20.5, HY, 113.6, yaw=0)
     s.D("egg_carrier_notissue", -28.4, HY, 111.12, yaw=90)
-    s.T("arms", "NOT ON ISSUE", (-28.4, HY + 4.6, 113.2), 0.42, "+z", "paint")
+    s.T("dress", "NOT ON ISSUE", (-28.4, HY + 4.6, 113.2), 0.42, "+z", "paint")
     s.light(-27, DB - 4, 125, "flood", 5000)
     # ---- call-ins: one seller, his kit stood out on the deck like the gun wall
     # no counter: he sits on a mortar-bomb crate among his kit, smoking, his crate-table at his
@@ -534,8 +534,8 @@ def desks_v2(s):
     fx, fz = 27, 105
     s.D("npc_carrier_sapper", fx, HY, fz, yaw=180, layer="crew")
     s.D("prop_vendor_callins", fx, HY, fz, yaw=180)
-    s.T("callins", "MIND THE", (fx - 3.05, HY + 1.75, fz + 3.8), 0.36, "-x", "red")
-    s.T("callins", "COILS", (fx - 3.05, HY + 1.2, fz + 3.8), 0.42, "-x", "red")
+    s.T("dress", "MIND THE", (fx - 3.05, HY + 1.75, fz + 3.8), 0.36, "-x", "red")
+    s.T("dress", "COILS", (fx - 3.05, HY + 1.2, fz + 3.8), 0.42, "-x", "red")
     s.light(fx - 0.6, HY + 6.5, fz + 0.8, "amber", 420)
     s.B("callins", "black", 23.2, 23.5, HY + 10, HY + 12.2, 96, 114)
     s.B("callins", "steel", 23.25, 23.45, HY + 12.2, DB - 1.5, 97, 97.3)
@@ -570,16 +570,16 @@ def desks_v2(s):
     for i, (name, n) in enumerate((("HAMMER", 23), ("ANVIL", 9), ("SHRIKE", 14), ("DOORMAN", 31))):
         zc = (133.6, 121.6)[i % 2]
         y = HY + (9.0 if i < 2 else 6.3)
-        s.T("callins", name, (W - 2.1, y + 0.9, zc + 2.6), 0.7, "-x", "black")
-        s.T("callins", " ".join(["IIII"] * (n // 5) + ["I" * (n % 5)]), (W - 2.1, y - 0.1, zc), 0.62, "-x", "black")
+        s.T("dress", name, (W - 2.1, y + 0.9, zc + 2.6), 0.7, "-x", "black")
+        s.T("dress", " ".join(["IIII"] * (n // 5) + ["I" * (n % 5)]), (W - 2.1, y - 0.1, zc), 0.62, "-x", "black")
     s.light(24, DB - 4, 122, "flood", 6000)
     # ---- the Loadmaster at the ramp's foot: no counter; his hammock between two stanchions, the
     # rigging rail and slung cases behind (vendor corners, owner 2026-11-17)
     s.D("npc_carrier_loadmaster", -2, HY, 88, yaw=90, layer="crew")
     s.D("prop_vendor_loadmaster", -2, HY, 88, yaw=90)
     for i, line in enumerate(("IIII IIII IIII IIII", "IIII IIII IIII II")):
-        s.T("loadout", line, (2.8, HY + 2.3 - i * 0.55, 89.3), 0.3, "+z", "paint")
-    s.T("loadout", "FLOWN BACK", (2.8, HY + 2.85, 89.25), 0.26, "+z", "yellow")
+        s.T("dress", line, (2.8, HY + 2.3 - i * 0.55, 89.3), 0.3, "+z", "paint")
+    s.T("dress", "FLOWN BACK", (2.8, HY + 2.85, 89.25), 0.26, "+z", "yellow")
     s.light(3.2, HY + 6.4, 89.4, "cabin", 320)
     s.D("prop_carrier_hoist", 3.5, HY, 84.0, yaw=0)
     s.D("prop_carrier_scale_cases", -7.5, HY, 84.5, yaw=180)
@@ -588,54 +588,54 @@ def desks_v2(s):
     s.B("loadout", "steel", 1.4, 1.6, HY + 12.2, DB - 1.5, 90.35, 90.55)
     s.T("loadout", "LOADOUT", (-2, HY + 11.1, 90.65), 1.5, "+z", "yellow")
     s.T("loadout", "SIGN FOR IT HERE", (-2, HY + 10.4, 90.65), 0.42, "+z", "paint")
-    s.B("loadout", "black", 7.2, 7.5, HY + 1.6, HY + 6.4, 84, 90)  # the lift board
+    s.B("dress", "black", 7.2, 7.5, HY + 1.6, HY + 6.4, 84, 90)  # the lift board
     for x in (7.35,):
         for z in (84.3, 89.7):
-            s.B("loadout", "steel", x - 0.15, x + 0.15, HY, HY + 1.6, z - 0.15, z + 0.15)
-    s.T("loadout", "TODAY'S LIFTS", (7.15, HY + 5.8, 87), 0.45, "-x", "paint")
+            s.B("dress", "steel", x - 0.15, x + 0.15, HY, HY + 1.6, z - 0.15, z + 0.15)
+    s.T("dress", "TODAY'S LIFTS", (7.15, HY + 5.8, 87), 0.45, "-x", "paint")
     for i, n in enumerate(BIRDS):
-        s.T("loadout", "HELO %d   SPOT %d   %s" % (sorted(BIRDS)[i], BIRDS.index(sorted(BIRDS)[i]) + 1, ("TURNING", "READY", "READY", "FUEL")[i]), (7.15, HY + 5.0 - i * 0.7, 87), 0.34, "-x", "paint")
-    s.T("loadout", "ATV   MOTOR POOL   ASK HER", (7.15, HY + 2.2, 87), 0.34, "-x", "red")
+        s.T("dress", "HELO %d   SPOT %d   %s" % (sorted(BIRDS)[i], BIRDS.index(sorted(BIRDS)[i]) + 1, ("TURNING", "READY", "READY", "FUEL")[i]), (7.15, HY + 5.0 - i * 0.7, 87), 0.34, "-x", "paint")
+    s.T("dress", "ATV   MOTOR POOL   ASK HER", (7.15, HY + 2.2, 87), 0.34, "-x", "red")
     # ---- the map room (was "THE PLOT"): mission choice stays here. Open floor, no walls (owner
     # 2026-11-17): a painted deck and a border line say where it is; walk in from any side.
     x0, x1, z0, z1, d0, d1 = PLOT
-    s.B("plot", "plot", x0, x1, HY, HY + 0.03, z0, z1)
+    s.B("maproom", "plot", x0, x1, HY, HY + 0.03, z0, z1)
     for a, c, e, f in ((x0, x0 + 0.3, z0, z1), (x0, x1, z0, z0 + 0.3), (x0, x1, z1 - 0.3, z1)):
-        s.B("plot", "yellow", a, c, HY + 0.03, HY + 0.05, e, f)
+        s.B("maproom", "yellow", a, c, HY + 0.03, HY + 0.05, e, f)
     s.T("floorpaint", "MAP ROOM", (x0 + 2.2, HY + 0.06, 10), 1.6, "up", "yellow", yaw=-90)
     for z in (5.0, 15.0):  # the sign hangs from the deckhead on the room's walk-side edge
-        s.B("plot", "steel", x0 - 0.05, x0 + 0.15, HY + 12.6, DB - 1.5, z - 0.1, z + 0.1)
-    s.B("plot", "black", x0 - 0.15, x0 + 0.25, HY + 10.2, HY + 12.6, 4.5, 15.5)
+        s.B("maproom", "steel", x0 - 0.05, x0 + 0.15, HY + 12.6, DB - 1.5, z - 0.1, z + 0.1)
+    s.B("maproom", "black", x0 - 0.15, x0 + 0.25, HY + 10.2, HY + 12.6, 4.5, 15.5)
     for face, xx in (("-x", x0 - 0.2), ("+x", x0 + 0.3)):
-        s.T("plot", "MAP ROOM", (xx, HY + 11.6, 10), 1.4, face, "yellow")
-        s.T("plot", "PICK YOUR MISSION", (xx, HY + 10.7, 10), 0.45, face, "paint")
+        s.T("maproom", "MAP ROOM", (xx, HY + 11.6, 10), 1.4, face, "yellow")
+        s.T("maproom", "PICK YOUR MISSION", (xx, HY + 10.7, 10), 0.45, face, "paint")
     for x, z, yaw in ((8, z0 + 2.2, 0), (20, z0 + 2.2, 0), (12, z1 - 2.2, 180), (20, z1 - 2.2, 180)):
         s.D("prop_carrier_console", x, HY, z, yaw=yaw)
     # Control's watch officer, tipped back with her boots on the table's end (vendor corners)
     s.D("npc_carrier_watch_officer", 26.8, HY, -3, yaw=180, layer="crew")
     s.D("prop_vendor_watch", 26.8, HY, -3, yaw=180)
-    s.B("plot", "card", 29.1, 29.2, HY + 7.2, HY + 8.0, -5.5, -4.4)  # the postcard of her street
-    s.B("plot", "sky", 29.08, 29.1, HY + 7.62, HY + 7.95, -5.45, -4.45)
+    s.B("maproom", "card", 29.1, 29.2, HY + 7.2, HY + 8.0, -5.5, -4.4)  # the postcard of her street
+    s.B("maproom", "sky", 29.08, 29.1, HY + 7.62, HY + 7.95, -5.45, -4.45)
     s.light(26.4, HY + 3.4, -0.3, "tungsten", 120)
     # the board now shows where the Infected are: the city in districts, red where they are thick
     for a, c, y0, y1, k in ((-3, 0.5, 6.5, 9.5, "red"), (5, 7.5, 4.5, 6.5, "red"), (11, 15, 7.5, 10.5, "ember"), (19, 21, 4, 6, "red"), (14.5, 17, 3.5, 5, "scope")):
         s.B("plot", k, 29.22, 29.3, HY + y0, HY + y1, a, c)
     for y in (5.0, 8.0):
         s.B("plot", "paint", 29.24, 29.3, HY + y, HY + y + 0.08, -5.6, 25.6)
-    s.B("plot", "redlamp", 8, 10, DB - 0.7, DB - 0.3, -3, -1)
-    s.B("plot", "redlamp", 26, 28, DB - 0.7, DB - 0.3, 21, 23)
+    s.B("maproom", "redlamp", 8, 10, DB - 0.7, DB - 0.3, -3, -1)
+    s.B("maproom", "redlamp", 26, 28, DB - 0.7, DB - 0.3, 21, 23)
     s.D("egg_carrier_clocks", W - 2, HY + 14.5, 14, yaw=180)  # on the hull over the board
-    s.T("plot", "CITY", (W - 2.12, HY + 14.95, 12.4), 0.3, "-x", "black")
-    s.T("plot", "SHIP", (W - 2.12, HY + 14.95, 15.6), 0.3, "-x", "black")
+    s.T("maproom", "CITY", (W - 2.12, HY + 14.95, 12.4), 0.3, "-x", "black")
+    s.T("maproom", "SHIP", (W - 2.12, HY + 14.95, 15.6), 0.3, "-x", "black")
     s.light(30, HY + 15, 14, "redlamp", 200)
     # where the Fires desk stood: the districts' tally board, free-standing on two posts
     for z in (17.0, 27.0):
-        s.B("plot", "steel", x0, x0 + 0.4, HY, HY + 11.2, z - 0.2, z + 0.2)
-        s.B("plot", "steel", x0 - 0.6, x0 + 1.0, HY, HY + 0.2, z - 0.5, z + 0.5)
+        s.B("maproom", "steel", x0, x0 + 0.4, HY, HY + 11.2, z - 0.2, z + 0.2)
+        s.B("maproom", "steel", x0 - 0.6, x0 + 1.0, HY, HY + 0.2, z - 0.5, z + 0.5)
     s.D("egg_carrier_scoreboard", x0, HY + 2.6, 22, yaw=180)
-    s.T("plot", "MISSIONS HOME", (x0 - 0.3, HY + 10.2, 22), 0.6, "-x", "paint")
+    s.T("maproom", "MISSIONS HOME", (x0 - 0.3, HY + 10.2, 22), 0.6, "-x", "paint")
     for r, name in enumerate(("DELTA", "MILE 14", "KESTREL", "THE YARD", "RESERVOIR")):
-        s.T("plot", name, (x0 - 0.3, HY + 8.55 - r * 1.25, 24.6), 0.5, "-x", "paint")
+        s.T("maproom", name, (x0 - 0.3, HY + 8.55 - r * 1.25, 24.6), 0.5, "-x", "paint")
 
 
 def hangar_life_v2(s):
@@ -651,14 +651,14 @@ def hangar_life_v2(s):
     # 20's floor; the motor sergeant's corner at its front, the net, the hoop
     for x0b, x1b in ((-20, -8), (-6, 6), (12, 24)):  # three painted bays
         for a, c, e, f in ((x0b, x0b + 0.3, -78, -52), (x1b - 0.3, x1b, -78, -52), (x0b, x1b, -78, -77.7)):
-            s.B("floorpaint", "yellow", a, c, HY, HY + 0.04, e, f)
+            s.B("motorpool", "yellow", a, c, HY, HY + 0.04, e, f)
     s.D("ref_carrier_atv", 0, HY, -64, yaw=90, layer="crew")  # the game's own ATV (VehicleBody)
-    s.T("floorpaint", "ATV", (0, HY + 0.05, -74.5), 1.6, "up", "yellow", yaw=90)
+    s.T("motorpool", "ATV", (0, HY + 0.05, -74.5), 1.6, "up", "yellow", yaw=90)
     for z in (-56, -60):
-        s.D("prop_carrier_toolchest", 9, HY, z, yaw=-90)
+        s.D("prop_carrier_toolchest", 9, HY, z, yaw=-90, export=False)  # MotorPool builds these
     s.D("prop_carrier_engine_stand", 18, HY, -66, yaw=90)  # bay 3: an engine out for the next one
-    s.D("prop_carrier_drums", -28, HY, -90)  # the fuel point
-    s.D("prop_carrier_blade_rack", W - 2, HY, -89, yaw=180)  # tyre rack stand-in along the hull
+    s.D("prop_carrier_drums", -28, HY, -90, export=False)  # the fuel point
+    s.D("prop_carrier_blade_rack", W - 2, HY, -89, yaw=180, export=False)  # tyre rack stand-in along the hull
     s.D("npc_carrier_motor_sergeant", 9, HY, -48, yaw=90, layer="crew")
     s.D("prop_vendor_motor_pool", 9, HY, -48, yaw=90)
     s.light(7.2, HY + 5.0, -47.5, "worklamp", 380)
@@ -1362,10 +1362,144 @@ def render_vendors(out_dir=None):
     aim("oblique")
 
 
+# ------------------------------------------------------------------ into the lobby (Luau data)
+# What the game already builds stays the game's (FallowBuilder, FallowArt, ArmsRack, DeskService
+# signs, CallInDisplay, MotorPool, LanternBird, WorldMap, ContainmentBoard): those groups and
+# meshes are left out; everything else v2 adds is written to src/lobby/server/CarrierV2Data.luau
+# and placed by CarrierV2.luau. Kit meshes' sizes, offsets and uploaded model ids go to
+# src/shared/CarrierKitMeshes.luau (ids from build/carrier_uploaded.json, upload_models.js).
+#   blender --background --python assets/3d/build/carrier_v2.py -- --export-luau
+SKIP_GROUPS = {"arms", "balcony", "callins", "deck", "hangar", "lane", "loadout", "marks_v1", "motor", "motorpool", "plot", "sea", "north", "spots"}
+SKIP_MESHES = ("env_fallow_", "veh_lantern_", "ref_", "npc_", "fx_", "prop_callin_")
+SKIP_NAMES = {"prop_carrier_placard", "env_carrier_ramp_trim", "env_container_olive", "env_container_rust"}
+# Floor props a soldier bumps into (a box collider; the rest is overhead, on a wall or flat).
+SOLID_MESHES = {"veh_carrier_tractor", "veh_carrier_crash_crane", "prop_carrier_pallet_net", "prop_carrier_drums", "prop_carrier_crates", "prop_carrier_toolchest", "prop_carrier_engine_stand", "prop_carrier_scale_cases", "prop_carrier_console", "prop_carrier_crew_corner", "egg_carrier_arcade"}
+GAME_LIGHTS = {"tungsten", "amber", "cabin", "worklamp", "cold", "chem"}
+NEON = {"sodium", "flood", "redlamp", "fire", "glow", "glow2", "glow3", "ember", "chem", "scope", "window", "label"}
+UPLOADED_JSON = os.path.join(HERE, "carrier_uploaded.json")
+
+
+def _n(v):
+    s = ("%.3f" % v).rstrip("0").rstrip(".")
+    return "0" if s in ("-0", "") else s
+
+
+def _exported(e):
+    n = e["name"]
+    if not e["export"] or e["layer"] not in ("ship", "shore"):
+        return False
+    if n.startswith("env_city_"):
+        return True  # the match's skyline meshes, already uploaded
+    return not n.startswith(SKIP_MESHES) and n not in SKIP_NAMES
+
+
+def game_meshes(s=None):
+    """The kit meshes the lobby places that need an upload (names, sorted)."""
+    s = s or v2()
+    return sorted({e["name"] for e in s.dress if _exported(e) and not e["name"].startswith("env_city_")})
+
+
+def _box_rows(s):
+    rows = []
+    for g, kind, shape, d in s.parts:
+        if g in SKIP_GROUPS:
+            continue
+        if shape == "box":
+            rows.append(("box", kind, d))
+        elif shape == "ramp":
+            rows.append(("wedge", kind, d))
+        elif shape == "stripes":  # one Part a band
+            x0, x1, y0, y1, z0, z1, n, axis = d
+            for i in range(n):
+                k = "yellow" if i % 2 == 0 else "black"
+                if axis == "x":
+                    a, c = x0 + (x1 - x0) * i / n, x0 + (x1 - x0) * (i + 1) / n
+                    rows.append(("box", k, (a, c, y0, y1, z0, z1)))
+                else:
+                    a, c = z0 + (z1 - z0) * i / n, z0 + (z1 - z0) * (i + 1) / n
+                    rows.append(("box", k, (x0, x1, y0, y1, a, c)))
+    return rows
+
+
+def export_luau(data_path=None, kit_path=None):
+    """Writes CarrierV2Data.luau (placements) and CarrierKitMeshes.luau (mesh defs)."""
+    import json
+
+    s = v2()
+    data_path = data_path or os.path.join(ROOT_DIR, "src", "lobby", "server", "CarrierV2Data.luau")
+    kit_path = kit_path or os.path.join(ROOT_DIR, "src", "shared", "CarrierKitMeshes.luau")
+    head = ["--!strict", "-- GENERATED by assets/3d/build/carrier_v2.py export_luau(): do not edit by hand."]
+    rows = _box_rows(s)
+    used = sorted({k for _, k, _ in rows} | {t[5] for t in s.texts if t[0] not in SKIP_GROUPS})
+    out = head + ["-- Carrier v2's dressing for the lobby (docs/sprints/CARRIER_V2.md); CarrierV2.luau builds it.", "", "return {"]
+    out.append("\tparts = { -- box: x0, x1, y0, y1, z0, z1 (a wedge is full height at z0)")
+    for shape, kind, d in rows:
+        out.append('\t\t{ shape = "%s", kind = "%s", box = { %s } },' % (shape, kind, ", ".join(_n(v) for v in d)))
+    out.append("\t},")
+    out.append("\tkinds = {")
+    for k in used:
+        rgb = KINDS[k][0]
+        out.append("\t\t%s = { color = Color3.fromRGB(%d, %d, %d), neon = %s, transparency = %s }," % (k, rgb[0], rgb[1], rgb[2], "true" if k in NEON else "false", _n(1 - ALPHA[k]) if k in ALPHA else "0"))
+    out.append("\t},")
+    out.append("\tmeshes = { -- at: x, y, z, yaw, tilt (degrees, Blender sense), sx, sy, sz (game axes)")
+    for e in s.dress:
+        if _exported(e):
+            sc = e["scale"] or (1, 1, 1)
+            out.append('\t\t{ name = "%s", at = { %s } },' % (e["name"], ", ".join(_n(v) for v in (e["x"], e["y"], e["z"], e["yaw"], e["tilt"], sc[0], sc[2], sc[1]))))
+    out.append("\t},")
+    out.append("\ttexts = { -- at: x, y, z, height, yaw")
+    for g, text, pos, size, face, kind, yaw in s.texts:
+        if g not in SKIP_GROUPS:
+            out.append('\t\t{ text = %s, face = "%s", kind = "%s", at = { %s } },' % (json.dumps(text), face, kind, ", ".join(_n(v) for v in (pos[0], pos[1], pos[2], size, yaw))))
+    out.append("\t},")
+    out.append("\tlights = { -- at: x, y, z, range")
+    for x, y, z, kind, power, spot in s.lights:
+        if kind in GAME_LIGHTS:
+            rgb = KINDS[kind][0]
+            out.append("\t\t{ color = Color3.fromRGB(%d, %d, %d), at = { %s, %s, %s, %d } }," % (rgb[0], rgb[1], rgb[2], _n(x), _n(y), _n(z), 14 if power < 1000 else 24))
+    out.append("\t},")
+    out.append("\tfx = { -- at: x, y, z, scale")
+    for e in s.dress:
+        if e["name"] in ("fx_fire", "fx_smoke"):
+            out.append('\t\t{ kind = "%s", at = { %s } },' % (e["name"][3:], ", ".join(_n(v) for v in (e["x"], e["y"], e["z"], (e["scale"] or (1, 1, 1))[0]))))
+    out.append("\t},")
+    out.append("}")
+    with open(data_path, "w", newline="\n") as f:
+        f.write("\n".join(out) + "\n")
+
+    ids = {}
+    if os.path.exists(UPLOADED_JSON):
+        with open(UPLOADED_JSON) as f:
+            ids = json.load(f)
+    names = game_meshes(s)
+    meshes = build_kit(set(names), materials())
+    k = head + ["-- Carrier v2's kit meshes (assets/3d/build/carrier_kit.py) for the lobby: the uploaded model",
+                "-- asset (group Boomin Dev Studios), the in-game size and the bounds centre from the design",
+                "-- origin. MeshAssets.register adds them; modelId 0 = not uploaded yet (skipped).", "",
+                "return {"]
+    for n in names:
+        vs = [v.co for v in meshes[n].vertices]
+        lo = [min(v[i] for v in vs) for i in range(3)]
+        hi = [max(v[i] for v in vs) for i in range(3)]
+        size = (hi[0] - lo[0], hi[2] - lo[2], hi[1] - lo[1])
+        off = ((hi[0] + lo[0]) / 2, (hi[2] + lo[2]) / 2, (hi[1] + lo[1]) / 2)
+        k.append("\t%s = { modelId = %s, size = Vector3.new(%s), offset = Vector3.new(%s), solid = %s }," % (
+            n, ids.get(n, {}).get("modelId", 0), ", ".join(_n(v) for v in size), ", ".join(_n(v) for v in off),
+            "true" if n in SOLID_MESHES else "false"))
+    k.append("}")
+    with open(kit_path, "w", newline="\n") as f:
+        f.write("\n".join(k) + "\n")
+    print("export_luau", len(rows), "parts", len(names), "meshes:", " ".join(names))
+    return names
+
+
 if __name__ == "__main__":
     argv = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
     if bpy.app.background:
         bpy.ops.wm.read_homefile(use_empty=True)
+    if "--export-luau" in argv:
+        export_luau()
+        sys.exit(0)
     build_all()
     if "--no-render" not in argv:
         render_previews()
