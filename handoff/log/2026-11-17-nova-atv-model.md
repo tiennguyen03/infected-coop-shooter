@@ -10,8 +10,8 @@ with the meshes (server templates; `publish` copies them for the clients' sling 
 `waitForMeshes` for the motor pool), the Part body stays as the fallback. The body numbers
 were re-measured on the model: tyre radius 1, ride height 1.23, the seats lower.
 **Verified:** Studio (built-in MCP): called in, the match ATV and the motor pool's ATV wear
-both meshes, the wheels are solid, no errors; Nova saw the first upload work. Tests (492), lint,
-types, both builds. Not checked: driving feel on the narrower track and lower seats, the rider
-pose on the lower saddle, the slung stand-in with the meshes.
+both meshes, the wheels are solid, no errors; then Nova played the final version: "everything
+looks solid", no problems. Tests (492), lint, types, both builds. Not measured: the
+low-end frame time with four ATVs in view (the performance reviewer's ask).
 **Heads-up:** the 70 MB `assets/3d/atvrbx.obj` is git-ignored; keep it to re-cut the body.
-**Next:** drive it and tune the seats and rider pose to the new saddle if they float or clip.
+**Next:** the MicroProfiler check with four ATVs on a low-end setting; the driver's hands on the bars.
