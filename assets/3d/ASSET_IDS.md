@@ -228,6 +228,15 @@ Open Cloud imports the FBX at 100x (1 Blender unit → 100 studs) and clamps any
 so the imported size is meaningless; `MeshAssets.luau` sets the intended stud size (Blender
 dimensions X, Z, Y) and the MeshPart scales the mesh to it.
 
+## Carrier v2 kit (the lobby, 2026-11-18)
+
+45 meshes from `assets/3d/build/carrier_kit.py`, uploaded without Studio as **Model** assets
+owned by the group (`upload_models.js`, Open Cloud). Their model ids are in
+`assets/3d/build/carrier_uploaded.json` and, with each in-game size and offset, in the generated
+`src/shared/CarrierKitMeshes.luau`; MeshAssets loads each model's MeshPart with
+`InsertService:LoadAsset` (`modelId`), so no MeshId is recorded. Placed by `CarrierV2`
+(`docs/sprints/CARRIER_V2.md` > In the lobby).
+
 ## Optics (found, not yet uploaded)
 
 Free models for the M16A4's optics (`Config.Optics` rows' `Model`), all by **notcplkerry** on

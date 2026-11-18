@@ -176,6 +176,13 @@ local function layout()
 		frame.Position = UDim2.fromOffset(0, (index - 1) * (settings.RowHeight + settings.RowGap))
 		frame.Visible = true
 	end
+	-- As tall as the rows shown, so the objective list under it in the left column sits
+	-- right below (HudTheme.inLeftColumn).
+	local shown = #ordered
+	root.Size = UDim2.fromOffset(
+		settings.Width,
+		if shown > 0 then shown * settings.RowHeight + (shown - 1) * settings.RowGap else 0
+	)
 end
 
 local function addRow(entry: Instance)
@@ -274,14 +281,12 @@ function SquadPanelUI.init()
 	if not settings.Enabled then
 		return
 	end
-	local gui = HudTheme.gui("SquadPanelUI")
+	-- First in the left column (Config.Hud), the objective list under it.
 	root = Instance.new("Frame")
+	root.Name = "SquadPanel"
 	root.BackgroundTransparency = 1
-	root.Position = UDim2.fromOffset(HudTheme.Margin, settings.Top)
-	root.Size =
-		UDim2.fromOffset(settings.Width, settings.MaxRows * (settings.RowHeight + settings.RowGap))
-	root.Parent = gui
-	HudTheme.parent(gui)
+	root.Size = UDim2.fromOffset(settings.Width, 0)
+	HudTheme.inLeftColumn(root, 1)
 
 	-- A squadmate's Player can arrive after their roster entry: name the rows again.
 	Players.PlayerAdded:Connect(function()

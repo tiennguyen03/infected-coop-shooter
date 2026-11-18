@@ -2,7 +2,8 @@
 -- How an Infected spit reads over time (client SpitFX; owner, 2026-11-11: the spit was "just
 -- a yellow circle"). Pure, unit-tested with Lune (tests/SpitShape.spec.luau). Three curves:
 -- the glob in flight (stretched along its path, wobbling, constant volume), the pool it
--- leaves (spreads in, holds, fades out with its damage), and the spitter's head through the
+-- leaves (spreads in, holds, shrinks and fades out with its damage; its outline is
+-- Rules/PuddleShape), and the spitter's head through the
 -- windup (rears back, snaps forward on the spit, settles).
 
 local SpitShape = {}
@@ -19,6 +20,7 @@ export type PoolSettings = {
 	grow: number, -- seconds the pool takes to spread to full size
 	startSize: number, -- share of full size it lands at
 	fade: number, -- seconds at the end of its life it fades over
+	shrink: number, -- share of its size it loses over the fade (drying in from the edge)
 }
 
 export type RearSettings = {
@@ -51,7 +53,7 @@ function SpitShape.pool(age: number, duration: number, settings: PoolSettings): 
 		then 1
 		elseif fadeTime > 0 then math.clamp((age - (duration - fadeTime)) / fadeTime, 0, 1)
 		else 0
-	return size, fade
+	return size * (1 - settings.shrink * fade), fade
 end
 
 -- Degrees the spitter's head is tilted back (negative: forward) `age` seconds after a windup

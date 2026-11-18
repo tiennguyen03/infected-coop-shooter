@@ -38,10 +38,10 @@ local LobbyCrew: { Crew } = {
 	},
 	{
 		id = "runner",
-		role = "Plot runner",
+		role = "Map room runner",
 		lines = {
 			"Make a hole. Message for the island.",
-			"Plot wants a count. Nobody likes the count.",
+			"The map room wants a count. Nobody likes the count.",
 		},
 	},
 	{

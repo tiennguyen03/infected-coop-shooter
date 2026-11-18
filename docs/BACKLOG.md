@@ -2,7 +2,10 @@
 
 The one page to open to see what is waiting, what is being built, and what needs you.
 Plain words, newest state. Updated in the same commit as the work that changes it.
-Last updated: 2026-11-11.
+Last updated: 2026-11-17. (Integration 2, #63, was playtested by Tien and merged to main on
+2026-11-17: call-ins land, Warden in the objective, the Loadmaster screen, one main
+seller, call-in display, board in the ring, review fixes, Nova's ATV. The "Try it" rows for
+#56, #58 and the ATV are now in main.)
 
 How to read it: **Try it** = built, waiting for you to play and say yes/no. **Building** =
 in progress. **Your call** = blocked on a decision from you. **Later** = not started.
@@ -15,6 +18,7 @@ published from `main`.
 
 | PR | What | What to look at |
 |---|---|---|
+| #77 Carrier v2 in the lobby | The revamped ship in the lobby: frames, pipes, deck gear, Easter eggs, every seller posed in their own corner, the map room open, a hidden nook under the ramp, the burning city straight ahead (`docs/sprints/CARRIER_V2.md` > In the lobby; `Config.Lobby.CarrierV2.Enabled` turns it off) | not yet seen in Studio; the poses are set blind and may need nudging; the sellers' idle loops are still to make |
 | #14 | Kill feedback: dark blood burst, soft tick on a kill | does a kill feel better; is the tick annoying |
 | #15 | Rewards crate after the hold, 60 s extraction with a second wave, Warden chest plate 400 | extraction length, the second wave |
 | #16 | Economy: missions pay merits; tabs stored | merits arrive in the lobby after extracting |
@@ -39,8 +43,11 @@ published from `main`.
 | #39 | Revive animation: kneel, treat, pull up | hands on the chest; the casualty not in the floor |
 | #56 | Call-ins hold the crowd they land on (Hammer, Anvil, Shrike) | spawn 25 Walkers, call each strike, count kills; does it look like a magnet |
 | #58 | The Warden comes partway through the main objective and is its last act | each objective's checklist in the PR; is he too much on top of the objective |
+| Spit puddle PR | The Hocker's spit pool is an uneven puddle (not a circle), spreads out, bubbles, fumes, shrinks away | dev menu: spawn 1 Hocker, let it spit near you; is it a puddle now; still clear on dark ground; does the edge match where it hurts |
+| NPC UI PR | Every desk looks like the Loadmaster: the Quartermaster, Call-ins and Vehicles open the same big screen with the item turning in 3D, its stats and BUY; the talk panels match | lobby place: buy something at each desk; does BUY feel clear; do you miss the camera on the gun wall (one switch brings it back) |
 | Optic PR | M16A4 optics at the Loadmaster's EDIT: Red dot 150, CompM2 2x 250, ACOG 4x 400 merits, bought once | in a match, aim with each: is the ACOG too slow, is 2x right for the CompM2 (the real one is 1x) |
 | ATV PR | The ATV: a call-in from the new Vehicles desk at the back of the hangar, slung in by the helicopter; one drives, one shoots off the back; runs the Infected down | Nova played the match side; the motor pool in the lobby is unseen |
+| Objective meter PR | Objective progress is a big yellow bar under the objective line ("HOLDING 23 of 60s", red "PAUSED" when you step out); the squad panel and objective list no longer cover each other | Restore Comms at the mast: step in and out; a side objective takes the bar while you work on it |
 
 Merge order when you are happy: #18 before #25 and #28; #16 before #32; #15 before #36 and
 #37; #21 before #38; #17 is replaced by #24. Several of these touch the same files; Claude
@@ -98,6 +105,35 @@ stamina bar; shove is free; the Open Cloud key stays.
 - **A real map of where the Infected are.** The lobby's coverage board shows only
   percentages; it should show a visual map with where the Infected are thickest and what
   still needs clearing.
+
+## Owner and Nova ideas to discuss (2026-11-17)
+
+From Tien and Nova's chat. First goal before any of these: **one small game loop done**
+(lobby → Checkpoint Delta or Mile 14 → extract → back to the lobby or keep going), solid.
+
+- **Longer missions, 15–20 minutes, mostly travel.** Drop on one side of the map; side
+  objective nearby; main objective on the far side; extraction halfway or all the way back.
+  The maps are probably too small for that (ties into Delta v2 / Mile 14 v2). Nova: big maps
+  are what make the running around work; maps may need to grow about 4x. To settle: 4x
+  the ground area (each side about 2x) or 4x each side (16x the area); the second needs
+  streaming and a phone frame-rate check.
+- **Boss parts to build special weapons (Tien, not fully thought out).** Each boss has a
+  rare chance to drop a weapon fragment; collect a full set to build a special item, e.g. a
+  gun that needs the Warden's parts, another that needs another boss's. Lasting reward
+  from a run (fits "rewards should last").
+- **The Warden is a bullet sponge, not thrilling.** Needs a real fight (moves, weak spots,
+  phases), not more health.
+- **Find bad collisions on the maps** (stuck spots, invisible walls, floating props) before
+  map two goes in.
+- **In-game UI is cluttered and overlaps** (first pass in progress: objective progress).
+- **More weapons; highly customizable weapons** (attachments).
+- **A rotating vendor who sells experimental government weapons** (stock changes; a
+  mysterious corner on the Carrier is reserved for him in Carrier v2).
+- **More fun call-ins:** heavy weapons with their own limited ammo (no resupply), an
+  exosuit, artillery, more vehicles; customizable squad vehicles or helicopter upgrades.
+- **Something to fill the "shop" gap** (the place players spend on new gear over time).
+- **Redo the sound effects** with a paid sound-generation tool; the Infected sounds are
+  getting old.
 
 ## 6. Later (not started), in the order I would do them
 

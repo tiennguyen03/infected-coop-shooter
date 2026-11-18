@@ -2,8 +2,8 @@
 -- The Loadmaster's EDIT (Nova, 2026-11-11: "a button next to each gun that says edit and then
 -- pulls up a screen of the gun model and several differnt options for accessories ie. the
 -- suppressor being for the barrel"). Opened from a gun's row in the Loadout (LoadoutMenu's
--- `edit` option, LoadmasterUI): the gun turning slowly in a viewport (the rack's own copy,
--- ArmsRack), and one list per slot it takes (Config.Attachments.Slots: the Barrel, NONE or the
+-- `edit` option, LoadmasterUI): the gun turning slowly in a viewport (its Loadout screen
+-- model, Shared.Showcase, framed with KitView's cream corners like the Loadout's), and one list per slot it takes (Config.Attachments.Slots: the Barrel, NONE or the
 -- suppressor). The suppressor shows on the gun as it is picked. DONE hands the fitting back
 -- to the Loadout (signed with SIGN FOR IT); BACK leaves it as it was.
 --
@@ -16,18 +16,18 @@
 local ContextActionService = game:GetService("ContextActionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
-local Workspace = game:GetService("Workspace")
 
 local AttachmentRules = require(ReplicatedStorage.Shared.Rules.AttachmentRules)
-local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
 local Messages = require(ReplicatedStorage.Shared.Messages)
 local Optics = require(ReplicatedStorage.Shared.Attachments.Optics)
 local Record = require(ReplicatedStorage.Shared.Rules.Record)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
+local Showcase = require(ReplicatedStorage.Shared.Showcase)
 local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
 local HudTheme = require(script.Parent.HudTheme)
+local KitView = require(script.Parent.KitView)
 
 local GunsmithUI = {}
 
@@ -49,20 +49,6 @@ local REFUSED: { [string]: string } = {
 	loading = "Your record is still loading. Try again in a moment.",
 	busy = "The Loadmaster is busy. Try again in a moment.",
 }
-
--- The rack's copy of the gun (ArmsRack: a Model named by the gun's id), or nil.
-local function rackPiece(id: string): Model?
-	for _, model in Workspace:GetDescendants() do
-		if
-			model:IsA("Model")
-			and model.Name == id
-			and model:GetAttribute(Attributes.RackDisplay)
-		then
-			return model
-		end
-	end
-	return nil
-end
 
 local function textButton(parent: Instance, text: string, size: Vector2): TextButton
 	local button = Instance.new("TextButton")
@@ -131,6 +117,7 @@ function GunsmithUI.open(
 	viewport.LightColor = Color3.fromRGB(255, 250, 240)
 	viewport.LightDirection = Vector3.new(-1, -1.5, -0.6)
 	viewport.Parent = frame
+	KitView.corners(viewport, C.MenuSelect)
 	local camera = Instance.new("Camera")
 	camera.FieldOfView = FOV
 	camera.Parent = viewport
@@ -140,8 +127,8 @@ function GunsmithUI.open(
 
 	-- Built in the held gun's frame (the grip at the origin, the barrel along -Z), so the
 	-- muzzle (MeshAssets.getMuzzle) is where PlayerSetup puts the suppressor in a hand.
-	local piece = rackPiece(gunId)
-	local mesh = piece and piece.PrimaryPart
+	local piece = Showcase.get(gunId)
+	local mesh = piece.PrimaryPart
 	local muzzleAt: Vector3? = nil
 	local centre = Vector3.zero
 	local length = 3
@@ -154,23 +141,12 @@ function GunsmithUI.open(
 		centre = copy.Position
 		length = copy.Size.Z
 		muzzleAt = MeshAssets.getMuzzle(weapon.Model) or Vector3.new(0, 0, -copy.Size.Z)
-	elseif piece then
-		-- Not uploaded yet: the rack's stand-in, laid along -Z (the rack turns it to +X).
-		local copy = piece:Clone()
-		for _, child in copy:GetDescendants() do
-			if child:IsA("BasePart") then
-				child.Anchored = true
-			end
-		end
-		local _, size = copy:GetBoundingBox()
-		copy:PivotTo(CFrame.Angles(0, math.pi / 2, 0))
-		copy.Parent = shown
-		length = math.max(size.X, size.Z)
+		piece:Destroy()
 	else
-		local missing =
-			HudTheme.label(viewport, { text = "SEE IT ON THE RACK", size = 14, color = C.TextDim })
-		missing.AnchorPoint = Vector2.new(0.5, 0.5)
-		missing.Position = UDim2.fromScale(0.5, 0.5)
+		-- Not loaded yet: Showcase's stand-in, a gun-sized block already along Z.
+		local _, size = piece:GetBoundingBox()
+		piece.Parent = shown
+		length = math.max(size.X, size.Z)
 	end
 
 	-- The suppressor as it would sit (PlayerSetup's Suppressor part).

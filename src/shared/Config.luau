@@ -666,6 +666,18 @@ local Config = {
 		GetUp = 1.0,
 		Grace = 1.0, -- after standing: no second knockdown (its damage still lands)
 	},
+	-- HUD layout (docs/STYLES.md section 5 > Layout; 2026-11-17: nothing stacks on anything).
+	-- Offsets are 1080p pixels (HudTheme scales them). The left column is one flow under the
+	-- Resupply line: the squad panel, then the objective list, so neither covers the other at
+	-- any squad size or objective count. The mission stack is one flow too: the mission line,
+	-- the objective meter, then subtitles (and on touch the insert card).
+	Hud = {
+		LeftColumnTop = 150, -- under the health stack, the ability circles and the Resupply line
+		LeftColumnGap = 14, -- between the squad panel and the objective list
+		MissionTop = 0.72, -- share of the screen height where the mission stack starts (PC)
+		MissionTopTouch = 40, -- pixels from the top on touch (clear of the thumbstick)
+		DownedTopTouch = 0.4, -- share of the screen height of DOWNED on touch (under the mission stack)
+	},
 	-- Squad status panel (client SquadPanelUI, Rules/SquadPanel; owner 2026-11-11: no
 	-- floating health bars, squadmates' status in a side panel). One row per other squad
 	-- member on the left edge under the top-left HUD. Offsets are 1080p pixels (HudTheme).
@@ -675,7 +687,6 @@ local Config = {
 		-- Roblox's own bar over squadmates. Names: Roblox's name tag over squadmates.
 		OverheadBars = false,
 		OverheadNames = false,
-		Top = 176, -- under the health stack, the ability circles and the resupply line
 		Width = 190,
 		RowHeight = 32,
 		RowGap = 8,
@@ -2161,6 +2172,15 @@ local Config = {
 		RadioGap = 4.5, -- seconds between Control's lines (insert, the Warden's line)
 		SyncInterval = 0.25, -- seconds between HUD updates at most
 		DoneSeconds = 6, -- a finished or failed side objective stays on the HUD this long
+		-- The big progress meter under the mission line (ObjectiveUI; Rules/Objectives
+		-- meterFocus and holdState; 2026-11-17, owner: "I just couldn't see the indicator").
+		Meter = {
+			Width = 440,
+			Height = 10,
+			FocusSeconds = 4, -- a side objective whose progress rose this recently takes the meter
+			PauseAfter = 1.6, -- a hold whose seconds have not risen this long reads PAUSED
+			FillSeconds = 0.25, -- the fill eases to each new value (about once a second)
+		},
 		MarkerDistance = 1200, -- studs a world marker is seen from
 		MetresPerStud = 0.28,
 		LampColor = Color3.fromRGB(255, 176, 64), -- Lights On: sodium
@@ -2616,18 +2636,47 @@ local Config = {
 				SplatLife = 2.5, -- seconds; fades over the last half
 				MaxSplats = 6, -- alive at once; the oldest goes first
 			},
-			-- The damaging pool: the core disc is exactly the damage radius; a darker rim
-			-- under it marks the edge; it bubbles, and fades out as its damage ends.
+			-- The damaging pool (owner 2026-11-17: the round disc was "a little too perfect,
+			-- it should look like a puddle of liquid"): a core blob and a ring of lobes of
+			-- varied size and turn (Rules/PuddleShape), each a low wet dome over a darker
+			-- rim, so the edge is uneven but stays about the damage radius (Shape: every
+			-- blob inside ReachMax of it, the whole covering at least 3/4 of it every way
+			-- round). It spreads out, the lobes running a little behind; it bubbles and
+			-- fumes; it shrinks and fades out as its damage ends.
 			Pool = {
 				Color = Color3.fromRGB(134, 98, 40),
 				EdgeColor = Color3.fromRGB(72, 28, 24),
-				EdgeWidth = 0.4, -- studs of rim outside the core
-				Transparency = 0.25,
-				Grow = 0.25, -- seconds to spread out
+				EdgeWidth = 0.4, -- studs of rim outside each blob
+				Transparency = 0, -- solid: overlapping blobs read as one liquid
+				Reflectance = 0.22, -- wet
+				Depth = 0.24, -- studs, how tall each blob's dome is in the middle
+				Grow = 0.3, -- seconds to spread out
 				StartSize = 0.3, -- share of full size it lands at
 				Fade = 1, -- seconds, at the end of its life
+				Shrink = 0.3, -- share of its size it loses over the fade
+				Shape = {
+					Lobes = 6,
+					CoreSize = 0.84, -- the core's longer half-axis, of the damage radius
+					CoreSquash = 0.92, -- its shorter half-axis over its longer
+					LobeMin = 0.38, -- a lobe's longer half-axis, of the damage radius
+					LobeMax = 0.52,
+					LobeSquash = 0.72, -- a lobe's shorter half-axis over its longer, from this to 1
+					ReachMin = 0.9, -- the furthest point of each lobe, of the damage radius
+					ReachMax = 1.04,
+					SpreadLag = 0.12, -- seconds a lobe may run behind the core
+				},
+				-- A lighter wet glint on the core.
+				SheenColor = Color3.fromRGB(222, 196, 132),
+				SheenTransparency = 0.45,
+				SheenSize = 0.22, -- longer half-axis, of the damage radius
 				BubbleInterval = 0.28, -- seconds between bubbles in one pool
 				BubbleColor = Color3.fromRGB(206, 186, 112), -- pus
+				-- Faint fumes rising off it while it hurts.
+				FumeInterval = 0.6, -- seconds between puffs in one pool
+				FumeColor = Color3.fromRGB(150, 128, 84),
+				FumeTransparency = 0.8, -- at its thickest
+				-- On a floor hit, extra droplets skim out low across the ground.
+				SplashDrops = 8,
 			},
 			-- Splashed (inside the impact's SplashRadius): the screen edges smear with bile.
 			Smear = {
@@ -3142,8 +3191,26 @@ local Config = {
 			Lift = 0.3, -- studs a hovered or framed piece rises off its pallet
 			ModelScale = 0.13, -- the Shrike's scale model, a share of the real gunship mesh
 		},
+		-- The desk screens (owner 2026-11-17: "any NPC interaction UI should be... the same as the
+		-- Loadmaster"): the Quartermaster's guns, the Call-ins sergeant's call-ins and the motor
+		-- sergeant's vehicles open on the Loadout screen's look (DeskScreen, KitView). false puts
+		-- the old views back: the camera on the rack and the pallets, the plain DeskShop list.
+		DeskScreen = {
+			Enabled = true,
+		},
 		DeskPromptDistance = 10, -- studs a soldier can talk to a desk from
 		DialogSeconds = 8, -- a desk's line stays up this long
+		-- Carrier v2 (docs/sprints/CARRIER_V2.md, owner-approved 2026-11-17): the revamped ship's
+		-- dressing (CarrierV2, data CarrierV2Data), a corner for every seller, the open map room,
+		-- the hidden nook under the ramp and the city straight ahead. `Enabled = false` builds
+		-- the ship as before (the fallback switch). `Poses` seats and leans the sellers in their
+		-- corners (NpcPose); off, they stand as before.
+		CarrierV2 = {
+			Enabled = true,
+			Poses = true,
+			RampSplit = 44, -- Z where the ramp's solid wedge stops; a plate covers the nook above it
+			FireRate = 6, -- city fire particles a second per emitter
+		},
 		-- The Fallow's sky: a clear afternoon at sea (owner and Nova, 2026-11-09). One table
 		-- so a day/night cycle can later drive these values instead of FallowBuilder.
 		-- Gloomy (Tien, 2026-11-10): an overcast, cold late afternoon on a grey sea, the sun low

@@ -107,12 +107,12 @@ local LobbyDesks: { Desk } = {
 	},
 	{
 		id = "plot",
-		title = "THE PLOT",
+		title = "MAP ROOM",
 		who = "Control's watch officer",
 		issues = "The corridor map and the Containment Board",
 		talk = {
 			greetings = {
-				"This is the Plot. I'm Control, the voice on your radio when you're down there.",
+				"This is the map room. I'm Control, the voice on your radio when you're down there.",
 				"Delta's your mission. Do the job, kill the big one, get to your bird before the Burn.",
 				"Every number on that board is a place we're holding. I'd like them higher.",
 				"Keep it down. Half this room is on the net with a team that's still out.",
@@ -123,7 +123,7 @@ local LobbyDesks: { Desk } = {
 			leave = "That's all.",
 			openLine = "The Harlan Corridor. Coast at the bottom, the dam at the top. You start at Delta.",
 			bought = "That's on your record now. I just keep the map.",
-			short = "You're short on merits. Nothing I can do about that from the Plot.",
+			short = "You're short on merits. Nothing I can do about that from the map room.",
 			refused = "Can't do that from here. Try again in a minute.",
 		},
 	},
