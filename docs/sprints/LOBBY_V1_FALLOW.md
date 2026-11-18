@@ -534,6 +534,13 @@ called **Loadout**. Lines by the lore developer (merits, the record, `LobbyDesks
   `Shared.Showcase` (booted in both places), numbers from `Rules/ArmsStats` and
   `Rules/KitCard`; layout in `docs/STYLES.md` §5 > The Loadout screen. Stand-ins: the Hammer,
   Anvil and Aid Bag (a case in their colour) and the frag (a plain grenade) have no model yet.
+  **KIT MODS tab** (2026-11-18, Nova; for the owner to decide, PROGRESSION.md > Kit Mods):
+  LOADOUT | KIT MODS beside BACK, the Loadout screen's own tab buttons (`LoadmasterUI`). KIT
+  MODS covers the lists with `KitModsTab`: a row per mod with its name, what it does, RANK n/3
+  and pips, the next rank's price and BUY (red when affordable), MAXED, or greyed COMING SOON
+  for a mod not switched on. BUY goes to `KitModService` on the `KitMods` remote; the row
+  changes when the server answers. Seen in ZCS Dev (the panel, refusals: disabled, not next,
+  beyond max, short); a bought rank not yet (no test merits on the dev record).
 - **Server** (`LoadmasterService`): checks the request with the match's rules and catalog
   (`Rules/Loadout`, `ArmsRoom`), keeps one signed Loadout per player, answers on the `Loadout`
   remote. **Kept between visits** (2026-11-10): saved in the DataStore `LoadmasterLoadouts`

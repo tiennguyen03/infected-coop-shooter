@@ -1277,6 +1277,68 @@ local Config = {
 		ConeDot = 0.5, -- hits inside ~60 degrees either side of facing
 		Cooldown = 1,
 	},
+	-- Kit Mods (Nova, 2026-11-18; the Loadmaster's KIT MODS tab): passive buffs on the soldier
+	-- whatever gun they carry, bought rank by rank with merits (never tabs) and kept for good on
+	-- the record (Rules/KitModRules, Shared.KitMods). One row per mod: Costs[n] is rank n's
+	-- price, PerRank is added to the row's Effect per rank held; the services that own an
+	-- Effect ask KitMods.bonus for it. Enabled = false: shown greyed, not sold, no effect (its
+	-- effect is a follow-up). Prices from the systems designer (about 1 : 2 : 3.5 a rank; a
+	-- full mod is 8-13 wins at 120 merits). docs/OWNER.md says power is the loadout, never stat
+	-- items: this is built for the owner to decide (docs/BACKLOG.md > Your call).
+	KitMods = {
+		stim_carry = {
+			Name = "Extra stim",
+			Description = "Carry one more stim per rank. Refills fill you to the new count.",
+			Effect = "StimsCarried", -- LoadoutService: stims carried
+			PerRank = 1,
+			MaxRank = 3,
+			Costs = { 200, 400, 750 },
+			Enabled = true,
+			Order = 1,
+		},
+		sprint_roll = {
+			Name = "Extra roll",
+			Description = "One more roll from a full stamina bar per rank (a little more sprint too).",
+			Effect = "StaminaRolls", -- SprintController: Stamina.Max + RollCost per roll
+			PerRank = 1,
+			MaxRank = 3,
+			Costs = { 150, 300, 500 },
+			Enabled = true,
+			Order = 2,
+		},
+		callin_cooldown = {
+			Name = "Quicker call-ins",
+			Description = "Call-ins are back 8 seconds sooner per rank.",
+			Effect = "CallInCooldown", -- seconds (not wired yet; the designer suggests ~5% a rank instead)
+			PerRank = -8,
+			MaxRank = 3,
+			Costs = { 250, 500, 850 },
+			Enabled = false,
+			Order = 3,
+		},
+		revive_speed = {
+			Name = "Faster revives",
+			Description = "Pick a downed squadmate up 15% faster per rank.",
+			Effect = "ReviveSpeed", -- share faster (not wired yet)
+			PerRank = 0.15,
+			MaxRank = 3,
+			Costs = { 150, 300, 500 },
+			Enabled = false,
+			Order = 4,
+		},
+	} :: {
+		[string]: {
+			Name: string,
+			Description: string,
+			Effect: string,
+			PerRank: number,
+			MaxRank: number,
+			Costs: { number },
+			Enabled: boolean,
+			Order: number,
+		},
+	},
+
 	Stim = {
 		Carried = 2,
 		Heal = 60, -- health over Duration

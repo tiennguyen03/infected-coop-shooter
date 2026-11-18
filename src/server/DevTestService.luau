@@ -7,7 +7,7 @@
 -- MCP runtime eval, e.g.:
 --   require(game.ServerScriptService.Server.DevTestService).spawnEnemy("Brute", 1)
 -- Loadout rework: SetCallIn / FireCallIn / GiveUpgrade / ClearUpgrades / RefillAmmo /
--- RestockCallIns / SetWeapon / DropUpgradeCrate / DropSupplyCrate / DropObjectiveCrate drive LoadoutService,
+-- RestockCallIns / SetKitRanks / SetWeapon / DropUpgradeCrate / DropSupplyCrate / DropObjectiveCrate drive LoadoutService,
 -- CallInService and RequisitionService directly.
 
 local CollectionService = game:GetService("CollectionService")
@@ -24,6 +24,8 @@ local CallInService = require(script.Parent.CallInService)
 local EnemyService = require(script.Parent.EnemyService)
 local HandoffService = require(script.Parent.HandoffService)
 local IndexService = require(script.Parent.IndexService)
+local KitModService = require(script.Parent.KitModService)
+local KitModRules = require(ReplicatedStorage.Shared.Rules.KitModRules)
 local LoadoutService = require(script.Parent.LoadoutService)
 local PlayerStatsService = require(script.Parent.PlayerStatsService)
 local RequisitionService = require(script.Parent.RequisitionService)
@@ -347,6 +349,12 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 	RefillAmmo = function(player)
 		LoadoutService.refillAmmo(player)
 		print(`[DevTest] RefillAmmo -> {player.Name}`)
+	end,
+	-- Kit Mod ranks for this soldier without the record ("stim_carry=2;sprint_roll=3"; "" for
+	-- none), through KitModService like the record's own (stims and stamina follow).
+	SetKitRanks = function(player, text)
+		KitModService.apply(player, KitModRules.decode(tostring(text or "")))
+		print(`[DevTest] SetKitRanks "{tostring(text or "")}" -> {player.Name}`)
 	end,
 	RestockCallIns = function(player)
 		CallInService.refill(player)

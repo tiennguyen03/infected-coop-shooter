@@ -15,6 +15,7 @@ local UserInputService = game:GetService("UserInputService")
 
 local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attributes"))
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
+local KitMods = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("KitMods"))
 local RunStates = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("RunStates"))
 local Stamina =
 	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Rules"):WaitForChild("Stamina"))
@@ -29,6 +30,24 @@ local stanceFactor = 1
 local sprintAllowed = true
 local overrideSpeed: number? = nil -- a roll or slide (MovementController) owns the speed
 local stamina = Stamina.new(Config.Stamina)
+
+-- Config.Stamina with this soldier's Kit Mods: each extra roll (Effect "StaminaRolls",
+-- Config.KitMods) adds one RollCost to the bar. Worked out again only when the KitRanks
+-- attribute changes (this runs every frame).
+local settingsFor: string? = nil
+local settings: typeof(Config.Stamina) = Config.Stamina
+local function staminaSettings(): typeof(Config.Stamina)
+	local text = Players.LocalPlayer:GetAttribute(Attributes.KitRanks)
+	local current = if typeof(text) == "string" then text else ""
+	if current ~= settingsFor then
+		settingsFor = current
+		local rolls = KitMods.bonusFor(Players.LocalPlayer, "StaminaRolls")
+		local grown = table.clone(Config.Stamina)
+		grown.Max = Config.Stamina.Max + Config.Stamina.RollCost * rolls
+		settings = grown
+	end
+	return settings
+end
 
 local function getHumanoid(): Humanoid?
 	local character = Players.LocalPlayer.Character
@@ -108,7 +127,7 @@ end
 
 -- For the bar: how full (0..1) and whether the body is winded.
 function SprintController.getStamina(): (number, boolean)
-	return Stamina.fraction(stamina, Config.Stamina), stamina.winded
+	return Stamina.fraction(stamina, staminaSettings()), stamina.winded
 end
 
 -- Sprint drains only while it is really carrying the body: moving, on its feet, and not in
@@ -128,7 +147,7 @@ local function stepStamina(dt: number)
 			and character:GetAttribute(Attributes.Riding) == nil
 	end
 	local wasWinded = stamina.winded
-	Stamina.step(stamina, dt, draining, Config.Stamina)
+	Stamina.step(stamina, dt, draining, staminaSettings())
 	if stamina.winded ~= wasWinded then
 		applySpeed() -- winded drops to a walk; recovered picks the sprint back up if held
 	end
@@ -161,7 +180,7 @@ function SprintController.init()
 		overrideSpeed = nil
 		stanceFactor = 1
 		sprintAllowed = true
-		Stamina.refill(stamina, Config.Stamina)
+		Stamina.refill(stamina, staminaSettings())
 		setSprinting(false)
 	end)
 
@@ -169,7 +188,7 @@ function SprintController.init()
 	workspace:GetAttributeChangedSignal(Attributes.RunState):Connect(function()
 		local state = RunStates.current()
 		if state == "Lobby" or state == "Insert" then
-			Stamina.refill(stamina, Config.Stamina)
+			Stamina.refill(stamina, staminaSettings())
 			applySpeed()
 		end
 	end)

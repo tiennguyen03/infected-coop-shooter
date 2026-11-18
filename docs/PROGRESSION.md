@@ -88,6 +88,34 @@ gives the gun in hand (`PlayerSetup`), the first-person sight line and zoom
 (`CameraController`, `FirstPersonView`) and the EDIT screen's gun (`Showcase` "<gun>+<optic>").
 The ACOG is a scope: aimed in first person it shows the scope picture, as the M110 does.
 
+### Kit Mods
+
+Nova, 2026-11-18 (on `nova/loadmaster-kit-mods`, **for the owner to decide**: it breaks
+`docs/OWNER.md` "power is the loadout, never stat items" and merits buy "new options, never
+stronger versions"; built so Tien can judge it, see `docs/BACKLOG.md` > Your call). A Kit Mod
+is a passive buff on the soldier whatever gun they carry, bought rank by rank with merits
+(never tabs) at the Loadmaster's KIT MODS tab and kept for good. The line with attachments:
+if a bonus changes how one gun behaves, it is an attachment; if it is on the soldier whatever
+the gun, it is a Kit Mod. Field upgrades stay per-mission picks.
+
+| Mod (`Config.KitMods`) | Per rank (max 3) | Rank 1 / 2 / 3 (merits) | State |
+|---|---|---|---|
+| Extra stim (`stim_carry`) | +1 stim carried (`Config.Stim.Carried` 2 → up to 5) | 200 / 400 / 750 | working |
+| Extra roll (`sprint_roll`) | +1 roll from a full bar: `Stamina.Max` + `RollCost` (100 → up to 160; ~1.7 s more sprint a rank) | 150 / 300 / 500 | working |
+| Quicker call-ins (`callin_cooldown`) | -8 s call-in cooldown (the designer suggests ~5% a rank instead) | 250 / 500 / 850 | greyed, not wired |
+| Faster revives (`revive_speed`) | +15% revive speed | 150 / 300 / 500 | greyed, not wired |
+
+Prices from the systems designer (about 1 : 2 : 3.5 a rank; a full mod is 8-13 wins). One row
+per mod; `Shared.KitMods` builds the typed records, and a service asks
+`KitMods.bonusFor(player, effect)` for the effect it owns. Rules: `Rules/KitModRules` (spec
+first): only the next rank, never past the cap, never a disabled mod, never short. Each rank
+bought is an id on the merit record (`<mod>@<rank>`), bought in one UpdateAsync step with its
+merits (lobby `KitModService` through `RecordService.change`, the Quartermaster's save path).
+The match reads the ranks off the record on join (`src/server/KitModService`,
+`MeritService.readRecord`) into the `KitRanks` attribute: `LoadoutService` carries the extra
+stims (refills fill to the new count; the HUD shows it), `SprintController` grows the bar.
+Bots have none. Dev: `SetKitRanks "stim_carry=2;sprint_roll=1"` (DevCommand).
+
 ### The soldier
 
 Every player is a Pike soldier; no classes, no hero kit. A soldier carries a primary, the M17
