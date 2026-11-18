@@ -13,5 +13,9 @@ were re-measured on the model: tyre radius 1, ride height 1.23, the seats lower.
 both meshes, the wheels are solid, no errors; then Nova played the final version: "everything
 looks solid", no problems. Tests (492), lint, types, both builds. Not measured: the
 low-end frame time with four ATVs in view (the performance reviewer's ask).
+**Fixed after (Nova's playtest):** getting on pulled the ATV to the rider (the engine made the
+rider's HumanoidRootPart the assembly root once the body was meshes; the chassis now has
+`RootPriority` 127) and a seated soldier kept the walk clip (`AnimationController` plays no
+locomotion in a seat). Both measured in Studio.
 **Heads-up:** the 70 MB `assets/3d/atvrbx.obj` is git-ignored; keep it to re-cut the body.
 **Next:** the MicroProfiler check with four ATVs on a low-end setting; the driver's hands on the bars.
