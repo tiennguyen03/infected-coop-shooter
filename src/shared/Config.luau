@@ -1943,25 +1943,34 @@ local Config = {
 			Cooldown = 180, -- a wrecked or scrapped ATV comes back when the charge does
 			ThrowDistance = 30,
 			Aim = { Shape = "ring", Radius = 5 }, -- where it is set down
-			-- Slung under the helicopter (Nova 2026-11-17): the helo comes in at Height over the
-			-- mark with the ATV on a Line studs long, lowers it to the ground, drops the hook and
-			-- climbs away. Approach and Depart are the flight in and out; the lowering lasts from
-			-- the end of the approach to Time (from the throw), when the server's ATV appears.
+			-- Dropped in a crate (Tien and Nova 2026-11-17; it was slung and lowered, `sling` is
+			-- still a style): the helo flies straight over the mark at Height and Speed from
+			-- Distance out and on as far again, climbing Climb, and never stops; it lets the crate
+			-- go Fall seconds before Time and the crate drops straight down, landing at Time (the
+			-- server's ATV appears inside it). The walls fall open flat over Open, the lid kicks
+			-- off behind; the boards lie Linger seconds and fade over Fade. The crate is the
+			-- vehicle's own size: its extents plus CrateRoom each side and over the top, in
+			-- CrateStep steps (Rules/Arrival.crateSize); a `Crate` (Vector3) on the Vehicle block
+			-- sets one instead.
 			Arrival = {
-				Style = "sling",
+				Style = "crate",
 				Time = 7.5,
 				Smoke = Color3.fromRGB(214, 196, 92),
 				SmokeTime = 8,
-				Approach = 4.5, -- in from Distance studs out to the hover
-				Depart = 3.5, -- the helo climbs away after the hook is dropped
-				Distance = 260,
-				Height = 34, -- the helo's frame above the mark during the hover
-				Line = 16, -- the sling line, studs, from the belly to the ATV's roll bar
-				Climb = 70, -- studs it gains on the way out
+				Distance = 300,
+				Speed = 60,
+				Height = 46, -- the helo's frame over the mark; the crate hangs under its skids
+				Climb = 25,
+				Fall = 1.4,
+				Open = 0.55,
+				Linger = 4,
+				Fade = 1.5,
+				CrateRoom = 0.4,
+				CrateStep = 0.5,
 				RotorVolume = 0.55,
 			},
 			Vehicle = {
-				Body = "atv", -- VehicleBody's build (blocky parts; a mesh later)
+				Body = "atv", -- VehicleBody's build (Nova's model; the Part body while it loads)
 				PerPlayer = 1, -- a second call replaces your empty one (Rules/Vehicle.callCheck)
 				PerSquad = 2, -- two ATVs carry the whole squad
 				Clear = Vector3.new(6, 4, 9), -- the landing box that must be free of walls (no charge spent)
@@ -2027,8 +2036,8 @@ local Config = {
 				-- radio notices: to the squad when it is called, set down and lost; to the caller
 				-- when a call is refused; to the riders when it is about to blow.
 				Radio = {
-					Inbound = "Pike, Control. Helo bringing your ATV in under it. Clear the drop.",
-					Down = "Helo. ATV's on the ground. Hook's clear.",
+					Inbound = "Pike, Control. Helo's coming over with your ATV in a crate. Clear the drop.",
+					Down = "Helo. Crate's down. ATV's yours.",
 					Lost = "Pike, Control. Lost your ATV. You're on foot.",
 					Burning = "It's going up! Get off!",
 					Occupied = "Your ATV's still got people on it.",
