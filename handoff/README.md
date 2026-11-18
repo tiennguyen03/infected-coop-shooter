@@ -10,6 +10,7 @@ Last updated: 2026-11-17 by Claude (the map room opened up, on `claude/open-map-
 Last updated: 2026-11-17 by Tien + Claude (the Hocker's spit pool as an uneven puddle, on `claude/spit-puddle`).
 Last updated: 2026-11-17 by Tien + Claude (the objective meter and the HUD layout pass, on `claude/objective-progress-visible`).
 Last updated: 2026-11-17 by Claude (every desk on the Loadmaster's look, on `claude/npc-ui-prototype2`).
+Last updated: 2026-11-18 by Claude (the big grey Delta test map, on `claude/delta-xl-blockout`).
 
 ## The game today (on `main`)
 
@@ -40,6 +41,14 @@ that restocks the squad.
   modelled attack helicopter, a fire mission's mark holds the Infected on it until the rounds land
   (`Config.CallIns.Landing`, 2026-11-16, **not yet played**), the Doorman a modelled tripod gun not yet seen in game:
   `Config.CallIns.Doorman.Model = 1` puts the old one back), flare on X, the Arms Room on B (stand-in until Nova's lobby screen).
+- **The big map** (2026-11-18, on `claude/delta-xl-blockout`, **not yet seen in Studio**): Checkpoint
+  Delta grown to 1,800 x 1,800 as grey blocks, today's base in the middle, eight areas round it,
+  a river with three crossings; drop at a far corner, the pickup called only when the main
+  objective is done (`docs/sprints/DELTA_XL.md`). Off by default (`Config.DeltaXL.Enabled`); dev
+  panel RUN > THE BIG MAP turns it on for a session. **Nova:** the objectives are now drawn as the
+  run starts on the big map (`ObjectiveService.prepare`, called from `RunManager.beginRun`);
+  pads and the cutscene read `Attributes.DropPoint`, extraction `Attributes.PickupPoint`; today's
+  map behaves as before. Infected spawning for a big map is the next step.
 - **Vehicles** (2026-11-17, Nova; on `nova/vehicles-atv`, **not yet played**): the ATV, a
   call-in slung in under the helo; a driver and a back-seat gunner on their primary; runs the
   Infected down (`docs/PROGRESSION.md` > The ATV). Bought at the new Vehicles desk at the
@@ -126,7 +135,7 @@ that restocks the squad.
   those flows (`HudTheme.inLeftColumn`, `MissionLine.attach`); `MissionLine.set` takes a table
   now; `Config.SquadPanel.Top` is gone (`Config.Hud.LeftColumnTop`).
 - **Checks:** stylua, selene, rojo build, 494 Lune tests (rules plus the source-wiring spec, which also reads the lobby's remotes and refuses key literals), luau-lsp, CI on every push.
-- **Checks:** stylua, selene, rojo build, 502 Lune tests (rules plus the source-wiring spec, which also reads the lobby's remotes and refuses key literals), luau-lsp, CI on every push.
+- **Checks:** stylua, selene, rojo build, 530 Lune tests (rules plus the source-wiring spec, which also reads the lobby's remotes and refuses key literals), luau-lsp, CI on every push.
 
 ## Who owns what
 
@@ -149,6 +158,7 @@ The plan beyond this table, in phases, with the owner's open decisions: [docs/RO
 | 1a | Look at the revive animation and tune it | Tien + Claude | Built without a playtest (the owner was playing). Check list in `handoff/log/2026-11-11-tien-revive-animation.md`; every pose number is in `Config.ReviveAnimation`, `Enabled = false` is the off switch |
 | 1a2 | Vehicles: play the ATV (built 2026-11-17, unplayed), then an engine sound, a Blender mesh, the motor sergeant's radio lines, more vehicles once the maps grow | Nova + Claude | check list in `handoff/log/2026-11-17-nova-vehicles-atv.md`; **Tien heads-up:** small hooks in your files (`CallInService`, `ProjectileServer`, `KitService`, `RequisitionService`, `BotService`, `Squad` revive, `EnemyProjectileService.damagePlayer` 4th arg, `LoadoutService.usePrimary`, the client movement/stance/sprint/ability/weapon gates on the `Riding` attribute) |
 | 1a3 | Look at the objective meter and the HUD layout (2026-11-17, unplayed) | Tien + Claude | check list in `handoff/log/2026-11-17-claude-objective-meter.md`; numbers in `Config.Objectives.Meter` and `Config.Hud` |
+| 1a4 | Play the big map (2026-11-18, unplayed), then spawning at scale (plan step 3) | Tien + Claude | how to play and what still breaks: `docs/sprints/DELTA_XL.md`; check list in `handoff/log/2026-11-18-claude-delta-xl.md` |
 | 1b | Play the away-review fixes (2026-11-16, `claude/review-fixes`, unplayed) | Tien + Claude | check list in `handoff/log/2026-11-16-claude-review-fixes.md`; Nova: the lobby now buys through `SaveSlot.update` |
 | 2 | Tune the feel by playing it | Tien | the 2026-11-11 reward panel, unplayed: is the panel readable and small enough during a fight, is E right, does the objective reward feel better than a pallet, is the full call-in restock before the Warden too much (`Config.Requisition.Pick`, `Config.Crates`); the 2026-11-10 rewards pass, unplayed: half reserve at insert, the second upgrade crate at the hold's end, the 60 s extraction and its second wave (`Config.Extraction.Waves`); Infected spacing first (`Config.Enemies.Spacing`: `Radius`, `Steer.EngageDistance`, `Steer.Strength`; fewer bodies reach a player at once now, so check the damage still bites; what to look for: `handoff/log/2026-11-11-tien-infected-spacing.md`); kick and shake strength, the low-health look (overlaps HealthBarUI's red pulse), the crawl; heartbeat asset was in moderation |
 | 3 | Checklist pass of every call-in and gun | Tien + Claude | dev `FireCallIn <id>`, `SetWeapon <id>`; each call-in's new arrival has not been seen in Studio yet (list: `handoff/log/2026-11-10-tien-callin-arrivals.md`), nor have the Anvil's binoculars (`handoff/log/2026-11-11-tien-anvil-binoculars.md`); throw timing (0.5 s wind-up, release from the hand) is unplayed and needs tuning (`handoff/log/2026-11-11-tien-throw-sync.md`); Gore stumps sit off the Runner/Brute arms; Brute/Walker hitboxes; the remade Infected have not been seen in game (which side the wounds are on, the bigger head boxes: `docs/STYLES.md` §7 "Infected v2") |

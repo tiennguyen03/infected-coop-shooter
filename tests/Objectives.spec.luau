@@ -141,6 +141,22 @@ return {
 			true
 		)
 	end,
+	["a bigger version of a map plays that map's signature objectives"] = function()
+		local rows, maps = sound()
+		maps.delta_xl = {
+			Of = "delta",
+			Main = pool({ "burn", "hold" }),
+			Side = pool({ "lamp" }),
+			Sites = maps.delta.Sites,
+		}
+		expect.equal(#Objectives.validate(rows, maps), 0)
+	end,
+	["a bigger version names a map that exists"] = function()
+		local rows, maps = sound()
+		maps.delta_xl =
+			{ Of = "nowhere", Main = pool({ "burn", "hold" }), Side = {}, Sites = maps.delta.Sites }
+		expect.equal(has(Objectives.validate(rows, maps), 'delta_xl: no map "nowhere"'), true)
+	end,
 	["a listed objective needs a site with everything it needs"] = function()
 		local rows, maps = sound()
 		maps.delta.Sites.lamp = nil

@@ -2131,7 +2131,7 @@ local Config = {
 			PauseAfter = 1.6, -- a hold whose seconds have not risen this long reads PAUSED
 			FillSeconds = 0.25, -- the fill eases to each new value (about once a second)
 		},
-		MarkerDistance = 1200, -- studs a world marker is seen from
+		MarkerDistance = 2600, -- studs a world marker is seen from (the big map is 1,800 across)
 		MetresPerStud = 0.28,
 		LampColor = Color3.fromRGB(255, 176, 64), -- Lights On: sodium
 		-- Said once at insert, before the main objective's brief.
@@ -2400,6 +2400,40 @@ local Config = {
 				loco_run_r = { 0.43, 0.96 },
 			},
 		},
+	},
+
+	-- Checkpoint Delta XL, the grey test map (docs/sprints/DELTA_XL.md; server DeltaXL, layout
+	-- Shared.DeltaXLLayout): today's Delta in the middle of 1,800 x 1,800 studs with eight
+	-- areas round it. Off: today's map, exactly as before. On (here, or the dev panel's RUN >
+	-- "Big map (grey test)" for one session): the fence opens, the outer areas are built,
+	-- the squad drops at a corner far from the main objective and the helicopter's pickup is
+	-- chosen and called only when the main objective is done.
+	DeltaXL = {
+		Enabled = false,
+		Map = "delta_xl", -- ObjectiveDefinitions map played while it is on (Of = "delta")
+		BoundaryHeight = 120, -- the invisible walls at the map's edge
+		SpawnInset = 892, -- Infected spawns stay this far inside the centre on each axis
+		-- A spawn whose ground is lower than this is refused: the river channel (bed -12).
+		LowGround = -1,
+		-- The Burn on the big map (PROGRESSION.md > Operation; 840 s elsewhere). Nothing
+		-- counts the Burn down yet: this is the number it will use.
+		BurnSeconds = 1200,
+		-- Picking (Rules/DropPickup; plan section 3).
+		DropMinDistance = 900, -- the drop corner is at least this far from the main site
+		Sides = { FirstMin = 150, FirstMax = 450, SecondFromFirst = 300, SecondFromLine = 350 },
+		Pickup = {
+			HalfwayShare = 0.5, -- of runs: a pickup halfway back
+			HalfwayMin = 400,
+			HalfwayMax = 700,
+			BackMin = 800, -- else all the way back: this far from the main objective or more
+			AvoidDrop = 300, -- ... and never this close to where the squad landed
+			AvoidRadius = 200, -- a pickup this close to the Warden is skipped
+		},
+		-- Control, when the main objective is done and the pickup is chosen ({place}).
+		PickupRadio = "Pike, Control. The helicopter will pick you up at {place}. Move.",
+		-- The distant city: only to the south, pushed out past the map and scaled up.
+		Skyline = { ArcFrom = 200, ArcTo = 340, Push = 800, Scale = 1.5 },
+		StoryMarkers = true, -- amber cubes on the environmental-story spots (grey pass only)
 	},
 
 	-- Stage 1 building kit (ArenaService.buildBuilding; docs/LEVELS.md section B).
