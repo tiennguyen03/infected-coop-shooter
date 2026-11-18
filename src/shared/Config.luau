@@ -3259,6 +3259,10 @@ local Config = {
 		-- the old views back: the camera on the rack and the pallets, the plain DeskShop list.
 		DeskScreen = {
 			Enabled = true,
+			-- Desks that keep their own view (LobbyDesks ids). The Quartermaster keeps the GTA
+			-- gun wall (Nova, 2026-11-18: the desk screen replaced it by accident): "Show me the
+			-- guns." glides the camera onto his rack and counter (ArmsRackUI) as before.
+			KeepOwnView = { arms_room = true } :: { [string]: boolean },
 		},
 		DeskPromptDistance = 10, -- studs a soldier can talk to a desk from
 		DialogSeconds = 8, -- a desk's line stays up this long
