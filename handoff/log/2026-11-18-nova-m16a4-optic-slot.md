@@ -10,9 +10,11 @@ the `Optic` remote.
 Dev: buy, buy again (owned), buy short, fit unowned, fit on the SMG, fit; screenshot of the
 menu. Match Dev boots clean with an ACOG fitted. Not checked: aiming through each optic in a
 match.
-**Heads-up:** the optics are not drawn on the gun: the free models (CC-BY, notcplkerry on
-Sketchfab) need a logged-in download (`assets/3d/ASSET_IDS.md` > Optics). `RecordService.buy`
+**On the gun (later the same day):** Nova downloaded the free models; `build/optics.py` cuts
+them and the build puts each on the M16 (`wpn_m16_acog`, `_compm2`, `_reddot`, uploaded to the
+group); `WeaponDefinitions.dressed` swaps the mesh and sight in hand, in first person and on
+the EDIT screen. Previews in `assets/3d/build/previews/wpn_m16_*.png`.
+**Heads-up:** `RecordService.buy`
 is now `purchase(player, id, priceOf)` with `RecordService.buyWith` for optics;
 `RecordService.allows` also checks optics; `LoadmasterService.fit` signs one slot.
-**Next:** download the two models, fit them on the M16 with the sight line on the optic, then
-the slot for the other guns.
+**Next:** aim through each optic in a match; then the slot for the other guns.

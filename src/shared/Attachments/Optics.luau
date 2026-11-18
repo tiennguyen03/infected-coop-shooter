@@ -3,7 +3,9 @@
 -- Config.Optics: every number comes from that row, and no list of optic names lives here or
 -- anywhere else. Rules/AttachmentRules takes `Optics.Rows` for buying and fitting,
 -- Rules/AttachmentMerge applies an optic's multipliers, and WeaponDefinitions.options offers
--- an optic in the Optic slot of each gun it lists.
+-- an optic in the Optic slot of each gun it lists. Each optic's `fits` (Config.Optics rows'
+-- Fit) name, per gun, the mesh of that gun with the optic on and its sight on that mesh;
+-- WeaponDefinitions.dressed puts them together.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -12,12 +14,22 @@ local AttachmentRules = require(ReplicatedStorage.Shared.Rules.AttachmentRules)
 
 local Optics = {}
 
+-- A gun with this optic on: its mesh (MeshAssets) and its sight's points on that mesh.
+export type Fit = {
+	model: string,
+	sight: { Rear: Vector3, Front: Vector3, Kind: string? },
+}
+
 export type Optic = AttachmentRules.Optic & {
-	model: string?, -- its mesh (MeshAssets) once uploaded; nil = not shown on the gun yet
+	fits: { [string]: Fit }, -- by gun id
 }
 
 local ROWS: { [string]: Optic } = {}
 for id, row in Config.Optics do
+	local fits: { [string]: Fit } = {}
+	for gunId, fit in row.Fit do
+		fits[gunId] = { model = fit.Model, sight = table.clone(fit.Sight) }
+	end
 	ROWS[id] = {
 		id = id,
 		displayName = row.Name,
@@ -26,7 +38,7 @@ for id, row in Config.Optics do
 		zoomMultiplier = row.ZoomMultiplier,
 		adsTimeMultiplier = row.AdsTimeMultiplier,
 		meritCost = row.Price,
-		model = row.Model,
+		fits = fits,
 	}
 end
 
@@ -36,6 +48,15 @@ Optics.Rows = (ROWS :: any) :: AttachmentRules.Optics
 
 function Optics.get(id: string?): Optic?
 	return if id then ROWS[id] else nil
+end
+
+-- Gun `gunId` with optic `id` on (nil: no such optic, or it does not fit that gun).
+function Optics.fit(id: string?, gunId: string): Fit?
+	local optic = Optics.get(id)
+	if not optic or not AttachmentRules.fits(optic, gunId) then
+		return nil
+	end
+	return optic.fits[gunId]
 end
 
 -- The optic ids gun `gunId` takes, cheapest first.

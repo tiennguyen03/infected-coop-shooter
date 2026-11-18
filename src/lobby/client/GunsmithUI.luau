@@ -127,27 +127,44 @@ function GunsmithUI.open(
 
 	-- Built in the held gun's frame (the grip at the origin, the barrel along -Z), so the
 	-- muzzle (MeshAssets.getMuzzle) is where PlayerSetup puts the suppressor in a hand.
-	local piece = Showcase.get(gunId)
-	local mesh = piece.PrimaryPart
+	-- With an optic fitted, the gun's mesh with it on its rail (WeaponDefinitions.dressed,
+	-- Showcase "<gun>+<optic>"); shown again when the optic changes.
 	local muzzleAt: Vector3? = nil
 	local centre = Vector3.zero
 	local length = 3
-	if mesh and mesh:IsA("MeshPart") then
-		local copy = mesh:Clone()
-		copy:ClearAllChildren()
-		copy.Anchored = true
-		copy.CFrame = CFrame.new(MeshAssets.getOffset(weapon.Model))
-		copy.Parent = shown
-		centre = copy.Position
-		length = copy.Size.Z
-		muzzleAt = MeshAssets.getMuzzle(weapon.Model) or Vector3.new(0, 0, -copy.Size.Z)
-		piece:Destroy()
-	else
-		-- Not loaded yet: Showcase's stand-in, a gun-sized block already along Z.
-		local _, size = piece:GetBoundingBox()
-		piece.Parent = shown
-		length = math.max(size.X, size.Z)
+	local gunBody: Instance? = nil
+	local function showGun()
+		if gunBody then
+			gunBody:Destroy()
+			gunBody = nil
+		end
+		local opticId = fitted[Optics.SLOT]
+		local model = WeaponDefinitions.dressed(gunId, opticId)
+		local showId = if opticId and model ~= weapon.Model
+			then WeaponDefinitions.dressedId(gunId, opticId)
+			else gunId
+		local piece = Showcase.get(showId)
+		local mesh = piece.PrimaryPart
+		if mesh and mesh:IsA("MeshPart") then
+			local copy = mesh:Clone()
+			copy:ClearAllChildren()
+			copy.Anchored = true
+			copy.CFrame = CFrame.new(MeshAssets.getOffset(model))
+			copy.Parent = shown
+			gunBody = copy
+			centre = copy.Position
+			length = copy.Size.Z
+			muzzleAt = MeshAssets.getMuzzle(model) or Vector3.new(0, 0, -copy.Size.Z)
+			piece:Destroy()
+		else
+			-- Not loaded yet: Showcase's stand-in, a gun-sized block already along Z.
+			local _, size = piece:GetBoundingBox()
+			piece.Parent = shown
+			gunBody = piece
+			length = math.max(size.X, size.Z)
+		end
 	end
+	showGun()
 
 	-- The suppressor as it would sit (PlayerSetup's Suppressor part).
 	local can: Part? = nil
@@ -309,6 +326,8 @@ function GunsmithUI.open(
 			end
 			local optic = Optics.get(b)
 			describe.Text = if optic then `{optic.displayName} fitted.` else "Iron sights."
+			showGun() -- the gun with the new optic on (or bare)
+			showFitting()
 			repaint()
 		elseif kind == Messages.Optic.Refused then
 			describe.Text = REFUSED[tostring(b)] or `Refused ({tostring(b)}).`
