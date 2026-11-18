@@ -75,16 +75,23 @@ function DamageService.dealDamage(
 	if part and typeof(plateHealth) == "number" then
 		local model = part:FindFirstAncestorOfClass("Model")
 		local guard = model and model:GetAttribute(Attributes.GuardFactor)
-		local left
-		left, amount = Plates.hit(
+		local share = part:GetAttribute(Attributes.WeakSpot)
+		local left, body
+		left, amount, body = Plates.hit(
 			plateHealth,
 			amount,
 			if typeof(guard) == "number" then guard else nil,
-			part:GetAttribute(Attributes.Flank) == true
+			part:GetAttribute(Attributes.Flank) == true,
+			if typeof(share) == "number" then share else nil
 		)
 		part:SetAttribute(Attributes.PlateHealth, left)
 		if attacker then
 			lastDamager[humanoid] = attacker
+		end
+		-- The weak spot: its share goes through to the body (the boss bar moves).
+		if body > 0 then
+			lastDamageKind[humanoid] = kind or "plate"
+			humanoid:TakeDamage(body)
 		end
 		reportHit(attacker, position, amount, kind or "plate")
 		return

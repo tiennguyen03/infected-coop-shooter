@@ -2,7 +2,7 @@
 
 The one page to open to see what is waiting, what is being built, and what needs you.
 Plain words, newest state. Updated in the same commit as the work that changes it.
-Last updated: 2026-11-17. (Integration 2, #63, was playtested by Tien and merged to main on
+Last updated: 2026-11-18 (Warden aggressive added under Try it). Earlier: 2026-11-17. (Integration 2, #63, was playtested by Tien and merged to main on
 2026-11-17: call-ins land, Warden in the objective, the Loadmaster screen, one main
 seller, call-in display, board in the ring, review fixes, Nova's ATV. The "Try it" rows for
 #56, #58 and the ATV are now in main.)
@@ -18,6 +18,7 @@ published from `main`.
 
 | PR | What | What to look at |
 |---|---|---|
+| Warden aggressive (`claude/warden-aggressive`) | The Warden hunts: leaps at whoever strays from the squad (a yellow ring where they stood, then he lands on it), walks faster, throws gas from the start, a rage below 30% (gas at everyone, more leaps); his back is a weak spot; less health; the spinning Bash is now a shield punch (`docs/sprints/WARDEN_AGGRESSIVE.md`) | F1 > THE WARDEN > "In front of me" (F9), then "To the rage". Does he feel dangerous; can you always see the leap coming; does the shield punch and the leap look heavy, not goofy (they were keyed blind); is 5,000 hp now too little |
 | #77 Carrier v2 in the lobby | The revamped ship in the lobby: frames, pipes, deck gear, Easter eggs, every seller posed in their own corner, the map room open, a hidden nook under the ramp, the burning city straight ahead (`docs/sprints/CARRIER_V2.md` > In the lobby; `Config.Lobby.CarrierV2.Enabled` turns it off) | not yet seen in Studio; the poses are set blind and may need nudging; the sellers' idle loops are still to make |
 | #14 | Kill feedback: dark blood burst, soft tick on a kill | does a kill feel better; is the tick annoying |
 | #15 | Rewards crate after the hold, 60 s extraction with a second wave, Warden chest plate 400 | extraction length, the second wave |
@@ -119,8 +120,8 @@ From Tien and Nova's chat. First goal before any of these: **one small game loop
   rare chance to drop a weapon fragment; collect a full set to build a special item, e.g. a
   gun that needs the Warden's parts, another that needs another boss's. Lasting reward
   from a run (fits "rewards should last").
-- **The Warden is a bullet sponge, not thrilling.** Needs a real fight (moves, weak spots,
-  phases), not more health.
+- **The Warden is a bullet sponge, not thrilling.** Built 2026-11-18: see "Warden aggressive"
+  under Try it.
 - **Find bad collisions on the maps** (stuck spots, invisible walls, floating props) before
   map two goes in.
 - **In-game UI is cluttered and overlaps** (first pass in progress: objective progress).
