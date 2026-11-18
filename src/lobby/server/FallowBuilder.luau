@@ -2,13 +2,13 @@
 -- Builds the Fallow (docs/LORE.md > The Fallow): a reactivated helicopter carrier holding
 -- station off the Harlan coast on a clear afternoon. Hull, flight deck with the open well and
 -- its ramp, the island (hull number painted out, HARLAN sprayed over it), the hangar deck, the
--- Plot's walls and chart table, the screening lane where soldiers arrive, the sea, the coast
+-- map room's chart table (open floor), the screening lane where soldiers arrive, the sea, the coast
 -- with the Burn's smoke along it, and the sky (Config.Lobby.Sky). Desks (DeskService), the
 -- board (PlotService) and the birds on their spots (LaunchService) build their own pieces
 -- from FallowLayout. These blocks carry all collision; FallowArt lays the ship's meshes over
 -- them once uploaded (assets/3d/build/fallow.py) and builds the lift balcony.
--- docs/STYLES.md: ShadowMap with GlobalShadows (lobby.project.json sets Technology), only
--- large pieces cast shadows, four lights (three in the hangar, one in the Plot), Shadows off,
+-- docs/STYLES.md: ShadowMap with GlobalShadows (lobby.project.json sets Technology), only large
+-- pieces cast shadows, four lights (three in the hangar, one over the map room), Shadows off,
 -- Range <= 56. No two faces share a plane (they flicker): surface pieces sit on, not in.
 
 local Lighting = game:GetService("Lighting")
@@ -28,7 +28,6 @@ local DECK = Color3.fromRGB(50, 52, 55)
 local ISLAND = Color3.fromRGB(86, 90, 94)
 local HANGAR_FLOOR = Color3.fromRGB(64, 66, 68)
 local HANGAR_WALL = Color3.fromRGB(96, 100, 102)
-local PLOT_WALL = Color3.fromRGB(40, 40, 42)
 local PAINT = Color3.fromRGB(214, 214, 208)
 local YELLOW = Color3.fromRGB(230, 189, 96)
 local CONCRETE = Color3.fromRGB(122, 120, 114)
@@ -340,7 +339,7 @@ end
 
 local function buildHangar(ship: Folder)
 	-- Three working lights under the deck: over the desks by the spawn, at the ramp's foot,
-	-- and at the Plot door.
+	-- and by the map room.
 	for _, position in
 		{
 			Vector3.new(0, DECK_BOTTOM - 1, 106),
@@ -373,43 +372,9 @@ end
 local function buildPlot(ship: Folder)
 	local plot = Layout.Plot
 	local top = DECK_BOTTOM
-	local x0, x1 = plot.x0, plot.x0 + 1
-	Build.box(
-		ship,
-		"PlotWall",
-		Vector3.new(x0, HANGAR_Y, plot.z0),
-		Vector3.new(x1, top, plot.doorZ0),
-		PLOT_WALL
-	)
-	Build.box(
-		ship,
-		"PlotWall",
-		Vector3.new(x0, HANGAR_Y, plot.doorZ1),
-		Vector3.new(x1, top, plot.z1),
-		PLOT_WALL
-	)
-	local lintel = Build.box(
-		ship,
-		"PlotLintel",
-		Vector3.new(x0, HANGAR_Y + 10, plot.doorZ0),
-		Vector3.new(x1, top, plot.doorZ1),
-		PLOT_WALL
-	)
-	Build.text(lintel, Enum.NormalId.Left, "THE PLOT", { size = 70, color = PAINT })
-	Build.box(
-		ship,
-		"PlotWall",
-		Vector3.new(x1, HANGAR_Y, plot.z0),
-		Vector3.new(plot.x1, top, plot.z0 + 1),
-		PLOT_WALL
-	)
-	Build.box(
-		ship,
-		"PlotWall",
-		Vector3.new(x1, HANGAR_Y, plot.z1 - 1),
-		Vector3.new(plot.x1, top, plot.z1),
-		PLOT_WALL
-	)
+	-- No walls: the map room is open hangar floor, walked into from any side (owner
+	-- 2026-11-17: the walls were awkward to get in and out of and cramped a full lobby).
+	-- The watch officer's sign (DeskService) names it.
 
 	-- The chart table: the Harlan Corridor on paper (WorldMap, the lore's world map).
 	WorldMap.build(ship)
@@ -423,7 +388,7 @@ local function buildPlot(ship: Folder)
 		{ material = Enum.Material.Neon, collide = false }
 	)
 	pointLight(lamp, PLOT_RED, 30, 2)
-	-- A white light set in the deckhead over the map, so the paper reads in the red room (flush,
+	-- A white light set in the deckhead over the map, so the paper reads under the red lamp (flush,
 	-- above the camera of the officer's "Show me the map.").
 	local table_ = Layout.ChartTable.Position
 	local panel = Build.part(

@@ -6,7 +6,7 @@ last one. **End of a session:** edit this page in place (never append history he
 one note to `handoff/log/` (format in `handoff/log/README.md`). History lives in
 `docs/HISTORY.md`; this page is only "now".
 
-Last updated: 2026-11-17 by Tien + Claude (the Hocker's spit pool as an uneven puddle, on `claude/spit-puddle`; the objective meter and the HUD layout pass, on `claude/objective-progress-visible`; every desk on the Loadmaster's look, on `claude/npc-ui-prototype2`).
+Last updated: 2026-11-17 by Tien + Claude (the Hocker's spit pool as an uneven puddle, on `claude/spit-puddle`; the objective meter and the HUD layout pass, on `claude/objective-progress-visible`; every desk on the Loadmaster's look, on `claude/npc-ui-prototype2`; the map room opened up, on `claude/open-map-room`).
 
 ## The game today (on `main`)
 
@@ -85,7 +85,12 @@ that restocks the squad.
   **Nova:** the Loadout's frame, rows and inspect panel moved out of `LoadoutMenu` into
   `src/client/KitView.luau` (mapped into the lobby; `LoadoutMenu` behaves the same), the
   Gunsmith takes its gun from `Showcase` instead of the rack, and `Showcase` shows a vehicle
-  call-in as its `VehicleBody` (what to check: `handoff/log/2026-11-17-claude-npc-ui.md`).
+  call-in as its `VehicleBody` (what to check: `handoff/log/2026-11-17-claude-npc-ui.md`). The map room (the Plot in
+  code) has no walls since 2026-11-17 (owner: awkward to walk in and out of, cramped with a
+  full lobby; on `claude/open-map-room`, **not yet seen in game**): the map table stands in open
+  hangar floor, the board on two posts, and players read "MAP ROOM" (**Nova:** the walls are
+  gone from `FallowBuilder.buildPlot`, `FallowLayout.Plot` lost its door fields, the desk
+  title and the runner's role/lines in `LobbyDesks`/`LobbyCrew` changed).
 - **Economy:** merits (soft) are paid when a mission ends (Win 120, Partial 60, Loss 0) onto
   the record the Carrier's desks spend from; tabs (hard, Robux or events, never power) are a
   balance on the same record with nothing to buy yet (`docs/OWNER.md`, `docs/ROADMAP.md` >

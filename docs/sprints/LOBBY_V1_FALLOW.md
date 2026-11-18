@@ -133,10 +133,12 @@ match place.
   with borders, the river and dam, Route 9, County Road 40, the coast road, the rail line, the
   grease-pencil quarantine line, burned towns, forests, the Carrier offshore with Lantern's
   pencilled track, a title, a legend and a red Plot stamp; about 150 flat parts, built once.
-  **Roomier** (Nova 2026-11-10: "way too cramped", stand in front of the map): the west wall
-  moved out from X 14 to X 4, the table sits at X 19 with about eight studs of floor between it
-  and the door, so you read the map the right way up from its west side; the officer stands
-  across it (26.8, -3) and her prompt reaches 18 studs (`DeskPlace.reach`) to cover the table.
+  **Open floor since 2026-11-17** (owner: the walls were "too awkward to walk in and out of"
+  and a full lobby would be cramped): no walls, door or lintel; the table stands at X 19 in
+  open hangar floor, walked up to from any side (the map reads the right way up from its west
+  side); the board stands on two end posts with flat feet (`PlotService`); the red lamp and the
+  map light still hang from the deckhead. Players read it as **MAP ROOM** (the officer's sign,
+  her lines, the runner's; code keeps "Plot"). The officer stands across the table (26.8, -3) and her prompt reaches 18 studs (`DeskPlace.reach`) to cover the table.
   A white light set flush in the deckhead over the table lights the paper (a hanging lamp
   blocked the map view). While the map is up the talk panel moves to the left edge and the
   map to the right of the screen (the panel covered the map).  **The numbers are placeholders**
@@ -144,7 +146,7 @@ match place.
 
 - **The walking crew** (2026-11-10, Nova: "give the fallow some life"; roles and lines by the
   lore developer, docs/lore/ship_company.md): six of the ship's company and Army staff -
-  plane director (yellow), deck hand (blue), hangar mechanic (green), Plot runner, screening
+  plane director (yellow), deck hand (blue), hangar mechanic (green), map room runner, screening
   medic (white smock), lane sentry - walk there and back along `FallowLayout.Crew`, pausing
   at each end. `CrewService` places NpcBody figures once (tag `Crew`, route as an attribute);
   each client walks its own copy (`CrewWalk`: one `BulkMoveTo` a frame on the anchored roots,
@@ -365,7 +367,7 @@ The rack is where guns are **bought** (merits, onto the soldier's record; owner 
      80  ┌ramp foot (hangar)┐ well X -30..-10
      20  └ramp top (deck)───┘ comes up facing aft
      50..-10                        ┌island┐ X 22..34 (deck); Plot under it (hangar,
-                                    └──────┘  X 4..33, Z -10..30)
+                                    └──────┘  X 4..33, Z -10..30, open floor)
     -15  spot 4 (helo X -12, ring radius 14, sign X 2)
     -48  Vehicles: motor sergeant (9), facing the spawn (hangar)
     -52..-78  motor pool bays X -20..-8, -6..6 (the ATV, 0,-64), 12..24
