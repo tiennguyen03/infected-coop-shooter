@@ -2,7 +2,10 @@
 
 The one page to open to see what is waiting, what is being built, and what needs you.
 Plain words, newest state. Updated in the same commit as the work that changes it.
-Last updated: 2026-11-11.
+Last updated: 2026-11-17. (Integration 2, #63, was playtested by Tien and merged to main on
+2026-11-17: call-ins land, Warden in the objective, the Loadmaster screen, one main
+seller, call-in display, board in the ring, review fixes, Nova's ATV. The "Try it" rows for
+#56, #58 and the ATV are now in main.)
 
 How to read it: **Try it** = built, waiting for you to play and say yes/no. **Building** =
 in progress. **Your call** = blocked on a decision from you. **Later** = not started.
@@ -96,6 +99,35 @@ stamina bar; shove is free; the Open Cloud key stays.
 - **A real map of where the Infected are.** The lobby's coverage board shows only
   percentages; it should show a visual map with where the Infected are thickest and what
   still needs clearing.
+
+## Owner and Nova ideas to discuss (2026-11-17)
+
+From Tien and Nova's chat. First goal before any of these: **one small game loop done**
+(lobby → Checkpoint Delta or Mile 14 → extract → back to the lobby or keep going), solid.
+
+- **Longer missions, 15–20 minutes, mostly travel.** Drop on one side of the map; side
+  objective nearby; main objective on the far side; extraction halfway or all the way back.
+  The maps are probably too small for that (ties into Delta v2 / Mile 14 v2). Nova: big maps
+  are what make the running around work; maps may need to grow about 4x. To settle: 4x
+  the ground area (each side about 2x) or 4x each side (16x the area); the second needs
+  streaming and a phone frame-rate check.
+- **Boss parts to build special weapons (Tien, not fully thought out).** Each boss has a
+  rare chance to drop a weapon fragment; collect a full set to build a special item, e.g. a
+  gun that needs the Warden's parts, another that needs another boss's. Lasting reward
+  from a run (fits "rewards should last").
+- **The Warden is a bullet sponge, not thrilling.** Needs a real fight (moves, weak spots,
+  phases), not more health.
+- **Find bad collisions on the maps** (stuck spots, invisible walls, floating props) before
+  map two goes in.
+- **In-game UI is cluttered and overlaps** (first pass in progress: objective progress).
+- **More weapons; highly customizable weapons** (attachments).
+- **A rotating vendor who sells experimental government weapons** (stock changes; a
+  mysterious corner on the Carrier is reserved for him in Carrier v2).
+- **More fun call-ins:** heavy weapons with their own limited ammo (no resupply), an
+  exosuit, artillery, more vehicles; customizable squad vehicles or helicopter upgrades.
+- **Something to fill the "shop" gap** (the place players spend on new gear over time).
+- **Redo the sound effects** with a paid sound-generation tool; the Infected sounds are
+  getting old.
 
 ## 6. Later (not started), in the order I would do them
 
