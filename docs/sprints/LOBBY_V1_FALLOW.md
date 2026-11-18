@@ -113,7 +113,10 @@ match place.
   (`DeskTalk`, the Loadout's menu dress since 2026-11-17).
 - **The desk screens** (2026-11-17, owner: "any NPC interaction UI should be using the
   Prototype 2 UI... the same as the Loadmaster"; not yet seen in game): choice 1 at the
-  Quartermaster, Call-ins and Vehicles opens `DeskScreen`, the Loadout screen's look (`KitView`):
+  Call-ins and Vehicles desks opens `DeskScreen`, the Loadout screen's look (`KitView`). The
+  Quartermaster keeps the GTA gun wall (Nova, 2026-11-18: the desk screen had replaced it by
+  accident; `Config.Lobby.DeskScreen.KeepOwnView = { arms_room = true }`, take him off the list
+  to put him on the desk screen). The desk screen:
   what the desk sells in the Loadout's columns with each item's shape, the picked one turning
   in 3D over its stat bars, the person's line under the header in their own voice, and BUY
   (Enter, gamepad Y) in the footer; Back steps back to the talk. Buying is unchanged: the same
@@ -325,8 +328,8 @@ The rack is where guns are **bought** (merits, onto the soldier's record; owner 
   sold for tabs.
 
 - **Talk** (F on the Quartermaster, `ArmsRackUI` for a desk with a `rack` in `LobbyDesks`): a
-  greeting, then 1 "Show me the guns." (the desk screen; the rack view when it is switched
-  off), 2 "How do I get merits?", 3 "That's all." Wording by the lore developer: BUY and a price in
+  greeting, then 1 "Show me the guns." (the camera on the rack, below; since 2026-11-18 he
+  keeps it while the other desks use the desk screen), 2 "How do I get merits?", 3 "That's all." Wording by the lore developer: BUY and a price in
   MERITS may show; never shop, store, wares, sell, lock or unlock.
 - **The corner** (`ArmsRack`, `FallowLayout.ArmsRoom`; Nova 2026-11-10: "use that entire
   corner for him", "the glass case would act as the desk, like in GTA"): the Arms Room fills
