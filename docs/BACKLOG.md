@@ -47,6 +47,7 @@ published from `main`.
 | NPC UI PR | Every desk looks like the Loadmaster: the Quartermaster, Call-ins and Vehicles open the same big screen with the item turning in 3D, its stats and BUY; the talk panels match | lobby place: buy something at each desk; does BUY feel clear; do you miss the camera on the gun wall (one switch brings it back) |
 | ATV PR | The ATV: a call-in from the new Vehicles desk at the back of the hangar, slung in by the helicopter; one drives, one shoots off the back; runs the Infected down | Nova played the match side; the motor pool in the lobby is unseen |
 | Objective meter PR | Objective progress is a big yellow bar under the objective line ("HOLDING 23 of 60s", red "PAUSED" when you step out); the squad panel and objective list no longer cover each other | Restore Comms at the mast: step in and out; a side objective takes the bar while you work on it |
+| Kit Mods PR | Kit Mods at the Loadmaster: a KIT MODS tab, ranked buffs for merits (Extra stim, Extra roll; two greyed) | **decide first** (Your call 13); then buy a rank, check stims and the stamina bar in a match |
 
 Merge order when you are happy: #18 before #25 and #28; #16 before #32; #15 before #36 and
 #37; #21 before #38; #17 is replaced by #24. Several of these touch the same files; Claude
@@ -83,6 +84,7 @@ joins them at merge time (already done once in the test mix).
 | 10 | Shedder and Kite: another Blender pass before they go in game? | yes |
 | 11 | Mile 14: v1, v2, or v2's skyline on v1's smaller frame? | look at the pictures first |
 | 12 | Generator to 4.8, light-tower collision as two boxes | older calls still open |
+| 13 | Kit Mods (Nova's PR): permanent ranked buffs bought with merits. OWNER.md says power is the loadout, never stat items, and merits buy new options, never stronger versions. Allow them? | your rule; if yes, the OWNER.md lines change with it |
 
 Decided 2026-11-11 (no longer open): game picks the main objective for now, lobby choice
 later; two side objectives per run; tabs will buy guns and upgrades; keep HARLAN; yellow

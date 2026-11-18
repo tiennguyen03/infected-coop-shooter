@@ -106,6 +106,14 @@ local Messages = table.freeze({
 		State = "state", -- server -> client: (merits, ownedIds, tabs) the soldier's record
 		Refused = "refused", -- server -> client: (gunId, reason) "short" | "owned" | "unknown" | "loading"
 	}),
+	-- KitMods (lobby place): the Loadmaster's KIT MODS tab (KitModService, Rules/KitModRules).
+	-- Merits only; the server checks and spends.
+	KitMods = table.freeze({
+		Buy = "buy", -- client -> server: (modId, rank) the rank being bought, the next one
+		Get = "get", -- client -> server: () send my ranks
+		State = "state", -- server -> client: (ranks) { [modId]: rank }
+		Refused = "refused", -- server -> client: (modId, reason) "short" | "maxed" | "beyond max" | "not next" | "disabled" | "unknown" | "loading" | "busy"
+	}),
 	Launch = table.freeze({
 		Manifest = "manifest", -- (spot, names, secondsLeft, squad, isLead) you are aboard; squad 0 = not picked
 		Squad = "squad", -- client -> server: (size) the first aboard picks the squad size, 1 to Capacity

@@ -21,6 +21,7 @@ local ArmsRoom = require(ReplicatedStorage.Shared.ArmsRoom)
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local CallInDefinitions = require(ReplicatedStorage.Shared.CallInDefinitions)
 local Config = require(ReplicatedStorage.Shared.Config)
+local KitMods = require(ReplicatedStorage.Shared.KitMods)
 local Loadout = require(ReplicatedStorage.Shared.Rules.Loadout)
 local Magazine = require(ReplicatedStorage.Shared.Rules.Magazine)
 local Messages = require(ReplicatedStorage.Shared.Messages)
@@ -99,14 +100,20 @@ local function pickFor(player: Player): Loadout.Loadout
 	return pick
 end
 
-local function freshState(pick: Loadout.Loadout): State
+-- Stims a soldier carries: Config.Stim.Carried plus their Kit Mods (Config.KitMods rows with
+-- Effect "StimsCarried"; KitMods.bonusFor reads the KitRanks attribute).
+local function stimCap(player: Player): number
+	return Config.Stim.Carried + KitMods.bonusFor(player, "StimsCarried")
+end
+
+local function freshState(player: Player, pick: Loadout.Loadout): State
 	return {
 		primary = fullGun(pick.primary),
 		secondary = fullGun(pick.secondary),
 		active = "primary",
 		grenade = pick.grenade,
 		grenades = Config.Grenade.Carried,
-		stims = Config.Stim.Carried,
+		stims = stimCap(player),
 		callIns = table.clone(pick.callIns),
 		upgrades = {},
 		reloadUntil = nil,
@@ -119,7 +126,7 @@ end
 local function get(player: Player): State
 	local state = states[player]
 	if not state then
-		state = freshState(pickFor(player))
+		state = freshState(player, pickFor(player))
 		states[player] = state
 	end
 	return state
@@ -368,7 +375,19 @@ end
 
 function LoadoutService.refillStims(player: Player)
 	local state = get(player)
-	state.stims = Config.Stim.Carried
+	state.stims = stimCap(player)
+	publishKit(player, state)
+end
+
+-- The soldier's Kit Mod ranks arrived (KitModService, after join): a stim cap that grew by
+-- `added` gives the soldier those stims now (never more than the cap). Nothing before the
+-- soldier has a kit.
+function LoadoutService.addKitStims(player: Player, added: number)
+	local state = states[player]
+	if not state or added <= 0 then
+		return
+	end
+	state.stims = math.min(state.stims + added, stimCap(player))
 	publishKit(player, state)
 end
 
@@ -660,7 +679,7 @@ end
 
 -- A run start: the Arms Room pick re-armed full, no upgrades, no plate.
 function LoadoutService.resetPlayer(player: Player)
-	local state = freshState(pickFor(player))
+	local state = freshState(player, pickFor(player))
 	states[player] = state
 	publish(player, state)
 end

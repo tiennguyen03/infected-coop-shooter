@@ -23,6 +23,7 @@ local BOOT: { ModuleScript } = {
 	Server.RecordService,
 	Server.TabsService,
 	Server.LoadmasterService,
+	Server.KitModService, -- after RecordService (ranks are bought onto the record)
 	Server.LaunchService,
 }
 
