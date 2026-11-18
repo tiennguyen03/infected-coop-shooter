@@ -1219,6 +1219,10 @@ local Config = {
 		Compact = Vector2.new(1180, 680),
 		TemplateWait = 20,
 	},
+	-- Vehicle bodies' meshes (VehicleBody): how long a server waits for them to load before it
+	-- publishes them to the clients (match) or builds the motor pool's display (lobby);
+	-- a body built without them is the Part body.
+	VehicleMeshes = { Wait = 30 },
 
 	-- Body animations: clip names from assets/animations (Mixamo, retargeted by
 	-- assets/animations/build/retarget.py). Ids are the published Roblox animations
