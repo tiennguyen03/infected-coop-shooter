@@ -10,6 +10,7 @@ Last updated: 2026-11-17 by Claude (the map room opened up, on `claude/open-map-
 Last updated: 2026-11-17 by Tien + Claude (the Hocker's spit pool as an uneven puddle, on `claude/spit-puddle`).
 Last updated: 2026-11-17 by Tien + Claude (the objective meter and the HUD layout pass, on `claude/objective-progress-visible`).
 Last updated: 2026-11-17 by Claude (every desk on the Loadmaster's look, on `claude/npc-ui-prototype2`).
+Last updated: 2026-11-18 by Claude (the Warden hunts: leap, rage, weak spot, no more spin, on `claude/warden-aggressive`).
 
 ## The game today (on `main`)
 
@@ -51,7 +52,14 @@ that restocks the squad.
   2026-11-11 on static checks and specs only: **not yet played**, the numbers want tuning.
 - **Infected:** Walker, Runner, Brute, Hocker (the remade bodies since 2026-11-11;
   `Config.Enemies.BodyVersion = 1` puts the first ones back), dismemberment, the Warden with
-  plates. They spread round a target instead of stacking on it
+  plates. On `claude/warden-aggressive` (2026-11-18, owner + Nova: "a bullet sponge";
+  **not yet played**) he hunts: a Leap at whoever strays from the squad, faster walk, gas
+  from the start, a rage below 30% with a gas Volley, his back plate a weak spot, 5,000 hp
+  (was 7,000), and a keyed shield punch for the Bash instead of the spinning Mixamo clip
+  (`docs/sprints/WARDEN_AGGRESSIVE.md`; `Leap.Enabled = false` and
+  `Animations.Infected.Warden.attack = "warden_bash"` are the fallbacks; **Nova:**
+  `Plates.hit` now returns a third value, the body's share, and `DamageService` applies it).
+  They spread round a target instead of stacking on it
   (`Config.Enemies.Spacing`; **built from static checks only, not yet played**: `Enabled = false`
   is the old chase). Spit (Hocker, Warden) is drawn on each client: `SpitFX`, not yet seen
   in game (`handoff/log/2026-11-11-tien-hocker-spit.md`). Its ground pool is an uneven
@@ -157,7 +165,7 @@ The plan beyond this table, in phases, with the owner's open decisions: [docs/RO
 | 6 | Performance measurements | open | 2-client network + MicroProfiler during an Anvil into 20, low-end device at low health (`docs/STUDIO_MCP.md`) |
 | 7 | Owner calls waiting | Tien | generator to 4.8, light-tower collision as two boxes (movement keys decided 2026-11-11: Shift twice rolls, hold C or Ctrl slides) |
 | 8 | Objective pools: **play the first slice** (2026-11-11, unplayed; checklist in the PR and `handoff/log/2026-11-11-tien-objective-pools.md`; dev `SetMainObjective <id>`), and the Warden inside each main objective (2026-11-16, unplayed; per-objective checklist in `handoff/log/2026-11-16-claude-boss-in-objectives.md`; dev `WardenNow`), then Open the Gate and the unbuilt side objectives, then Mile 14 + its boss | Tien + Claude | `docs/PROGRESSION.md` > Objective pools; the dev panel has no buttons for the new commands yet (`claude/dev-menu`) |
-| 9 | Warden follow-ups | open | time the fight with the chest plate at 400 (target 100-120 s), Gate dressing, insert/wipe radio lines (`docs/sprints/SPRINT_19_WARDEN.md`) |
+| 9 | Warden follow-ups | open | play the aggression pass (`claude/warden-aggressive`): time the fight (target 60-90 s solo), watch the keyed shove and leap clips in Studio (keyed blind), the leap over cover and onto slopes; lore pass on the new lines (`Radio.WeakSpot`, `Radio.Rage`, the leap / volley / rage tells); Gate dressing, insert/wipe radio lines (`docs/sprints/WARDEN_AGGRESSIVE.md`, `docs/sprints/SPRINT_19_WARDEN.md`) |
 | 10 | Housekeeping | Tien | rotate the group Open Cloud key (it was pasted in chat); archive the old CZS and "Shooterr" experiences |
 
 ## Where to look
