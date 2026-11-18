@@ -110,7 +110,7 @@ local Config = {
 	-- them; each option names its slot. A gun offers an option when its row has it (the
 	-- suppressor: Config.Weapons.<id>.Suppressor; not the revolver or the Goose).
 	Attachments = {
-		Slots = { "Barrel" },
+		Slots = { "Barrel", "Optic" }, -- Optic: the rows of Config.Optics (Shared.Attachments.Optics)
 		Options = {
 			suppressor = {
 				Name = "Suppressor",
@@ -127,6 +127,56 @@ local Config = {
 				Color: Color3,
 				Volume: number,
 			},
+		},
+	},
+
+	-- Optics for the Optic slot (Nova, 2026-11-18: the M16A4 first, other guns in a later PR).
+	-- One row per optic; Shared.Attachments.Optics builds the typed records from them, and a
+	-- new optic appears by having a row. Bought once with merits at the Loadmaster's EDIT and
+	-- kept on the record for good (Rules/AttachmentRules; never tabs or Robux). On the gun it
+	-- multiplies the gun's own Sight.Zoom and the time into the sights (Weapon.ADS.EnterTime;
+	-- Rules/AttachmentMerge, CameraController). Numbers from the systems designer: the named
+	-- magnification is the final zoom on the M16's 1.35 irons; each costs less than the gun it
+	-- competes with (2, 3 and 4 wins at 120 merits). Model: its mesh (MeshAssets) once the free
+	-- model is uploaded (assets/3d/ASSET_IDS.md has the source and licence); nil = not shown on
+	-- the gun yet, only in the menu.
+	Optics = {
+		reddot = {
+			Name = "Red dot",
+			Description = "No magnification, but the fastest into the sights. Close range, first shot first.",
+			Guns = { "service_rifle" },
+			ZoomMultiplier = 1.0, -- 1.35: the irons' picture
+			AdsTimeMultiplier = 0.75, -- 0.11 s
+			Price = 150,
+			Model = nil :: string?, -- the RMR from notcplkerry's ACOG pack (CC-BY 4.0)
+		},
+		compm2 = {
+			Name = "CompM2 (M68)",
+			Description = "2x and no slower to raise. The general-purpose sight.",
+			Guns = { "service_rifle" },
+			ZoomMultiplier = 1.5, -- 2.0
+			AdsTimeMultiplier = 1.0, -- 0.15 s
+			Price = 250,
+			Model = nil :: string?, -- notcplkerry's Aimpoint ECOS-N / CompM2 (CC-BY 4.0)
+		},
+		acog = {
+			Name = "ACOG 4x",
+			Description = "4x for picking off the Infected at range. Slower into the sights.",
+			Guns = { "service_rifle" },
+			ZoomMultiplier = 3.0, -- 4.05
+			AdsTimeMultiplier = 1.6, -- 0.24 s, about a scope's ScopeTime
+			Price = 400,
+			Model = nil :: string?, -- notcplkerry's Trijicon ACOG (CC-BY 4.0)
+		},
+	} :: {
+		[string]: {
+			Name: string,
+			Description: string,
+			Guns: { string },
+			ZoomMultiplier: number,
+			AdsTimeMultiplier: number,
+			Price: number,
+			Model: string?,
 		},
 	},
 

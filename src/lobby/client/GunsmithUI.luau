@@ -6,13 +6,24 @@
 -- model, Shared.Showcase, framed with KitView's cream corners like the Loadout's), and one list per slot it takes (Config.Attachments.Slots: the Barrel, NONE or the
 -- suppressor). The suppressor shows on the gun as it is picked. DONE hands the fitting back
 -- to the Loadout (signed with SIGN FOR IT); BACK leaves it as it was.
+--
+-- The Optic slot (Nova, 2026-11-18; the M16A4 first, Config.Optics): each optic is LOCKED
+-- (greyed, its price and BUY), OWNED (pick it to fit it) or EQUIPPED (lit), with "X/3 OPTICS
+-- UNLOCKED" over the list. An optic is bought once with merits and fitted on the `Optic`
+-- remote (OpticService): the server checks and spends, and the row changes only when it
+-- answers; a fitted optic is signed at once, and DONE hands it back to the Loadout too.
 
 local ContextActionService = game:GetService("ContextActionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local AttachmentRules = require(ReplicatedStorage.Shared.Rules.AttachmentRules)
 local Config = require(ReplicatedStorage.Shared.Config)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
+local Messages = require(ReplicatedStorage.Shared.Messages)
+local Optics = require(ReplicatedStorage.Shared.Attachments.Optics)
+local Record = require(ReplicatedStorage.Shared.Rules.Record)
+local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local Showcase = require(ReplicatedStorage.Shared.Showcase)
 local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
 local HudTheme = require(script.Parent.HudTheme)
@@ -28,6 +39,16 @@ local VIEW = Vector2.new(440, 300)
 local ROW = 30
 local FOV = 34
 local ACTION_BACK = "GunsmithBack"
+local BUY_WIDTH = 84
+-- What a refused buy or fit says under the gun (OpticService's reasons).
+local REFUSED: { [string]: string } = {
+	short = "Not enough merits for that one yet.",
+	owned = "Already on your record.",
+	["not owned"] = "Buy it first.",
+	incompatible = "That sight does not fit this gun.",
+	loading = "Your record is still loading. Try again in a moment.",
+	busy = "The Loadmaster is busy. Try again in a moment.",
+}
 
 local function textButton(parent: Instance, text: string, size: Vector2): TextButton
 	local button = Instance.new("TextButton")
@@ -179,6 +200,124 @@ function GunsmithUI.open(
 			paint()
 		end
 	end
+	-- The optics on the soldier's record (OpticService "state"); nil until it answers.
+	local ownedOptics: { string }? = nil
+	local opticRemote = Remotes.get("Optic")
+	local opticSlot = Optics.SLOT
+	local function opticRecord(): Record.Record
+		local record = Record.new(0)
+		record.owned = ownedOptics or {}
+		return record
+	end
+
+	-- The Optic slot: the counter, NONE, then each optic the gun takes, cheapest first.
+	-- Returns the y under the list.
+	local function opticRows(left: number, top: number, width: number): number
+		local at = top
+		local counter = HudTheme.label(frame, { text = "", size = 12, color = C.TextDim })
+		counter.Position = UDim2.fromOffset(left, at)
+		at += 20
+		table.insert(painters, function()
+			local have, total = AttachmentRules.unlocked(opticRecord(), gunId, Optics.Rows)
+			counter.Text = if ownedOptics
+				then `{have}/{total} OPTICS UNLOCKED`
+				else `-/{total} OPTICS UNLOCKED`
+		end)
+		local list: { string } = { "" }
+		for _, id in Optics.idsFor(gunId) do
+			table.insert(list, id)
+		end
+		for _, id in list do
+			local optic = Optics.get(id)
+			local button = textButton(
+				frame,
+				if optic then string.upper(optic.displayName) else "NONE",
+				Vector2.new(width, ROW - 4)
+			)
+			button.Position = UDim2.fromOffset(left, at)
+			button.TextXAlignment = Enum.TextXAlignment.Left
+			local pad = Instance.new("UIPadding")
+			pad.PaddingLeft = UDim.new(0, 10)
+			pad.Parent = button
+			-- The right end of the row: OWNED, EQUIPPED, or the price and BUY.
+			local tag = HudTheme.label(button, { text = "", size = 12, color = C.TextDim })
+			tag.AnchorPoint = Vector2.new(1, 0.5)
+			tag.Position = UDim2.new(1, -8, 0.5, 0)
+			local buyButton: TextButton? = nil
+			if optic then
+				local buyNow =
+					textButton(button, `BUY · {optic.meritCost}`, Vector2.new(BUY_WIDTH, ROW - 10))
+				buyNow.AnchorPoint = Vector2.new(1, 0.5)
+				buyNow.Position = UDim2.new(1, -3, 0.5, 0)
+				buyNow.BackgroundColor3 = C.Red
+				buyNow.BackgroundTransparency = 0
+				buyNow.TextSize = 12
+				buyNow.Activated:Connect(function()
+					describe.Text = `Signing the {optic.displayName} to your record...`
+					opticRemote:FireServer(Messages.Optic.Buy, id)
+				end)
+				buyButton = buyNow
+			end
+			at += ROW
+			button.MouseEnter:Connect(function()
+				describe.Text = if optic
+					then `{optic.description} {optic.meritCost} merits, yours for good.`
+					else "Iron sights."
+			end)
+			button.Activated:Connect(function()
+				local state = if optic
+					then AttachmentRules.state(opticRecord(), fitted[opticSlot], id, Optics.Rows)
+					else "owned"
+				if optic and state == "locked" then
+					describe.Text = `Locked: {optic.meritCost} merits. Press BUY.`
+					return
+				end
+				opticRemote:FireServer(Messages.Optic.Equip, gunId, id)
+			end)
+			table.insert(painters, function()
+				local state: AttachmentRules.State = if optic
+					then AttachmentRules.state(opticRecord(), fitted[opticSlot], id, Optics.Rows)
+					elseif fitted[opticSlot] == nil then "equipped"
+					else "owned"
+				local locked = state == "locked"
+				local lit = state == "equipped"
+				button.BackgroundColor3 = if lit then C.MenuSelect else C.Track
+				button.BackgroundTransparency = if lit then 0 elseif locked then 0.6 else 0.35
+				button.TextColor3 = if lit
+					then C.MenuSelectText
+					elseif locked then C.TextDim
+					else C.Text
+				tag.Text = if lit then "EQUIPPED" elseif not optic or locked then "" else "OWNED"
+				tag.TextColor3 = if lit then C.MenuSelectText else C.TextDim
+				if buyButton then
+					buyButton.Visible = locked and ownedOptics ~= nil
+				end
+			end)
+		end
+		return at
+	end
+
+	local opticEvents = opticRemote.OnClientEvent:Connect(function(kind: string, a: any, b: any)
+		if kind == Messages.Optic.State and typeof(a) == "table" then
+			ownedOptics = a
+			repaint()
+		elseif kind == Messages.Optic.Equipped and a == gunId and typeof(b) == "string" then
+			if b ~= "" then
+				fitted[opticSlot] = b
+			else
+				fitted[opticSlot] = nil
+			end
+			local optic = Optics.get(b)
+			describe.Text = if optic then `{optic.displayName} fitted.` else "Iron sights."
+			repaint()
+		elseif kind == Messages.Optic.Refused then
+			describe.Text = REFUSED[tostring(b)] or `Refused ({tostring(b)}).`
+		end
+	end)
+	if offers[opticSlot] then
+		opticRemote:FireServer(Messages.Optic.Owned)
+	end
+
 	local x = 24 + VIEW.X + 24
 	local y = 82
 	local columnWidth = WIDTH - x - 24
@@ -191,6 +330,10 @@ function GunsmithUI.open(
 			HudTheme.label(frame, { text = string.upper(slot), size = 13, color = C.TextDim })
 		title.Position = UDim2.fromOffset(x, y)
 		y += 22
+		if slot == Optics.SLOT then
+			y = opticRows(x, y, columnWidth)
+			continue
+		end
 		local list: { string } = { "" }
 		for _, id in choices do
 			table.insert(list, id)
@@ -240,15 +383,26 @@ function GunsmithUI.open(
 		end
 		closed = true
 		spin:Disconnect()
+		opticEvents:Disconnect()
 		ContextActionService:UnbindAction(ACTION_BACK)
 		cover:Destroy()
+	end
+	-- BACK leaves the other slots as they were, but an optic fitted here is already signed
+	-- (OpticService), so the Loadout is handed that one change.
+	local function leave()
+		if fitted[opticSlot] ~= current[opticSlot] then
+			local kept = table.clone(current)
+			kept[opticSlot] = fitted[opticSlot]
+			done(kept)
+		end
+		close()
 	end
 	-- Backspace or Escape closes this screen only (bound over the Loadmaster's own Backspace).
 	ContextActionService:BindActionAtPriority(
 		ACTION_BACK,
 		function(_, state)
 			if state == Enum.UserInputState.Begin then
-				close()
+				leave()
 			end
 			return Enum.ContextActionResult.Sink
 		end,
@@ -261,7 +415,7 @@ function GunsmithUI.open(
 	local back = textButton(frame, "BACK", Vector2.new(120, 36))
 	back.AnchorPoint = Vector2.new(1, 0)
 	back.Position = UDim2.new(1, -24, 0, 16)
-	back.Activated:Connect(close)
+	back.Activated:Connect(leave)
 
 	local confirm = textButton(frame, "DONE", Vector2.new(200, 44))
 	confirm.AnchorPoint = Vector2.new(1, 1)

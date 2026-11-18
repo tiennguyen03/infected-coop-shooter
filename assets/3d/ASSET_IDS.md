@@ -236,3 +236,16 @@ owned by the group (`upload_models.js`, Open Cloud). Their model ids are in
 `src/shared/CarrierKitMeshes.luau`; MeshAssets loads each model's MeshPart with
 `InsertService:LoadAsset` (`modelId`), so no MeshId is recorded. Placed by `CarrierV2`
 (`docs/sprints/CARRIER_V2.md` > In the lobby).
+
+## Optics (found, not yet uploaded)
+
+Free models for the M16A4's optics (`Config.Optics` rows' `Model`), all by **notcplkerry** on
+Sketchfab under **CC BY 4.0** (commercial use allowed; credit the author). Download needs a
+Sketchfab account: save each into `assets/3d/source/`, then they are cut, sized and uploaded
+like the other meshes and their ids go in a row here.
+
+| Optic | Model | Licence |
+|---|---|---|
+| ACOG 4x (`acog`) | [Low-Poly Trijicon ACOG scope & RMR reflex sight](https://sketchfab.com/3d-models/low-poly-trijicon-acog-scope-rmr-reflex-sight-bdc3487c2b5b40148347e1f68c2f1c86) (the TA01, ~1.8k tris with the RMR) | CC BY 4.0, notcplkerry |
+| Red dot (`reddot`) | the RMR in the same pack | CC BY 4.0, notcplkerry |
+| CompM2 (`compm2`) | [Low-Poly Aimpoint ECOS-N / CompM2](https://sketchfab.com/3d-models/low-poly-aimpoint-ecos-n-compm2-78e7674c782446aebdb10e89f903b397) (~1.3k tris; the ECOS-N is a CompM2 on another mount) | CC BY 4.0, notcplkerry |

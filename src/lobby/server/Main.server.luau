@@ -24,6 +24,7 @@ local BOOT: { ModuleScript } = {
 	Server.TabsService,
 	Server.LoadmasterService,
 	Server.KitModService, -- after RecordService (ranks are bought onto the record)
+	Server.OpticService, -- after RecordService and LoadmasterService (buys onto one, fits through the other)
 	Server.LaunchService,
 }
 

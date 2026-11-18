@@ -18,6 +18,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage.Shared.Config)
 local Messages = require(ReplicatedStorage.Shared.Messages)
 local Record = require(ReplicatedStorage.Shared.Rules.Record)
+local AttachmentRules = require(ReplicatedStorage.Shared.Rules.AttachmentRules)
+local Optics = require(ReplicatedStorage.Shared.Attachments.Optics)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local KitPrices = require(ReplicatedStorage.Shared.KitPrices)
 local SaveSlot = require(script.Parent.SaveSlot)
@@ -62,13 +64,20 @@ function RecordService.waitFor(player: Player): Record.Record?
 	return records[player]
 end
 
--- Whether every gun in `loadout` is on the soldier's record.
-function RecordService.allows(player: Player, loadout: Record.Loadout): (boolean, string?)
+export type Signable = Record.Loadout & { attachments: AttachmentRules.Attachments? }
+
+-- Whether every gun in `loadout` is on the soldier's record, and every optic fitted to it
+-- is bought and fits its gun (Rules/AttachmentRules).
+function RecordService.allows(player: Player, loadout: Signable): (boolean, string?)
 	local record = RecordService.waitFor(player)
 	if not record then
 		return false, "record not loaded"
 	end
-	return Record.allows(record, loadout, RecordService.priceOf)
+	local ok, reason = Record.allows(record, loadout, RecordService.priceOf)
+	if not ok then
+		return ok, reason
+	end
+	return AttachmentRules.fittedAllowed(record, loadout.attachments, Optics.Rows)
 end
 
 local function load(player: Player)
@@ -160,6 +169,19 @@ end
 -- KitModService): same save, same one-at-a-time lock. (true) or (false, reason).
 function RecordService.change(player: Player, label: string, edit: Edit): (boolean, string?)
 	return change(player, label, edit)
+end
+
+-- Buys `id` at the price `priceOf` gives, on the same saved record and the same one-step
+-- save as the Quartermaster's guns (OpticService: an optic's own row). (true) or (false,
+-- "loading" | "busy" | "unknown" | "owned" | "short").
+function RecordService.buyWith(
+	player: Player,
+	id: string,
+	priceOf: Record.PriceOf
+): (boolean, string?)
+	return change(player, `bought {id}`, function(record)
+		return Record.buy(record, id, priceOf)
+	end)
 end
 
 local function grant(player: Player, purchaseId: string, tabs: number): boolean

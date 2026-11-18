@@ -40,6 +40,17 @@ local Spotting =
 	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Rules"):WaitForChild("Spotting"))
 local Sight =
 	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Rules"):WaitForChild("Sight"))
+local AttachmentMerge = require(
+	ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Rules"):WaitForChild("AttachmentMerge")
+)
+local AttachmentRules = require(
+	ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Rules"):WaitForChild("AttachmentRules")
+)
+local Loadout =
+	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Rules"):WaitForChild("Loadout"))
+local Optics = require(
+	ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attachments"):WaitForChild("Optics")
+)
 local FirstPersonView = require(script.Parent.FirstPersonView)
 local ScopeView = require(script.Parent.ScopeView)
 
@@ -82,6 +93,33 @@ local scopeBlend = 0 -- 0 = no glass, 1 = through it
 local eyeScoped = false -- scopeBlend > 0: the eye is on the Head whatever the camera mode
 local sightWeapon: string? = nil -- the gun the sights were last eased for
 
+-- What this soldier has fitted (the player's Fitted attribute, Loadout.encodeFitted), decoded
+-- only when it changes.
+local fittedText: string? = nil
+local fitted: Loadout.Attachments = {}
+
+-- The optic on gun `weaponId` (Config.Optics), as AttachmentMerge modifiers: none when bare
+-- or when the optic does not fit that gun.
+local function opticModifiers(weaponId: string?): { AttachmentMerge.Modifier }
+	local text = Players.LocalPlayer:GetAttribute(Attributes.Fitted)
+	local current = if typeof(text) == "string" then text else ""
+	if current ~= fittedText then
+		fittedText = current
+		fitted = Loadout.decodeFitted(current)
+	end
+	local id = weaponId or WeaponDefinitions.DEFAULT
+	local optic = Optics.get(Loadout.fitted(fitted, id, Optics.SLOT))
+	if optic and AttachmentRules.fits(optic, id) then
+		return { optic }
+	end
+	return {}
+end
+
+-- The gun's zoom and time into the sights with its optic on (Rules/AttachmentMerge).
+local function aimStats(weaponId: string?, zoom: number, adsTime: number): AttachmentMerge.Stats
+	return AttachmentMerge.apply({ zoom = zoom, adsTime = adsTime }, opticModifiers(weaponId))
+end
+
 -- Fraction left after `dt` of an exponential ease that is ~95% done after `over` seconds.
 local function decayFactor(dt: number, over: number): number
 	return math.exp(-3 * dt / math.max(over, 0.01))
@@ -89,12 +127,14 @@ end
 
 local function onShot()
 	local player = Players.LocalPlayer
-	local weapon = WeaponDefinitions.get(player:GetAttribute(Attributes.Weapon) :: string?)
+	local weaponId = player:GetAttribute(Attributes.Weapon) :: string?
+	local weapon = WeaponDefinitions.get(weaponId)
 	local kick = weapon.Kick
 	local scale = 1 + (Config.Camera.Kick.AdsScale - 1) * adsBlend
 	if firstPerson then
 		-- A magnified picture is thrown further by the same kick (Rules/Sight.kickScale).
-		local magnified = Sight.kickScale(weapon.Sight.Zoom, Config.Weapon.Sights.Zoom)
+		local zoom = aimStats(weaponId, weapon.Sight.Zoom, 1).zoom
+		local magnified = Sight.kickScale(zoom, Config.Weapon.Sights.Zoom)
 		scale *= 1 + (magnified - 1) * adsBlend
 	end
 	kickPitch += math.rad(kick.Pitch) * scale
@@ -329,14 +369,22 @@ local function onRenderStep(deltaTime: number)
 		end
 	end
 	sightWeapon = weaponId
-	local enterTime = if gunScoped then Config.Weapon.Sights.ScopeTime else ads.EnterTime
-	local rate = deltaTime / math.max(enterTime, 0.01)
+	-- An optic (Config.Optics) scales the gun's zoom and its time into the sights.
+	local aim = aimStats(
+		weaponId,
+		sight.Zoom,
+		if gunScoped then Config.Weapon.Sights.ScopeTime else ads.EnterTime
+	)
+	local rate = deltaTime / math.max(aim.adsTime, 0.01)
 	adsBlend += math.clamp(target - adsBlend, -rate, rate)
 	local shoulder = Config.Camera.ShoulderOffset:Lerp(ads.ShoulderOffset, adsBlend)
 	local reach = distance + (ads.CameraDistance - distance) * adsBlend
 	-- First person: this gun's own zoom; a scope raises, then shades and zooms (Rules/Sight).
 	local raise, zoom, shade = Sight.phases(gunScoped, adsBlend)
-	local aimedFov = if firstPerson then Sight.fov(HIP_FOV, sight.Zoom) else ads.FOV
+	-- Third person narrows the shared ADS view by the optic's own share of the zoom.
+	local aimedFov = if firstPerson
+		then Sight.fov(HIP_FOV, aim.zoom)
+		else Sight.fov(ads.FOV, aim.zoom / sight.Zoom)
 	-- Binoculars: the glass narrows the view further, and the eye sits on the Head while any
 	-- of it is in the way.
 	scopeBlend = Spotting.blend(scopeBlend, scoped, deltaTime, scopeRaise, scopeLower)

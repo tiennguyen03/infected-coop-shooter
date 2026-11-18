@@ -7,6 +7,7 @@ one note to `handoff/log/` (format in `handoff/log/README.md`). History lives in
 `docs/HISTORY.md`; this page is only "now".
 
 Last updated: 2026-11-18 by Nova + Claude (Kit Mods at the Loadmaster, on `nova/loadmaster-kit-mods`).
+Last updated: 2026-11-18 by Nova + Claude (the M16A4 optic slot, on `nova/m16a4-optic-slot`).
 Last updated: 2026-11-17 by Claude (the map room opened up, on `claude/open-map-room`).
 Last updated: 2026-11-17 by Tien + Claude (the Hocker's spit pool as an uneven puddle, on `claude/spit-puddle`).
 Last updated: 2026-11-17 by Tien + Claude (the objective meter and the HUD layout pass, on `claude/objective-progress-visible`).
@@ -51,6 +52,12 @@ that restocks the squad.
   (`docs/PROGRESSION.md` > Kit Mods). **Nova:** `RecordService`'s buy is now
   `change(player, label, edit)` (the same save), `LoadmasterUI` has the tab bar, new
   `KitModsTab`; `LoadoutService.freshState` takes the player.
+- **Optics** (2026-11-18, Nova; on `nova/m16a4-optic-slot`): the M16A4's EDIT at the
+  Loadmaster has an Optic slot: Red dot, CompM2, ACOG, bought once with merits and kept on the
+  record, fitted on the `Optic` remote (`OpticService`); zoom and ADS time change in the match
+  (`Rules/AttachmentMerge`, `CameraController`; not yet seen aiming in game). The optics are
+  not drawn on the gun until the free models are downloaded and uploaded
+  (`assets/3d/ASSET_IDS.md` > Optics). Other guns: the next PR (`Config.Optics` rows' `Guns`).
 - **Keys:** every key is a row of `Config.Keys` and every hint reads it (table: `docs/OWNER.md`);
   a key written into client or server code fails the tests. E interact, C or Ctrl crouch, Z prone.
 - **Movement:** sprint on a stamina bar (8 s; a roll costs 20, a slide 10; winded at zero),
