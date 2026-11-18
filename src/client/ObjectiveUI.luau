@@ -31,7 +31,6 @@ local C = HudTheme.Color
 local OWNER = "objective"
 local DONE_SECONDS = 2.5
 local REFRESH_HZ = 4
-local LIST_TOP = 150 -- under the Resupply line (16, 108)
 local ROW_GAP = 8
 
 -- The single hold.
@@ -45,11 +44,17 @@ type Row = {
 	head: TextLabel,
 	why: TextLabel,
 	step: TextLabel,
+	bar: Frame,
+	barFill: Frame,
 }
+
+local ROW_BAR_WIDTH = 160
 
 local board: { Rules.Entry } = {}
 local rows: { [string]: Row } = {}
 local seenState: { [string]: string } = {}
+local lastDone: { [string]: number } = {}
+local advancedAt: { [string]: number } = {}
 local list: Frame = nil :: any
 local card: Frame = nil :: any
 local cardName: TextLabel = nil :: any
@@ -66,13 +71,17 @@ local function onHold(kind: string, progress: number, playersIn: number?, player
 	if kind == Messages.ObjectiveUpdate.Started then
 		active = true
 		doneToken += 1
-		MissionLine.set(OWNER, holdTitle(), `0 of {required}s`, 0)
+		MissionLine.set(OWNER, { text = holdTitle(), progress = 0, readout = `0 of {required}s` })
 	elseif kind == Messages.ObjectiveUpdate.Progress and active then
-		local sub = `{math.floor(progress)} of {required}s`
-		if playersLiving and playersLiving > 1 then
-			sub ..= `  ·  {playersIn or 0} of {playersLiving} in`
-		end
-		MissionLine.set(OWNER, holdTitle(), sub, progress / math.max(required, 1))
+		local sub = if playersLiving and playersLiving > 1
+			then `{playersIn or 0} of {playersLiving} in`
+			else nil
+		MissionLine.set(OWNER, {
+			text = holdTitle(),
+			sub = sub,
+			progress = progress / math.max(required, 1),
+			readout = `{HudTheme.tint("HOLDING", C.Yellow)}  {math.floor(progress)} of {required}s`,
+		})
 	elseif kind == Messages.ObjectiveUpdate.Completed then
 		if not active then
 			if #board == 0 then
@@ -84,7 +93,7 @@ local function onHold(kind: string, progress: number, playersIn: number?, player
 		doneToken += 1
 		SoundFX.ui("ui_radio", "objective_complete")
 		local token = doneToken
-		MissionLine.set(OWNER, `AREA {HudTheme.tint("SECURED", C.Yellow)}`, "", nil)
+		MissionLine.set(OWNER, { text = `AREA {HudTheme.tint("SECURED", C.Yellow)}` })
 		task.delay(DONE_SECONDS, function()
 			if token == doneToken then
 				MissionLine.clear(OWNER)
@@ -113,11 +122,12 @@ local function distanceText(entry: Rules.Entry, from: Vector3?): string
 	return `{metres} m`
 end
 
--- "what to do  ·  2 of 3  ·  1:32 left", leaving out what there is none of.
-local function detailText(entry: Rules.Entry): string
+-- "what to do  ·  2 of 3  ·  1:32 left", leaving out what there is none of (and the
+-- count when the meter already shows it: `withCount` false).
+local function detailText(entry: Rules.Entry, withCount: boolean?): string
 	local parts = { entry.step }
 	local progress = Rules.progressText(entry.done, entry.total, entry.unit)
-	if progress ~= "" then
+	if progress ~= "" and withCount ~= false then
 		table.insert(parts, progress)
 	end
 	if entry.timeLeft then
@@ -172,14 +182,64 @@ local function buildRow(order: number): Row
 	why.LayoutOrder = 2
 	local step = HudTheme.label(text, { font = HudTheme.Font.Body, size = 12, rich = true })
 	step.LayoutOrder = 3
-	return { frame = frame, needle = needle, head = head, why = why, step = step }
+	-- A side objective's own small progress bar (the big meter takes it while it moves).
+	local bar =
+		HudTheme.rect(text, UDim2.fromOffset(ROW_BAR_WIDTH, 3), C.Track, HudTheme.TrackTransparency)
+	bar.LayoutOrder = 4
+	bar.Visible = false
+	local barFill = HudTheme.rect(bar, UDim2.fromScale(0, 1), C.Yellow)
+	return {
+		frame = frame,
+		needle = needle,
+		head = head,
+		why = why,
+		step = step,
+		bar = bar,
+		barFill = barFill,
+	}
+end
+
+-- Notes when each objective's progress last went up (for the meter's focus and PAUSED).
+local function trackProgress(entry: Rules.Entry, now: number)
+	local before = lastDone[entry.slot]
+	if before ~= nil and entry.done > before then
+		advancedAt[entry.slot] = now
+	end
+	lastDone[entry.slot] = entry.done
+end
+
+-- The meter's readout: "HOLDING  23 of 60s", a red "PAUSED  23 of 60s", or "2 of 3"; a
+-- side objective's carries its name.
+local function meterReadout(entry: Rules.Entry, now: number): (string, boolean)
+	local settings = Config.Objectives.Meter
+	local since = now - (advancedAt[entry.slot] or -math.huge)
+	local state = Rules.holdState(entry.unit, entry.done, entry.total, since, settings.PauseAfter)
+	local count = Rules.progressText(entry.done, entry.total, entry.unit)
+	local text = count
+	if state == "holding" then
+		text = `{HudTheme.tint("HOLDING", C.Yellow)}  {count}`
+	elseif state == "paused" then
+		text = `{HudTheme.tint("PAUSED", C.RedLight)}  {count}`
+	end
+	if entry.role ~= "main" then
+		text = `{HudTheme.tint("SIDE", C.TextDim)}  {HudTheme.tint(
+			string.upper(entry.name),
+			C.Yellow
+		)}  {text}`
+	end
+	return text, state == "paused"
 end
 
 -- Draws the board: the mission line for the main objective, a list row for each one.
 local function render()
 	local from, look = viewpoint()
+	local now = os.clock()
 	local main: Rules.Entry? = nil
 	local shown: { [string]: boolean } = {}
+	for _, entry in board do
+		trackProgress(entry, now)
+	end
+	local focus = Rules.meterFocus(board, advancedAt, now, Config.Objectives.Meter.FocusSeconds)
 	for order, entry in board do
 		shown[entry.slot] = true
 		local isMain = entry.role == "main"
@@ -200,9 +260,13 @@ local function render()
 		)}{stateTag(entry)}{if distance ~= "" then "  " .. distance else ""}`
 		-- The main objective's reason and step are on the mission line; a side one's are here.
 		row.why.Text = entry.why
-		row.why.Visible = not isMain
+		-- On touch the left column is kept short (it reaches toward the thumbstick).
+		row.why.Visible = not isMain and not HudTheme.isTouch()
 		row.step.Text = detailText(entry)
 		row.step.Visible = not isMain and open
+		local fraction = Rules.fraction(entry.done, entry.total)
+		row.bar.Visible = not isMain and open and fraction ~= nil
+		row.barFill.Size = UDim2.fromScale(fraction or 0, 1)
 		row.needle.Visible = open and from ~= nil
 		if from then
 			local to = entry.position - from
@@ -221,28 +285,43 @@ local function render()
 			row.frame:Destroy()
 			rows[slot] = nil
 			seenState[slot] = nil
+			lastDone[slot] = nil
+			advancedAt[slot] = nil
 		end
 	end
 	list.Visible = next(rows) ~= nil
 
+	-- The meter: the objective the squad is working on now (Rules.meterFocus).
+	local progress, readout, paused = nil, nil, nil
+	if focus then
+		progress = Rules.fraction(focus.done, focus.total)
+		readout, paused = meterReadout(focus, now)
+	end
+
 	if main then
 		local name = HudTheme.tint(string.upper(main.name), C.Yellow)
 		if Rules.isOpen(main.state) then
-			local detail = detailText(main)
+			-- The count is on the meter when the meter shows the main objective.
+			local detail = detailText(main, focus ~= main)
 			local distance = distanceText(main, from)
 			if distance ~= "" then
 				detail ..= `  ·  {distance}`
 			end
-			MissionLine.set(
-				OWNER,
-				`MAIN OBJECTIVE  {name}`,
-				main.why,
-				Rules.fraction(main.done, main.total),
-				nil,
-				detail
-			)
+			MissionLine.set(OWNER, {
+				text = `MAIN OBJECTIVE  {name}`,
+				sub = main.why,
+				detail = detail,
+				progress = progress,
+				readout = readout,
+				paused = paused,
+			})
 		else
-			MissionLine.set(OWNER, `{name}{stateTag(main)}`, "", nil)
+			MissionLine.set(OWNER, {
+				text = `{name}{stateTag(main)}`,
+				progress = progress,
+				readout = readout,
+				paused = paused,
+			})
 		end
 	elseif not active then
 		MissionLine.clear(OWNER)
@@ -282,13 +361,14 @@ end
 
 local function build()
 	local gui = HudTheme.gui("ObjectiveUI", 9)
+	-- Second in the left column, under the squad panel (Config.Hud): never over it.
 	list = Instance.new("Frame")
+	list.Name = "ObjectiveList"
 	list.BackgroundTransparency = 1
-	list.Position = UDim2.fromOffset(HudTheme.Margin, LIST_TOP)
 	list.AutomaticSize = Enum.AutomaticSize.XY
 	list.Size = UDim2.fromOffset(0, 0)
 	list.Visible = false
-	list.Parent = gui
+	HudTheme.inLeftColumn(list, 2)
 	local layout = Instance.new("UIListLayout")
 	layout.SortOrder = Enum.SortOrder.LayoutOrder
 	layout.Padding = UDim.new(0, ROW_GAP)
@@ -315,6 +395,13 @@ local function build()
 	cardWhy.LayoutOrder = 3
 	cardPlace = HudTheme.label(card, { size = 16, color = C.TextDim })
 	cardPlace.LayoutOrder = 4
+	-- On touch the mission line and subtitles are at top centre too: the card flows under
+	-- them in the mission stack instead of over them.
+	if HudTheme.isTouch() then
+		card.AutomaticSize = Enum.AutomaticSize.Y
+		card.Size = UDim2.fromOffset(900, 0)
+		MissionLine.attach(card, 3)
+	end
 
 	HudTheme.parent(gui)
 end

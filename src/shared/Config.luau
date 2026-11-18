@@ -616,6 +616,18 @@ local Config = {
 		GetUp = 1.0,
 		Grace = 1.0, -- after standing: no second knockdown (its damage still lands)
 	},
+	-- HUD layout (docs/STYLES.md section 5 > Layout; 2026-11-17: nothing stacks on anything).
+	-- Offsets are 1080p pixels (HudTheme scales them). The left column is one flow under the
+	-- Resupply line: the squad panel, then the objective list, so neither covers the other at
+	-- any squad size or objective count. The mission stack is one flow too: the mission line,
+	-- the objective meter, then subtitles (and on touch the insert card).
+	Hud = {
+		LeftColumnTop = 150, -- under the health stack, the ability circles and the Resupply line
+		LeftColumnGap = 14, -- between the squad panel and the objective list
+		MissionTop = 0.72, -- share of the screen height where the mission stack starts (PC)
+		MissionTopTouch = 40, -- pixels from the top on touch (clear of the thumbstick)
+		DownedTopTouch = 0.4, -- share of the screen height of DOWNED on touch (under the mission stack)
+	},
 	-- Squad status panel (client SquadPanelUI, Rules/SquadPanel; owner 2026-11-11: no
 	-- floating health bars, squadmates' status in a side panel). One row per other squad
 	-- member on the left edge under the top-left HUD. Offsets are 1080p pixels (HudTheme).
@@ -625,7 +637,6 @@ local Config = {
 		-- Roblox's own bar over squadmates. Names: Roblox's name tag over squadmates.
 		OverheadBars = false,
 		OverheadNames = false,
-		Top = 176, -- under the health stack, the ability circles and the resupply line
 		Width = 190,
 		RowHeight = 32,
 		RowGap = 8,
@@ -2111,6 +2122,15 @@ local Config = {
 		RadioGap = 4.5, -- seconds between Control's lines (insert, the Warden's line)
 		SyncInterval = 0.25, -- seconds between HUD updates at most
 		DoneSeconds = 6, -- a finished or failed side objective stays on the HUD this long
+		-- The big progress meter under the mission line (ObjectiveUI; Rules/Objectives
+		-- meterFocus and holdState; 2026-11-17, owner: "I just couldn't see the indicator").
+		Meter = {
+			Width = 440,
+			Height = 10,
+			FocusSeconds = 4, -- a side objective whose progress rose this recently takes the meter
+			PauseAfter = 1.6, -- a hold whose seconds have not risen this long reads PAUSED
+			FillSeconds = 0.25, -- the fill eases to each new value (about once a second)
+		},
 		MarkerDistance = 1200, -- studs a world marker is seen from
 		MetresPerStud = 0.28,
 		LampColor = Color3.fromRGB(255, 176, 64), -- Lights On: sodium

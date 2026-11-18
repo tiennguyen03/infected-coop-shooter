@@ -1,8 +1,9 @@
 --!strict
 -- Notices (HUD language: HudTheme; after Prototype 2's notification card and subtitles).
 -- The BuffNotice remote carries (text, kind):
--- - a radio line (Messages.Notice.Radio) is a subtitle at lower centre under the mission
---   line: "CONTROL: line", the speaker in bold caps; the Warden's tells use the same line
+-- - a radio line (Messages.Notice.Radio) is a subtitle in the mission stack under the
+--   mission line (MissionLine.attach): "CONTROL: line", the speaker in bold caps; the
+--   Warden's tells use the same line
 --   ("WARDEN: ...", BossBarUI);
 -- - anything else (a pickup, a squadmate's pick) is a card at top right: a dark strip with a
 --   red-outlined square and a bold title; up to three stack downward, each slides in,
@@ -14,6 +15,7 @@ local TweenService = game:GetService("TweenService")
 local Messages = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Messages"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
 local HudTheme = require(script.Parent.HudTheme)
+local MissionLine = require(script.Parent.MissionLine)
 local SoundFX = require(script.Parent.SoundFX)
 
 local BuffNoticeUI = {}
@@ -135,6 +137,12 @@ function BuffNoticeUI.subtitle(speaker: string?, text: string, color: Color3?, h
 				TweenInfo.new(0.3),
 				{ TextTransparency = 1, TextStrokeTransparency = 1 }
 			):Play()
+			-- Gone from the mission stack once faded, so it holds no space.
+			task.delay(0.3, function()
+				if token == subtitleToken then
+					subtitle.Visible = false
+				end
+			end)
 		end
 	end)
 end
@@ -165,16 +173,15 @@ function BuffNoticeUI.init()
 	cardColumn.Size = UDim2.fromOffset(CARD_SIZE.X, (CARD_SIZE.Y + CARD_GAP) * MAX_CARDS)
 	cardColumn.Parent = gui
 
+	-- Under the mission line in the mission stack (MissionLine.attach), so a long line that
+	-- wraps pushes down instead of running over the objective or its meter.
 	subtitle = HudTheme.label(gui, { font = HudTheme.Font.Body, size = 16, rich = true })
 	subtitle.AutomaticSize = Enum.AutomaticSize.Y
-	subtitle.AnchorPoint = Vector2.new(0.5, if HudTheme.isTouch() then 0 else 1)
-	subtitle.Position = if HudTheme.isTouch()
-		then UDim2.new(0.5, 0, 0, 112)
-		else UDim2.new(0.5, 0, 0.8, 52)
 	subtitle.Size = UDim2.fromOffset(820, 0)
 	subtitle.TextWrapped = true
 	subtitle.TextXAlignment = Enum.TextXAlignment.Center
 	subtitle.Visible = false
+	MissionLine.attach(subtitle, 2)
 
 	HudTheme.parent(gui)
 	Remotes.get("BuffNotice").OnClientEvent:Connect(onNotice)
