@@ -37,4 +37,22 @@ return {
 		expect.equal(Feel.canKillConfirm(5.07, 5, 0.07), true, "at the gap")
 		expect.equal(Feel.canKillConfirm(5.02, 5, 0), true, "no gap set")
 	end,
+	["the low-health effect eases up by dt over the ease time"] = function()
+		expect.near(Feel.easeToward(0, 1, 0.1, 0.5, 0.002), 0.2, 1e-9, "rising")
+		expect.near(Feel.easeToward(0.9, 1, 0.5, 0.5, 0.002), 1, 1e-9, "stops at the goal")
+	end,
+	["the low-health effect eases down without passing the goal"] = function()
+		expect.near(Feel.easeToward(1, 0.5, 0.1, 0.5, 0.002), 0.8, 1e-9, "falling")
+		expect.near(Feel.easeToward(0.6, 0.5, 0.5, 0.5, 0.002), 0.5, 1e-9, "stops at the goal")
+	end,
+	["no ease time jumps straight to the goal"] = function()
+		expect.near(Feel.easeToward(0, 1, 0.01, 0, 0.002), 1, 1e-9)
+	end,
+	["fading out snaps to zero under the off threshold"] = function()
+		expect.equal(Feel.easeToward(0.003, 0, 0.0005, 0.5, 0.002), 0, "snapped")
+		expect.near(Feel.easeToward(0.3, 0, 0.0005, 0.5, 0.002), 0.299, 1e-9, "still fading")
+	end,
+	["a small goal above zero does not snap"] = function()
+		expect.near(Feel.easeToward(0.003, 0.001, 0.0005, 0.5, 0.002), 0.002, 1e-9)
+	end,
 }
