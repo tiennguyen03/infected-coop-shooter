@@ -2,7 +2,7 @@
 
 The one page to open to see what is waiting, what is being built, and what needs you.
 Plain words, newest state. Updated in the same commit as the work that changes it.
-Last updated: 2026-11-17. (Integration 2, #63, was playtested by Tien and merged to main on
+Last updated: 2026-11-18 (the Visitor). (Integration 2, #63, was playtested by Tien and merged to main on
 2026-11-17: call-ins land, Warden in the objective, the Loadmaster screen, one main
 seller, call-in display, board in the ring, review fixes, Nova's ATV. The "Try it" rows for
 #56, #58 and the ATV are now in main.)
@@ -19,6 +19,7 @@ published from `main`.
 | PR | What | What to look at |
 |---|---|---|
 | #77 Carrier v2 in the lobby | The revamped ship in the lobby: frames, pipes, deck gear, Easter eggs, every seller posed in their own corner, the map room open, a hidden nook under the ramp, the burning city straight ahead (`docs/sprints/CARRIER_V2.md` > In the lobby; `Config.Lobby.CarrierV2.Enabled` turns it off) | not yet seen in Studio; the poses are set blind and may need nudging; the sellers' idle loops are still to make |
+| The Visitor (`claude/the-visitor`) | The hidden seller in the nook under the ramp: a man in a long raincoat with a red ESCORT REQUIRED badge, hands in his pockets, his head following you; talk to him (no sign, find him from the port side behind the ramp). Dialog only, he sells nothing yet; a deck hand now says "Nobody's under the ramp." | his lines and the first-meeting line; the head turn (smooth, not creepy-wrong); the coat and badge read at a glance; can you talk to him through the tarp (you should not) |
 | #14 | Kill feedback: dark blood burst, soft tick on a kill | does a kill feel better; is the tick annoying |
 | #15 | Rewards crate after the hold, 60 s extraction with a second wave, Warden chest plate 400 | extraction length, the second wave |
 | #16 | Economy: missions pay merits; tabs stored | merits arrive in the lobby after extracting |
@@ -130,8 +131,11 @@ From Tien and Nova's chat. First goal before any of these: **one small game loop
   map two goes in.
 - **In-game UI is cluttered and overlaps** (first pass in progress: objective progress).
 - **More weapons; highly customizable weapons** (attachments).
-- **A rotating vendor who sells experimental government weapons** (stock changes; a
-  mysterious corner on the Carrier is reserved for him in Carrier v2).
+- **The Visitor's stock and items** (he stands and talks in the lobby since 2026-11-18; the
+  rules are written: five items, one stock for everyone, changes every week, permanent
+  unlocks for 1,500-2,500 merits, each a sidegrade with a drawback,
+  `docs/sprints/CARRIER_V2.md` > The Visitor). Still to design: the item list and prices;
+  then build the weekly stock and his buy screen.
 - **More fun call-ins:** heavy weapons with their own limited ammo (no resupply), an
   exosuit, artillery, more vehicles; customizable squad vehicles or helicopter upgrades.
 - **Something to fill the "shop" gap** (the place players spend on new gear over time).

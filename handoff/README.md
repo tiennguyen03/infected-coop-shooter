@@ -7,6 +7,11 @@ one note to `handoff/log/` (format in `handoff/log/README.md`). History lives in
 `docs/HISTORY.md`; this page is only "now".
 
 Last updated: 2026-11-17 by Tien, Nova + Claude (the Hocker's spit pool as an uneven puddle, on `claude/spit-puddle`; the objective meter and the HUD layout pass, on `claude/objective-progress-visible`; every desk on the Loadmaster's look, on `claude/npc-ui-prototype2`; the map room opened up, on `claude/open-map-room`; vehicles: the ATV, the motor pool and the ATV's own model, on `nova/vehicles-atv`; the M16A4 optic slot, on `nova/m16a4-optic-slot`; Kit Mods at the Loadmaster, on `nova/loadmaster-kit-mods`; the Quartermaster's GTA gun wall back, on `nova/quartermaster-rack`).
+Last updated: 2026-11-18 by Claude (the Visitor, dialog only, on `claude/the-visitor`).
+Last updated: 2026-11-17 by Claude (the map room opened up, on `claude/open-map-room`).
+Last updated: 2026-11-17 by Tien + Claude (the Hocker's spit pool as an uneven puddle, on `claude/spit-puddle`).
+Last updated: 2026-11-17 by Tien + Claude (the objective meter and the HUD layout pass, on `claude/objective-progress-visible`).
+Last updated: 2026-11-17 by Claude (every desk on the Loadmaster's look, on `claude/npc-ui-prototype2`).
 
 ## The game today (on `main`)
 
@@ -97,6 +102,12 @@ that restocks the squad.
   in their corners (idle loops still to make); off with `Config.Lobby.CarrierV2.Enabled = false`.
   **Nova:** touches your `FallowBuilder`, `FallowLayout`, `DeskService`, lobby `Main`; what to
   check: `docs/sprints/CARRIER_V2.md` > In the lobby.
+  **The Visitor** stands in that nook (2026-11-18, owner, on `claude/the-visitor`, **not yet seen
+  in Studio**): the hidden seller, no sign, talks through the shared desk panel and sells nothing
+  yet; his weekly stock of five is written down, not built (`docs/sprints/CARRIER_V2.md` > The
+  Visitor). **Nova:** desk `visitor` in `LobbyDesks` (new optional `first`, `farewell`,
+  `unmarked`), small edits in `DeskService`, `DeskDialogUI`, `NpcPose`, `FallowLayout`,
+  `LobbyCrew`, new `VisitorBody`, `VisitorLook`.
   **Nova:** the Loadout screen (`LoadoutMenu`) was rebuilt
   bigger with each item turning in 3D and its stats (2026-11-16, not yet seen in game; what to
   check: `handoff/log/2026-11-16-claude-loadmaster-screen.md`). **Every desk now looks like the
