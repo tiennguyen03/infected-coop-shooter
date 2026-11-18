@@ -4,7 +4,7 @@
 -- docs/lore/world_map.md) laid on a chart table as thin flat parts and printed labels. The
 -- base sheet is printed (districts, water, forest, roads, rail, river, labels); the cordon,
 -- the district borders, the burned towns and Lantern's track are grease pencil over it.
--- North points away from someone standing on the table's west side (the Plot door side),
+-- North points away from someone standing on the table's west side (the hangar side),
 -- so the map reads the right way up as you walk in. Static: built once, nothing moves.
 -- The client's map view (DeskDialogUI, the watch officer's "Show me the map.") looks down
 -- on the part named "WorldMapSheet".

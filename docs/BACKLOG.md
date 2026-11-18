@@ -15,6 +15,7 @@ published from `main`.
 
 | PR | What | What to look at |
 |---|---|---|
+| #77 Carrier v2 in the lobby | The revamped ship in the lobby: frames, pipes, deck gear, Easter eggs, every seller posed in their own corner, the map room open, a hidden nook under the ramp, the burning city straight ahead (`docs/sprints/CARRIER_V2.md` > In the lobby; `Config.Lobby.CarrierV2.Enabled` turns it off) | not yet seen in Studio; the poses are set blind and may need nudging; the sellers' idle loops are still to make |
 | #14 | Kill feedback: dark blood burst, soft tick on a kill | does a kill feel better; is the tick annoying |
 | #15 | Rewards crate after the hold, 60 s extraction with a second wave, Warden chest plate 400 | extraction length, the second wave |
 | #16 | Economy: missions pay merits; tabs stored | merits arrive in the lobby after extracting |
@@ -39,7 +40,10 @@ published from `main`.
 | #39 | Revive animation: kneel, treat, pull up | hands on the chest; the casualty not in the floor |
 | #56 | Call-ins hold the crowd they land on (Hammer, Anvil, Shrike) | spawn 25 Walkers, call each strike, count kills; does it look like a magnet |
 | #58 | The Warden comes partway through the main objective and is its last act | each objective's checklist in the PR; is he too much on top of the objective |
+| Spit puddle PR | The Hocker's spit pool is an uneven puddle (not a circle), spreads out, bubbles, fumes, shrinks away | dev menu: spawn 1 Hocker, let it spit near you; is it a puddle now; still clear on dark ground; does the edge match where it hurts |
+| NPC UI PR | Every desk looks like the Loadmaster: the Quartermaster, Call-ins and Vehicles open the same big screen with the item turning in 3D, its stats and BUY; the talk panels match | lobby place: buy something at each desk; does BUY feel clear; do you miss the camera on the gun wall (one switch brings it back) |
 | ATV PR | The ATV: a call-in from the new Vehicles desk at the back of the hangar, slung in by the helicopter; one drives, one shoots off the back; runs the Infected down | Nova played the match side; the motor pool in the lobby is unseen |
+| Objective meter PR | Objective progress is a big yellow bar under the objective line ("HOLDING 23 of 60s", red "PAUSED" when you step out); the squad panel and objective list no longer cover each other | Restore Comms at the mast: step in and out; a side objective takes the bar while you work on it |
 
 Merge order when you are happy: #18 before #25 and #28; #16 before #32; #15 before #36 and
 #37; #21 before #38; #17 is replaced by #24. Several of these touch the same files; Claude

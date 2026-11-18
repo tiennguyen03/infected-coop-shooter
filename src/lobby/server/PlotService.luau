@@ -68,6 +68,28 @@ local function buildPanel(): Frame
 			Color3.fromRGB(30, 30, 32)
 		)
 	end
+	-- Two posts at the ends, floor to top frame, each on a flat foot: the board stands on its
+	-- own now the map room has no walls (owner 2026-11-17).
+	local floorY = Layout.HangarY
+	local topY = Layout.Board.cframe.Position.Y + size.Y / 2 + 0.2
+	local postHeight = topY - floorY
+	for _, z in { -size.Z / 2 - 0.5, size.Z / 2 + 0.5 } do
+		local base = Layout.Board.cframe.Position + Vector3.new(0, 0, z)
+		Build.part(
+			folder,
+			"BoardPost",
+			Vector3.new(0.6, postHeight, 0.6),
+			CFrame.new(base.X, floorY + postHeight / 2, base.Z),
+			Color3.fromRGB(30, 30, 32)
+		)
+		Build.part(
+			folder,
+			"BoardFoot",
+			Vector3.new(3, 0.3, 0.8),
+			CFrame.new(base.X, floorY + 0.15, base.Z),
+			Color3.fromRGB(30, 30, 32)
+		)
+	end
 	-- (The silent plotter who stood behind it is gone: Control's watch officer runs the Plot
 	-- now, a desk at the map table, DeskService; owner 2026-11-10.)
 

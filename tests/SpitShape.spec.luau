@@ -10,7 +10,7 @@ local GLOB: SpitShape.GlobSettings = {
 	wobbleRate = 9, -- Hz
 }
 
-local POOL: SpitShape.PoolSettings = { grow = 0.25, startSize = 0.3, fade = 1 }
+local POOL: SpitShape.PoolSettings = { grow = 0.25, startSize = 0.3, fade = 1, shrink = 0.3 }
 
 local REAR: SpitShape.RearSettings = { back = 16, lunge = 8, recover = 0.3 }
 
@@ -67,6 +67,14 @@ return {
 		expect.near(SpitShape.rear(0.7999, 0.8, REAR), 16, 1e-2, "full rear just before")
 		expect.near(SpitShape.rear(1.1, 0.8, REAR), 0, 1e-9, "settled")
 		expect.equal(SpitShape.rear(5, 0.8, REAR), 0, "stays settled")
+	end,
+	["a pool shrinks as it fades, by its shrink share at the end"] = function()
+		local size = SpitShape.pool(3, 4, POOL)
+		expect.equal(size, 1, "full until the fade")
+		size = SpitShape.pool(3.5, 4, POOL)
+		expect.near(size, 0.85, 1e-9, "half way")
+		size = SpitShape.pool(4, 4, POOL)
+		expect.near(size, 0.7, 1e-9, "at the end")
 	end,
 	["a windup of no length goes straight to the lunge"] = function()
 		expect.near(SpitShape.rear(0, 0, REAR), -8, 1e-9, "lunge")

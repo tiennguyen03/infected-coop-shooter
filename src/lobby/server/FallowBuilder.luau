@@ -2,13 +2,13 @@
 -- Builds the Fallow (docs/LORE.md > The Fallow): a reactivated helicopter carrier holding
 -- station off the Harlan coast on a clear afternoon. Hull, flight deck with the open well and
 -- its ramp, the island (hull number painted out, HARLAN sprayed over it), the hangar deck, the
--- Plot's walls and chart table, the screening lane where soldiers arrive, the sea, the coast
+-- map room's chart table (open floor), the screening lane where soldiers arrive, the sea, the coast
 -- with the Burn's smoke along it, and the sky (Config.Lobby.Sky). Desks (DeskService), the
 -- board (PlotService) and the birds on their spots (LaunchService) build their own pieces
 -- from FallowLayout. These blocks carry all collision; FallowArt lays the ship's meshes over
 -- them once uploaded (assets/3d/build/fallow.py) and builds the lift balcony.
--- docs/STYLES.md: ShadowMap with GlobalShadows (lobby.project.json sets Technology), only
--- large pieces cast shadows, four lights (three in the hangar, one in the Plot), Shadows off,
+-- docs/STYLES.md: ShadowMap with GlobalShadows (lobby.project.json sets Technology), only large
+-- pieces cast shadows, four lights (three in the hangar, one over the map room), Shadows off,
 -- Range <= 56. No two faces share a plane (they flicker): surface pieces sit on, not in.
 
 local Lighting = game:GetService("Lighting")
@@ -28,7 +28,6 @@ local DECK = Color3.fromRGB(50, 52, 55)
 local ISLAND = Color3.fromRGB(86, 90, 94)
 local HANGAR_FLOOR = Color3.fromRGB(64, 66, 68)
 local HANGAR_WALL = Color3.fromRGB(96, 100, 102)
-local PLOT_WALL = Color3.fromRGB(40, 40, 42)
 local PAINT = Color3.fromRGB(214, 214, 208)
 local YELLOW = Color3.fromRGB(230, 189, 96)
 local CONCRETE = Color3.fromRGB(122, 120, 114)
@@ -48,6 +47,7 @@ local DECK_Y = Layout.DeckY
 local DECK_BOTTOM = DECK_Y - Layout.DeckThickness
 local HANGAR_Y = Layout.HangarY
 local HULL_TOP = HANGAR_Y - FLOOR
+local V2 = Config.Lobby.CarrierV2.Enabled -- Carrier v2 (CarrierV2): open map room, hidden nook, city ahead
 
 local function pointLight(parent: BasePart, color: Color3, range: number, brightness: number)
 	local light = Instance.new("PointLight")
@@ -164,16 +164,44 @@ local function buildDeck(ship: Folder)
 	-- rails. A WedgePart rises toward +Z, so it is turned half round.
 	local rise = DECK_Y - HANGAR_Y
 	local run = well.z1 - well.z0
-	Build.part(
-		ship,
-		"Ramp",
-		Vector3.new(well.x1 - well.x0, rise, run),
-		CFrame.new((well.x0 + well.x1) / 2, HANGAR_Y + rise / 2, (well.z0 + well.z1) / 2)
-			* CFrame.Angles(0, math.pi, 0),
-		HANGAR_FLOOR,
-		{ wedge = true, material = Enum.Material.DiamondPlate }
-	)
 	local slope = math.atan2(rise, run)
+	local midX = (well.x0 + well.x1) / 2
+	if V2 then
+		-- Carrier v2: solid from the foot up to RampSplit, a plate above it, so a hidden nook
+		-- opens under the ramp's high end (the future seller's corner; CarrierV2 walls it).
+		local split = Config.Lobby.CarrierV2.RampSplit
+		local splitY = HANGAR_Y + rise * (well.z1 - split) / run
+		Build.part(
+			ship,
+			"Ramp",
+			Vector3.new(well.x1 - well.x0, splitY - HANGAR_Y, well.z1 - split),
+			CFrame.new(midX, (HANGAR_Y + splitY) / 2, (split + well.z1) / 2)
+				* CFrame.Angles(0, math.pi, 0),
+			HANGAR_FLOOR,
+			{ wedge = true, material = Enum.Material.DiamondPlate }
+		)
+		local plateLength = math.sqrt((DECK_Y - splitY) ^ 2 + (split - well.z0) ^ 2)
+		Build.part(
+			ship,
+			"RampPlate",
+			Vector3.new(well.x1 - well.x0, 0.6, plateLength),
+			CFrame.new(midX, (DECK_Y + splitY) / 2, (well.z0 + split) / 2)
+				* CFrame.Angles(slope, 0, 0)
+				* CFrame.new(0, -0.3, 0),
+			HANGAR_FLOOR,
+			{ material = Enum.Material.DiamondPlate }
+		)
+	else
+		Build.part(
+			ship,
+			"Ramp",
+			Vector3.new(well.x1 - well.x0, rise, run),
+			CFrame.new(midX, HANGAR_Y + rise / 2, (well.z0 + well.z1) / 2)
+				* CFrame.Angles(0, math.pi, 0),
+			HANGAR_FLOOR,
+			{ wedge = true, material = Enum.Material.DiamondPlate }
+		)
+	end
 	local railLength = math.sqrt(rise * rise + run * run)
 	for _, x in { well.x0 + 0.3, well.x1 - 0.3 } do
 		Build.part(
@@ -193,7 +221,7 @@ local function buildDeck(ship: Folder)
 		Vector3.new(well.x0, DECK_Y, well.z1),
 		Vector3.new(well.x1, DECK_Y + 3, well.z1 + 0.4),
 		YELLOW,
-		{ material = Enum.Material.SmoothPlastic }
+		{ material = Enum.Material.SmoothPlastic, transparency = if V2 then 1 else 0 } -- v2: pipe rails (CarrierV2) show; this still holds
 	)
 	for _, x in { well.x0, well.x1 } do
 		Build.box(
@@ -202,7 +230,7 @@ local function buildDeck(ship: Folder)
 			Vector3.new(x - 0.2, DECK_Y, well.z0),
 			Vector3.new(x + 0.2, DECK_Y + 3, well.z1),
 			YELLOW,
-			{ material = Enum.Material.SmoothPlastic }
+			{ material = Enum.Material.SmoothPlastic, transparency = if V2 then 1 else 0 }
 		)
 	end
 
@@ -248,7 +276,9 @@ local function buildDeck(ship: Folder)
 
 	-- Floodlight poles along the port edge, over the aft spots (unlit by day; a night cycle
 	-- lights them later).
-	for _, z in { -125, -25 } do
+	-- v2: flood masts (CarrierV2) stand here instead.
+	local poles: { number } = if V2 then {} else { -125, -25 }
+	for _, z in poles do
 		Build.box(
 			ship,
 			"FloodPole",
@@ -340,7 +370,7 @@ end
 
 local function buildHangar(ship: Folder)
 	-- Three working lights under the deck: over the desks by the spawn, at the ramp's foot,
-	-- and at the Plot door.
+	-- and by the map room.
 	for _, position in
 		{
 			Vector3.new(0, DECK_BOTTOM - 1, 106),
@@ -373,43 +403,9 @@ end
 local function buildPlot(ship: Folder)
 	local plot = Layout.Plot
 	local top = DECK_BOTTOM
-	local x0, x1 = plot.x0, plot.x0 + 1
-	Build.box(
-		ship,
-		"PlotWall",
-		Vector3.new(x0, HANGAR_Y, plot.z0),
-		Vector3.new(x1, top, plot.doorZ0),
-		PLOT_WALL
-	)
-	Build.box(
-		ship,
-		"PlotWall",
-		Vector3.new(x0, HANGAR_Y, plot.doorZ1),
-		Vector3.new(x1, top, plot.z1),
-		PLOT_WALL
-	)
-	local lintel = Build.box(
-		ship,
-		"PlotLintel",
-		Vector3.new(x0, HANGAR_Y + 10, plot.doorZ0),
-		Vector3.new(x1, top, plot.doorZ1),
-		PLOT_WALL
-	)
-	Build.text(lintel, Enum.NormalId.Left, "THE PLOT", { size = 70, color = PAINT })
-	Build.box(
-		ship,
-		"PlotWall",
-		Vector3.new(x1, HANGAR_Y, plot.z0),
-		Vector3.new(plot.x1, top, plot.z0 + 1),
-		PLOT_WALL
-	)
-	Build.box(
-		ship,
-		"PlotWall",
-		Vector3.new(x1, HANGAR_Y, plot.z1 - 1),
-		Vector3.new(plot.x1, top, plot.z1),
-		PLOT_WALL
-	)
+	-- No walls: the map room is open hangar floor, walked into from any side (owner
+	-- 2026-11-17: the walls were awkward to get in and out of and cramped a full lobby).
+	-- The watch officer's sign (DeskService) names it.
 
 	-- The chart table: the Harlan Corridor on paper (WorldMap, the lore's world map).
 	WorldMap.build(ship)
@@ -423,7 +419,7 @@ local function buildPlot(ship: Folder)
 		{ material = Enum.Material.Neon, collide = false }
 	)
 	pointLight(lamp, PLOT_RED, 30, 2)
-	-- A white light set in the deckhead over the map, so the paper reads in the red room (flush,
+	-- A white light set in the deckhead over the map, so the paper reads under the red lamp (flush,
 	-- above the camera of the officer's "Show me the map.").
 	local table_ = Layout.ChartTable.Position
 	local panel = Build.part(
@@ -717,7 +713,9 @@ end
 local function buildWorld(ship: Folder)
 	local sky = Config.Lobby.Sky
 	buildSea()
-	buildCoast(ship)
+	if not V2 then -- v2: the burning city stands where the hills were (CarrierV2)
+		buildCoast(ship)
+	end
 
 	-- An overcast late afternoon (Config.Lobby.Sky). Templates arrive with their own effects; the
 	-- Fallow's sky replaces them so the place looks the same however it was created.
