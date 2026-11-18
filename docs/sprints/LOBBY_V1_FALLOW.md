@@ -459,7 +459,7 @@ sling across his chest"; the crew's block eyes "dont look right" on the R15 bodi
 | Place | File |
 |---|---|
 | Project | `lobby.project.json` (shares `src/shared`; `src/lobby/shared` as `ReplicatedStorage.Lobby`; maps the match's `src/server/PlayerSetup.luau` into the lobby server and `src/client/HudTheme.luau`, `PaletteController.luau`, `LoadoutMenu.luau` into the lobby client; sets `Lighting.Technology`) |
-| Server | `src/lobby/server/`: `Main.server`, `FallowLayout`, `Build`, `FallowBuilder`, `FallowArt`, `PikeBody`, `NpcBody`, `DeskService`, `ContainmentBoard`, `PlotService`, `LaunchService`, `LanternBird`, `ArmsRack`, `LoadmasterService` |
+| Server | `src/lobby/server/`: `Main.server`, `FallowLayout`, `Build`, `FallowBuilder`, `FallowArt`, `PikeBody`, `NpcBody`, `DeskService`, `ContainmentBoard`, `PlotService`, `LaunchService`, `LanternBird`, `ArmsRack`, `LoadmasterService`, `OpticService` |
 | Client | `src/lobby/client/`: `Main.client`, `LaunchUI`, `DeskDialogUI`, `ArmsRackUI`, `LoadmasterUI`, `DeskShop`, `RecordClient`, `LobbyMusic`, `ShipAmbience`, `SlingHands`, `HoldStill`, `RadarSpin`, `LanternSpool`, `SoldierMoves` |
 | Art | `assets/3d/build/fallow.py` (12 `env_fallow_*` meshes), `lantern.py` (4 `veh_lantern_*`); `MeshAssets` entries; `Config.Lobby.Ship`, `Config.Lobby.Lantern`; attribute `LiftAt`; rule `Rules/ArmsStats` (+ spec), `Config.Lobby.Rack` |
 | Shared | `src/lobby/shared/LobbyDesks`; rules `src/shared/Rules/Manifest`, `Rules/Containment`, `Rules/Handoff` (main's, the teleport data both places share); `Config.Lobby`, `Config.Places`, `Config.Containment`; remotes `Launch` + `Messages.Launch`, `Loadout` (shared with the match); attribute `DeskId` |
@@ -504,7 +504,14 @@ called **Loadout**. Lines by the lore developer (merits, the record, `LobbyDesks
   the rack's copy of the gun turning in a viewport, a list per slot (`Config.Attachments.Slots`:
   the Barrel, NONE or the suppressor), the suppressor shown on the muzzle as it is picked, DONE
   or BACK. The row then reads e.g. "M16A4 +SUP". What is fitted is signed with the rest (the
-  Loadout's `attachments`, saved, flown to the match). The soldier is held still (`HoldStill`, shared with
+  Loadout's `attachments`, saved, flown to the match). **Optic** (2026-11-18, Nova; the M16A4
+  only): under the Barrel, "X/3 OPTICS UNLOCKED" and NONE, Red dot, CompM2, ACOG; a locked
+  optic is greyed with `BUY · <price>`, an owned one reads OWNED, the fitted one is lit
+  EQUIPPED. BUY and picking an optic go to `OpticService` (the `Optic` remote): the server
+  buys onto the record and signs the fitting at once (`LoadmasterService.fit`); the row only
+  changes when it answers, and BACK keeps a fitted optic (rules and numbers:
+  [PROGRESSION.md > Attachments](../PROGRESSION.md#attachments)). Verified live in ZCS Dev
+  2026-11-18: buy, refused buys (owned, short), refused fits (not owned, wrong gun), fit. The soldier is held still (`HoldStill`, shared with
   the rack); BACK or Backspace steps out. Prototype: the whole catalog may be signed for.
   **Bigger, with the item in 3D** (2026-11-16, owner; not yet seen in game): the screen fills
   most of the display (1560x880 at 1080p, a tabbed layout on a phone), each row shows the

@@ -227,3 +227,16 @@ Lobby meshes (12 `env_fallow_*`, 4 `veh_lantern_*`) uploaded 2026-11-09 to the g
 Open Cloud imports the FBX at 100x (1 Blender unit → 100 studs) and clamps any axis to 2048,
 so the imported size is meaningless; `MeshAssets.luau` sets the intended stud size (Blender
 dimensions X, Z, Y) and the MeshPart scales the mesh to it.
+
+## Optics (found, not yet uploaded)
+
+Free models for the M16A4's optics (`Config.Optics` rows' `Model`), all by **notcplkerry** on
+Sketchfab under **CC BY 4.0** (commercial use allowed; credit the author). Download needs a
+Sketchfab account: save each into `assets/3d/source/`, then they are cut, sized and uploaded
+like the other meshes and their ids go in a row here.
+
+| Optic | Model | Licence |
+|---|---|---|
+| ACOG 4x (`acog`) | [Low-Poly Trijicon ACOG scope & RMR reflex sight](https://sketchfab.com/3d-models/low-poly-trijicon-acog-scope-rmr-reflex-sight-bdc3487c2b5b40148347e1f68c2f1c86) (the TA01, ~1.8k tris with the RMR) | CC BY 4.0, notcplkerry |
+| Red dot (`reddot`) | the RMR in the same pack | CC BY 4.0, notcplkerry |
+| CompM2 (`compm2`) | [Low-Poly Aimpoint ECOS-N / CompM2](https://sketchfab.com/3d-models/low-poly-aimpoint-ecos-n-compm2-78e7674c782446aebdb10e89f903b397) (~1.3k tris; the ECOS-N is a CompM2 on another mount) | CC BY 4.0, notcplkerry |

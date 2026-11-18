@@ -11,6 +11,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local Sight = require(ReplicatedStorage.Shared.Rules.Sight)
 local KeyBindings = require(ReplicatedStorage.Shared.Rules.KeyBindings)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
+local Optics = require(ReplicatedStorage.Shared.Attachments.Optics)
 
 -- A row's sight points are written on the gun's design (guns.py); the eye lines up where
 -- they show on the uploaded mesh, which Roblox mirrors left-right (MeshAssets.shownPoint).
@@ -314,12 +315,18 @@ function WeaponDefinitions.grenade(id: string?): GrenadeDefinition
 	return (id and GRENADES[id]) or GRENADES[WeaponDefinitions.DEFAULT_GRENADE]
 end
 
--- What gun `id` can take: [slot] = its options (Config.Attachments), empty when nothing.
+-- What gun `id` can take: [slot] = its options (Config.Attachments, Config.Optics), empty
+-- when nothing.
 function WeaponDefinitions.options(id: string): { [string]: { string } }
 	local options: { [string]: { string } } = {}
 	local gun = ROWS[id]
 	if gun and gun.Suppressor then
 		options.Barrel = { "suppressor" }
+	end
+	-- Optics: each Config.Optics row that lists this gun (only the M16A4 so far).
+	local optics = Optics.idsFor(id)
+	if gun and #optics > 0 then
+		options[Optics.SLOT] = optics
 	end
 	return options
 end
