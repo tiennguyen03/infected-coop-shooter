@@ -40,12 +40,12 @@ Rebuilt as a true "before" (`carrier_v2.today()`, same layout, meshes, lights an
   that has been at this for 214 days.
 - **The city on the shore** is the city the squad is retaking (owner's city campaign direction,
   2026-11-16). Players read it only as "the city". **Canon flag:** `docs/lore/world_map.md` has no
-  city yet; this proposal puts it on the coast off the Carrier's port side (code -X), at the foot of
+  city yet; this proposal puts it on the coast STRAIGHT AHEAD of the Carrier (code +Z, owner 2026-11-17), at the foot of
   Route 9 below Checkpoint Delta ("the army checkpoint on the highway out of the city"). The
-  hills and Burn sites ahead (Z 900) stay. The lore developer adds it to the world map when the
+  green hills and Burn sites that stood ahead are gone from v2: the city is there. The lore developer adds it to the world map when the
   owner approves.
 - The map room is labelled MAP ROOM, not THE PLOT, because THE PLOT is on the owner's list of made-up
-  words to change (BACKLOG Q3). Owner's call.
+  words to change (BACKLOG Q3). Owner confirmed 2026-11-17 (the lobby renamed it in PR #67).
 
 ## Level-design note (level designer)
 
@@ -68,14 +68,14 @@ changes is how each space reads as a ship:
   the hull over the board, the tally board on two posts. Walk in from the walk, fore or aft.
 - **Aft hangar:** Nova's motor pool (three painted bays, the ATV in the middle one, tool chests,
   the fuel point, a rack along the hull) with the motor sergeant at its front; the half court
-  with a hoop and the memorial net on the aft bulkhead; the restricted cage (future vendor) in
-  the port aft corner. Helicopter 20 on jacks is gone: the motor pool took its floor.
+  with a hoop and the memorial net on the aft bulkhead. The future seller hides in a nook under
+  the ramp. Helicopter 20 on jacks is gone: the motor pool took its floor.
 - **Flight deck:** bigger yellow boarding rings ("BOARD HERE"), the separate square gone; a red foul
   line; flood masts; tie-downs and chocks; the island dressed (vents, lights, flags, life rings,
   door); a ship's crane and boat; a deck-gear park (crash crane, tractor, pallets, drums); a
   stores-drop box forward; containers; pipe rails with posts instead of yellow slabs.
-- **Shore:** the burning city off the port side, seen from the whole flight deck, the lift balcony
-  and through the hangar's lift opening.
+- **Shore:** the burning city STRAIGHT AHEAD, off the bow where the hills were (owner 2026-11-17),
+  filling the view from the whole flight deck and the lookout at the bow.
 
 ## Layout (top-downs)
 
@@ -91,9 +91,9 @@ changes is how each space reads as a ship:
 | Loadmaster | feet (-2, 88) facing +Z, no counter; hammock posts (-7.2, 88), (3.2, 88) | keeps loadouts; hoist (3.5, 84), cases (-7.5, 84.5) |
 | Map room | `FallowLayout.Plot` X 4..33, Z -10..30, **no walls** | table unchanged; tally board on posts at X 4, Z 17..27 |
 | Motor pool, motor sergeant | feet (9, -48) facing +Z; bays as `FallowLayout.MotorPool` | Nova's PR #65; her bench X 2.6..7.2, dog X 11..14 |
-| Restricted cage (future) | X -33..-25, Z -73..-45, gate Z -61..-57 facing +X | nothing sells there yet; see Vendor corners |
+| Hidden nook (future seller) | under the ramp's high end, X -29.5..-10.5, Z 20..44; way in X -29.5..-22 at Z 20 (the rest hung with a tarp) | nothing sells there yet; see Vendor corners |
 | Spots 1-4 | helo X -12, Z -150 + 45 i | boarding is the yellow ring (PR #55) |
-| City | quay X -560, Z -700..900; towers X -640..-720 | see "Shore" |
+| City | ahead: quay Z 560, X -1000..900; towers Z 640..720, X -700..760 | laid out as if to port, turned onto the bow (`shore_v2`) |
 
 ## Kit pieces (new meshes, `assets/3d/build/carrier_kit.py`)
 
@@ -142,12 +142,15 @@ Placement is in `carrier_v2.py` (`hangar_v2`, `flight_deck_v2`, `desks_v2`, `han
 | `prop_vendor_loadmaster` | hammock on two stanchions, flight bag, cool box desk, salvaged cabin door, blue lamp | 1 | 392 | (-2, 20, 88) yaw 90 |
 | `prop_vendor_motor_pool` | tyre seat, bench with vice, clamp lamp, log book, thermos, the dog on a tarp | 1 | 520 | (9, 20, -48) yaw 90 |
 | `prop_vendor_watch` | swivel chair, stool with three mugs and phone, gooseneck lamp, folded cot, pack | 1 | 356 | (26.8, 20, -3) yaw 180 |
-| `prop_vendor_restricted` | sealed cases, locker, folding chair with raincoat, chessboard drum, document case, caged bulb | 1 | 472 | (-25, 20, -59) |
+| `prop_vendor_restricted` | sealed cases, locker, folding chair with raincoat, chessboard drum, document case, caged bulb | 1 | 472 | (-23.5, 20, 21.5) yaw -90 |
 
 Vendor corner pieces are drawn in the person's frame: origin at their feet, +x the way they face.
-The posed people (`npc_carrier_*`, 216-276 tris each) and `ref_carrier_atv` are picture
-stand-ins only: registered with `register(ba, npcs=True)` from `carrier_v2`, never exported, not
-counted (the game draws its own rigs and the ATV from `VehicleBody`).
+The posed people (`npc_carrier_*`, 216-276 tris each) and `ref_carrier_atv` are **pose
+references only**: registered with `register(ba, npcs=True)` from `carrier_v2`, never exported,
+not counted. In game the sellers stay the lobby's own R15 figures as they look now (`NpcBody`,
+their Dress and catalog items; owner 2026-11-17: "the regular R15, not the Blender-made one, but
+put them in the same pose and maybe some animations"). The stand-ins use the same blocky 5-stud
+proportions as R15 (legs 2, torso 2, head 1), so the poses carry over.
 
 The Doorman on the show floor is the uploaded `ref_doorman`; the city towers are the match's
 uploaded `env_city_*` (office, residential, deco, glass, ruined, midrise), 15 of them at X -640
@@ -161,14 +164,14 @@ to -720, scaled 0.62, several tilted, each with burnt gashes. Fire, smoke and se
 | 1 | Ship's cat asleep in a mortar crate, "DO NOT LOAD THE CAT" (the sapper feeds her) | call-ins floor (26.6, 20, 112.2) | `egg_carrier_cat` |
 | 2 | The net: cargo net of wrist bands, helmets and green chemlights, "STILL ON THE LIST" | aft bulkhead (-22, 21, -99.9) | `egg_carrier_memorial` |
 | 3 | Districts' tally board "MISSIONS HOME": Delta, Mile 14, Kestrel, the Yard, Reservoir | on two posts at the map room's walk edge (4, 22.6, 22) | `egg_carrier_scoreboard` |
-| 4 | "DAYS SINCE ONE GOT ABOARD 214 / KEEP IT THAT WAY" | screening lane (24, 40, -133.2) | `egg_carrier_dayssign` |
+| 4 | "DAYS SINCE ONE GOT ABOARD 214 / KEEP IT THAT WAY"; **counts up for real** (owner 2026-11-17): the lobby works out whole days since a fixed start date in Config (`Config.Lobby.DaysSince = { Start = "<date 214 days before launch>" }`, `os.time` UTC, floor of the difference / 86400) and writes it to the board's SurfaceGui on start and once an hour | screening lane (24, 40, -133.2) | `egg_carrier_dayssign` |
 | 5 | Broken arcade cabinet, "OUT OF ORDER" | crew corner (-14.5, 20, 137.4) | `egg_carrier_arcade` |
 | 6 | Call-in tallies stencilled on the hull: HAMMER, ANVIL, SHRIKE, DOORMAN | over the call-ins floor, X 33 | text |
 | 7 | (dropped 2026-11-17: helicopter 20 on jacks; its floor is the motor pool. `egg_carrier_queen_marks` stays in the kit, unplaced) | | |
 | 8 | Stolen road signs "HARLAN 14", "CHECKPOINT DELTA" | fore bulkhead (-2, 29.2, 139.9), (8.5, 32.8, 139.9) | `egg_carrier_roadsign` |
 | 9 | "NOT ON ISSUE" shelf: bat with nails, crossbow, chainsaw | Arms Room (-28.4, 20, 111.1) | `egg_carrier_notissue` |
-| 10 | Lookout's post: big binoculars on the city, chair, flask, skyline log "STILL STANDING" with towers crossed off | port deck edge (-31.5, 40, 98) | `egg_carrier_lookout` |
-| 10b | One tower still signals short-long-short in lit windows | glass tower (-690, ~264, -205) | Parts |
+| 10 | Lookout's post: big binoculars on the city, chair, flask, skyline log "STILL STANDING" with towers crossed off | the bow, port corner (-24, 40, 204), facing the city ahead | `egg_carrier_lookout` |
+| 10b | One tower still signals short-long-short in lit windows | glass tower ahead (-205, ~264, 690) | Parts |
 | 11 | Basketball hoop and half court | aft hangar (17, 20, -99.9) | `egg_carrier_hoop` |
 | 12 | Two clocks, SHIP runs, CITY stopped and taped | map room, on the hull over the board (33, 34.5, 14) | `egg_carrier_clocks` |
 
@@ -197,27 +200,54 @@ fore or aft. Nothing in a corner overlaps the walk lines painted on the floor.
 | Corner | Role, one line of character | Signature props | Pose (for animation later) | Light |
 |---|---|---|---|---|
 | **Arms Room** (port fore, feet (-26.6, 124) facing +X) | **The Quartermaster.** Thirty years behind cages like this; he counts every rifle out and every rifle back because once, long ago, a count came up short, and he would rather you leave with the right gun than the cheap one. | his high stool; a reading lamp on the glass turned onto his clipboard; a bell with RING ONCE; behind him a kettle on a hot plate, his tin mug and an old radio playing low; low on the gun wall a photo of his first arms room and a calendar with the days crossed off | **perched**: sits on the stool, leans on the glass on both elbows, reading glasses low, clipboard flat under his left hand, pencil in his right; idle: looks up over the glasses, taps the pencil | warm tungsten (255, 178, 102) under the lamp |
-| **Call-ins** (starboard, feet (27, 105) facing -X) | **The sapper sergeant.** Cleared roads into the city with a mine roller before it fell; nine fingers and all the time in the world, he sells you a mortar like a man selling a car he actually likes, and he feeds the ship's cat. | an upturned mortar-bomb crate he sits on; a crate-table at his right hand with an ashtray cut from a 105 shell case full of ends, the hand-cranked field telephone and his wire cutters; a hand-painted MIND THE COILS board; one caged bulb on a cord; the cat in her crate by his boots | **sitting**: on the crate, forearms on his knees, a cigarette in the hand with the short finger, waving you over with the other; idle: a slow drag, flick ash into the shell case | amber bulb (255, 140, 50); the cigarette's ember |
+| **Call-ins** (starboard, feet (27, 105) facing -X) | **The sapper sergeant.** Cleared roads into the city with a mine roller before it fell; nine fingers and all the time in the world, he sells you a mortar like a man selling a car he actually likes, and he feeds the ship's cat. | an upturned mortar-bomb crate he sits on; a crate-table at his right hand with a 105 shell case cut down for his pencils, the hand-cranked field telephone and his wire cutters; a hand-painted MIND THE COILS board; one caged bulb on a cord; the cat in her crate by his boots; an unlit cigarette behind his ear | **sitting**: on the crate, forearms on his knees, a tin mug in the hand with the short finger, waving you over with the other | amber bulb (255, 140, 50) |
 | **Loadout** (ramp foot, feet (-2, 88) facing +Z) | **The Loadmaster.** Rides the door on every lift and naps in a cargo-net hammock between them; wakes up loud, remembers every face he has flown, and keeps the count of everyone he brought back on a door off a dead helicopter. | a cargo-net hammock on two yellow stanchions; flight bag under it; a cool box he uses as a desk (mug, clipboard); the salvaged cabin door with FLOWN BACK and the tally in grease pencil; TODAY'S LIFTS board beside him | **lounging**: sits sideways in the hammock, one boot on the deck, one arm behind his head, pointing you at the board with the grease pencil; idle: rocks the hammock with his boot | cabin blue (110, 170, 255) clipped to the post |
 | **Vehicles** (motor pool front, feet (9, -48) facing +Z) | **The motor sergeant.** Fixed city buses at the depot before her reserve unit was called up; came aboard on the last convoy with a toolbox and a stray dog that would not get off the truck. She writes down which ATVs come back, and asks after the drivers second, but she asks. | two stacked tyres she sits on; a bench with a vice, a clamp work lamp bent over it, her log book and a thermos; a carburettor in her lap; the dog asleep on a folded tarp with water in a hubcap; tool chests behind | **tinkering**: sits on the tyres bent over the part in her lap, wrench in hand, looking up at you; idle: wipes her hands on the rag, scratches the dog | hard white work lamp (236, 244, 255) |
-| **Map room** (open floor, feet (26.8, -3) facing -X) | **Control's watch officer.** Grew up on a street in the city off the port side; the postcard pinned to the board's corner is that street before. She has had the watch for 214 days, sleeps on a camp cot behind the board, and talks in places and times because it is easier than names. | a swivel chair tipped back; a stool with three steel mugs (all cold) and the sound-powered phone; a gooseneck lamp; the folded cot and her pack; the postcard on the board | **feet up**: tipped back in the chair, boots crossed on the map table's end, mug resting on her chest, one earcup on; idle: sits up to tap a district on the map | the map room's red, plus a small warm lamp on the stool |
-| **Restricted cage** (FUTURE, port aft, X -33..-25, Z -73..-45) | **The visitor** (working title; owner idea, not built: a rotating seller of experimental government weapons). Comes aboard now and then on a helicopter that is not one of ours, with cases nobody else is cleared to open; polite, patient, no rank and no unit, and the Quartermaster will not stand near him. | a wire cage to head height with a padlocked gate, RESTRICTED / KEEP CLEAR; two sealed cases under seal tape and a locked tall case; a folding chair with his raincoat over it; a chessboard on a drum, a game half played against nobody; a document case; the hangar's one dead ceiling lamp overhead, a single cold bulb inside; the cage's back door goes into the hull | **waiting**: stands in the open gate, hands in his raincoat pockets, head slightly tilted; idle: moves one chess piece. When he is away the gate is shut and the chair empty | cold dim (170, 214, 226); nothing else lit |
+| **Map room** (open floor, feet (26.8, -3) facing -X) | **Control's watch officer.** Grew up on a street in the city dead ahead; the postcard pinned to the board's corner is that street before. She has had the watch for 214 days, sleeps on a camp cot behind the board, and talks in places and times because it is easier than names. | a swivel chair tipped back; a stool with three steel mugs (all cold) and the sound-powered phone; a gooseneck lamp; the folded cot and her pack; the postcard on the board | **feet up**: tipped back in the chair, boots crossed on the map table's end, mug resting on her chest, one earcup on; idle: sits up to tap a district on the map | the map room's red, plus a small warm lamp on the stool |
+| **Hidden nook** (FUTURE, under the ramp's high end, X -29.5..-10.5, Z 20..44; way in at the port end of its aft face) | **The visitor** (no sign, no job title on show; owner idea, not built: a rotating seller of experimental government weapons; owner 2026-11-17: "hidden in like the corner of the ship"). Comes aboard now and then on a helicopter that is not one of ours, with cases nobody else is cleared to open; polite, patient, no rank and no unit, and the Quartermaster will not stand near him. | a tarp hung across the ramp's back with a 7.5-stud gap at the port end, a netted pallet in front of it; inside, two sealed cases under seal tape and a locked tall case; a folding chair with his raincoat over it; a chessboard on a drum, a game half played against nobody; a document case; one cold bulb on a cord | **waiting**: stands just inside the gap, hands in his raincoat pockets, head slightly tilted. When he is away the nook is empty except the cases | cold dim (170, 214, 226); nothing else lit |
 
-Real-world rules: the owner asked for a cigarette. **Check Roblox's content rules on showing
-tobacco before shipping it;** if it is not allowed, the fallback keeps the pose: an unlit
-cigarette behind his ear and a match or a toothpick in his teeth, or a steaming tin mug in that
-hand. The cigarette is two small boxes in `npc_carrier_sapper` (no smoke particles yet).
+**No lit cigarette** (owner 2026-11-17: the question went unanswered, so the safe choice): no
+lit cigarette, no smoke, no ashtray. The sapper keeps an unlit cigarette behind his ear, holds a
+tin mug of tea, and his shell case holds pencils.
+
+**Finding the hidden nook.** The ramp's top third (Z 20..44) becomes a plate over a room 20 wide,
+24 deep and 12-20 tall; the solid wedge stays from Z 44 to the foot. Its sides are walled. From
+the spawn walk you see only a tarp behind the ramp and a pallet in front of it; walk down the
+port side toward the lift balcony and the gap at the port end opens, with the cold bulb inside.
+The gap is 7.5 studs wide and the room is 20 x 24, so four players fit once they find it.
+
+### Poses and idle animations (for the lobby, R15)
+
+Each seller is their existing lobby R15 figure, placed at the feet above, posed like the stand-in
+and playing one short looping idle. How to build them with the project's animation pipeline
+(`assets/animations/README.md`): `retarget.py` turns Mixamo FBX clips into R15 Motor6D keyframe
+JSON (`src/shared/AnimationClips/`), `AnimationBuilder` makes a KeyframeSequence from it, and
+`build_rbxm.luau` writes an `.rbxm` to upload to the group (Boomin Dev Studios, 270506601). Two
+routes per clip: (a) a Mixamo clip that is close (Sitting Idle, Sitting Talking, Leaning, Lying
+Down) retargeted as-is, or (b) a small hand-keyed clip in the same JSON format (3-4 keyframes of
+joint angles copied from the stand-in's joint points in `carrier_kit.npc_*`). Seated figures need
+the root lowered onto the seat (`HipHeight` / the root's offset), and the ProximityPrompt stays
+where soldiers stand, not on the seat.
+
+| Seller | Hold pose | Loop (about 4-8 s, Looped, Priority Idle) |
+|---|---|---|
+| The Quartermaster | perched on the stool, both elbows on the glass, clipboard under the left hand | turns a page on the clipboard; every other loop lifts the tin mug from the side table, sips, puts it back |
+| The sapper sergeant | sitting on the crate, forearms on his knees, mug in the right hand | slow sip of tea, a glance at the cat, the left hand comes up in a lazy wave when a soldier is near |
+| The Loadmaster | sitting sideways in the hammock, one boot on the deck | sways the hammock with the boot; settles back with an arm over his eyes; every so often taps the board with the grease pencil |
+| The motor sergeant | sitting on the tyres, the part in her lap | wipes the part with the rag, turns it; reaches down and scratches the dog's head |
+| Control's watch officer | tipped back, boots crossed on the map table | tosses a pen up and catches it; now and then sits up to tap the map, then tips back |
+| The visitor (future) | standing, hands in his coat pockets | stands still; only his head turns slowly to follow the nearest player in range (a Neck look-at in code, not a clip) |
 
 ## Budgets: today vs v2 (measured by `carrier_v2.report`)
 
-| | Today | v2 ship (11-16) | v2 ship with vendor corners (11-17) | v2 shore |
+| | Today | v2 ship (11-16) | v2 ship with vendor corners, hidden nook (11-18) | v2 shore (city ahead) |
 |---|---|---|---|---|
-| Parts | 129 | 323 | 345 (9 stripe runs as one piece each) | (in the ship count) |
-| Mesh instances / unique meshes | 44 / 16 | 245 / 65 | 240 / 69 | 30 / 10 |
-| Triangles drawn | 16,558 | 49,490 | 49,478 | 24,070 |
-| Unique mesh triangles (download) | 5,178 | 21,178 | 23,646 | 9,314 |
+| Parts | 129 | 323 | 319 (9 stripe runs as one piece each) | (in the ship count) |
+| Mesh instances / unique meshes | 44 / 16 | 245 / 65 | 241 / 69 | 30 / 10 |
+| Triangles drawn | 16,558 | 49,490 | 49,522 | 24,070 |
+| Unique mesh triangles (download) | 5,178 | 21,178 | 23,538 | 9,314 |
 | Lights | 5 | 18 | 24 | 0 |
-| Text labels | 17 | 84 | 96 | 0 |
+| Text labels | 17 | 84 | 94 | 0 |
 
 The six vendor corners add 2,812 triangles; dropping helicopter 20 (body, trim, its jacks, engine
 stand and chests moved) gave about the same back, so the ship's total did not grow. The posed
@@ -269,7 +299,7 @@ origin (30.8, H, 105) facing -X, length 31, depth 3.6; each call-in's Config row
    their `Display.Prop` (Hammer crate, Anvil binoculars, Tripline mines, concertina, Shrike) and
    the placards as its plates. Drop v2's own show-floor copies so there is one row.
 7. Boarding: keep #55's ring and sign; v2's bigger "BOARD HERE" ring paint must use `BoardRadius`.
-8. Shore: wrap the coast round to port (today it is only ahead at Z 900); near row = the uploaded
+8. Shore: the city STRAIGHT AHEAD in place of the hills and Burn sites at Z 900 (owner 2026-11-17; coordinates in Layout); near row = the uploaded
    `env_city_*` at 0.62 scale, far rows = the cards; fire as ParticleEmitters on 10-12 towers,
    smoke as 6 big emitters, 3 searchlight Beams; no lights on the shore.
 9. Lighting: at most 8 lights in the hangar, Shadows off: the five vendor lights (Range 12 or
@@ -281,8 +311,11 @@ origin (30.8, H, 105) facing -X, length 31, depth 3.6; each call-in's Config row
    mesh = facing). Each person's pose is an idle animation on its `NpcBody` (Pose column above;
    seated poses need the body lowered onto the seat); keep the `ProximityPrompt` reach from where
    soldiers stand, not from the seat. The motor sergeant's corner goes in front of `MotorPool`'s
-   bays (her bench at X 2.6..7.2, the dog at X 11..14, both Z -49.6..-46). The restricted cage
-   is scenery until the future vendor exists: gate shut, chair empty.
+   bays (her bench at X 2.6..7.2, the dog at X 11..14, both Z -49.6..-46). The hidden nook
+   under the ramp needs the ramp built as a wedge from Z 44 to the foot plus a sloped plate from
+   Z 20 to 44 (today it is one WedgePart), two side walls, the tarp and the pallet; it stays
+   empty scenery (the cases) until the future seller exists. Idle clips: Poses and idle
+   animations above (can follow the move into the corners).
 9c. Map room: delete the four `PlotWall` parts in `FallowBuilder.buildPlot` (owner: open floor);
    paint the floor and border instead; hang the MAP ROOM sign from the deckhead at X 4; put the
    tally board on two posts and the clocks on the hull over the board.
@@ -302,15 +335,12 @@ origin (30.8, H, 105) facing -X, length 31, depth 3.6; each call-in's Config row
   animations will read better. The pictures use flat ambient light, so the vendor lights look
   softer than they will in game.
 
-## Questions for the owner
+## Owner answers (2026-11-17)
 
-1. City off the port side (seen from the whole deck and through the lift) or ahead where the
-   hills are today?
-2. MAP ROOM instead of THE PLOT? (The pictures and floor paint say MAP ROOM.)
-3. Keep the 11 Easter eggs, or drop some (the arcade and the hoop are the lightest-hearted)?
-4. "214 days": fine as a fixed number, or should it count real days later?
-5. The cigarette: keep it if Roblox's rules allow it, or go straight to the fallback (unlit
-   behind the ear, a match in his teeth)?
-6. The future visitor's sign: no sign at all (recommended: the cage and RESTRICTED say enough),
-   or a plain job title like "the contractor"?
-7. OK to drop helicopter 20 for the motor pool, or bring it back somewhere on the flight deck?
+1. City: **straight ahead**, where the hills were (done in v2).
+2. **MAP ROOM** confirmed (the lobby renamed it in PR #67).
+3. **Keep all 11** remaining Easter eggs; the days board **counts up for real** later (egg 4).
+4. Sellers: **the lobby's own R15 figures**, posed like the stand-ins, with idle animations.
+5. Cigarette: **none lit**; unlit behind the ear.
+6. Future seller: **hidden in a corner**, no sign (the nook under the ramp).
+7. Helicopter 20: **dropped**.

@@ -54,6 +54,7 @@ DECK, DB = 40.0, 38.0  # flight deck top and underside
 HY = 20.0  # hangar floor
 HA, HF = -100.0, 140.0  # hangar bulkheads
 WELL = (-30.0, -10.0, 20.0, 80.0)  # x0, x1, z0 (ramp top), z1 (ramp foot)
+RAMP_SPLIT = 44.0  # v2: the ramp is a solid wedge from here to the foot, a plate above (the hidden nook)
 ISLAND = (22.0, 34.0, -10.0, 50.0)
 PLOT = (4.0, 33.0, -10.0, 30.0, 6.0, 14.0)  # x0, x1, z0, z1, door z0, door z1
 LANE = (19.0, 29.0, -172.0, -136.0)
@@ -182,13 +183,19 @@ def hull_art(s):
         s.D("env_fallow_catwalk_rafts" if rafts else "env_fallow_catwalk", side * 35.0, DECK, z, yaw=0 if side > 0 else 180)
 
 
-def deck_slabs(s):
+def deck_slabs(s, hollow=False):
     x0, x1, z0, z1 = WELL
     s.B("deck", "deck", -W, W, DB, DECK, -L, z0)
     s.B("deck", "deck", -W, x0, DB, DECK, z0, z1)
     s.B("deck", "deck", x1, W, DB, DECK, z0, z1)
     s.B("deck", "deck", -W, W, DB, DECK, z1, L + 30)
-    s.ramp("deck", "floor", x0, x1, HY, DECK, z0, z1)
+    if hollow:  # v2: a plate over the top third, the hidden nook under it (hangar_life_v2)
+        yc = HY + (DECK - HY) * (z1 - RAMP_SPLIT) / (z1 - z0)
+        s.ramp("deck", "floor", x0, x1, HY, yc, RAMP_SPLIT, z1)
+        xm = (x0 + x1) / 2
+        s.bar("deck", "floor", (xm, DECK - 0.32, z0), (xm, yc - 0.32, RAMP_SPLIT), x1 - x0, 0.6)
+    else:
+        s.ramp("deck", "floor", x0, x1, HY, DECK, z0, z1)
     s.B("hangar", "floor", -W + 2, W - 2, HY - 0.2, HY, HA, HF)
     s.B("hangar", "hull", -W + 2, W - 2, HY, DB, HA - 1, HA)  # aft bulkhead (AftSpaces' face)
     s.B("hangar", "hull", -W + 2, W - 2, HY, DB, HF, HF + 1)  # fore bulkhead
@@ -240,8 +247,10 @@ def plot_room(s, v2):
     s.light(19, DB - 3, 0, "flood", 1500, spot=True)
 
 
-def sea_and_north(s):
-    s.B("sea", "sea", -2560, 2560, -2, 0, -2560, COAST_Z)
+def sea_and_north(s, north=True):
+    s.B("sea", "sea", -2560, 2560, -2, 0, -2560, COAST_Z if north else 2560)
+    if not north:  # v2: the city stands where the hills were (shore_v2)
+        return
     s.B("north", "sand", -2560, 2560, -2, 2.5, COAST_Z - 30, COAST_Z)
     s.B("north", "grass", -2560, 2560, -2, 9, COAST_Z, COAST_Z + 800)
     for x in BURN_SITES:
@@ -393,9 +402,6 @@ def hangar_v2(s):
                 continue
             if x > 0 and PLOT[2] < z < PLOT[3]:
                 continue
-            if x < 0 and z == -64:  # the dead lamp over the restricted cage (its bulb is gone)
-                s.B("lamps", "black", x - 1.4, x + 1.4, DB - 2.2, DB - 1.9, z - 0.7, z + 0.7)
-                continue
             s.B("lamps", "black", x - 1.4, x + 1.4, DB - 2.2, DB - 1.9, z - 0.7, z + 0.7)
             s.B("lamps", "sodium", x - 1.2, x + 1.2, DB - 2.45, DB - 2.2, z - 0.5, z + 0.5)
             n += 1
@@ -408,7 +414,7 @@ def hangar_v2(s):
     s.D("env_carrier_door", 28, HY, HA, yaw=90)
     s.D("env_carrier_door", -W + 2, HY, -70, yaw=0)
     s.D("env_carrier_door", W - 2, HY, 60, yaw=180)
-    for x, z, yaw in ((W - 2, 84, 180), (W - 2, -18, 180), (-W + 2, 96, 0), (W - 2, -80, 180)):
+    for x, z, yaw in ((W - 2, 84, 180), (W - 2, -18, 180), (-W + 2, -52, 0), (-W + 2, 96, 0), (W - 2, -80, 180)):
         s.D("env_carrier_firestation", x, HY, z + 3, yaw=yaw)
     s.T("hangar", "HANGAR BAY 1", (10, HY + 14, HA + 0.2), 3.0, "+z", "yellow")
     s.T("hangar", "FR 100", (W - 2.2, HY + 8.2, 98), 0.8, "-x", "black")
@@ -662,30 +668,23 @@ def hangar_life_v2(s):
     s.T("motor", "VEHICLES", (9, HY + 11.1, -46.25), 1.5, "+z", "yellow")
     s.T("motor", "MOTOR POOL", (9, HY + 10.4, -46.25), 0.42, "+z", "paint")
     s.D("veh_carrier_tractor", 24, HY, -26, yaw=75)
-    # ---- FUTURE: the restricted cage, port aft (owner idea: a visitor who sells experimental
-    # government weapons now and then). The hangar's one dead lamp is over it.
-    cx0, cx1, cz0, cz1, gate = -W + 2, -25.0, -73.0, -45.0, (-61.0, -57.0)
-    top = HY + 10.5  # under the hull pipes (from 10.9)
-    for z in range(int(cz0), int(cz1) + 1, 4):
-        s.B("restricted", "gunmetal", cx1 - 0.15, cx1 + 0.15, HY, top, z - 0.15, z + 0.15)
-    for x in (cx0 + 4, cx1):
-        for z in (cz0, cz1):
-            s.B("restricted", "gunmetal", x - 0.15, x + 0.15, HY, top, z - 0.15, z + 0.15)
-    s.B("restricted", "gunmetal", cx1 - 0.15, cx1 + 0.15, top - 0.3, top, cz0, cz1)
-    s.B("restricted", "cage", cx1 - 0.05, cx1 + 0.05, HY, top - 0.3, cz0, gate[0])
-    s.B("restricted", "cage", cx1 - 0.05, cx1 + 0.05, HY, top - 0.3, gate[1], cz1)
-    s.B("restricted", "cage", cx1 - 0.05, cx1 + 0.05, HY + 8.0, top - 0.3, gate[0], gate[1])
-    s.B("restricted", "cage", cx1 + 0.2, cx1 + 0.3, HY + 0.2, HY + 8.0, gate[1] + 0.2, gate[1] + 4.0)  # the gate, swung back open
-    for z in (cz0, cz1):
-        s.B("restricted", "cage", cx0, cx1, HY, top - 0.3, z - 0.05, z + 0.05)
-    s.B("restricted", "yellow", cx1 + 0.15, cx1 + 0.2, HY + 4.6, HY + 6.2, -69, -65)
-    s.T("restricted", "RESTRICTED", (cx1 + 0.25, HY + 5.65, -67), 0.5, "+x", "black")
-    s.T("restricted", "KEEP CLEAR", (cx1 + 0.25, HY + 5.0, -67), 0.4, "+x", "black")
-    s.B("floorpaint", "yellow", cx1 + 0.3, cx1 + 3.3, HY, HY + 0.04, gate[0], gate[0] + 0.3)
-    s.B("floorpaint", "yellow", cx1 + 0.3, cx1 + 3.3, HY, HY + 0.04, gate[1] - 0.3, gate[1])
-    s.D("prop_vendor_restricted", cx1, HY, (gate[0] + gate[1]) / 2)
-    s.D("npc_carrier_contractor", cx1 - 0.6, HY, (gate[0] + gate[1]) / 2, layer="crew")
-    s.light(cx1 - 3.0, HY + 8.6, -60.0, "cold", 160)
+    # ---- FUTURE, hidden (owner 2026-11-17: "hidden in like the corner of the ship"): the
+    # experimental-weapons visitor's nook UNDER THE RAMP's high end. The ramp's top third is a
+    # plate on the wedge (deck_slabs hollow), so a room 20 wide, 24 deep and 12-20 tall opens
+    # under it, walled at both sides, its aft face hung with a tarp except an 7.5-stud gap at the
+    # port end: found by walking down the port side behind the ramp toward the lift. No sign.
+    x0w, x1w, zt, zc = WELL[0], WELL[1], WELL[2], RAMP_SPLIT
+    yc = HY + (DECK - HY) * (WELL[3] - zc) / (WELL[3] - zt)
+    for a, c in ((x0w, x0w + 0.5), (x1w - 0.5, x1w)):  # side walls under the plate
+        s.B("hidden", "wall_lo", a, c, HY, yc, zt, zc)
+        s.ramp("hidden", "wall_lo", a, c, yc, DECK - 0.7, zt, zc)
+    gap = x0w + 0.5 + 7.5
+    s.B("hidden", "crate", gap, x1w - 0.5, HY + 1.2, DB, zt - 0.4, zt - 0.2)  # the tarp
+    for x in (gap + 2.5, gap + 6.0, gap + 9.5):
+        s.B("hidden", "black", x - 0.08, x + 0.08, HY + 1.2, DB, zt - 0.45, zt - 0.4)  # its folds
+    s.D("prop_vendor_restricted", -23.5, HY, zt + 1.5, yaw=-90)
+    s.D("npc_carrier_contractor", -25.5, HY, zt + 1.2, yaw=-90, layer="crew")
+    s.light(-23, HY + 8, zt + 4, "cold", 140)
     s.D("egg_carrier_memorial", -22, HY + 1.0, HA + 0.14, yaw=90)
     for i, (dx, y) in enumerate(((-6.4, 4.2), (-2.9, 7.9), (0.8, 5.6), (4.6, 9.8), (6.9, 3.6))):
         s.B("eggs", "chem", -22 + dx - 0.1, -22 + dx + 0.1, HY + 1 + y, HY + 1 + y + 0.9, HA + 0.5, HA + 0.7)
@@ -703,14 +702,14 @@ def hangar_life_v2(s):
     s.D("prop_carrier_drums", 29.5, HY, 78)
     s.D("prop_carrier_toolchest", 30.5, HY, 54, yaw=-90)
     s.D("prop_carrier_crates", -27, HY, 100, yaw=0)
-    s.D("prop_carrier_pallet_net", -24, HY, 8)
+    s.D("prop_carrier_pallet_net", -16, HY, 12)  # in front of the tarp over the hidden nook
     s.stripes("floorpaint", 23.6, 24.0, HY, HY + 0.04, 33, 82, 24, axis="z")
 
 
 def eggs_deck_v2(s):
-    # the lookout's post, on the open edge forward of the ramp, glasses on the city
-    s.D("egg_carrier_lookout", -31.5, DECK, 98, yaw=180)
-    s.T("eggs", "STILL STANDING", (-32.05, DECK + 4.65, 101.2), 0.26, "+x", "black")
+    # the lookout's post at the bow, glasses on the city
+    s.D("egg_carrier_lookout", -24, DECK, 204, yaw=90)  # at the bow, glasses on the city ahead
+    s.T("eggs", "STILL STANDING", (-20.8, DECK + 4.65, 204.55), 0.26, "-z", "black")
     # the count board where teams come off the helicopter
     s.D("egg_carrier_dayssign", 24, DECK, -133.2, yaw=90)
     s.T("eggs", "DAYS SINCE ONE GOT ABOARD", (24, DECK + 6.75, -133.0), 0.36, "+z", "paint")
@@ -734,6 +733,21 @@ TOWERS = (  # kind, x, z, yaw off the quay line, scale, burning, tilt
 
 
 def shore_v2(s):
+    """The city STRAIGHT AHEAD, off the bow where the hills were (owner 2026-11-17). Laid out as
+    if off the port side (`_city_port`, x out to sea) and turned a quarter round onto the bow:
+    game (x, z) -> (z, -x), yaw - 90."""
+    t = Set("city")
+    _city_port(t)
+    for g, kind, shape, d in t.parts:
+        x0, x1, y0, y1, z0, z1 = d
+        s.parts.append((g, kind, shape, (z0, z1, y0, y1, -x1, -x0)))
+    for e in t.dress:
+        e = dict(e)
+        e["x"], e["z"], e["yaw"] = e["z"], -e["x"], e["yaw"] - 90
+        s.dress.append(e)
+
+
+def _city_port(s):
     """The city, off the side away from the island: quay and waterfront, a row of real towers
     (the match's skyline meshes, already uploaded), then flat skyline strips fading into the
     smoke, a glow behind it all. Fire, smoke and beams are particles and Beams in game."""
@@ -775,11 +789,11 @@ def shore_v2(s):
 
 def v2():
     s = Set("v2")
-    deck_slabs(s)
+    deck_slabs(s, hollow=True)
     hull_art(s)
     birds(s, tie=True)
     plot_room(s, True)
-    sea_and_north(s)
+    sea_and_north(s, north=False)
     hangar_v2(s)
     flight_deck_v2(s)
     desks_v2(s)
@@ -788,17 +802,17 @@ def v2():
     shore_v2(s)
     s.labels = [
         ("SPAWN", 0, 125, "h"), ("ARMS ROOM: Quartermaster on his stool", -29.5, 106, "h"),
-        ("CALL-INS: sapper on his crate, smoking", 30.5, 98, "h"), ("LOADOUT: Loadmaster in his hammock", 10.5, 80, "h"),
+        ("CALL-INS: sapper on his crate, tea", 30.5, 98, "h"), ("LOADOUT: Loadmaster in his hammock", 10.5, 80, "h"),
         ("RAMP up to the flight deck", -20, 50, "h"), ("MAP ROOM: open floor, watch officer", 18, 34, "h"),
         ("Crew corner, arcade", -10.5, 126, "h"), ("Tally board", -3, 22, "h"),
         ("VEHICLES: motor sergeant, her dog", 9, -38, "h"), ("Motor pool: 3 bays, the ATV", 0, -82, "h"),
-        ("FUTURE: restricted cage", -29, -40, "h"),
-        ("The net", -22, -92, "h"), ("Hoop", 17, -82, "h"), ("Lift balcony: the city view", -41, -20, "h"), ("Stores", 28, 58, "h"),
+        ("HIDDEN nook under the ramp", -20, 4, "h"),
+        ("The net", -22, -92, "h"), ("Hoop", 17, -82, "h"), ("Lift balcony", -41, -20, "h"), ("Stores", 28, 58, "h"),
         ("SPOT 1", -12, -150, "d"), ("SPOT 2", -12, -105, "d"), ("SPOT 3", -12, -60, "d"), ("SPOT 4", -12, -15, "d"),
         ("Board inside the yellow circle", 10.5, -105, "d"), ("RAMP", -20, 50, "d"), ("ISLAND", 28, 20, "d"),
         ("Deck gear", 27, -90, "d"), ("Screening lane", 24, -160, "d"), ("Count board", 24, -128, "d"),
-        ("Stores drop", 0, 150, "d"), ("Lookout", -28, 106, "d"), ("Lift (down)", -41, -20, "d"), ("Ship's crane", 30, -30, "d"),
-        ("THE CITY IS OFF THIS SIDE", -58, 40, "d"),
+        ("Stores drop", 0, 150, "d"), ("Lookout", -24, 196, "d"), ("Lift (down)", -41, -20, "d"), ("Ship's crane", 30, -30, "d"),
+        ("THE CITY IS DEAD AHEAD", 0, 232, "d"),
     ]
     return s
 
@@ -1166,14 +1180,14 @@ VIEWS = {
     "map_room_door": ((-10, H, 30), (10, H + 1, 8), 16),
     "map_room": ((8, H, 12), (26, H - 1, -2), 14),
     "hangar_aft": ((0, H, -8), (-4, H, -90), 16),
-    "lift_view": ((-14, H, -14), (-300, H + 18, -60), 20),  # through the lift opening, to the city
+    "lift_view": ((-14, H, -14), (-300, H + 18, -60), 20),  # through the lift opening, the sea to port
     "ramp_top": ((-20, D, 24), (-12, D - 2, -60), 16),  # coming up onto the flight deck
     "flight_deck": ((8, D, -34), (-30, D + 2, -150), 18),
     "spot": ((4, D, -52), (-14, D, -62), 18),  # boarding: the circle and the open door
     "island": ((-22, D, 64), (30, D + 22, 16), 16),
     "deck_gear": ((4, D, -44), (30, D + 3, -84), 18),
-    "shore": ((-30, D, -40), (-600, 100, 60), 26),  # the city from the flight deck's open edge
-    "shore_wide": ((-34, D + 1, 40), (-600, 110, -80), 16),
+    "shore": ((-10, D, 120), (0, 100, 700), 26),  # the city dead ahead, from the forward deck
+    "shore_wide": ((8, D + 1, -30), (-60, 110, 700), 16),
     "fore_deck": ((-10, D, 84), (8, D, 170), 16),
 }
 EGGS = {
@@ -1185,10 +1199,10 @@ EGGS = {
     "egg_06_callin_tallies": ((20, H, 127), (33, HY + 10, 128), 18),
     "egg_08_road_signs": ((3, H, 118), (3, HY + 9.5, 140), 20),
     "egg_09_not_on_issue": ((-28.0, H + 1.0, 118.5), (-28.4, HY + 5.2, 111.1), 20),
-    "egg_10_lookout": ((-22, D, 104), (-34, DECK + 3.6, 97.5), 22),
+    "egg_10_lookout": ((-14, D, 196), (-24, DECK + 3.6, 204.5), 22),
     "egg_11_hoop": ((14, H, -74), (17, HY + 8, -100), 18),
-    "egg_12_stopped_clock": ((10, H, 0), (10, HY + 8.4, -9), 24),
-    "egg_10b_signal_tower": ((-34, D, -60), (-640, 236, -205), 150),
+    "egg_12_stopped_clock": ((20, H + 2, 14), (33, HY + 16, 14), 24),
+    "egg_10b_signal_tower": ((0, D, 150), (-205, 250, 652), 150),
 }
 VENDORS = {  # vendor corners (owner 2026-11-17): render_vendors() writes vendor_<name>.png
     "quartermaster": ((-16, H + 0.5, 118), (-27, HY + 3, 125), 20),
@@ -1199,7 +1213,8 @@ VENDORS = {  # vendor corners (owner 2026-11-17): render_vendors() writes vendor
     "motor_pool_close": ((5, H + 0.5, -40), (8, HY + 2.5, -48.5), 22),
     "map_room": ((15, HY + 10.5, 13), (26.5, HY + 2.3, -3.5), 22),
     "map_room_open": ((-8, H + 3.0, 8), (20, HY + 2, 2), 16),
-    "restricted": ((-15, H + 0.5, -52), (-27.5, HY + 2.5, -59.5), 22),
+    "restricted": ((-27, H + 0.5, 9), (-23, HY + 3, 24), 22),
+    "restricted_find": ((-30, H, -14), (-22, HY + 6, 20), 18),
     "hangar_walk": ((-2, HY + 14, 136), (2, HY + 2, 40), 16),
 }
 PAIRS = ("oblique", "oblique_island", "spawn", "arms_room", "callins", "loadout", "map_room_door", "hangar_aft", "lift_view", "ramp_top", "flight_deck", "island", "shore")

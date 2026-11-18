@@ -76,7 +76,8 @@ that restocks the squad.
   the lobby doc > What v1 has).
   **Carrier v2** (proposal, 2026-11-16, pictures only, not in game): the ship revamp and the
   burning city on the shore, PR off `claude/carrier-v2`; 2026-11-17 adds a corner, pose and light
-  for every seller (and a restricted cage for a future visitor), and the map room as open floor
+  for every seller (R15 figures posed, idles specified), a hidden nook under the ramp for a future
+  seller, the city straight ahead, and the map room as open floor
   (doc > Vendor corners); **Nova:** once the owner approves,
   `docs/sprints/CARRIER_V2.md` > Putting it in the lobby is the step list (builds on #55, #57, #61, #65).
   **Nova:** the Loadout screen (`LoadoutMenu`) was rebuilt

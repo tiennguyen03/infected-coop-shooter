@@ -990,7 +990,7 @@ def vendor_quartermaster(b):
 
 def vendor_callins(b):
     """The sapper sergeant's corner among his call-ins: he sits on an upturned mortar-bomb crate
-    (no counter), his crate-table at his right hand with the ashtray he made from a shell case,
+    (no counter), his crate-table at his right hand with a shell case cut down for his pencils,
     the hand-cranked field telephone and his wire cutters; a hand-painted MIND THE COILS board
     leant against it; one caged bulb on a cord over him."""
     R(b, -1.0, 1.0, 0, 1.6, -1.3, 1.3, "olive")  # the seat
@@ -1000,15 +1000,11 @@ def vendor_callins(b):
     R(b, 0.2, 2.6, 0, 1.4, -4.4, -2.4, "olive_d")
     R(b, 0.4, 2.4, 1.4, 2.4, -4.2, -2.6, "olive")
     R(b, 0.38, 2.42, 1.85, 1.95, -4.22, -2.58, "tan_d")
-    # the ashtray: a 105 shell case cut down, cigarette ends round it and in it
+    # a 105 shell case cut down: his pot for pencils and a spare pair of pliers
     cyl_up(b, 1.6, 2.4, 2.9, -3.0, 0.38, "brass", segs=8)
     cyl_up(b, 1.6, 2.9, 2.92, -3.0, 0.3, "dark_d", segs=8)
-    for dx, dz, ang in ((0.05, 0.1, 20), (-0.12, -0.08, 75), (0.1, -0.15, 130), (-0.05, 0.16, 160), (0.6, 0.35, 40), (0.85, -0.2, 100)):
-        x, z = 1.6 + dx, -3.0 + dz
-        a = math.radians(ang)
-        y = 2.95 if abs(dx) < 0.3 else 2.42
-        rod(b, (x, y, z), (x + math.cos(a) * 0.35, y + 0.02, z + math.sin(a) * 0.35), 0.07, "white_l")
-        R(b, x - 0.04, x + 0.04, y - 0.03, y + 0.04, z - 0.04, z + 0.04, "tan")
+    for dx, dz in ((-0.1, 0.05), (0.1, -0.1), (0.0, 0.12)):
+        rod(b, (1.6 + dx, 2.6, -3.0 + dz), (1.6 + dx * 2.5, 3.5, -3.0 + dz * 2.5), 0.08, "objective_yellow")
     # the field telephone: a canvas case, a handset on the hook, a crank
     R(b, 0.6, 1.4, 2.4, 3.1, -4.1, -3.3, "olive_d")
     R(b, 0.65, 1.35, 3.1, 3.3, -4.0, -3.4, "dark_d")
@@ -1219,8 +1215,8 @@ def npc_quartermaster(b):
 
 
 def npc_sapper(b):
-    """On the crate, forearms on his knees, a cigarette in the hand with the short finger,
-    waving you over with the other; beanie, sleeves rolled, work gloves tucked in his belt."""
+    """On the crate, forearms on his knees, a tin mug in the hand with the short finger, an unlit
+    cigarette behind his ear, waving you over with the other; beanie, sleeves rolled, gloves in belt."""
     pose = {
         "pelvis": (0.0, 2.1, 0), "neck": (0.75, 3.9, 0), "head": (0.1, 0, 0),
         "l_elbow": (1.0, 3.7, 1.75), "l_hand": (1.45, 4.85, 1.6),
@@ -1231,10 +1227,8 @@ def npc_sapper(b):
     h = npc(b, pose, "olive_l", "tan_d", skin="flesh_d", sleeves="flesh_d")
     R(b, h.x - 0.58, h.x + 0.58, h.y + 0.3, h.y + 0.78, -0.58, 0.58, "olive_d")  # beanie
     R(b, h.x + 0.55, h.x + 0.59, h.y - 0.55, h.y - 0.15, -0.5, 0.5, "pallor_d")  # stubble
-    rod(b, (2.3, 2.95, -0.45), (2.75, 3.05, -0.3), 0.08, "white_l")  # the cigarette
-    R(b, 2.72, 2.84, 2.98, 3.1, -0.36, -0.24, "warning_orange")
-    for (x0, y0, z0), (x1, y1, z1) in (((2.8, 3.15, -0.3), (2.9, 3.7, -0.2)), ((2.9, 3.7, -0.2), (2.75, 4.2, -0.05)), ((2.75, 4.2, -0.05), (2.95, 4.6, 0.1))):
-        obox(b, (x0, y0, z0), (x1, y1, z1), 0.07, 0.07, "white_d")  # a thread of smoke (particles in game)
+    rod(b, (h.x - 0.1, h.y + 0.15, -0.6), (h.x + 0.45, h.y + 0.05, -0.62), 0.09, "white_l")  # unlit cigarette behind his ear (no lit one: owner 2026-11-17)
+    mug(b, 2.3, 2.6, -0.5)  # a tin mug of tea in the hand on his knee
     R(b, 0.2, 0.9, 1.7, 2.3, -1.1, -1.0, "warning_orange")  # gloves tucked in the belt
 
 

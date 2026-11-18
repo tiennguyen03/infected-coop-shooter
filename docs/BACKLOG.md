@@ -50,7 +50,7 @@ joins them at merge time (already done once in the test mix).
 | PR | What | Pictures | Honest state |
 |---|---|---|---|
 | #19 | Bloat, Shedder, Crawler, Kite, Growth | Desktop `Infected_roster` | Bloat good; Shedder reads like an armoured knight and needs another pass; Kite is weak from the front |
-| Carrier v2 | The lobby ship revamped: frames, pipes, desks as places, deck gear, 12 Easter eggs, a burning city off port (`docs/sprints/CARRIER_V2.md`; Nova builds it once approved) | Desktop `Carrier_v2` | reads as a ship; the ship draws about 3x today's triangles (over the cap, cuts listed); the city's fire needs particles in game |
+| #62 Carrier v2 | The lobby ship revamped: frames, pipes, deck gear, Easter eggs, the burning city straight ahead; every seller has a corner with props and a pose, the map room is open floor, a hidden nook under the ramp for the future experimental-weapons seller (`docs/sprints/CARRIER_V2.md`; owner answered the questions 2026-11-17; next: put it in the lobby) | Desktop `Carrier_v2` (`vendor_*.png` first) | reads as a ship; draws about 3x today's triangles; the city's fire needs particles in game; the sellers' idle animations are still to make |
 | #26 | Mile 14 v2: bigger (640 x 900), six-lane interstate, skyline | Desktop `Mile14_v2` | about 3.7x the detail of v1, frame rate not measured; some wrecks clip the median wall; fields are empty |
 
 ## 3. Building now
