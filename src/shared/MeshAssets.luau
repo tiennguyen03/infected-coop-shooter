@@ -48,6 +48,10 @@ export type Collider = {
 }
 type MeshDef = {
 	meshId: string,
+	-- An uploaded Model asset holding the mesh (an Open Cloud upload, no Studio step): the
+	-- template is that model's MeshPart, loaded with InsertService:LoadAsset. Used when meshId
+	-- is "" (Carrier v2's kit in the lobby: CarrierKitMeshes, MeshAssets.register).
+	modelId: number?,
 	size: Vector3,
 	solid: boolean?,
 	offset: Vector3?,
@@ -1414,10 +1418,18 @@ local templates: { [string]: MeshPart } = {}
 local warned: { [string]: boolean } = {}
 
 local function buildTemplate(folder: Folder, name: string, def: MeshDef)
-	if def.meshId == "" then
+	local modelId = def.modelId or 0
+	if def.meshId == "" and modelId <= 0 then
 		return -- registered, not uploaded yet (MeshAssets.isUploaded is false)
 	end
-	local ok, result = pcall(function()
+	local ok, result = pcall(function(): any
+		if def.meshId == "" then
+			local model = InsertService:LoadAsset(modelId)
+			local mesh = model:FindFirstChildWhichIsA("MeshPart", true)
+			local part = if mesh then mesh:Clone() else nil
+			model:Destroy()
+			return part
+		end
 		-- Positional form: (meshId, collisionFidelity, renderFidelity). The options-table
 		-- form documented elsewhere fails here with "Argument 3 missing or nil".
 		return InsertService:CreateMeshPartAsync(
@@ -1458,7 +1470,27 @@ end
 -- True when the entry has an asset id (a template will exist once it has loaded).
 function MeshAssets.isUploaded(name: string): boolean
 	local def = MESHES[name]
-	return def ~= nil and def.meshId ~= ""
+	return def ~= nil and (def.meshId ~= "" or (def.modelId or 0) > 0)
+end
+
+-- Adds entries before init() (the lobby's Carrier v2 kit, CarrierKitMeshes): palette meshes
+-- loaded from their uploaded models, no shadow, a box collider only when `solid`. An existing
+-- name is kept.
+function MeshAssets.register(defs: {
+	[string]: { modelId: number, size: Vector3, offset: Vector3, solid: boolean? },
+})
+	for name, def in defs do
+		if MESHES[name] == nil then
+			MESHES[name] = {
+				meshId = "",
+				modelId = def.modelId,
+				size = def.size,
+				offset = def.offset,
+				solid = def.solid, -- floor props: a box collider
+				castShadow = false,
+			}
+		end
+	end
 end
 
 function MeshAssets.getSize(name: string): Vector3?

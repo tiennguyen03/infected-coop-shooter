@@ -1383,6 +1383,14 @@ import lantern  # noqa: E402
 
 lantern.register(sys.modules[__name__])
 
+# Carrier v2 (proposal 2026-11-16, docs/sprints/CARRIER_V2.md): the revamp's kit pieces
+# (`env_carrier_*`, `prop_carrier_*`, `prop_callin_*`, `egg_carrier_*`, `env_shore_*`) are opt-in
+# until the owner approves: `blender --background --python build_assets.py -- --carrier-v2`.
+if "--carrier-v2" in sys.argv:
+    import carrier_kit  # noqa: E402
+
+    carrier_kit.register(sys.modules[__name__])
+
 # The remade common Infected (owner adopted them 2026-11-11) live in infected_v2.py
 # (`inf_v2_*`); the bodies above stay built as the fallback set (Config.Enemies.BodyVersion).
 # Its side-by-side previews: `blender --background --python infected_v2.py`.
