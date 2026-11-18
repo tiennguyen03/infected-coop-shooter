@@ -57,7 +57,7 @@ joins them at merge time (already done once in the test mix).
 | What | Notes |
 |---|---|
 | New key layout: E interact, V stim, F shove, C/Ctrl crouch, Z prone, X flare | one table for all keys; follow-ups on the open PRs |
-| Vehicles: the ATV, follow-ups (Nova) | driver's hands on the bars, faster, engine sound, the motor sergeant's radio lines, a real model, more vehicles as maps grow |
+| Vehicles: the ATV, follow-ups (Nova) | driver's hands on the bars, faster, the motor sergeant's radio lines, more vehicles as maps grow (the ATV wears Nova's model since 2026-11-17) |
 | Checkpoint Delta revamp in Blender (proposal, pictures first) | layers along the highway, multi-storey buildings, consistent vehicles; Desktop `Delta_v2` when done |
 
 ## 4. Your call

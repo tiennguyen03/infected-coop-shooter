@@ -1396,6 +1396,11 @@ import doorman  # noqa: E402
 
 doorman.register(sys.modules[__name__])
 
+# The ATV (build/atv.py): the owner's model, cut once into assets/3d/source/, painted here.
+import atv  # noqa: E402
+
+atv.register(sys.modules[__name__])
+
 
 # ------------------------------------------------------------------ The Chosen (player bodies)
 # Same limb-swap build as the Infected: one mesh per R15 limb inside the stock limb box.
@@ -2275,6 +2280,8 @@ def main():
 
     if any(n in changed for n in (*doorman.PIECES, *doorman.FIGURES)):
         doorman.render_previews(sys.modules[__name__], scene, cam, built, PREVIEWS)
+    if any(n in changed for n in atv.ATV):
+        atv.render_previews(sys.modules[__name__], scene, cam, built, PREVIEWS)
 
     # skinned bodies: mesh + armature, exported together; previews in rest pose with the
     # rigid gear sitting on its limbs, then bent (PROOF_POSE) with the gear following the bones
