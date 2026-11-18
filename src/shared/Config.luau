@@ -110,7 +110,7 @@ local Config = {
 	-- them; each option names its slot. A gun offers an option when its row has it (the
 	-- suppressor: Config.Weapons.<id>.Suppressor; not the revolver or the Goose).
 	Attachments = {
-		Slots = { "Barrel" },
+		Slots = { "Barrel", "Optic" }, -- Optic: the rows of Config.Optics (Shared.Attachments.Optics)
 		Options = {
 			suppressor = {
 				Name = "Suppressor",
@@ -126,6 +126,90 @@ local Config = {
 				Description: string,
 				Color: Color3,
 				Volume: number,
+			},
+		},
+	},
+
+	-- Optics for the Optic slot (Nova, 2026-11-18: the M16A4 first, other guns in a later PR).
+	-- One row per optic; Shared.Attachments.Optics builds the typed records from them, and a
+	-- new optic appears by having a row. Bought once with merits at the Loadmaster's EDIT and
+	-- kept on the record for good (Rules/AttachmentRules; never tabs or Robux). On the gun it
+	-- multiplies the gun's own Sight.Zoom and the time into the sights (Weapon.ADS.EnterTime;
+	-- Rules/AttachmentMerge, CameraController). Numbers from the systems designer: the named
+	-- magnification is the final zoom on the M16's 1.35 irons; each costs less than the gun it
+	-- competes with (2, 3 and 4 wins at 120 merits). Fit: per gun it fits, the mesh of that gun
+	-- with this optic on its rail (assets/3d/build/optics.py, from the free models in
+	-- assets/3d/ASSET_IDS.md > Optics) and its sight on that mesh (Rules/Sight: Rear and Front on
+	-- the optic's axis; the zoom is worked out from ZoomMultiplier). WeaponDefinitions.dressed
+	-- reads it for the gun in hand, first person and the EDIT screen.
+	Optics = {
+		reddot = {
+			Name = "Red dot",
+			Description = "No magnification, but the fastest into the sights. Close range, first shot first.",
+			Guns = { "service_rifle" },
+			ZoomMultiplier = 1.0, -- 1.35: the irons' picture
+			AdsTimeMultiplier = 0.75, -- 0.11 s
+			Price = 150,
+			Fit = {
+				-- The RMR on a riser, its dot on the irons' line, co-witnessed with the front post.
+				service_rifle = {
+					Model = "wpn_m16_reddot",
+					Sight = {
+						Rear = Vector3.new(0, 0.615, -0.01),
+						Front = Vector3.new(0, 0.615, -1.345),
+					},
+				},
+			},
+		},
+		compm2 = {
+			Name = "CompM2 (M68)",
+			Description = "2x and no slower to raise. The general-purpose sight.",
+			Guns = { "service_rifle" },
+			ZoomMultiplier = 1.48, -- 2.0 (a sight that is not a scope stops at 2x, Rules/Sight)
+			AdsTimeMultiplier = 1.0, -- 0.15 s
+			Price = 250,
+			Fit = {
+				service_rifle = {
+					Model = "wpn_m16_compm2",
+					Sight = {
+						Rear = Vector3.new(0, 0.651, 0.04),
+						Front = Vector3.new(0, 0.651, -0.307),
+					},
+				},
+			},
+		},
+		acog = {
+			Name = "ACOG 4x",
+			Description = "4x for picking off the Infected at range. Slower into the sights.",
+			Guns = { "service_rifle" },
+			ZoomMultiplier = 3.0, -- 4.05
+			AdsTimeMultiplier = 1.6, -- 0.24 s, about a scope's ScopeTime
+			Price = 400,
+			Fit = {
+				-- A scope: aimed, the scope picture (ScopeView) as on the M110.
+				service_rifle = {
+					Model = "wpn_m16_acog",
+					Sight = {
+						Kind = "scope",
+						Rear = Vector3.new(0, 0.643, 0.097),
+						Front = Vector3.new(0, 0.643, -0.325),
+					},
+				},
+			},
+		},
+	} :: {
+		[string]: {
+			Name: string,
+			Description: string,
+			Guns: { string },
+			ZoomMultiplier: number,
+			AdsTimeMultiplier: number,
+			Price: number,
+			Fit: {
+				[string]: {
+					Model: string,
+					Sight: { Rear: Vector3, Front: Vector3, Kind: string? },
+				},
 			},
 		},
 	},
@@ -1193,6 +1277,68 @@ local Config = {
 		ConeDot = 0.5, -- hits inside ~60 degrees either side of facing
 		Cooldown = 1,
 	},
+	-- Kit Mods (Nova, 2026-11-18; the Loadmaster's KIT MODS tab): passive buffs on the soldier
+	-- whatever gun they carry, bought rank by rank with merits (never tabs) and kept for good on
+	-- the record (Rules/KitModRules, Shared.KitMods). One row per mod: Costs[n] is rank n's
+	-- price, PerRank is added to the row's Effect per rank held; the services that own an
+	-- Effect ask KitMods.bonus for it. Enabled = false: shown greyed, not sold, no effect (its
+	-- effect is a follow-up). Prices from the systems designer (about 1 : 2 : 3.5 a rank; a
+	-- full mod is 8-13 wins at 120 merits). docs/OWNER.md says power is the loadout, never stat
+	-- items: this is built for the owner to decide (docs/BACKLOG.md > Your call).
+	KitMods = {
+		stim_carry = {
+			Name = "Extra stim",
+			Description = "Carry one more stim per rank. Refills fill you to the new count.",
+			Effect = "StimsCarried", -- LoadoutService: stims carried
+			PerRank = 1,
+			MaxRank = 3,
+			Costs = { 200, 400, 750 },
+			Enabled = true,
+			Order = 1,
+		},
+		sprint_roll = {
+			Name = "Extra roll",
+			Description = "One more roll from a full stamina bar per rank (a little more sprint too).",
+			Effect = "StaminaRolls", -- SprintController: Stamina.Max + RollCost per roll
+			PerRank = 1,
+			MaxRank = 3,
+			Costs = { 150, 300, 500 },
+			Enabled = true,
+			Order = 2,
+		},
+		callin_cooldown = {
+			Name = "Quicker call-ins",
+			Description = "Call-ins are back 8 seconds sooner per rank.",
+			Effect = "CallInCooldown", -- seconds (not wired yet; the designer suggests ~5% a rank instead)
+			PerRank = -8,
+			MaxRank = 3,
+			Costs = { 250, 500, 850 },
+			Enabled = false,
+			Order = 3,
+		},
+		revive_speed = {
+			Name = "Faster revives",
+			Description = "Pick a downed squadmate up 15% faster per rank.",
+			Effect = "ReviveSpeed", -- share faster (not wired yet)
+			PerRank = 0.15,
+			MaxRank = 3,
+			Costs = { 150, 300, 500 },
+			Enabled = false,
+			Order = 4,
+		},
+	} :: {
+		[string]: {
+			Name: string,
+			Description: string,
+			Effect: string,
+			PerRank: number,
+			MaxRank: number,
+			Costs: { number },
+			Enabled: boolean,
+			Order: number,
+		},
+	},
+
 	Stim = {
 		Carried = 2,
 		Heal = 60, -- health over Duration
@@ -1219,6 +1365,10 @@ local Config = {
 		Compact = Vector2.new(1180, 680),
 		TemplateWait = 20,
 	},
+	-- Vehicle bodies' meshes (VehicleBody): how long a server waits for them to load before it
+	-- publishes them to the clients (match) or builds the motor pool's display (lobby);
+	-- a body built without them is the Part body.
+	VehicleMeshes = { Wait = 30 },
 
 	-- Body animations: clip names from assets/animations (Mixamo, retargeted by
 	-- assets/animations/build/retarget.py). Ids are the published Roblox animations
@@ -1950,25 +2100,34 @@ local Config = {
 			Cooldown = 180, -- a wrecked or scrapped ATV comes back when the charge does
 			ThrowDistance = 30,
 			Aim = { Shape = "ring", Radius = 5 }, -- where it is set down
-			-- Slung under the helicopter (Nova 2026-11-17): the helo comes in at Height over the
-			-- mark with the ATV on a Line studs long, lowers it to the ground, drops the hook and
-			-- climbs away. Approach and Depart are the flight in and out; the lowering lasts from
-			-- the end of the approach to Time (from the throw), when the server's ATV appears.
+			-- Dropped in a crate (Tien and Nova 2026-11-17; it was slung and lowered, `sling` is
+			-- still a style): the helo flies straight over the mark at Height and Speed from
+			-- Distance out and on as far again, climbing Climb, and never stops; it lets the crate
+			-- go Fall seconds before Time and the crate drops straight down, landing at Time (the
+			-- server's ATV appears inside it). The walls fall open flat over Open, the lid kicks
+			-- off behind; the boards lie Linger seconds and fade over Fade. The crate is the
+			-- vehicle's own size: its extents plus CrateRoom each side and over the top, in
+			-- CrateStep steps (Rules/Arrival.crateSize); a `Crate` (Vector3) on the Vehicle block
+			-- sets one instead.
 			Arrival = {
-				Style = "sling",
+				Style = "crate",
 				Time = 7.5,
 				Smoke = Color3.fromRGB(214, 196, 92),
 				SmokeTime = 8,
-				Approach = 4.5, -- in from Distance studs out to the hover
-				Depart = 3.5, -- the helo climbs away after the hook is dropped
-				Distance = 260,
-				Height = 34, -- the helo's frame above the mark during the hover
-				Line = 16, -- the sling line, studs, from the belly to the ATV's roll bar
-				Climb = 70, -- studs it gains on the way out
+				Distance = 300,
+				Speed = 60,
+				Height = 46, -- the helo's frame over the mark; the crate hangs under its skids
+				Climb = 25,
+				Fall = 1.4,
+				Open = 0.55,
+				Linger = 4,
+				Fade = 1.5,
+				CrateRoom = 0.4,
+				CrateStep = 0.5,
 				RotorVolume = 0.55,
 			},
 			Vehicle = {
-				Body = "atv", -- VehicleBody's build (blocky parts; a mesh later)
+				Body = "atv", -- VehicleBody's build (Nova's model; the Part body while it loads)
 				PerPlayer = 1, -- a second call replaces your empty one (Rules/Vehicle.callCheck)
 				PerSquad = 2, -- two ATVs carry the whole squad
 				Clear = Vector3.new(6, 4, 9), -- the landing box that must be free of walls (no charge spent)
@@ -2034,8 +2193,8 @@ local Config = {
 				-- radio notices: to the squad when it is called, set down and lost; to the caller
 				-- when a call is refused; to the riders when it is about to blow.
 				Radio = {
-					Inbound = "Pike, Control. Helo bringing your ATV in under it. Clear the drop.",
-					Down = "Helo. ATV's on the ground. Hook's clear.",
+					Inbound = "Pike, Control. Helo's coming over with your ATV in a crate. Clear the drop.",
+					Down = "Helo. Crate's down. ATV's yours.",
 					Lost = "Pike, Control. Lost your ATV. You're on foot.",
 					Burning = "It's going up! Get off!",
 					Occupied = "Your ATV's still got people on it.",
@@ -3147,6 +3306,10 @@ local Config = {
 		-- the old views back: the camera on the rack and the pallets, the plain DeskShop list.
 		DeskScreen = {
 			Enabled = true,
+			-- Desks that keep their own view (LobbyDesks ids). The Quartermaster keeps the GTA
+			-- gun wall (Nova, 2026-11-18: the desk screen replaced it by accident): "Show me the
+			-- guns." glides the camera onto his rack and counter (ArmsRackUI) as before.
+			KeepOwnView = { arms_room = true } :: { [string]: boolean },
 		},
 		DeskPromptDistance = 10, -- studs a soldier can talk to a desk from
 		DialogSeconds = 8, -- a desk's line stays up this long

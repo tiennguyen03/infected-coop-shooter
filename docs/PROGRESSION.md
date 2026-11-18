@@ -56,6 +56,66 @@ Infected hear it only close in, [Awareness](#awareness-the-quiet-missions)); the
 0.3 volume with no muzzle flash, and a dark cylinder sits on the muzzle (the shot leaves from its
 end) in third and first person. No damage or range cost yet.
 
+**Optic** (Nova, 2026-11-18; the M16A4 only, other guns next): the second slot. Three optics,
+one row each in `Config.Optics` (typed records in `Shared.Attachments.Optics`; a new optic
+appears by having a row that lists its guns). Numbers from the systems designer: the named
+magnification is the final zoom on the M16's 1.35 irons, and each costs less than the gun it
+competes with.
+
+| Optic | Zoom | Into the sights | Merits |
+|---|---|---|---|
+| Red dot (the RMR) | x1.0 (1.35, the irons' picture) | x0.75 (0.11 s) | 150 |
+| CompM2 (M68) | x1.5 (2.0) | x1.0 (0.15 s) | 250 |
+| ACOG 4x | x3.0 (4.05) | x1.6 (0.24 s) | 400 |
+
+Bought once with merits at the EDIT screen and kept for good: it goes on the soldier's record
+like bought kit (`Rules/Record.owned`, the same UpdateAsync save as the Quartermaster's guns;
+never tabs or Robux). The rules (buy, fit, the three states, the unlock count) are
+`Rules/AttachmentRules` (spec first); the server is the lobby's `OpticService` on the `Optic`
+remote, and the Loadmaster refuses to sign an optic not on the record or on a gun it does not
+fit (`RecordService.allows`). On the gun, `Rules/AttachmentMerge` multiplies the gun's zoom and
+its time into the sights (`CameraController`; in third person the shared ADS view narrows by
+the optic's share). The CompM2 is a real 1x sight; 2x here is the owner's call (its multiplier
+is 1.48 so the zoom stays at the 2x limit for a sight that is not a scope).
+
+On the gun (2026-11-18): each optic is the free model (`assets/3d/ASSET_IDS.md` > Optics) on
+the M16's rail, one mesh per rifle and optic (`wpn_m16_acog`, `wpn_m16_compm2`,
+`wpn_m16_reddot`, `assets/3d/build/optics.py`): the rifle without its flip-up backup sight, the
+optic's mount on the rail, the glass left open. The red dot sits on a riser so its dot is on
+the irons' line (co-witnessed with the front post); the CompM2 and the ACOG ride a little
+higher. Each row's `Fit` names that mesh and its sight on it; `WeaponDefinitions.dressed`
+gives the gun in hand (`PlayerSetup`), the first-person sight line and zoom
+(`CameraController`, `FirstPersonView`) and the EDIT screen's gun (`Showcase` "<gun>+<optic>").
+The ACOG is a scope: aimed in first person it shows the scope picture, as the M110 does.
+
+### Kit Mods
+
+Nova, 2026-11-18 (on `nova/loadmaster-kit-mods`, **for the owner to decide**: it breaks
+`docs/OWNER.md` "power is the loadout, never stat items" and merits buy "new options, never
+stronger versions"; built so Tien can judge it, see `docs/BACKLOG.md` > Your call). A Kit Mod
+is a passive buff on the soldier whatever gun they carry, bought rank by rank with merits
+(never tabs) at the Loadmaster's KIT MODS tab and kept for good. The line with attachments:
+if a bonus changes how one gun behaves, it is an attachment; if it is on the soldier whatever
+the gun, it is a Kit Mod. Field upgrades stay per-mission picks.
+
+| Mod (`Config.KitMods`) | Per rank (max 3) | Rank 1 / 2 / 3 (merits) | State |
+|---|---|---|---|
+| Extra stim (`stim_carry`) | +1 stim carried (`Config.Stim.Carried` 2 → up to 5) | 200 / 400 / 750 | working |
+| Extra roll (`sprint_roll`) | +1 roll from a full bar: `Stamina.Max` + `RollCost` (100 → up to 160; ~1.7 s more sprint a rank) | 150 / 300 / 500 | working |
+| Quicker call-ins (`callin_cooldown`) | -8 s call-in cooldown (the designer suggests ~5% a rank instead) | 250 / 500 / 850 | greyed, not wired |
+| Faster revives (`revive_speed`) | +15% revive speed | 150 / 300 / 500 | greyed, not wired |
+
+Prices from the systems designer (about 1 : 2 : 3.5 a rank; a full mod is 8-13 wins). One row
+per mod; `Shared.KitMods` builds the typed records, and a service asks
+`KitMods.bonusFor(player, effect)` for the effect it owns. Rules: `Rules/KitModRules` (spec
+first): only the next rank, never past the cap, never a disabled mod, never short. Each rank
+bought is an id on the merit record (`<mod>@<rank>`), bought in one UpdateAsync step with its
+merits (lobby `KitModService` through `RecordService.change`, the Quartermaster's save path).
+The match reads the ranks off the record on join (`src/server/KitModService`,
+`MeritService.readRecord`) into the `KitRanks` attribute: `LoadoutService` carries the extra
+stims (refills fill to the new count; the HUD shows it), `SprintController` grows the bar.
+Bots have none. Dev: `SetKitRanks "stim_carry=2;sprint_roll=1"` (DevCommand).
+
 ### The soldier
 
 Every player is a Pike soldier; no classes, no hero kit. A soldier carries a primary, the M17
@@ -251,7 +311,7 @@ out of the door; fire missions are someone on the net. HUD names and radio: [LOR
 | Emplacement | **Concertina** (wire) | 16 x 3 strip for 60 s: 0.4x slow, 5 dps; never vaultable | 2 / 90 | yes |
 | Supply | **Speedball** (ammo bundle) | 4 re-arms (a player again only after stepping out), no lure wave | 1 / 180 | yes |
 | Supply | **Aid Bag** (medical drop) | every soldier within 6 studs: full heal, stims refilled, +25 plate; once each | 1 / 180 | yes |
-| Vehicle | **ATV** (two-seat military ATV) | slung in under the helo; a driver and a back-seat gunner; runs the Infected down ([The ATV](#the-atv-vehicle-call-in)) | 1 / 180 | yes, not played |
+| Vehicle | **ATV** (two-seat military ATV) | dropped in a crate by the helo; a driver and a back-seat gunner; runs the Infected down ([The ATV](#the-atv-vehicle-call-in)) | 1 / 180 | yes, not played |
 
 Every built call-in is thrown (`Kind "throw"`, `ThrowUtil` clamp) except the Anvil, which is
 marked through binoculars (below). Services:
@@ -327,7 +387,7 @@ start on the mark at once).
 | **Concertina** | `unroll` | no smoke | the coil splits into two drums that roll out to the ends paying out a strand, with dust | three rattles | the wire stands at 1.05 s |
 | **Speedball** | `tumble` | yellow smoke | the bundle tumbles down from 50 studs with no chute in 0.75 s | the landing thump | one bounce, dust, ready at 1.5 s |
 | **Aid Bag** | `streamer` | pink smoke | the bag comes down steadily from 38 studs under a 9-stud red and white streamer | the landing thump | the streamer falls across the ground; ready at 1.8 s |
-| **ATV** | `sling` | yellow smoke; rotor wash puffs while it comes down | the helicopter (the insertion's) flies in low along the throw with the ATV on a 16-stud line, hovers 34 up and lowers it | the rotor loop | the hook drops at 7.5 s, the real ATV stands there; the helo climbs away ahead |
+| **ATV** | `crate` (Tien and Nova 2026-11-17; was `sling`, still a style) | yellow smoke | the helicopter (the insertion's) flies straight over the mark 46 up at 60 studs/s with the crate under its skids, never stopping; it lets go 1.4 s before the landing and the crate drops straight down | the rotor loop | the crate lands at 7.5 s (the real ATV appears inside), its walls fall open flat and the lid kicks off behind; the boards lie 4 s and fade. The crate is the vehicle's size plus 0.4 room, in half-stud steps (`Rules/Arrival.crateSize`: 5.5 x 4 x 8.5 for the ATV); a `Crate` on a Vehicle block sets one |
 
 - **Where the values live:** each call-in's row has an `Arrival` block (`Style` plus any
   value it changes) over `Config.CallIns.Arrivals.Defaults`; `Rules/Arrival` merges them and
@@ -351,7 +411,8 @@ start on the mark at once).
 ### The ATV (vehicle call-in)
 
 Nova and Tien, 2026-11-17: the first vehicle. Design by the systems, level and lore agents;
-Nova's picks: a call-in slot (not a free ride or its own slot), slung under the helo. Maps
+Nova's picks: a call-in slot (not a free ride or its own slot), slung under the helo (since
+2026-11-17, Tien's idea: dropped in a crate on a fly-over, see the arrivals table). Maps
 are going to get much bigger, so it is transport as well as a gun platform and a getaway.
 Built, **not played**.
 
@@ -387,6 +448,12 @@ Built, **not played**.
   through, folder `Vehicles`). At 0 it burns 3 s and blows: 120 to the Infected within 10;
   anyone still aboard is thrown off, takes 20 and is knocked down 1.2 s.
 - **HUD:** while riding, a panel over the bottom: the seat, the keys, the ATV's health.
+- **Look** (Nova's own model, 2026-11-17; `docs/STYLES.md` §6 > The ATV): a sport quad with
+  a tall cowl over the front axle, a low saddle, a raised back and a rear rack inside a rail.
+  7.5 long, 3.3 tall; tyres of radius 1 on a 4.81 wheelbase and a 3.28 track; the chassis
+  stands 1.23 over the ground (`VehicleBody.Bodies.atv`, measured on the model). It wears the
+  meshes once they load (the server copies them to the clients for the slung stand-in; the
+  motor pool waits up to `Config.VehicleMeshes.Wait`); before that it is the first Part body.
 - **How riders look** (client `VehiclePose`, the row's `Pose`; a placeholder until a riding
   clip is authored): both seats sit (hips and knees bent over the clip); the driver's hands
   reach the bars and the gun is put away (hidden on every client, and the first-person gun

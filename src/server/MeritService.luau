@@ -69,6 +69,12 @@ local function held(userId: number): Record.Record?
 	return Record.decode(saved, SAVE.StartMerits)
 end
 
+-- The saved record of `userId` (yields; one try), or nil when it cannot be read: the merit
+-- record the lobby keeps (KitModService reads the Kit Mod ranks on it).
+function MeritService.readRecord(userId: number): Record.Record?
+	return held(userId)
+end
+
 -- The wallet the results screen shows (RunEndUI): what the record holds now.
 local function publish(player: Player, record: Record.Record)
 	if player.Parent then

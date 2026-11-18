@@ -6,10 +6,7 @@ last one. **End of a session:** edit this page in place (never append history he
 one note to `handoff/log/` (format in `handoff/log/README.md`). History lives in
 `docs/HISTORY.md`; this page is only "now".
 
-Last updated: 2026-11-17 by Claude (the map room opened up, on `claude/open-map-room`).
-Last updated: 2026-11-17 by Tien + Claude (the Hocker's spit pool as an uneven puddle, on `claude/spit-puddle`).
-Last updated: 2026-11-17 by Tien + Claude (the objective meter and the HUD layout pass, on `claude/objective-progress-visible`).
-Last updated: 2026-11-17 by Claude (every desk on the Loadmaster's look, on `claude/npc-ui-prototype2`).
+Last updated: 2026-11-17 by Tien, Nova + Claude (the Hocker's spit pool as an uneven puddle, on `claude/spit-puddle`; the objective meter and the HUD layout pass, on `claude/objective-progress-visible`; every desk on the Loadmaster's look, on `claude/npc-ui-prototype2`; the map room opened up, on `claude/open-map-room`; vehicles: the ATV, the motor pool and the ATV's own model, on `nova/vehicles-atv`; the M16A4 optic slot, on `nova/m16a4-optic-slot`; Kit Mods at the Loadmaster, on `nova/loadmaster-kit-mods`; the Quartermaster's GTA gun wall back, on `nova/quartermaster-rack`).
 
 ## The game today (on `main`)
 
@@ -41,9 +38,24 @@ that restocks the squad.
   (`Config.CallIns.Landing`, 2026-11-16, **not yet played**), the Doorman a modelled tripod gun not yet seen in game:
   `Config.CallIns.Doorman.Model = 1` puts the old one back), flare on X, the Arms Room on B (stand-in until Nova's lobby screen).
 - **Vehicles** (2026-11-17, Nova; on `nova/vehicles-atv`, **not yet played**): the ATV, a
-  call-in slung in under the helo; a driver and a back-seat gunner on their primary; runs the
+  call-in dropped in a crate by the helo on a fly-over; a driver and a back-seat gunner on their primary; runs the
   Infected down (`docs/PROGRESSION.md` > The ATV). Bought at the new Vehicles desk at the
-  hangar's aft end (the motor pool, `docs/sprints/LOBBY_V1_FALLOW.md` > Motor pool).
+  hangar's aft end (the motor pool, `docs/sprints/LOBBY_V1_FALLOW.md` > Motor pool). It wears
+  Nova's own model (body) and built wheels, ~12k tris (`docs/STYLES.md` §6 > The ATV).
+- **Optics** (2026-11-18, Nova; on `nova/m16a4-optic-slot`): the M16A4's EDIT at the
+  Loadmaster has an Optic slot: Red dot, CompM2, ACOG, bought once with merits and kept on the
+  record, fitted on the `Optic` remote (`OpticService`); zoom and ADS time change in the match
+  (`Rules/AttachmentMerge`, `CameraController`; not yet seen aiming in game). Each optic is on
+  the gun: one mesh per rifle and optic from the free models (`wpn_m16_<optic>`,
+  `assets/3d/build/optics.py`), its sight line through the optic (`WeaponDefinitions.dressed`;
+  the ACOG shows the scope picture). Other guns: the next PR (`Config.Optics` rows' `Guns`, a
+  `Fit` and a mesh each).
+- **Kit Mods** (2026-11-18, Nova; on `nova/loadmaster-kit-mods`, **for Tien to decide**: it
+  breaks OWNER.md "never stat items"): a KIT MODS tab at the Loadmaster sells ranked soldier
+  buffs for merits, kept on the record; Extra stim and Extra roll work, two more are greyed
+  (`docs/PROGRESSION.md` > Kit Mods). **Nova:** `RecordService`'s buy is now
+  `change(player, label, edit)` (the same save), `LoadmasterUI` has the tab bar, new
+  `KitModsTab`; `LoadoutService.freshState` takes the player.
 - **Keys:** every key is a row of `Config.Keys` and every hint reads it (table: `docs/OWNER.md`);
   a key written into client or server code fails the tests. E interact, C or Ctrl crouch, Z prone.
 - **Movement:** sprint on a stamina bar (8 s; a roll costs 20, a slide 10; winded at zero),
@@ -87,21 +99,22 @@ that restocks the squad.
   check: `docs/sprints/CARRIER_V2.md` > In the lobby.
   **Nova:** the Loadout screen (`LoadoutMenu`) was rebuilt
   bigger with each item turning in 3D and its stats (2026-11-16, not yet seen in game; what to
-  check: `handoff/log/2026-11-16-claude-loadmaster-screen.md`). The map room (the Plot in
-  code) has no walls since 2026-11-17 (owner: awkward to walk in and out of, cramped with a
-  full lobby; on `claude/open-map-room`, **not yet seen in game**): the map table stands in open
-  hangar floor, the board on two posts, and players read "MAP ROOM" (**Nova:** the walls are
-  gone from `FallowBuilder.buildPlot`, `FallowLayout.Plot` lost its door fields, the desk
-  title and the runner's role/lines in `LobbyDesks`/`LobbyCrew` changed).
   check: `handoff/log/2026-11-16-claude-loadmaster-screen.md`). **Every desk now looks like the
   Loadmaster** (2026-11-17, owner; on `claude/npc-ui-prototype2`, **not yet seen in game**):
   the Quartermaster's guns, the Call-ins sergeant's call-ins and the motor sergeant's ATV open
   on the Loadout's look with BUY (`DeskScreen`), and every desk's talk panel is one build in
   the menu dress (`DeskTalk`); `Config.Lobby.DeskScreen.Enabled = false` is the old views.
+  **Except the Quartermaster** (2026-11-18, Nova; on `nova/quartermaster-rack`): he keeps the
+  GTA gun wall, the camera on his rack and counter (`Config.Lobby.DeskScreen.KeepOwnView`).
   **Nova:** the Loadout's frame, rows and inspect panel moved out of `LoadoutMenu` into
   `src/client/KitView.luau` (mapped into the lobby; `LoadoutMenu` behaves the same), the
   Gunsmith takes its gun from `Showcase` instead of the rack, and `Showcase` shows a vehicle
-  call-in as its `VehicleBody` (what to check: `handoff/log/2026-11-17-claude-npc-ui.md`).
+  call-in as its `VehicleBody` (what to check: `handoff/log/2026-11-17-claude-npc-ui.md`). The map room (the Plot in
+  code) has no walls since 2026-11-17 (owner: awkward to walk in and out of, cramped with a
+  full lobby; on `claude/open-map-room`, **not yet seen in game**): the map table stands in open
+  hangar floor, the board on two posts, and players read "MAP ROOM" (**Nova:** the walls are
+  gone from `FallowBuilder.buildPlot`, `FallowLayout.Plot` lost its door fields, the desk
+  title and the runner's role/lines in `LobbyDesks`/`LobbyCrew` changed).
 - **Economy:** merits (soft) are paid when a mission ends (Win 120, Partial 60, Loss 0) onto
   the record the Carrier's desks spend from; tabs (hard, Robux or events, never power) are a
   balance on the same record with nothing to buy yet (`docs/OWNER.md`, `docs/ROADMAP.md` >
@@ -125,8 +138,6 @@ that restocks the squad.
   §5 > Nothing stacks on anything). **Nova:** a new HUD element that can grow joins one of
   those flows (`HudTheme.inLeftColumn`, `MissionLine.attach`); `MissionLine.set` takes a table
   now; `Config.SquadPanel.Top` is gone (`Config.Hud.LeftColumnTop`).
-- **Checks:** stylua, selene, rojo build, 494 Lune tests (rules plus the source-wiring spec, which also reads the lobby's remotes and refuses key literals), luau-lsp, CI on every push.
-- **Checks:** stylua, selene, rojo build, 502 Lune tests (rules plus the source-wiring spec, which also reads the lobby's remotes and refuses key literals), luau-lsp, CI on every push.
 
 ## Who owns what
 
@@ -147,7 +158,7 @@ The plan beyond this table, in phases, with the owner's open decisions: [docs/RO
 |---|---|---|---|
 | 1 | Lobby: debrief panel, the Carrier rename; buying is built on `nova/lobby` (merits, not Credits: Nova 2026-11-10; guns and grenades at the Quartermaster's rack, call-ins at the one Call-ins desk since 2026-11-16 (`Config.Lobby.Sellers`, a row's own `Desk` overrides); the Loadmaster signs only for kit on the record); merits are earned on missions and the record holds tabs (Tien, 2026-11-10: `RecordService.grantReceipt`, `SaveSlot.update`, `TabsService`, the balance lines in `RecordClient` / `ArmsRackUI` / `DeskShop`). 2026-11-10: desk dialog rewritten (four voices, random greetings, the same 3-choice talk at every desk), a gloomy overcast sky, lobby music (licensed library, `LobbyMusic`); ship sounds on `nova/lobby-audio` (2026-11-11, `ShipAmbience`: carrier hallway and deck beds, the Plot's radio, crew walla, doors and a horn now and then, crew footsteps; picked by description, Nova to listen); the crew and the soldier on Rthro clips, the soldier's gun slung across the chest with both hands on it (`SlingHands`), a slow stride with a sprint on Shift, every NPC and the soldier (lobby and match, players and bots: `Config.Player.Look`, Tien heads-up) on Roblox's default R15 avatar wearing catalog items (`Shared.AvatarLook`; first try of the picks page's suggestions); night vision on N in the match (`NightVision`, for Nova's night area), the goggles seen flipping down on the helmet on `nova/nvg-flip` (2026-11-11, `Shared.Goggles`; the soldier's helmet is now a plain FAST plus separate PVS-31 goggles; played, works); bots spread out in a loose formation on `nova/mile14` (`Config.Bots.Loose`; heads-up Tien: `BotService.follow` asks `spreadPosition` instead of the slot); the suppressor on `nova/mile14` (EDIT at the Loadmaster, `GunsmithUI`, `Config.Attachments`, docs/PROGRESSION.md > Attachments; heads-up Tien: the Loadout gained `attachments`, `LoadoutMenu` an `edit` option, `PlayerSetup` the suppressor part, `ShotTracer` a 5th argument); Mile 14 started on `nova/mile14` (2026-11-11: its own place Mile 14 Dev on `mile14.project.json`, a first layout, the Infected's five awareness states and gun noise, docs/PROGRESSION.md > Awareness; heads-up Tien: `EnemyService`, `ProjectileServer`, `BotService`, `KitService`, `StanceService` gained noise and stance hooks, all inert off Mile 14); the insertion cutscene on `nova/insertion-cutscene` (`InsertionCutscene`, Nova to playtest; heads-up Tien: RunManager's Insert timing and the brief now wait for it) on `nova/lobby-figures` (2026-11-11, Nova to playtest); the balcony gap closed, the coast burning harder, HARLAN replaces HRD, the Plot's watch officer and paper map, six crew walking the ship, kit on every figure and the Pike's band, chemlight and tourniquet, the five long guns rebuilt and re-uploaded (M16, MP5, M249, Mossberg, M110: tapered stocks, curved magazines, trigger guards; same grip origin and muzzles); the Arms Room fills the port fore corner (glass counter, long-gun wall; rack hover and zoom fixed); the Plot opened up (stand at the map); every NPC is an R15 crew figure; first person in the match on T with arms, gun, reload and real sights on every gun (2026-11-11, Tien + Claude: the sight pictures reworked per gun, `Weapons.<id>.Sight` + `Rules/Sight`, scope pictures with zoom on the M2010, M110 and Goose; **not yet seen in game**: run the dev sight tour, F10, and check the list in `handoff/log/2026-11-11-tien-first-person-views.md`; Nova ran it 2026-11-11: fine but the M249, MP5 and M16, whose eye sat beside the sights because Roblox mirrors the gun meshes left-right; fixed on `nova/scopes` with `MeshAssets.shownPoint`, played: fixed) (Nova; heads-up Tien: `CameraController`, `FirstPersonView`, `WeaponController` shot origin in first person, `Config.Camera.FirstPerson`). **Models still need work** (Nova, 2026-11-10): every NPC is now an R15 crew body (one plain dress mesh, coloured per figure) but faces and kit are still small blocks, the revolver, M2010, Goose and M17 were not reworked, and the rebuilt guns are unseen in a hand in the match | Nova | `docs/LOBBY_MATCH_HANDOFF.md` > What's next; `docs/ROADMAP.md` (merits, tabs, the Carrier) |
 | 1a | Look at the revive animation and tune it | Tien + Claude | Built without a playtest (the owner was playing). Check list in `handoff/log/2026-11-11-tien-revive-animation.md`; every pose number is in `Config.ReviveAnimation`, `Enabled = false` is the off switch |
-| 1a2 | Vehicles: play the ATV (built 2026-11-17, unplayed), then an engine sound, a Blender mesh, the motor sergeant's radio lines, more vehicles once the maps grow | Nova + Claude | check list in `handoff/log/2026-11-17-nova-vehicles-atv.md`; **Tien heads-up:** small hooks in your files (`CallInService`, `ProjectileServer`, `KitService`, `RequisitionService`, `BotService`, `Squad` revive, `EnemyProjectileService.damagePlayer` 4th arg, `LoadoutService.usePrimary`, the client movement/stance/sprint/ability/weapon gates on the `Riding` attribute) |
+| 1a2 | Vehicles: play the ATV (built 2026-11-17, unplayed), then the motor sergeant's radio lines, more vehicles once the maps grow | Nova + Claude | check list in `handoff/log/2026-11-17-nova-vehicles-atv.md`; **Tien heads-up:** small hooks in your files (`CallInService`, `ProjectileServer`, `KitService`, `RequisitionService`, `BotService`, `Squad` revive, `EnemyProjectileService.damagePlayer` 4th arg, `LoadoutService.usePrimary`, the client movement/stance/sprint/ability/weapon gates on the `Riding` attribute) |
 | 1a3 | Look at the objective meter and the HUD layout (2026-11-17, unplayed) | Tien + Claude | check list in `handoff/log/2026-11-17-claude-objective-meter.md`; numbers in `Config.Objectives.Meter` and `Config.Hud` |
 | 1b | Play the away-review fixes (2026-11-16, `claude/review-fixes`, unplayed) | Tien + Claude | check list in `handoff/log/2026-11-16-claude-review-fixes.md`; Nova: the lobby now buys through `SaveSlot.update` |
 | 2 | Tune the feel by playing it | Tien | the 2026-11-11 reward panel, unplayed: is the panel readable and small enough during a fight, is E right, does the objective reward feel better than a pallet, is the full call-in restock before the Warden too much (`Config.Requisition.Pick`, `Config.Crates`); the 2026-11-10 rewards pass, unplayed: half reserve at insert, the second upgrade crate at the hold's end, the 60 s extraction and its second wave (`Config.Extraction.Waves`); Infected spacing first (`Config.Enemies.Spacing`: `Radius`, `Steer.EngageDistance`, `Steer.Strength`; fewer bodies reach a player at once now, so check the damage still bites; what to look for: `handoff/log/2026-11-11-tien-infected-spacing.md`); kick and shake strength, the low-health look (overlaps HealthBarUI's red pulse), the crawl; heartbeat asset was in moderation |

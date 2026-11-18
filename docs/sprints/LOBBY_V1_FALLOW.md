@@ -113,7 +113,10 @@ match place.
   (`DeskTalk`, the Loadout's menu dress since 2026-11-17).
 - **The desk screens** (2026-11-17, owner: "any NPC interaction UI should be using the
   Prototype 2 UI... the same as the Loadmaster"; not yet seen in game): choice 1 at the
-  Quartermaster, Call-ins and Vehicles opens `DeskScreen`, the Loadout screen's look (`KitView`):
+  Call-ins and Vehicles desks opens `DeskScreen`, the Loadout screen's look (`KitView`). The
+  Quartermaster keeps the GTA gun wall (Nova, 2026-11-18: the desk screen had replaced it by
+  accident; `Config.Lobby.DeskScreen.KeepOwnView = { arms_room = true }`, take him off the list
+  to put him on the desk screen). The desk screen:
   what the desk sells in the Loadout's columns with each item's shape, the picked one turning
   in 3D over its stat bars, the person's line under the header in their own voice, and BUY
   (Enter, gamepad Y) in the footer; Back steps back to the talk. Buying is unchanged: the same
@@ -325,8 +328,8 @@ The rack is where guns are **bought** (merits, onto the soldier's record; owner 
   sold for tabs.
 
 - **Talk** (F on the Quartermaster, `ArmsRackUI` for a desk with a `rack` in `LobbyDesks`): a
-  greeting, then 1 "Show me the guns." (the desk screen; the rack view when it is switched
-  off), 2 "How do I get merits?", 3 "That's all." Wording by the lore developer: BUY and a price in
+  greeting, then 1 "Show me the guns." (the camera on the rack, below; since 2026-11-18 he
+  keeps it while the other desks use the desk screen), 2 "How do I get merits?", 3 "That's all." Wording by the lore developer: BUY and a price in
   MERITS may show; never shop, store, wares, sell, lock or unlock.
 - **The corner** (`ArmsRack`, `FallowLayout.ArmsRoom`; Nova 2026-11-10: "use that entire
   corner for him", "the glass case would act as the desk, like in GTA"): the Arms Room fills
@@ -473,7 +476,7 @@ sling across his chest"; the crew's block eyes "dont look right" on the R15 bodi
 | Place | File |
 |---|---|
 | Project | `lobby.project.json` (shares `src/shared`; `src/lobby/shared` as `ReplicatedStorage.Lobby`; maps the match's `src/server/PlayerSetup.luau` into the lobby server and `src/client/HudTheme.luau`, `PaletteController.luau`, `LoadoutMenu.luau` into the lobby client; sets `Lighting.Technology`) |
-| Server | `src/lobby/server/`: `Main.server`, `FallowLayout`, `Build`, `FallowBuilder`, `FallowArt`, `PikeBody`, `NpcBody`, `DeskService`, `ContainmentBoard`, `PlotService`, `LaunchService`, `LanternBird`, `ArmsRack`, `LoadmasterService` |
+| Server | `src/lobby/server/`: `Main.server`, `FallowLayout`, `Build`, `FallowBuilder`, `FallowArt`, `PikeBody`, `NpcBody`, `DeskService`, `ContainmentBoard`, `PlotService`, `LaunchService`, `LanternBird`, `ArmsRack`, `LoadmasterService`, `OpticService` |
 | Client | `src/lobby/client/`: `Main.client`, `LaunchUI`, `DeskDialogUI`, `ArmsRackUI`, `LoadmasterUI`, `DeskShop`, `RecordClient`, `LobbyMusic`, `ShipAmbience`, `SlingHands`, `HoldStill`, `RadarSpin`, `LanternSpool`, `SoldierMoves` |
 | Art | `assets/3d/build/fallow.py` (12 `env_fallow_*` meshes), `lantern.py` (4 `veh_lantern_*`); `MeshAssets` entries; `Config.Lobby.Ship`, `Config.Lobby.Lantern`; attribute `LiftAt`; rule `Rules/ArmsStats` (+ spec), `Config.Lobby.Rack` |
 | Shared | `src/lobby/shared/LobbyDesks`; rules `src/shared/Rules/Manifest`, `Rules/Containment`, `Rules/Handoff` (main's, the teleport data both places share); `Config.Lobby`, `Config.Places`, `Config.Containment`; remotes `Launch` + `Messages.Launch`, `Loadout` (shared with the match); attribute `DeskId` |
@@ -518,7 +521,14 @@ called **Loadout**. Lines by the lore developer (merits, the record, `LobbyDesks
   the rack's copy of the gun turning in a viewport, a list per slot (`Config.Attachments.Slots`:
   the Barrel, NONE or the suppressor), the suppressor shown on the muzzle as it is picked, DONE
   or BACK. The row then reads e.g. "M16A4 +SUP". What is fitted is signed with the rest (the
-  Loadout's `attachments`, saved, flown to the match). The soldier is held still (`HoldStill`, shared with
+  Loadout's `attachments`, saved, flown to the match). **Optic** (2026-11-18, Nova; the M16A4
+  only): under the Barrel, "X/3 OPTICS UNLOCKED" and NONE, Red dot, CompM2, ACOG; a locked
+  optic is greyed with `BUY · <price>`, an owned one reads OWNED, the fitted one is lit
+  EQUIPPED. BUY and picking an optic go to `OpticService` (the `Optic` remote): the server
+  buys onto the record and signs the fitting at once (`LoadmasterService.fit`); the row only
+  changes when it answers, and BACK keeps a fitted optic (rules and numbers:
+  [PROGRESSION.md > Attachments](../PROGRESSION.md#attachments)). Verified live in ZCS Dev
+  2026-11-18: buy, refused buys (owned, short), refused fits (not owned, wrong gun), fit. The soldier is held still (`HoldStill`, shared with
   the rack); BACK or Backspace steps out. Prototype: the whole catalog may be signed for.
   **Bigger, with the item in 3D** (2026-11-16, owner; not yet seen in game): the screen fills
   most of the display (1560x880 at 1080p, a tabbed layout on a phone), each row shows the
@@ -527,6 +537,13 @@ called **Loadout**. Lines by the lore developer (merits, the record, `LobbyDesks
   `Shared.Showcase` (booted in both places), numbers from `Rules/ArmsStats` and
   `Rules/KitCard`; layout in `docs/STYLES.md` §5 > The Loadout screen. Stand-ins: the Hammer,
   Anvil and Aid Bag (a case in their colour) and the frag (a plain grenade) have no model yet.
+  **KIT MODS tab** (2026-11-18, Nova; for the owner to decide, PROGRESSION.md > Kit Mods):
+  LOADOUT | KIT MODS beside BACK, the Loadout screen's own tab buttons (`LoadmasterUI`). KIT
+  MODS covers the lists with `KitModsTab`: a row per mod with its name, what it does, RANK n/3
+  and pips, the next rank's price and BUY (red when affordable), MAXED, or greyed COMING SOON
+  for a mod not switched on. BUY goes to `KitModService` on the `KitMods` remote; the row
+  changes when the server answers. Seen in ZCS Dev (the panel, refusals: disabled, not next,
+  beyond max, short); a bought rank not yet (no test merits on the dev record).
 - **Server** (`LoadmasterService`): checks the request with the match's rules and catalog
   (`Rules/Loadout`, `ArmsRoom`), keeps one signed Loadout per player, answers on the `Loadout`
   remote. **Kept between visits** (2026-11-10): saved in the DataStore `LoadmasterLoadouts`

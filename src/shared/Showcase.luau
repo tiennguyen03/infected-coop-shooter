@@ -153,6 +153,19 @@ function Showcase.init()
 	folder.Parent = ReplicatedStorage
 	for _, id in WeaponDefinitions.allIds() do
 		task.spawn(build, folder, id, { { Mesh = WeaponDefinitions.get(id).Model } })
+		-- The gun with each optic it takes on (the Loadmaster's EDIT): "<gun>+<optic>".
+		local optics: { string } = WeaponDefinitions.options(id).Optic or {}
+		for _, opticId in optics do
+			local mesh = WeaponDefinitions.dressed(id, opticId)
+			if mesh ~= WeaponDefinitions.get(id).Model then
+				task.spawn(
+					build,
+					folder,
+					WeaponDefinitions.dressedId(id, opticId),
+					{ { Mesh = mesh } }
+				)
+			end
+		end
 	end
 	for id, grenade in WeaponDefinitions.Grenades do
 		local mesh = grenade.Model

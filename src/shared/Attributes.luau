@@ -91,6 +91,10 @@ local Attributes = table.freeze({
 	-- Player: what is fitted to each of their guns, Rules/Loadout.encodeFitted
 	-- ("gun.Slot=option;..."; LoadoutService in the match, LoadmasterService on the ship)
 	Fitted = "Fitted",
+	-- Player: the Kit Mod ranks held (match: KitModService from the record; lobby:
+	-- KitModService after a buy), Rules/KitModRules.encode ("stim_carry=2;sprint_roll=1").
+	-- LoadoutService (stims carried) and SprintController (stamina) read it.
+	KitRanks = "KitRanks",
 	LastShotAt = "LastShotAt", -- local only: the client stamps each of its own shots
 	UpgradeKit = "UpgradeKit",
 
