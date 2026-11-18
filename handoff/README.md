@@ -9,6 +9,7 @@ one note to `handoff/log/` (format in `handoff/log/README.md`). History lives in
 Last updated: 2026-11-17 by Claude (the map room opened up, on `claude/open-map-room`).
 Last updated: 2026-11-17 by Tien + Claude (the Hocker's spit pool as an uneven puddle, on `claude/spit-puddle`).
 Last updated: 2026-11-17 by Tien + Claude (the objective meter and the HUD layout pass, on `claude/objective-progress-visible`).
+Last updated: 2026-11-17 by Claude (every desk on the Loadmaster's look, on `claude/npc-ui-prototype2`).
 
 ## The game today (on `main`)
 
@@ -85,6 +86,15 @@ that restocks the squad.
   hangar floor, the board on two posts, and players read "MAP ROOM" (**Nova:** the walls are
   gone from `FallowBuilder.buildPlot`, `FallowLayout.Plot` lost its door fields, the desk
   title and the runner's role/lines in `LobbyDesks`/`LobbyCrew` changed).
+  check: `handoff/log/2026-11-16-claude-loadmaster-screen.md`). **Every desk now looks like the
+  Loadmaster** (2026-11-17, owner; on `claude/npc-ui-prototype2`, **not yet seen in game**):
+  the Quartermaster's guns, the Call-ins sergeant's call-ins and the motor sergeant's ATV open
+  on the Loadout's look with BUY (`DeskScreen`), and every desk's talk panel is one build in
+  the menu dress (`DeskTalk`); `Config.Lobby.DeskScreen.Enabled = false` is the old views.
+  **Nova:** the Loadout's frame, rows and inspect panel moved out of `LoadoutMenu` into
+  `src/client/KitView.luau` (mapped into the lobby; `LoadoutMenu` behaves the same), the
+  Gunsmith takes its gun from `Showcase` instead of the rack, and `Showcase` shows a vehicle
+  call-in as its `VehicleBody` (what to check: `handoff/log/2026-11-17-claude-npc-ui.md`).
 - **Economy:** merits (soft) are paid when a mission ends (Win 120, Partial 60, Loss 0) onto
   the record the Carrier's desks spend from; tabs (hard, Robux or events, never power) are a
   balance on the same record with nothing to buy yet (`docs/OWNER.md`, `docs/ROADMAP.md` >
@@ -109,6 +119,7 @@ that restocks the squad.
   those flows (`HudTheme.inLeftColumn`, `MissionLine.attach`); `MissionLine.set` takes a table
   now; `Config.SquadPanel.Top` is gone (`Config.Hud.LeftColumnTop`).
 - **Checks:** stylua, selene, rojo build, 494 Lune tests (rules plus the source-wiring spec, which also reads the lobby's remotes and refuses key literals), luau-lsp, CI on every push.
+- **Checks:** stylua, selene, rojo build, 502 Lune tests (rules plus the source-wiring spec, which also reads the lobby's remotes and refuses key literals), luau-lsp, CI on every push.
 
 ## Who owns what
 

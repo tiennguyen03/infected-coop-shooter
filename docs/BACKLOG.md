@@ -40,6 +40,7 @@ published from `main`.
 | #56 | Call-ins hold the crowd they land on (Hammer, Anvil, Shrike) | spawn 25 Walkers, call each strike, count kills; does it look like a magnet |
 | #58 | The Warden comes partway through the main objective and is its last act | each objective's checklist in the PR; is he too much on top of the objective |
 | Spit puddle PR | The Hocker's spit pool is an uneven puddle (not a circle), spreads out, bubbles, fumes, shrinks away | dev menu: spawn 1 Hocker, let it spit near you; is it a puddle now; still clear on dark ground; does the edge match where it hurts |
+| NPC UI PR | Every desk looks like the Loadmaster: the Quartermaster, Call-ins and Vehicles open the same big screen with the item turning in 3D, its stats and BUY; the talk panels match | lobby place: buy something at each desk; does BUY feel clear; do you miss the camera on the gun wall (one switch brings it back) |
 | ATV PR | The ATV: a call-in from the new Vehicles desk at the back of the hangar, slung in by the helicopter; one drives, one shoots off the back; runs the Infected down | Nova played the match side; the motor pool in the lobby is unseen |
 | Objective meter PR | Objective progress is a big yellow bar under the objective line ("HOLDING 23 of 60s", red "PAUSED" when you step out); the squad panel and objective list no longer cover each other | Restore Comms at the mast: step in and out; a side objective takes the bar while you work on it |
 
