@@ -178,5 +178,17 @@
   "veh_carrier_tractor": {
     "modelId": 123765570353623,
     "uploadedAt": "2026-11-18T17:56:14.787Z"
+  },
+  "wpn_m16_acog": {
+    "modelId": 112543898025888,
+    "uploadedAt": "2026-11-18T20:55:29.890Z"
+  },
+  "wpn_m16_compm2": {
+    "modelId": 108280623635703,
+    "uploadedAt": "2026-11-18T20:55:42.053Z"
+  },
+  "wpn_m16_reddot": {
+    "modelId": 88119224076426,
+    "uploadedAt": "2026-11-18T20:55:53.072Z"
   }
 }

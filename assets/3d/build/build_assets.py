@@ -1353,6 +1353,11 @@ import guns  # noqa: E402
 
 guns.register(sys.modules[__name__])
 
+# The M16A4 with each optic (free models cut once into assets/3d/source/opt_*) live in optics.py.
+import optics  # noqa: E402
+
+optics.register(sys.modules[__name__])
+
 # Aircraft (the Shrike gunship and its rotor) live in aircraft.py (2026-11-09).
 import aircraft  # noqa: E402
 

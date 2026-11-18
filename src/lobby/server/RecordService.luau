@@ -18,6 +18,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage.Shared.Config)
 local Messages = require(ReplicatedStorage.Shared.Messages)
 local Record = require(ReplicatedStorage.Shared.Rules.Record)
+local AttachmentRules = require(ReplicatedStorage.Shared.Rules.AttachmentRules)
+local Optics = require(ReplicatedStorage.Shared.Attachments.Optics)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local KitPrices = require(ReplicatedStorage.Shared.KitPrices)
 local SaveSlot = require(script.Parent.SaveSlot)
@@ -62,13 +64,20 @@ function RecordService.waitFor(player: Player): Record.Record?
 	return records[player]
 end
 
--- Whether every gun in `loadout` is on the soldier's record.
-function RecordService.allows(player: Player, loadout: Record.Loadout): (boolean, string?)
+export type Signable = Record.Loadout & { attachments: AttachmentRules.Attachments? }
+
+-- Whether every gun in `loadout` is on the soldier's record, and every optic fitted to it
+-- is bought and fits its gun (Rules/AttachmentRules).
+function RecordService.allows(player: Player, loadout: Signable): (boolean, string?)
 	local record = RecordService.waitFor(player)
 	if not record then
 		return false, "record not loaded"
 	end
-	return Record.allows(record, loadout, RecordService.priceOf)
+	local ok, reason = Record.allows(record, loadout, RecordService.priceOf)
+	if not ok then
+		return ok, reason
+	end
+	return AttachmentRules.fittedAllowed(record, loadout.attachments, Optics.Rows)
 end
 
 local function load(player: Player)
@@ -88,24 +97,24 @@ local function load(player: Player)
 	end
 end
 
-local function buy(player: Player, id: unknown)
+-- Buys `id` onto the soldier's record at the price `priceOf` gives (the kit's own rows, or
+-- the optics': OpticService): (true) or (false, reason). The record is sent on success.
+local function purchase(player: Player, id: unknown, priceOf: Record.PriceOf): (boolean, string?)
 	local record = records[player]
 	-- One buy at a time, and none while a receipt is being paid.
 	if not record or typeof(id) ~= "string" or granting[player] or buying[player] then
-		remote:FireClient(player, Messages.Record.Refused, id, "loading")
-		return
+		return false, "loading"
 	end
 	if unread[player] or not slot.store then
 		-- Nothing is saved this visit (see `unread`; Studio without API access): the buy is
 		-- made on the record held here only.
-		local after, ok, reason = Record.buy(record, id, RecordService.priceOf)
+		local after, ok, reason = Record.buy(record, id, priceOf)
 		if not ok then
-			remote:FireClient(player, Messages.Record.Refused, id, reason)
-			return
+			return false, reason
 		end
 		records[player] = after
 		send(player, after)
-		return
+		return true, nil
 	end
 	-- The buy is applied to the record as it is stored, in one step (UpdateAsync), never by
 	-- writing the copy read on join over it: merits the match paid after the soldier joined
@@ -113,14 +122,13 @@ local function buy(player: Player, id: unknown)
 	buying[player] = true
 	local refused: string? = nil
 	local ok, written = pcall(slot.update, slot, player, function(old: unknown): any
-		local saved, reason = Record.buyStored(old, id, RecordService.priceOf, SAVE.StartMerits)
+		local saved, reason = Record.buyStored(old, id, priceOf, SAVE.StartMerits)
 		refused = reason
 		return saved
 	end)
 	buying[player] = nil
 	if not ok or written == nil then
-		remote:FireClient(player, Messages.Record.Refused, id, refused or "busy")
-		return
+		return false, refused or "busy"
 	end
 	local after = Record.decode(written, SAVE.StartMerits)
 	if player.Parent then
@@ -128,6 +136,25 @@ local function buy(player: Player, id: unknown)
 		print(`[RecordService] {player.Name} bought {id}: {after.merits} merits left`)
 		send(player, after)
 	end
+	return true, nil
+end
+
+local function buy(player: Player, id: unknown)
+	local ok, reason = purchase(player, id, RecordService.priceOf)
+	if not ok then
+		remote:FireClient(player, Messages.Record.Refused, id, reason)
+	end
+end
+
+-- Buys `id` at the price `priceOf` gives, on the same saved record and the same one-step
+-- save as the Quartermaster's guns (OpticService: an optic's own row). (true) or (false,
+-- "loading" | "busy" | "unknown" | "owned" | "short").
+function RecordService.buyWith(
+	player: Player,
+	id: string,
+	priceOf: Record.PriceOf
+): (boolean, string?)
+	return purchase(player, id, priceOf)
 end
 
 local function grant(player: Player, purchaseId: string, tabs: number): boolean
