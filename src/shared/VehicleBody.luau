@@ -255,6 +255,10 @@ function VehicleBody.build(bodyId: string, frame: CFrame, anchored: boolean): Mo
 	root.BottomSurface = Enum.SurfaceType.Smooth
 	root.Anchored = anchored
 	root.CanTouch = false
+	-- Always the root of its assembly, riders included: with the meshes the engine picked the
+	-- seated soldier's HumanoidRootPart, so the ATV jumped to the rider when they got on and
+	-- moved as part of the character (Nova, 2026-11-17).
+	root.RootPriority = 127
 	-- Heavier than its riders, so a seated soldier does not tip it.
 	root.CustomPhysicalProperties = PhysicalProperties.new(3, 0.6, 0.1)
 	root.Parent = model
