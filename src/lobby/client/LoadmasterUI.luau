@@ -20,6 +20,7 @@ local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local LobbyDesks = require(ReplicatedStorage.Lobby.LobbyDesks)
 local KitPrices = require(ReplicatedStorage.Shared.KitPrices)
 local DeskShop = require(script.Parent.DeskShop)
+local DeskTalk = require(script.Parent.DeskTalk)
 local GunsmithUI = require(script.Parent.GunsmithUI)
 local HoldStill = require(script.Parent.HoldStill)
 local HudTheme = require(script.Parent.HudTheme)
@@ -58,66 +59,10 @@ local remote: RemoteEvent
 -- --------------------------------------------------------------- the talk panel
 local gui = HudTheme.gui("LoadmasterUI", 7)
 
-local function button(parent: Instance, width: number): TextButton
-	local b = Instance.new("TextButton")
-	b.Size = UDim2.fromOffset(width, 40)
-	b.BackgroundColor3 = HudTheme.Color.Track
-	b.BackgroundTransparency = HudTheme.TrackTransparency
-	b.BorderSizePixel = 0
-	b.AutoButtonColor = true
-	b.Font = HudTheme.Font.Line
-	b.TextSize = 18
-	b.TextColor3 = HudTheme.Color.Text
-	b.TextXAlignment = Enum.TextXAlignment.Left
-	local stroke = Instance.new("UIStroke")
-	stroke.Color = HudTheme.Color.White
-	stroke.Transparency = HudTheme.OutlineTransparency
-	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-	stroke.Parent = b
-	local inset = Instance.new("UIPadding")
-	inset.PaddingLeft = UDim.new(0, 14)
-	inset.Parent = b
-	b.Parent = parent
-	return b
-end
-
-local talk = HudTheme.rect(
-	gui,
-	UDim2.fromOffset(560, 0),
-	HudTheme.Color.Track,
-	HudTheme.TrackTransparency,
-	true
-)
-talk.AnchorPoint = Vector2.new(0.5, 1)
-talk.Position = UDim2.new(0.5, 0, 1, -200)
-talk.AutomaticSize = Enum.AutomaticSize.Y
-talk.Visible = false
-do
-	local padding = Instance.new("UIPadding")
-	padding.PaddingTop = UDim.new(0, 12)
-	padding.PaddingBottom = UDim.new(0, 12)
-	padding.PaddingLeft = UDim.new(0, 16)
-	padding.PaddingRight = UDim.new(0, 16)
-	padding.Parent = talk
-	local list = Instance.new("UIListLayout")
-	list.SortOrder = Enum.SortOrder.LayoutOrder
-	list.Padding = UDim.new(0, 8)
-	list.Parent = talk
-end
-local talkTitle = HudTheme.label(
-	talk,
-	{ size = 22, font = HudTheme.Font.Headline, color = HudTheme.Color.Yellow, rich = true }
-)
-talkTitle.LayoutOrder = 1
-local talkLine = HudTheme.label(talk, { size = 18, font = HudTheme.Font.Body })
-talkLine.LayoutOrder = 2
-talkLine.AutomaticSize = Enum.AutomaticSize.Y
-talkLine.Size = UDim2.fromScale(1, 0)
-talkLine.TextWrapped = true
-local choices = { button(talk, 528), button(talk, 528), button(talk, 528) }
-for index, choice in choices do
-	choice.LayoutOrder = 2 + index
-end
+-- Talk: the same panel at every desk (DeskTalk).
+local talkPanel = DeskTalk.new(gui)
+local talk = talkPanel.frame
+local choices = talkPanel.choices
 HudTheme.parent(gui)
 
 -- The Loadout sits in its own layer above the talk panel.
@@ -139,7 +84,7 @@ local function chooseAction(
 end
 
 local function showTalk(line: string)
-	talkLine.Text = `"{line}"`
+	talkPanel.say(line)
 	talkCloseAt = os.clock() + Config.Lobby.DialogSeconds * 3
 end
 
@@ -161,11 +106,8 @@ local function openTalk(chosen: LobbyDesks.Desk, from: ProximityPrompt, line: st
 	desk = chosen
 	prompt = from
 	mode = "talk"
-	talkTitle.Text = `{chosen.title}  {HudTheme.tint(chosen.who, HudTheme.Color.TextDim)}`
 	local said = chosen.talk
-	choices[1].Text = `1.  {said.open}`
-	choices[2].Text = `2.  {said.ask}`
-	choices[3].Text = `3.  {said.leave}`
+	talkPanel.show(chosen)
 	showTalk(line or said.greetings[math.random(1, #said.greetings)])
 	talk.Visible = true
 	choices[3].Modal = true -- frees the mouse even zoomed into first person

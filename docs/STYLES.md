@@ -226,6 +226,7 @@ UIScale) and its text through `HudTheme.label`.
 | Run timer (`RunTimerUI`) | top centre (0,8) | 16 pt, no panel |
 | Ammo (`LoadoutUI`) | crosshair (+40,+40) | the gun in hand 12 pt above it with "[Q] PISTOL" dim (the other gun); magazine GothamBlack 26 + " / reserve" 16 dim; yellow low, "RELOADING" + bar, red "DRY [R]"; attribute-driven |
 | Loadout screen (`LoadoutMenu`: the Loadmaster's LOADOUT, the match's ARMS ROOM on B) | centre, fitted to the screen (below) | three columns of rows with the item's shape, and an inspect panel with the item turning in 3D over its stat bars: "The Loadout screen" below |
+| Desk screens (lobby `DeskScreen`, talk `DeskTalk`) | centre, the Loadout's size | the Loadout's look for the Quartermaster, Call-ins and Vehicles: what the desk sells, the person's line under the header, BUY in the footer: "The desk screens" below |
 | Reward cards (`RewardPanel`, opened by `ResupplyUI` on a crate's prompt) | centre, DisplayOrder 60 | up to three 300x400 cards 16 apart under "//RESUPPLY" 30 yellow, a 18 pt note and a dim "closes in 0:42"; a card: menu fill (22,8,8) at 0.08 with a red.m 1 px box and a 4 px bar in its kind's colour (supply yellow, field upgrade blue), "[1]" 16 yellow, kind tag 16 right, 88 px icon, name GothamBlack 28, one-line description Gotham 20, red.l "REPLACES ..." 16; hover or gamepad selection: cream 3 px box; taken: cream flash, x1.06, the others shrink and fade, gone in 0.45 s; footer 16: yellow squares + callsigns that have taken theirs, the refusal in red.l, "[E] CLOSE (or walk away)"; black layer behind at 0.8 transparency. On a short screen the panel is held at 0.7 scale or more (name 19 px, description 14 px on 844x390) |
 | Mission line (`MissionLine`, driven by `ObjectiveUI` / `ExtractionUI`) | mission stack: lower centre from (0.5, 0.72) down; touch top centre (0.5, 40) | "MAIN OBJECTIVE  NAME" (name yellow), its reason on the second line the whole time, a dim 14 pt third line (what to do now, timer, distance in metres), then the meter (below); "HOLD the LZ" / "WAITING FOR SQUAD n/m" / red "RETURN to the LZ"; extraction outranks the objective |
 | Objective meter (`MissionLine`, `Config.Objectives.Meter`) | under the mission line | whenever there is progress: GothamBlack 20 readout over a 440x10 hard-edged bar (track at 0.3, 1 px white outline at 0.75, yellow fill easing 0.25 s to each server step). "HOLDING  23 of 60s" (HOLDING yellow) while a hold's seconds rise; "PAUSED  23 of 60s" (red.l, fill dim, outline red.l) when they stopped partway (`Rules/Objectives.holdState`, 1.6 s); "2 of 3" for a count. Shows the objective whose progress rose in the last 4 s, else the main one (`meterFocus`); a side objective's readout starts "SIDE  NAME". Extraction uses it too (waiting and returning read PAUSED) |
@@ -298,6 +299,45 @@ square cells). Code `src/client/LoadoutMenu.luau`, numbers `Config.LoadoutScreen
   `Show` pieces); no model = a stand-in (a frag, or a case banded in the call-in's colour).
 - **Budget:** one turning ViewportFrame (the only per-frame work, only while open) plus about
   18 static row views; stat rows pooled.
+- **Shared pieces:** the frame, the row and the inspect panel are `src/client/KitView.luau`
+  (the Loadout and the desk screens below build from it; change the look there once).
+
+### The desk screens (2026-11-17)
+
+Owner: "any NPC interaction UI should be using the Prototype 2 UI... the same as the
+Loadmaster". Decision (ui-ux-designer): one screen for every desk that hands out kit, built
+from the Loadout screen's own pieces (`KitView`), so the Quartermaster, the Call-ins sergeant
+and the motor sergeant look and read exactly like the Loadmaster; the talk before it gets the
+same menu dress. Code `src/lobby/client/DeskScreen.luau`, `DeskTalk.luau`, wording
+`Rules/DeskOffer`; `Config.Lobby.DeskScreen.Enabled = false` puts the old views back.
+
+- **Talk panel** (`DeskTalk`, every desk): 560 wide at the bottom centre, menu fill (22,8,8)
+  at 0.06 with a red.m 1 px box; "//ARMS ROOM" GothamBlack 22 + who in dim caps; their line
+  Gotham 18 in quotes; three 40 px choice rows (track at 0.35, white 0.75 outline), the number
+  yellow; under the mouse or a gamepad's selection a row turns cream with dark text.
+- **Desk screen** (`DeskScreen`): the Loadout's frame, size and fit, "//" + the desk's header
+  (THE RACK, THE KIT, or the desk's title: VEHICLES). Under the header, the person's line in
+  their own voice: who in dim caps, then the line in quotes (opens on their `openLine`, then
+  their bought / short / refused line after a buy). Merits and tabs yellow GothamBlack 20 top
+  right beside BACK.
+- **Lists:** the Loadout's columns, kept to what the desk sells (`KitPrices`): PRIMARY |
+  SIDEARM + GRENADE | CALL-INS (VEHICLES when every one is a vehicle); empty sections and
+  columns drop out, and a desk with one column gets a 400-wide list. Rows as the Loadout's:
+  the item's flat shape, name, designation; badge top right: the price "400 MERITS" yellow, or
+  "ON RECORD" dim.
+- **Inspect panel:** the Loadout's (the item turning, name, designation, status, line, stat
+  bars against the whole roster). Status: ON YOUR RECORD yellow, or NOT ON YOUR RECORD red.l
+  + the price yellow. A vehicle turns as its own body (`VehicleBody` via `Showcase`).
+- **Footer:** the keys dim 13 on the left (wide, not touch); on the right the cream BUY
+  button 300x56, "BUY · 400 MERITS"; short: dimmed to 0.5, "(SHORT)", still pressable so the
+  person answers; on the record: no fill, yellow "ON YOUR RECORD" with a yellow 1 px box.
+- **Input:** hover inspects (the row gets the yellow box), leaving the rows returns to the
+  picked one; click / tap / A picks (cream); BUY, Enter or gamepad Y buys what is shown;
+  Back, Backspace or B returns to the talk panel.
+- **Kept as they are:** the rack wall and the call-in pallets stay in the world as dressing
+  (the camera views are the switch's old path); the Plot's map view keeps its camera with the
+  new talk panel; the Gunsmith (EDIT) already had the menu dress and now frames its gun with
+  the same cream corners, from `Showcase`.
 
 ---
 
@@ -553,6 +593,9 @@ Color `rgb(112,118,126)`; ColorCorrection Contrast 0.08, Saturation -0.22, Tint
 Helicopter lamps are the warm notes. The hangar desks must still read at a glance.
 
 ### The Carrier's buying panels (2026-11-10)
+
+Since 2026-11-17 every desk buys on the desk screen (section 5 > The desk screens); what
+follows is the old path behind `Config.Lobby.DeskScreen.Enabled = false`. The words still hold.
 
 The Quartermaster's rack card (above) and `DeskShop` (call-ins at the Call-ins desk; the
 Fires desk and the Loadmaster's drops folded into it 2026-11-16) share one look: the HUD track panel and outline, the item name in GothamBlack

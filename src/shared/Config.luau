@@ -3141,6 +3141,13 @@ local Config = {
 			Lift = 0.3, -- studs a hovered or framed piece rises off its pallet
 			ModelScale = 0.13, -- the Shrike's scale model, a share of the real gunship mesh
 		},
+		-- The desk screens (owner 2026-11-17: "any NPC interaction UI should be... the same as the
+		-- Loadmaster"): the Quartermaster's guns, the Call-ins sergeant's call-ins and the motor
+		-- sergeant's vehicles open on the Loadout screen's look (DeskScreen, KitView). false puts
+		-- the old views back: the camera on the rack and the pallets, the plain DeskShop list.
+		DeskScreen = {
+			Enabled = true,
+		},
 		DeskPromptDistance = 10, -- studs a soldier can talk to a desk from
 		DialogSeconds = 8, -- a desk's line stays up this long
 		-- The Fallow's sky: a clear afternoon at sea (owner and Nova, 2026-11-09). One table
