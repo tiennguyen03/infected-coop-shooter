@@ -663,11 +663,18 @@ orange (`rgb(255,150,60)`) plus a ball at the landing point.
   on the spit, bile dripping from the mouth. In flight: an amber-brown ellipsoid stretched
   along its path and wobbling, a dark red clot dragging behind, a tapering strand, drops
   falling off. Impact: a burst of drops off the surface and a blotch with an uneven edge
-  (2.5 s); on the ground the pool is a core disc of exactly the damage radius over a dark red
-  rim, bubbling toward the edge, fading over its last second. A splashed player's screen
-  edges smear with bile for 0.8 s. Budget: bodies pooled and reused, nine burst-only
-  emitters in all whatever the number of spitters, drool and drips capped at 40 drops/s
-  together, 6 blotches, pools at `MaxPuddles`. `Enabled = false` is the old Neon ball and disc.
+  (2.5 s); on the floor, low droplets also skim out. The pool on the ground (owner
+  2026-11-17: the disc was "a little too perfect", "a puddle of liquid") is a puddle of low
+  wet domes, a core and six lobes of varied size and turn from `Rules/PuddleShape` (a new
+  layout each time), each over a dark red rim, with a lighter glint on the core: its edge is
+  uneven but honest, every blob inside 1.04x the damage radius and the whole covering at
+  least 3/4 of it in every direction. It spreads out over 0.3 s with the lobes running a
+  little behind, bubbles toward the edge, gives off faint fumes, and shrinks by 30% while it
+  fades over its last second. A splashed player's screen edges smear with bile for 0.8 s.
+  Budget: bodies pooled and reused (a pool is 14 parts, moved only while it spreads and
+  fades), twelve burst-only emitters in all whatever the number of spitters, drool and drips
+  capped at 40 drops/s together, 6 blotches, pools at `MaxPuddles`. `Enabled = false` is the
+  old Neon ball and disc.
 - First person (`CameraController`, `Config.Camera.FirstPerson`; Nova 2026-11-10): T or the
   right stick click toggles it, the wheel in past `MinDistance` enters and back out leaves.
   The eye sits on the Head (0.45 forward, 0.1 up), so crouch and prone carry it; yaw, pitch,
