@@ -3150,6 +3150,17 @@ local Config = {
 		},
 		DeskPromptDistance = 10, -- studs a soldier can talk to a desk from
 		DialogSeconds = 8, -- a desk's line stays up this long
+		-- Carrier v2 (docs/sprints/CARRIER_V2.md, owner-approved 2026-11-17): the revamped ship's
+		-- dressing (CarrierV2, data CarrierV2Data), a corner for every seller, the open map room,
+		-- the hidden nook under the ramp and the city straight ahead. `Enabled = false` builds
+		-- the ship as before (the fallback switch). `Poses` seats and leans the sellers in their
+		-- corners (NpcPose); off, they stand as before.
+		CarrierV2 = {
+			Enabled = true,
+			Poses = true,
+			RampSplit = 44, -- Z where the ramp's solid wedge stops; a plate covers the nook above it
+			FireRate = 6, -- city fire particles a second per emitter
+		},
 		-- The Fallow's sky: a clear afternoon at sea (owner and Nova, 2026-11-09). One table
 		-- so a day/night cycle can later drive these values instead of FallowBuilder.
 		-- Gloomy (Tien, 2026-11-10): an overcast, cold late afternoon on a grey sea, the sun low

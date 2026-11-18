@@ -78,7 +78,14 @@ that restocks the squad.
   uses the match's idle and walk and carries the signed primary (2026-11-11, **not yet seen in
   game**; **Nova:** small edits in your `PikeBody`, `LoadmasterService`, lobby `Main.client`,
   new `SoldierMoves`; off with `Config.Lobby.Soldier.Enabled = false`; what to check is in
-  the lobby doc > What v1 has). **Nova:** the Loadout screen (`LoadoutMenu`) was rebuilt
+  the lobby doc > What v1 has).
+  **Carrier v2 is in the lobby** (2026-11-18, PR off `claude/carrier-v2-in-lobby`, **not yet seen
+  in Studio**): `CarrierV2` dresses the ship from generated data, the kit meshes are uploaded,
+  the map room is open, a hidden nook under the ramp, the city straight ahead, the sellers posed
+  in their corners (idle loops still to make); off with `Config.Lobby.CarrierV2.Enabled = false`.
+  **Nova:** touches your `FallowBuilder`, `FallowLayout`, `DeskService`, lobby `Main`; what to
+  check: `docs/sprints/CARRIER_V2.md` > In the lobby.
+  **Nova:** the Loadout screen (`LoadoutMenu`) was rebuilt
   bigger with each item turning in 3D and its stats (2026-11-16, not yet seen in game; what to
   check: `handoff/log/2026-11-16-claude-loadmaster-screen.md`). The map room (the Plot in
   code) has no walls since 2026-11-17 (owner: awkward to walk in and out of, cramped with a

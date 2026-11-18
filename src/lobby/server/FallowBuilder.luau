@@ -47,6 +47,7 @@ local DECK_Y = Layout.DeckY
 local DECK_BOTTOM = DECK_Y - Layout.DeckThickness
 local HANGAR_Y = Layout.HangarY
 local HULL_TOP = HANGAR_Y - FLOOR
+local V2 = Config.Lobby.CarrierV2.Enabled -- Carrier v2 (CarrierV2): open map room, hidden nook, city ahead
 
 local function pointLight(parent: BasePart, color: Color3, range: number, brightness: number)
 	local light = Instance.new("PointLight")
@@ -163,16 +164,44 @@ local function buildDeck(ship: Folder)
 	-- rails. A WedgePart rises toward +Z, so it is turned half round.
 	local rise = DECK_Y - HANGAR_Y
 	local run = well.z1 - well.z0
-	Build.part(
-		ship,
-		"Ramp",
-		Vector3.new(well.x1 - well.x0, rise, run),
-		CFrame.new((well.x0 + well.x1) / 2, HANGAR_Y + rise / 2, (well.z0 + well.z1) / 2)
-			* CFrame.Angles(0, math.pi, 0),
-		HANGAR_FLOOR,
-		{ wedge = true, material = Enum.Material.DiamondPlate }
-	)
 	local slope = math.atan2(rise, run)
+	local midX = (well.x0 + well.x1) / 2
+	if V2 then
+		-- Carrier v2: solid from the foot up to RampSplit, a plate above it, so a hidden nook
+		-- opens under the ramp's high end (the future seller's corner; CarrierV2 walls it).
+		local split = Config.Lobby.CarrierV2.RampSplit
+		local splitY = HANGAR_Y + rise * (well.z1 - split) / run
+		Build.part(
+			ship,
+			"Ramp",
+			Vector3.new(well.x1 - well.x0, splitY - HANGAR_Y, well.z1 - split),
+			CFrame.new(midX, (HANGAR_Y + splitY) / 2, (split + well.z1) / 2)
+				* CFrame.Angles(0, math.pi, 0),
+			HANGAR_FLOOR,
+			{ wedge = true, material = Enum.Material.DiamondPlate }
+		)
+		local plateLength = math.sqrt((DECK_Y - splitY) ^ 2 + (split - well.z0) ^ 2)
+		Build.part(
+			ship,
+			"RampPlate",
+			Vector3.new(well.x1 - well.x0, 0.6, plateLength),
+			CFrame.new(midX, (DECK_Y + splitY) / 2, (well.z0 + split) / 2)
+				* CFrame.Angles(slope, 0, 0)
+				* CFrame.new(0, -0.3, 0),
+			HANGAR_FLOOR,
+			{ material = Enum.Material.DiamondPlate }
+		)
+	else
+		Build.part(
+			ship,
+			"Ramp",
+			Vector3.new(well.x1 - well.x0, rise, run),
+			CFrame.new(midX, HANGAR_Y + rise / 2, (well.z0 + well.z1) / 2)
+				* CFrame.Angles(0, math.pi, 0),
+			HANGAR_FLOOR,
+			{ wedge = true, material = Enum.Material.DiamondPlate }
+		)
+	end
 	local railLength = math.sqrt(rise * rise + run * run)
 	for _, x in { well.x0 + 0.3, well.x1 - 0.3 } do
 		Build.part(
@@ -192,7 +221,7 @@ local function buildDeck(ship: Folder)
 		Vector3.new(well.x0, DECK_Y, well.z1),
 		Vector3.new(well.x1, DECK_Y + 3, well.z1 + 0.4),
 		YELLOW,
-		{ material = Enum.Material.SmoothPlastic }
+		{ material = Enum.Material.SmoothPlastic, transparency = if V2 then 1 else 0 } -- v2: pipe rails (CarrierV2) show; this still holds
 	)
 	for _, x in { well.x0, well.x1 } do
 		Build.box(
@@ -201,7 +230,7 @@ local function buildDeck(ship: Folder)
 			Vector3.new(x - 0.2, DECK_Y, well.z0),
 			Vector3.new(x + 0.2, DECK_Y + 3, well.z1),
 			YELLOW,
-			{ material = Enum.Material.SmoothPlastic }
+			{ material = Enum.Material.SmoothPlastic, transparency = if V2 then 1 else 0 }
 		)
 	end
 
@@ -247,7 +276,9 @@ local function buildDeck(ship: Folder)
 
 	-- Floodlight poles along the port edge, over the aft spots (unlit by day; a night cycle
 	-- lights them later).
-	for _, z in { -125, -25 } do
+	-- v2: flood masts (CarrierV2) stand here instead.
+	local poles: { number } = if V2 then {} else { -125, -25 }
+	for _, z in poles do
 		Build.box(
 			ship,
 			"FloodPole",
@@ -682,7 +713,9 @@ end
 local function buildWorld(ship: Folder)
 	local sky = Config.Lobby.Sky
 	buildSea()
-	buildCoast(ship)
+	if not V2 then -- v2: the burning city stands where the hills were (CarrierV2)
+		buildCoast(ship)
+	end
 
 	-- An overcast late afternoon (Config.Lobby.Sky). Templates arrive with their own effects; the
 	-- Fallow's sky replaces them so the place looks the same however it was created.

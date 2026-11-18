@@ -11,6 +11,7 @@
 local Config = require(game:GetService("ReplicatedStorage").Shared.Config)
 
 local FallowLayout = {}
+local V2 = Config.Lobby.CarrierV2.Enabled -- Carrier v2 (CarrierV2): the sellers sit in their corners
 -- Players read "the Carrier"; this module keeps the old name (docs/LORE.md > Naming).
 
 FallowLayout.HalfWidth = 35
@@ -100,7 +101,8 @@ export type DeskPlace = {
 FallowLayout.Desks = {
 	{
 		id = "arms_room",
-		feet = Vector3.new(-26, FallowLayout.HangarY, 124),
+		-- Carrier v2: on his stool, a little further back behind the glass (CarrierV2).
+		feet = Vector3.new(if V2 then -26.6 else -26, FallowLayout.HangarY, 124),
 		facing = Vector3.new(1, 0, 0),
 		counter = false, -- his counter is the glass case (ArmsRack, FallowLayout.ArmsRoom)
 	},
@@ -108,11 +110,13 @@ FallowLayout.Desks = {
 		id = "callins",
 		feet = Vector3.new(27, FallowLayout.HangarY, 105),
 		facing = Vector3.new(-1, 0, 0),
+		counter = if V2 then false else nil, -- v2: he sits on a crate among his kit
 	},
 	{
 		id = "loadmaster",
 		feet = Vector3.new(-2, FallowLayout.HangarY, 88),
 		facing = Vector3.new(0, 0, 1),
+		counter = if V2 then false else nil, -- v2: his hammock and cool box
 	},
 	-- Control's watch officer at the map table in the Plot, between the table and the board,
 	-- facing the door (owner 2026-11-10: someone real in the Plot).
@@ -129,6 +133,7 @@ FallowLayout.Desks = {
 		id = "vehicles",
 		feet = Vector3.new(9, FallowLayout.HangarY, -48),
 		facing = Vector3.new(0, 0, 1),
+		counter = if V2 then false else nil, -- v2: her bench and tyres
 	},
 } :: { DeskPlace }
 
