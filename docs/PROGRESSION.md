@@ -56,6 +56,38 @@ Infected hear it only close in, [Awareness](#awareness-the-quiet-missions)); the
 0.3 volume with no muzzle flash, and a dark cylinder sits on the muzzle (the shot leaves from its
 end) in third and first person. No damage or range cost yet.
 
+**Optic** (Nova, 2026-11-18; the M16A4 only, other guns next): the second slot. Three optics,
+one row each in `Config.Optics` (typed records in `Shared.Attachments.Optics`; a new optic
+appears by having a row that lists its guns). Numbers from the systems designer: the named
+magnification is the final zoom on the M16's 1.35 irons, and each costs less than the gun it
+competes with.
+
+| Optic | Zoom | Into the sights | Merits |
+|---|---|---|---|
+| Red dot (the RMR) | x1.0 (1.35, the irons' picture) | x0.75 (0.11 s) | 150 |
+| CompM2 (M68) | x1.5 (2.0) | x1.0 (0.15 s) | 250 |
+| ACOG 4x | x3.0 (4.05) | x1.6 (0.24 s) | 400 |
+
+Bought once with merits at the EDIT screen and kept for good: it goes on the soldier's record
+like bought kit (`Rules/Record.owned`, the same UpdateAsync save as the Quartermaster's guns;
+never tabs or Robux). The rules (buy, fit, the three states, the unlock count) are
+`Rules/AttachmentRules` (spec first); the server is the lobby's `OpticService` on the `Optic`
+remote, and the Loadmaster refuses to sign an optic not on the record or on a gun it does not
+fit (`RecordService.allows`). On the gun, `Rules/AttachmentMerge` multiplies the gun's zoom and
+its time into the sights (`CameraController`; in third person the shared ADS view narrows by
+the optic's share). The CompM2 is a real 1x sight; 2x here is the owner's call (its multiplier
+is 1.48 so the zoom stays at the 2x limit for a sight that is not a scope).
+
+On the gun (2026-11-18): each optic is the free model (`assets/3d/ASSET_IDS.md` > Optics) on
+the M16's rail, one mesh per rifle and optic (`wpn_m16_acog`, `wpn_m16_compm2`,
+`wpn_m16_reddot`, `assets/3d/build/optics.py`): the rifle without its flip-up backup sight, the
+optic's mount on the rail, the glass left open. The red dot sits on a riser so its dot is on
+the irons' line (co-witnessed with the front post); the CompM2 and the ACOG ride a little
+higher. Each row's `Fit` names that mesh and its sight on it; `WeaponDefinitions.dressed`
+gives the gun in hand (`PlayerSetup`), the first-person sight line and zoom
+(`CameraController`, `FirstPersonView`) and the EDIT screen's gun (`Showcase` "<gun>+<optic>").
+The ACOG is a scope: aimed in first person it shows the scope picture, as the M110 does.
+
 ### The soldier
 
 Every player is a Pike soldier; no classes, no hero kit. A soldier carries a primary, the M17

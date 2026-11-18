@@ -106,6 +106,16 @@ local Messages = table.freeze({
 		State = "state", -- server -> client: (merits, ownedIds, tabs) the soldier's record
 		Refused = "refused", -- server -> client: (gunId, reason) "short" | "owned" | "unknown" | "loading"
 	}),
+	-- Optic (lobby place): the Loadmaster's EDIT, the M16A4's optic slot (OpticService,
+	-- Rules/AttachmentRules). Bought once with merits; the server checks and spends.
+	Optic = table.freeze({
+		Buy = "buy", -- client -> server: (opticId)
+		Equip = "equip", -- client -> server: (gunId, opticId) "" takes the optic off
+		Owned = "owned", -- client -> server: () send the optics on my record
+		State = "state", -- server -> client: (ownedOpticIds)
+		Equipped = "equipped", -- server -> client: (gunId, opticId) fitted and signed
+		Refused = "refused", -- server -> client: (id, reason) "short" | "owned" | "unknown" | "not owned" | "incompatible" | "loading"
+	}),
 	Launch = table.freeze({
 		Manifest = "manifest", -- (spot, names, secondsLeft, squad, isLead) you are aboard; squad 0 = not picked
 		Squad = "squad", -- client -> server: (size) the first aboard picks the squad size, 1 to Capacity

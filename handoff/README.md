@@ -6,6 +6,7 @@ last one. **End of a session:** edit this page in place (never append history he
 one note to `handoff/log/` (format in `handoff/log/README.md`). History lives in
 `docs/HISTORY.md`; this page is only "now".
 
+Last updated: 2026-11-18 by Nova + Claude (the M16A4 optic slot, on `nova/m16a4-optic-slot`).
 Last updated: 2026-11-17 by Claude (the map room opened up, on `claude/open-map-room`).
 Last updated: 2026-11-17 by Tien + Claude (the Hocker's spit pool as an uneven puddle, on `claude/spit-puddle`).
 Last updated: 2026-11-17 by Tien + Claude (the objective meter and the HUD layout pass, on `claude/objective-progress-visible`).
@@ -44,6 +45,14 @@ that restocks the squad.
   call-in slung in under the helo; a driver and a back-seat gunner on their primary; runs the
   Infected down (`docs/PROGRESSION.md` > The ATV). Bought at the new Vehicles desk at the
   hangar's aft end (the motor pool, `docs/sprints/LOBBY_V1_FALLOW.md` > Motor pool).
+- **Optics** (2026-11-18, Nova; on `nova/m16a4-optic-slot`): the M16A4's EDIT at the
+  Loadmaster has an Optic slot: Red dot, CompM2, ACOG, bought once with merits and kept on the
+  record, fitted on the `Optic` remote (`OpticService`); zoom and ADS time change in the match
+  (`Rules/AttachmentMerge`, `CameraController`; not yet seen aiming in game). Each optic is on
+  the gun: one mesh per rifle and optic from the free models (`wpn_m16_<optic>`,
+  `assets/3d/build/optics.py`), its sight line through the optic (`WeaponDefinitions.dressed`;
+  the ACOG shows the scope picture). Other guns: the next PR (`Config.Optics` rows' `Guns`, a
+  `Fit` and a mesh each).
 - **Keys:** every key is a row of `Config.Keys` and every hint reads it (table: `docs/OWNER.md`);
   a key written into client or server code fails the tests. E interact, C or Ctrl crouch, Z prone.
 - **Movement:** sprint on a stamina bar (8 s; a roll costs 20, a slide 10; winded at zero),
