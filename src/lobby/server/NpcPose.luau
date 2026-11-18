@@ -4,7 +4,8 @@
 -- (NpcBody) keeps its look; its Motor6Ds are turned once into the corner's pose: the Quartermaster
 -- perched on his stool leaning on the glass, the call-ins sergeant on his crate with a mug and a
 -- wave, the Loadmaster sitting back in his hammock, the motor sergeant bent over the part in her
--- lap, Control's watch officer tipped back with her boots on the map table. The idle clip
+-- lap, Control's watch officer tipped back with her boots on the map table, the Visitor standing
+-- with his hands in his raincoat pockets. The idle clip
 -- NpcBody plays still breathes on top. Idle loops per seller are the follow-up (the doc).
 --
 -- Angles are degrees about each joint's own axes (R15 rest: limbs down, facing -Z): +X swings a
@@ -92,6 +93,16 @@ local POSES: { [string]: Pose } = {
 			LeftShoulder = Vector3.new(40, 0, 0),
 			LeftElbow = Vector3.new(100, 0, 0),
 			RightShoulder = Vector3.new(-20, 0, 0),
+		},
+	},
+	visitor = { -- standing, hands in his raincoat pockets, head a little tilted (the turn: VisitorLook)
+		root = Vector3.new(0, 0, 0),
+		joints = {
+			Neck = Vector3.new(0, 0, 6),
+			LeftShoulder = Vector3.new(-8, 0, 0),
+			RightShoulder = Vector3.new(-8, 0, 0),
+			LeftElbow = Vector3.new(28, 0, 0),
+			RightElbow = Vector3.new(28, 0, 0),
 		},
 	},
 }

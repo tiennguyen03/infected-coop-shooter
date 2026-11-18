@@ -3161,6 +3161,13 @@ local Config = {
 			RampSplit = 44, -- Z where the ramp's solid wedge stops; a plate covers the nook above it
 			FireRate = 6, -- city fire particles a second per emitter
 		},
+		-- The Visitor in the nook under the ramp (LobbyDesks `visitor`, Carrier v2 only): his head
+		-- slowly follows the nearest soldier in range (VisitorLook, each client); nothing else moves.
+		Visitor = {
+			LookRange = 22, -- studs: a soldier nearer than this is watched
+			LookMaxYaw = 55, -- degrees his head turns either way, at most
+			LookSpeed = 1.5, -- how fast the head catches up (higher is quicker; about 1/s)
+		},
 		-- The Fallow's sky: a clear afternoon at sea (owner and Nova, 2026-11-09). One table
 		-- so a day/night cycle can later drive these values instead of FallowBuilder.
 		-- Gloomy (Tien, 2026-11-10): an overcast, cold late afternoon on a grey sea, the sun low

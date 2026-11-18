@@ -93,7 +93,7 @@ changes is how each space reads as a ship:
 | Loadmaster | feet (-2, 88) facing +Z, no counter; hammock posts (-7.2, 88), (3.2, 88) | keeps loadouts; hoist (3.5, 84), cases (-7.5, 84.5) |
 | Map room | `FallowLayout.Plot` X 4..33, Z -10..30, **no walls** | table unchanged; tally board on posts at X 4, Z 17..27 |
 | Motor pool, motor sergeant | feet (9, -48) facing +Z; bays as `FallowLayout.MotorPool` | Nova's PR #65; her bench X 2.6..7.2, dog X 11..14 |
-| Hidden nook (future seller) | under the ramp's high end, X -29.5..-10.5, Z 20..44; way in X -29.5..-22 at Z 20 (the rest hung with a tarp) | nothing sells there yet; see Vendor corners |
+| Hidden nook, the Visitor | under the ramp's high end, X -29.5..-10.5, Z 20..44; way in X -29.5..-22 at Z 20 (the rest hung with a tarp); his feet (-25.5, 21.2) facing -Z, out of the gap | talks, sells nothing yet; see The Visitor |
 | Spots 1-4 | helo X -12, Z -150 + 45 i | boarding is the yellow ring (PR #55) |
 | City | ahead: quay Z 560, X -1000..900; towers Z 640..720, X -700..760 | laid out as if to port, turned onto the bow (`shore_v2`) |
 
@@ -206,7 +206,7 @@ fore or aft. Nothing in a corner overlaps the walk lines painted on the floor.
 | **Loadout** (ramp foot, feet (-2, 88) facing +Z) | **The Loadmaster.** Rides the door on every lift and naps in a cargo-net hammock between them; wakes up loud, remembers every face he has flown, and keeps the count of everyone he brought back on a door off a dead helicopter. | a cargo-net hammock on two yellow stanchions; flight bag under it; a cool box he uses as a desk (mug, clipboard); the salvaged cabin door with FLOWN BACK and the tally in grease pencil; TODAY'S LIFTS board beside him | **lounging**: sits sideways in the hammock, one boot on the deck, one arm behind his head, pointing you at the board with the grease pencil; idle: rocks the hammock with his boot | cabin blue (110, 170, 255) clipped to the post |
 | **Vehicles** (motor pool front, feet (9, -48) facing +Z) | **The motor sergeant.** Fixed city buses at the depot before her reserve unit was called up; came aboard on the last convoy with a toolbox and a stray dog that would not get off the truck. She writes down which ATVs come back, and asks after the drivers second, but she asks. | two stacked tyres she sits on; a bench with a vice, a clamp work lamp bent over it, her log book and a thermos; a carburettor in her lap; the dog asleep on a folded tarp with water in a hubcap; tool chests behind | **tinkering**: sits on the tyres bent over the part in her lap, wrench in hand, looking up at you; idle: wipes her hands on the rag, scratches the dog | hard white work lamp (236, 244, 255) |
 | **Map room** (open floor, feet (26.8, -3) facing -X) | **Control's watch officer.** Grew up on a street in the city dead ahead; the postcard pinned to the board's corner is that street before. She has had the watch for 214 days, sleeps on a camp cot behind the board, and talks in places and times because it is easier than names. | a swivel chair tipped back; a stool with three steel mugs (all cold) and the sound-powered phone; a gooseneck lamp; the folded cot and her pack; the postcard on the board | **feet up**: tipped back in the chair, boots crossed on the map table's end, mug resting on her chest, one earcup on; idle: sits up to tap a district on the map | the map room's red, plus a small warm lamp on the stool |
-| **Hidden nook** (FUTURE, under the ramp's high end, X -29.5..-10.5, Z 20..44; way in at the port end of its aft face) | **The visitor** (no sign, no job title on show; owner idea, not built: a rotating seller of experimental government weapons; owner 2026-11-17: "hidden in like the corner of the ship"). Comes aboard now and then on a helicopter that is not one of ours, with cases nobody else is cleared to open; polite, patient, no rank and no unit, and the Quartermaster will not stand near him. | a tarp hung across the ramp's back with a 7.5-stud gap at the port end, a netted pallet in front of it; inside, two sealed cases under seal tape and a locked tall case; a folding chair with his raincoat over it; a chessboard on a drum, a game half played against nobody; a document case; one cold bulb on a cord | **waiting**: stands just inside the gap, hands in his raincoat pockets, head slightly tilted. When he is away the nook is empty except the cases | cold dim (170, 214, 226); nothing else lit |
+| **Hidden nook** (under the ramp's high end, X -29.5..-10.5, Z 20..44; way in at the port end of its aft face) | **The Visitor** (no sign, no job title on show; a weekly rotating seller of experimental government weapons, in the lobby since 2026-11-18 with dialog only, see The Visitor; owner 2026-11-17: "hidden in like the corner of the ship"). Comes aboard now and then on a helicopter that is not one of ours, with cases nobody else is cleared to open; polite, patient, no rank and no unit, and the Quartermaster will not stand near him. | a tarp hung across the ramp's back with a 7.5-stud gap at the port end, a netted pallet in front of it; inside, two sealed cases under seal tape and a locked tall case; a folding chair with his raincoat over it; a chessboard on a drum, a game half played against nobody; a document case; one cold bulb on a cord | **waiting**: stands just inside the gap, hands in his raincoat pockets, head slightly tilted. When he is away the nook is empty except the cases | cold dim (170, 214, 226); nothing else lit |
 
 **No lit cigarette** (owner 2026-11-17: the question went unanswered, so the safe choice): no
 lit cigarette, no smoke, no ashtray. The sapper keeps an unlit cigarette behind his ear, holds a
@@ -238,7 +238,7 @@ where soldiers stand, not on the seat.
 | The Loadmaster | sitting sideways in the hammock, one boot on the deck | sways the hammock with the boot; settles back with an arm over his eyes; every so often taps the board with the grease pencil |
 | The motor sergeant | sitting on the tyres, the part in her lap | wipes the part with the rag, turns it; reaches down and scratches the dog's head |
 | Control's watch officer | tipped back, boots crossed on the map table | tosses a pen up and catches it; now and then sits up to tap the map, then tips back |
-| The visitor (future) | standing, hands in his coat pockets | stands still; only his head turns slowly to follow the nearest player in range (a Neck look-at in code, not a clip) |
+| The Visitor | standing, hands in his coat pockets (`NpcPose.visitor`) | stands still; only his head turns slowly to follow the nearest player in range (`VisitorLook`, built: a Neck turn in code, not a clip) |
 
 ## Budgets: today vs v2 (measured by `carrier_v2.report`)
 
@@ -319,6 +319,39 @@ from the Blender stand-ins, not seen on the R15 rig: a seller sunk into a seat o
 `root` tweak), that every kit mesh loaded (Output: `MeshAssets: could not build`), the text
 orientation on the floor stencils, the walk into the hidden nook from the port side, the open map
 room, boarding still from every ring, and the city ahead from the deck.
+
+## The Visitor (2026-11-18: dialog built, stock not built)
+
+Owner: "the visitor is fine for now, it should change every week and sell like 5 items, do not
+implement the items yet, just give him some dialog for now." Who he is: `docs/lore/desk_crew.md`
+> The Visitor (canon); his lines are there and in `LobbyDesks` (desk `visitor`).
+
+**Built (lobby, Carrier v2 only):** his lobby R15 figure stands just inside the tarp's gap
+(`FallowLayout.Desks`, added only when `Config.Lobby.CarrierV2.Enabled`), hands in his pockets
+(`NpcPose`), his head slowly following the nearest soldier within 22 studs on each client
+(`VisitorLook`, `Config.Lobby.Visitor`). His look is parts on the rig (`VisitorBody`): the coat's
+colour on the torso and arms, a coat skirt to the knees, a sweater strip and a shirt collar at
+the open front, a turned-up coat collar, a red lanyard and a white badge reading ESCORT
+REQUIRED; no catalog items yet, no screening band. No sign and no map marker (`LobbyDesks`
+`unmarked`); the prompt reads Talk / VISITOR, reaches 8 studs and needs a line of sight, so he
+is not found through the tarp or from the ramp above. The talk is the shared desk panel
+(`DeskTalk` through `DeskDialogUI`): "What do you sell?" gets "Nothing on the table this
+week...", "Who are you?" an evasive answer, "Leave." his parting line, then the panel closes.
+His first line, "You walked past twice. Come in.", is said once per visit (the record has no
+flag for it, so it comes back on the next visit to the Carrier).
+
+**Stock rules (written down, not built; the item list is designed later):**
+
+- **Five items at a time**, one stock for everyone on every server.
+- **It changes every week**, on a fixed UTC day and hour (the week number picks the five, so
+  every server agrees without talking to each other); an item that leaves does not come back
+  for a while.
+- **Each item is a permanent unlock** onto the soldier's record, paid in **merits at high
+  prices**, around 1,500 to 2,500 each (to be tuned against what a mission pays; the
+  systems designer sets them).
+- **Every item is a sidegrade with a drawback**, never a straight upgrade (experimental
+  government kit: it does something the issued kit cannot, and costs you something for it).
+- Until the stock is built, "What do you sell?" says nothing is on the table this week.
 
 ## Still weak
 
