@@ -868,32 +868,53 @@ Patient reuse the frame. Index hosts never dismember: their plates are the mecha
   the screening route: Gate lane, bus line, Inner Gate, under the bridge, the Apron, then the
   hunt (walk times out after 75 s). A member within 90 studs during the walk gets the
   sighting line. Radio lines: LORE.md.
-- **Body.** 7,000 hp at scale 1.9, +33% per extra living player (the one exception to "more
-  Infected, not tougher": one body cannot be more bodies). Headshot x2 once the helmet is off.
-- **Plates** (one rule): helmet 300, chest 400 (was 500 until 2026-11-10), back 400 (the flank), shoulders 300 each,
-  shield 600. A round into a plate does 25% to the plate and nothing to the body; a round into
-  a limb whose plate is gone does 150%. At half a plate cracks (yellow pip); at zero it flies
-  off, he staggers 1.5 s. HUD order: HELM, CHEST, BACK, L SHLD, R SHLD, SHIELD.
+- **Body.** 5,000 hp at scale 1.9 (7,000 until the aggression pass, 2026-11-18,
+  [WARDEN_AGGRESSIVE.md](sprints/WARDEN_AGGRESSIVE.md)), +33% per extra living player (the
+  one exception to "more Infected, not tougher": one body cannot be more bodies). Headshot x2
+  once the helmet is off. Walk 12 studs/s (13 below 60%, 15 in the rage; the soldier walks 16).
+- **Plates** (one rule): helmet 200, chest 300, back 400 (the flank and the weak spot),
+  shoulders 200 each, shield 400. A round into a plate does 25% to the plate and nothing to
+  the body; a round into a limb whose plate is gone does 150%. At half a plate cracks (yellow
+  pip); at zero it flies off, he staggers 1.5 s. HUD order: HELM, CHEST, BACK, L SHLD, R SHLD,
+  SHIELD.
+- **Weak spot: his back** (the plate over his radio pack, `Plates.Back.WeakSpot`). A round
+  into it counts whole (not 25%), pops the headshot marker, and half of it goes through to
+  his body; it ignores his guard; breaking it staggers him 3 s. Control names it 10 s into
+  the fight.
 - **Attacks**, each announced by his words ("WARDEN: ...") on the boss bar. Where you stand picks
-  his move: **Bash** (0-15 studs, 70° arc, 40, 0.9 s windup; roll through it); **Shield
+  his move: **Bash** (0-15 studs, 70° arc, 40, 0.7 s windup; a shield punch with a step, no
+  spin; roll through it); **Shield
   Sweep** (17 studs, 180°, 25 and a shove; get behind him); **Overhead Slam** (17 x 6 line at
   a body that stopped moving in reach, 60, 1.3 s; step aside); **Ground Pound** (23-stud ring
   drawn through the 1.4 s windup, 30 and 2.4 s knocked down; beat it with distance or a
   ledge, not the roll; he is stuck 2.6 s after); **Stomp** (a body within 7 studs: 8.5-stud
-  disc, 20 and 1.8 s knocked down, 0.6 s; roll it); **Charge** (19-45 studs, 1.2 s windup,
-  45 studs at 40/s, 35; hard cover stuns him 3 s); **Gas Canister** (phase 2+, or any phase
-  at a perched member; furthest member within 70, 10 + a 9-stud puddle 6 s); **Guard** (his
+  disc, 20 and 1.8 s knocked down, 0.6 s; roll it); **Leap** (at the member furthest from the
+  rest, 22-70 studs, every 9 s, 7 below 60%, 5 in the rage: a 0.8 s crouch with the
+  9.5-stud ring already on the ground where they stood, 0.8 s in the air, 35 and 1.2 s
+  knocked down; leave the ring, the roll does not beat it; stay together);
+  **Charge** (19-60 studs, 1.2 s windup,
+  45 studs at 40/s, 35; hard cover stuns him 3 s); **Gas Canister** (every phase; furthest
+  member within 70 when that member is past his reach, 10 + a 9-stud puddle 6 s);
+  **Volley** (the rage only: a canister at every member within 70, every 12 s); **Guard** (his
   plates took 150 inside 3 s: shield up 2.5 s, half speed, frontal plates take 25%; flank
-  him). He walks a beat between attacks (1.0 / 0.7 / 0.4 s by phase), never repeats one
-  except the Bash, never chains two knockdowns. Limb attacks miss a rolling body; the Pound
-  and the Charge do not. Knocked down: no moving, firing or abilities; 1 s immunity on the
-  get-up (`Config.Knockdown`). Bots step out of the ring and the lines.
-- **Phases** by body health: below 60% the **Riot Call** (6 Walkers + 2 Runners, +3 Walkers
-  per extra player); below 25% a second call, charges every 5 s, walk 11. While he is up the
-  wave loop spawns at x1.5 interval, 8 fewer alive, no Brutes.
+  him). Out of reach the order is Volley, Leap, Charge, Canister (`Rules/WardenBrain.farPick`).
+  He walks a beat between attacks (0.5 / 0.35 / 0.15 s by phase), never repeats one
+  except the Bash, never chains two knockdowns (the Leap counts). Limb attacks miss a rolling
+  body; the Pound, the Leap and the Charge do not. Knocked down: no moving, firing or
+  abilities; 1 s immunity on the get-up (`Config.Knockdown`). Bots step out of the rings and
+  the lines.
+- **Phases** by body health (`Rules/WardenBrain.phase`): below 60% the **Riot Call** (6
+  Walkers + 2 Runners, +3 Walkers per extra player), walk 13, leap every 7 s; below 30% the
+  **rage**: a second call, his words "WEAPONS FREE", Control's warning, walk 15, charges every
+  5 s, leaps every 5 s, the Volley. While he is up the wave loop spawns at x1.5 interval, 8
+  fewer alive, no Brutes.
 - **Kill.** Priority pallet at the corpse, everyone alive healed and re-armed; extraction
   opens (with him in the objective: once its work is done too). Corpse stays 8 s.
-- **Target fight** 100-120 s for a squad that works the plates; retune plate health first.
+- **Target fight** 60-90 s for a solo squad, more of it moving than shooting (was 100-120 s,
+  2-3 minutes in practice). Fallbacks: `Leap.Enabled = false`; `Animations.Infected.Warden.attack
+  = "warden_bash"` puts the old spinning Bash clip back.
+- **Dev.** F1 > THE WARDEN: "In front of me" (F9), "To the rage" (`RageWarden`: his body just
+  under 30%), "Kill him".
 
 ## The Infected roster
 

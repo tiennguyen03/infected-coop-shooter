@@ -152,6 +152,7 @@ local Attributes = table.freeze({
 	Cracked = "Cracked",
 	Exposed = "Exposed",
 	Flank = "Flank",
+	WeakSpot = "WeakSpot", -- a plate's share of each round passed to the body (the Warden's back)
 
 	-- Blast visuals (AirStrikeService, KitService, MineService): the server tags each blast
 	-- flash part with the CollectionService tag BlastTag (a tag, not an attribute, kept here

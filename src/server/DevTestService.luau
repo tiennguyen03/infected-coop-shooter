@@ -15,6 +15,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local Config = require(ReplicatedStorage.Shared.Config)
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local CallInDefinitions = require(ReplicatedStorage.Shared.CallInDefinitions)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
@@ -402,6 +403,20 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 			end
 		end
 		print("[DevTest] KillWarden")
+	end,
+	-- The Warden's body just under the rage threshold (the last Phases row): see the rage now.
+	RageWarden = function()
+		local phases = Config.Index.Warden.Phases
+		local below = phases[#phases].Below
+		for _, model in CollectionService:GetTagged("Enemy") do
+			if model:GetAttribute(Attributes.EnemyType) == "Warden" then
+				local humanoid = model:FindFirstChildOfClass("Humanoid")
+				if humanoid and humanoid.Health > 0 then
+					humanoid.Health = humanoid.MaxHealth * (below - 0.01)
+				end
+			end
+		end
+		print("[DevTest] RageWarden")
 	end,
 	-- The Index: the full entrance from the Gate, or the Warden in front of you (no walk).
 	SpawnWarden = function()

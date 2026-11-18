@@ -48,6 +48,10 @@ local TELL_TEXT: { [string]: string } = {
 	sweep = "...clear the lane. CLEAR THE LANE...",
 	slam = "...hold still. HOLD STILL...",
 	stomp = "...off the wire. OFF THE WIRE...",
+	-- Aggression pass (2026-11-18; placeholders until the lore pass).
+	leap = "...you. YOU. Stay where you are...",
+	volley = "...gas, gas, GAS. All of you...",
+	rage = "...ALL POSTS. WEAPONS FREE. WEAPONS FREE...",
 }
 
 local frame: Frame = nil :: any

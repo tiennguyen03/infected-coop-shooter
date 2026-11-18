@@ -1445,6 +1445,9 @@ local Config = {
 			warden_slam = "rbxassetid://80930861193470",
 			warden_stomp = "rbxassetid://137160328942631",
 			warden_hit = "rbxassetid://92513440124088",
+			-- Keyed by assets/animations/build/keyed.luau (no Mixamo source), 2026-11-18.
+			warden_shove = "rbxassetid://119777822260499",
+			warden_leap = "rbxassetid://129607022708712",
 			knockdown_back = "rbxassetid://98193119951691",
 			getup_back = "rbxassetid://136455455125454",
 			-- Roblox's stock R15 climb (the Animate script's ClimbAnim): played on a ladder
@@ -1555,9 +1558,12 @@ local Config = {
 			-- The Warden stands upright: his own set. idle plays whenever he stands still,
 			-- guard is an upper-body overlay (shield up) over the walk, charge loops during
 			-- the Gate Charge, riot on each Riot Call, throw on the Gas Canister (upper body).
+			-- attack = "warden_shove" (keyed shield punch, 2026-11-18); "warden_bash" is the old
+			-- Mixamo Power Slash that spun him a full turn. leap = his Leap (keyed).
 			Warden = {
 				move = "warden_walk",
-				attack = "warden_bash",
+				attack = "warden_shove",
+				leap = "warden_leap",
 				death = "warden_death",
 				idle = "warden_idle",
 				guard = "warden_guard",
@@ -1598,7 +1604,7 @@ local Config = {
 			prone_walk_b = 4,
 			zombie_crawl = 6,
 			-- Downloaded in place (no root motion to measure), so by eye.
-			warden_walk = 6,
+			warden_walk = 11, -- 6 at scale 1 by eye, times his 1.9 scale (the old 6 slid his boots)
 			warden_run = 16,
 		},
 		WalkRunThreshold = 20, -- studs/s: faster than this plays the run clip (walk 16, sprint 24)
@@ -2856,9 +2862,10 @@ local Config = {
 			WaypointReach = 6,
 			WalkTimeout = 75, -- the hunt starts anyway after this long on the lane
 			SightingRange = 90, -- a living member this close during the walk: the sighting line
-			SpawnDelay = 1.5, -- stands still after spawning
+			SpawnDelay = 0.8, -- stands still after spawning (was 1.5: the aggression pass)
 			GateOpenDelay = 3,
 			HideDelay = 2.5, -- boss bar stays this long after the fight
+			WeakSpotHintDelay = 10, -- seconds after he spawns that Control names his weak spot (Radio.WeakSpot)
 			TellHold = 1.6, -- seconds a tell line stays on the boss bar
 			RiotCallSpacing = 1, -- frames between the bodies of a Riot Call (one burst would hitch)
 			RiotCallHold = 2.0, -- seconds he stands and roars on a Riot Call (the riot clip)
@@ -2869,47 +2876,79 @@ local Config = {
 			ArmouredMultiplier = 0.25, -- a round into a plate (the plate takes it, not the body)
 			ExposedMultiplier = 1.5, -- a round into a limb whose plate is gone
 			-- Plates: { Limb = the R15 part it welds to, Mesh = assets/3d piece, Health }.
-			-- Flank: full damage even while he guards (the back).
+			-- Flank: full damage even while he guards (the back). WeakSpot (the back plate over
+			-- his radio pack): the share of each round that also goes through to his body; the
+			-- round is taken whole (WeakSpot.RoundMultiplier below, not ArmouredMultiplier).
+			-- Aggression pass (2026-11-18): plates lighter (old: helmet 300, chest 400,
+			-- shoulders 300, shield 600) now that he hunts.
 			Plates = {
-				Helmet = { Limb = "Head", Mesh = "inf_warden_plate_helmet", Health = 300 },
-				Chest = { Limb = "UpperTorso", Mesh = "inf_warden_plate_chest", Health = 400 },
+				Helmet = { Limb = "Head", Mesh = "inf_warden_plate_helmet", Health = 200 },
+				Chest = { Limb = "UpperTorso", Mesh = "inf_warden_plate_chest", Health = 300 },
 				Back = {
 					Limb = "UpperTorso",
 					Mesh = "inf_warden_plate_back",
 					Health = 400,
 					Flank = true,
+					WeakSpot = 0.5,
 				},
 				ShoulderL = {
 					Limb = "LeftUpperArm",
 					Mesh = "inf_warden_plate_shoulder_l",
-					Health = 300,
+					Health = 200,
 				},
 				ShoulderR = {
 					Limb = "RightUpperArm",
 					Mesh = "inf_warden_plate_shoulder_r",
-					Health = 300,
+					Health = 200,
 				},
-				Shield = { Limb = "LeftLowerArm", Mesh = "inf_warden_plate_shield", Health = 600 },
+				Shield = { Limb = "LeftLowerArm", Mesh = "inf_warden_plate_shield", Health = 400 },
 			},
 			PlateOrder = { "Helmet", "Chest", "Back", "ShoulderL", "ShoulderR", "Shield" }, -- boss bar pips
 			CrackFraction = 0.5, -- a plate below this fraction reads cracked
 			PlateBreakStagger = 1.5,
 			PlateBreakImpulse = 30, -- studs/s the plate flies off at
 			PlateDebris = 5, -- seconds a fallen plate lies there
-			-- Shield Bash: close, frontal arc. Roll out of it.
+			-- The weak spot (Plates.Back.WeakSpot): a round into it counts whole; breaking it
+			-- staggers him BreakStagger seconds instead of PlateBreakStagger.
+			WeakSpot = { RoundMultiplier = 1, BreakStagger = 3 },
+			-- Shield Bash: close, frontal arc. Roll out of it. The clip is warden_shove (a
+			-- shield punch, keyed); the Mixamo Power Slash spun him a full turn.
 			Bash = {
 				Range = 8,
-				Windup = 0.9,
+				Windup = 0.7, -- was 0.9
 				ArcDegrees = 70, -- narrower since the Sweep: Bash = step aside, Sweep = get behind
 				Damage = 40,
 				Cooldown = 3,
-				Recovery = 0.6,
+				Recovery = 0.4, -- was 0.6
 				StrikeAt = 0.45, -- fraction of the bash clip where the blow lands (rate-scaled to Windup)
 			},
+			-- Leap: at the straggler (Rules/WardenBrain.isolated) between MinRange and MaxRange.
+			-- The tell: he crouches Windup seconds while the landing ring is already on the
+			-- ground where they stood; he lands Flight seconds later. Everyone on the ground inside
+			-- Radius (x ScaleReach) is hit and knocked down; the roll does not beat it, leaving
+			-- the ring does. Counts as a knockdown attack (never two in a row).
+			Leap = {
+				Enabled = true, -- false: no Leap (the fallback switch)
+				MinRange = 22,
+				MaxRange = 70,
+				Windup = 0.8,
+				Flight = 0.8,
+				Height = 14, -- studs at the top of the arc
+				Radius = 5,
+				Damage = 35,
+				Knockdown = 1.2,
+				Recovery = 1.0,
+				Cooldown = 9, -- Phases override (LeapCooldown)
+				FirstDelay = 3, -- seconds after spawning before the first leap
+				StrikeAt = 0.75, -- fraction of the warden_leap clip where he lands
+			},
+			-- Rage volley (phase MinPhase on): a canister at every member inside
+			-- Canister.MaxRange at once (Canister's damage and puddle).
+			Volley = { MinPhase = 3, Windup = 1.0, Recovery = 0.6, Cooldown = 12 },
 			-- Gate Charge: a straight line at speed; hard cover in the way stuns him (WallStun).
 			Charge = {
 				MinRange = 19, -- leaves the ring just past the Bash to the Pound
-				MaxRange = 45,
+				MaxRange = 60, -- was 45
 				Windup = 1.2,
 				Distance = 45,
 				Speed = 40,
@@ -2917,19 +2956,20 @@ local Config = {
 				Damage = 35,
 				Cooldown = 10,
 				FirstDelay = 6, -- seconds after spawning before the first charge
-				Recovery = 0.8,
+				Recovery = 0.5, -- was 0.8
 				WallStun = 3,
 				Probe = 3, -- studs ahead of the root (at scale 1) the charge looks for hard cover
 				HitHeight = 8, -- height difference inside which the charge still hits a body
 			},
-			-- Gas Canister (phase 2+): lobbed at the furthest member in range; a puddle.
+			-- Gas Canister (every phase since the aggression pass; was phase 2+): lobbed at the
+			-- furthest member in range; a puddle.
 			Canister = {
-				MinPhase = 2,
+				MinPhase = 1,
 				MaxRange = 70,
 				Windup = 1,
 				Damage = 10,
 				Cooldown = 8,
-				Recovery = 0.5,
+				Recovery = 0.3, -- was 0.5
 				Projectile = {
 					Speed = 50,
 					Size = 1.2,
@@ -2952,7 +2992,7 @@ local Config = {
 			-- Kit expansion (systems-designer pass): where you stand picks his move.
 			-- Beat (IndexService.chooseAttack): seconds he walks between one recovery ending
 			-- and the next decision, by phase. The pause is what makes a rhythm, not a spam.
-			AttackGap = { 1.0, 0.7, 0.4 },
+			AttackGap = { 0.5, 0.35, 0.15 }, -- was { 1.0, 0.7, 0.4 }: the aggression pass
 			-- Close-band weights among ready attacks; a crowd (CrowdCount members inside the
 			-- shape) doubles Sweep and Pound. Never the same attack twice in a row except the
 			-- Bash; a knockdown attack is never followed by another.
@@ -2981,7 +3021,7 @@ local Config = {
 				Range = 9,
 				ArcDegrees = 180,
 				Windup = 1.1,
-				Recovery = 0.8,
+				Recovery = 0.6, -- was 0.8
 				Cooldown = 8,
 				Damage = 25,
 				Pushback = 40, -- studs/s shove away from him (client Impact "push")
@@ -2992,7 +3032,7 @@ local Config = {
 				Length = 9,
 				Width = 3,
 				Windup = 1.3,
-				Recovery = 1.2,
+				Recovery = 0.9, -- was 1.2
 				Cooldown = 10,
 				Damage = 60,
 				StrikeAt = 0.5,
@@ -3008,21 +3048,27 @@ local Config = {
 				StrikeAt = 0.45,
 			},
 			-- Phases, entered at or below a body fraction; each opens with a Riot Call
-			-- (spawnWave round him, 25-35 studs) and may retune him.
+			-- (spawnWave round him, 25-35 studs) and may retune him (Rules/WardenBrain.phase).
+			-- The last is the rage (Rage = true: the rage tell, and the Volley opens): faster
+			-- feet, shorter cooldowns. Base walk is EnemyDefinitions.Warden.WalkSpeed (12).
 			Phases = {
 				{
 					Below = 0.6,
 					RiotCall = { Walker = 6, Runner = 2 },
 					WalkersPerExtraPlayer = 3,
 					PoundCooldown = 11,
+					LeapCooldown = 7,
+					WalkSpeed = 13,
 				},
 				{
-					Below = 0.25,
+					Below = 0.3, -- was 0.25
+					Rage = true,
 					RiotCall = { Walker = 6, Runner = 2 },
 					WalkersPerExtraPlayer = 3,
 					ChargeCooldown = 5,
 					PoundCooldown = 8,
-					WalkSpeed = 11,
+					LeapCooldown = 5,
+					WalkSpeed = 15, -- was 11; the soldier walks 16, sprints 24
 				},
 			},
 			-- The field while he is up: fewer ambient spawns, a smaller horde, no Brutes.
@@ -3042,6 +3088,9 @@ local Config = {
 				FirstPlate = "Plate's off. That's bone under it. Keep working the seams.",
 				LastPlate = "Last plate. He's just a man again. Put him down.",
 				RiotCall = "...all posts, Gate. Crowd at the wire. Send the reserve...",
+				-- Aggression pass placeholders (2026-11-18) until the lore developer's pass.
+				WeakSpot = "Control: the radio pack on his back. Rounds go through it. Get behind him.",
+				Rage = "He's hurt and he's fast now. Stay together: he jumps whoever's alone.",
 				Kill = "The Warden is down. Control copies. Gate's yours, Pike. Pallet inbound.",
 			},
 		},

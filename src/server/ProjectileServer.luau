@@ -202,6 +202,10 @@ function ProjectileServer.hitMultiplier(
 	-- The Index's armour (IndexService): a plated part takes the round at the armoured rate
 	-- (DamageService routes it to the plate); a limb whose plate is gone is exposed.
 	if typeof(part:GetAttribute(Attributes.PlateHealth)) == "number" then
+		-- The weak spot (his back) takes the round whole and pops the headshot marker.
+		if typeof(part:GetAttribute(Attributes.WeakSpot)) == "number" then
+			return Config.Index.Warden.WeakSpot.RoundMultiplier, "headshot"
+		end
 		return Config.Index.Warden.ArmouredMultiplier, "plate"
 	end
 	if part.Name ~= "Head" then
