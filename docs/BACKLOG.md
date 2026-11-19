@@ -40,7 +40,7 @@ Merging #92 (Integration 5, "Create a merge commit") brings in #86 and #88-#91 a
 | Vehicles: the ATV, follow-ups (Nova) | driver's hands on the bars, faster, the motor sergeant's radio lines, more vehicles as maps grow (the ATV wears Nova's model since 2026-11-17) |
 | Optics for the other guns (Nova) | the M16's three are on the gun (2026-11-18); each other gun needs a `Fit` and a mesh per optic |
 | Checkpoint Delta revamp in Blender (proposal, pictures first) | layers along the highway, multi-storey buildings, consistent vehicles; Desktop `Delta_v2` when done |
-| The big map, next steps | spawning for a big map (Infected thinned out far away, none stuck in the river), then Delta v2 in the middle, then real art two areas at a time |
+| The big map, next steps | fill it after the fun sprint is played (roaming packs, road fights, small stops every 150-250 studs, wrecks and cover); then judge the size (shrink to ~1,200 if still empty); then Delta v2 in the middle and real art two areas at a time || Next after #92 is played | difficulty levels; a four-player test with Nova and friends plus a performance check; a first-time player pass (tutorial / what confuses a newcomer); save versioning (building) |
 
 ## 4. Your call
 
