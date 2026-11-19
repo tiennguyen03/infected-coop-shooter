@@ -459,6 +459,12 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 	RestartRun = function(player)
 		DevTestService.restartRun(player)
 	end,
+	-- The big map (Config.DeltaXL, server DeltaXL) for the rest of this session, then a fresh
+	-- run so the squad drops at a corner. One way: Stop and Play goes back to Config.
+	BigMap = function(player)
+		print("[DevTest] BigMap ->", require(script.Parent.DeltaXL).apply())
+		DevTestService.restartRun(player)
+	end,
 	-- Flies the caller to this match's lobby (HandoffService.lobbyPlaceId: Config.Places), for
 	-- a tester who joined the match place directly. Teleports never run in Studio.
 	ToLobby = function(player)

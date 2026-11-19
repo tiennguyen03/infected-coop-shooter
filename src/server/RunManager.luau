@@ -95,6 +95,9 @@ local function beginRun()
 			+ (if Config.Insertion.Enabled then Config.Insertion.LeadSeconds else 0)
 	)
 	setState("Insert", "")
+	-- The big map draws now: the drop corner follows the main objective, and the bots and
+	-- the cutscene land there (Config.DeltaXL; nothing happens on today's map).
+	ObjectiveService.prepare(HandoffService.objective())
 	BotService.startRun()
 	-- The squad lands: with the insertion cutscene on (Config.Insertion, client
 	-- InsertionCutscene) Insert lasts the cutscene plus Run.InsertSeconds and the objectives are

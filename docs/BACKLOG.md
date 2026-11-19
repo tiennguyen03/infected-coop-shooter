@@ -4,6 +4,7 @@ The one page to open to see what is waiting, what is being built, and what needs
 Plain words, newest state. Updated in the same commit as the work that changes it.
 Last updated: 2026-11-18 (the Visitor). (Integration 2, #63, was playtested by Tien and merged to main on
 Last updated: 2026-11-18 (Warden aggressive added under Try it). Earlier: 2026-11-17. (Integration 2, #63, was playtested by Tien and merged to main on
+Last updated: 2026-11-18 (the big map). (Integration 2, #63, was playtested by Tien and merged to main on
 2026-11-17: call-ins land, Warden in the objective, the Loadmaster screen, one main
 seller, call-in display, board in the ring, review fixes, Nova's ATV. The "Try it" rows for
 #56, #58 and the ATV are now in main.)
@@ -53,6 +54,7 @@ published from `main`.
 | Objective meter PR | Objective progress is a big yellow bar under the objective line ("HOLDING 23 of 60s", red "PAUSED" when you step out); the squad panel and objective list no longer cover each other | Restore Comms at the mast: step in and out; a side objective takes the bar while you work on it |
 | Kit Mods PR | Kit Mods at the Loadmaster: a KIT MODS tab, ranked buffs for merits (Extra stim, Extra roll; two greyed) | **decide first** (Your call 13); then buy a rank, check stims and the stamina bar in a match |
 | Rack PR | The Quartermaster's GTA gun wall is back (the desk screen had replaced it); Call-ins and Vehicles keep the desk screen | talk to the Quartermaster, "Show me the guns.": the camera on the wall, hover, click a gun, Q to the counter |
+| Big map PR | Checkpoint Delta grown to 1,800 x 1,800 as grey blocks: today's base in the middle, eight areas round it (farms, truck stop, water works, camp, rail yard, houses, interchange, fuel farm), a river with a ford and two bridges; you drop at a far corner and the helicopter's pickup is only called when the main objective is done | F1 > RUN > "Big map on"; walk or drive the loop; is it too empty, too far, is the river readable; how long a run takes. The Infected are not yet spread for a big map (`docs/sprints/DELTA_XL.md` > What breaks) |
 
 Merge order when you are happy: #18 before #25 and #28; #16 before #32; #15 before #36 and
 #37; #21 before #38; #17 is replaced by #24. Several of these touch the same files; Claude
@@ -73,6 +75,7 @@ joins them at merge time (already done once in the test mix).
 | Vehicles: the ATV, follow-ups (Nova) | driver's hands on the bars, faster, the motor sergeant's radio lines, more vehicles as maps grow (the ATV wears Nova's model since 2026-11-17) |
 | Optics for the other guns (Nova) | the M16's three are on the gun (2026-11-18); each other gun needs a `Fit` and a mesh per optic |
 | Checkpoint Delta revamp in Blender (proposal, pictures first) | layers along the highway, multi-storey buildings, consistent vehicles; Desktop `Delta_v2` when done |
+| The big map, next steps | spawning for a big map (Infected thinned out far away, none stuck in the river), then Delta v2 in the middle, then real art two areas at a time |
 
 ## 4. Your call
 
@@ -91,6 +94,8 @@ joins them at merge time (already done once in the test mix).
 | 11 | Mile 14: v1, v2, or v2's skyline on v1's smaller frame? | look at the pictures first |
 | 12 | Generator to 4.8, light-tower collision as two boxes | older calls still open |
 | 13 | Kit Mods (Nova's PR): permanent ranked buffs bought with merits. OWNER.md says power is the loadout, never stat items, and merits buy new options, never stronger versions. Allow them? | your rule; if yes, the OWNER.md lines change with it |
+| 13 | Big map: its river runs east-west north of the checkpoint, but the map room's paper map has the river down the west side. Call it a side river that joins it ("the river")? | yes |
+| 14 | Big map: switch it on for everyone after you have played it, or keep it a test until the Infected are spread for it (step 3)? | keep it a test until step 3 |
 
 Decided 2026-11-11 (no longer open): game picks the main objective for now, lobby choice
 later; two side objectives per run; tabs will buy guns and upgrades; keep HARLAN; yellow
