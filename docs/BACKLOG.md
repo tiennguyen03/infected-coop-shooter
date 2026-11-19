@@ -3,7 +3,7 @@
 The one page to open to see what is waiting, what is being built, and what needs you.
 Plain words, newest state. Updated in the same commit as the work that changes it.
 Last updated: 2026-11-18 (the Visitor). (Integration 2, #63, was playtested by Tien and merged to main on
-Last updated: 2026-11-18 (Warden aggressive added under Try it). Earlier: 2026-11-17. (Integration 2, #63, was playtested by Tien and merged to main on
+Last updated: 2026-11-18 (the Warden as a real boss added under Try it). Earlier: Warden aggressive. Earlier: 2026-11-17. (Integration 2, #63, was playtested by Tien and merged to main on
 Last updated: 2026-11-18 (the big map). (Integration 2, #63, was playtested by Tien and merged to main on
 2026-11-17: call-ins land, Warden in the objective, the Loadmaster screen, one main
 seller, call-in display, board in the ring, review fixes, Nova's ATV. The "Try it" rows for
@@ -20,6 +20,7 @@ published from `main`.
 
 | PR | What | What to look at |
 |---|---|---|
+| The Warden as a real boss (`claude/fun-warden`, built on #86) | He arrives over the top (warning, ring, dive, screen shake, roar, the boss bar slams in, his own music); bigger, never flinches, turns heavily, a new heavy walk with boots you feel; at 66% and 33% he roars and calls Brutes; new big attacks: the Quake (shockwave rings: jump or roll them) and the Rampage (three charges in a row); his charges smash small cover; standing still makes you his leap target (`docs/sprints/FUN_WARDEN.md`) | F1 > THE WARDEN > "In front of me" (F9), then "To stage 2", "Quake now", "To stage 3", "Rampage now". Does he feel like a boss now; is the walk heavy, not goofy (keyed blind); are the shakes too much; is the music audible (it may sit in moderation for a while); how long does the fight take with the squad |
 | Warden aggressive (`claude/warden-aggressive`) | The Warden hunts: leaps at whoever strays from the squad (a yellow ring where they stood, then he lands on it), walks faster, throws gas from the start, a rage below 30% (gas at everyone, more leaps); his back is a weak spot; less health; the spinning Bash is now a shield punch (`docs/sprints/WARDEN_AGGRESSIVE.md`) | F1 > THE WARDEN > "In front of me" (F9), then "To the rage". Does he feel dangerous; can you always see the leap coming; does the shield punch and the leap look heavy, not goofy (they were keyed blind); is 5,000 hp now too little |
 | #77 Carrier v2 in the lobby | The revamped ship in the lobby: frames, pipes, deck gear, Easter eggs, every seller posed in their own corner, the map room open, a hidden nook under the ramp, the burning city straight ahead (`docs/sprints/CARRIER_V2.md` > In the lobby; `Config.Lobby.CarrierV2.Enabled` turns it off) | not yet seen in Studio; the poses are set blind and may need nudging; the sellers' idle loops are still to make |
 | The Visitor (`claude/the-visitor`) | The hidden seller in the nook under the ramp: a man in a long raincoat with a red ESCORT REQUIRED badge, hands in his pockets, his head following you; talk to him (no sign, find him from the port side behind the ramp). Dialog only, he sells nothing yet; a deck hand now says "Nobody's under the ramp." | his lines and the first-meeting line; the head turn (smooth, not creepy-wrong); the coat and badge read at a glance; can you talk to him through the tarp (you should not) |

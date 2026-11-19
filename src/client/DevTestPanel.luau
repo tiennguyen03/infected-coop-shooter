@@ -370,9 +370,21 @@ local function tabs(): { Tab }
 						hotkey = Enum.KeyCode.F9,
 						echo = "Warden here",
 					}, {
-						label = "To the rage",
-						send = cmd("RageWarden"),
-						echo = "Warden to the rage",
+						label = "To stage 2 (the call)",
+						send = cmd("WardenStage2"),
+						echo = "Warden stage 2",
+					}, {
+						label = "To stage 3 (the rage)",
+						send = cmd("WardenStage3"),
+						echo = "Warden stage 3",
+					}, {
+						label = "Quake now",
+						send = cmd("WardenQuake"),
+						echo = "Warden quake",
+					}, {
+						label = "Rampage now",
+						send = cmd("WardenRampage"),
+						echo = "Warden rampage",
 					}, {
 						label = "Kill him",
 						send = cmd("KillWarden"),

@@ -173,6 +173,20 @@ end
 -- A UI that needs the mouse (the dev panel) frees the cursor while it holds a reason.
 -- A cutscene holds the camera (InsertionCutscene): the follow camera stands aside until off.
 local cinematic = false
+-- A shake from something near the camera (the Warden's boots and blows, BossPresence):
+-- `power` degrees at `position`, nothing at `radius`; radius 0 shakes at full power anywhere.
+-- Adds to the blast shake under the same cap and decay.
+function CameraController.shake(position: Vector3, power: number, radius: number)
+	local camera = workspace.CurrentCamera
+	local from = lastFocus or (camera and camera.CFrame.Position) or position
+	local added = if radius <= 0
+		then power
+		else Feel.shake(power, (position - from).Magnitude, radius)
+	if added > 0 then
+		shakeAmplitude = Feel.addShake(shakeAmplitude, added, Config.Camera.Shake.Cap)
+	end
+end
+
 function CameraController.setCinematic(on: boolean)
 	cinematic = on
 end

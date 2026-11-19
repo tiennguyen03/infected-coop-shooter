@@ -1448,6 +1448,7 @@ local Config = {
 			-- Keyed by assets/animations/build/keyed.luau (no Mixamo source), 2026-11-18.
 			warden_shove = "rbxassetid://119777822260499",
 			warden_leap = "rbxassetid://129607022708712",
+			warden_stride = "rbxassetid://128664443037961", -- the heavy walk (the boss pass, 2026-11-18)
 			knockdown_back = "rbxassetid://98193119951691",
 			getup_back = "rbxassetid://136455455125454",
 			-- Roblox's stock R15 climb (the Animate script's ClimbAnim): played on a ladder
@@ -1568,7 +1569,7 @@ local Config = {
 			-- attack = "warden_shove" (keyed shield punch, 2026-11-18); "warden_bash" is the old
 			-- Mixamo Power Slash that spun him a full turn. leap = his Leap (keyed).
 			Warden = {
-				move = "warden_walk",
+				move = "warden_stride", -- the keyed heavy walk (boss pass); "warden_walk" is the old one
 				attack = "warden_shove",
 				leap = "warden_leap",
 				death = "warden_death",
@@ -1611,7 +1612,10 @@ local Config = {
 			prone_walk_b = 4,
 			zombie_crawl = 6,
 			-- Downloaded in place (no root motion to measure), so by eye.
-			warden_walk = 11, -- 6 at scale 1 by eye, times his 1.9 scale (the old 6 slid his boots)
+			warden_walk = 13, -- 6 at scale 1 by eye, times his scale (2.2 since the boss pass; was 11 at 1.9)
+			-- Keyed: ~10.5 studs per 1.3 s cycle at scale 2.2 (an estimate; IndexService also
+			-- matches the rate to his real ground speed, so the boots never slide).
+			warden_stride = 8,
 			warden_run = 16,
 		},
 		WalkRunThreshold = 20, -- studs/s: faster than this plays the run clip (walk 16, sprint 24)
@@ -2921,8 +2925,12 @@ local Config = {
 			RiotCallHold = 2.0, -- seconds he stands and roars on a Riot Call (the riot clip)
 			IdleSpeed = 1, -- studs/s of root speed below which the idle clip plays over the walk
 			SyncInterval = 0.2,
-			HealthPerExtraPlayer = 0.33,
-			ScaleReach = 1.9, -- the body's scale: reach distances below are at scale 1
+			-- Boss pass (2026-11-18): 0.33 -> 0.5, so four players get a 2-3 minute fight
+			-- (x2.5 body and plates) while solo with bots stays 5,000.
+			HealthPerExtraPlayer = 0.5,
+			-- The body's scale (keep equal to EnemyDefinitions.Warden.Scale): reach distances
+			-- below are at scale 1. 1.9 -> 2.2 in the boss pass: he reads bigger.
+			ScaleReach = 2.2,
 			ArmouredMultiplier = 0.25, -- a round into a plate (the plate takes it, not the body)
 			ExposedMultiplier = 1.5, -- a round into a limb whose plate is gone
 			-- Plates: { Limb = the R15 part it welds to, Mesh = assets/3d piece, Health }.
@@ -2939,7 +2947,7 @@ local Config = {
 					Mesh = "inf_warden_plate_back",
 					Health = 400,
 					Flank = true,
-					WeakSpot = 0.5,
+					WeakSpot = 0.75, -- was 0.5: the boss pass rewards getting behind him more
 				},
 				ShoulderL = {
 					Limb = "LeftUpperArm",
@@ -3101,26 +3109,128 @@ local Config = {
 			-- (spawnWave round him, 25-35 studs) and may retune him (Rules/WardenBrain.phase).
 			-- The last is the rage (Rage = true: the rage tell, and the Volley opens): faster
 			-- feet, shorter cooldowns. Base walk is EnemyDefinitions.Warden.WalkSpeed (12).
+			-- Boss pass (2026-11-18): the stages at two thirds and one third (were 60% and
+			-- 30%); each call brings Brutes (RiotCall.Brute; PerExtraPlayer adds bodies per
+			-- extra living player, rounded down: Rules/WardenBrain.summon) and opens with the
+			-- stage roar (StageRoar). Stage 2 opens the Quake and the charge through cover
+			-- (Smash), stage 3 (the rage) the Rampage.
 			Phases = {
 				{
-					Below = 0.6,
-					RiotCall = { Walker = 6, Runner = 2 },
-					WalkersPerExtraPlayer = 3,
+					Below = 0.66, -- was 0.6
+					Radio = "Stage2", -- Control's line (Radio below; was "RiotCall")
+					RiotCall = { Walker = 6, Runner = 2, Brute = 1 },
+					PerExtraPlayer = { Walker = 3, Brute = 0.5 },
 					PoundCooldown = 11,
 					LeapCooldown = 7,
 					WalkSpeed = 13,
 				},
 				{
-					Below = 0.3, -- was 0.25
+					Below = 0.33, -- was 0.3
+					Radio = "Rage",
 					Rage = true,
-					RiotCall = { Walker = 6, Runner = 2 },
-					WalkersPerExtraPlayer = 3,
+					RiotCall = { Walker = 6, Runner = 3, Brute = 2 },
+					PerExtraPlayer = { Walker = 3, Brute = 0.5 },
 					ChargeCooldown = 5,
 					PoundCooldown = 8,
 					LeapCooldown = 5,
 					WalkSpeed = 15, -- was 11; the soldier walks 16, sprints 24
 				},
 			},
+			-- The boss pass (2026-11-18, docs/sprints/FUN_WARDEN.md; owner: "he doesn't move
+			-- like a boss"). Each block has its own off switch. Studs here are not
+			-- reach-scaled unless the line says so.
+			-- Entrance: he comes over the top. The landing ring shows Warn seconds (Control's
+			-- warning, his roar far off, the music starts), then he dives FromHeight studs in
+			-- Fall seconds onto it: everyone inside Radius is hit and knocked down, everyone
+			-- feels the shake. He roars RoarHold seconds and the boss bar slams in. Enabled =
+			-- false: he appears where he spawns, as before.
+			Entrance = {
+				Enabled = true,
+				Warn = 2.5,
+				Fall = 1.1,
+				FromHeight = 110,
+				FromBack = 40, -- studs back along the line from the nearest member to the ring
+				Radius = 14,
+				Damage = 25,
+				Knockdown = 1.5,
+				Shake = 4, -- degrees of camera shake for everyone, any distance
+				RoarHold = 2.4,
+				DevDistance = 30, -- F1 "In front of me": he lands this far ahead of you
+			},
+			-- Weight: how he moves. NoFlinch: rounds never play a flinch on him (EnemyService).
+			-- TurnRate: degrees a second he turns walking (WindupTurnRate tracking his target
+			-- through a windup); 0 = the Humanoid's instant turn, as before. StepMarks: points
+			-- in the walk clip (fractions) where a boot lands: the step sound and a camera
+			-- shake (StepShake degrees at his feet, nothing at StepShakeRadius). ImpactShake:
+			-- the Pound, the Stomp, a landing, the Quake, a wall: degrees at the centre, nothing
+			-- at ImpactShakeRadius. Markers: the Charge and the Rampage draw their lane on the
+			-- ground for the squad (the Pound, Leap and Quake draw rings).
+			Weight = {
+				NoFlinch = true,
+				TurnRate = 150,
+				WindupTurnRate = 260,
+				TrackLock = 0.35, -- seconds before a blow lands that he stops turning (step aside)
+				StepMarks = { 0.25, 0.75 },
+				StepShake = 1.2,
+				StepShakeRadius = 45,
+				ImpactShake = 3.5,
+				ImpactShakeRadius = 70,
+				Markers = true,
+				RateMin = 0.4, -- the walk clip's rate is his ground speed / its MoveClipSpeed,
+				RateMax = 2.2, -- clamped here
+			},
+			-- His fight loop (client BossPresence; assets/audio/build/warden_drone.js, uploaded
+			-- 2026-11-18): starts with the landing warning, louder and faster each stage, fades
+			-- out on his death.
+			Music = {
+				Enabled = true,
+				Id = "rbxassetid://122577606238229",
+				Volume = { 0.35, 0.45, 0.6 }, -- by stage
+				Speed = { 1, 1.04, 1.08 }, -- PlaybackSpeed by stage
+				FadeIn = 2,
+				FadeOut = 3,
+			},
+			-- Stage roar (each Phases row): he stands RiotCallHold seconds and roars; everyone
+			-- inside Radius is shoved Push studs/s away (no damage); the shake is felt by all.
+			StageRoar = { Radius = 20, Push = 45, Shake = 3 },
+			-- Quake (stage MinPhase on): fists up for Windup seconds (the ring of its reach on
+			-- the ground), then Waves rings run out from him at Speed studs/s, WaveGap seconds
+			-- apart, to Radius. A ring hits each body on the ground it crosses (Damage and a
+			-- knockdown); jump it, roll it or be outside. Chosen for a crowd round him (CrowdCount
+			-- on the ground inside Radius) or anyone in it out of his reach.
+			Quake = {
+				Enabled = true,
+				MinPhase = 2,
+				Radius = 36,
+				Windup = 1.6,
+				Waves = 2,
+				WaveGap = 0.75,
+				Speed = 26,
+				Damage = 30,
+				Knockdown = 1.2,
+				AirHeight = 1.5, -- studs of feet above the ground that count as in the air
+				CrowdCount = 2,
+				Recovery = 1.0, -- after the last ring has run out
+				Cooldown = 14,
+				StrikeAt = 0.55, -- fraction of the pound clip where the fists land
+			},
+			-- Rampage (the rage on): Charges Gate Charges back to back, each at the member
+			-- furthest from where the last ended, ReWindup seconds to turn and mark the lane.
+			Rampage = { Enabled = true, MinPhase = 3, Charges = 3, ReWindup = 0.6, Cooldown = 20 },
+			-- Smash (stage MinPhase on): a charge into cover no bigger than MaxSize studs on
+			-- every side goes through it (it flies apart, comes back next run) instead of the
+			-- WallStun. Tagged parts, people and the ground are never smashed.
+			Smash = {
+				Enabled = true,
+				MinPhase = 2,
+				MaxSize = 8,
+				MaxParts = 30,
+				Fling = 45,
+				Debris = 6,
+			},
+			-- Camp: a member who has not moved MoveStuds in Seconds is the Leap's first pick
+			-- (Rules/WardenBrain.camper), before the straggler. Standing still is how you die.
+			Camp = { Enabled = true, Seconds = 4, MoveStuds = 3, Sample = 0.5 },
 			-- The field while he is up: fewer ambient spawns, a smaller horde, no Brutes.
 			Pressure = { SpawnFactor = 1.5, MaxAliveReduction = 8, Caps = { Brute = 0 } },
 			-- The priority pallet on death: a full heal, a re-arm and a quiet pallet with the
@@ -3140,7 +3250,11 @@ local Config = {
 				RiotCall = "...all posts, Gate. Crowd at the wire. Send the reserve...",
 				-- Aggression pass placeholders (2026-11-18) until the lore developer's pass.
 				WeakSpot = "Control: the radio pack on his back. Rounds go through it. Get behind him.",
-				Rage = "He's hurt and he's fast now. Stay together: he jumps whoever's alone.",
+				-- The boss pass (2026-11-18; plain words, placeholders until the lore pass).
+				Rage = "He's going through cover now. Don't hide behind it. Keep moving, stay together.",
+				Incoming = "Control: something big just came over the wall. It's coming down on you. Get off the marker!",
+				Landed = "That's the Warden. Still in his riot plate, still on duty. Put him down.",
+				Stage2 = "He's calling the reserve. Brutes in that crowd. When his fists go up, jump the shockwave or get clear.",
 				Kill = "The Warden is down. Control copies. Gate's yours, Pike. Pallet inbound.",
 			},
 		},

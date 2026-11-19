@@ -14,6 +14,7 @@ Last updated: 2026-11-17 by Tien + Claude (the Hocker's spit pool as an uneven p
 Last updated: 2026-11-17 by Tien + Claude (the objective meter and the HUD layout pass, on `claude/objective-progress-visible`).
 Last updated: 2026-11-17 by Claude (every desk on the Loadmaster's look, on `claude/npc-ui-prototype2`).
 Last updated: 2026-11-18 by Claude (the Warden hunts: leap, rage, weak spot, no more spin, on `claude/warden-aggressive`).
+Last updated: 2026-11-18 by Claude (the Warden as a real boss: entrance, weight, stages, Quake, Rampage, on `claude/fun-warden`).
 Last updated: 2026-11-18 by Claude (the big grey Delta test map, on `claude/delta-xl-blockout`).
 
 ## The game today (on `main`)
@@ -86,6 +87,13 @@ that restocks the squad.
   (`docs/sprints/WARDEN_AGGRESSIVE.md`; `Leap.Enabled = false` and
   `Animations.Infected.Warden.attack = "warden_bash"` are the fallbacks; **Nova:**
   `Plates.hit` now returns a third value, the body's share, and `DamageService` applies it).
+  On `claude/fun-warden` (2026-11-18, owner: "doesn't move like a boss"; **not yet played**)
+  he is a boss: a dive-in entrance with music, scale 2.2, no flinch, a capped turn, a keyed
+  heavy stride with boots you feel, stages at 66% / 33% that roar and call Brutes, the Quake
+  and the Rampage, charges through small cover, campers leaped first, +50% health per extra
+  player (`docs/sprints/FUN_WARDEN.md` > Off switches). **Nova:** `BossHandle` now carries
+  `moveTrack` / `moveReference`; bosses skip `EnemyService`'s flinch; `CameraController.shake`
+  is new; new client `BossPresence`; four new `Messages.BossUpdate` kinds.
   They spread round a target instead of stacking on it
   (`Config.Enemies.Spacing`; **built from static checks only, not yet played**: `Enabled = false`
   is the old chase). Spit (Hocker, Warden) is drawn on each client: `SpitFX`, not yet seen
@@ -205,7 +213,7 @@ The plan beyond this table, in phases, with the owner's open decisions: [docs/RO
 | 6 | Performance measurements | open | 2-client network + MicroProfiler during an Anvil into 20, low-end device at low health (`docs/STUDIO_MCP.md`) |
 | 7 | Owner calls waiting | Tien | generator to 4.8, light-tower collision as two boxes (movement keys decided 2026-11-11: Shift twice rolls, hold C or Ctrl slides) |
 | 8 | Objective pools: **play the first slice** (2026-11-11, unplayed; checklist in the PR and `handoff/log/2026-11-11-tien-objective-pools.md`; dev `SetMainObjective <id>`), and the Warden inside each main objective (2026-11-16, unplayed; per-objective checklist in `handoff/log/2026-11-16-claude-boss-in-objectives.md`; dev `WardenNow`), then Open the Gate and the unbuilt side objectives, then Mile 14 + its boss | Tien + Claude | `docs/PROGRESSION.md` > Objective pools; the dev panel has no buttons for the new commands yet (`claude/dev-menu`) |
-| 9 | Warden follow-ups | open | play the aggression pass (`claude/warden-aggressive`): time the fight (target 60-90 s solo), watch the keyed shove and leap clips in Studio (keyed blind), the leap over cover and onto slopes; lore pass on the new lines (`Radio.WeakSpot`, `Radio.Rage`, the leap / volley / rage tells); Gate dressing, insert/wipe radio lines (`docs/sprints/WARDEN_AGGRESSIVE.md`, `docs/sprints/SPRINT_19_WARDEN.md`) |
+| 9 | Warden follow-ups | open | play the boss pass (`claude/fun-warden`, `docs/sprints/FUN_WARDEN.md` > Not yet seen: the keyed stride, the dive, shake strength, the drone's mix, fight length with 4); play the aggression pass (`claude/warden-aggressive`): time the fight (target 60-90 s solo), watch the keyed shove and leap clips in Studio (keyed blind), the leap over cover and onto slopes; lore pass on the new lines (`Radio.WeakSpot`, `Radio.Rage`, the leap / volley / rage tells); Gate dressing, insert/wipe radio lines (`docs/sprints/WARDEN_AGGRESSIVE.md`, `docs/sprints/SPRINT_19_WARDEN.md`) |
 | 10 | Housekeeping | Tien | rotate the group Open Cloud key (it was pasted in chat); archive the old CZS and "Shooterr" experiences |
 
 ## Where to look

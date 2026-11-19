@@ -145,6 +145,9 @@ export type BossHandle = {
 	humanoid: Humanoid,
 	root: BasePart,
 	attackTrack: AnimationTrack?,
+	-- The walk clip and its 1x ground speed: IndexService sets its rate from his real speed.
+	moveTrack: AnimationTrack?,
+	moveReference: number,
 }
 
 local zombieTemplate: Model?
@@ -340,6 +343,12 @@ local function flinch(zombie: Zombie, info: DamageService.HitInfo)
 	local cfg = Config.Enemies.Flinch
 	local now = os.clock()
 	if not Feel.canFlinch(now, zombie.lastFlinchAt, cfg.Cooldown) then
+		return
+	end
+	-- A boss never flinches from rounds (Config.Index.Warden.Weight.NoFlinch, the boss
+	-- pass): only his plates coming off stagger him (IndexService).
+	local definition = EnemyDefinitions[zombie.typeName]
+	if definition and definition.Boss and Config.Index.Warden.Weight.NoFlinch then
 		return
 	end
 	if (cfg.HeavyOnly :: { [string]: boolean })[zombie.typeName] then
@@ -1415,6 +1424,8 @@ function EnemyService.spawnBoss(
 		humanoid = zombie.humanoid,
 		root = zombie.root,
 		attackTrack = zombie.attackTrack,
+		moveTrack = zombie.moveTrack,
+		moveReference = zombie.moveReference,
 	}
 end
 

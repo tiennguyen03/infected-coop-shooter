@@ -869,17 +869,29 @@ Patient reuse the frame. Index hosts never dismember: their plates are the mecha
   the screening route: Gate lane, bus line, Inner Gate, under the bridge, the Apron, then the
   hunt (walk times out after 75 s). A member within 90 studs during the walk gets the
   sighting line. Radio lines: LORE.md.
-- **Body.** 5,000 hp at scale 1.9 (7,000 until the aggression pass, 2026-11-18,
-  [WARDEN_AGGRESSIVE.md](sprints/WARDEN_AGGRESSIVE.md)), +33% per extra living player (the
+- **Boss pass** (2026-11-18, [FUN_WARDEN.md](sprints/FUN_WARDEN.md), not yet played): he
+  arrives over the top (Control's warning, a 2.5 s ring, a dive onto it: 25 and knocked down
+  inside 14 studs, the screen shakes, he roars, the boss bar slams in, his fight loop starts);
+  never flinches from rounds; turns at 150°/s (260° through a windup, locked 0.35 s before the
+  blow); a keyed heavy stride whose rate follows his speed, a boot and a camera shake on each
+  heel strike; impacts shake the screen; every Charge draws its lane. Stage 2 (66%) opens the
+  **Quake** (fists up 1.6 s, a 36-stud ring, then 2 rings at 26 studs/s: 30 and knocked down;
+  jump, roll or be outside; every 14 s) and his charges go through props up to 8 studs a side
+  (back next run). Stage 3 (33%) opens the **Rampage** (three Charges back to back at whoever
+  is furthest). Whoever stands still 4 s is the Leap's first pick.
+- **Body.** 5,000 hp at scale 2.2 (1.9 until the boss pass; 7,000 hp until the aggression pass, 2026-11-18,
+  [WARDEN_AGGRESSIVE.md](sprints/WARDEN_AGGRESSIVE.md)), +50% per extra living player (33% until the boss pass; the
   one exception to "more Infected, not tougher": one body cannot be more bodies). Headshot x2
-  once the helmet is off. Walk 12 studs/s (13 below 60%, 15 in the rage; the soldier walks 16).
+  once the helmet is off. Walk 12 studs/s (13 below 66%, 15 in the rage; the soldier walks 16).
+  The reach distances below were written at scale 1.9; at 2.2 each is about 16% longer.
 - **Plates** (one rule): helmet 200, chest 300, back 400 (the flank and the weak spot),
   shoulders 200 each, shield 400. A round into a plate does 25% to the plate and nothing to
   the body; a round into a limb whose plate is gone does 150%. At half a plate cracks (yellow
   pip); at zero it flies off, he staggers 1.5 s. HUD order: HELM, CHEST, BACK, L SHLD, R SHLD,
   SHIELD.
 - **Weak spot: his back** (the plate over his radio pack, `Plates.Back.WeakSpot`). A round
-  into it counts whole (not 25%), pops the headshot marker, and half of it goes through to
+  into it counts whole (not 25%), pops the headshot marker, and three quarters of it (half
+  until the boss pass) goes through to
   his body; it ignores his guard; breaking it staggers him 3 s. Control names it 10 s into
   the fight.
 - **Attacks**, each announced by his words ("WARDEN: ...") on the boss bar. Where you stand picks
@@ -904,18 +916,21 @@ Patient reuse the frame. Index hosts never dismember: their plates are the mecha
   body; the Pound, the Leap and the Charge do not. Knocked down: no moving, firing or
   abilities; 1 s immunity on the get-up (`Config.Knockdown`). Bots step out of the rings and
   the lines.
-- **Phases** by body health (`Rules/WardenBrain.phase`): below 60% the **Riot Call** (6
-  Walkers + 2 Runners, +3 Walkers per extra player), walk 13, leap every 7 s; below 30% the
-  **rage**: a second call, his words "WEAPONS FREE", Control's warning, walk 15, charges every
-  5 s, leaps every 5 s, the Volley. While he is up the wave loop spawns at x1.5 interval, 8
-  fewer alive, no Brutes.
+- **Phases** by body health (`Rules/WardenBrain.phase`): below 66% (60% until the boss pass)
+  stage 2: the stage roar (everyone within 20 studs thrown back) and the **Riot Call** (6
+  Walkers + 2 Runners + 1 Brute, +3 Walkers and +1 Brute per 2 extra players), walk 13, leap
+  every 7 s, the Quake, charges through props; below 33% (was 30%) the **rage**: the roar, a
+  second call (6 Walkers, 3 Runners, 2 Brutes), his words "WEAPONS FREE", Control's warning,
+  walk 15, charges every 5 s, leaps every 5 s, the Volley, the Rampage. While he is up the wave
+  loop spawns at x1.5 interval, 8 fewer alive, no ambient Brutes (his call still brings them).
 - **Kill.** Priority pallet at the corpse, everyone alive healed and re-armed; extraction
   opens (with him in the objective: once its work is done too). Corpse stays 8 s.
-- **Target fight** 60-90 s for a solo squad, more of it moving than shooting (was 100-120 s,
-  2-3 minutes in practice). Fallbacks: `Leap.Enabled = false`; `Animations.Infected.Warden.attack
-  = "warden_bash"` puts the old spinning Bash clip back.
-- **Dev.** F1 > THE WARDEN: "In front of me" (F9), "To the rage" (`RageWarden`: his body just
-  under 30%), "Kill him".
+- **Target fight** 90-120 s for a solo squad with the adds, 2-3 minutes for four players,
+  more of it moving than shooting. Fallbacks: `Leap.Enabled = false`; `Animations.Infected.Warden.attack
+  = "warden_bash"` puts the old spinning Bash clip back; the boss pass's switches are listed
+  in FUN_WARDEN.md > Off switches.
+- **Dev.** F1 > THE WARDEN: "In front of me" (F9; the full entrance, 30 studs ahead), "To
+  stage 2 (the call)", "To stage 3 (the rage)", "Quake now", "Rampage now", "Kill him".
 
 ## The Infected roster
 
