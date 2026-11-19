@@ -10,14 +10,17 @@
 -- events (TabsService) and will buy cosmetics and conveniences, never power. The record also
 -- remembers the last Robux receipts it was paid for, so one purchase never pays twice.
 --
--- The saved form carries a version: 1 = merits and kit, 2 adds tabs and receipts (a version 1
--- save reads with 0 tabs). A missing, junk or newer-version save reads as a new record with
--- the starting merits; a server that updates a save in place checks `canUpdate` first so it
--- never writes over one it cannot read.
+-- The saved form carries a version and is read through Rules/SaveSchema (docs/SAVES.md): 0 =
+-- unversioned, 1 = merits and kit, 2 adds tabs and receipts; any older save is migrated on
+-- read. A missing, junk or newer-version save reads as a new record with the starting merits;
+-- a server that updates a save in place checks `canUpdate` first so it never writes over one
+-- it cannot read, and passes the stored value to `encode` so fields it does not know are kept.
+
+local SaveSchema = require("./SaveSchema")
 
 local Record = {}
 
-Record.VERSION = 2
+Record.VERSION = SaveSchema.Record.version
 -- The record's DataStore key is "r_<UserId>", the same in the lobby and the match.
 Record.KEY_PREFIX = "r_"
 
@@ -166,32 +169,31 @@ function Record.allows(record: Record, loadout: Loadout, priceOf: PriceOf): (boo
 	return true, nil
 end
 
-function Record.encode(record: Record): Saved
-	return {
+-- The value to save. Pass what is stored (`stored`, the UpdateAsync `old`) so every field this
+-- code does not know is kept; without it (or when it may not be written over) only the
+-- record's own fields are written.
+function Record.encode(record: Record, stored: unknown?): Saved
+	local fields = {
 		version = Record.VERSION,
 		merits = record.merits,
 		owned = table.clone(record.owned),
 		tabs = record.tabs,
 		receipts = table.clone(record.receipts),
 	}
+	local over = if stored ~= nil then SaveSchema.over(SaveSchema.Record, stored, fields) else nil
+	return (over or fields) :: any
 end
 
--- True for a saved form this code reads: version 1 up to the current one, with merits.
-local function readable(data: unknown): boolean
-	if typeof(data) ~= "table" then
-		return false
-	end
-	local saved = data :: any
-	return typeof(saved.version) == "number"
-		and saved.version >= 1
-		and saved.version <= Record.VERSION
-		and typeof(saved.merits) == "number"
+-- The stored record migrated to the current shape, or nil when it is none this code reads.
+local function readable(data: unknown): SaveSchema.Save?
+	local status, save = SaveSchema.read(SaveSchema.Record, data)
+	return if status == "ok" then save else nil
 end
 
 -- Whether a server may update this stored value in place (UpdateAsync): no save yet, or one
--- this code reads. Junk or a newer version is left alone rather than written over.
+-- this code reads (older ones are migrated). Junk or a newer version is left alone.
 function Record.canUpdate(data: unknown): boolean
-	return data == nil or readable(data)
+	return SaveSchema.writable(SaveSchema.Record, data)
 end
 
 local function strings(list: unknown): { string }
@@ -207,14 +209,13 @@ local function strings(list: unknown): { string }
 end
 
 function Record.decode(data: unknown, startMerits: number): Record
-	if not readable(data) then
+	local saved: any = readable(data)
+	if not saved then
 		return Record.new(startMerits)
 	end
-	local saved = data :: any
 	return {
 		merits = balance(saved.merits),
 		owned = strings(saved.owned),
-		-- Version 1 had neither: 0 tabs, no receipts.
 		tabs = balance(saved.tabs),
 		receipts = strings(saved.receipts),
 	}
@@ -237,7 +238,7 @@ function Record.buyStored(
 	if not ok then
 		return nil, reason
 	end
-	return Record.encode(after), nil
+	return Record.encode(after, stored), nil
 end
 
 return Record

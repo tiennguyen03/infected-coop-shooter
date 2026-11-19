@@ -13,7 +13,9 @@
 local PhysicsService = game:GetService("PhysicsService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
+local DeltaXLLayout = require(ReplicatedStorage.Shared.DeltaXLLayout)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
 local SkyService = require(script.Parent.SkyService)
 
@@ -84,6 +86,14 @@ local RAMPS = mission.Ramps
 local PERIMETER = mission.Perimeter
 local FENCE = mission.Fence
 local BUILDINGS = mission.Buildings
+
+-- The big map (Config.DeltaXL, server DeltaXL): on at boot, the perimeter's scenery and its
+-- walls are never built and the fence opens at DeltaXLLayout.FenceGaps; switched on later
+-- (the dev panel), `openPerimeter` takes them away.
+local XL_AT_BOOT = Config.DeltaXL.Enabled and mission.Id == "delta"
+local function bigMap(): boolean
+	return XL_AT_BOOT or workspace:GetAttribute(Attributes.DeltaXL) == true
+end
 
 local function makePart(
 	name: string,
@@ -452,6 +462,11 @@ local function buildPerimeter(arena: Instance)
 	local model = Instance.new("Model")
 	model.Name = "Perimeter"
 	model.ModelStreamingMode = Enum.ModelStreamingMode.Persistent
+	if XL_AT_BOOT then
+		-- The big map: only the fence stands here (placeDressing); DeltaXL builds the rest.
+		model.Parent = workspace
+		return model
+	end
 	-- What stops the squad: invisible walls just behind the fence (inner face at 300).
 	local height = Config.Arena.BoundaryHeight
 	for _, side in
@@ -675,6 +690,9 @@ local function placePiece(folder: Folder, params: RaycastParams, entry: Dressing
 	return part
 end
 
+-- The fence's own pieces in the Perimeter model (kept when the big map clears the rest).
+local fenceParts: { [Instance]: boolean } = {}
+
 local function placeFence(folder: Instance, params: RaycastParams, panel: FencePanel)
 	local rotation = CFrame.Angles(0, math.rad(panel.yaw), 0)
 	local half = rotation:VectorToWorldSpace(Vector3.new(FENCE_STEP / 2, 0, 0))
@@ -689,15 +707,26 @@ local function placeFence(folder: Instance, params: RaycastParams, panel: FenceP
 	end
 	local fence = MeshAssets.waitFor("prop_chainlink_panel", 20)
 	local wire = MeshAssets.waitFor("prop_concertina", 20)
+	-- The big map opens the fence where a road leaves or the crowd broke out.
+	if bigMap() and DeltaXLLayout.inFenceGap(panel.x, panel.z) then
+		for _, piece in { fence, wire } do
+			if piece then
+				piece:Destroy()
+			end
+		end
+		return
+	end
 	if fence then
 		fence.CFrame = CFrame.new(panel.x, ground + fence.Size.Y / 2, panel.z) * rotation
 		fence.Parent = folder
+		fenceParts[fence] = true
 	end
 	if wire then
 		local top = ground + (if fence then fence.Size.Y else 7)
 		wire.CFrame = CFrame.new(panel.x, top + wire.Size.Y / 2, panel.z) * rotation
 		wire.CastShadow = false
 		wire.Parent = folder
+		fenceParts[wire] = true
 	end
 end
 
@@ -718,6 +747,9 @@ local function placeDressing()
 		perimeterParams.FilterType = Enum.RaycastFilterType.Exclude
 		perimeterParams.FilterDescendantsInstances = { folder, perimeter }
 		for _, entry in PERIMETER do
+			if bigMap() then
+				break -- the big map's outer areas stand where this scenery was
+			end
 			placePiece(perimeter :: any, perimeterParams, entry)
 		end
 		for _, panel in FENCE do
@@ -1246,18 +1278,71 @@ function ArenaService.getSpawnLocation(index: number): SpawnLocation?
 	return spawnPads[((index - 1) % #Config.Run.SpawnPads) + 1]
 end
 
--- The landing pad for squad slot `index` (1..4): a standing CFrame on the LZ helipad,
+-- Where the squad lands this run: the big map's drop corner (Attributes.DropPoint), else the
+-- LZ helipad.
+function ArenaService.landingPoint(): Vector3
+	local drop = workspace:GetAttribute(Attributes.DropPoint)
+	return if typeof(drop) == "Vector3" then drop else Config.Extraction.ZonePosition
+end
+
+-- The landing pad for squad slot `index` (1..4): a standing CFrame round the landing point,
 -- facing the middle of the arena.
 function ArenaService.getSpawnPad(index: number): CFrame
 	local pads = Config.Run.SpawnPads
 	local offset = pads[((index - 1) % #pads) + 1]
-	local lz = Config.Extraction.ZonePosition
-	local position = Vector3.new(lz.X + offset.X, 3.5, lz.Z + offset.Z)
+	local lz = ArenaService.landingPoint()
+	local position = Vector3.new(lz.X + offset.X, lz.Y + 2.9, lz.Z + offset.Z)
 	local toward = Vector3.new(-position.X, 0, -position.Z)
 	if toward.Magnitude < 0.01 then
 		toward = Vector3.new(0, 0, -1)
 	end
 	return CFrame.lookAlong(position, toward.Unit)
+end
+
+-- The SpawnLocations follow the landing point (the big map moves it every run).
+function ArenaService.moveSpawnPads()
+	for index, pad in spawnPads do
+		pad.CFrame = ArenaService.getSpawnPad(index) - Vector3.new(0, 2.9, 0)
+	end
+end
+
+-- How far from the centre (each axis) an Infected may spawn.
+function ArenaService.spawnInset(): number
+	return if bigMap() then Config.DeltaXL.SpawnInset else Config.Arena.SpawnInset
+end
+
+-- The big map switched on after boot: the walls at 300 and the scenery past the fence go,
+-- the fence opens at its gaps (DeltaXLLayout.FenceGaps). Pieces still being placed check
+-- bigMap() themselves.
+function ArenaService.openPerimeter()
+	local arena = workspace:FindFirstChild("TestArena")
+	if arena then
+		for _, child in arena:GetChildren() do
+			if string.sub(child.Name, 1, 8) == "Boundary" then
+				child:Destroy()
+			end
+		end
+	end
+	local perimeter = workspace:FindFirstChild("Perimeter")
+	if not perimeter then
+		return
+	end
+	for _, child in perimeter:GetChildren() do
+		local keep = fenceParts[child] == true
+		if keep and child:IsA("BasePart") then
+			keep = not DeltaXLLayout.inFenceGap(child.Position.X, child.Position.Z)
+		end
+		if not keep then
+			fenceParts[child] = nil
+			child:Destroy()
+		end
+	end
+end
+
+-- Builders the big map (DeltaXL) shares with the base, so its grey pieces match.
+ArenaService.makePart = makePart
+function ArenaService.buildBuilding(parent: Instance, spec: BuildingSpec): Model
+	return buildBuilding(parent, spec)
 end
 
 function ArenaService.init()

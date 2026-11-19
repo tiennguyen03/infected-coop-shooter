@@ -886,6 +886,289 @@ STYLES.sling = function(ctx: Ctx)
 	hold(ctx, goneAt)
 end
 
+-- A vehicle dropped in a crate (Config.CallIns.<Key>.Arrival "crate"; Tien and Nova
+-- 2026-11-17): the helo (the insertion's InsertLantern, nose +Z) flies straight over the
+-- mark without stopping, the crate under its belly; it lets go Fall seconds before Time, the
+-- crate drops straight down and lands at Time (the server's vehicle appears inside it), the
+-- walls fall open flat and the lid flies off behind; the boards lie there, then fade. The
+-- crate is the vehicle's own size (Rules/Arrival.crateSize) unless its Vehicle row sets
+-- `Crate`.
+local CRATE_WALL = 0.2 -- board thickness
+local CRATE_HANG = 1.2 -- the crate's top under the helo's skids (its frame's origin)
+
+STYLES.crate = function(ctx: Ctx)
+	local arrival, cfg = ctx.arrival, ctx.cfg
+	local bodyId = cfg.Vehicle and cfg.Vehicle.Body
+	local body = bodyId and VehicleBody.get(bodyId)
+	local marker = thrown(ctx)
+	if not body then
+		return
+	end
+	local landAt = arrival.Time :: number
+	local release = landAt - arrival.Fall
+	local leg = arrival.Distance / arrival.Speed
+	local appear = math.max(arrival.Throw, release - leg)
+	local goneAt = release + leg
+	local openAt = landAt + arrival.Open
+	local fadeAt = openAt + arrival.Linger
+	local endAt = fadeAt + arrival.Fade
+
+	-- The vehicle (anchored, the same build the server uses) and the crate round it, both
+	-- laid out in the vehicle's own frame (`root`), which faces along the throw.
+	local vehicle = VehicleBody.build(bodyId, CFrame.new(ctx.point + UP * 200), true) :: Model
+	vehicle.Parent = ctx.model
+	local vehicleRoot = vehicle.PrimaryPart :: BasePart
+	local boxFrame, extents = vehicle:GetBoundingBox()
+	local centre = vehicleRoot.CFrame:PointToObjectSpace(boxFrame.Position)
+	local bottom = centre.Y - extents.Y / 2
+	local fixed = cfg.Vehicle.Crate
+	local size = if typeof(fixed) == "Vector3"
+		then fixed
+		else Vector3.new(
+			Arrival.crateSize(extents.X, extents.Y, extents.Z, arrival.CrateRoom, arrival.CrateStep)
+		)
+	-- The crate's frame in the vehicle's: centred on it, its floor just under the wheels.
+	local crateInRoot = CFrame.new(centre.X, bottom + 0.05 + size.Y / 2, centre.Z)
+
+	local pieces: { BasePart } = {}
+	local rest: { CFrame } = {}
+	for _, piece in vehicle:GetDescendants() do
+		if piece:IsA("BasePart") then
+			piece.CanQuery = false
+			table.insert(pieces, piece)
+			table.insert(rest, vehicleRoot.CFrame:ToObjectSpace(piece.CFrame))
+		end
+	end
+	-- Four walls (the sides fit between the ends, nothing overlaps) and the lid on top.
+	local t = CRATE_WALL
+	local half = size / 2
+	local walls: { { part: Part, frame: CFrame, out: Vector3 } } = {}
+	local function board(name: string, boardSize: Vector3, frame: CFrame): Part
+		local piece = part(ctx, name, boardSize, OLIVE_DARK)
+		piece.Material = Enum.Material.WoodPlanks
+		piece.CastShadow = true
+		table.insert(pieces, piece)
+		table.insert(rest, crateInRoot * frame)
+		return piece
+	end
+	for _, side in { -1, 1 } do
+		local out = Vector3.new(0, 0, side)
+		local frame = CFrame.new(0, 0, side * (half.Z - t / 2))
+		table.insert(walls, {
+			part = board("CrateEnd", Vector3.new(size.X, size.Y, t), frame),
+			frame = frame,
+			out = out,
+		})
+		local sideOut = Vector3.new(side, 0, 0)
+		local sideFrame = CFrame.new(side * (half.X - t / 2), 0, 0)
+		table.insert(walls, {
+			part = board("CrateSide", Vector3.new(t, size.Y, size.Z - t * 2), sideFrame),
+			frame = sideFrame,
+			out = sideOut,
+		})
+	end
+	local lidFrame = CFrame.new(0, half.Y + t / 2, 0)
+	local lid = board("CrateLid", Vector3.new(size.X, t, size.Z), lidFrame)
+	-- Two straps from the skids to the lid while it hangs.
+	local straps: { Beam } = {}
+	local strapEnds: { Attachment } = {}
+	for _, side in { -1, 1 } do
+		local onLid = Instance.new("Attachment")
+		onLid.Position = Vector3.new(0, t / 2, side * half.Z * 0.6)
+		onLid.Parent = lid
+		local onHeli = Instance.new("Attachment")
+		table.insert(strapEnds, onHeli)
+		local strap = Instance.new("Beam")
+		strap.Attachment0 = onHeli
+		strap.Attachment1 = onLid
+		strap.Width0 = 0.15
+		strap.Width1 = 0.15
+		strap.FaceCamera = true
+		strap.Segments = 1
+		strap.Color = ColorSequence.new(CORD)
+		strap.Parent = lid
+		table.insert(straps, strap)
+	end
+
+	-- The helicopter: a local copy of the insertion's, every part placed from its frame.
+	local template = ReplicatedStorage:FindFirstChild("InsertLantern")
+	local heli: Model? = if template and template:IsA("Model") then template:Clone() else nil
+	local heliParts: { BasePart } = {}
+	local heliRest: { CFrame } = {}
+	local heliNames: { string } = {}
+	local hub = Config.Insertion.Hub
+	local tailHub = Config.Insertion.TailHub
+	if heli then
+		for _, piece in heli:GetDescendants() do
+			if piece:IsA("BasePart") then
+				table.insert(heliParts, piece)
+				table.insert(heliRest, piece.CFrame) -- built around the identity frame
+				table.insert(heliNames, piece.Name)
+			end
+		end
+		heli.Parent = ctx.model
+		local bodyPart = heli:FindFirstChild("Body")
+		if bodyPart and bodyPart:IsA("BasePart") then
+			for _, strapEnd in strapEnds do
+				strapEnd.Parent = bodyPart
+			end
+			local rotor = SoundBanks.create("CrateRotor", 30, 600)
+			rotor.Parent = bodyPart
+			SoundBanks.loop(rotor, "ambience", "lantern_rotor", arrival.RotorVolume)
+		end
+	end
+
+	local over = ctx.point + UP * arrival.Height
+	local function heliFrame(at: number): CFrame
+		local climb = arrival.Climb * Arrival.progress(at, release, goneAt) ^ 2
+		local position = over + ctx.flat * Arrival.flyover(at, release, arrival.Speed) + UP * climb
+		-- Cruising nose-down, no hover.
+		return CFrame.lookAlong(position, -ctx.flat) * CFrame.Angles(math.rad(6), 0, 0)
+	end
+	-- The vehicle's frame on the ground, and under the helo while it hangs.
+	local landed = CFrame.lookAlong(ctx.point + UP * (0.05 - bottom), ctx.flat)
+	local function hanging(at: number): CFrame
+		local frame = heliFrame(at)
+		local top = frame.Position.Y - CRATE_HANG
+		local rootY = top - t - half.Y - crateInRoot.Position.Y
+		return CFrame.lookAlong(Vector3.new(frame.Position.X, rootY, frame.Position.Z), ctx.flat)
+	end
+	local dropFrom = hanging(release).Position.Y - landed.Position.Y
+
+	local spin = 0
+	local lastT = appear
+	track(ctx, appear, goneAt, function(now)
+		local dt = math.max(now - lastT, 0)
+		lastT = now
+		local frame = heliFrame(now)
+		local parts: { BasePart } = {}
+		local frames: { CFrame } = {}
+		if heli then
+			spin += math.rad(Config.Insertion.RotorSpin) * dt
+			local hubFrame = frame * CFrame.new(hub)
+			local tailFrame = frame * CFrame.new(tailHub)
+			for i, piece in heliParts do
+				local name = heliNames[i]
+				table.insert(parts, piece)
+				if name == "Rotor" then
+					table.insert(
+						frames,
+						hubFrame * CFrame.Angles(0, spin, 0) * CFrame.new(-hub) * heliRest[i]
+					)
+				elseif name == "TailRotor" then
+					table.insert(
+						frames,
+						tailFrame
+							* CFrame.Angles(spin * 3, 0, 0)
+							* CFrame.new(-tailHub)
+							* heliRest[i]
+					)
+				else
+					table.insert(frames, frame * heliRest[i])
+				end
+			end
+		end
+		if now < release then
+			for index, strapEnd in strapEnds do
+				local side = if index == 1 then -1 else 1
+				strapEnd.WorldPosition = (frame * CFrame.new(0, 0.3, side * half.Z * 0.6)).Position
+			end
+		end
+		if now < landAt and vehicle.Parent then
+			-- Under the belly, then straight down, gathering speed.
+			local at = if now < release
+				then hanging(now)
+				else landed + UP * Arrival.fall(now, release, landAt, dropFrom)
+			for i, piece in pieces do
+				table.insert(parts, piece)
+				table.insert(frames, at * rest[i])
+			end
+		end
+		workspace:BulkMoveTo(parts, frames, Enum.BulkMoveMode.FireCFrameChanged)
+	end)
+	cue(ctx, release, function()
+		for _, strap in straps do
+			strap.Enabled = false
+		end
+	end)
+
+	-- Touchdown: the crate slams down and bursts. Whichever comes first, this clock or the
+	-- server's vehicle arriving on the mark, ends the stand-in, so the two never overlap.
+	local crate = landed * crateInRoot
+	local burst = false
+	local function touchdown()
+		if burst then
+			return
+		end
+		burst = true
+		marker:Destroy()
+		vehicle:Destroy()
+		for _, wall in walls do
+			wall.part.CFrame = crate * wall.frame
+		end
+		lid.CFrame = crate * lidFrame
+		puff(ctx.point + UP * 0.5, CORD, 14, 6, 18, 1)
+		sound(ctx.point, "callins", "pallet_land", 1, 0.5, false)
+		sound(ctx.point, "player_gear", "breach", 0.8, 0.8, false)
+	end
+	local vehicles = workspace:FindFirstChild("Vehicles")
+	if vehicles then
+		local watch: RBXScriptConnection
+		watch = vehicles.ChildAdded:Connect(function(child)
+			local real: BasePart? = if child:IsA("Model") then child.PrimaryPart else nil
+			if
+				real
+				and (Vector3.new(real.Position.X, 0, real.Position.Z) - Vector3.new(
+						ctx.point.X,
+						0,
+						ctx.point.Z
+					)).Magnitude
+					< 6
+			then
+				watch:Disconnect()
+				touchdown()
+			end
+		end)
+		ctx.model.Destroying:Connect(function()
+			watch:Disconnect()
+		end)
+	end
+	cue(ctx, landAt, touchdown)
+	-- The walls fall open about their bottom outer edges, flat on the ground; the lid kicks up
+	-- and over, landing upside down behind the back wall.
+	local lidAway = half.Z + size.Y + half.Z + 0.3
+	track(ctx, landAt, openAt + 0.3, function(now)
+		if not burst then
+			touchdown()
+		end
+		local angle = Arrival.hinge(now, landAt, openAt)
+		for _, wall in walls do
+			local pivot = wall.frame.Position + wall.out * (t / 2) - UP * half.Y
+			local axis = UP:Cross(wall.out)
+			wall.part.CFrame = crate
+				* CFrame.new(pivot)
+				* CFrame.fromAxisAngle(axis, angle)
+				* CFrame.new(-pivot)
+				* wall.frame
+		end
+		local u = Arrival.progress(now, landAt, openAt + 0.3)
+		local flatY = -half.Y + t / 2
+		local y = lidFrame.Position.Y
+			+ (flatY - lidFrame.Position.Y) * u
+			+ Arrival.hop(now, landAt, openAt + 0.3, 3)
+		lid.CFrame = crate * CFrame.new(0, y, lidAway * u) * CFrame.Angles(math.pi * u, 0, 0)
+	end)
+	-- The boards lie there a while, then fade.
+	track(ctx, fadeAt, endAt, function(now)
+		local u = Arrival.progress(now, fadeAt, endAt)
+		for _, wall in walls do
+			wall.part.Transparency = u
+		end
+		lid.Transparency = u
+	end)
+	hold(ctx, math.max(endAt, goneAt))
+end
+
 STYLES.scatter = function(ctx: Ctx)
 	local arrival, cfg = ctx.arrival, ctx.cfg
 	local landed = arrival.Throw

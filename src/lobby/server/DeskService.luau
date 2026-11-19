@@ -18,6 +18,7 @@ local Layout = require(script.Parent.FallowLayout)
 local MotorPool = require(script.Parent.MotorPool)
 local NpcBody = require(script.Parent.NpcBody)
 local NpcPose = require(script.Parent.NpcPose)
+local VisitorBody = require(script.Parent.VisitorBody)
 
 local DeskService = {}
 
@@ -57,6 +58,13 @@ local DRESS: { [string]: NpcBody.Dress } = {
 		shirt = ARMY.shirt,
 		trousers = ARMY.trousers,
 		items = { 9482682978, 9482717204 },
+	},
+	-- The Visitor: the raincoat's colour on the torso, dark trousers; the coat, the sweater, the
+	-- collar and the red ESCORT REQUIRED badge are parts (VisitorBody). No catalog items yet.
+	visitor = {
+		shirt = VisitorBody.Coat,
+		trousers = VisitorBody.Trousers,
+		skin = Color3.fromRGB(200, 178, 160), -- pale: he does not work on deck
 	},
 	-- Military shirt, combat pants, a headset (A6 A9 E5).
 	plot = {
@@ -136,13 +144,19 @@ function DeskService.init()
 		if V2 and Config.Lobby.CarrierV2.Poses then
 			NpcPose.apply(body, desk.id)
 		end
+		if desk.id == "visitor" then
+			VisitorBody.dress(body)
+		end
 		local frame = CFrame.lookAt(place.feet, place.feet + place.facing)
 		props(folder, desk.id, frame)
 
 		-- The counter in front of the person, the stencil over it (or over the person when the
-		-- place has no counter: the Plot's watch officer works at the map table).
+		-- place has no counter: the Plot's watch officer works at the map table). An unmarked
+		-- desk (the Visitor: no counter) has no sign either; he is found by walking in.
 		if place.counter == false then
-			Build.sign(torso, desk.title, desk.who, 4)
+			if not desk.unmarked then
+				Build.sign(torso, desk.title, desk.who, 4)
+			end
 		else
 			local counter = Build.part(
 				folder,
@@ -160,7 +174,8 @@ function DeskService.init()
 		prompt.KeyboardKeyCode = Config.Keys.Interact
 		prompt.HoldDuration = 0
 		prompt.MaxActivationDistance = place.reach or Config.Lobby.DeskPromptDistance
-		prompt.RequiresLineOfSight = false
+		-- An unmarked desk is not talked to through a wall or the tarp.
+		prompt.RequiresLineOfSight = desk.unmarked == true
 		prompt:SetAttribute(Attributes.DeskId, desk.id)
 		prompt.Parent = torso
 	end

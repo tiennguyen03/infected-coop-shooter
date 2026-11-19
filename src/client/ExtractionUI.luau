@@ -16,7 +16,7 @@ local ExtractionUI = {}
 
 local C = HudTheme.Color
 local OWNER = "extraction"
-local LZ = HudTheme.tint("LZ", C.Yellow)
+local LZ = HudTheme.tint("landing zone", C.Yellow) -- "the LZ" in code; players read the plain word
 
 local function onUpdate(kind: string, progress: number, playersIn: number?, playersLiving: number?)
 	local required = Config.Extraction.HoldDuration

@@ -27,15 +27,28 @@
 -- by the handset tell (BossUpdate "tell"; the carrier hiss clip is open work); the Pound
 -- also draws its ring (BossUpdate "zone") and every ground / line attack marks the danger
 -- on workspace attributes so bots step out of it (BotService). Phases by body health: the
--- Riot Call at 60% and 25% (EnemyService.spawnWave round him). On death: the priority
+-- Riot Call at 60% and 30% (EnemyService.spawnWave round him). On death: the priority
 -- pallet (RequisitionService crate, Drop.Cards), a full heal and re-arm for the squad.
 -- docs/PROGRESSION.md "Index kit: the Warden"; docs/sprints/SPRINT_19_WARDEN.md.
+--
+-- Aggression pass (2026-11-18, docs/sprints/WARDEN_AGGRESSIVE.md): he closes distance.
+-- Out of limb reach, Rules/WardenBrain.farPick chooses: the Leap at the straggler
+-- (WardenBrain.isolated; a crouch with the landing ring already on the ground, a flight on
+-- an anchored root, a knockdown disc where they stood), the Charge, the Canister (every
+-- phase now), and in the rage (the last phase) the Volley, a canister at everyone. The
+-- back plate is the weak spot: rounds go into it whole and half goes through to the body.
+--
+-- The boss pass (2026-11-18, docs/sprints/FUN_WARDEN.md): he dives in over the top (the
+-- Entrance), turns at a capped rate, never flinches, his walk clip follows his speed with a
+-- boot and a camera shake on each heel strike; stage 2 opens the Quake and charges through
+-- small cover, the rage the Rampage; whoever stands still is leaped first (Camp).
 --
 -- Two entrances: `start` (the old order, Config.Objectives.Boss.Enabled = false: after the
 -- main objective, from the Gate up the lane) and `arrive` (ObjectiveService, the main
 -- objective's last act: from a point near the objective, walking to it, optionally hunting
 -- one member first). `position` tells the objective where he stands.
 
+local CollectionService = game:GetService("CollectionService")
 local Debris = game:GetService("Debris")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -48,6 +61,7 @@ local EnemyDefinitions = require(ReplicatedStorage.Shared.EnemyDefinitions)
 local GroundUtil = require(ReplicatedStorage.Shared.GroundUtil)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
+local WardenBrain = require(ReplicatedStorage.Shared.Rules.WardenBrain)
 local DifficultyService = require(script.Parent.DifficultyService)
 local EnemyProjectileService = require(script.Parent.EnemyProjectileService)
 local EnemyService = require(script.Parent.EnemyService)
@@ -74,10 +88,13 @@ type Plate = {
 	health: number, -- last seen, for the damage log (Guard trigger)
 	cracked: boolean,
 	broken: boolean,
+	weak: boolean, -- the weak spot (its row's WeakSpot)
 }
 
 -- Attacks that put a body on the ground; never two in a row.
-local KNOCKDOWN_ATTACKS: { [string]: boolean } = { pound = true, stomp = true }
+local KNOCKDOWN_ATTACKS: { [string]: boolean } = { pound = true, stomp = true, leap = true }
+-- Windup clips a plate break or a Riot Call cuts off.
+local WINDUP_CLIPS = { "pound", "sweep", "slam", "stomp", "leap" }
 -- Attack -> its Config.Index.Warden block.
 local ATTACK_SETTINGS: { [string]: string } = {
 	bash = "Bash",
@@ -87,7 +104,15 @@ local ATTACK_SETTINGS: { [string]: string } = {
 	stomp = "Stomp",
 	charge = "Charge",
 	canister = "Canister",
+	leap = "Leap",
+	volley = "Volley",
+	quake = "Quake",
 }
+-- Attacks whose windup plays another attack's clip (the Quake raises the fists like the Pound).
+local CLIP_OF: { [string]: string } = { quake = "pound" }
+-- Tells that get his bellow on top of the handset.
+local ROAR_TELLS: { [string]: boolean } =
+	{ pound = true, leap = true, rage = true, quake = true, rampage = true, riot = true }
 
 type Charge = {
 	from: Vector3,
@@ -95,6 +120,40 @@ type Charge = {
 	startedAt: number,
 	duration: number,
 	hit: { [Humanoid]: boolean },
+}
+
+-- A leap in the air: the root is anchored and carried on an arc from `from` to `to`. The
+-- entrance (the boss pass) is a leap too: a dive from high up (`dive`: the fall speeds up),
+-- its own ring and blow, and the roar and the boss bar on landing.
+type Leap = {
+	from: Vector3,
+	to: Vector3,
+	ground: Vector3, -- the landing ring's centre (the straggler's feet at the windup)
+	startedAt: number,
+	duration: number,
+	height: number, -- studs at the top of the arc
+	radius: number, -- the landing ring (studs, already scaled)
+	damage: number,
+	knockdown: number,
+	recovery: number,
+	dive: boolean,
+	entrance: boolean,
+}
+
+-- The Quake's rings running out from where his fists hit (the boss pass).
+type Quake = {
+	center: Vector3, -- on the ground
+	startedAt: number,
+	lastElapsed: number,
+	hit: { [number]: { [Humanoid]: boolean } }, -- per ring
+}
+
+-- Cover his charge went through (Config.Index.Warden.Smash): hidden until the next run.
+type Smashed = {
+	instance: Instance,
+	transparency: number,
+	canCollide: boolean?,
+	canQuery: boolean?,
 }
 
 -- How he comes in and whom he hunts (`arrive`); `start` is the Gate lane.
@@ -125,9 +184,22 @@ type Fight = {
 	resolveAt: number,
 	busyUntil: number,
 	charge: Charge?,
+	leap: Leap?,
+	leapGround: Vector3?, -- where the pending leap lands (set at its windup)
+	-- The boss pass: whom a windup turns to (until Weight.TrackLock before the blow), the
+	-- Quake running, the Rampage's charges still to come, where the entrance lands, the walk
+	-- clip's last position (the step marks), whether the bar has slammed in.
+	faceTarget: BasePart?,
+	quake: Quake?,
+	rampageLeft: number,
+	entranceGround: Vector3?,
+	lastStepPhase: number,
+	shown: boolean,
 	cooldowns: { [string]: number },
 	chargeCooldown: number,
 	poundCooldown: number,
+	leapCooldown: number,
+	rage: boolean,
 	lastAttack: string?, -- the no-repeat rule
 	nextDecisionAt: number, -- the beat: he walks until then after a recovery
 	plateHits: { { t: number, amount: number } }, -- recent plate damage (Guard trigger)
@@ -144,9 +216,27 @@ local bossRemote: RemoteEvent
 local noticeRemote: RemoteEvent
 local damageRemote: RemoteEvent
 local defeatedListeners: { () -> () } = {}
+-- The boss pass: cover smashed this run (restored by reset), and how long each member has
+-- stood still (Config.Index.Warden.Camp).
+local smashed: { Smashed } = {}
+local stillness: { [Squad.Member]: { at: Vector3, seconds: number } } = {}
+local nextStillSampleAt = 0
 
 local function cfg()
 	return Config.Index.Warden
+end
+
+-- A camera shake for the squad round `position` (client BossPresence): `power` degrees at
+-- the centre, nothing at `radius`; radius 0 is felt by everyone at full power.
+local function shake(position: Vector3, power: number, radius: number)
+	if power > 0 then
+		bossRemote:FireAllClients(Messages.BossUpdate.Shake, position, power, radius)
+	end
+end
+
+local function impactShake(position: Vector3, factor: number?)
+	local weight = cfg().Weight
+	shake(position, weight.ImpactShake * (factor or 1), weight.ImpactShakeRadius)
 end
 
 local function radio(key: string)
@@ -167,7 +257,7 @@ local function tell(kind: string)
 		-- The tell: his riot handset keys open (his own bank, docs/PROGRESSION.md "Boss
 		-- sound"); the Pound gets the bellow on top.
 		WorldSounds.on(head, "warden", "warden_handset", "Handset")
-		if kind == "pound" then
+		if ROAR_TELLS[kind] then
 			WorldSounds.voice(head, "warden", "warden_roar")
 		end
 	end
@@ -206,6 +296,7 @@ local function loadTracks(handle: EnemyService.BossHandle): { [string]: Animatio
 		sweep = Enum.AnimationPriority.Action2,
 		slam = Enum.AnimationPriority.Action2,
 		stomp = Enum.AnimationPriority.Action2,
+		leap = Enum.AnimationPriority.Action2,
 		hit = Enum.AnimationPriority.Action3,
 	}
 	for name, priority in wanted do
@@ -255,13 +346,46 @@ local function updateIdle(current: Fight)
 	-- MoveDirection stays zero on a MoveTo-driven server humanoid, so
 	-- the root's ground speed is the test; a charge (anchored root) counts as moving.
 	local root = current.handle.root
-	local moving = current.charge ~= nil
-		or flat(root.AssemblyLinearVelocity).Magnitude > cfg().IdleSpeed
+	local speed = flat(root.AssemblyLinearVelocity).Magnitude
+	local moving = current.charge ~= nil or current.leap ~= nil or speed > cfg().IdleSpeed
 	local now = os.clock()
-	if moving and now >= nextStepAt then
+	local weight = cfg().Weight
+	local function boot()
+		local feet = root.Position - Vector3.new(0, 3, 0)
+		WorldSounds.at(feet, "warden", "warden_step")
+		shake(feet, weight.StepShake, weight.StepShakeRadius)
+	end
+	-- The walk clip's rate follows his real ground speed (the boots never slide), and a
+	-- boot lands on each of its StepMarks (the boss pass); the charge keeps the fast timer.
+	local walk = current.handle.moveTrack
+	if walk and walk.IsPlaying and walk.Length > 0 and not current.charge and not current.leap then
+		if speed > cfg().IdleSpeed then
+			walk:AdjustSpeed(
+				math.clamp(
+					speed / math.max(current.handle.moveReference, 0.1),
+					weight.RateMin,
+					weight.RateMax
+				)
+			)
+		end
+		local phase = walk.TimePosition / walk.Length
+		local last = current.lastStepPhase
+		current.lastStepPhase = phase
+		if moving then
+			for _, mark in weight.StepMarks do
+				local crossed = if phase >= last
+					then mark > last and mark <= phase
+					else mark > last or mark <= phase
+				if crossed then
+					boot()
+					break
+				end
+			end
+		end
+	elseif moving and now >= nextStepAt and not current.leap then
 		local interval = Config.Audio.WardenStepInterval
 		nextStepAt = now + (if current.charge then interval * 0.4 else interval)
-		WorldSounds.at(root.Position - Vector3.new(0, 3, 0), "warden", "warden_step")
+		boot()
 	end
 	if moving and idle.IsPlaying then
 		idle:Stop(0.2)
@@ -349,6 +473,55 @@ local function faceToward(root: BasePart, target: Vector3)
 	end
 end
 
+local function yawOf(direction: Vector3): number
+	return math.atan2(-direction.X, -direction.Z)
+end
+
+-- His turn (the boss pass, Weight.TurnRate): the Humanoid's AutoRotate is off and the root
+-- swings toward where he is going (or, through a windup, toward his target until TrackLock
+-- before the blow) at a capped rate. No snapping round, no spinning on the spot.
+local function turn(current: Fight, now: number, dt: number, target: BasePart?)
+	local weight = cfg().Weight
+	if weight.TurnRate <= 0 then
+		return
+	end
+	local root = current.handle.root
+	if root.Anchored then
+		return
+	end
+	local action = current.action
+	if action == "stagger" or action == "stun" or action == "riot" then
+		return
+	end
+	local desired: Vector3? = nil
+	local rate = weight.TurnRate
+	if current.pending then
+		local face = current.faceTarget
+		if not face or not face.Parent or now > current.resolveAt - weight.TrackLock then
+			return
+		end
+		desired = flat(face.Position - root.Position)
+		rate = weight.WindupTurnRate
+	else
+		local velocity = flat(root.AssemblyLinearVelocity)
+		if velocity.Magnitude > cfg().IdleSpeed then
+			desired = velocity
+		elseif target then
+			desired = flat(target.Position - root.Position)
+		end
+	end
+	if not desired or desired.Magnitude < 0.05 then
+		return
+	end
+	local look = flat(root.CFrame.LookVector)
+	if look.Magnitude < 0.01 then
+		return
+	end
+	local yaw =
+		WardenBrain.turnToward(yawOf(look), yawOf(desired), math.rad(rate) * math.min(dt, 0.1))
+	root.CFrame = CFrame.new(root.Position) * CFrame.Angles(0, yaw, 0)
+end
+
 -- Whom he goes for: the arrival's target when it names a living one, else the nearest.
 local function nearestTarget(current: Fight): Squad.Member?
 	local pick = current.target
@@ -376,6 +549,55 @@ local function furthestTarget(current: Fight, maxRange: number): Squad.Member?
 		end
 	end
 	return best
+end
+
+-- The straggler (Rules/WardenBrain.isolated) among the living members on the ground: the
+-- Leap's target. Perched members are left out (the leap never lands on a roof).
+local function isolatedTarget(current: Fight): Squad.Member?
+	local members: { Squad.Member } = {}
+	local points: { WardenBrain.Point } = {}
+	local still: { number } = {}
+	for _, member in Squad.living() do
+		local root = member.root
+		if root and not isPerched(current, member) then
+			table.insert(members, member)
+			table.insert(points, { x = root.Position.X, z = root.Position.Z })
+			local record = stillness[member]
+			table.insert(still, if record then record.seconds else 0)
+		end
+	end
+	-- The boss pass: whoever has stood still too long goes first (Config.Index.Warden.Camp).
+	local camp = cfg().Camp
+	local camper = if camp.Enabled then WardenBrain.camper(still, camp.Seconds) else nil
+	local index = camper or WardenBrain.isolated(points)
+	return if index then members[index] else nil
+end
+
+-- Seconds each living member has stood still (sampled every Camp.Sample seconds).
+local function sampleStillness(now: number)
+	local camp = cfg().Camp
+	if not camp.Enabled or now < nextStillSampleAt then
+		return
+	end
+	nextStillSampleAt = now + camp.Sample
+	local seen: { [Squad.Member]: boolean } = {}
+	for _, member in Squad.living() do
+		local root = member.root
+		if root then
+			seen[member] = true
+			local record = stillness[member]
+			if not record or flat(root.Position - record.at).Magnitude > camp.MoveStuds then
+				stillness[member] = { at = root.Position, seconds = 0 }
+			else
+				record.seconds += camp.Sample
+			end
+		end
+	end
+	for member in stillness do
+		if not seen[member] then
+			stillness[member] = nil
+		end
+	end
 end
 
 -- Hard cover between the Warden and `target` blocks a charge; other Infected never do.
@@ -415,6 +637,7 @@ local function breakPlate(current: Fight, plate: Plate)
 	local part = plate.part
 	part:SetAttribute(Attributes.PlateHealth, nil)
 	part:SetAttribute(Attributes.PlateMax, nil)
+	part:SetAttribute(Attributes.WeakSpot, nil)
 	plate.limb:SetAttribute(Attributes.Exposed, true)
 	for _, child in part:GetChildren() do
 		if child:IsA("WeldConstraint") or child:IsA("Weld") then
@@ -434,22 +657,38 @@ local function breakPlate(current: Fight, plate: Plate)
 	-- The break in the world: the hit burst everyone already knows (HitMarkerUI).
 	damageRemote:FireAllClients(part.Position, 0, "break", nil)
 
-	-- The stagger cancels a windup in progress; a charge already running carries on.
-	EnemyService.stagger(current.handle.humanoid, settings.PlateBreakStagger)
+	-- The stagger cancels a windup in progress; a charge or a leap already running carries on.
+	-- The weak spot coming off staggers him longer.
+	local staggerFor = if plate.weak
+		then settings.WeakSpot.BreakStagger
+		else settings.PlateBreakStagger
+	EnemyService.stagger(current.handle.humanoid, staggerFor)
+	if current.pending == "entrance" then
+		-- Shot off him on the way in: the entrance still lands.
+		bossRemote:FireAllClients(Messages.BossUpdate.Tell, Messages.BossTell.Break)
+		sync(current)
+		return
+	end
 	if current.pending then
 		current.pending = nil
 		current.action = nil
+		current.faceTarget = nil
+		current.rampageLeft = 0
 		clearDanger()
-		for _, name in { "pound", "sweep", "slam", "stomp" } do
+		for _, name in WINDUP_CLIPS do
 			stop(current, name, 0.1)
 		end
+		local attack = current.handle.attackTrack
+		if attack and attack.IsPlaying then
+			attack:Stop(0.1)
+		end
 	end
-	if not current.charge then
+	if not current.charge and not current.leap and not current.quake then
 		if current.action == "guard" then
 			cancelGuard(current)
 		end
 		current.action = "stagger"
-		current.busyUntil = math.max(current.busyUntil, os.clock() + settings.PlateBreakStagger)
+		current.busyUntil = math.max(current.busyUntil, os.clock() + staggerFor)
 		stop(current, "idle", 0.05)
 		play(current, "hit", 0.05)
 	end
@@ -523,6 +762,9 @@ local function buildPlates(model: Model)
 		if spec.Flank then
 			plate:SetAttribute(Attributes.Flank, true)
 		end
+		if spec.WeakSpot then
+			plate:SetAttribute(Attributes.WeakSpot, spec.WeakSpot)
+		end
 		local original = Instance.new("Vector3Value")
 		original.Name = "OriginalSize"
 		original.Value = plate.Size
@@ -556,6 +798,7 @@ local function armPlates(current: Fight, healthMultiplier: number)
 			health = health,
 			cracked = false,
 			broken = false,
+			weak = spec.WeakSpot ~= nil,
 		}
 		table.insert(current.plates, record)
 		watchPlate(current, record)
@@ -564,9 +807,15 @@ end
 
 -- --- attacks
 
-local function startWindup(current: Fight, kind: string, windup: number, target: BasePart?)
+local function startWindup(
+	current: Fight,
+	kind: string,
+	windup: number,
+	target: BasePart?,
+	tellKind: string?
+)
 	local now = os.clock()
-	print(`[IndexService] {kind} (phase {current.phase})`)
+	print(`[IndexService] {tellKind or kind} (phase {current.phase})`)
 	if current.action == "guard" then
 		cancelGuard(current)
 	end
@@ -574,29 +823,40 @@ local function startWindup(current: Fight, kind: string, windup: number, target:
 	current.action = kind
 	current.resolveAt = now + windup
 	current.busyUntil = now + windup
+	current.faceTarget = target
 	local root = current.handle.root
 	current.handle.humanoid:MoveTo(root.Position)
-	if target then
+	local settings = cfg()
+	-- With a capped turn (the boss pass) he swings round to the target through the windup
+	-- (turn); without one he faces it at once, as before.
+	if target and settings.Weight.TurnRate <= 0 then
 		faceToward(root, target.Position)
 	end
-	local settings = cfg()
 	local reach = settings.ScaleReach
 	-- The clip runs so its blow lands at StrikeAt of it when the windup ends; the Bash
 	-- wears the rig's own attack track (EnemyService), the others their named clips.
-	local track = if kind == "bash" then current.handle.attackTrack else current.tracks[kind]
+	local track = if kind == "bash"
+		then current.handle.attackTrack
+		else current.tracks[CLIP_OF[kind] or kind]
 	local block = ATTACK_SETTINGS[kind] and (settings :: any)[ATTACK_SETTINGS[kind]]
+	-- The Leap's blow is the landing, after the flight.
+	local strikeIn = if kind == "leap" then windup + settings.Leap.Flight else windup
 	if track and block and block.StrikeAt then
 		stop(current, "idle", 0.05)
 		track:Play(0.05)
 		local length = track.Length
 		if length > 0 then
-			track:AdjustSpeed(length * block.StrikeAt / windup)
+			track:AdjustSpeed(length * block.StrikeAt / strikeIn)
 		end
-	elseif kind == "canister" then
+	elseif kind == "canister" or kind == "volley" then
 		play(current, "throw")
 	end
-	-- The shape of what is coming, for the bots and (the Pound) the squad's ring.
-	local forward = flat(root.CFrame.LookVector)
+	-- The shape of what is coming, for the bots and (the Pound) the squad's ring. Aimed
+	-- where he will face (the target), not where he faces now.
+	local forward = if target then flat(target.Position - root.Position) else Vector3.zero
+	if forward.Magnitude < 0.01 then
+		forward = flat(root.CFrame.LookVector)
+	end
 	if forward.Magnitude < 0.01 then
 		forward = Vector3.zAxis
 	else
@@ -606,6 +866,13 @@ local function startWindup(current: Fight, kind: string, windup: number, target:
 	if kind == "pound" then
 		local radius = settings.Pound.Radius * reach
 		markDanger("disc", ground, radius, current.resolveAt)
+		bossRemote:FireAllClients(Messages.BossUpdate.Zone, ground, radius, windup)
+	elseif kind == "quake" then
+		-- The ring of its reach through the windup; the rings themselves after.
+		local quake = settings.Quake
+		local radius = quake.Radius
+		local travel = (quake.Waves - 1) * quake.WaveGap + radius / quake.Speed
+		markDanger("disc", ground, radius, current.resolveAt + travel)
 		bossRemote:FireAllClients(Messages.BossUpdate.Zone, ground, radius, windup)
 	elseif kind == "stomp" then
 		markDanger("disc", ground, settings.Stomp.Radius * reach, current.resolveAt)
@@ -619,16 +886,39 @@ local function startWindup(current: Fight, kind: string, windup: number, target:
 			settings.Slam.Length * reach
 		)
 	elseif kind == "charge" then
+		local travel = settings.Charge.Distance / settings.Charge.Speed
 		markDanger(
 			"line",
 			ground,
 			settings.Charge.Width * reach,
-			current.resolveAt + settings.Charge.Distance / settings.Charge.Speed,
+			current.resolveAt + travel,
 			forward,
 			settings.Charge.Distance
 		)
+		-- The lane on the ground for the squad (the boss pass).
+		if settings.Weight.Markers then
+			bossRemote:FireAllClients(
+				Messages.BossUpdate.Line,
+				ground,
+				forward,
+				settings.Charge.Distance,
+				settings.Charge.Width * reach * 2,
+				windup + travel
+			)
+		end
+	elseif kind == "leap" and target then
+		-- The ring goes down where the straggler stands now and stays through the flight:
+		-- leave it and he lands on nothing.
+		local humanoid = target.Parent and target.Parent:FindFirstChildOfClass("Humanoid")
+		local landing = if humanoid
+			then Vector3.new(target.Position.X, feetY(humanoid, target), target.Position.Z)
+			else GroundUtil.GetGroundPosition(target.Position, 0)
+		local radius = settings.Leap.Radius * reach
+		current.leapGround = landing
+		markDanger("disc", landing, radius, now + strikeIn)
+		bossRemote:FireAllClients(Messages.BossUpdate.Zone, landing, radius, strikeIn)
 	end
-	tell(kind)
+	tell(tellKind or kind)
 end
 
 -- A limb lands: "melee" damage (a rolling body is missed), the attack's cooldown and
@@ -714,6 +1004,7 @@ local function resolveSlam(current: Fight)
 		end
 	end
 	WorldSounds.at(root.Position + forward * 6, "warden", "warden_impact")
+	impactShake(root.Position + forward * 6, 0.6)
 	landed(current, "slam", settings)
 end
 
@@ -729,6 +1020,7 @@ local function resolveDisc(current: Fight, kind: "pound" | "stomp")
 		"warden",
 		if kind == "pound" then "warden_pound" else "warden_impact"
 	)
+	impactShake(root.Position, if kind == "pound" then 1 else 0.5)
 	for _, member in Squad.living() do
 		local humanoid, targetRoot = member.humanoid, member.root
 		if not humanoid or not targetRoot then
@@ -798,14 +1090,155 @@ local function endCharge(current: Fight, wall: boolean)
 	if wall then
 		local stun = cfg().Charge.WallStun
 		WorldSounds.at(root.Position, "warden", "warden_impact")
+		impactShake(root.Position, 0.8)
 		current.action = "stun"
 		current.busyUntil = now + stun
+		current.rampageLeft = 0 -- a wall ends the Rampage too
 		EnemyService.stagger(current.handle.humanoid, stun)
 		bossRemote:FireAllClients(Messages.BossUpdate.Tell, Messages.BossTell.Stun)
-	else
-		current.action = "recover"
-		current.busyUntil = now + cfg().Charge.Recovery
+		return
 	end
+	-- The Rampage (the boss pass): the next charge at whoever is furthest from where this
+	-- one ended, after a short turn with its lane on the ground.
+	if current.rampageLeft > 0 then
+		current.rampageLeft -= 1
+		local next = furthestTarget(current, cfg().Charge.MaxRange * 2)
+		if next and next.root then
+			startWindup(current, "charge", cfg().Rampage.ReWindup, next.root)
+			return
+		end
+		current.rampageLeft = 0
+	end
+	current.action = "recover"
+	current.busyUntil = now + cfg().Charge.Recovery
+end
+
+-- Cover his charge can go through (Config.Index.Warden.Smash): the prop the part belongs to
+-- when that whole prop is small enough, else the part alone; nil for walls, the ground,
+-- bodies and anything tagged (objective props, pallets, call-ins).
+local function smashTarget(part: BasePart): Instance?
+	local smash = cfg().Smash
+	if part:IsA("Terrain") or #CollectionService:GetTags(part) > 0 then
+		return nil
+	end
+	local parent = part.Parent
+	if parent and parent:IsA("Model") and parent ~= workspace then
+		if parent:FindFirstChildOfClass("Humanoid") or #CollectionService:GetTags(parent) > 0 then
+			return nil
+		end
+		local size = parent:GetExtentsSize()
+		local parts = 0
+		for _, child in parent:GetDescendants() do
+			if child:IsA("BasePart") then
+				parts += 1
+			end
+		end
+		if
+			parts <= smash.MaxParts and WardenBrain.smashable(size.X, size.Y, size.Z, smash.MaxSize)
+		then
+			return parent
+		end
+	end
+	local size = part.Size
+	return if WardenBrain.smashable(size.X, size.Y, size.Z, smash.MaxSize) then part else nil
+end
+
+local function hide(instance: Instance)
+	if instance:IsA("BasePart") then
+		local part = instance :: BasePart
+		local record: Smashed = {
+			instance = instance,
+			transparency = part.Transparency,
+			canCollide = part.CanCollide,
+			canQuery = part.CanQuery,
+		}
+		table.insert(smashed, record)
+		part.Transparency = 1
+		part.CanCollide = false
+		part.CanQuery = false
+	elseif instance:IsA("Decal") or instance:IsA("Texture") then
+		local decal = instance :: Decal
+		local record: Smashed = {
+			instance = instance,
+			transparency = decal.Transparency,
+			canCollide = nil,
+			canQuery = nil,
+		}
+		table.insert(smashed, record)
+		decal.Transparency = 1
+	end
+end
+
+-- The prop flies apart: hidden (back next run, IndexService.reset) and a few loose copies
+-- of its parts flung ahead of him that fall and vanish.
+local function smash(current: Fight, target: Instance, direction: Vector3)
+	local settings = cfg().Smash
+	local parts: { BasePart } = {}
+	if target:IsA("BasePart") then
+		table.insert(parts, target)
+	end
+	for _, child in target:GetDescendants() do
+		if child:IsA("BasePart") then
+			table.insert(parts, child)
+		end
+	end
+	local flung = 0
+	for _, part in parts do
+		if flung < 6 and part.Transparency < 1 then
+			flung += 1
+			local copy = part:Clone()
+			for _, child in copy:GetChildren() do
+				if
+					not child:IsA("Decal")
+					and not child:IsA("Texture")
+					and not child:IsA("SpecialMesh")
+				then
+					child:Destroy()
+				end
+			end
+			copy.Anchored = false
+			copy.CanCollide = true
+			copy.CanQuery = false
+			copy.CanTouch = false
+			copy.CollisionGroup = ENEMY_COLLISION_GROUP
+			copy.Parent = workspace
+			copy.AssemblyLinearVelocity = (
+				direction
+				+ Vector3.new(math.random() - 0.5, 0.6 + math.random() * 0.4, math.random() - 0.5)
+			) * settings.Fling
+			copy.AssemblyAngularVelocity =
+				Vector3.new(math.random() * 8 - 4, math.random() * 8 - 4, math.random() * 8 - 4)
+			Debris:AddItem(copy, settings.Debris)
+		end
+	end
+	hide(target)
+	for _, child in target:GetDescendants() do
+		hide(child)
+	end
+	local at = if target:IsA("BasePart")
+		then target.Position
+		elseif target:IsA("Model") then target:GetPivot().Position
+		else current.handle.root.Position
+	WorldSounds.at(at, "warden", "warden_impact")
+	WorldSounds.at(at, "warden", "warden_plate")
+	impactShake(at, 0.8)
+end
+
+local function restoreSmashed()
+	for _, record in smashed do
+		local instance = record.instance
+		if instance.Parent then
+			if instance:IsA("BasePart") then
+				local part = instance :: BasePart
+				part.Transparency = record.transparency
+				part.CanCollide = record.canCollide == true
+				part.CanQuery = record.canQuery == true
+			elseif instance:IsA("Decal") or instance:IsA("Texture") then
+				(instance :: Decal).Transparency = record.transparency
+			end
+		end
+	end
+	table.clear(smashed)
 end
 
 local function stepCharge(current: Fight, charge: Charge, now: number)
@@ -826,8 +1259,15 @@ local function stepCharge(current: Fight, charge: Charge, now: number)
 		local model = hit.Instance:FindFirstAncestorOfClass("Model")
 		local isBody = model ~= nil and model:FindFirstChildOfClass("Humanoid") ~= nil
 		if not isBody then
-			endCharge(current, true)
-			return
+			-- From stage Smash.MinPhase he goes through small cover (the boss pass).
+			local smashOn = cfg().Smash.Enabled and current.phase >= cfg().Smash.MinPhase
+			local target = smashOn and hit.Instance:IsA("BasePart") and smashTarget(hit.Instance)
+			if target then
+				smash(current, target, charge.direction)
+			else
+				endCharge(current, true)
+				return
+			end
 		end
 	end
 	root.CFrame = CFrame.lookAt(nextPosition, nextPosition + charge.direction)
@@ -873,6 +1313,279 @@ local function resolveCanister(current: Fight)
 	current.lastAttack = "canister"
 end
 
+-- The rage Volley: one canister at every member inside Canister.MaxRange at once.
+local function resolveVolley(current: Fight)
+	local canister = cfg().Canister
+	local settings = cfg().Volley
+	local root = current.handle.root
+	local origin = root.Position + Vector3.new(0, 2, 0) + flat(root.CFrame.LookVector) * 2
+	WorldSounds.at(origin, "warden", "warden_canister")
+	for _, member in Squad.living() do
+		local targetRoot = member.root
+		if targetRoot and (targetRoot.Position - root.Position).Magnitude <= canister.MaxRange then
+			EnemyProjectileService.fire(
+				origin,
+				targetRoot.Position,
+				targetRoot.AssemblyLinearVelocity,
+				canister.Projectile :: EnemyDefinitions.ProjectileSpec,
+				canister.Damage
+			)
+		end
+	end
+	local now = os.clock()
+	current.cooldowns.volley = now + settings.Cooldown
+	current.busyUntil = now + settings.Recovery
+	current.action = "throw"
+	current.lastAttack = "volley"
+end
+
+-- The Leap takes off: the root is anchored and carried to the ring (stepLeap).
+local function startLeap(current: Fight)
+	local settings = cfg().Leap
+	local landing = current.leapGround
+	current.leapGround = nil
+	local root = current.handle.root
+	if not landing then
+		return
+	end
+	local rootHeight = root.Position.Y - feetY(current.handle.humanoid, root)
+	local to = landing + Vector3.new(0, rootHeight, 0)
+	faceToward(root, to)
+	current.handle.humanoid:MoveTo(root.Position)
+	root.AssemblyLinearVelocity = Vector3.zero
+	root.Anchored = true
+	local now = os.clock()
+	current.leap = {
+		from = root.Position,
+		to = to,
+		ground = landing,
+		startedAt = now,
+		duration = settings.Flight,
+		height = settings.Height,
+		radius = settings.Radius * cfg().ScaleReach,
+		damage = settings.Damage,
+		knockdown = settings.Knockdown,
+		recovery = settings.Recovery,
+		dive = false,
+		entrance = false,
+	}
+	current.action = "leap"
+	current.busyUntil = now + settings.Flight
+	current.lastAttack = "leap"
+	current.cooldowns.leap = now + current.leapCooldown
+	WorldSounds.at(root.Position, "warden", "warden_swing")
+end
+
+-- He lands: everyone on the ground inside the ring is hit and knocked down (the ground
+-- moves: the roll does not beat it, leaving the ring does).
+-- The fight's bar on every screen (the entrance holds it back until he lands: the slam-in).
+local function showBar(current: Fight)
+	current.shown = true
+	local names = {}
+	for _, plate in current.plates do
+		table.insert(names, plate.name)
+	end
+	bossRemote:FireAllClients(
+		Messages.BossUpdate.Show,
+		EnemyDefinitions[TYPE_NAME].DisplayName,
+		names
+	)
+	sync(current)
+end
+
+local function landLeap(current: Fight, leap: Leap)
+	local root = current.handle.root
+	current.leap = nil
+	local direction = flat(leap.to - leap.from)
+	if direction.Magnitude < 0.01 then
+		direction = flat(root.CFrame.LookVector)
+	end
+	if direction.Magnitude < 0.01 then
+		direction = Vector3.zAxis
+	end
+	root.CFrame = CFrame.lookAt(leap.to, leap.to + direction.Unit)
+	root.Anchored = false
+	root.AssemblyLinearVelocity = Vector3.zero
+	WorldSounds.at(leap.ground, "warden", "warden_pound")
+	for _, member in Squad.living() do
+		local humanoid, targetRoot = member.humanoid, member.root
+		if not humanoid or not targetRoot then
+			continue
+		end
+		local offset = flat(targetRoot.Position - leap.ground)
+		local height = feetY(humanoid, targetRoot) - leap.ground.Y
+		if offset.Magnitude <= leap.radius and math.abs(height) < cfg().PerchHeight then
+			EnemyProjectileService.damagePlayer(humanoid, leap.damage, nil, VEHICLE_DAMAGE)
+			if humanoid.Health > 0 then
+				Squad.knock(member, leap.knockdown)
+			end
+		end
+	end
+	clearDanger()
+	local now = os.clock()
+	if leap.entrance then
+		-- He is here: everyone feels it, he roars, the bar slams in (the boss pass).
+		local entrance = cfg().Entrance
+		shake(leap.ground, entrance.Shake, 0)
+		damageRemote:FireAllClients(leap.ground, 0, "break", nil)
+		current.action = "riot"
+		current.busyUntil = now + leap.recovery
+		stop(current, "leap", 0.2)
+		play(current, "riot", 0.15)
+		tell("riot")
+		showBar(current)
+		radio("Landed")
+		return
+	end
+	impactShake(leap.ground)
+	current.action = "recover"
+	current.busyUntil = now + leap.recovery
+end
+
+local function stepLeap(current: Fight, leap: Leap, now: number)
+	local s = math.clamp((now - leap.startedAt) / leap.duration, 0, 1)
+	if s >= 1 then
+		landLeap(current, leap)
+		return
+	end
+	local position = leap.from:Lerp(leap.to, s) + Vector3.new(0, 4 * leap.height * s * (1 - s), 0)
+	if leap.dive then
+		-- The entrance falls: the drop speeds up like a body falling.
+		local across = leap.from:Lerp(leap.to, s)
+		position = Vector3.new(across.X, leap.from.Y + (leap.to.Y - leap.from.Y) * s * s, across.Z)
+	end
+	local direction = flat(leap.to - leap.from)
+	if direction.Magnitude < 0.01 then
+		direction = flat(current.handle.root.CFrame.LookVector)
+	end
+	current.handle.root.CFrame = CFrame.lookAt(position, position + direction.Unit)
+end
+
+-- The entrance's dive (the boss pass): from where he waited out of sight onto the ring,
+-- the leap clip from its take-off so the fists hit as he lands.
+local function startEntranceFall(current: Fight)
+	local entrance = cfg().Entrance
+	local landing = current.entranceGround
+	current.entranceGround = nil
+	if not landing then
+		return
+	end
+	local root = current.handle.root
+	local rootHeight = root.Position.Y - feetY(current.handle.humanoid, root)
+	local now = os.clock()
+	current.leap = {
+		from = root.Position,
+		to = landing + Vector3.new(0, rootHeight, 0),
+		ground = landing,
+		startedAt = now,
+		duration = entrance.Fall,
+		height = 0,
+		radius = entrance.Radius,
+		damage = entrance.Damage,
+		knockdown = entrance.Knockdown,
+		recovery = entrance.RoarHold,
+		dive = true,
+		entrance = true,
+	}
+	current.action = "leap"
+	current.busyUntil = now + entrance.Fall
+	local track = current.tracks.leap
+	if track then
+		-- warden_leap: take-off ~0.72 s, lands at StrikeAt (0.75 of 2.0 s = 1.5 s).
+		track:Play(0.05)
+		track.TimePosition = 0.72
+		local remaining = track.Length * cfg().Leap.StrikeAt - 0.72
+		if remaining > 0 then
+			track:AdjustSpeed(remaining / entrance.Fall)
+		end
+	end
+	WorldSounds.at(landing, "warden", "warden_swing")
+end
+
+-- The Quake's fists land (the boss pass): the rings start running out from him.
+local function startQuake(current: Fight)
+	local settings = cfg().Quake
+	local root = current.handle.root
+	local ground = GroundUtil.GetGroundPosition(root.Position, 0)
+	local now = os.clock()
+	current.quake = { center = ground, startedAt = now, lastElapsed = 0, hit = {} }
+	current.action = "quake"
+	current.lastAttack = "quake"
+	current.cooldowns.quake = now + settings.Cooldown
+	WorldSounds.at(ground, "warden", "warden_pound")
+	impactShake(ground, 1.2)
+	bossRemote:FireAllClients(
+		Messages.BossUpdate.Quake,
+		ground,
+		settings.Radius,
+		settings.Speed,
+		settings.Waves,
+		settings.WaveGap
+	)
+	for wave = 2, settings.Waves do
+		local current0 = current
+		task.delay((wave - 1) * settings.WaveGap, function()
+			if fight == current0 and current0.quake then
+				WorldSounds.at(ground, "warden", "warden_impact")
+				impactShake(ground, 0.7)
+			end
+		end)
+	end
+end
+
+-- Each ring hits each body on the ground it crosses (Rules/WardenBrain.crossed): a jump
+-- (feet AirHeight off the ground), the roll ("melee") or a ledge beats it.
+local function stepQuake(current: Fight, quake: Quake, now: number)
+	local settings = cfg().Quake
+	local elapsed = now - quake.startedAt
+	local before = quake.lastElapsed
+	quake.lastElapsed = elapsed
+	for wave = 1, settings.Waves do
+		local offset = (wave - 1) * settings.WaveGap
+		local r0 = math.max(before - offset, 0) * settings.Speed
+		local r1 = math.max(elapsed - offset, 0) * settings.Speed
+		if r1 <= 0 or r0 >= settings.Radius then
+			continue
+		end
+		local hit = quake.hit[wave]
+		if not hit then
+			hit = {}
+			quake.hit[wave] = hit
+		end
+		for _, member in Squad.living() do
+			local humanoid, targetRoot = member.humanoid, member.root
+			if not humanoid or not targetRoot or hit[humanoid] then
+				continue
+			end
+			local distance = flat(targetRoot.Position - quake.center).Magnitude
+			if distance > settings.Radius or not WardenBrain.crossed(r0, r1, distance) then
+				continue
+			end
+			hit[humanoid] = true
+			local feet = feetY(humanoid, targetRoot)
+			if math.abs(feet - quake.center.Y) >= cfg().PerchHeight then
+				continue -- up a ledge or down a drop: the ring runs under or over them
+			end
+			local floor = GroundUtil.GetGroundPosition(targetRoot.Position, 0).Y
+			if feet - floor > settings.AirHeight then
+				continue -- jumped it
+			end
+			local health = humanoid.Health
+			EnemyProjectileService.damagePlayer(humanoid, settings.Damage, "melee", VEHICLE_DAMAGE)
+			if humanoid.Health > 0 and humanoid.Health < health then
+				Squad.knock(member, settings.Knockdown)
+			end
+		end
+	end
+	local done = (settings.Waves - 1) * settings.WaveGap + settings.Radius / settings.Speed
+	if elapsed >= done then
+		current.quake = nil
+		clearDanger()
+		current.action = "recover"
+		current.busyUntil = now + settings.Recovery
+	end
+end
+
 local function startGuard(current: Fight)
 	local settings = cfg().Guard
 	local now = os.clock()
@@ -896,7 +1609,10 @@ local function resolvePending(current: Fight)
 	local kind = current.pending
 	current.pending = nil
 	local target = nearestTarget(current)
-	local targetRoot = target and target.root
+	-- The charge goes at whom it was aimed (a Rampage's pick), else the nearest.
+	local face = current.faceTarget
+	current.faceTarget = nil
+	local targetRoot = if face and face.Parent then face else target and target.root
 	if kind == "bash" or kind == "sweep" then
 		resolveArc(current, kind)
 	elseif kind == "slam" then
@@ -908,6 +1624,14 @@ local function resolvePending(current: Fight)
 		resolveCharge(current, targetRoot)
 	elseif kind == "canister" then
 		resolveCanister(current)
+	elseif kind == "volley" then
+		resolveVolley(current)
+	elseif kind == "leap" then
+		startLeap(current)
+	elseif kind == "quake" then
+		startQuake(current)
+	elseif kind == "entrance" then
+		startEntranceFall(current)
 	end
 end
 
@@ -1044,6 +1768,17 @@ local function chooseAttack(current: Fight, now: number, target: Squad.Member): 
 		end
 	end
 
+	-- The boss pass: the Quake for a crowd round him, before the limbs get a say.
+	local quake = settings.Quake
+	local quakeReady = quake.Enabled
+		and current.phase >= quake.MinPhase
+		and ready(current, "quake", now)
+	local quakeCount = if quakeReady then countWithin(current, quake.Radius, false) else 0
+	if quakeReady and quakeCount >= quake.CrowdCount then
+		startWindup(current, "quake", quake.Windup, targetRoot)
+		return true
+	end
+
 	-- Bands.
 	local distance = flat(targetRoot.Position - root.Position).Magnitude
 	local canisterReady = ready(current, "canister", now)
@@ -1075,23 +1810,63 @@ local function chooseAttack(current: Fight, now: number, target: Squad.Member): 
 			startWindup(current, "pound", settings.Pound.Windup, targetRoot)
 			return true
 		end
-	elseif distance >= settings.Charge.MinRange and distance <= settings.Charge.MaxRange then
-		if ready(current, "charge", now) and lineClear(current, targetRoot) then
-			startWindup(current, "charge", settings.Charge.Windup, targetRoot)
-			return true
-		end
 	end
-	if canisterReady then
-		local far = furthestTarget(current, settings.Canister.MaxRange)
-		if
-			far
-			and far.root
-			and flat(far.root.Position - root.Position).Magnitude
-				> settings.Pound.MaxRange * reach
-		then
-			startWindup(current, "canister", settings.Canister.Windup, far.root)
-			return true
-		end
+
+	-- Out of his limbs' reach: close the distance or lob (Rules/WardenBrain.farPick).
+	local closeMax = settings.Pound.MaxRange * reach
+	local straggler = isolatedTarget(current)
+	local stragglerRoot = straggler and straggler.root
+	local far = furthestTarget(current, settings.Canister.MaxRange)
+	local farRoot = far and far.root
+	local pick = WardenBrain.farPick({
+		distance = distance,
+		leapDistance = if stragglerRoot
+			then flat(stragglerRoot.Position - root.Position).Magnitude
+			else nil,
+		leapReady = settings.Leap.Enabled and ready(current, "leap", now),
+		chargeReady = ready(current, "charge", now),
+		chargeClear = ready(current, "charge", now)
+			and distance <= settings.Charge.MaxRange
+			and lineClear(current, targetRoot),
+		canisterReady = canisterReady
+			and farRoot ~= nil
+			and flat(farRoot.Position - root.Position).Magnitude > closeMax,
+		volleyReady = current.phase >= settings.Volley.MinPhase and ready(current, "volley", now),
+		quakeReady = quakeReady,
+		quakeCount = quakeCount,
+		rampageReady = settings.Rampage.Enabled
+			and current.phase >= settings.Rampage.MinPhase
+			and now >= (current.cooldowns.rampage or 0)
+			and allowed(current, "charge"),
+	}, {
+		closeMax = closeMax,
+		leapMin = settings.Leap.MinRange,
+		leapMax = settings.Leap.MaxRange,
+		chargeMin = settings.Charge.MinRange,
+		chargeMax = settings.Charge.MaxRange,
+		quakeCrowd = quake.CrowdCount,
+	}, current.rage)
+	if pick == "quake" then
+		startWindup(current, "quake", quake.Windup, targetRoot)
+		return true
+	elseif pick == "rampage" then
+		-- Charges back to back (endCharge starts the next ones).
+		current.rampageLeft = settings.Rampage.Charges - 1
+		current.cooldowns.rampage = now + settings.Rampage.Cooldown
+		startWindup(current, "charge", settings.Charge.Windup, targetRoot, "rampage")
+		return true
+	elseif pick == "leap" and stragglerRoot then
+		startWindup(current, "leap", settings.Leap.Windup, stragglerRoot)
+		return true
+	elseif pick == "charge" then
+		startWindup(current, "charge", settings.Charge.Windup, targetRoot)
+		return true
+	elseif pick == "canister" and farRoot then
+		startWindup(current, "canister", settings.Canister.Windup, farRoot)
+		return true
+	elseif pick == "volley" then
+		startWindup(current, "volley", settings.Volley.Windup, targetRoot)
+		return true
 	end
 	return false
 end
@@ -1107,11 +1882,14 @@ local function enterPhase(current: Fight, phase: number)
 	end
 	local extra = DifficultyService.getExtraPlayers()
 	local center = current.handle.root.Position
+	local counts = WardenBrain.summon(
+		spec.RiotCall :: { [string]: number },
+		(spec :: any).PerExtraPlayer,
+		extra
+	)
 	-- The call answers one body per few frames: one burst of rigs would hitch a phone.
 	task.spawn(function()
-		for typeName, count in spec.RiotCall :: { [string]: number } do
-			local total = count
-				+ (if typeName == "Walker" then spec.WalkersPerExtraPlayer * extra else 0)
+		for typeName, total in counts do
 			for _ = 1, total do
 				if fight ~= current then
 					return
@@ -1129,6 +1907,15 @@ local function enterPhase(current: Fight, phase: number)
 	if spec.PoundCooldown then
 		current.poundCooldown = spec.PoundCooldown
 	end
+	if spec.LeapCooldown then
+		current.leapCooldown = spec.LeapCooldown
+		-- A leap already waiting longer than the new cooldown comes sooner.
+		current.cooldowns.leap =
+			math.min(current.cooldowns.leap or 0, os.clock() + spec.LeapCooldown)
+	end
+	if spec.Rage then
+		current.rage = true
+	end
 	if spec.WalkSpeed then
 		local humanoid = current.handle.humanoid
 		humanoid:SetAttribute(Attributes.BaseWalkSpeed, spec.WalkSpeed)
@@ -1136,18 +1923,36 @@ local function enterPhase(current: Fight, phase: number)
 			humanoid.WalkSpeed = spec.WalkSpeed
 		end
 	end
-	radio("RiotCall")
-	tell("riot")
-	-- The call is the beat: a guard or a windup in progress gives way to it (a charge already
-	-- running carries on and skips the roar).
-	if not current.charge then
+	radio((spec :: any).Radio or (if spec.Rage then "Rage" else "RiotCall"))
+	tell(if spec.Rage then "rage" else "riot")
+	-- The stage roar (the boss pass): everyone feels it, anyone close is thrown back.
+	local roar = settings.StageRoar
+	shake(center, roar.Shake, 0)
+	damageRemote:FireAllClients(center, 0, "break", nil)
+	for _, member in Squad.living() do
+		local targetRoot = member.root
+		if targetRoot and flat(targetRoot.Position - center).Magnitude <= roar.Radius then
+			shove(current, member, roar.Push)
+		end
+	end
+	-- The call is the beat: a guard or a windup in progress gives way to it (a charge, a
+	-- leap or a quake already running carries on and skips the roar's hold).
+	if
+		not current.charge
+		and not current.leap
+		and not current.quake
+		and current.pending ~= "entrance"
+	then
 		if current.action == "guard" then
 			cancelGuard(current)
 		end
+		current.rampageLeft = 0
 		if current.pending then
 			current.pending = nil
+			current.leapGround = nil
+			current.faceTarget = nil
 			clearDanger()
-			for _, name in { "pound", "sweep", "slam", "stomp" } do
+			for _, name in WINDUP_CLIPS do
 				stop(current, name, 0.1)
 			end
 		end
@@ -1164,12 +1969,14 @@ end
 local function checkPhase(current: Fight)
 	local humanoid = current.handle.humanoid
 	local fraction = if humanoid.MaxHealth > 0 then humanoid.Health / humanoid.MaxHealth else 0
-	local phases = cfg().Phases
-	for index, spec in phases do
-		local phase = index + 1
-		if fraction <= spec.Below and current.phase < phase then
-			enterPhase(current, phase)
-		end
+	local thresholds = {}
+	for _, spec in cfg().Phases do
+		table.insert(thresholds, spec.Below)
+	end
+	local target = WardenBrain.phase(fraction, thresholds)
+	-- One burst of damage past two thresholds still plays each phase in order.
+	for phase = current.phase + 1, target do
+		enterPhase(current, phase)
 	end
 end
 
@@ -1182,8 +1989,9 @@ local function endFight(current: Fight, defeated: boolean)
 	fight = nil
 	workspace:SetAttribute(Attributes.IndexActive, false)
 	clearDanger()
-	if current.charge then
-		current.handle.root.Anchored = false
+	current.quake = nil
+	if current.handle.root.Anchored then
+		current.handle.root.Anchored = false -- a charge, a leap or the entrance's wait
 	end
 	if defeated then
 		radio("Kill")
@@ -1218,7 +2026,7 @@ local function endFight(current: Fight, defeated: boolean)
 	end)
 end
 
-local function step()
+local function step(dt: number)
 	local current = fight
 	if not current then
 		return
@@ -1243,16 +2051,30 @@ local function step()
 		sync(current)
 	end
 	checkPhase(current)
+	sampleStillness(now)
 
 	local charge = current.charge
 	if charge then
 		stepCharge(current, charge, now)
 		return
 	end
+	local leap = current.leap
+	if leap then
+		stepLeap(current, leap, now)
+		return
+	end
+	local quake = current.quake
+	if quake then
+		stepQuake(current, quake, now)
+		return
+	end
 	if current.pending and now >= current.resolveAt then
 		resolvePending(current)
 		return
 	end
+	-- The capped turn (the boss pass): toward the windup's target, his path, or the nearest.
+	local nearest = nearestTarget(current)
+	turn(current, now, dt, nearest and nearest.root)
 	local busy = now < current.busyUntil
 	if busy and current.action ~= "guard" then
 		return
@@ -1365,37 +2187,90 @@ local function spawnWarden(groundPosition: Vector3, walk: boolean, arrival: Arri
 		resolveAt = 0,
 		busyUntil = os.clock() + settings.SpawnDelay,
 		charge = nil,
+		leap = nil,
+		leapGround = nil,
 		cooldowns = {
 			charge = os.clock() + settings.Charge.FirstDelay,
 			pound = os.clock() + settings.Charge.FirstDelay, -- the first move is never the Pound
+			leap = os.clock() + settings.Leap.FirstDelay,
 		},
 		chargeCooldown = settings.Charge.Cooldown,
 		poundCooldown = settings.Pound.Cooldown,
+		leapCooldown = settings.Leap.Cooldown,
+		rage = false,
 		lastAttack = nil,
 		nextDecisionAt = 0,
 		plateHits = {},
 		nextRepathAt = 0,
 		nextSyncAt = 0,
 		tracks = loadTracks(handle),
+		faceTarget = nil,
+		quake = nil,
+		rampageLeft = 0,
+		entranceGround = nil,
+		lastStepPhase = 0,
+		shown = false,
 	}
 	fight = current
 	armPlates(current, healthMultiplier)
 	workspace:SetAttribute(Attributes.IndexActive, true)
-
-	local names = {}
-	for _, plate in current.plates do
-		table.insert(names, plate.name)
+	table.clear(stillness)
+	-- The capped turn (the boss pass): the root is turned by `turn`, not the Humanoid.
+	if settings.Weight.TurnRate > 0 then
+		humanoid.AutoRotate = false
 	end
-	bossRemote:FireAllClients(
-		Messages.BossUpdate.Show,
-		EnemyDefinitions[TYPE_NAME].DisplayName,
-		names
-	)
-	sync(current)
+
+	-- The entrance (the boss pass): he waits out of sight above and behind the ring, the
+	-- squad gets the warning, then he dives onto it (startEntranceFall) and the bar slams
+	-- in when he lands. Without it the bar shows now, as before.
+	local entrance = settings.Entrance
+	local hint = settings.WeakSpotHintDelay
+	if entrance.Enabled then
+		local root = handle.root
+		local nearest = Squad.nearestLiving(groundPosition)
+		local away = if nearest and nearest.root
+			then flat(groundPosition - nearest.root.Position)
+			else Vector3.zero
+		if away.Magnitude < 0.5 then
+			away = flat(root.CFrame.LookVector)
+		end
+		away = if away.Magnitude > 0.01 then away.Unit else Vector3.zAxis
+		local rootHeight = root.Position.Y - feetY(humanoid, root)
+		local from = groundPosition
+			+ away * entrance.FromBack
+			+ Vector3.new(0, rootHeight + entrance.FromHeight, 0)
+		root.Anchored = true
+		root.CFrame = CFrame.lookAt(from, from - away)
+		local now = os.clock()
+		current.entranceGround = groundPosition
+		current.pending = "entrance"
+		current.action = "entrance"
+		current.resolveAt = now + math.max(entrance.Warn - entrance.Fall, 0)
+		current.busyUntil = current.resolveAt
+		markDanger("disc", groundPosition, entrance.Radius, now + entrance.Warn)
+		bossRemote:FireAllClients(Messages.BossUpdate.Incoming, groundPosition, entrance.Warn)
+		bossRemote:FireAllClients(
+			Messages.BossUpdate.Zone,
+			groundPosition,
+			entrance.Radius,
+			entrance.Warn
+		)
+		WorldSounds.at(groundPosition, "warden", "warden_roar")
+		radio("Incoming")
+		hint += entrance.Warn + entrance.RoarHold
+	else
+		showBar(current)
+	end
 
 	humanoid.Died:Connect(function()
 		if fight == current then
 			endFight(current, true)
+		end
+	end)
+	-- Control names the weak spot once he is in the fight.
+	task.delay(hint, function()
+		if fight == current and humanoid.Health > 0 then
+			radio("WeakSpot")
 		end
 	end)
 	print(
@@ -1432,7 +2307,8 @@ function IndexService.position(): Vector3?
 	if not current or current.handle.humanoid.Health <= 0 then
 		return nil
 	end
-	return current.handle.root.Position
+	-- Waiting to come down (the entrance): where he will land.
+	return current.entranceGround or current.handle.root.Position
 end
 
 -- Dev: the Warden at `position`, hunting at once (no walk in).
@@ -1457,7 +2333,46 @@ function IndexService.reset()
 			current.handle.model:Destroy()
 		end
 	end
+	restoreSmashed() -- the cover his charges went through stands again
+	table.clear(stillness)
 	workspace:SetAttribute(Attributes.IndexActive, false)
+end
+
+-- Dev (F1 > THE WARDEN): his body just under stage `stage`'s threshold (2 = the call at
+-- two thirds, 3 = the rage at one third); the stage plays on the next frame.
+function IndexService.devStage(stage: number): boolean
+	local current = fight
+	local spec = cfg().Phases[stage - 1]
+	if not current or not spec then
+		return false
+	end
+	local humanoid = current.handle.humanoid
+	humanoid.Health = math.min(humanoid.Health, humanoid.MaxHealth * (spec.Below - 0.01))
+	return true
+end
+
+-- Dev: one of his big attacks now ("quake" or "rampage"), whatever the stage.
+function IndexService.devAttack(kind: string): boolean
+	local current = fight
+	if not current or current.pending or current.charge or current.leap or current.quake then
+		return false
+	end
+	local target = nearestTarget(current)
+	local targetRoot = target and target.root
+	if not targetRoot then
+		return false
+	end
+	local settings = cfg()
+	if kind == "quake" then
+		startWindup(current, "quake", settings.Quake.Windup, targetRoot)
+	elseif kind == "rampage" then
+		current.rampageLeft = settings.Rampage.Charges - 1
+		current.cooldowns.rampage = os.clock() + settings.Rampage.Cooldown
+		startWindup(current, "charge", settings.Charge.Windup, targetRoot, "rampage")
+	else
+		return false
+	end
+	return true
 end
 
 -- Fresh clients (a late join mid-fight) get the current state on request.
@@ -1471,7 +2386,7 @@ function IndexService.init()
 	workspace:SetAttribute(Attributes.IndexActive, false)
 	bossRemote.OnServerEvent:Connect(function(player)
 		local current = fight
-		if current then
+		if current and current.shown then
 			local names = {}
 			for _, plate in current.plates do
 				table.insert(names, plate.name)

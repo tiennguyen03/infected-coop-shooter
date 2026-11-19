@@ -18,20 +18,23 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage.Shared.Config)
 local Messages = require(ReplicatedStorage.Shared.Messages)
 local Record = require(ReplicatedStorage.Shared.Rules.Record)
+local AttachmentRules = require(ReplicatedStorage.Shared.Rules.AttachmentRules)
+local Optics = require(ReplicatedStorage.Shared.Attachments.Optics)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local KitPrices = require(ReplicatedStorage.Shared.KitPrices)
+local SaveSchema = require(ReplicatedStorage.Shared.Rules.SaveSchema)
 local SaveSlot = require(script.Parent.SaveSlot)
 
 local RecordService = {}
 
 local SAVE = Config.Lobby.Save
-local LOAD_WAIT = 10 -- seconds `waitFor` waits for a record still loading
+local LOAD_WAIT = SAVE.LoadWait -- seconds `waitFor` waits for a record still loading
 
+-- The record held for each soldier. On a read-only visit (SaveSlot: the saved record could
+-- not be read on join, or is newer than this code, or junk) it is a stand-in, and saving it
+-- would wipe the real one (merits earned on missions, kit, paid tabs). They can still buy for
+-- this visit; nothing of it is saved (docs/SAVES.md).
 local records: { [Player]: Record.Record } = {}
--- Soldiers whose saved record could not be read on join (a DataStore error, or Studio): the
--- record held here is a stand-in, and saving it would wipe the real one (merits earned on
--- missions, kit, paid tabs). They can still buy for this visit; nothing of it is saved.
-local unread: { [Player]: boolean } = {}
 -- Soldiers with a Robux receipt being paid right now: one at a time, and no buy meanwhile.
 local granting: { [Player]: boolean } = {}
 -- Soldiers with a buy being saved right now: one at a time.
@@ -62,72 +65,118 @@ function RecordService.waitFor(player: Player): Record.Record?
 	return records[player]
 end
 
--- Whether every gun in `loadout` is on the soldier's record.
-function RecordService.allows(player: Player, loadout: Record.Loadout): (boolean, string?)
+export type Signable = Record.Loadout & { attachments: AttachmentRules.Attachments? }
+
+-- Whether every gun in `loadout` is on the soldier's record, and every optic fitted to it
+-- is bought and fits its gun (Rules/AttachmentRules).
+function RecordService.allows(player: Player, loadout: Signable): (boolean, string?)
 	local record = RecordService.waitFor(player)
 	if not record then
 		return false, "record not loaded"
 	end
-	return Record.allows(record, loadout, RecordService.priceOf)
+	local ok, reason = Record.allows(record, loadout, RecordService.priceOf)
+	if not ok then
+		return ok, reason
+	end
+	return AttachmentRules.fittedAllowed(record, loadout.attachments, Optics.Rows)
 end
 
 local function load(player: Player)
-	local data, answered = slot:load(player)
+	-- A failed read, or a save this code cannot read (junk, a newer version), makes the visit
+	-- read-only in the slot: never written over. An older save is migrated here on read.
+	local data = slot:load(player)
 	local record = Record.decode(data, SAVE.StartMerits)
 	if player.Parent and not records[player] then
-		-- A save this code cannot read (junk, a newer version) is treated like one that could
-		-- not be read: never written over.
-		if not answered or not Record.canUpdate(data) then
-			unread[player] = true
-			warn(
-				`[RecordService] {player.Name}'s record could not be read: this visit is not saved`
-			)
-		end
 		records[player] = record
 		send(player, record)
 	end
 end
 
-local function buy(player: Player, id: unknown)
+-- A change to the record: (the new record, true) or (the record unchanged, false, reason).
+export type Edit = (record: Record.Record) -> (Record.Record, boolean, string?)
+
+-- Applies `edit` to the soldier's record and saves it (yields): one at a time, none while a
+-- receipt is being paid, applied to the record as it is stored. (true) or (false, reason;
+-- "loading" | "busy" | "unreadable" | what `edit` said). The record is sent on success.
+local function change(player: Player, label: string, edit: Edit): (boolean, string?)
 	local record = records[player]
-	-- One buy at a time, and none while a receipt is being paid.
-	if not record or typeof(id) ~= "string" or granting[player] or buying[player] then
-		remote:FireClient(player, Messages.Record.Refused, id, "loading")
-		return
+	if granting[player] or buying[player] then
+		return false, "busy"
 	end
-	if unread[player] or not slot.store then
-		-- Nothing is saved this visit (see `unread`; Studio without API access): the buy is
+	if not record then
+		return false, "loading"
+	end
+	if slot:isReadOnly(player) or not slot.store then
+		-- Nothing is saved this visit (see `records`; Studio without API access): the change is
 		-- made on the record held here only.
-		local after, ok, reason = Record.buy(record, id, RecordService.priceOf)
+		local after, ok, reason = edit(record)
 		if not ok then
-			remote:FireClient(player, Messages.Record.Refused, id, reason)
-			return
+			return false, reason
 		end
 		records[player] = after
 		send(player, after)
-		return
+		return true, nil
 	end
-	-- The buy is applied to the record as it is stored, in one step (UpdateAsync), never by
+	-- The change is applied to the record as it is stored, in one step (UpdateAsync), never by
 	-- writing the copy read on join over it: merits the match paid after the soldier joined
 	-- (a slow save at mission end) are kept, and a save this lobby cannot read is left alone.
 	buying[player] = true
 	local refused: string? = nil
 	local ok, written = pcall(slot.update, slot, player, function(old: unknown): any
-		local saved, reason = Record.buyStored(old, id, RecordService.priceOf, SAVE.StartMerits)
-		refused = reason
-		return saved
+		if not Record.canUpdate(old) then
+			refused = "unreadable"
+			return nil
+		end
+		local after, done, reason = edit(Record.decode(old, SAVE.StartMerits))
+		if not done then
+			refused = reason
+			return nil
+		end
+		return Record.encode(after, old)
 	end)
 	buying[player] = nil
 	if not ok or written == nil then
-		remote:FireClient(player, Messages.Record.Refused, id, refused or "busy")
-		return
+		return false, refused or "busy"
 	end
 	local after = Record.decode(written, SAVE.StartMerits)
 	if player.Parent then
 		records[player] = after
-		print(`[RecordService] {player.Name} bought {id}: {after.merits} merits left`)
+		print(`[RecordService] {player.Name} {label}: {after.merits} merits left`)
 		send(player, after)
 	end
+	return true, nil
+end
+
+local function buy(player: Player, id: unknown)
+	if typeof(id) ~= "string" then
+		remote:FireClient(player, Messages.Record.Refused, id, "loading")
+		return
+	end
+	local ok, reason = change(player, `bought {id}`, function(record)
+		return Record.buy(record, id, RecordService.priceOf)
+	end)
+	if not ok then
+		remote:FireClient(player, Messages.Record.Refused, id, reason)
+	end
+end
+
+-- Applies `edit` to the soldier's merit record the way a buy is (the Kit Mods' ranks,
+-- KitModService): same save, same one-at-a-time lock. (true) or (false, reason).
+function RecordService.change(player: Player, label: string, edit: Edit): (boolean, string?)
+	return change(player, label, edit)
+end
+
+-- Buys `id` at the price `priceOf` gives, on the same saved record and the same one-step
+-- save as the Quartermaster's guns (OpticService: an optic's own row). (true) or (false,
+-- "loading" | "busy" | "unknown" | "owned" | "short").
+function RecordService.buyWith(
+	player: Player,
+	id: string,
+	priceOf: Record.PriceOf
+): (boolean, string?)
+	return change(player, `bought {id}`, function(record)
+		return Record.buy(record, id, priceOf)
+	end)
 end
 
 local function grant(player: Player, purchaseId: string, tabs: number): boolean
@@ -141,7 +190,7 @@ local function grant(player: Player, purchaseId: string, tabs: number): boolean
 		if not granted and not Record.hasReceipt(stored, purchaseId) then
 			return nil -- a bad id or amount: nothing to write
 		end
-		return Record.encode(paid)
+		return Record.encode(paid, old)
 	end)
 	if written == nil then
 		return false
@@ -180,7 +229,7 @@ end
 
 function RecordService.init()
 	remote = Remotes.get("Record")
-	slot = SaveSlot.new(SAVE.RecordStore, Record.KEY_PREFIX)
+	slot = SaveSlot.new(SAVE.RecordStore, Record.KEY_PREFIX, SaveSchema.Record)
 	remote.OnServerEvent:Connect(function(player: Player, kind: unknown, id: unknown)
 		if kind == Messages.Record.Buy then
 			buy(player, id)
@@ -194,7 +243,6 @@ function RecordService.init()
 	end
 	Players.PlayerRemoving:Connect(function(player: Player)
 		records[player] = nil
-		unread[player] = nil
 		buying[player] = nil
 	end)
 end

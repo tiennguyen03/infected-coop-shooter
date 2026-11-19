@@ -5,6 +5,13 @@ Gameplay rules in [PLAN.md](PLAN.md) and tone in [LORE.md](LORE.md) win over any
 Performance wins over fidelity: the game must run smooth on low-end devices first. What
 shipped when is in [HISTORY.md](HISTORY.md).
 
+**Contents** (read only the section you need): 1 Art direction · 2 Palette · 3 Lighting ·
+4 Icons (canvas, glyphs, pipeline) · 5 UI (HUD rules and layout table, the Loadout screen,
+the desk screens, the Arms Room counter) · 6 3D assets (budgets, modelling, colour, export,
+performance) · 7 Enemies and characters (Infected v2, skies, Checkpoint Delta's sky and
+skyline, the Carrier, the helicopter, the ATV, the Doorman, body animation) · 8 VFX (spit,
+first person and sights, night vision, kick, shake, low health) · 9 Checklist · 10 Decisions.
+
 ---
 
 ## 1. Art direction in one line
@@ -123,7 +130,7 @@ Icons show on call-in and field-upgrade cards through `IconId` on each
 - No text, no letters, no logos. Stencil marks are abstract bars.
 - Readability test: shrink to 40 px. If you can't name the object, simplify.
 
-### Glyphs (2026-11-11)
+### Glyphs
 
 Marks that sit beside a number on the HUD, drawn at 16-20 px: `GLYPHS` in the generator, no
 plate and no ground shadow, a transparent canvas, one bold silhouette filling it, a dark
@@ -204,10 +211,9 @@ UIScale) and its text through `HudTheme.label`.
   1)`, set on ViewportSize change. 16 px edge margin. Touch-only devices (no keyboard) move
   the mission stack (mission line, meter, subtitles, insert card) to top centre, clear of
   the thumbstick and buttons, DOWNED to 40% down, and drop side objectives' reason line.
-- **Nothing stacks on anything** (2026-11-17, Nova: "the in game UI is clutter and overstack
-  each other"): elements whose height changes share one flow instead of fixed offsets. The
-  left column (`HudTheme.inLeftColumn`, `Config.Hud`) is the squad panel, then the objective
-  list; the mission stack (`MissionLine.attach`) is the mission line with its meter, then
+- **Nothing stacks on anything:** elements whose height changes share one flow instead of fixed offsets. The
+  left column (`HudTheme.inLeftColumn`, `Config.Hud`) is the reinforcements line, the squad
+  panel, then the objective list; the mission stack (`MissionLine.attach`) is the mission line with its meter, then
   subtitles (and on touch the insert card). A new HUD element that grows joins a flow.
 - **Motion:** appear 0.18 s Quad Out (fade + 8 px rise or a 40 px slide for cards),
   disappear 0.3 s fade; the health trail holds 0.35 s then shrinks 0.25 s; pulses are
@@ -220,22 +226,23 @@ UIScale) and its text through `HudTheme.label`.
 |---|---|---|
 | Health stack (`HealthBarUI`) | top left (16,12) | 400x16 red bar, white damage trail; shield 400x6 white bar under it with a "+N" tag; low health: red outline + red edge vignette pulsing; downed: dim fill, vignette held |
 | Abilities (`AbilityUI`) | top left (16,44) | seven 38 px circles G / F / V / 1-4 (frag, shove, stim, the call-ins): key letter from `Config.Keys`, name under (PC); cooling: white fill rising, seconds; grenades, stims and call-in charges as yellow squares under the circle, the circle dims when empty; a diamond marks an upgrade in the slot |
-| Resupply (`ResupplyUI`) | top left (16,108) | 14 pt line + 240x4 bar with quarter ticks; ready: "RESUPPLY READY [X] FLARE" with the bar pulsing; inbound: "PALLET 0:14", bar drains |
+| Resupply (`ResupplyUI`) | top left (16,108) | 14 pt line + 240x4 bar with quarter ticks; ready: "RESUPPLY READY [X] FLARE" with the bar pulsing; paid for but the flare's wait running (`Config.Scarcity.Resupply`): "RESUPPLY  FLARE IN 1:12" (yellow), bar dim; inbound: "PALLET 0:14", bar drains |
+| Reinforcements (`ReinforceUI`, `Config.Scarcity.Reinforce`) | left column, first (over the squad panel) | "REINFORCEMENTS" 12 dim + one 9 px square per reinforcement, 4 apart: yellow left, empty outline spent (one just spent flashes red.l 0.5 s); "NO REINFORCEMENTS" red.l when none; hidden when reinforcements are off |
 | Stamina (`StaminaUI`) | top left (16,38), under the shield bar | 300x4 yellow bar, no label: shorter and thinner than health; hidden until stamina is spent (0.18 s in), fades out 0.3 s once full for 2 s (`Config.Stamina.BarHideAfter`); winded: fill and outline red.l, pulsing twice a second (15 Hz) until sprint is back |
-| Squad panel (`SquadPanelUI`, `Config.SquadPanel`) | left column (16,150), first; as tall as its rows | one 190x32 row per other squad member (max 3, callsign order): name 14 in friendly blue (a player's display name, a bot's callsign), state 12 right-aligned, 190x6 health bar (red; red.l with a red outline under 30%), 190x3 white Armour Plate bar when plated; downed: "DOWN 23s" on a draining red.l bar, "REVIVING" on a filling blue bar; dead: dim, "DEAD 8s" while a bot's respawn runs; a red.l flash on a hit of 25% or a down. Repaints on attribute changes; a 0.25 s timer only while a countdown shows |
+| Squad panel (`SquadPanelUI`, `Config.SquadPanel`) | left column (16,150), under the reinforcements line; as tall as its rows | one 190x32 row per other squad member (max 3, callsign order): name 14 in friendly blue (a player's display name, a bot's callsign), state 12 right-aligned, 190x6 health bar (red; red.l with a red outline under 30%), 190x3 white Armour Plate bar when plated; downed: "DOWN 23s" on a draining red.l bar, "REVIVING" on a filling blue bar; dead: dim, "DEAD 8s" while a bot's respawn runs; a red.l flash on a hit of 25% or a down. Repaints on attribute changes; a 0.25 s timer only while a countdown shows |
 | Run timer (`RunTimerUI`) | top centre (0,8) | 16 pt, no panel |
 | Ammo (`LoadoutUI`) | crosshair (+40,+40) | the gun in hand 12 pt above it with "[Q] PISTOL" dim (the other gun); magazine GothamBlack 26 + " / reserve" 16 dim; yellow low, "RELOADING" + bar, red "DRY [R]"; attribute-driven |
 | Loadout screen (`LoadoutMenu`: the Loadmaster's LOADOUT, the match's ARMS ROOM on B) | centre, fitted to the screen (below) | three columns of rows with the item's shape, and an inspect panel with the item turning in 3D over its stat bars: "The Loadout screen" below |
 | Desk screens (lobby `DeskScreen`, talk `DeskTalk`) | centre, the Loadout's size | the Loadout's look for the Quartermaster, Call-ins and Vehicles: what the desk sells, the person's line under the header, BUY in the footer: "The desk screens" below |
 | Reward cards (`RewardPanel`, opened by `ResupplyUI` on a crate's prompt) | centre, DisplayOrder 60 | up to three 300x400 cards 16 apart under "//RESUPPLY" 30 yellow, a 18 pt note and a dim "closes in 0:42"; a card: menu fill (22,8,8) at 0.08 with a red.m 1 px box and a 4 px bar in its kind's colour (supply yellow, field upgrade blue), "[1]" 16 yellow, kind tag 16 right, 88 px icon, name GothamBlack 28, one-line description Gotham 20, red.l "REPLACES ..." 16; hover or gamepad selection: cream 3 px box; taken: cream flash, x1.06, the others shrink and fade, gone in 0.45 s; footer 16: yellow squares + callsigns that have taken theirs, the refusal in red.l, "[E] CLOSE (or walk away)"; black layer behind at 0.8 transparency. On a short screen the panel is held at 0.7 scale or more (name 19 px, description 14 px on 844x390) |
-| Mission line (`MissionLine`, driven by `ObjectiveUI` / `ExtractionUI`) | mission stack: lower centre from (0.5, 0.72) down; touch top centre (0.5, 40) | "MAIN OBJECTIVE  NAME" (name yellow), its reason on the second line the whole time, a dim 14 pt third line (what to do now, timer, distance in metres), then the meter (below); "HOLD the LZ" / "WAITING FOR SQUAD n/m" / red "RETURN to the LZ"; extraction outranks the objective |
+| Mission line (`MissionLine`, driven by `ObjectiveUI` / `ExtractionUI`) | mission stack: lower centre from (0.5, 0.72) down; touch top centre (0.5, 40) | "MAIN OBJECTIVE  NAME" (name yellow), its reason on the second line the whole time, a dim 14 pt third line (what to do now, timer, distance in metres), then the meter (below); "HOLD the landing zone" / "WAITING FOR SQUAD n/m" / red "RETURN to the landing zone"; extraction outranks the objective |
 | Objective meter (`MissionLine`, `Config.Objectives.Meter`) | under the mission line | whenever there is progress: GothamBlack 20 readout over a 440x10 hard-edged bar (track at 0.3, 1 px white outline at 0.75, yellow fill easing 0.25 s to each server step). "HOLDING  23 of 60s" (HOLDING yellow) while a hold's seconds rise; "PAUSED  23 of 60s" (red.l, fill dim, outline red.l) when they stopped partway (`Rules/Objectives.holdState`, 1.6 s); "2 of 3" for a count. Shows the objective whose progress rose in the last 4 s, else the main one (`meterFocus`); a side objective's readout starts "SIDE  NAME". Extraction uses it too (waiting and returning read PAUSED) |
 | Objective list (`ObjectiveUI`) | left column, under the squad panel | one row per known objective: a needle that turns toward it (up = ahead), "MAIN OBJECTIVE / SIDE OBJECTIVE  NAME  140 m" 14 pt; a side objective adds its reason (not on touch), its step 12 pt and a 160x3 yellow progress bar when it counts; DONE yellow, FAILED red.l for 6 s; refreshed at 4 Hz |
 | Objective card (`ObjectiveUI`) | upper centre (0.5, 120); touch: last in the mission stack | at insert, 8 s, no panel: "MAIN OBJECTIVE" 14 dim, the name GothamBlack 36 yellow, the reason 18, "at <place>" 16 dim |
 | Subtitles (`BuffNoticeUI.subtitle`) | mission stack, under the mission line and meter (touch: the insert card under them) | "CONTROL: radio line" (BuffNotice kind radio), the Warden's "WARDEN: ..." tells |
 | Notification cards (`BuffNoticeUI.card`) | top right (-16,12), y 120 during a boss | dark strip, red-outlined square, bold title; pickups, picks, the flare call, an upgrade landing; max 3 |
 | Boss bar (`BossBarUI`) | top right (-16,12) | name in red right-aligned, 380x16 faceted body bar ending in a round emblem (blue while stunned), six 56x6 plate bars with labels |
-| Downed / K.I.A. (`RunEndUI`) | centre (0.5, 0.22); touch (0.5, 0.4) | "DOWNED" 40 red + 360x4 bleed-out bar + line; "K.I.A." + line; no panel |
+| Downed / K.I.A. (`RunEndUI`) | centre (0.5, 0.22); touch (0.5, 0.4) | "DOWNED" 40 red + 360x4 bleed-out bar + line; "K.I.A." + line ("Reinforcement in 6s · dropping beside PIKE TWO", the name blue; or "No reinforcements left..."); no panel |
 | Results (`RunEndUI`) | full screen | menu style: dark red field, corner L-brackets, "//OPERATION COMPLETE" yellow or "//SQUAD WIPED" red, stats in a red-outlined box, cream READY |
 | Results (`RunEndUI`) wallet | under the "+N MERITS" line | dim 14 pt "ON YOUR RECORD" + the wallet readout; counts up from the balance before the pay; hidden until the match has read the record |
 | Wallet (`WalletReadout`; lobby `WalletUI`) | the Carrier: right end of Roblox's top bar (ScreenInsets TopbarSafeInsets, 16 px in), DisplayOrder 4, always on | medal glyph + merits in yellow, tag glyph + tabs in white, GothamBlack 20, no panel, no words; numbers by `Rules/Wallet` (exact under 10,000, then "12.4k", "1.2M", rounded down); a change counts to the new number over 0.6 s at 15 Hz while the number starts white and the glyph swells 35% and settles |
@@ -244,26 +251,26 @@ UIScale) and its text through `HudTheme.label`.
 
 - No always-on loadout strip: an upgrade shows as a card when it lands and as a diamond on
   its ability circle.
-- **Ally outline** (`AllyOutline`, `Config.AllyOutline`; owner 2026-11-11): every squadmate
+- **Ally outline** (`AllyOutline`, `Config.AllyOutline`): every squadmate
   (player or bot) wears a thin pale blue outline seen through walls, no fill; yellow while
   downed, off when dead.
-- **No floating health bars or name tags** (owner 2026-11-11): none over the Infected,
+- **No floating health bars or name tags** (owner): none over the Infected,
   players or bots, and Roblox's own top-right health bar is off. Squadmates are the squad
   panel, the boss its top bar. `Config.SquadPanel.OverheadBars` / `OverheadNames` restore them.
 - World markers: each objective carries a BillboardGui ("MAIN OBJECTIVE" / "SIDE OBJECTIVE"
   over its name, seen through walls from 1200 studs; `Objectives/Kit.marker`). Not built yet:
   LZ and pallet diamonds with distance, and a squad roster.
 - Crates carry one label in the world (kind in yellow, "TAKEN n/m" under it) and a light
-  pillar on the upgrade and objective crates. The small card billboards are gone
-  (owner 2026-11-11: too small to read); they remain only behind `Requisition.Pick.WalkOver`.
+  pillar on the upgrade and objective crates (small card billboards only behind
+  `Requisition.Pick.WalkOver`: the owner found them too small to read).
 - UI stays **code-generated** (disk is the single source of truth). No hand edits in Studio.
 - Never block the centre of the screen except for the run-end screens and the reward cards,
   which the player opens on purpose and can walk away from.
 
-### The Loadout screen (2026-11-16)
+### The Loadout screen
 
-Owner: "bigger", each item with its gun's shape, the picked one turning in 3D beside its
-stats. After Prototype 2's upgrade menu (`.superpowers/ui-refs/prototype2/17-upgrade-menu.jpg`:
+Big, each item with its gun's shape, the picked one turning in 3D beside its stats. After
+Prototype 2's upgrade menu (`.superpowers/ui-refs/prototype2/17-upgrade-menu.jpg`:
 "//" header, a list of icon rows with the cream selection, a red-boxed DETAILS panel, tiers as
 square cells). Code `src/client/LoadoutMenu.luau`, numbers `Config.LoadoutScreen`.
 
@@ -302,10 +309,9 @@ square cells). Code `src/client/LoadoutMenu.luau`, numbers `Config.LoadoutScreen
 - **Shared pieces:** the frame, the row and the inspect panel are `src/client/KitView.luau`
   (the Loadout and the desk screens below build from it; change the look there once).
 
-### The desk screens (2026-11-17)
+### The desk screens
 
-Owner: "any NPC interaction UI should be using the Prototype 2 UI... the same as the
-Loadmaster". Decision (ui-ux-designer): one screen for every desk that hands out kit, built
+Owner: every NPC screen uses the Prototype 2 look, the same as the Loadmaster. One screen for every desk that hands out kit, built
 from the Loadout screen's own pieces (`KitView`), so the Quartermaster, the Call-ins sergeant
 and the motor sergeant look and read exactly like the Loadmaster; the talk before it gets the
 same menu dress. Code `src/lobby/client/DeskScreen.luau`, `DeskTalk.luau`, wording
@@ -338,10 +344,10 @@ same menu dress. Code `src/lobby/client/DeskScreen.luau`, `DeskTalk.luau`, wordi
   (the camera views are the switch's old path); the Plot's map view keeps its camera with the
   new talk panel; the Gunsmith (EDIT) already had the menu dress and now frames its gun with
   the same cream corners, from `Showcase`.
+- **The Quartermaster keeps his gun wall** (`Config.Lobby.DeskScreen.KeepOwnView`): the camera
+  on his rack and counter, not the desk screen.
 
----
-
-### The Arms Room counter (2026-11-09)
+### The Arms Room counter
 
 The rack (`docs/sprints/LOBBY_V1_FALLOW.md` > Arms Room counter) is a wall behind a wire cage,
 not a lit display: no spotlights, turntables or display lighting. The one feedback is the
@@ -350,8 +356,7 @@ outline 0.3, `HudTheme.Color.Yellow`). The card follows the HUD: `HudTheme` trac
 outline, GothamBlack name, dim designation, yellow ON YOUR RECORD, stat bars as a 6 px white track
 with a yellow fill. BUY and a price in MERITS show for a gun not on the record (a full-width BUY · N MERITS
 button under the status line, dimmed with "(SHORT)"; the merits in yellow under the rack's
-header; owner, 2026-11-09); words never used on it: sell,
-lock, unlock, shop, store, wares.
+header). Words never used on it: sell, lock, unlock, shop, store, wares.
 
 ## 6. 3D assets (Blender → Roblox)
 
@@ -478,8 +483,9 @@ Lower is always acceptable. Add triangles only where the silhouette needs them.
 Per-body build sheets live in [CHARACTERS.md](CHARACTERS.md): who each form was, what it
 still wears, the silhouette ladder, the strain's two colours (`rebuilt`, `strain`).
 
-**The Infected are blocky Roblox bodies** (owner: a rounded sculpted redesign was built and
-rejected 2026-11-08). One mesh per R15 limb swapped onto the stock rig
+**The Infected are blocky Roblox bodies** (owner: a rounded sculpted redesign was rejected).
+The game wears the v2 bodies (below); this section's first bodies are the fallback
+(`Config.Enemies.BodyVersion = 1`). One mesh per R15 limb swapped onto the stock rig
 (`assets/3d/README.md` > Infected and player bodies), built in `build_assets.py`
 (`INFECTED_TYPES`). Built: Walker, Runner, Brute, Hocker, and the Warden (`build/warden.py`).
 Not built: Bloat, Shedder, Crawler, Kite, Growth, the other Index hosts, Kilo.
@@ -497,16 +503,8 @@ Not built: Bloat, Shedder, Crawler, Kite, Growth, the other Index hosts, Kilo.
   forearms) fill the box.
 - Posture is baked into the limb meshes (`shift_all` / `rotate_all` hang a limb off its
   fixed R15 joint; MeshAssets offsets the part by the bounds centre, so limbs may leave
-  their R15 box). Walker (the civilian): right shoulder sloped 0.3 lower, head down 18 deg
-  and forward, a `foliage.d` blanket slab to mid-thigh at the back, `concrete.d` trousers,
-  a `white.l` screening band with one red stripe. Runner (the garrison soldier): upper torso
-  pitched 20 deg forward, traps up to the jaw, head jutting and sunk, arms hung 0.45 ahead on
-  forearms 0.55 longer (hands at the knees), a stepped spine, dog tags hanging plumb. Brute:
-  torso 2.6 x 1.2, stepped bone slabs per shoulder rising 0.4 above the crown with the head
-  sunk 0.45, arms hung 0.42 outboard on forearms 1.0 longer (fists at the shin), trousers
-  low over short legs, the pack split in two. Hocker: head thrown back 22 deg on a split
-  jaw, a stepped notch down the chest, a `white.l` surgical mask, soaked shirt, knees bent
-  18 deg. 1,524 / 2,008 / 2,172 / 1,484 tris (caps in `BODY_TRI_CAP`). Previews:
+  their R15 box). Each first body's pose and costume is in `build_assets.py`
+  (`INFECTED_TYPES`) and CHARACTERS.md; caps in `BODY_TRI_CAP`; previews
   `ref_inf_<form>.png`, `_side.png`, `_back.png`.
 - Hocker sac: `strain.m` SmoothPlastic, swells 1.8x over the 0.8 s windup. Its spit: §8.
 - Gore (owner: limbs come off when shot): a severed limb leaves a flat raw stump
@@ -524,18 +522,16 @@ Not built: Bloat, Shedder, Crawler, Kite, Growth, the other Index hosts, Kilo.
 **Players are anonymous Pike soldiers** (Pike One to Four; bots Two to Four in solo). Every
 player and bot wears the one limb set `pc_assault_*` (grey fatigues, `dark` Pike carrier,
 helmet with NVG mount, friendly-blue shoulder patch), swapped on by
-`MeshAssets.dressModel`; the forearms and shins taper with joint caps. The Chosen are
-retired: the build script still builds four more limb sets (`PC_CLASSES` k9 / epi / recon /
-engineer) that the game never loads, and the skinned body (`pc_assault_skinned` + gear) is
-switched off (`Config.Player.SkinnedBody = false`, see `assets/3d/README.md`).
+`MeshAssets.dressModel`; the forearms and shins taper with joint caps. The unused class limb
+sets (`PC_CLASSES`) and the skinned body (`Config.Player.SkinnedBody = false`) are still
+built but never loaded (`assets/3d/README.md`).
 
 - Weapons: `gun` and `dark` materials, one accent facet (sight, mag tape) in the owning
   item's accent color.
 
-### Infected v2 (in the game since 2026-11-11)
+### Infected v2
 
-The remade Walker, Runner, Brute and Hocker (owner: "I like the new zombies"). The game wears
-them while `Config.Enemies.BodyVersion` is 2; 1 puts the bodies above back (both sets stay
+The remade Walker, Runner, Brute and Hocker (owner approved). The game wears them while `Config.Enemies.BodyVersion` is 2; 1 puts the bodies above back (both sets stay
 uploaded). Source: `assets/3d/build/infected_v2.py`. Pictures (first bodies next to v2, front
 and back): `assets/3d/build/previews/infected_v2_<form>.png` and `lineup_infected_v2.png`.
 
@@ -564,15 +560,13 @@ Sided limbs: Walker arms and legs, Brute arms (`infected_v2.SIDED`). Heads, tors
 sided limbs are not symmetric, so every `inf_v2_*` FBX is exported mirrored in X
 (`assets/3d/README.md`); the bad side is the body's own right. The Hocker's sac is placed
 from the limb centre, not the mesh centre (the hump moves the torso's bounds). Hit boxes are
-the limb bounds, so they grew with the shapes: Walker head 1.38 x 1.92 x 1.40 (was 1.22 x
-1.60 x 1.48), Hocker head 1.84 x 1.56 x 1.90 (was 1.33 x 1.60 x 1.70), Brute upper torso
-3.29 x 3.40 x 1.91 (was 2.86 x 3.11 x 1.87), Brute right forearm 1.48 x 2.12 x 1.34 (was
-1.19 x 2.12 x 1.01). Not yet seen in game: which side the wounds land on, gore stumps on the
+the limb bounds: Walker head 1.38 x 1.92 x 1.40, Hocker head 1.84 x 1.56 x 1.90, Brute
+upper torso 3.29 x 3.40 x 1.91, Brute right forearm 1.48 x 2.12 x 1.34. Not yet seen in game: which side the wounds land on, gore stumps on the
 new arms, how the clips move the longer right arm.
 
-### Mile 14's night (2026-11-11)
+### Mile 14's night
 
-Nova: "nearly pitch black". `Config.NightSky` (SkyService, for its `Missions`): midnight, no sun
+Nearly pitch black (Nova). `Config.NightSky` (SkyService, for its `Missions`): midnight, no sun
 or moon, brightness 0, ambient (7, 8, 11) / outdoor (12, 13, 18), exposure -0.4, a dark
 blue-black haze (density 0.42), heavy dark cloud, 300 faint stars, a cold drained grade. The
 burning skyline (the distant city) is the only glow on the horizon. Night vision lifts it on
@@ -581,9 +575,9 @@ that client: +2.2 exposure and the ambient raised to (46, 52, 46) / (70, 78, 70)
 `build/trees.py` (tall and young pines, a broadleaf, a shrub) in the palette's dark greens on a
 dark bark.
 
-### The Carrier's sky (gloomy, 2026-11-10)
+### The Carrier's sky
 
-Tien: gloomier. An overcast, cold late afternoon on a grey sea (`Config.Lobby.Sky`): ClockTime
+An overcast, cold late afternoon on a grey sea (`Config.Lobby.Sky`): ClockTime
 17.3, Brightness 1.5, Ambient `rgb(88,94,104)`, OutdoorAmbient `rgb(118,126,138)`, ColorShift
 top `rgb(196,206,220)`, Exposure -0.05, ShadowSoftness 0.75; Atmosphere Density 0.36, Color
 `rgb(148,156,166)`, Decay `rgb(78,86,98)`, Glare 0, Haze 2.2; Clouds Cover 0.88, Density 0.8,
@@ -592,23 +586,13 @@ Color `rgb(112,118,126)`; ColorCorrection Contrast 0.08, Saturation -0.22, Tint
 `rgb(38,58,64)`, reflectance 0.25, seabed `rgb(16,28,32)`. The orange coast fires and the
 Helicopter lamps are the warm notes. The hangar desks must still read at a glance.
 
-### The Carrier's buying panels (2026-11-10)
+### The Carrier's buying panels (old path)
 
-Since 2026-11-17 every desk buys on the desk screen (section 5 > The desk screens); what
-follows is the old path behind `Config.Lobby.DeskScreen.Enabled = false`. The words still hold.
-
-The Quartermaster's rack card (above) and `DeskShop` (call-ins at the Call-ins desk; the
-Fires desk and the Loadmaster's drops folded into it 2026-11-16) share one look: the HUD track panel and outline, the item name in GothamBlack
-with its designation dim under it, ON YOUR RECORD in yellow, or a BUY · N MERITS button
-(outlined, dimmed with "(SHORT)" when the soldier cannot pay), the merits in yellow at the
-top. In the Loadout, kit not on the record is dimmed with its price in yellow where the
-designation was. Words: BUY, MERITS, ON YOUR RECORD; never shop, store, wares, sell, lock
-or unlock.
-The Call-ins display (2026-11-16, `CallInDisplayUI`) is the rack's screen for call-ins: the same
-header top left (desk, THE KIT, his line, the merits), hint and Back bar at the bottom, the same
-card on the right; in the world each pallet's plate carries the name in dark stencil and, for
-this soldier only, ON YOUR RECORD in yellow or the price in white (GothamBlack, scaled to the
-plate).
+Every desk buys on the desk screen (§5 > The desk screens). The old `DeskShop` and
+`CallInDisplayUI` views stay behind `Config.Lobby.DeskScreen.Enabled = false`, in the rack
+card's look. The words hold everywhere: BUY, MERITS, ON YOUR RECORD; never shop, store,
+wares, sell, lock or unlock. In the world each call-in pallet's plate carries the name in
+dark stencil and, for this soldier only, ON YOUR RECORD in yellow or the price in white.
 
 ### Mission 1 "Checkpoint Delta"
 
@@ -637,20 +621,25 @@ studs out, clustered north-east (`SkyService.SKYLINE`), six types from
 4-9), 960-1,870 tris, placed at 0.75-1.05 scale with the long face toward the arena. Each
 tower's `_lit` twin holds its lit windows as Neon slabs: sodium in most, fluorescent in a
 quarter, fire orange in the six burning ones (smoke and fire at 60% height). 46 MeshParts,
-### The Fallow, the lobby ship (art pass 2026-11-09, uploaded 2026-11-09)
+~42k tris, no lights, no collision or queries. `SkyService.burn(part)` puts the same fire +
+smoke on a dressing piece (`burning = true` in `ArenaService.DRESSING`). Smoke is the stock
+`smoke_main` particle at rate 5, 14-22 s life, a light westerly drift; fire is `fire_main`,
+with a PointLight (Range 36, Brightness 1.6, no shadows) only on burning dressing in the
+arena. Budget: nine emitters in the whole scene.
+
+### The Carrier, the lobby ship (`Fallow` in code)
 
 Build sheet and decisions: `docs/sprints/LOBBY_V1_FALLOW.md` > Ship art; meshes in
 `assets/3d/build/fallow.py`. Read: a carrier because the deck overhangs the hull (sponsons,
 catwalks, safety nets), the bow tapers and flares under a square deck end, and the island
 steps up to bridge, Pri-Fly, funnels and mast. Shells are one-material meshes in Metal: hull
 (100,106,112), island (116,122,128), lighter so it stands off the Asphalt deck; trims keep the
-palette. The one loud mark is the HARLAN spray (was HRD until 2026-11-10) (island, both bow sides, the deck's bow end);
+palette. The one loud mark is the HARLAN spray (island, both bow sides, the deck's bow end);
 canvas tubs (`tan_d`), raft canisters (`white_l`) and the hose station (`red`) are small
-accents. The v1 `BridgeWindows` Part (Glass, transparency 0.1) broke the no-transparency rule;
-the island mesh replaces it with opaque `glass` and FallowArt removes the Part. Budget: ~8,000
+accents. Bridge windows are opaque `glass` in the island mesh. Budget: ~8,000
 tris for the whole ship with 18 instanced catwalk bays (cap 18,000).
 
-### The helicopter (`Lantern` in code), the lift bird (art pass 2026-11-09, uploaded 2026-11-09)
+### The helicopter (`Lantern` in code)
 
 Canon: `docs/LORE.md` > The helicopter; sheet and decisions: `docs/sprints/LOBBY_V1_FALLOW.md` >
 Lantern; meshes in `assets/3d/build/lantern.py`. Vehicles take the prefix `veh_` (collection
@@ -663,6 +652,18 @@ transparency on geometry"**: the rotor blur discs (two flat cylinders a bird, fa
 in to 0.8 transparent over the last 6 s before lift while the blades fade to 0.6, never out;
 `Rules/RotorBlur`) are VFX, like the breach ghost.
 
+**The ATV** (`assets/3d/build/atv.py`, prefix `veh_`, collection `Vehicles`; Nova): a sport
+quad with a tall cowl over the front axle, a low saddle, a raised back and a rear rack inside
+a rail. The body is Nova's own sculpted model (`assets/3d/atvrbx.obj`, 1.7M tris, not in
+git), cut and reduced once into `assets/3d/source/atv_body.obj` and painted by region in the
+build; the wheel is built from primitives at the model's tyre size (cut from the model it was
+an open shell Roblox showed through). Paint follows Nova's colour reference: `olive_d` on the
+upper panels only (cowl, rear fender tops; `olive` read as lime in the sun), `dark` / `dark_d`
+for the lower body, the middle, the grille and the seat, `gun_d` bars (handlebar, bumper, rack
+rail), `dark_d` lugged tyres with a `gun` lip, `dark` rim, `gun_l` hub and bolts. No markings.
+**Budget exception (Nova): ~12k tris**, over the 5,000 vehicle cap: the body
+7,946 + four wheels of 564 = 10,202 an ATV, two at most per squad. Only the body casts a shadow.
+
 **The Doorman** (`assets/3d/build/doorman.py`, prefix `dep_`, collection `Deployables`): a
 belt-fed medium machine gun on a squat tripod, run by a sensor head. Read from 25 studs: the
 long barrel with its vented olive heat shield, the olive sensor box above the receiver (blue
@@ -671,11 +672,6 @@ on the aft legs. Three meshes so it can turn: base (still), cradle (yaws 1.9 up)
 at the trunnion 2.6 up, muzzle 3.52 ahead). 2,300 tris, counted against the vehicle class
 (cap 5,000; four at most in a match). 4.05 wide, 5.54 long, 3.5 tall. No collision.
 
-~42k tris, no lights, no collision or queries. `SkyService.burn(part)` puts the same fire +
-smoke on a dressing piece (`burning = true` in `ArenaService.DRESSING`). Smoke is the stock
-`smoke_main` particle at rate 5, 14-22 s life, a light westerly drift; fire is `fire_main`,
-with a PointLight (Range 36, Brightness 1.6, no shadows) only on burning dressing in the
-arena. Budget: nine emitters in the whole scene.
 
 ### Body animation
 
@@ -707,14 +703,13 @@ orange (`rgb(255,150,60)`) plus a ball at the landing point.
   built-in smoke sprite tinted from the palette. The whole table:
   [PROGRESSION.md > Call-in arrivals](PROGRESSION.md#call-in-arrivals).
 - Fire ground: faceted orange/yellow triangles on the floor, flicker by scale not by light.
-- Infected spit (owner 2026-11-11: "just a yellow circle"; `SpitFX`, client only, colours and
+- Infected spit (`SpitFX`, client only, colours and
   numbers in `Config.Enemies.SpitFX`, curves in `Rules/SpitShape`): bile and pus, never green
   or bright yellow, no Neon. Tell: the head goes back 16 deg over the windup and snaps forward
   on the spit, bile dripping from the mouth. In flight: an amber-brown ellipsoid stretched
   along its path and wobbling, a dark red clot dragging behind, a tapering strand, drops
   falling off. Impact: a burst of drops off the surface and a blotch with an uneven edge
-  (2.5 s); on the floor, low droplets also skim out. The pool on the ground (owner
-  2026-11-17: the disc was "a little too perfect", "a puddle of liquid") is a puddle of low
+  (2.5 s); on the floor, low droplets also skim out. The pool on the ground is a puddle of low
   wet domes, a core and six lobes of varied size and turn from `Rules/PuddleShape` (a new
   layout each time), each over a dark red rim, with a lighter glint on the core: its edge is
   uneven but honest, every blob inside 1.04x the damage radius and the whole covering at
@@ -725,7 +720,7 @@ orange (`rgb(255,150,60)`) plus a ball at the landing point.
   fades), twelve burst-only emitters in all whatever the number of spitters, drool and drips
   capped at 40 drops/s together, 6 blotches, pools at `MaxPuddles`. `Enabled = false` is the
   old Neon ball and disc.
-- First person (`CameraController`, `Config.Camera.FirstPerson`; Nova 2026-11-10): T or the
+- First person (`CameraController`, `Config.Camera.FirstPerson`): T or the
   right stick click toggles it, the wheel in past `MinDistance` enters and back out leaves.
   The eye sits on the Head (0.45 forward, 0.1 up), so crouch and prone carry it; yaw, pitch,
   kick, shake and the sights work as in third person. The soldier's own body is hidden on their
@@ -734,13 +729,12 @@ orange (`rgb(255,150,60)`) plus a ball at the landing point.
   body's hand holds the real gun, the left on the handguard (under the grip for a sidearm).
   It points where the camera looks; at the hip the grip sits where that kind of gun is carried
   (`Config.Weapon.Sights.Hold`: a long gun low right, a sidearm nearer the middle, the Goose on
-  the shoulder). **Sights (2026-11-11, `Rules/Sight`, not yet seen in game):** every gun row
+  the shoulder). **Sights (`Rules/Sight`):** every gun row
   carries `Sight`: its mesh's `Rear` and `Front` sight points (peep centre or notch top and the
   post's tip; a scope's eyepiece and objective), and optionally `Kind`, `Hold`, `EyeRelief`,
   `Zoom`. The points are written on the gun's design; Roblox shows an uploaded mesh mirrored
   left-right about its bounds centre, so `WeaponDefinitions` moves them (and `getMuzzle` the
-  barrel tip) to where they show, x = 2 * offset.X - x (`MeshAssets.shownPoint`; measured
-  2026-11-11: without it the M249, MP5 and M16 put the eye beside the sights). Down the sights the eye sits on the line through the two, the eye relief behind the
+  barrel tip) to where they show, x = 2 * offset.X - x (`MeshAssets.shownPoint`). Down the sights the eye sits on the line through the two, the eye relief behind the
   rear sight (0.35 studs with a cheek on the stock, 1.0 for a sidearm at arm's length, 0.3
   behind a scope), looking at the front one, so the post is centred in the peep on the screen's
   centre, where the round goes; the crosshair fades out. The view narrows by the gun's own
@@ -752,7 +746,7 @@ orange (`rgb(255,150,60)`) plus a ball at the landing point.
   posts and a red centre dot; the HUD stays above it. A reload or a Q swap lowers the gun
   out of the sights. `tests/Sight.spec.luau` fails any gun row whose sight is missing, off its
   mesh, not along the bore or with the eye in the wrong place. Third person keeps the shared
-  `Weapon.ADS` view. **Night vision** (2026-11-11, client `NightVision`, `Config.NightVision`): N or D-pad up
+  `Weapon.ADS` view. **Night vision** (client `NightVision`, `Config.NightVision`): N or D-pad up
   flips the helmet's goggles down or up with a short blink and a click; through them the
   exposure is raised 2.2 stops, a green tint with no colour of its own, bloom on lights, a
   slight flicker, dark screen edges; off on respawn and death. Made for the night area. The goggles
@@ -804,21 +798,10 @@ orange (`rgb(255,150,60)`) plus a ball at the landing point.
 
 ## 10. Decisions log
 
-Decisions that still hold, one line each. The story behind them is in [HISTORY.md](HISTORY.md).
+Owner decisions that still hold. Most are stated as rules above (icons from the generator §4;
+flat shading and one palette texture §6; built-in materials §6; no zombie green §2; no
+coplanar faces §6; modelled skyline towers §7; limbs come off, no blood spray §7; blocky
+Infected and anonymous Pike soldiers §7; Prototype 2's HUD §5). Not stated elsewhere:
 
-- 2026-11-05: One generated faceted icon set; the generator is the source, not hand SVGs.
-- 2026-11-05: Low-poly flat-shaded 3D with one shared palette texture, for performance.
-- 2026-11-07: Built-in Roblox materials on arena Parts and one-material meshes (owner wants
-  texture); measured, no frame cost.
-- 2026-11-07: No zombie green on bodies: pallor / flesh / bruise / wound / pus, damage as
-  geometry, strain green only on seams and sacs (owner).
-- 2026-11-08: Brighter sky (owner: too gloomy); Bloom only on Neon and fire.
-- 2026-11-08: Cars built to the character's scale from side profiles with real glass
-  (`props.py`; owner: "redo all the cars").
-- 2026-11-08: Skyline is modelled towers with lit-window twins, not slabs (owner: "goofy").
-- 2026-11-08: No coplanar faces and no pieces inside each other (owner: "clipping").
-- 2026-11-08: Limbs come off when shot, with a flat stump and chunks; no blood spray (owner).
-- 2026-11-08: The Infected stay blocky Roblox bodies; the rounded redesign was rejected
-  (owner: "I like the regular blocky body").
-- 2026-11-08: Players are anonymous Pike soldiers; the Chosen are retired (owner).
-- 2026-11-08: HUD follows Prototype 2's HUD (owner).
+- The match sky is brighter than the first pass (owner: too gloomy); Bloom only on Neon and fire.
+- Cars are built to the character's scale from side profiles with real glass (`props.py`).
