@@ -8,6 +8,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Config = require(ReplicatedStorage.Shared.Config)
 local VehicleBody = require(ReplicatedStorage.Shared.VehicleBody)
 
 local Build = require(script.Parent.Build)
@@ -211,7 +212,11 @@ function MotorPool.build(folder: Folder)
 	for _, bay in pool.bays do
 		bayLines(folder, bay.x0, bay.x1, pool.bayZ0, pool.bayZ1, floor)
 	end
-	parkedVehicle(folder, floor)
+	-- The parked ATV wears its meshes: built once they load (or the Part body after the wait).
+	task.spawn(function()
+		VehicleBody.waitForMeshes(Config.VehicleMeshes.Wait)
+		parkedVehicle(folder, floor)
+	end)
 	chests(folder, floor)
 	tyreRack(folder, floor)
 	fuelPoint(folder, floor)

@@ -1,5 +1,5 @@
 --!strict
--- Talking to the Call-ins, Vehicles and Plot desks (DeskService, LobbyDesks; the Quartermaster
+-- Talking to the Call-ins, Vehicles, Plot and Visitor desks (DeskService, LobbyDesks; the Quartermaster
 -- and the Loadmaster have their own hosts, ArmsRackUI and LoadmasterUI). F on the desk's prompt
 -- opens the same talk as every desk (DeskTalk): a greeting picked at random, then 1 their kit
 -- (the desk screen, DeskScreen, with what the desk sells, KitPrices: each row's `Desk` or the
@@ -94,6 +94,10 @@ function DeskDialogUI.init()
 	local desk: LobbyDesks.Desk? = nil
 	local openPrompt: ProximityPrompt? = nil
 	local closeAt = 0
+	local saidFarewell = false
+	-- Desks this soldier has talked to this visit: a desk's `first` line is said once (no flag
+	-- on the record yet, so a new visit to the Carrier meets the Visitor anew).
+	local met: { [string]: boolean } = {}
 
 	local function say(text: string)
 		talk.say(text)
@@ -149,7 +153,15 @@ function DeskDialogUI.init()
 		elseif index == 2 then
 			say(current.talk.answer)
 		elseif index == 3 then
-			close()
+			-- A parting line (the Visitor) stays up a moment, then the panel closes.
+			local farewell = current.talk.farewell
+			if farewell and not saidFarewell then
+				saidFarewell = true
+				say(farewell)
+				closeAt = os.clock() + Config.Lobby.DialogSeconds / 2
+			else
+				close()
+			end
 		end
 	end
 
@@ -169,7 +181,13 @@ function DeskDialogUI.init()
 		openPrompt = prompt
 		local said = chosen.talk
 		talk.show(chosen)
-		say(said.greetings[math.random(1, #said.greetings)])
+		saidFarewell = false
+		if said.first and not met[chosen.id] then
+			say(said.first)
+		else
+			say(said.greetings[math.random(1, #said.greetings)])
+		end
+		met[chosen.id] = true
 		panel.Visible = true
 		choices[3].Modal = true -- frees the mouse even zoomed into first person
 		ContextActionService:BindAction(

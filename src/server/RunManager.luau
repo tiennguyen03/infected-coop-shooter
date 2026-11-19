@@ -6,8 +6,9 @@
 --   Warden) -> Extract -> Ended ("Extracted" on extraction, "Wiped" when nobody is alive).
 --   With the Warden inside the main objective (Config.Objectives.Boss.Enabled) Index is
 --   skipped: Primary lasts until he is down and the work done, then Extract.
--- Auto-respawn is off: death ends a player's run; RestartRun (death or results screen)
--- starts a fresh one. Every system with run state registers its reset with Lifecycle.
+-- Auto-respawn is off: a dead player comes back only as a reinforcement while the squad's
+-- pool lasts (ReinforceService, Config.Scarcity.Reinforce); RestartRun (results screen)
+-- starts a fresh run. Every system with run state registers its reset with Lifecycle.
 -- A squad sent by the lobby (HandoffService, docs/LOBBY_MATCH_HANDOFF.md): each player gets
 -- the loadout the lobby sent, Lobby stays a staging state until everyone the lobby sent has
 -- a body (or Config.Run.StagingSeconds after the first), and at run end READY flies the
@@ -30,7 +31,9 @@ local HandoffService = require(script.Parent.HandoffService)
 local LoadoutService = require(script.Parent.LoadoutService)
 local MeritService = require(script.Parent.MeritService)
 local Missions = require(script.Parent.Missions)
+local ReinforceService = require(script.Parent.ReinforceService)
 local Squad = require(script.Parent.Squad)
+local TallyService = require(script.Parent.TallyService)
 local Lifecycle = require(script.Parent.Lifecycle)
 local Handoff = require(ReplicatedStorage.Shared.Rules.Handoff)
 local Messages = require(ReplicatedStorage.Shared.Messages)
@@ -95,6 +98,9 @@ local function beginRun()
 			+ (if Config.Insertion.Enabled then Config.Insertion.LeadSeconds else 0)
 	)
 	setState("Insert", "")
+	-- The big map draws now: the drop corner follows the main objective, and the bots and
+	-- the cutscene land there (Config.DeltaXL; nothing happens on today's map).
+	ObjectiveService.prepare(HandoffService.objective())
 	BotService.startRun()
 	-- The squad lands: with the insertion cutscene on (Config.Insertion, client
 	-- InsertionCutscene) Insert lasts the cutscene plus Run.InsertSeconds and the objectives are
@@ -164,6 +170,13 @@ function RunManager.endRun(result: RunStates.RunResult)
 	if not paid then
 		warn(`[RunManager] merits were not paid: {payError}`)
 	end
+	-- The Carrier's painted counts (TallyService): call-ins fired, and a mission home.
+	local counted, countError = pcall(function()
+		TallyService.flush(result == "Extracted", Missions.current().Id)
+	end)
+	if not counted then
+		warn(`[RunManager] the Carrier counts were not added: {countError}`)
+	end
 	setState("Ended", result)
 	-- A squad from the lobby goes home: READY now means "back to the Carrier", and the bird
 	-- lifts on its own after Config.Handoff.ReturnAfterSeconds.
@@ -212,14 +225,16 @@ function RunManager.goHome()
 	end)
 end
 
--- Bots never hold a run open on their own: it is over when no player is Alive or Downed
--- (a downed player can still be revived).
-local function anyoneAlive(): boolean
-	return #Squad.activeOwners() > 0
-end
-
+-- The mission is lost when no player is Alive or Downed (a downed player can still be
+-- revived) and nobody can be dropped back in: with reinforcements on (Config.Scarcity) a dead
+-- player comes back while the pool lasts and somebody, a bot too, is still in the fight
+-- (ReinforceService.wiped, Rules/Scarcity.wiped). Bots never hold a run open on their own.
 local function onDied()
-	if RunStates.current() ~= "Ended" and RunStates.current() ~= "Lobby" and not anyoneAlive() then
+	if
+		RunStates.current() ~= "Ended"
+		and RunStates.current() ~= "Lobby"
+		and ReinforceService.wiped()
+	then
 		RunManager.endRun("Wiped")
 	end
 end
@@ -374,8 +389,15 @@ function RunManager.init()
 			end)
 		end,
 	})
-	-- Death ends the run; respawning only happens through resetRun.
+	-- No auto-respawn: a dead player comes back only as a reinforcement (ReinforceService) or
+	-- with the next run.
 	Players.CharacterAutoLoads = false
+	-- Any member dying (a bot too) may be the last one a reinforcement could drop to.
+	Squad.onStateChanged(function(_member, _old, new)
+		if new == "Dead" then
+			onDied()
+		end
+	end)
 	workspace:SetAttribute(Attributes.SquadExpected, 1)
 	workspace:SetAttribute(Attributes.SquadArrived, 0)
 	workspace:SetAttribute(Attributes.StagingEndsAt, 0)
