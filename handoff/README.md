@@ -6,7 +6,7 @@ last one. **End of a session:** edit this page in place (never append history he
 one note to `handoff/log/` (format in `handoff/log/README.md`). History lives in
 `docs/HISTORY.md`; this page is only "now".
 
-Last updated: 2026-11-19 by Claude (housekeeping: plain words for players, the session log pruned to 12, the backlog tidied, on `claude/housekeeping-plain-words`).
+Last updated: 2026-11-19 by Claude (housekeeping: plain words, on `claude/housekeeping-plain-words`; saves versioned, on `claude/save-versioning`).
 
 ## The game today (on `main`)
 
@@ -75,6 +75,12 @@ that restocks the squad.
   (`docs/PROGRESSION.md` > Kit Mods). **Nova:** `RecordService`'s buy is now
   `change(player, label, edit)` (the same save), `LoadmasterUI` has the tab bar, new
   `KitModsTab`; `LoadoutService.freshState` takes the player.
+- **Saves** (2026-11-19, on `claude/save-versioning`, built on #92; no gameplay change): the
+  record and the signed Loadout are versioned and migrated on read (`Rules/SaveSchema`), written
+  only with UpdateAsync, and never written when the load failed or the save is newer or junk
+  (the visit is read-only; SAVE OFFLINE under the wallet). **Nova:** a new saved field follows
+  `docs/SAVES.md` > How to change the save; `SaveSlot.new` takes a schema, `SaveSlot.save` is
+  now an UpdateAsync, `Record.encode(record, old)` keeps unknown fields.
 - **Keys:** every key is a row of `Config.Keys` and every hint reads it (table: `docs/OWNER.md`);
   a key written into client or server code fails the tests. E interact, C or Ctrl crouch, Z prone.
 - **Movement:** sprint on a stamina bar (8 s; a roll costs 20, a slide 10; winded at zero),
@@ -193,7 +199,7 @@ that restocks the squad.
 - **Roblox:** the group Boomin Dev Studios (270506601) owns the game "Co-op Zombie Shooter" and
   every sound and animation. Its start place 87556879379942 holds the **lobby**; the match is
   "Checkpoint Delta" 125769854992316 (`Config.Places`).
-- **Checks:** stylua, selene, rojo build, 666 Lune tests (rules plus the source-wiring spec, which also reads the lobby's remotes and refuses key literals), luau-lsp, CI on every push.
+- **Checks:** stylua, selene, rojo build, 687 Lune tests (rules plus the source-wiring spec, which also reads the lobby's remotes and refuses key literals), luau-lsp, CI on every push.
 - **HUD layout** (2026-11-17, owner: "I couldn't see the indicator", Nova: "the in game UI is
   clutter and overstack each other"; **not yet seen in game**): objective progress is a big
   yellow meter under the objective line, HOLDING / red PAUSED, and shows a side objective
