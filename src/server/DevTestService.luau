@@ -536,6 +536,42 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 	BreachNow = function()
 		print("[DevTest] BreachNow ->", require(script.Parent.BreachService).breachNow())
 	end,
+	-- Config.InfectedMoves off (or on again) for this session: the old Infected behaviour
+	-- with the new health and damage.
+	ToggleMoves = function()
+		local off = workspace:GetAttribute(Attributes.DevMovesOff) ~= true
+		workspace:SetAttribute(Attributes.DevMovesOff, off)
+		print(`[DevTest] Infected moves {if off then "OFF" else "ON"}`)
+	end,
+	-- One form placed in front of the caller where its move fires (Config.InfectedMoves):
+	-- a Brute 28 studs out (the charge), a Runner 12 out (the pounce), a Hocker 50 out (the
+	-- barrage; stand behind cover for the lob), five Walkers round you (the grab).
+	MoveTest = function(player, form)
+		local character = player.Character
+		local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		if not root then
+			return
+		end
+		local look = root.CFrame.LookVector
+		local flat = Vector3.new(look.X, 0, look.Z)
+		local forward = if flat.Magnitude > 0.01 then flat.Unit else Vector3.zAxis
+		local distances = { Brute = 28, Runner = 12, Hocker = 50 }
+		local name = tostring(form)
+		if name == "Walker" then
+			for index = 1, 5 do
+				local angle = index / 5 * math.pi * 2
+				local spot = root.Position + Vector3.new(math.cos(angle), 0, math.sin(angle)) * 5
+				EnemyService.spawnAt("Walker", EnemyService.groundNear(spot, 0, 1))
+			end
+		elseif distances[name] then
+			local spot = root.Position + forward * distances[name]
+			EnemyService.spawnAt(name, EnemyService.groundNear(spot, 0, 1))
+		else
+			warn(`[DevTest] MoveTest: unknown form '{name}'`)
+			return
+		end
+		print(`[DevTest] MoveTest {name}`)
+	end,
 	ActivateObjective = function()
 		require(script.Parent.ObjectiveService).activateNow()
 		print("[DevTest] ActivateObjective")

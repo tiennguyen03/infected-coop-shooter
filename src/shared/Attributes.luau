@@ -72,6 +72,7 @@ local Attributes = table.freeze({
 	ReinforceAt = "ReinforceAt",
 	ReinforceTo = "ReinforceTo",
 	DevSpawnsOff = "DevSpawnsOff",
+	DevMovesOff = "DevMovesOff", -- workspace: true turns Config.InfectedMoves off for the session (dev panel)
 	-- lobby: a Lantern bird model's lift time (server time, workspace:GetServerTimeNow()) while
 	-- its spot counts down; nil otherwise (LaunchService writes, LanternSpool reads)
 	LiftAt = "LiftAt",
@@ -157,6 +158,12 @@ local Attributes = table.freeze({
 	VehicleHealth = "VehicleHealth",
 	VehicleMaxHealth = "VehicleMaxHealth",
 	KnockGraceUntil = "KnockGraceUntil",
+	-- Dangerous Infected (Config.InfectedMoves, EnemyService): on a soldier's character, true
+	-- while a Runner pins them; on a Runner's model, true while it pins someone (bots shoot
+	-- it first); on a soldier's character, the speed factor a Walker crowd's grab leaves.
+	Pinned = "Pinned",
+	Pinning = "Pinning",
+	Grabbed = "Grabbed",
 	CoverMoveUntil = "CoverMoveUntil",
 	RootDrop = "RootDrop",
 	StandHipHeight = "StandHipHeight",

@@ -2691,6 +2691,117 @@ local Config = {
 		},
 	},
 
+	-- Dangerous Infected (the "make it fun" sprint, 2026-11-18; docs/sprints/FUN_ENEMIES.md,
+	-- docs/PROGRESSION.md > The Infected roster > Moves). Each form forces its own answer:
+	-- the Brute's plated front and charge (flank it, blow it up, scatter), the Runner's
+	-- pounce and pin (a squadmate shoots or shoves it off), the Hocker's lob over cover and
+	-- its barrage of puddles (move), the Walkers' grab in a crowd (do not let them close).
+	-- Every move has a tell: a sound and a pose before it lands. EnemyService runs them,
+	-- DamageService the armour, Rules/InfectedMoves the maths. Enabled = false turns every
+	-- move off (the forms keep their new health and damage in EnemyDefinitions); each move
+	-- has its own Enabled too. Numbers: systems designer pass in the design note.
+	InfectedMoves = {
+		Enabled = true,
+		-- Control on the radio (subtitles): the first charge and the first lob of a run say
+		-- what beats them; every pin names who needs help ({name}), at most every PinGap s.
+		Radio = {
+			FirstCharge = "Big one charging. Get out of its line and hit it from behind.",
+			FirstLob = "Spitter's lobbing over your cover. Move off the spot.",
+			Pinned = "{name} is pinned. Shoot it off them.",
+			PinGap = 6,
+		},
+		Brute = {
+			-- The plated front: a round on the head, torso or arms from the front does
+			-- FrontShare; from behind BackMultiplier; the side and the legs full. Blasts are
+			-- never plated (explosives are the answer). The hit marker shows "plate".
+			Armour = {
+				Enabled = true,
+				FrontShare = 0.4,
+				BackMultiplier = 1.25,
+				FrontDot = 0.5, -- the face a round lands on points this far forward: front (~60 deg)
+				BackDot = -0.5,
+			},
+			-- The charge: a soldier 14-40 studs off in the open. Tell: he stops, rears back
+			-- (the body tilts) and bellows for Windup seconds, turning to follow; then runs a
+			-- straight line through them and Overrun past. Everyone in Width is hit once:
+			-- Damage, knocked down Knockdown seconds and thrown off the side of the line
+			-- (the squad scatters). Hard cover stops him dead, stunned WallStun: the flank.
+			Charge = {
+				Enabled = true,
+				MinRange = 14,
+				MaxRange = 40,
+				Cooldown = 9, -- seconds between charges, per Brute
+				FirstDelay = 4, -- seconds after a Brute spawns before its first
+				Windup = 1.1,
+				RearTilt = 14, -- degrees he leans back through the windup
+				Speed = 36, -- studs/s (the soldier sprints 24)
+				Overrun = 12, -- studs past where the target stood
+				Distance = 48, -- the most one runs
+				Width = 4.5, -- studs either side of the line that are hit
+				HitHeight = 6,
+				Damage = 25,
+				Knockdown = 1.4,
+				Throw = 34, -- studs/s, the scatter
+				ThrowAlong = 0.6, -- share of the throw along the charge
+				WallStun = 2.5,
+				Recovery = 0.8, -- seconds he stands after a clean run
+				Probe = 3, -- studs ahead he looks for a wall
+			},
+		},
+		Runner = {
+			-- The pounce: a soldier 6-18 studs off. Tell: a crouch and a shriek for Windup;
+			-- then a leap at where they stood (step aside or roll and it lands on nothing).
+			-- A hit pins them on their back: knocked down until a squadmate kills the Runner
+			-- or shoves it off (F), or PinSeconds pass; it claws PinDamage every PinTick.
+			Pounce = {
+				Enabled = true,
+				MinRange = 6,
+				MaxRange = 18,
+				Cooldown = 8,
+				FirstDelay = 2,
+				Windup = 0.55,
+				CrouchTilt = 18, -- degrees it drops forward through the windup
+				Flight = 0.45, -- seconds in the air
+				Arc = 3.5, -- studs above the line at half way
+				LandRadius = 4, -- the soldier within this of the landing is caught
+				Damage = 10, -- the landing
+				PinSeconds = 5, -- the most a pin lasts
+				PinTick = 0.5,
+				PinDamage = 4, -- per tick (8 a second)
+				Miss = 0.7, -- seconds it stumbles after landing on nothing
+				ThrownOff = 1.0, -- seconds it is stunned when shoved off or the pin runs out
+				HopOff = 5, -- studs it is thrown clear
+				Lift = 1.2, -- studs above the pinned body's root it crouches
+			},
+			-- Runners come in packs: the spawn director's Runner brings PackExtra more (dev
+			-- spawns and objective waves do not).
+			Pack = { Enabled = true, Extra = { 1, 2 }, Spread = 4 },
+		},
+		Hocker = {
+			-- Out of a clear line it lobs high over the cover instead (Flight seconds in the
+			-- air: a long, readable arc), when the sky above both ends is open.
+			Lob = { Enabled = true, Flight = 1.7, SkyCheck = 30 },
+			-- Each spit is Globs globs: one on the mark, the rest Spread studs either side
+			-- across the line, each with its puddle. The squad has to move.
+			Barrage = { Enabled = true, Globs = 3, Spread = 7 },
+			BackOffShare = 0.7, -- backs off when a soldier is inside this share of its stand-off
+		},
+		Walker = {
+			-- The grab: a Walker's claw landing with Crowd or more Infected within Radius of
+			-- the soldier (the hitter counted) holds them: their speed drops to the factor
+			-- (Rules/InfectedMoves.grabFactor) for Seconds. Bots too, while they walk to their spot.
+			Grab = {
+				Enabled = true,
+				Radius = 7,
+				Crowd = 3,
+				Slow = 0.6,
+				SlowPerExtra = 0.1,
+				MinFactor = 0.3,
+				Seconds = 1.2,
+			},
+		},
+	},
+
 	-- Checkpoint Delta XL, the grey test map (docs/sprints/DELTA_XL.md; server DeltaXL, layout
 	-- Shared.DeltaXLLayout): today's Delta in the middle of 1,800 x 1,800 studs with eight
 	-- areas round it. Off: today's map, exactly as before. On (here, or the dev panel's RUN >
@@ -2858,7 +2969,7 @@ local Config = {
 			HeavyOnly = { Brute = true },
 		},
 		BossCorpseLifetime = 8, -- an Index host's body stays long enough to read
-		MaxPuddles = 8, -- caustic puddles alive at once (perf); the oldest goes first
+		MaxPuddles = 12, -- caustic puddles alive at once (perf); the oldest goes first (was 8 before the Hocker barrage)
 		ThroatSacSwell = 1.8, -- Hocker sac size multiplier at the end of the windup
 		-- How a spit looks (owner 2026-11-11: "just a yellow circle"; bile and pus, no green,
 		-- no cartoon yellow). Drawn on each client (SpitFX; curves in Rules/SpitShape); the

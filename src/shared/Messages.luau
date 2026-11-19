@@ -80,6 +80,7 @@ local Messages = table.freeze({
 	Impact = table.freeze({
 		Knockdown = "knockdown",
 		Push = "push",
+		GetUp = "getup", -- (seconds) a knockdown cut short (a Runner shot off): the get-up now
 	}),
 	Stance = table.freeze({
 		Stand = "stand",

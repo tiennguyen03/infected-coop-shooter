@@ -51,6 +51,7 @@ local VehicleService = require(script.Parent.VehicleService)
 local ENEMY_TAG = "Enemy"
 local MAX_SQUAD = 4
 local LOS_CHECKS = 3 -- nearest Infected tested for line of sight per decision
+local KNOCK_FALL_MAX = 1.4 -- seconds: a long knockdown's fall clip, then it holds on the ground
 
 local BotService = {}
 
@@ -87,6 +88,7 @@ type Bot = {
 	stuckMark: BotBrain.Point?, -- where the follow last made progress, and when (BotBrain.stall)
 	stuckSince: number?,
 	knocked: boolean?, -- on the ground (Squad.knock), clips started
+	knockUntil: number?, -- the KnockedUntil those clips were started for (Squad.standUp moves it)
 	-- The path being walked (PathfindingService), its request and how many failed in a row.
 	pathObject: PathInstance?,
 	waypoints: { PathWaypoint }?,
@@ -257,6 +259,19 @@ local function loadTracks(bot: Bot, humanoid: Humanoid)
 	end
 end
 
+-- Knocked down: the get-up clip over `seconds` (the end of a knockdown, or one cut short).
+local function botRise(bot: Bot, seconds: number)
+	local fall = bot.tracks.knockdown
+	if fall and fall.IsPlaying then
+		fall:Stop(0.1)
+	end
+	local rise = bot.tracks.getup
+	if rise then
+		rise:Play(0.05)
+		rise:AdjustSpeed(math.max(rise.Length, 0.01) / math.max(seconds, 0.2))
+	end
+end
+
 -- Drops the revive this bot was holding (the squad panel's revive bar follows the Reviver).
 local function stopReviving(bot: Bot)
 	if bot.reviveProgress > 0 and bot.reviving then
@@ -377,7 +392,13 @@ local function pickTarget(eye: Vector3, params: RaycastParams): (Humanoid?, Vect
 			end
 		end
 	end
+	-- A Runner pinning a squadmate first (Config.InfectedMoves.Runner.Pounce), then nearest.
 	table.sort(candidates, function(a, b)
+		local aPin = a.model:GetAttribute(Attributes.Pinning) == true
+		local bPin = b.model:GetAttribute(Attributes.Pinning) == true
+		if aPin ~= bPin then
+			return aPin
+		end
 		return a.distance < b.distance
 	end)
 	for index = 1, math.min(LOS_CHECKS, #candidates) do
@@ -812,10 +833,14 @@ local function follow(
 		humanoid:MoveTo(here)
 		return
 	end
-	humanoid.WalkSpeed = if toSlot > settings.CatchUpBeyond
-		then settings.CatchUpSpeed
-		elseif post or toSlot > settings.RunBeyond then settings.RunSpeed
-		else settings.WalkSpeed
+	-- A Walker crowd's grab (EnemyService; Config.InfectedMoves.Walker.Grab) holds bots too.
+	local grabbed = bot.model and bot.model:GetAttribute(Attributes.Grabbed)
+	humanoid.WalkSpeed = (
+		if toSlot > settings.CatchUpBeyond
+			then settings.CatchUpSpeed
+			elseif post or toSlot > settings.RunBeyond then settings.RunSpeed
+			else settings.WalkSpeed
+	) * (if typeof(grabbed) == "number" then grabbed else 1)
 
 	local level = post ~= nil or math.abs(leader.Position.Y - here.Y) <= settings.DirectMaxRise
 	local stalledFor = now - (bot.stuckSince or now)
@@ -1107,6 +1132,7 @@ local function think(bot: Bot, now: number, params: RaycastParams)
 		stopReviving(bot) -- knocked over mid-revive: the label must not stick on REVIVING
 		if not bot.knocked then
 			bot.knocked = true
+			bot.knockUntil = knockedUntil
 			humanoid:MoveTo(root.Position)
 			for _, track in { bot.tracks.idle, bot.tracks.walk, bot.tracks.run } do
 				if track and track.IsPlaying then
@@ -1116,24 +1142,33 @@ local function think(bot: Bot, now: number, params: RaycastParams)
 			local getUp = Config.Knockdown.GetUp
 			local fall = bot.tracks.knockdown
 			local total = knockedUntil - now
+			-- A long knockdown (a Runner's pin) falls at most KNOCK_FALL_MAX, then holds.
+			local fallPlay = math.min(total - getUp, KNOCK_FALL_MAX)
 			if fall then
 				fall:Play(0.05)
-				fall:AdjustSpeed(math.max(fall.Length, 0.01) / math.max(total - getUp, 0.2))
+				fall:AdjustSpeed(math.max(fall.Length, 0.01) / math.max(fallPlay, 0.2))
+				if fallPlay < total - getUp then
+					task.delay(math.max(fallPlay - 0.05, 0), function()
+						if bot.knockUntil == knockedUntil and fall.IsPlaying then
+							fall:AdjustSpeed(0)
+						end
+					end)
+				end
 			end
 			task.delay(math.max(total - getUp, 0), function()
-				local rise = bot.tracks.getup
-				if rise and bot.model == model then
-					if fall and fall.IsPlaying then
-						fall:Stop(0.1)
-					end
-					rise:Play(0.05)
-					rise:AdjustSpeed(math.max(rise.Length, 0.01) / getUp)
+				if bot.model == model and bot.knockUntil == knockedUntil then
+					botRise(bot, getUp)
 				end
 			end)
+		elseif bot.knockUntil ~= knockedUntil then
+			-- Cut short (Squad.standUp: the Runner on it was shot or shoved off): up now.
+			bot.knockUntil = knockedUntil
+			botRise(bot, math.max(knockedUntil - now, 0.2))
 		end
 		return
 	end
 	bot.knocked = false
+	bot.knockUntil = nil
 	local settings = Config.Bots
 	local leader = leaderRoot(root.Position)
 	-- A boss fight (Config.Bots.Boss): the boss is within Engage of the bot's leader.

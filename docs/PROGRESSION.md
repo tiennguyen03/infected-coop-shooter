@@ -244,9 +244,11 @@ Numbers in `Config.Weapons.<Gun>`, rows in `WeaponDefinitions`. Semi guns fire o
   an `aiming` flag with each shot and the server picks the cone.
 - Headshot x3.0 (per gun, `HeadshotMultiplier`); the Brute overrides to 1.25 (plated skull).
   Tracers are client-drawn.
-- Rounds to kill body / head: rifle Walker 3 / 1, Brute 13 / 11; SMG 4 / 2, 19 / 15; DMR
-  1 / 1, 5 / 4; shotgun one pull for every form but the Brute (3). Ammo reins in the DMR
-  (100 x 60 is the M16's 270 x 20).
+- Rounds to kill body / head: rifle Walker 3 / 1; DMR Walker 1 / 1; shotgun one pull for
+  every form but the Brute. The Brute (500, plated front since 2026-11-18, Infected roster >
+  Moves): rifle 63 from the front, 20 from behind, 25 in the legs; shotgun 15 / 5 pulls; DMR
+  21 / 7 (was rifle 13, SMG 19, DMR 5, shotgun 3 anywhere). Ammo reins in the DMR (100 x 60
+  is the M16's 270 x 20).
 - A soldier lands with about half the reserve (`ReserveStart` on the gun's row,
   2026-11-10; was the full `ReserveMax`), so the first pallet is wanted; a pallet or the
   Index kill fills it to `ReserveMax`. The Goose keeps its one spare round.
@@ -977,10 +979,10 @@ lore-accurate poses, no zombie green (OWNER.md); build sheets in [CHARACTERS.md]
 
 | Form | Role | Look | First seen | Engine |
 |---|---|---|---|---|
-| Walker | slow melee | still a person, grey, old wounds closed | Delta | built, 55 HP |
-| Runner | fast melee | dense rebuilt muscle, tendons like cable | Delta | built, 35 HP |
-| Brute | melee tank | bone overgrowth, plated shoulders | Delta | built, 260 HP, headshot x1.25, legs never break |
-| Hocker | ranged | lobs caustic fluid; throat a swollen sac | Delta late | built, 75 HP |
+| Walker | slow melee; the crowd grabs | still a person, grey, old wounds closed | Delta | built, 60 HP |
+| Runner | fast melee; pounces and pins, in packs | dense rebuilt muscle, tendons like cable | Delta | built, 40 HP |
+| Brute | melee tank; plated front, charges | bone overgrowth, plated shoulders | Delta | built, 500 HP, headshot x1.25, legs never break |
+| Hocker | ranged; barrage, lobs over cover | lobs caustic fluid; throat a swollen sac | Delta late | built, 80 HP |
 | Bloat | exploder, area denial | gas-swollen, pale belly, veins showing | Mile 14 Index, common Kestrel | on-death cloud |
 | Shedder | splitter | body seamed into segments, extra limbs | Kestrel | on-death spawns 2-3 Crawlers |
 | Crawler | swarm | shed segment, fast, fragile | Kestrel (from Shedders) | small rig, no attack clip needed |
@@ -992,6 +994,30 @@ Enemy behaviour is data-driven (`EnemyDefinitions`: `Behaviour` melee | projecti
 type; `EnemyProjectileService` owns lobs and puddles and makes no parts: clients draw the
 spit, docs/STYLES.md §8). Still to add as forms need them:
 `onDeath` (cloud | split), `mover` (none | flyer).
+
+### Moves (2026-11-18, the "make it fun" sprint; **not yet played**)
+
+Each form forces its own answer, with a tell (a sound and a pose) before it lands. Numbers in
+`Config.InfectedMoves` (`Enabled = false` turns them all off; each move has its own switch),
+the before/after numbers and the reasoning in [FUN_ENEMIES.md](sprints/FUN_ENEMIES.md).
+
+- **Brute: plated front and the charge.** Rounds on the head, torso or arms from the front do
+  40%, in the back 125%, the side and legs 100%; blasts are never plated (the hit shows as a
+  plate hit). At a soldier 14-40 studs off in the open: stops, leans back and bellows 1.1 s,
+  then runs through them at 36 studs/s and 12 past: 25, knocked down 1.4 s, thrown off the
+  side of the line. Hard cover stuns him 2.5 s. Answer: leave the line, cover, flank, explosives.
+- **Runner: pounce and pin, in packs.** At 6-18 studs: a crouch and a shriek 0.55 s, a leap at
+  where you stood (step aside or roll). Caught: 10, pinned on your back (knocked down, no
+  shooting) up to 5 s, 8 a second, until a squadmate hits it or shoves it (F). Bots shoot a
+  pinning Runner first; Control names who is pinned. The director's Runners come with 1-2
+  pack-mates.
+- **Hocker: barrage and lob.** Each spit is three globs (on you and 7 studs either side), each
+  with a puddle (7 studs, 7 s, 12/s). With no clear line but open sky it lobs high over the
+  cover (1.7 s flight). Backs off inside 70% of its 45-stud stand-off.
+- **Walker: the grab.** A claw landing with 3+ Infected within 7 studs of you slows you to 60%
+  (10% less per extra body, 30% floor) for 1.2 s; a roll slips it.
+- Dev: F1 > INFECTED > THE MOVES places each form where its move fires; "Moves off" for the
+  session.
 
 ## Hit feedback on the Infected (owner: it must feel satisfying)
 
