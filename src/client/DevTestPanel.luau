@@ -355,6 +355,33 @@ local function tabs(): { Tab }
 				},
 				{ title = "SPAWN AROUND THE SQUAD", rows = spawnRows },
 				{
+					-- Config.InfectedMoves: each form placed where its move fires.
+					title = "THE MOVES (in front of me)",
+					actions = acts({
+						label = "Brute charge",
+						send = cmd("MoveTest", "Brute"),
+						echo = "Brute: charge",
+					}, {
+						label = "Runner pounce",
+						send = cmd("MoveTest", "Runner"),
+						echo = "Runner: pounce",
+					}, {
+						label = "Hocker barrage",
+						send = cmd("MoveTest", "Hocker"),
+						echo = "Hocker: barrage",
+					}, {
+						label = "Walker grab",
+						send = cmd("MoveTest", "Walker"),
+						echo = "Walkers: grab",
+					}, {
+						label = "Moves off",
+						send = cmd("ToggleMoves"),
+						on = function()
+							return workspace:GetAttribute(Attributes.DevMovesOff) == true
+						end,
+					}),
+				},
+				{
 					title = "THE WARDEN",
 					actions = acts({
 						label = "To the objective",

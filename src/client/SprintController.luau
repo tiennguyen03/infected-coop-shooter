@@ -65,6 +65,12 @@ function SprintController.getBaseSpeed(): number
 			Players.LocalPlayer:GetAttribute(Attributes.Weapon) :: string?
 		).AdsMoveFactor
 	end
+	-- Grabbed by a Walker crowd (EnemyService; Config.InfectedMoves.Walker.Grab).
+	local character = Players.LocalPlayer.Character
+	local grabbed = character and character:GetAttribute(Attributes.Grabbed)
+	if typeof(grabbed) == "number" then
+		mult *= grabbed
+	end
 	return base * mult * stanceFactor
 end
 
@@ -172,10 +178,12 @@ function SprintController.init()
 	if player.Character then
 		player.Character:GetAttributeChangedSignal(Attributes.SquadState):Connect(applySpeed)
 		player.Character:GetAttributeChangedSignal(Attributes.KnockedUntil):Connect(applySpeed)
+		player.Character:GetAttributeChangedSignal(Attributes.Grabbed):Connect(applySpeed)
 	end
 	player.CharacterAdded:Connect(function(character)
 		character:GetAttributeChangedSignal(Attributes.SquadState):Connect(applySpeed)
 		character:GetAttributeChangedSignal(Attributes.KnockedUntil):Connect(applySpeed)
+		character:GetAttributeChangedSignal(Attributes.Grabbed):Connect(applySpeed)
 		isAiming = false
 		overrideSpeed = nil
 		stanceFactor = 1

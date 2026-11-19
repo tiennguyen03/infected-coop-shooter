@@ -431,12 +431,46 @@ end
 
 -- Knocked down (KnockdownController): the fall clip over the first part of `seconds`, the
 -- get-up over the last Config.Knockdown.GetUp; the locomotion and the aim stay off.
+-- A long knockdown (a Runner's pin) plays the fall over at most FALL_MAX seconds and holds
+-- its last frame on the ground; a newer knockdown or an early get-up (getUpNow) takes over.
+local FALL_MAX = 1.4
+local knockToken = 0
+
+local function rise(getUp: number, token: number)
+	if dead or token ~= knockToken then
+		return
+	end
+	local fall = tracks.knockdown
+	if fall and fall.IsPlaying then
+		fall:Stop(0.1)
+	end
+	local track = tracks.getup
+	if track then
+		track:Play(0.05)
+		track:AdjustSpeed(math.max(track.Length, 0.01) / math.max(getUp, 0.2))
+		task.delay(getUp, function()
+			if token ~= knockToken then
+				return
+			end
+			if track.IsPlaying then
+				track:Stop(FADE)
+			end
+			if aiming then
+				playAim(true)
+			end
+		end)
+	end
+end
+
 function AnimationController.playKnockdown(seconds: number)
 	if dead then
 		return
 	end
+	knockToken += 1
+	local token = knockToken
 	local getUp = math.min(Config.Knockdown.GetUp, seconds * 0.5)
 	local fallTime = seconds - getUp
+	local fallPlay = math.min(fallTime, FALL_MAX)
 	busyUntil = os.clock() + seconds
 	switchSet(nil)
 	setIdle(false)
@@ -444,29 +478,27 @@ function AnimationController.playKnockdown(seconds: number)
 	local fall = tracks.knockdown
 	if fall then
 		fall:Play(0.05)
-		fall:AdjustSpeed(math.max(fall.Length, 0.01) / math.max(fallTime, 0.2))
-	end
-	task.delay(fallTime, function()
-		if dead then
-			return
-		end
-		if fall and fall.IsPlaying then
-			fall:Stop(0.1)
-		end
-		local rise = tracks.getup
-		if rise then
-			rise:Play(0.05)
-			rise:AdjustSpeed(math.max(rise.Length, 0.01) / math.max(getUp, 0.2))
-			task.delay(getUp, function()
-				if rise.IsPlaying then
-					rise:Stop(FADE)
-				end
-				if aiming then
-					playAim(true)
+		fall:AdjustSpeed(math.max(fall.Length, 0.01) / math.max(fallPlay, 0.2))
+		if fallPlay < fallTime then
+			task.delay(math.max(fallPlay - 0.05, 0), function()
+				if token == knockToken and fall.IsPlaying then
+					fall:AdjustSpeed(0) -- on the ground: hold the last frame
 				end
 			end)
 		end
-	end)
+	end
+	task.delay(fallTime, rise, getUp, token)
+end
+
+-- A knockdown cut short (Impact "getup": a pinning Runner shot or shoved off): the get-up
+-- clip now, over `seconds`.
+function AnimationController.getUpNow(seconds: number)
+	if dead then
+		return
+	end
+	knockToken += 1
+	busyUntil = os.clock() + seconds
+	rise(seconds, knockToken)
 end
 
 local function stopReload()

@@ -7,6 +7,7 @@ one note to `handoff/log/` (format in `handoff/log/README.md`). History lives in
 `docs/HISTORY.md`; this page is only "now".
 
 Last updated: 2026-11-17 by Tien, Nova + Claude (the Hocker's spit pool as an uneven puddle, on `claude/spit-puddle`; the objective meter and the HUD layout pass, on `claude/objective-progress-visible`; every desk on the Loadmaster's look, on `claude/npc-ui-prototype2`; the map room opened up, on `claude/open-map-room`; vehicles: the ATV, the motor pool and the ATV's own model, on `nova/vehicles-atv`; the M16A4 optic slot, on `nova/m16a4-optic-slot`; Kit Mods at the Loadmaster, on `nova/loadmaster-kit-mods`; the Quartermaster's GTA gun wall back, on `nova/quartermaster-rack`).
+Last updated: 2026-11-18 by Claude (dangerous Infected: the Brute's plated front and charge, the Runner's pounce and pin, the Hocker's barrage and lob, the Walker's grab, on `claude/fun-enemies`).
 Last updated: 2026-11-18 by Claude (the Visitor, dialog only, on `claude/the-visitor`).
 Last updated: 2026-11-18 by Claude (Carrier counts as numbers, the days board counting, the sellers' idle loops, on `claude/carrier-followups`).
 Last updated: 2026-11-17 by Claude (the map room opened up, on `claude/open-map-room`).
@@ -79,7 +80,16 @@ that restocks the squad.
   2026-11-11 on static checks and specs only: **not yet played**, the numbers want tuning.
 - **Infected:** Walker, Runner, Brute, Hocker (the remade bodies since 2026-11-11;
   `Config.Enemies.BodyVersion = 1` puts the first ones back), dismemberment, the Warden with
-  plates. On `claude/warden-aggressive` (2026-11-18, owner + Nova: "a bullet sponge";
+  plates. **Each form has a move** (2026-11-18, the "make it fun" sprint, on
+  `claude/fun-enemies`, **not yet played**; `docs/sprints/FUN_ENEMIES.md`): the Brute (500 hp)
+  has a plated front and charges, knocking the squad down and apart; Runners pounce and pin a
+  soldier until a squadmate hits or shoves them off, and come in packs; Hockers spit a
+  three-glob barrage and lob over cover; a Walker crowd grabs (slows). Off:
+  `Config.InfectedMoves.Enabled = false` (or one move's own `Enabled`), or F1 > INFECTED > THE
+  MOVES > "Moves off". **Nova:** `Squad.standUp` cuts a knockdown short (Impact `getup`), a long
+  knockdown's fall holds on the ground (`AnimationController`, `BotService`), the character
+  attribute `Grabbed` scales the walk (`SprintController`), and the spawn loop's one spawn line
+  now calls `spawnDirected` (Runner packs). On `claude/warden-aggressive` (2026-11-18, owner + Nova: "a bullet sponge";
   **not yet played**) he hunts: a Leap at whoever strays from the squad, faster walk, gas
   from the start, a rage below 30% with a gas Volley, his back plate a weak spot, 5,000 hp
   (was 7,000), and a keyed shield punch for the Bash instead of the spinning Mixamo clip

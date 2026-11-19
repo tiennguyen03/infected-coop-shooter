@@ -11,6 +11,8 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
+local Config = require(ReplicatedStorage.Shared.Config)
+local InfectedMoves = require(ReplicatedStorage.Shared.Rules.InfectedMoves)
 local Plates = require(ReplicatedStorage.Shared.Rules.Plates)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local Lifecycle = require(script.Parent.Lifecycle)
@@ -60,6 +62,55 @@ local function reportHit(attacker: Player?, position: Vector3?, amount: number, 
 	end
 end
 
+-- A form with an Armour row (Config.InfectedMoves.<form>.Armour, the Brute): a round on the
+-- plated front does FrontShare and shows as "plate" (a headshot keeps its marker), one in
+-- the back BackMultiplier, the side and the legs full (Rules/InfectedMoves). The face is
+-- where the round landed on the struck part, in the body's own frame. Blasts pass no part
+-- and are never plated.
+local function armoured(
+	humanoid: Humanoid,
+	part: Instance,
+	position: Vector3?,
+	amount: number,
+	kind: string
+): (number, string)
+	local moves = Config.InfectedMoves
+	local model = humanoid.Parent
+	local root = humanoid.RootPart
+	if
+		not moves.Enabled
+		or workspace:GetAttribute(Attributes.DevMovesOff) == true
+		or not model
+		or not root
+		or not part:IsA("BasePart")
+	then
+		return amount, kind
+	end
+	local typeName = model:GetAttribute(Attributes.EnemyType)
+	local row = if typeof(typeName) == "string" then (moves :: any)[typeName] else nil
+	local settings = row and row.Armour
+	if not settings or not settings.Enabled then
+		return amount, kind
+	end
+	local rule: InfectedMoves.ArmourSettings = {
+		frontShare = settings.FrontShare,
+		backMultiplier = settings.BackMultiplier,
+		frontDot = settings.FrontDot,
+		backDot = settings.BackDot,
+	}
+	local offset = (position or part.Position) - part.Position
+	local face = InfectedMoves.facing(
+		offset:Dot(root.CFrame.LookVector),
+		offset:Dot(root.CFrame.RightVector),
+		rule
+	)
+	local multiplier = InfectedMoves.armour(face, part.Name, rule)
+	if multiplier < 1 and kind ~= "headshot" then
+		kind = "plate"
+	end
+	return amount * multiplier, kind
+end
+
 function DamageService.dealDamage(
 	attacker: Player?,
 	humanoid: Humanoid,
@@ -95,6 +146,10 @@ function DamageService.dealDamage(
 		end
 		reportHit(attacker, position, amount, kind or "plate")
 		return
+	end
+	-- A plated front (the Brute): a round's share by the face it struck.
+	if part and (kind == "hit" or kind == "headshot") then
+		amount, kind = armoured(humanoid, part, position, amount, kind :: string)
 	end
 	-- A bot's hit (no attacker) leaves any player's kill credit on the target in place.
 	if attacker then

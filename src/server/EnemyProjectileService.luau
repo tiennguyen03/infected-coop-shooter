@@ -255,17 +255,19 @@ end
 
 -- Launches a spit from `origin` to land at `targetPosition` (`targetVelocity` adds the
 -- spec's lead). Flight time comes from the spec's speed over the flat distance. `damage` is
--- the definition's Damage, scaled on impact.
+-- the definition's Damage, scaled on impact. `flight` (seconds) overrides the flight time
+-- when it is longer: a high lob over cover (Config.InfectedMoves.Hocker.Lob).
 function EnemyProjectileService.fire(
 	origin: Vector3,
 	targetPosition: Vector3,
 	targetVelocity: Vector3?,
 	spec: Projectile,
 	damage: number,
-	vehicleDamage: number?
+	vehicleDamage: number?,
+	flight: number?
 )
 	local flat = Vector3.new(targetPosition.X - origin.X, 0, targetPosition.Z - origin.Z)
-	local flightTime = math.max(0.45, flat.Magnitude / spec.Speed)
+	local flightTime = math.max(0.45, flat.Magnitude / spec.Speed, flight or 0)
 	local lead = if targetVelocity
 		then Vector3.new(targetVelocity.X, 0, targetVelocity.Z) * flightTime * spec.Lead
 		else Vector3.zero
