@@ -112,13 +112,13 @@ local LobbyDesks: { Desk } = {
 		id = "plot",
 		title = "MAP ROOM",
 		who = "Control's watch officer",
-		issues = "The corridor map and the Containment Board",
+		issues = "The corridor map and the board of what we hold",
 		talk = {
 			greetings = {
 				"This is the map room. I'm Control, the voice on your radio when you're down there.",
-				"Delta's your mission. Do the job, kill the big one, get to your bird before the Burn.",
+				"Delta's your mission. Do the job, kill the big one, get to the helicopter before it leaves.",
 				"Every number on that board is a place we're holding. I'd like them higher.",
-				"Keep it down. Half this room is on the net with a team that's still out.",
+				"Keep it down. Half this room is on the radio with a team that's still out.",
 			},
 			open = "Show me the map.",
 			ask = "What's the board for?",
@@ -201,7 +201,7 @@ local LobbyDesks: { Desk } = {
 		talk = {
 			first = "You walked past twice. Come in.",
 			greetings = {
-				"You found me. Most don't. Have a look, and keep it off the net.",
+				"You found me. Most don't. Have a look, and keep it off the radio.",
 				"Bring me something of the Warden's, one day.",
 				"Mind the tarp on your way out. It's there for a reason.",
 				"Sit, if you like. The chair is the only thing down here that isn't sealed.",

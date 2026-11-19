@@ -433,7 +433,7 @@ start on the mark at once).
   is 22 Parts; smoke and dust are bursts of 2 to 20 particles, no lights.
 - **Switch:** `Config.CallIns.Arrivals.Enabled = false` puts back the flat red discs, the
   stock blast, the one shared whistle and the instant kit.
-- **Needs an in-game look (none of it has been seen running):** `handoff/log/2026-11-10-tien-callin-arrivals.md`.
+- **Needs an in-game look (none of it has been seen running):** [PLAYTEST_CHECKS.md](PLAYTEST_CHECKS.md) > Call-in arrivals.
 
 ### The ATV (vehicle call-in)
 
@@ -633,6 +633,8 @@ Design and numbers: [FUN_BREACHES.md](sprints/FUN_BREACHES.md); code `BreachServ
   Secondary +3. Perfect operation = 18 per district.
 
 ## The Containment Board (war map, not built)
+
+Players read it as the board titled WHAT WE HOLD in the map room (plain words, 2026-11-19).
 
 Every district carries a containment % raised by every extracted mission. Delta starts at 25;
 the others at 0; the next district unlocks at 50 of the previous. Perfect play reaches 100 in

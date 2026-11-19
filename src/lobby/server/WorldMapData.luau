@@ -126,7 +126,7 @@ WorldMapData.Lines = {
 WorldMapData.Title = "HARLAN CORRIDOR"
 WorldMapData.Subtitle = "QUARANTINE AREA - SHEET 1"
 WorldMapData.Legend = { "ROAD", "RAIL", "RIVER", "QUARANTINE LINE", "DISTRICT BORDER", "BURNED" }
-WorldMapData.Stamp = "HARLAN CONTROL - PLOT COPY - DO NOT REMOVE"
+WorldMapData.Stamp = "HARLAN CONTROL - MAP ROOM COPY - DO NOT REMOVE"
 WorldMapData.Margin = "CONTAINED IS NOT CLEAN"
 
 return WorldMapData
