@@ -14,6 +14,9 @@ local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
 local Optics = require(ReplicatedStorage.Shared.Attachments.Optics)
 local AttachmentMerge = require(ReplicatedStorage.Shared.Rules.AttachmentMerge)
 local Loadout = require(ReplicatedStorage.Shared.Rules.Loadout)
+local Scarcity = require(ReplicatedStorage.Shared.Rules.Scarcity)
+
+local SCARCE_AMMO = Config.Scarcity.Enabled and Config.Scarcity.Ammo.Enabled
 
 -- A row's sight points are written on the gun's design (guns.py); the eye lines up where
 -- they show on the uploaded mesh, which Roblox mirrors left-right (MeshAssets.shownPoint).
@@ -97,6 +100,7 @@ type Tuning = {
 	ReloadTime: number,
 	ReserveStart: number,
 	ReserveMax: number,
+	Scarce: { ReserveStart: number, ReserveMax: number }?, -- Config.Scarcity.Ammo
 	HipSpread: number,
 	AdsSpread: number,
 	BloomPerShot: number,
@@ -136,6 +140,8 @@ local function row(
 	description: string,
 	tuning: Tuning
 ): WeaponDefinition
+	-- Spare rounds: the row's Scarce block while Config.Scarcity.Ammo is on (Rules/Scarcity).
+	local reserveStart, reserveMax = Scarcity.reserve(tuning, SCARCE_AMMO)
 	return {
 		Id = id,
 		Name = name,
@@ -147,8 +153,8 @@ local function row(
 		FireCooldown = tuning.FireCooldown,
 		MagazineSize = tuning.MagazineSize,
 		ReloadTime = tuning.ReloadTime,
-		ReserveStart = tuning.ReserveStart,
-		ReserveMax = tuning.ReserveMax,
+		ReserveStart = reserveStart,
+		ReserveMax = reserveMax,
 		HipSpread = tuning.HipSpread,
 		AdsSpread = tuning.AdsSpread,
 		BloomPerShot = tuning.BloomPerShot,

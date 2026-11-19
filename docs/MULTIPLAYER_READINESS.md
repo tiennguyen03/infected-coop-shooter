@@ -33,8 +33,8 @@ mine, sentry and wire caps, every `PlayerRemoving` handler, kill credit via
 ## Co-op rules in force
 
 - **Run flow:** the server owns `Lobby → Insert → Explore → Primary → Index → Extract → Ended`
-  (`RunStates`); per member `Alive / Downed / Dead`. The run ends when every member is dead
-  or extraction completes; start and restart use the ready-up (decision 4) and reset every
+  (`RunStates`); per member `Alive / Downed / Dead`. The run ends when no player is up and
+  nobody can be reinforced (`Rules/Scarcity.wiped`) or extraction completes; start and restart use the ready-up (decision 4) and reset every
   player. Run-end screens follow `RunState` / `RunResult`, not respawn.
 - **Hold:** any living member (player or bot) in the zone runs it; the HUD shows `n / living`.
 - **Objectives:** drawn once per run for the whole squad (`ObjectiveService`; state per run,
@@ -80,9 +80,11 @@ Planned shape | Fix when`.
 3. **Death: downed, revivable, respawn at the start of the next mission.** At 0 HP a member
    is *Downed*: bleed-out timer, the Infected ignore them and they take no damage (a rescue
    target, not a snack); the pressure is the timer and the teammate having to stop shooting.
-   A teammate holds E next to them to revive (bots revive on their own). Timer out = *Dead*,
-   spectate; the dead respawn when the next mission starts. Until missions chain, dead =
-   spectate to run end. Numbers in `Config.Downed` (max revives per mission included: `Squad` resets the count on
+   A teammate holds E next to them to revive (bots revive on their own). Timer out = *Dead*.
+   Since 2026-11-18 a dead player spends one of the squad's shared reinforcements per run
+   and is dropped back beside a standing squadmate; with the pool empty, dead = spectate to
+   run end (bots never spend it; `Config.Scarcity.Reinforce`, docs/PROGRESSION.md >
+   Reinforcements and ammo pouches). The dead respawn when the next mission starts. Numbers in `Config.Downed` (max revives per mission included: `Squad` resets the count on
    the Lifecycle `onMissionStart` hook as well as on a fresh run).
 4. **Run ownership: anyone can request, short ready-up timer.** The first request opens a
    countdown; the run starts when it expires or everyone readies. Restart works the same way.

@@ -208,6 +208,24 @@ local function tabs(): { Tab }
 		)
 	end
 
+	-- Scarcity (Config.Scarcity): the squad's reinforcements left and both guns' spare mags.
+	local reinforceButtons: { Action } = {}
+	for _, count in { 0, 1, 3, 6 } do
+		table.insert(reinforceButtons, {
+			label = tostring(count),
+			send = cmd("SetReinforcements", count),
+			echo = `Reinforcements: {count}`,
+		})
+	end
+	local magButtons: { Action } = {}
+	for _, mags in { 0, 1, 3 } do
+		table.insert(magButtons, {
+			label = tostring(mags),
+			send = cmd("SetSpareMags", mags),
+			echo = `Spare mags: {mags}`,
+		})
+	end
+
 	local teleports: { Action } = {}
 	for _, spot in TELEPORTS do
 		table.insert(teleports, {
@@ -324,6 +342,14 @@ local function tabs(): { Tab }
 						{ label = "Down me", send = cmd("DownPlayer") },
 						{ label = "Kill me", send = cmd("KillPlayer") }
 					),
+				},
+				{
+					-- Kill me spends a reinforcement; with none left you stay dead.
+					title = "SCARCITY",
+					rows = {
+						{ label = "Reinforcements left", buttons = reinforceButtons },
+						{ label = "Spare mags (both guns)", buttons = magButtons },
+					},
 				},
 				{
 					title = "BOTS",
