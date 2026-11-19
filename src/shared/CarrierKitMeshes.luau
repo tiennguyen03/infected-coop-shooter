@@ -60,7 +60,7 @@ return {
 		solid = false,
 	},
 	egg_carrier_scoreboard = {
-		modelId = 75270107457944,
+		modelId = 125056382901380,
 		size = Vector3.new(1, 8.4, 11.2),
 		offset = Vector3.new(0.5, 4.2, 0),
 		solid = false,

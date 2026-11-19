@@ -1,7 +1,8 @@
 # Levels: Checkpoint Delta, Mile 14, Aid Station Kestrel
 
 Layout spec from the level designer for the three missions of an operation
-([PROGRESSION.md](PROGRESSION.md)). Frame: 600 x 600, origin centre, +X east, +Z north
+([PROGRESSION.md](PROGRESSION.md)). Frame: 600 x 600 (the big Delta test map is 1,800 x
+1,800: section E), origin centre, +X east, +Z north
 (ArenaService convention). Positions are (x, z) of a piece's bounds centre; y only where it
 matters. Ground is raycast. Visual rules (materials, colours, sky) are in
 [STYLES.md](STYLES.md) §6-7.
@@ -467,3 +468,43 @@ doors to 6; Contained a 7th medical tent at (-150,-100) with a stores crate.
    and along the Pens N row from (-290,8,147). Fix: move the piece 2 studs onto the flat.
 3. **Flare under the bridge** at (-30,-45): if the pallet lands on the deck above, land it by
    a raycast from the flare's resting point + 2, not from the sky.
+
+---
+
+# E. Checkpoint Delta XL (the big grey test map, 2026-11-18)
+
+Behind `Config.DeltaXL.Enabled` (off) or the dev panel (RUN > THE BIG MAP). Frame 1,800 x
+1,800 (-900..900), same axes; today's Delta (sections A and B) is the middle square,
+unchanged. Data: `src/shared/DeltaXLLayout.luau`; builder `src/server/DeltaXL.luau`; design
+note, picking rules, how to play and what still breaks: [sprints/DELTA_XL.md](sprints/DELTA_XL.md).
+
+| Square | x, z | Landmark (always loaded) | Points |
+|---|---|---|---|
+| the farms | -900..-300, 300..900 | grain silos (-505, 790), 70 tall | drop I1 (-690, 700); misdrop (-780, 580); spitters at the silos (-470, 760) |
+| the truck stop | -300..300, 300..900 | highway bridge towers (56), the sign (150, 842), 72 | pickup X1 (-80, 800); Secure the Site (60, 735) 46x46; misdrop (200, 640); spitters at the bridge (-30, 425) |
+| the water works | 300..900, 300..900 | water tower (820, 800), 82 | drop I2 (610, 800); Restore Comms (820, 772); Lights On (720, 652.6); misdrop (560, 380) |
+| the camp | -900..-300, -300..300 | ball field floodlights, 64 | pickup X2 (-740, 0); Lights On (-440, 37.6); misdrop (-520, 240) |
+| the checkpoint | -300..300 | the comm tower | today's sites (A3-A7); pickup X0 the landing pad (-90, -90) |
+| the rail yard | 300..900, -300..300 | gantry cranes at z -230 / 230, 76 | pickup X3 (790, 80); Confirm Casualties (607, -60), spawns between the sidings; misdrop (420, -200) |
+| the houses | -900..-300, -900..-300 | school chimney (-722, -727), 55 | drop I3 (-610, -720); misdrop (-480, -760) |
+| the interchange | -300..300, -900..-300 | the flyover (deck 24.2, x -150..90, z -580..-540) | pickup X4 on the deck (30, 24.8, -560); Secure the Site (90, -640); misdrop (200, -760); spitters on the deck (-110, -560) |
+| the fuel farm | 300..900, -900..-300 | burning tank (720, -760) and flare stack, 60 | drop I4 (560, -720); Lights On (540, -647.6); misdrop (420, -420) |
+
+- **Roads** (top 0.2): highway x -30, 24 wide, both ways out of the base; farm road z 420;
+  north road z 200 carried out to both edges; ring road z -560 (flyover over the highway);
+  dirt track x -650 (12, dirt); service road x 684 (z -550 north). N-S roads are cut where an
+  E-W road crosses, so no road faces overlap. Rail x 650 (bed top 0.15, rails 0.55), sidings
+  x 620 / 595 from z -220 to 180.
+- **The river:** z 446..514; bed top -12, water top -11, banks 4 deep and 12 tall (past
+  `ClimbMaxHeight`). Crossings: the ford x -690..-610 (bed -2, shores and channel ramps),
+  the highway bridge x -46..-14 and the rail bridge x 640..696 (decks z 440..520, top 0.2).
+  Boat ramps out of the channel: south bank x 250..280, north bank x -330..-300 and 760..790.
+- **The base's fence** stays with 12 gaps (`DeltaXLLayout.FenceGaps`: roads out 36 wide,
+  breaches 24); the walls at 300 and the scenery past the fence go. The Pens' terrace gets a
+  slope down its west edge (`PensShoulder`). The edge is invisible walls at 901
+  (`Config.DeltaXL.BoundaryHeight`), earth banks past them N, E and W, the highway running
+  on south; Infected spawns are clamped inside `Config.DeltaXL.SpawnInset` (892) and never in
+  the channel (`LowGround`).
+- **Houses** are kit buildings (B1): a door in each wall (a 10-wide gap on the south of the
+  barn, gym and warehouse), windows every 9, an inside stair along the north wall on two
+  storeys. Everything else is a solid grey block at the size the real piece should take.

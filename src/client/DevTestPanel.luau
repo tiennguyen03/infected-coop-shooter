@@ -19,6 +19,8 @@ local CallInDefinitions =
 	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("CallInDefinitions"))
 local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attributes"))
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
+local DeltaXLLayout =
+	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("DeltaXLLayout"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
 local WeaponDefinitions =
 	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("WeaponDefinitions"))
@@ -206,6 +208,24 @@ local function tabs(): { Tab }
 		)
 	end
 
+	-- Scarcity (Config.Scarcity): the squad's reinforcements left and both guns' spare mags.
+	local reinforceButtons: { Action } = {}
+	for _, count in { 0, 1, 3, 6 } do
+		table.insert(reinforceButtons, {
+			label = tostring(count),
+			send = cmd("SetReinforcements", count),
+			echo = `Reinforcements: {count}`,
+		})
+	end
+	local magButtons: { Action } = {}
+	for _, mags in { 0, 1, 3 } do
+		table.insert(magButtons, {
+			label = tostring(mags),
+			send = cmd("SetSpareMags", mags),
+			echo = `Spare mags: {mags}`,
+		})
+	end
+
 	local teleports: { Action } = {}
 	for _, spot in TELEPORTS do
 		table.insert(teleports, {
@@ -215,6 +235,25 @@ local function tabs(): { Tab }
 				teleport(spot.x, spot.z)
 			end,
 		})
+	end
+	-- The big map's drops and pickups (open ground by design; Shared.DeltaXLLayout).
+	local bigTeleports: { Action } = {}
+	type PointGroup = { kind: string, points: { DeltaXLLayout.Point } }
+	local pointGroups: { PointGroup } = {
+		{ kind = "Drop", points = DeltaXLLayout.Drops },
+		{ kind = "Pickup", points = DeltaXLLayout.Pickups },
+	}
+	for _, pointGroup in pointGroups do
+		for _, point in pointGroup.points do
+			local label = `{pointGroup.kind}: {point.name}`
+			table.insert(bigTeleports, {
+				label = label,
+				echo = `Teleport: {label}`,
+				run = function()
+					teleport(point.x, point.z)
+				end,
+			})
+		end
 	end
 
 	return {
@@ -237,6 +276,17 @@ local function tabs(): { Tab }
 						{ label = "Extract (win)", send = cmd("ForceMissionSuccess") },
 						{ label = "Wipe (lose)", send = cmd("ForceWipe") }
 					),
+				},
+				{
+					-- Config.DeltaXL: on until Stop; a fresh run follows.
+					title = "THE BIG MAP (grey test)",
+					actions = acts({
+						label = "Big map on (restarts the run)",
+						send = cmd("BigMap"),
+						on = function()
+							return workspace:GetAttribute(Attributes.DeltaXL) == true
+						end,
+					}),
 				},
 				{
 					title = "THE FIELD",
@@ -294,6 +344,14 @@ local function tabs(): { Tab }
 					),
 				},
 				{
+					-- Kill me spends a reinforcement; with none left you stay dead.
+					title = "SCARCITY",
+					rows = {
+						{ label = "Reinforcements left", buttons = reinforceButtons },
+						{ label = "Spare mags (both guns)", buttons = magButtons },
+					},
+				},
+				{
 					title = "BOTS",
 					rows = { { label = "How many", buttons = botButtons } },
 					actions = acts(
@@ -338,6 +396,10 @@ local function tabs(): { Tab }
 						hotkey = Enum.KeyCode.F9,
 						echo = "Warden here",
 					}, {
+						label = "To the rage",
+						send = cmd("RageWarden"),
+						echo = "Warden to the rage",
+					}, {
 						label = "Kill him",
 						send = cmd("KillWarden"),
 						echo = "Kill the Warden",
@@ -370,7 +432,13 @@ local function tabs(): { Tab }
 			},
 		},
 		{ title = "UPGRADES", groups = upgradeGroups },
-		{ title = "TELEPORT", groups = { { title = "CHECKPOINT DELTA", actions = teleports } } },
+		{
+			title = "TELEPORT",
+			groups = {
+				{ title = "CHECKPOINT DELTA", actions = teleports },
+				{ title = "THE BIG MAP (turn it on in RUN)", actions = bigTeleports },
+			},
+		},
 	}
 end
 

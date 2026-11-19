@@ -110,6 +110,7 @@ class Set:
         self.parts = []  # (group, kind, shape, dims)
         self.dress = []  # kit instances
         self.texts = []
+        self.counts = {}  # index in texts -> count tag (T(count=...))
         self.lights = []
         self.labels = []  # (text, x, z, level)
 
@@ -129,7 +130,11 @@ class Set:
         """A Cylinder Part on its flat (a painted circle); r_in > 0 draws the ring only."""
         self.parts.append((g, kind, "disc", (x, z, r, y0, y1, r_in)))
 
-    def T(self, g, text, pos, size, face="up", kind="paint", yaw=0.0):
+    def T(self, g, text, pos, size, face="up", kind="paint", yaw=0.0, count=None):
+        """Lettering. `count` tags a number the lobby paints from the store or the clock
+        (TallyBoards: "callin:<id>", "mission:<id>", "days:<tile>"); `text` is its preview."""
+        if count:
+            self.counts[len(self.texts)] = count
         self.texts.append((g, text, pos, size, face, kind, yaw))
 
     def D(self, name, x, y, z, yaw=0.0, scale=None, layer="ship", mat=None, tilt=0.0, export=True):
@@ -566,12 +571,14 @@ def desks_v2(s):
         s.T("callins", sub, (px - 0.25, HY + 2.9, pz), 0.3, "-x", "paint")
     s.D("egg_carrier_cat", 26.6, HY + 0.04, 112.2, yaw=90)
     s.T("callins", "DO NOT LOAD THE CAT", (25.55, HY + 0.7, 112.2), 0.26, "-x", "paint")
-    # the tallies stencilled on the hull over the show floor: one mark a mission
-    for i, (name, n) in enumerate((("HAMMER", 23), ("ANVIL", 9), ("SHRIKE", 14), ("DOORMAN", 31))):
+    # the call-in counts stencilled on the hull over the show floor: a painted number under each
+    # name (owner 2026-11-18: tally marks do not scale to hundreds). The number here is only the
+    # preview's; in game TallyBoards paints the row's `count` (Config.CallIns.<row>.Tally + uses).
+    for i, (name, cid, n) in enumerate((("HAMMER", "hammer", "1,284"), ("ANVIL", "anvil", "502"), ("SHRIKE", "shrike", "781"), ("DOORMAN", "doorman", "1,736"))):
         zc = (133.6, 121.6)[i % 2]
         y = HY + (9.0 if i < 2 else 6.3)
         s.T("dress", name, (W - 2.1, y + 0.9, zc + 2.6), 0.7, "-x", "black")
-        s.T("dress", " ".join(["IIII"] * (n // 5) + ["I" * (n % 5)]), (W - 2.1, y - 0.1, zc), 0.62, "-x", "black")
+        s.T("dress", n.rjust(6), (W - 2.1, y - 0.1, zc + 2.6), 0.62, "-x", "black", count="callin:" + cid)
     s.light(24, DB - 4, 122, "flood", 6000)
     # ---- the Loadmaster at the ramp's foot: no counter; his hammock between two stanchions, the
     # rigging rail and slung cases behind (vendor corners, owner 2026-11-17)
@@ -634,8 +641,14 @@ def desks_v2(s):
         s.B("maproom", "steel", x0 - 0.6, x0 + 1.0, HY, HY + 0.2, z - 0.5, z + 0.5)
     s.D("egg_carrier_scoreboard", x0, HY + 2.6, 22, yaw=180)
     s.T("maproom", "MISSIONS HOME", (x0 - 0.3, HY + 10.2, 22), 0.6, "-x", "paint")
-    for r, name in enumerate(("DELTA", "MILE 14", "KESTREL", "THE YARD", "RESERVOIR")):
-        s.T("maproom", name, (x0 - 0.3, HY + 8.55 - r * 1.25, 24.6), 0.5, "-x", "paint")
+    # one row a district: its name, then a painted number of missions home (owner 2026-11-18:
+    # numbers, not chalk marks; TallyBoards paints Config.Lobby.Tallies.Districts + extractions).
+    # Read from the walk (facing +X) +Z is the right, so the names sit at the low-Z half and the
+    # numbers at the high-Z half; the preview, mirrored, shows them the other way round.
+    for r, (name, mid, n) in enumerate((("DELTA", "delta", "11"), ("MILE 14", "mile14", "6"), ("KESTREL", "kestrel", "4"), ("THE YARD", "yard", "2"), ("RESERVOIR", "reservoir", "0"))):
+        y = HY + 8.55 - r * 1.25
+        s.T("maproom", name, (x0 - 0.3, y, 19.6), 0.5, "-x", "paint")
+        s.T("maproom", n.rjust(5), (x0 - 0.3, y, 25.0), 0.5, "-x", "paint", count="mission:" + mid)
 
 
 def hangar_life_v2(s):
@@ -713,8 +726,10 @@ def eggs_deck_v2(s):
     # the count board where teams come off the helicopter
     s.D("egg_carrier_dayssign", 24, DECK, -133.2, yaw=90)
     s.T("eggs", "DAYS SINCE ONE GOT ABOARD", (24, DECK + 6.75, -133.0), 0.36, "+z", "paint")
+    # three number tiles, counted up for real in game (TallyBoards, Config.Lobby.DaysSince): tile 1
+    # (hundreds) on the viewer's left. Read from the lane (facing -Z) +X is the right.
     for i, ch in enumerate("214"):
-        s.T("eggs", ch, (25.5 - i * 1.5, DECK + 3.9, -132.9), 1.3, "+z", "paint")
+        s.T("eggs", ch, (22.5 + i * 1.5, DECK + 3.9, -132.9), 1.3, "+z", "paint", count="days:%d" % (i + 1))
     s.T("eggs", "KEEP IT THAT WAY", (24, DECK + 5.45, -133.0), 0.4, "+z", "black")
 
 
@@ -1448,9 +1463,10 @@ def export_luau(data_path=None, kit_path=None):
             out.append('\t\t{ name = "%s", at = { %s } },' % (e["name"], ", ".join(_n(v) for v in (e["x"], e["y"], e["z"], e["yaw"], e["tilt"], sc[0], sc[2], sc[1]))))
     out.append("\t},")
     out.append("\ttexts = { -- at: x, y, z, height, yaw")
-    for g, text, pos, size, face, kind, yaw in s.texts:
+    for i, (g, text, pos, size, face, kind, yaw) in enumerate(s.texts):
         if g not in SKIP_GROUPS:
-            out.append('\t\t{ text = %s, face = "%s", kind = "%s", at = { %s } },' % (json.dumps(text), face, kind, ", ".join(_n(v) for v in (pos[0], pos[1], pos[2], size, yaw))))
+            count = ' count = "%s",' % s.counts[i] if i in s.counts else ""
+            out.append('\t\t{ text = %s, face = "%s", kind = "%s",%s at = { %s } },' % (json.dumps(text), face, kind, count, ", ".join(_n(v) for v in (pos[0], pos[1], pos[2], size, yaw))))
     out.append("\t},")
     out.append("\tlights = { -- at: x, y, z, range")
     for x, y, z, kind, power, spot in s.lights:

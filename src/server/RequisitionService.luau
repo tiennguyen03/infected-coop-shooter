@@ -105,6 +105,16 @@ local function cardEffects(): { [string]: Reward.Effects }
 	return Config.Crates.Cards :: any
 end
 
+-- Seconds after a pallet lands before the next flare: Config.Scarcity.Resupply's long wait
+-- while scarcity is on (the flare is the main refill), else Requisition.FlareCooldown.
+local function flareCooldown(): number
+	local scarcity = Config.Scarcity
+	if scarcity.Enabled and scarcity.Resupply.Enabled then
+		return scarcity.Resupply.FlareCooldown
+	end
+	return Config.Requisition.FlareCooldown
+end
+
 local function currentCost(): number
 	local cfg = Config.Requisition
 	local base = math.min(cfg.BaseCost * cfg.CostGrowth ^ drops, cfg.CostCap)
@@ -119,8 +129,17 @@ local function publish()
 		Attributes.ResupplyDropIn,
 		if pending then math.max(pending.landAt - os.clock(), 0) else -1
 	)
-	-- The flare's own cooldown, so the flare key does not play an empty throw during it.
-	workspace:SetAttribute(Attributes.ResupplyFlareCooling, os.clock() < flareReadyAt)
+	-- The flare's own cooldown, so the flare key does not play an empty throw during it, and
+	-- when it ends (the meter counts it down: ResupplyUI).
+	local cooling = os.clock() < flareReadyAt
+	workspace:SetAttribute(Attributes.ResupplyFlareCooling, cooling)
+	workspace:SetAttribute(
+		Attributes.ResupplyFlareReadyAt,
+		-- Whole seconds: this runs every step, and a steady value is not sent again.
+		if cooling
+			then math.round(workspace:GetServerTimeNow() + (flareReadyAt - os.clock()))
+			else 0
+	)
 end
 
 -- The one way in: a kill's SupplyValue (once, not once per player) and the objective reward.
@@ -478,7 +497,7 @@ local function releaseFlare(player: Player, target: unknown)
 	local cfg = Config.Requisition
 	pool -= currentCost()
 	drops += 1
-	flareReadyAt = now + cfg.DropDelay + cfg.FlareCooldown
+	flareReadyAt = now + cfg.DropDelay + flareCooldown()
 
 	local landing = ThrowUtil.landingPoint(
 		root,

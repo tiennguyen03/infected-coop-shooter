@@ -1,6 +1,6 @@
 --!strict
 -- Pure maths for the satisfying pass (docs/superpowers/plans/2026-11-09-satisfying-pass.md):
--- blast shake falloff, low-health intensity, the killing push and the flinch cooldown. No
+-- blast shake falloff, low-health intensity and its fade, the killing push and the flinch cooldown. No
 -- Roblox APIs, so tests/Feel.spec.luau runs it in Lune.
 
 local Feel = {}
@@ -27,6 +27,22 @@ function Feel.lowHealth(fraction: number, start: number): number
 		return 0
 	end
 	return math.clamp(1 - fraction / start, 0, 1)
+end
+
+-- One frame of a linear fade from `shown` toward `goal` (LowHealthFX): a full 0 -> 1 swing
+-- takes `ease` seconds (0 jumps straight there), never passing the goal. Fading out to 0, a
+-- value at or under `off` snaps to 0.
+function Feel.easeToward(shown: number, goal: number, dt: number, ease: number, off: number): number
+	local stepSize = if ease > 0 then dt / ease else 1
+	if goal > shown then
+		shown = math.min(shown + stepSize, goal)
+	else
+		shown = math.max(shown - stepSize, goal)
+	end
+	if shown <= off and goal == 0 then
+		shown = 0
+	end
+	return shown
 end
 
 -- Launch speed (studs/s) of a body killed by a hit of `kind` doing `damage`.
