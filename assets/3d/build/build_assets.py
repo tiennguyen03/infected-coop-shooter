@@ -1353,6 +1353,11 @@ import guns  # noqa: E402
 
 guns.register(sys.modules[__name__])
 
+# The M16A4 with each optic (free models cut once into assets/3d/source/opt_*) live in optics.py.
+import optics  # noqa: E402
+
+optics.register(sys.modules[__name__])
+
 # Aircraft (the Shrike gunship and its rotor) live in aircraft.py (2026-11-09).
 import aircraft  # noqa: E402
 
@@ -1403,6 +1408,11 @@ infected_v2.register(sys.modules[__name__])
 import doorman  # noqa: E402
 
 doorman.register(sys.modules[__name__])
+
+# The ATV (build/atv.py): the owner's model, cut once into assets/3d/source/, painted here.
+import atv  # noqa: E402
+
+atv.register(sys.modules[__name__])
 
 
 # ------------------------------------------------------------------ The Chosen (player bodies)
@@ -2283,6 +2293,8 @@ def main():
 
     if any(n in changed for n in (*doorman.PIECES, *doorman.FIGURES)):
         doorman.render_previews(sys.modules[__name__], scene, cam, built, PREVIEWS)
+    if any(n in changed for n in atv.ATV):
+        atv.render_previews(sys.modules[__name__], scene, cam, built, PREVIEWS)
 
     # skinned bodies: mesh + armature, exported together; previews in rest pose with the
     # rigid gear sitting on its limbs, then bent (PROOF_POSE) with the gear following the bones

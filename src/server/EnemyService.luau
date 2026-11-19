@@ -1293,8 +1293,9 @@ groundPositionNear = function(center: Vector3, minDistance: number, maxDistance:
 	for _ = 1, Config.Spawning.SpawnAttempts do
 		local angle = math.random() * math.pi * 2
 		local distance = math.random(minDistance, maxDistance)
-		-- Inside the perimeter (Config.Arena.SpawnInset): no spawn in the fence band or past it.
-		local inset = Config.Arena.SpawnInset
+		-- Inside the perimeter (Config.Arena.SpawnInset, the big map's edge on Delta XL): no
+		-- spawn in the fence band or past it.
+		local inset = ArenaService.spawnInset()
 		local x = math.clamp(center.X + math.cos(angle) * distance, -inset, inset)
 		local z = math.clamp(center.Z + math.sin(angle) * distance, -inset, inset)
 		local result =
@@ -1303,6 +1304,8 @@ groundPositionNear = function(center: Vector3, minDistance: number, maxDistance:
 		candidate = Vector3.new(x, groundY, z)
 		if
 			isOpenGround(result)
+			-- never in the big map's river channel (no map has ground this low elsewhere)
+			and groundY >= Config.DeltaXL.LowGround
 			and not ArenaService.insideBuilding(candidate, Config.Spawning.SpawnBuildingMargin)
 		then
 			return candidate

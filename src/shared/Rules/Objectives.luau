@@ -41,6 +41,9 @@ export type Row = {
 	Needs: { string },
 }
 export type Map = {
+	-- A bigger version of another map (delta_xl of delta): it plays that map's signature
+	-- objectives too.
+	Of: string?,
 	Main: { Pick },
 	Side: { Pick },
 	Sites: { [string]: { { [string]: any } } },
@@ -168,6 +171,9 @@ function Objectives.validate(rows: { [string]: Row }, maps: { [string]: Map }): 
 	end
 	for mapId, map in maps do
 		local signatureMain = false
+		if map.Of ~= nil and maps[map.Of] == nil then
+			table.insert(problems, `{mapId}: no map "{map.Of}"`)
+		end
 		local pools: { [string]: { Pick } } = { main = map.Main, side = map.Side }
 		for role, pool in pools do
 			local seen: { [string]: boolean } = {}
@@ -192,7 +198,7 @@ function Objectives.validate(rows: { [string]: Row }, maps: { [string]: Map }): 
 					table.insert(problems, `{mapId}: {id} needs a weight above 0`)
 				end
 				if row.Kind == "signature" then
-					if row.Map ~= mapId then
+					if row.Map ~= mapId and row.Map ~= map.Of then
 						table.insert(
 							problems,
 							`{mapId}: {id} is {row.Map or "another map"}'s signature`

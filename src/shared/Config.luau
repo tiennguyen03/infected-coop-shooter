@@ -110,7 +110,7 @@ local Config = {
 	-- them; each option names its slot. A gun offers an option when its row has it (the
 	-- suppressor: Config.Weapons.<id>.Suppressor; not the revolver or the Goose).
 	Attachments = {
-		Slots = { "Barrel" },
+		Slots = { "Barrel", "Optic" }, -- Optic: the rows of Config.Optics (Shared.Attachments.Optics)
 		Options = {
 			suppressor = {
 				Name = "Suppressor",
@@ -126,6 +126,90 @@ local Config = {
 				Description: string,
 				Color: Color3,
 				Volume: number,
+			},
+		},
+	},
+
+	-- Optics for the Optic slot (Nova, 2026-11-18: the M16A4 first, other guns in a later PR).
+	-- One row per optic; Shared.Attachments.Optics builds the typed records from them, and a
+	-- new optic appears by having a row. Bought once with merits at the Loadmaster's EDIT and
+	-- kept on the record for good (Rules/AttachmentRules; never tabs or Robux). On the gun it
+	-- multiplies the gun's own Sight.Zoom and the time into the sights (Weapon.ADS.EnterTime;
+	-- Rules/AttachmentMerge, CameraController). Numbers from the systems designer: the named
+	-- magnification is the final zoom on the M16's 1.35 irons; each costs less than the gun it
+	-- competes with (2, 3 and 4 wins at 120 merits). Fit: per gun it fits, the mesh of that gun
+	-- with this optic on its rail (assets/3d/build/optics.py, from the free models in
+	-- assets/3d/ASSET_IDS.md > Optics) and its sight on that mesh (Rules/Sight: Rear and Front on
+	-- the optic's axis; the zoom is worked out from ZoomMultiplier). WeaponDefinitions.dressed
+	-- reads it for the gun in hand, first person and the EDIT screen.
+	Optics = {
+		reddot = {
+			Name = "Red dot",
+			Description = "No magnification, but the fastest into the sights. Close range, first shot first.",
+			Guns = { "service_rifle" },
+			ZoomMultiplier = 1.0, -- 1.35: the irons' picture
+			AdsTimeMultiplier = 0.75, -- 0.11 s
+			Price = 150,
+			Fit = {
+				-- The RMR on a riser, its dot on the irons' line, co-witnessed with the front post.
+				service_rifle = {
+					Model = "wpn_m16_reddot",
+					Sight = {
+						Rear = Vector3.new(0, 0.615, -0.01),
+						Front = Vector3.new(0, 0.615, -1.345),
+					},
+				},
+			},
+		},
+		compm2 = {
+			Name = "CompM2 (M68)",
+			Description = "2x and no slower to raise. The general-purpose sight.",
+			Guns = { "service_rifle" },
+			ZoomMultiplier = 1.48, -- 2.0 (a sight that is not a scope stops at 2x, Rules/Sight)
+			AdsTimeMultiplier = 1.0, -- 0.15 s
+			Price = 250,
+			Fit = {
+				service_rifle = {
+					Model = "wpn_m16_compm2",
+					Sight = {
+						Rear = Vector3.new(0, 0.651, 0.04),
+						Front = Vector3.new(0, 0.651, -0.307),
+					},
+				},
+			},
+		},
+		acog = {
+			Name = "ACOG 4x",
+			Description = "4x for picking off the Infected at range. Slower into the sights.",
+			Guns = { "service_rifle" },
+			ZoomMultiplier = 3.0, -- 4.05
+			AdsTimeMultiplier = 1.6, -- 0.24 s, about a scope's ScopeTime
+			Price = 400,
+			Fit = {
+				-- A scope: aimed, the scope picture (ScopeView) as on the M110.
+				service_rifle = {
+					Model = "wpn_m16_acog",
+					Sight = {
+						Kind = "scope",
+						Rear = Vector3.new(0, 0.643, 0.097),
+						Front = Vector3.new(0, 0.643, -0.325),
+					},
+				},
+			},
+		},
+	} :: {
+		[string]: {
+			Name: string,
+			Description: string,
+			Guns: { string },
+			ZoomMultiplier: number,
+			AdsTimeMultiplier: number,
+			Price: number,
+			Fit: {
+				[string]: {
+					Model: string,
+					Sight: { Rear: Vector3, Front: Vector3, Kind: string? },
+				},
 			},
 		},
 	},
@@ -1193,6 +1277,68 @@ local Config = {
 		ConeDot = 0.5, -- hits inside ~60 degrees either side of facing
 		Cooldown = 1,
 	},
+	-- Kit Mods (Nova, 2026-11-18; the Loadmaster's KIT MODS tab): passive buffs on the soldier
+	-- whatever gun they carry, bought rank by rank with merits (never tabs) and kept for good on
+	-- the record (Rules/KitModRules, Shared.KitMods). One row per mod: Costs[n] is rank n's
+	-- price, PerRank is added to the row's Effect per rank held; the services that own an
+	-- Effect ask KitMods.bonus for it. Enabled = false: shown greyed, not sold, no effect (its
+	-- effect is a follow-up). Prices from the systems designer (about 1 : 2 : 3.5 a rank; a
+	-- full mod is 8-13 wins at 120 merits). docs/OWNER.md says power is the loadout, never stat
+	-- items: this is built for the owner to decide (docs/BACKLOG.md > Your call).
+	KitMods = {
+		stim_carry = {
+			Name = "Extra stim",
+			Description = "Carry one more stim per rank. Refills fill you to the new count.",
+			Effect = "StimsCarried", -- LoadoutService: stims carried
+			PerRank = 1,
+			MaxRank = 3,
+			Costs = { 200, 400, 750 },
+			Enabled = true,
+			Order = 1,
+		},
+		sprint_roll = {
+			Name = "Extra roll",
+			Description = "One more roll from a full stamina bar per rank (a little more sprint too).",
+			Effect = "StaminaRolls", -- SprintController: Stamina.Max + RollCost per roll
+			PerRank = 1,
+			MaxRank = 3,
+			Costs = { 150, 300, 500 },
+			Enabled = true,
+			Order = 2,
+		},
+		callin_cooldown = {
+			Name = "Quicker call-ins",
+			Description = "Call-ins are back 8 seconds sooner per rank.",
+			Effect = "CallInCooldown", -- seconds (not wired yet; the designer suggests ~5% a rank instead)
+			PerRank = -8,
+			MaxRank = 3,
+			Costs = { 250, 500, 850 },
+			Enabled = false,
+			Order = 3,
+		},
+		revive_speed = {
+			Name = "Faster revives",
+			Description = "Pick a downed squadmate up 15% faster per rank.",
+			Effect = "ReviveSpeed", -- share faster (not wired yet)
+			PerRank = 0.15,
+			MaxRank = 3,
+			Costs = { 150, 300, 500 },
+			Enabled = false,
+			Order = 4,
+		},
+	} :: {
+		[string]: {
+			Name: string,
+			Description: string,
+			Effect: string,
+			PerRank: number,
+			MaxRank: number,
+			Costs: { number },
+			Enabled: boolean,
+			Order: number,
+		},
+	},
+
 	Stim = {
 		Carried = 2,
 		Heal = 60, -- health over Duration
@@ -1219,6 +1365,10 @@ local Config = {
 		Compact = Vector2.new(1180, 680),
 		TemplateWait = 20,
 	},
+	-- Vehicle bodies' meshes (VehicleBody): how long a server waits for them to load before it
+	-- publishes them to the clients (match) or builds the motor pool's display (lobby);
+	-- a body built without them is the Part body.
+	VehicleMeshes = { Wait = 30 },
 
 	-- Body animations: clip names from assets/animations (Mixamo, retargeted by
 	-- assets/animations/build/retarget.py). Ids are the published Roblox animations
@@ -1295,11 +1445,21 @@ local Config = {
 			warden_slam = "rbxassetid://80930861193470",
 			warden_stomp = "rbxassetid://137160328942631",
 			warden_hit = "rbxassetid://92513440124088",
+			-- Keyed by assets/animations/build/keyed.luau (no Mixamo source), 2026-11-18.
+			warden_shove = "rbxassetid://119777822260499",
+			warden_leap = "rbxassetid://129607022708712",
 			knockdown_back = "rbxassetid://98193119951691",
 			getup_back = "rbxassetid://136455455125454",
 			-- Roblox's stock R15 climb (the Animate script's ClimbAnim): played on a ladder
 			-- (TrussPart) while the Humanoid is in its Climbing state; not a Mixamo clip
 			ladder_climb = "rbxassetid://507765644",
+			-- The Carrier sellers' looping idles (lobby, NpcPose; hand-keyed by
+			-- assets/animations/build/seller_idles.luau, played on top of each seller's pose)
+			seller_quartermaster = "rbxassetid://124934111901603",
+			seller_sapper = "rbxassetid://76071341544718",
+			seller_loadmaster = "rbxassetid://72753754042631",
+			seller_motor_sergeant = "rbxassetid://121963273047523",
+			seller_watch_officer = "rbxassetid://135909242377486",
 		},
 		-- Throw timing, one row per throw clip (Rules/ThrowTiming; docs/PROGRESSION.md >
 		-- Throwing): the clip plays from Start seconds in at Speed, and the grenade, marker or
@@ -1405,9 +1565,12 @@ local Config = {
 			-- The Warden stands upright: his own set. idle plays whenever he stands still,
 			-- guard is an upper-body overlay (shield up) over the walk, charge loops during
 			-- the Gate Charge, riot on each Riot Call, throw on the Gas Canister (upper body).
+			-- attack = "warden_shove" (keyed shield punch, 2026-11-18); "warden_bash" is the old
+			-- Mixamo Power Slash that spun him a full turn. leap = his Leap (keyed).
 			Warden = {
 				move = "warden_walk",
-				attack = "warden_bash",
+				attack = "warden_shove",
+				leap = "warden_leap",
 				death = "warden_death",
 				idle = "warden_idle",
 				guard = "warden_guard",
@@ -1448,7 +1611,7 @@ local Config = {
 			prone_walk_b = 4,
 			zombie_crawl = 6,
 			-- Downloaded in place (no root motion to measure), so by eye.
-			warden_walk = 6,
+			warden_walk = 11, -- 6 at scale 1 by eye, times his 1.9 scale (the old 6 slid his boots)
 			warden_run = 16,
 		},
 		WalkRunThreshold = 20, -- studs/s: faster than this plays the run clip (walk 16, sprint 24)
@@ -1677,6 +1840,7 @@ local Config = {
 		-- the mark at most. Walk It In steps them Config.Upgrades.WalkingBarrage.Step apart.
 		Hammer = {
 			Price = 0, -- merits on the Carrier (Rules/Record, KitPrices); issued free
+			Tally = 1284, -- uses painted on the Carrier hull before any squad added to it (TallyBoards, Rules/Tally)
 			Display = { Prop = "shells", Width = 3 }, -- how the Call-ins display shows it (CallInDisplay)
 			Charges = 1,
 			Cooldown = 120,
@@ -1717,6 +1881,7 @@ local Config = {
 		-- line of sight; one heavy shell Delay seconds after the mark.
 		Anvil = {
 			Price = 0, -- merits on the Carrier (Rules/Record, KitPrices); issued free
+			Tally = 502,
 			Display = { Prop = "maptable", Width = 4 }, -- how the Call-ins display shows it (CallInDisplay)
 			Charges = 1,
 			Cooldown = 180,
@@ -1762,6 +1927,7 @@ local Config = {
 		-- impacts centred on the mark, Step studs apart along the throw, BurstInterval apart.
 		Shrike = {
 			Price = 0, -- merits on the Carrier (Rules/Record, KitPrices); issued free
+			Tally = 781,
 			Display = { Prop = "gunship", Width = 4.2 }, -- how the Call-ins display shows it (CallInDisplay)
 			Charges = 1,
 			Cooldown = 150,
@@ -1799,6 +1965,7 @@ local Config = {
 		-- FireInterval it shoots the nearest Infected in Range it can see.
 		Doorman = {
 			Price = 400, -- merits on the Carrier (Rules/Record, KitPrices)
+			Tally = 1736,
 			Display = { Prop = "doorman", Width = 4.6 }, -- how the Call-ins display shows it (CallInDisplay)
 			Charges = 1,
 			Cooldown = 150,
@@ -1836,6 +2003,7 @@ local Config = {
 		-- when an Infected steps within TriggerRadius.
 		Tripline = {
 			Price = 0, -- merits on the Carrier (Rules/Record, KitPrices); issued free
+			Tally = 960,
 			Display = { Prop = "mines", Width = 3.4 }, -- how the Call-ins display shows it (CallInDisplay)
 			Charges = 2,
 			Cooldown = 60,
@@ -1864,6 +2032,7 @@ local Config = {
 		-- DamagePerSecond (dealt every TickInterval).
 		Concertina = {
 			Price = 250, -- merits on the Carrier (Rules/Record, KitPrices)
+			Tally = 433,
 			Display = { Prop = "wire", Width = 3.4 }, -- how the Call-ins display shows it (CallInDisplay)
 			Charges = 2,
 			Cooldown = 90,
@@ -1892,6 +2061,7 @@ local Config = {
 		-- times in all. A player re-arms again only after stepping out of the radius.
 		Speedball = {
 			Price = 300, -- merits on the Carrier (Rules/Record, KitPrices)
+			Tally = 1102,
 			Display = { Prop = "ammo", Width = 3.4 }, -- how the Call-ins display shows it (CallInDisplay)
 			Charges = 1,
 			Cooldown = 180,
@@ -1918,6 +2088,7 @@ local Config = {
 		-- full heal, stims refilled, +Plate shield (Config.Crates.ShieldCap still caps it).
 		AidBag = {
 			Price = 300, -- merits on the Carrier (Rules/Record, KitPrices)
+			Tally = 1458,
 			Display = { Prop = "medbag", Width = 3 }, -- how the Call-ins display shows it (CallInDisplay)
 			Charges = 1,
 			Cooldown = 180,
@@ -1945,30 +2116,40 @@ local Config = {
 		-- gun) and the back seat, who fires their primary.
 		ATV = {
 			Price = 400, -- merits on the Carrier (Rules/Record, KitPrices)
+			Tally = 37,
 			Desk = "vehicles", -- sold by the motor sergeant (LobbyDesks), not the Call-ins desk
 			Charges = 1,
 			Cooldown = 180, -- a wrecked or scrapped ATV comes back when the charge does
 			ThrowDistance = 30,
 			Aim = { Shape = "ring", Radius = 5 }, -- where it is set down
-			-- Slung under the helicopter (Nova 2026-11-17): the helo comes in at Height over the
-			-- mark with the ATV on a Line studs long, lowers it to the ground, drops the hook and
-			-- climbs away. Approach and Depart are the flight in and out; the lowering lasts from
-			-- the end of the approach to Time (from the throw), when the server's ATV appears.
+			-- Dropped in a crate (Tien and Nova 2026-11-17; it was slung and lowered, `sling` is
+			-- still a style): the helo flies straight over the mark at Height and Speed from
+			-- Distance out and on as far again, climbing Climb, and never stops; it lets the crate
+			-- go Fall seconds before Time and the crate drops straight down, landing at Time (the
+			-- server's ATV appears inside it). The walls fall open flat over Open, the lid kicks
+			-- off behind; the boards lie Linger seconds and fade over Fade. The crate is the
+			-- vehicle's own size: its extents plus CrateRoom each side and over the top, in
+			-- CrateStep steps (Rules/Arrival.crateSize); a `Crate` (Vector3) on the Vehicle block
+			-- sets one instead.
 			Arrival = {
-				Style = "sling",
+				Style = "crate",
 				Time = 7.5,
 				Smoke = Color3.fromRGB(214, 196, 92),
 				SmokeTime = 8,
-				Approach = 4.5, -- in from Distance studs out to the hover
-				Depart = 3.5, -- the helo climbs away after the hook is dropped
-				Distance = 260,
-				Height = 34, -- the helo's frame above the mark during the hover
-				Line = 16, -- the sling line, studs, from the belly to the ATV's roll bar
-				Climb = 70, -- studs it gains on the way out
+				Distance = 300,
+				Speed = 60,
+				Height = 46, -- the helo's frame over the mark; the crate hangs under its skids
+				Climb = 25,
+				Fall = 1.4,
+				Open = 0.55,
+				Linger = 4,
+				Fade = 1.5,
+				CrateRoom = 0.4,
+				CrateStep = 0.5,
 				RotorVolume = 0.55,
 			},
 			Vehicle = {
-				Body = "atv", -- VehicleBody's build (blocky parts; a mesh later)
+				Body = "atv", -- VehicleBody's build (Nova's model; the Part body while it loads)
 				PerPlayer = 1, -- a second call replaces your empty one (Rules/Vehicle.callCheck)
 				PerSquad = 2, -- two ATVs carry the whole squad
 				Clear = Vector3.new(6, 4, 9), -- the landing box that must be free of walls (no charge spent)
@@ -2034,8 +2215,8 @@ local Config = {
 				-- radio notices: to the squad when it is called, set down and lost; to the caller
 				-- when a call is refused; to the riders when it is about to blow.
 				Radio = {
-					Inbound = "Pike, Control. Helo bringing your ATV in under it. Clear the drop.",
-					Down = "Helo. ATV's on the ground. Hook's clear.",
+					Inbound = "Pike, Control. Helo's coming over with your ATV in a crate. Clear the drop.",
+					Down = "Helo. Crate's down. ATV's yours.",
 					Lost = "Pike, Control. Lost your ATV. You're on foot.",
 					Burning = "It's going up! Get off!",
 					Occupied = "Your ATV's still got people on it.",
@@ -2131,7 +2312,7 @@ local Config = {
 			PauseAfter = 1.6, -- a hold whose seconds have not risen this long reads PAUSED
 			FillSeconds = 0.25, -- the fill eases to each new value (about once a second)
 		},
-		MarkerDistance = 1200, -- studs a world marker is seen from
+		MarkerDistance = 2600, -- studs a world marker is seen from (the big map is 1,800 across)
 		MetresPerStud = 0.28,
 		LampColor = Color3.fromRGB(255, 176, 64), -- Lights On: sodium
 		-- Said once at insert, before the main objective's brief.
@@ -2400,6 +2581,40 @@ local Config = {
 				loco_run_r = { 0.43, 0.96 },
 			},
 		},
+	},
+
+	-- Checkpoint Delta XL, the grey test map (docs/sprints/DELTA_XL.md; server DeltaXL, layout
+	-- Shared.DeltaXLLayout): today's Delta in the middle of 1,800 x 1,800 studs with eight
+	-- areas round it. Off: today's map, exactly as before. On (here, or the dev panel's RUN >
+	-- "Big map (grey test)" for one session): the fence opens, the outer areas are built,
+	-- the squad drops at a corner far from the main objective and the helicopter's pickup is
+	-- chosen and called only when the main objective is done.
+	DeltaXL = {
+		Enabled = false,
+		Map = "delta_xl", -- ObjectiveDefinitions map played while it is on (Of = "delta")
+		BoundaryHeight = 120, -- the invisible walls at the map's edge
+		SpawnInset = 892, -- Infected spawns stay this far inside the centre on each axis
+		-- A spawn whose ground is lower than this is refused: the river channel (bed -12).
+		LowGround = -1,
+		-- The Burn on the big map (PROGRESSION.md > Operation; 840 s elsewhere). Nothing
+		-- counts the Burn down yet: this is the number it will use.
+		BurnSeconds = 1200,
+		-- Picking (Rules/DropPickup; plan section 3).
+		DropMinDistance = 900, -- the drop corner is at least this far from the main site
+		Sides = { FirstMin = 150, FirstMax = 450, SecondFromFirst = 300, SecondFromLine = 350 },
+		Pickup = {
+			HalfwayShare = 0.5, -- of runs: a pickup halfway back
+			HalfwayMin = 400,
+			HalfwayMax = 700,
+			BackMin = 800, -- else all the way back: this far from the main objective or more
+			AvoidDrop = 300, -- ... and never this close to where the squad landed
+			AvoidRadius = 200, -- a pickup this close to the Warden is skipped
+		},
+		-- Control, when the main objective is done and the pickup is chosen ({place}).
+		PickupRadio = "Pike, Control. The helicopter will pick you up at {place}. Move.",
+		-- The distant city: only to the south, pushed out past the map and scaled up.
+		Skyline = { ArcFrom = 200, ArcTo = 340, Push = 800, Scale = 1.5 },
+		StoryMarkers = true, -- amber cubes on the environmental-story spots (grey pass only)
 	},
 
 	-- Stage 1 building kit (ArenaService.buildBuilding; docs/LEVELS.md section B).
@@ -2697,9 +2912,10 @@ local Config = {
 			WaypointReach = 6,
 			WalkTimeout = 75, -- the hunt starts anyway after this long on the lane
 			SightingRange = 90, -- a living member this close during the walk: the sighting line
-			SpawnDelay = 1.5, -- stands still after spawning
+			SpawnDelay = 0.8, -- stands still after spawning (was 1.5: the aggression pass)
 			GateOpenDelay = 3,
 			HideDelay = 2.5, -- boss bar stays this long after the fight
+			WeakSpotHintDelay = 10, -- seconds after he spawns that Control names his weak spot (Radio.WeakSpot)
 			TellHold = 1.6, -- seconds a tell line stays on the boss bar
 			RiotCallSpacing = 1, -- frames between the bodies of a Riot Call (one burst would hitch)
 			RiotCallHold = 2.0, -- seconds he stands and roars on a Riot Call (the riot clip)
@@ -2710,47 +2926,79 @@ local Config = {
 			ArmouredMultiplier = 0.25, -- a round into a plate (the plate takes it, not the body)
 			ExposedMultiplier = 1.5, -- a round into a limb whose plate is gone
 			-- Plates: { Limb = the R15 part it welds to, Mesh = assets/3d piece, Health }.
-			-- Flank: full damage even while he guards (the back).
+			-- Flank: full damage even while he guards (the back). WeakSpot (the back plate over
+			-- his radio pack): the share of each round that also goes through to his body; the
+			-- round is taken whole (WeakSpot.RoundMultiplier below, not ArmouredMultiplier).
+			-- Aggression pass (2026-11-18): plates lighter (old: helmet 300, chest 400,
+			-- shoulders 300, shield 600) now that he hunts.
 			Plates = {
-				Helmet = { Limb = "Head", Mesh = "inf_warden_plate_helmet", Health = 300 },
-				Chest = { Limb = "UpperTorso", Mesh = "inf_warden_plate_chest", Health = 400 },
+				Helmet = { Limb = "Head", Mesh = "inf_warden_plate_helmet", Health = 200 },
+				Chest = { Limb = "UpperTorso", Mesh = "inf_warden_plate_chest", Health = 300 },
 				Back = {
 					Limb = "UpperTorso",
 					Mesh = "inf_warden_plate_back",
 					Health = 400,
 					Flank = true,
+					WeakSpot = 0.5,
 				},
 				ShoulderL = {
 					Limb = "LeftUpperArm",
 					Mesh = "inf_warden_plate_shoulder_l",
-					Health = 300,
+					Health = 200,
 				},
 				ShoulderR = {
 					Limb = "RightUpperArm",
 					Mesh = "inf_warden_plate_shoulder_r",
-					Health = 300,
+					Health = 200,
 				},
-				Shield = { Limb = "LeftLowerArm", Mesh = "inf_warden_plate_shield", Health = 600 },
+				Shield = { Limb = "LeftLowerArm", Mesh = "inf_warden_plate_shield", Health = 400 },
 			},
 			PlateOrder = { "Helmet", "Chest", "Back", "ShoulderL", "ShoulderR", "Shield" }, -- boss bar pips
 			CrackFraction = 0.5, -- a plate below this fraction reads cracked
 			PlateBreakStagger = 1.5,
 			PlateBreakImpulse = 30, -- studs/s the plate flies off at
 			PlateDebris = 5, -- seconds a fallen plate lies there
-			-- Shield Bash: close, frontal arc. Roll out of it.
+			-- The weak spot (Plates.Back.WeakSpot): a round into it counts whole; breaking it
+			-- staggers him BreakStagger seconds instead of PlateBreakStagger.
+			WeakSpot = { RoundMultiplier = 1, BreakStagger = 3 },
+			-- Shield Bash: close, frontal arc. Roll out of it. The clip is warden_shove (a
+			-- shield punch, keyed); the Mixamo Power Slash spun him a full turn.
 			Bash = {
 				Range = 8,
-				Windup = 0.9,
+				Windup = 0.7, -- was 0.9
 				ArcDegrees = 70, -- narrower since the Sweep: Bash = step aside, Sweep = get behind
 				Damage = 40,
 				Cooldown = 3,
-				Recovery = 0.6,
+				Recovery = 0.4, -- was 0.6
 				StrikeAt = 0.45, -- fraction of the bash clip where the blow lands (rate-scaled to Windup)
 			},
+			-- Leap: at the straggler (Rules/WardenBrain.isolated) between MinRange and MaxRange.
+			-- The tell: he crouches Windup seconds while the landing ring is already on the
+			-- ground where they stood; he lands Flight seconds later. Everyone on the ground inside
+			-- Radius (x ScaleReach) is hit and knocked down; the roll does not beat it, leaving
+			-- the ring does. Counts as a knockdown attack (never two in a row).
+			Leap = {
+				Enabled = true, -- false: no Leap (the fallback switch)
+				MinRange = 22,
+				MaxRange = 70,
+				Windup = 0.8,
+				Flight = 0.8,
+				Height = 14, -- studs at the top of the arc
+				Radius = 5,
+				Damage = 35,
+				Knockdown = 1.2,
+				Recovery = 1.0,
+				Cooldown = 9, -- Phases override (LeapCooldown)
+				FirstDelay = 3, -- seconds after spawning before the first leap
+				StrikeAt = 0.75, -- fraction of the warden_leap clip where he lands
+			},
+			-- Rage volley (phase MinPhase on): a canister at every member inside
+			-- Canister.MaxRange at once (Canister's damage and puddle).
+			Volley = { MinPhase = 3, Windup = 1.0, Recovery = 0.6, Cooldown = 12 },
 			-- Gate Charge: a straight line at speed; hard cover in the way stuns him (WallStun).
 			Charge = {
 				MinRange = 19, -- leaves the ring just past the Bash to the Pound
-				MaxRange = 45,
+				MaxRange = 60, -- was 45
 				Windup = 1.2,
 				Distance = 45,
 				Speed = 40,
@@ -2758,19 +3006,20 @@ local Config = {
 				Damage = 35,
 				Cooldown = 10,
 				FirstDelay = 6, -- seconds after spawning before the first charge
-				Recovery = 0.8,
+				Recovery = 0.5, -- was 0.8
 				WallStun = 3,
 				Probe = 3, -- studs ahead of the root (at scale 1) the charge looks for hard cover
 				HitHeight = 8, -- height difference inside which the charge still hits a body
 			},
-			-- Gas Canister (phase 2+): lobbed at the furthest member in range; a puddle.
+			-- Gas Canister (every phase since the aggression pass; was phase 2+): lobbed at the
+			-- furthest member in range; a puddle.
 			Canister = {
-				MinPhase = 2,
+				MinPhase = 1,
 				MaxRange = 70,
 				Windup = 1,
 				Damage = 10,
 				Cooldown = 8,
-				Recovery = 0.5,
+				Recovery = 0.3, -- was 0.5
 				Projectile = {
 					Speed = 50,
 					Size = 1.2,
@@ -2793,7 +3042,7 @@ local Config = {
 			-- Kit expansion (systems-designer pass): where you stand picks his move.
 			-- Beat (IndexService.chooseAttack): seconds he walks between one recovery ending
 			-- and the next decision, by phase. The pause is what makes a rhythm, not a spam.
-			AttackGap = { 1.0, 0.7, 0.4 },
+			AttackGap = { 0.5, 0.35, 0.15 }, -- was { 1.0, 0.7, 0.4 }: the aggression pass
 			-- Close-band weights among ready attacks; a crowd (CrowdCount members inside the
 			-- shape) doubles Sweep and Pound. Never the same attack twice in a row except the
 			-- Bash; a knockdown attack is never followed by another.
@@ -2822,7 +3071,7 @@ local Config = {
 				Range = 9,
 				ArcDegrees = 180,
 				Windup = 1.1,
-				Recovery = 0.8,
+				Recovery = 0.6, -- was 0.8
 				Cooldown = 8,
 				Damage = 25,
 				Pushback = 40, -- studs/s shove away from him (client Impact "push")
@@ -2833,7 +3082,7 @@ local Config = {
 				Length = 9,
 				Width = 3,
 				Windup = 1.3,
-				Recovery = 1.2,
+				Recovery = 0.9, -- was 1.2
 				Cooldown = 10,
 				Damage = 60,
 				StrikeAt = 0.5,
@@ -2849,21 +3098,27 @@ local Config = {
 				StrikeAt = 0.45,
 			},
 			-- Phases, entered at or below a body fraction; each opens with a Riot Call
-			-- (spawnWave round him, 25-35 studs) and may retune him.
+			-- (spawnWave round him, 25-35 studs) and may retune him (Rules/WardenBrain.phase).
+			-- The last is the rage (Rage = true: the rage tell, and the Volley opens): faster
+			-- feet, shorter cooldowns. Base walk is EnemyDefinitions.Warden.WalkSpeed (12).
 			Phases = {
 				{
 					Below = 0.6,
 					RiotCall = { Walker = 6, Runner = 2 },
 					WalkersPerExtraPlayer = 3,
 					PoundCooldown = 11,
+					LeapCooldown = 7,
+					WalkSpeed = 13,
 				},
 				{
-					Below = 0.25,
+					Below = 0.3, -- was 0.25
+					Rage = true,
 					RiotCall = { Walker = 6, Runner = 2 },
 					WalkersPerExtraPlayer = 3,
 					ChargeCooldown = 5,
 					PoundCooldown = 8,
-					WalkSpeed = 11,
+					LeapCooldown = 5,
+					WalkSpeed = 15, -- was 11; the soldier walks 16, sprints 24
 				},
 			},
 			-- The field while he is up: fewer ambient spawns, a smaller horde, no Brutes.
@@ -2883,6 +3138,9 @@ local Config = {
 				FirstPlate = "Plate's off. That's bone under it. Keep working the seams.",
 				LastPlate = "Last plate. He's just a man again. Put him down.",
 				RiotCall = "...all posts, Gate. Crowd at the wire. Send the reserve...",
+				-- Aggression pass placeholders (2026-11-18) until the lore developer's pass.
+				WeakSpot = "Control: the radio pack on his back. Rounds go through it. Get behind him.",
+				Rage = "He's hurt and he's fast now. Stay together: he jumps whoever's alone.",
 				Kill = "The Warden is down. Control copies. Gate's yours, Pike. Pallet inbound.",
 			},
 		},
@@ -3147,6 +3405,10 @@ local Config = {
 		-- the old views back: the camera on the rack and the pallets, the plain DeskShop list.
 		DeskScreen = {
 			Enabled = true,
+			-- Desks that keep their own view (LobbyDesks ids). The Quartermaster keeps the GTA
+			-- gun wall (Nova, 2026-11-18: the desk screen replaced it by accident): "Show me the
+			-- guns." glides the camera onto his rack and counter (ArmsRackUI) as before.
+			KeepOwnView = { arms_room = true } :: { [string]: boolean },
 		},
 		DeskPromptDistance = 10, -- studs a soldier can talk to a desk from
 		DialogSeconds = 8, -- a desk's line stays up this long
@@ -3158,9 +3420,36 @@ local Config = {
 		CarrierV2 = {
 			Enabled = true,
 			Poses = true,
+			Idles = true, -- each posed seller plays their own looping idle (NpcPose); off: the breathing idle
 			RampSplit = 44, -- Z where the ramp's solid wedge stops; a plate covers the nook above it
 			FireRate = 6, -- city fire particles a second per emitter
 		},
+		-- The Visitor in the nook under the ramp (LobbyDesks `visitor`, Carrier v2 only): his head
+		-- slowly follows the nearest soldier in range (VisitorLook, each client); nothing else moves.
+		Visitor = {
+			LookRange = 22, -- studs: a soldier nearer than this is watched
+			LookMaxYaw = 55, -- degrees his head turns either way, at most
+			LookSpeed = 1.5, -- how fast the head catches up (higher is quicker; about 1/s)
+		},
+		-- The Carrier's painted counts (docs/sprints/CARRIER_V2.md > Easter eggs 3, 4, 6; owner
+		-- 2026-11-18: numbers, not tally marks). Each match adds its run's counts to one DataStore
+		-- key at run end (server TallyService: every call-in a player fires, one MISSIONS HOME for
+		-- an extraction); the lobby paints start + stored (TallyBoards) on start and every
+		-- RefreshSeconds. A call-in's start value is its own row's Tally (Config.CallIns); a
+		-- district's is here (the board's rows, by mission id). Without the store (Studio
+		-- without API access) the start values show.
+		Tallies = {
+			Enabled = true,
+			Store = "CarrierTallies",
+			Key = "totals",
+			RefreshSeconds = 300,
+			Retries = 2,
+			RetryDelay = 2,
+			Districts = { delta = 11, mile14 = 6, kestrel = 4, yard = 2, reservoir = 0 },
+		},
+		-- DAYS SINCE ONE GOT ABOARD (egg 4): whole UTC days since Start ("YYYY-MM-DD"), painted
+		-- on start and every RefreshSeconds. Start is 214 days before 2026-11-18.
+		DaysSince = { Start = "2026-04-18", RefreshSeconds = 3600 },
 		-- The Fallow's sky: a clear afternoon at sea (owner and Nova, 2026-11-09). One table
 		-- so a day/night cycle can later drive these values instead of FallowBuilder.
 		-- Gloomy (Tien, 2026-11-10): an overcast, cold late afternoon on a grey sea, the sun low
