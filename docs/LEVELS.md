@@ -1,17 +1,23 @@
-# Levels: Checkpoint Delta, Mile 14, Aid Station Kestrel
+# Levels: Checkpoint Delta and the building kit
 
-Layout spec from the level designer for the three missions of an operation
-([PROGRESSION.md](PROGRESSION.md)). Frame: 600 x 600 (the big Delta test map is 1,800 x
-1,800: section E), origin centre, +X east, +Z north
+Layout spec from the level designer ([PROGRESSION.md](PROGRESSION.md)). Frame: 600 x 600
+(the big Delta test map is 1,800 x 1,800: section E), origin centre, +X east, +Z north
 (ArenaService convention). Positions are (x, z) of a piece's bounds centre; y only where it
 matters. Ground is raycast. Visual rules (materials, colours, sky) are in
-[STYLES.md](STYLES.md) §6-7.
+[STYLES.md](STYLES.md) §6-7. Mile 14 and Kestrel (not built, was section C):
+[LATER.md](LATER.md).
 
-**Status.** Built in `ArenaService`: section A (Checkpoint Delta) and the building kit
-(B1-B2), with the systems they need (`EnemyService` spawn filter + vertical chase,
-`BotService` unstick, `StanceService` crawl, StreamingEnabled), and the Warden (A6). Not
-built: A5 Primary props and points, A7 stores crates and Secondaries, per-site spawn points,
-and Mile 14 / Kestrel (section C).
+**Contents** (read only the section you need): A Checkpoint Delta (A2 landmarks, A3 sites,
+A4 Depot, A5 objective placements, A6 the Warden's entry, A7 pads and side objectives, A8
+traversal and colliders, A9 routes, A10 the Scrapes, A11 props, A12 ground, A12b placement
+rules, A13 checks owed, A14 open questions, A15 perimeter, A16 vehicles) · B the building
+kit · D playtest risks · E Checkpoint Delta XL.
+
+**Status.** Built in `ArenaService`: section A (Checkpoint Delta, its objectives and side
+objectives) and the building kit (B1-B2), with the systems they need (`EnemyService` spawn
+filter + vertical chase, `BotService` unstick, `StanceService` crawl, StreamingEnabled), and
+the Warden (A6). Not built: stores crates, per-site spawn points, the rows marked "not
+built" in A5 and A7.
 
 Two engine facts that drive every site:
 
@@ -297,7 +303,7 @@ player never touches empty air. No soft out-of-bounds warning: there is no way o
 - The Studio Baseplate is hidden at once and destroyed after 5 s (deleting it at boot
   dropped the first player through the world).
 
-## A16. Vehicles (the ATV, 2026-11-17; level designer)
+## A16. Vehicles (the ATV)
 
 The ATV (PROGRESSION.md > The ATV) drives level 0 only. Delta does not need it for distance
 (LZ to the Pens is 11 s at a sprint); it is the test bed, and bigger maps are coming.
@@ -404,58 +410,6 @@ container. Built pieces are listed in `assets/3d/README.md`.
 
 ---
 
-# C. Mile 14 and Aid Station Kestrel (not built)
-
-## C1. Mile 14 (full dark)
-
-**First pass built** (2026-11-11, `src/server/Missions/Mile14.luau`, played in Mile 14 Dev): the deck in two halves (HighwayS, HighwayN) with the Culvert between, the Jam (22 buses, none over the Culvert), the Toll Plaza lot with its four booths and jersey pairs, the Rest Stop diner and lot, and woods (Nova: "some wooded areas in it") on the east shoulder south, the west shoulder north, behind the Toll Plaza and behind the Rest Stop, now real woods (`build/trees.py`: tall and young pines, a broadleaf now and then, a shrub for every third tree) and brush along both foots of the deck to creep past the Jam; night lighting (`Config.NightSky`, [STYLES.md > Mile 14's night](STYLES.md#mile-14s-night-2026-11-11)). Not yet: the Overpass, the off-ramp, pumps and canopy, the water tower, placed sleepers, objectives. Played quiet: [PROGRESSION.md > Awareness](PROGRESSION.md#awareness-the-quiet-missions).
-
-| Landmark | Centre | Bounds | Level | Built from |
-|---|---|---|---|---|
-| Highway deck "the Jam" | x=0 | x-30..30, full z; hills HighwayS z-300..-60 and HighwayN z-20..300, open N/S ends | 12 | asphalt + dashes; 24 buses nose to tail, lanes x=-14 and x=14, z every 48 from -276 to 276, yaw 90, 6-stud gap each; 2 containers as cargo trucks (10,12,140),(10,12,-100) with stores crates |
-| the Culvert | z=-40 | the 40-wide gap under a deck 40x18 at 12, piers each side | 0 | the one E-W crossing under the Jam |
-| Rest Stop | (-170,-170) | concrete 120x100 | 0 | diner = ruin building (-170,-200); 4 pumps from (-140,-160), 6 apart, under a canopy 30x1x14 at y 9; stores crate (-190,0.3,-222); alt pad (-200,-130) |
-| Off-ramp | (-40,-150) | W slope of HighwayS, asphalt z-170..-130 | 0 to 12 | lamp posts at its foot |
-| Toll Plaza | (160,60) | hill 120x80 h6, x100..220 | 6 | 4 checkpoint booths at x=160, z=32,48,64,80 yaw 90 (lanes 16 wide E-W); jersey pairs at lane mouths; generator (120,6,30); main pad (240,6,60) |
-| Overpass | z=60 | hill E x60..300 and W x-300..-60, 36 wide, h24; span 80x36 over the deck at 24 (underside 22.5) | 24 | two stair ramps (wedges 12 rise, 18 long) from the span to the deck, N and S |
-| Water tower | (250,-230) | | 0 | env_water_tower; Restore Comms prop at (250,0,-220) |
-
-Routes: Rest Stop > off-ramp > along the Jam (central gap plus shoulders) > Overpass stairs.
-Secret: the Culvert. Sites: **Overpass span** (zone 28x28 at (0,24.5,60); Hockers on the deck
-12 below lob up); **Toll Plaza** (zone 46x46 at (160,6.5,56); booths block sight, lanes
-funnel); **Rest Stop** (zone 46x46 at (-160,0.6,-170); pumps burn when hit; the off-ramp is
-the Hocker gallery). Primaries: Sanitize = buses (14,-84),(14,12),(14,108); Record = booth 2
-(160,6,48) to the span centre; Comms = water tower; Casualties = 6 Hockers on the deck
-z-150..150; Open the Route = lead bus (-14,12,-276), point (0,12,-292); Evacuate = diner door
-(-150,0,-200) to the main pad. Index: the Bloat from the lead bus > off-ramp (-40,-150) > Rest
-Stop lot (-150,-160) > free chase. Pads: main (240,6,60); alt (-200,0,-130). Bands: Lost pumps
-burn, horn loops; Held toll floodlights, one lane cleared (remove 4 buses z-36..108 lane
-x=14); Contained lane lights, container "truck" at the toll (200,6,100).
-
-## C2. Aid Station Kestrel (dawn)
-
-| Landmark | Centre | Bounds | Level | Built from |
-|---|---|---|---|---|
-| the Field | (40,-180) | 160x100 | 0 | painted LZ at (40,0.6,-180) (main pad), field lines; the lowest ground |
-| Bleachers | (-60,-180) | hill 20x100 h8 along the Field's W edge | 8 | env_bleachers x2 (no collision) over the E wedge; hesco at the ends |
-| Triage Lot | (-150,-170) | concrete 100x80 | 0 | 6 medical tents in 2 rows x=-180/-120, z=-200/-170/-140; stores crate (-170,0.3,-215); alt pad (-130,-120); generator (-100,-215) |
-| the Ward (gym) | (100,60) | walls x70..130, z35..85 of env_twall; doors 12 wide on N and S walls | 6 | on hill "Campus" (100,60) 140x110 h6; 18 beds in 3 rows at x=82/100/118, z 42..78; open sky, 12.5 walls |
-| the Morgue | (220,-20) | 2 ruins (205,-20),(238,-20) yaw 90 + loading dock 30x4x12 at (220,2,-45) with a wedge ramp S | 0 | isolation bay = the 8-stud gap between the blocks |
-| Main Block | (-120,100) | 2 ruins (-135,100),(-105,100); roof plate 62x0.5x21 at y 24.6 | 24.6 | fire stair on the S face: 2 wedges 18 long rising 12 each with a 6x6 landing; Comms prop (-120,25,100); pharmacy crate (-88,0.3,88) |
-| Campus road | z=0 | asphalt 600x16 | 0 | Morgue > Field > Triage spine |
-
-Sites: **the Ward** (zone 46x46 at (100,6.5,60); two mouths, beds break the floor into 3
-aisles, Shedders drop Crawlers in the aisles); **Triage Lot** (zone 46x46 at (-150,0.6,-170);
-Hockers climb the bleacher bank and lob W); **the Roof** (zone 28x28 at (-120,25,100); the
-stair landing is the choke). Primaries: Sanitize = beds (82,6,42),(100,6,60),(118,6,78);
-Evacuate = 3 survivors at the Ward N door (100,6,88) to the Field; Record = triage whiteboard
-(-150,0,-120) to the roof; Comms = roof; Casualties = 6 Bloats in the Ward; not Open the
-Route. Index: the Patient out of the bay (220,0,-20) > campus road > the Field's N edge
-(40,-120) > Triage Lot (-130,-160) > free chase. Pads: main Field (40,0.6,-180); alt Triage
-(-130,-120). Bands: Lost tents burn, PA loops; Held Field lamps, hesco pairs narrow both Ward
-doors to 6; Contained a 7th medical tent at (-150,-100) with a stores crate.
-
----
 
 # D. Risks to check in a playtest
 
@@ -471,7 +425,7 @@ doors to 6; Contained a 7th medical tent at (-150,-100) with a stores crate.
 
 ---
 
-# E. Checkpoint Delta XL (the big grey test map, 2026-11-18)
+# E. Checkpoint Delta XL (the big grey test map)
 
 Behind `Config.DeltaXL.Enabled` (off) or the dev panel (RUN > THE BIG MAP). Frame 1,800 x
 1,800 (-900..900), same axes; today's Delta (sections A and B) is the middle square,

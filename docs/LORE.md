@@ -2,13 +2,16 @@
 
 # Project Vision
 
-This document is NOT a gameplay specification.
+Not a gameplay specification: world, characters, tone and long-term vision. Gameplay
+decisions come from [PLAN.md](PLAN.md) and the sprint docs. **If gameplay and lore ever
+conflict, prioritize gameplay.** Owned by the lore developer agent (`.claude/agents/lore-developer.md`).
 
-It provides world-building context, character direction, tone, themes, and long-term vision.
-Future implementation should reference this document to maintain consistency, but gameplay
-decisions are always driven by [PLAN.md](PLAN.md) and sprint documents.
-
-**If gameplay and lore ever conflict, prioritize gameplay.**
+**Contents** (read only the section you need): [The strain](#the-strain) ·
+[Naming](#naming) (plain words players read) · [The Harlan Corridor](#the-harlan-corridor)
+(Containment, Index hosts and the Warden's radio lines, Resupply) · [The Carrier](#the-carrier)
+(desks, the Visitor, the map room, HARLAN) · [The helicopter](#the-helicopter) (the ATV's
+lines) · [Pike](#pike) · [The Arms Room and the call-ins](#the-arms-room-and-the-call-ins)
+(HUD names, radio) · [Themes](#core-theme). Side files: `docs/lore/`.
 
 ---
 
@@ -59,8 +62,8 @@ fell). One rule per form; roster and stage of first appearance in
 
 # Naming
 
-Owner, 2026-11-11 ([OWNER.md](OWNER.md) > Decisions): this is a multiplayer game with lore in
-it, not a campaign, so a new player must understand every name on first read.
+Owner ([OWNER.md](OWNER.md)): a multiplayer game with lore in it, not a campaign, so a new
+player must understand every name on first read.
 
 - Anything a player sees or hears that has an obvious plain word is called by it: **the
   Carrier** (the ship), **the helicopter** ("Helo" where the radio or a sign needs a short
@@ -70,8 +73,7 @@ it, not a campaign, so a new player must understand every name on first read.
 - Kept: **HARLAN** (the place and the mark), **Pike** and **Control** (who you are and who
   talks to you), boss names that say what they look like, and the call-in names (Hammer,
   Anvil, Shrike, Doorman...), which always show their plain designation under them.
-- Plain words players read since 2026-11-19 (owner's pick, Your call 3), the left word staying
-  in docs and code only: Index → **the Warden** or **the boss**; NCOIC → **the sergeant**; the
+- Plain words players read (the left word stays in docs and code only): Index → **the Warden** or **the boss**; NCOIC → **the sergeant**; the
   Primary → **the main objective**; the Burn → **the helicopter leaves** / **the timer**; THE
   PLOT → **MAP ROOM**; FIRES → **CALL-INS**; the Containment Board → **the board**, titled
   **WHAT WE HOLD**; LZ → **landing zone** (the HUD's extraction line, the Loadout's refusals);
@@ -139,13 +141,13 @@ is just a man again. Optional name for the roster board: SGT HALE (not used in g
 
 Radio for the Warden mission (`Config.Index.Warden.Radio`; the lines for his part in the
 main objective are `Config.Objectives.Boss` and each objective's `Boss` block in
-`ObjectiveDefinitions`, 2026-11-16: he guards his own post, so each line ties him to the
-site; the insert and wipe lines are written but not yet placed):
+`ObjectiveDefinitions`: he guards his own post, so each line ties him to the site; the
+insert and wipe lines are written but not yet placed):
 
 | Cue | Line |
 |---|---|
 | Insert (not placed) | "Pike, Control. Delta's boss is the Gate sergeant. He chained it. Expect him to come looking." |
-| Main objective complete (old order, `Config.Objectives.Boss.Enabled = false`) | "That woke the Gate sergeant. He still guards this post. The Warden is coming up the road." (plain words, 2026-11-11) |
+| Main objective complete (old order, `Config.Objectives.Boss.Enabled = false`) | "That woke the Gate sergeant. He still guards this post. The Warden is coming up the road." |
 | He comes to the main objective (default) | "That woke the Gate sergeant. He still guards this post. The Warden is coming to {place}." |
 | ... Sanitize the Pens | "The fires woke the Warden. Those were his pens. He's coming to guard the last tent." |
 | ... Secure the Site | "That woke the Warden. He still holds this perimeter, and he's coming to take {place} back." |
@@ -185,10 +187,8 @@ you can get the lid off quietly, which you cannot.
 
 # The Carrier
 
-Canon as of 2026-11-09 (lobby place, Nova). Renamed from "the Fallow" by the owner
-(2026-11-09: easier to understand); older docs and code comments that say "LORE.md > The
-Fallow" mean this section. Code identifiers keep the old word (`FallowLayout`,
-`env_fallow_*`); players only ever read "the Carrier".
+The lobby place (Nova). Called "the Fallow" in code and older docs (`FallowLayout`,
+`env_fallow_*`; "LORE.md > The Fallow" means this section); players only read "the Carrier".
 
 The corridor runs north from the coast to the dam; Checkpoint Delta is the gate nearest the
 sea. Command runs the corridor from offshore. The Carrier is a helicopter carrier pulled out
@@ -202,12 +202,12 @@ The Infected cannot reach the ship. The one way aboard is the helicopter, so eve
 a helo walks the screening lane at the deck edge (hose, hands, eyes, band), Pike included,
 every time. Delta screened and failed. The Carrier screens and has not, yet.
 
-Many window teams share the ship. They are **not** all Pike (owner and Nova, 2026-11-09):
-how the other teams are called is open, for the lore developer.
+Many window teams share the ship. They are **not** all Pike (owner and Nova); how the other
+teams are called is open, for the lore developer.
 
 - **Flight deck.** Numbered helicopter spots; a team launches by boarding its bird. By day smoke
   stands over the coast where the Burn has been; at night it shows orange.
-- **Hangar deck.** Where the teams wait, and where they kit up (owner, 2026-11-09). Every
+- **Hangar deck.** Where the teams wait, and where they kit up. Every
   soldier has a **record**: the kit signed to their name. A soldier buys kit onto it at the
   **Arms Room** with **merits**, which the Plot pays a window team for containment work done
   before the Burn (not "Requisition", which is the pallet cost). The desks: the **Arms Room**
@@ -215,8 +215,7 @@ how the other teams are called is open, for the lore developer.
   the **Loadmaster** (the helicopter crew chief: he makes up each soldier's **Loadout**, what they
   carry and what is kicked out of the door, and they sign for it before they walk up the
   ramp), and **Call-ins** (a sapper sergeant: every call-in, from the fire missions to the
-  Doorman, the wire and the supply drops; owner 2026-11-16 folded the Fires desk into it),
-  and **Vehicles** (2026-11-17, Nova approved: the motor pool at the hangar's aft end, three
+  Doorman, the wire and the supply drops), and **Vehicles** (the motor pool at the hangar's aft end, three
   painted bays, a parked ATV lashed to the deck, tool chests, a tyre rack and a fuel point; the
   **motor sergeant** sells the ATV, which is signed into a call-in slot at the Loadmaster).
   Desk crew wear ship or Army working dress, never Pike grey. The desks are run by the same
@@ -224,7 +223,7 @@ how the other teams are called is open, for the lore developer.
   the Loadmaster (the helicopter crew chief, who rides the door), the sapper sergeant (a
   staff sergeant) and the motor sergeant (a staff sergeant). Voices and lines in
   [lore/desk_crew.md](lore/desk_crew.md).
-- **The Visitor.** (2026-11-18, owner approved.) A man in a long raincoat waits in a nook
+- **The Visitor.** A man in a long raincoat waits in a nook
   under the ramp, behind a tarp, with sealed cases nobody else is cleared to open. He is from
   the government office that funded the program. He flies in on the one helicopter without the
   ship's markings, and the crew are told not to see him. No sign, no rank, no unit; a red badge
@@ -244,8 +243,7 @@ how the other teams are called is open, for the lore developer.
   weld letters show faintly through the paint and cannot be read. She flies one flag from the
   flagstaff: plain yellow, the quarantine flag, because everything that comes aboard comes
   from the corridor.
-- **The mark: HARLAN.** (2026-11-10, replaces HRD, which the owner did not like and which
-  misread as NRD.) Every hull and airframe drawn from the reserve for the corridor has its
+- **The mark: HARLAN.** Every hull and airframe drawn from the reserve for the corridor has its
   old unit marks painted out and HARLAN sprayed over them by hand, white, in capitals: on the
   island, both bow sides, the deck's bow end and every helicopter. It means the thing belongs to
   Task Force Harlan and is quarantined with it: nothing that wears the word goes back to the
@@ -266,10 +264,9 @@ daily stock; the desks never rotate, the Visitor does, once a week), and the PA 
 
 ## The helicopter
 
-Canon as of 2026-11-09 (owner approved). Called "Lantern" until 2026-11-11
-([Naming](#naming)); code identifiers keep that word (`LanternBird`, `Config.Lobby.Lantern`,
-`veh_lantern_*`, `lantern_rotor`), and older docs that say "LORE.md > Lantern" mean this
-section. Players read "the helicopter", and "Helo" on the radio and on signs.
+Called "Lantern" in code and older docs (`LanternBird`, `Config.Lobby.Lantern`,
+`veh_lantern_*`, `lantern_rotor`; "LORE.md > Lantern" means this section). Players read "the
+helicopter", and "Helo" on the radio and on signs.
 
 Every lift bird off the Carrier is the same helicopter. Each is a medium utility helo drawn from the
 same reserve fleet as the ship: one main rotor, a tail rotor, skids, a boxy cabin and a long
@@ -285,7 +282,7 @@ feet.
 - **No door gun.** The pintle mount is still on the door frame, empty, its arm swung inboard
   and tied off. The helicopter does not fight for its LZ. Pike holds it. When the squad needs a gun
   from the air, it calls Shrike.
-- **The ATV.** (2026-11-17.) The helicopter brings one two-seat military ATV in a crate
+- **The ATV.** The helicopter brings one two-seat military ATV in a crate
   sized to it. It flies straight over the mark without stopping and drops the crate, which
   falls straight down; on landing the walls fall open flat and the lid kicks off, and the ATV
   is standing in the middle. The ATV wears HARLAN stencilled like every airframe. The driver has no gun; the one on the back seat
@@ -316,8 +313,8 @@ feet.
 
 # Pike
 
-Canon as of 2026-11-08 (owner: "just soldiers, like Helldivers"; the five Chosen are
-retired, their sheets kept in [lore/retired_chosen.md](lore/retired_chosen.md)).
+Just soldiers, like Helldivers (owner; the retired Chosen:
+[lore/retired_chosen.md](lore/retired_chosen.md)).
 
 Command does not send heroes up the corridor. It sends window teams: four soldiers, a helo
 and the time before the Burn. On paper each one is a Task Force Harlan recovery team;
@@ -335,13 +332,12 @@ identity. Build sheet in [CHARACTERS.md](CHARACTERS.md) section C.
 
 ## The Arms Room and the call-ins
 
-The loadout menu is the **Loadout** (owner, 2026-11-09: signed for at the Loadmaster's desk).
+The loadout menu is the **Loadout** (signed for at the Loadmaster's desk).
 The **Arms Room** (the Army's name for a unit armoury) is the Quartermaster's cage on the
 Carrier, where kit is bought onto a soldier's record. Naming rules:
 
 - **Guns** carry their plain real-world designation on the HUD ("M4A1 Carbine"), no
-  nicknames. Starting list: M4A1 Carbine (default), M16A4 Rifle, Mossberg 590 Shotgun,
-  MP5 SMG, M110 DMR, M17 Pistol (sidearm).
+  nicknames. The guns in the game: [PROGRESSION.md](PROGRESSION.md) > Guns.
 - **Fire missions** are named by the asset's radio callsign: the player is calling someone
   on the net.
 - **Support weapons, emplacements and supply** take a soldier's word for the thing, with
@@ -365,8 +361,7 @@ Carrier, where kit is bought onto a soldier's record. Naming rules:
 | **Speedball** | ammunition bundle | supply |
 | **Aid Bag** | medical and plates drop | supply |
 
-Retired 2026-11-08 as too far from the ground: Magpie (the quadcopter beacon) and Pen Coil
-(the shock coil). Hammer and Anvil are a deliberate pair.
+Hammer and Anvil are a deliberate pair. Retired as too far from the ground: Magpie and Pen Coil.
 
 Radio, one line per family:
 
@@ -382,84 +377,29 @@ Radio, one line per family:
 
 # Core Theme
 
-The game is not about saving the world. The game is about **saving whoever can still be
-saved**.
+The game is not about saving the world; it is about **saving whoever can still be saved**.
+Players survive inside the apocalypse, not conquer it: every rescued survivor and every
+mission matters, every failure has consequences, the goal is to preserve what remains.
 
-Players are not conquering the apocalypse. Players are surviving inside it. Every rescued
-survivor matters. Every successful mission matters. Every failure has consequences. The
-world is already broken. The goal is to preserve what remains.
-
----
-
-# Tone
-
-Balance: military survival, hope, desperation, heroism, dark humor.
-
-The world is dangerous and often tragic, but it should not be relentlessly depressing.
-Players should feel like they are making a difference. Even small victories should feel
-meaningful.
-
----
-
-# Character Philosophy
-
-The soldiers are not characters; the corridor is. The people a player remembers are the ones
-the strain finished: who they were, and what they still wear. A soldier is told apart by
-seat colour and kit, and kit is supposed to change.
-
----
-
-# Survivor Philosophy
-
-Survivors are important. They are not background decoration. They represent what remains
-of humanity.
-
-Future gameplay may include: rescue missions, evacuations, defensive operations, escort
-missions, supply recovery, medical assistance.
-
-Survivors should make players feel responsible for something larger than themselves.
-
----
-
-# Objective Philosophy
-
-The game should eventually become more than endless zombie killing. Combat is important.
-Progression is important. But the player's actions should feel purposeful.
-
-Future objectives may include: protecting civilians, recovering supplies, defending safe
-zones, establishing communication networks, extracting survivors, investigating outbreak
-sites, securing military assets.
-
-These objectives should reinforce the idea that humanity is still fighting back.
-
----
-
-# Progression Philosophy
-
-The player should begin each run as a capable survivor and gradually become a powerful
-force capable of handling overwhelming odds. Progression should create stories. The most
-memorable moments should come from unexpected combinations of upgrades, weapons,
-objectives, and encounters.
-
----
-
-# World Building Rules
-
-- Avoid magic, supernatural explanations, and fantasy themes.
-- Technology stays grounded in military, scientific, and emergency-response concepts.
-- The infection may evolve in unusual ways, but the setting remains a believable
+- **Tone:** military survival, hope, desperation, heroism, dark humour. Dangerous and often
+  tragic, never relentlessly depressing; small victories feel meaningful.
+- **Characters:** the soldiers are not characters; the corridor is. The people a player
+  remembers are the ones the strain finished: who they were, and what they still wear. A
+  soldier is told apart by seat colour and kit, and kit is supposed to change.
+- **Survivors** are not decoration; they are what remains of humanity and should make players
+  feel responsible for something larger (future: rescues, evacuations, escorts, medical aid).
+- **Objectives** make the fighting purposeful and show humanity still fighting back
+  (protecting civilians, recovering supplies, defending safe zones, restoring communications,
+  extracting survivors, investigating outbreak sites, securing military assets).
+- **Progression** creates stories: a capable soldier becomes a force that handles
+  overwhelming odds, and the best moments come from unexpected combinations of weapons,
+  objectives and encounters (power comes from the loadout: [OWNER.md](OWNER.md)).
+- **World rules:** no magic, supernatural or fantasy; technology stays military, scientific
+  and emergency-response; the infection may evolve in unusual ways inside a believable
   apocalypse.
+- **The ideal run:** "I entered a ruined city, rescued trapped civilians, defended a radio
+  tower, survived an overwhelming zombie attack, found powerful equipment, completed critical
+  objectives, and escaped feeling like I actually helped humanity survive another day." The
+  game is a story generator; players remember the people they saved and the impossible
+  situations they survived.
 
----
-
-# Long-Term Vision
-
-The ideal player experience:
-
-> "I entered a ruined city, rescued trapped civilians, defended a radio tower, survived an
-> overwhelming zombie attack, found powerful equipment, completed critical objectives, and
-> escaped feeling like I actually helped humanity survive another day."
-
-The game should feel like a story generator. Every run should create memorable moments.
-Players should remember the people they saved, the objectives they completed, and the
-impossible situations they survived.
