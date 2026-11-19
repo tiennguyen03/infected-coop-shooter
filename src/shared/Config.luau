@@ -1453,6 +1453,13 @@ local Config = {
 			-- Roblox's stock R15 climb (the Animate script's ClimbAnim): played on a ladder
 			-- (TrussPart) while the Humanoid is in its Climbing state; not a Mixamo clip
 			ladder_climb = "rbxassetid://507765644",
+			-- The Carrier sellers' looping idles (lobby, NpcPose; hand-keyed by
+			-- assets/animations/build/seller_idles.luau, played on top of each seller's pose)
+			seller_quartermaster = "rbxassetid://124934111901603",
+			seller_sapper = "rbxassetid://76071341544718",
+			seller_loadmaster = "rbxassetid://72753754042631",
+			seller_motor_sergeant = "rbxassetid://121963273047523",
+			seller_watch_officer = "rbxassetid://135909242377486",
 		},
 		-- Throw timing, one row per throw clip (Rules/ThrowTiming; docs/PROGRESSION.md >
 		-- Throwing): the clip plays from Start seconds in at Speed, and the grenade, marker or
@@ -1833,6 +1840,7 @@ local Config = {
 		-- the mark at most. Walk It In steps them Config.Upgrades.WalkingBarrage.Step apart.
 		Hammer = {
 			Price = 0, -- merits on the Carrier (Rules/Record, KitPrices); issued free
+			Tally = 1284, -- uses painted on the Carrier hull before any squad added to it (TallyBoards, Rules/Tally)
 			Display = { Prop = "shells", Width = 3 }, -- how the Call-ins display shows it (CallInDisplay)
 			Charges = 1,
 			Cooldown = 120,
@@ -1873,6 +1881,7 @@ local Config = {
 		-- line of sight; one heavy shell Delay seconds after the mark.
 		Anvil = {
 			Price = 0, -- merits on the Carrier (Rules/Record, KitPrices); issued free
+			Tally = 502,
 			Display = { Prop = "maptable", Width = 4 }, -- how the Call-ins display shows it (CallInDisplay)
 			Charges = 1,
 			Cooldown = 180,
@@ -1918,6 +1927,7 @@ local Config = {
 		-- impacts centred on the mark, Step studs apart along the throw, BurstInterval apart.
 		Shrike = {
 			Price = 0, -- merits on the Carrier (Rules/Record, KitPrices); issued free
+			Tally = 781,
 			Display = { Prop = "gunship", Width = 4.2 }, -- how the Call-ins display shows it (CallInDisplay)
 			Charges = 1,
 			Cooldown = 150,
@@ -1955,6 +1965,7 @@ local Config = {
 		-- FireInterval it shoots the nearest Infected in Range it can see.
 		Doorman = {
 			Price = 400, -- merits on the Carrier (Rules/Record, KitPrices)
+			Tally = 1736,
 			Display = { Prop = "doorman", Width = 4.6 }, -- how the Call-ins display shows it (CallInDisplay)
 			Charges = 1,
 			Cooldown = 150,
@@ -1992,6 +2003,7 @@ local Config = {
 		-- when an Infected steps within TriggerRadius.
 		Tripline = {
 			Price = 0, -- merits on the Carrier (Rules/Record, KitPrices); issued free
+			Tally = 960,
 			Display = { Prop = "mines", Width = 3.4 }, -- how the Call-ins display shows it (CallInDisplay)
 			Charges = 2,
 			Cooldown = 60,
@@ -2020,6 +2032,7 @@ local Config = {
 		-- DamagePerSecond (dealt every TickInterval).
 		Concertina = {
 			Price = 250, -- merits on the Carrier (Rules/Record, KitPrices)
+			Tally = 433,
 			Display = { Prop = "wire", Width = 3.4 }, -- how the Call-ins display shows it (CallInDisplay)
 			Charges = 2,
 			Cooldown = 90,
@@ -2048,6 +2061,7 @@ local Config = {
 		-- times in all. A player re-arms again only after stepping out of the radius.
 		Speedball = {
 			Price = 300, -- merits on the Carrier (Rules/Record, KitPrices)
+			Tally = 1102,
 			Display = { Prop = "ammo", Width = 3.4 }, -- how the Call-ins display shows it (CallInDisplay)
 			Charges = 1,
 			Cooldown = 180,
@@ -2074,6 +2088,7 @@ local Config = {
 		-- full heal, stims refilled, +Plate shield (Config.Crates.ShieldCap still caps it).
 		AidBag = {
 			Price = 300, -- merits on the Carrier (Rules/Record, KitPrices)
+			Tally = 1458,
 			Display = { Prop = "medbag", Width = 3 }, -- how the Call-ins display shows it (CallInDisplay)
 			Charges = 1,
 			Cooldown = 180,
@@ -2101,6 +2116,7 @@ local Config = {
 		-- gun) and the back seat, who fires their primary.
 		ATV = {
 			Price = 400, -- merits on the Carrier (Rules/Record, KitPrices)
+			Tally = 37,
 			Desk = "vehicles", -- sold by the motor sergeant (LobbyDesks), not the Call-ins desk
 			Charges = 1,
 			Cooldown = 180, -- a wrecked or scrapped ATV comes back when the charge does
@@ -3404,6 +3420,7 @@ local Config = {
 		CarrierV2 = {
 			Enabled = true,
 			Poses = true,
+			Idles = true, -- each posed seller plays their own looping idle (NpcPose); off: the breathing idle
 			RampSplit = 44, -- Z where the ramp's solid wedge stops; a plate covers the nook above it
 			FireRate = 6, -- city fire particles a second per emitter
 		},
@@ -3414,6 +3431,25 @@ local Config = {
 			LookMaxYaw = 55, -- degrees his head turns either way, at most
 			LookSpeed = 1.5, -- how fast the head catches up (higher is quicker; about 1/s)
 		},
+		-- The Carrier's painted counts (docs/sprints/CARRIER_V2.md > Easter eggs 3, 4, 6; owner
+		-- 2026-11-18: numbers, not tally marks). Each match adds its run's counts to one DataStore
+		-- key at run end (server TallyService: every call-in a player fires, one MISSIONS HOME for
+		-- an extraction); the lobby paints start + stored (TallyBoards) on start and every
+		-- RefreshSeconds. A call-in's start value is its own row's Tally (Config.CallIns); a
+		-- district's is here (the board's rows, by mission id). Without the store (Studio
+		-- without API access) the start values show.
+		Tallies = {
+			Enabled = true,
+			Store = "CarrierTallies",
+			Key = "totals",
+			RefreshSeconds = 300,
+			Retries = 2,
+			RetryDelay = 2,
+			Districts = { delta = 11, mile14 = 6, kestrel = 4, yard = 2, reservoir = 0 },
+		},
+		-- DAYS SINCE ONE GOT ABOARD (egg 4): whole UTC days since Start ("YYYY-MM-DD"), painted
+		-- on start and every RefreshSeconds. Start is 214 days before 2026-11-18.
+		DaysSince = { Start = "2026-04-18", RefreshSeconds = 3600 },
 		-- The Fallow's sky: a clear afternoon at sea (owner and Nova, 2026-11-09). One table
 		-- so a day/night cycle can later drive these values instead of FallowBuilder.
 		-- Gloomy (Tien, 2026-11-10): an overcast, cold late afternoon on a grey sea, the sun low

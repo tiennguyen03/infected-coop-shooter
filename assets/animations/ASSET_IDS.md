@@ -74,3 +74,8 @@ Mirror every id into `Config.Animations.Ids`. Every id is owned by the Roblox gr
 | getup_back (Mixamo Getting Up from back, trimmed to the rise; Assault + bots) | 136455455125454 | 2026-11-07 |
 | zombie_hit (Mixamo Zombie Reaction Hit) | 73020069431259 | 2026-11-09 |
 | rifle_reload (Mixamo Reloading, rifle standing) | 74976087886072 | 2026-11-09 |
+| seller_quartermaster (hand-keyed, lobby) | 124934111901603 | 2026-11-18 |
+| seller_sapper (hand-keyed, lobby) | 76071341544718 | 2026-11-18 |
+| seller_loadmaster (hand-keyed, lobby) | 72753754042631 | 2026-11-18 |
+| seller_motor_sergeant (hand-keyed, lobby) | 121963273047523 | 2026-11-18 |
+| seller_watch_officer (hand-keyed, lobby) | 135909242377486 | 2026-11-18 |

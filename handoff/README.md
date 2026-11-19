@@ -8,6 +8,7 @@ one note to `handoff/log/` (format in `handoff/log/README.md`). History lives in
 
 Last updated: 2026-11-17 by Tien, Nova + Claude (the Hocker's spit pool as an uneven puddle, on `claude/spit-puddle`; the objective meter and the HUD layout pass, on `claude/objective-progress-visible`; every desk on the Loadmaster's look, on `claude/npc-ui-prototype2`; the map room opened up, on `claude/open-map-room`; vehicles: the ATV, the motor pool and the ATV's own model, on `nova/vehicles-atv`; the M16A4 optic slot, on `nova/m16a4-optic-slot`; Kit Mods at the Loadmaster, on `nova/loadmaster-kit-mods`; the Quartermaster's GTA gun wall back, on `nova/quartermaster-rack`).
 Last updated: 2026-11-18 by Claude (the Visitor, dialog only, on `claude/the-visitor`).
+Last updated: 2026-11-18 by Claude (Carrier counts as numbers, the days board counting, the sellers' idle loops, on `claude/carrier-followups`).
 Last updated: 2026-11-17 by Claude (the map room opened up, on `claude/open-map-room`).
 Last updated: 2026-11-17 by Tien + Claude (the Hocker's spit pool as an uneven puddle, on `claude/spit-puddle`).
 Last updated: 2026-11-17 by Tien + Claude (the objective meter and the HUD layout pass, on `claude/objective-progress-visible`).
@@ -116,7 +117,12 @@ that restocks the squad.
   **Carrier v2 is in the lobby** (2026-11-18, PR off `claude/carrier-v2-in-lobby`, **not yet seen
   in Studio**): `CarrierV2` dresses the ship from generated data, the kit meshes are uploaded,
   the map room is open, a hidden nook under the ramp, the city straight ahead, the sellers posed
-  in their corners (idle loops still to make); off with `Config.Lobby.CarrierV2.Enabled = false`.
+  in their corners, each playing their own looping idle since 2026-11-18 (`claude/carrier-followups`,
+  **not yet seen**; `Config.Lobby.CarrierV2.Idles = false` is the old breathing idle); off with
+  `Config.Lobby.CarrierV2.Enabled = false`. The hull's call-in tallies and the MISSIONS HOME board are
+  painted numbers now, counted for real: the match adds each run's call-ins and an extraction to a
+  shared DataStore key at run end (`TallyService`), the lobby paints start + count (`TallyBoards`);
+  the DAYS SINCE board counts up from `Config.Lobby.DaysSince.Start` (doc > Counts).
   **Nova:** touches your `FallowBuilder`, `FallowLayout`, `DeskService`, lobby `Main`; what to
   check: `docs/sprints/CARRIER_V2.md` > In the lobby.
   **The Visitor** stands in that nook (2026-11-18, owner, on `claude/the-visitor`, **not yet seen

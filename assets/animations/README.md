@@ -13,6 +13,8 @@ animations, played by `src/client/AnimationController.luau` (players) and
 | Path | What |
 |---|---|
 | `source/mixamo/*.fbx` | Mixamo downloads, git-ignored. Download settings: FBX Binary, **Without Skin**, 30 fps, no keyframe reduction, **In Place** for every locomotion clip |
+| `build/seller_idles.luau` | Lune script: hand-keyed clips (the sellers' idles) -> the same `AnimationClips/<clip>.json`; keys eased and sampled at 15 fps |
+| `build/upload_animations.js` | Open Cloud upload of `build/out/<clip>.rbxm` as group Animations (`node ... <clip> ...`, prints the ids; key from the robloxstudio MCP entry, never printed) |
 | `build/retarget.py` | Blender script: FBX -> `src/shared/AnimationClips/<clip>.json` (git-ignored); per-clip settings in `CLIPS` |
 | `build/keyed.luau` | Lune: hand-keyed clips (moves no Mixamo download covers) as joint angles on top of a base clip's first frame -> the same JSON; `lune run assets/animations/build/keyed.luau` (after retarget.py, it reads `warden_idle`) |
 | `build/upload_animations.js` | Node: uploads `build/out/<clip>.rbxm` (from `build_rbxm.luau`) as Animation assets for the group through Open Cloud, no Studio; prints the ids |
@@ -75,6 +77,7 @@ animations, played by `src/client/AnimationController.luau` (players) and
 | warden_slam (Sword And Shield Downward Slash) | Warden Overhead Slam | `in_place`, `Slam.StrikeAt` |
 | warden_stomp (Stomp, Hard Floor Stomp) | Warden Stomp | `in_place`, `Stomp.StrikeAt` |
 | warden_hit (Sword And Shield Impact, head) | Warden flinch on a plate break | `in_place` |
+| seller_quartermaster, seller_sapper, seller_loadmaster, seller_motor_sergeant, seller_watch_officer | the Carrier sellers' looping idles (lobby `NpcPose`) | hand-keyed, not Mixamo: `build/seller_idles.luau`; offsets from each seller's held pose (NpcPose turns the joints' C0), so every clip leaves and returns to zero |
 | spare (published, not wired) | rifle_walk, rifle_run (replaced by the four-way sets), zombie_idle, zombie_stumble, zombie_scream | |
 
 ## Pipeline

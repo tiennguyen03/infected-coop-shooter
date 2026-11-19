@@ -31,6 +31,7 @@ local LoadoutService = require(script.Parent.LoadoutService)
 local MeritService = require(script.Parent.MeritService)
 local Missions = require(script.Parent.Missions)
 local Squad = require(script.Parent.Squad)
+local TallyService = require(script.Parent.TallyService)
 local Lifecycle = require(script.Parent.Lifecycle)
 local Handoff = require(ReplicatedStorage.Shared.Rules.Handoff)
 local Messages = require(ReplicatedStorage.Shared.Messages)
@@ -166,6 +167,13 @@ function RunManager.endRun(result: RunStates.RunResult)
 	end)
 	if not paid then
 		warn(`[RunManager] merits were not paid: {payError}`)
+	end
+	-- The Carrier's painted counts (TallyService): call-ins fired, and a mission home.
+	local counted, countError = pcall(function()
+		TallyService.flush(result == "Extracted", Missions.current().Id)
+	end)
+	if not counted then
+		warn(`[RunManager] the Carrier counts were not added: {countError}`)
 	end
 	setState("Ended", result)
 	-- A squad from the lobby goes home: READY now means "back to the Carrier", and the bird

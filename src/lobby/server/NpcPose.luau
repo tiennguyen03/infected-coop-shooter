@@ -6,15 +6,23 @@
 -- wave, the Loadmaster sitting back in his hammock, the motor sergeant bent over the part in her
 -- lap, Control's watch officer tipped back with her boots on the map table, the Visitor standing
 -- with his hands in his raincoat pockets. The idle clip
--- NpcBody plays still breathes on top. Idle loops per seller are the follow-up (the doc).
+-- NpcBody plays breathes on top until the seller's own looping idle takes over (`idle`, a clip
+-- in Config.Animations.Ids hand-keyed by assets/animations/build/seller_idles.luau; it moves
+-- away from and back to this pose). Off with Config.Lobby.CarrierV2.Idles = false.
 --
 -- Angles are degrees about each joint's own axes (R15 rest: limbs down, facing -Z): +X swings a
 -- limb forward and up, a negative Waist X leans forward. `root` moves the body against its
 -- anchored root, in the figure's frame: +Y up (onto a seat), +Z back (over the seat).
 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Animations = require(ReplicatedStorage.Shared.Animations)
+local Attributes = require(ReplicatedStorage.Shared.Attributes)
+local Config = require(ReplicatedStorage.Shared.Config)
+
 local NpcPose = {}
 
-type Pose = { root: Vector3, joints: { [string]: Vector3 } }
+type Pose = { root: Vector3, joints: { [string]: Vector3 }, idle: string }
 
 local SEATED_LEGS = {
 	LeftHip = Vector3.new(90, 0, 0),
@@ -34,6 +42,7 @@ end
 local POSES: { [string]: Pose } = {
 	arms_room = { -- perched on the high stool, both elbows on the glass
 		root = Vector3.new(0, 1.0, 0.6),
+		idle = "seller_quartermaster",
 		joints = seated({
 			Waist = Vector3.new(-30, 0, 0),
 			Neck = Vector3.new(15, 0, 0),
@@ -47,6 +56,7 @@ local POSES: { [string]: Pose } = {
 	},
 	callins = { -- on the crate, forearms on his knees, a mug in one hand, waving with the other
 		root = Vector3.new(0, 0, 0),
+		idle = "seller_sapper",
 		joints = seated({
 			Waist = Vector3.new(-20, 0, 0),
 			Neck = Vector3.new(10, 0, 0),
@@ -60,6 +70,7 @@ local POSES: { [string]: Pose } = {
 	},
 	loadmaster = { -- sitting back in the hammock, one arm behind his head, one boot down
 		root = Vector3.new(0, 0.1, 0.3),
+		idle = "seller_loadmaster",
 		joints = seated({
 			Waist = Vector3.new(20, 0, 0),
 			LeftShoulder = Vector3.new(165, 0, -10),
@@ -72,6 +83,7 @@ local POSES: { [string]: Pose } = {
 	},
 	vehicles = { -- on her tyres, bent over the part in her lap, looking up
 		root = Vector3.new(0, 0.4, 0.2),
+		idle = "seller_motor_sergeant",
 		joints = seated({
 			Waist = Vector3.new(-30, 0, 0),
 			Neck = Vector3.new(25, 0, 0),
@@ -83,6 +95,7 @@ local POSES: { [string]: Pose } = {
 	},
 	plot = { -- tipped back in the chair, boots on the map table's end, mug on her chest
 		root = Vector3.new(0, -0.2, 0.2),
+		idle = "seller_watch_officer",
 		joints = {
 			Waist = Vector3.new(25, 0, 0),
 			Neck = Vector3.new(-10, 0, 0),
@@ -109,6 +122,31 @@ local POSES: { [string]: Pose } = {
 
 local function turn(motor: Motor6D, angles: Vector3)
 	motor.C0 = motor.C0 * CFrame.Angles(math.rad(angles.X), math.rad(angles.Y), math.rad(angles.Z))
+end
+
+-- Swaps the breathing idle NpcBody started for the seller's own loop, once the look is on.
+local function playIdle(body: Model, clip: string)
+	local deadline = os.clock() + 30
+	while body:GetAttribute(Attributes.CrewReady) ~= true and os.clock() < deadline do
+		task.wait(0.25)
+	end
+	local humanoid = body:FindFirstChildOfClass("Humanoid")
+	local animator = humanoid and humanoid:FindFirstChildOfClass("Animator")
+	if not animator or body:GetAttribute(Attributes.CrewReady) ~= true then
+		return
+	end
+	task.wait() -- NpcBody starts its idle right after CrewReady
+	local track = Animations.load(animator, clip, Enum.AnimationPriority.Idle)
+	if not track then
+		return -- no id: the breathing idle stays
+	end
+	for _, playing in animator:GetPlayingAnimationTracks() do
+		playing:Stop(0.5)
+	end
+	track.Looped = true
+	track:Play(0.5)
+	-- Not all in step.
+	track.TimePosition = (#body.Name % 10) / 10 * math.max(track.Length, 1)
 end
 
 -- Poses one seller's figure; the joints are made after its look loads (NpcBody), so this waits
@@ -139,6 +177,9 @@ function NpcPose.apply(body: Model, id: string)
 			if angles then
 				turn(motor, angles)
 			end
+		end
+		if Config.Lobby.CarrierV2.Idles then
+			playIdle(body, pose.idle)
 		end
 	end)
 end

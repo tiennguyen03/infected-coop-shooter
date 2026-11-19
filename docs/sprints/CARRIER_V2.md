@@ -165,10 +165,10 @@ to -720, scaled 0.62, several tilted, each with burnt gashes. Fire, smoke and se
 |---|---|---|---|
 | 1 | Ship's cat asleep in a mortar crate, "DO NOT LOAD THE CAT" (the sapper feeds her) | call-ins floor (26.6, 20, 112.2) | `egg_carrier_cat` |
 | 2 | The net: cargo net of wrist bands, helmets and green chemlights, "STILL ON THE LIST" | aft bulkhead (-22, 21, -99.9) | `egg_carrier_memorial` |
-| 3 | Districts' tally board "MISSIONS HOME": Delta, Mile 14, Kestrel, the Yard, Reservoir | on two posts at the map room's walk edge (4, 22.6, 22) | `egg_carrier_scoreboard` |
-| 4 | "DAYS SINCE ONE GOT ABOARD 214 / KEEP IT THAT WAY"; **counts up for real** (owner 2026-11-17): the lobby works out whole days since a fixed start date in Config (`Config.Lobby.DaysSince = { Start = "<date 214 days before launch>" }`, `os.time` UTC, floor of the difference / 86400) and writes it to the board's SurfaceGui on start and once an hour | screening lane (24, 40, -133.2) | `egg_carrier_dayssign` |
+| 3 | Districts' board "MISSIONS HOME": Delta, Mile 14, Kestrel, the Yard, Reservoir, each with a **painted number** of missions home (owner 2026-11-18: numbers, not chalk marks; counted for real, see Counts below) | on two posts at the map room's walk edge (4, 22.6, 22) | `egg_carrier_scoreboard` |
+| 4 | "DAYS SINCE ONE GOT ABOARD 214 / KEEP IT THAT WAY"; **counts up for real** (owner 2026-11-17; built 2026-11-18): whole UTC days since `Config.Lobby.DaysSince.Start` ("2026-04-18", 214 days before 2026-11-18; `Rules/Tally.daysSince`), one digit a tile, painted on start and every `RefreshSeconds` (an hour); 999 at most | screening lane (24, 40, -133.2) | `egg_carrier_dayssign` |
 | 5 | Broken arcade cabinet, "OUT OF ORDER" | crew corner (-14.5, 20, 137.4) | `egg_carrier_arcade` |
-| 6 | Call-in tallies stencilled on the hull: HAMMER, ANVIL, SHRIKE, DOORMAN | over the call-ins floor, X 33 | text |
+| 6 | Call-in counts stencilled on the hull: HAMMER, ANVIL, SHRIKE, DOORMAN, each with a **painted number** under the name, e.g. 1,284 (owner 2026-11-18: "some equipment might be used hundreds of times"; counted for real, see Counts below) | over the call-ins floor, X 33 | text |
 | 7 | (dropped 2026-11-17: helicopter 20 on jacks; its floor is the motor pool. `egg_carrier_queen_marks` stays in the kit, unplaced) | | |
 | 8 | Stolen road signs "HARLAN 14", "CHECKPOINT DELTA" | fore bulkhead (-2, 29.2, 139.9), (8.5, 32.8, 139.9) | `egg_carrier_roadsign` |
 | 9 | "NOT ON ISSUE" shelf: bat with nails, crossbow, chainsaw | Arms Room (-28.4, 20, 111.1) | `egg_carrier_notissue` |
@@ -218,7 +218,37 @@ the spawn walk you see only a tarp behind the ramp and a pallet in front of it; 
 port side toward the lift balcony and the gap at the port end opens, with the cold bulb inside.
 The gap is 7.5 studs wide and the room is 20 x 24, so four players fit once they find it.
 
+### Counts (eggs 3, 4, 6; built 2026-11-18)
+
+- **What is counted.** The match (`server/TallyService`) counts every call-in a player fires
+  (`CallInService`, after the charge is spent; bots and dev-panel fires are not counted) and, when
+  the squad extracts, one mission home for the mission played (`Missions.current().Id`: `delta`,
+  `mile14`). At run end (`RunManager.endRun`) the run's counts are added in one `UpdateAsync`
+  to the one shared key (DataStore `Config.Lobby.Tallies.Store` "CarrierTallies", key "totals",
+  a table `{ ["callin:hammer"] = n, ["mission:delta"] = n, ... }`, merged by `Rules/Tally.merge`);
+  a server shut down mid-run adds what it has on close. A failed save is warned once and dropped.
+- **What is painted.** Lettering rows in `CarrierV2Data` carry a `count` tag (the generator's
+  `T(..., count=...)`); `CarrierV2` hands those cards to the lobby's `TallyBoards`, which paints
+  the start value plus the stored count on start and every `Config.Lobby.Tallies.RefreshSeconds`
+  (5 min). A call-in's start value is its own Config row's `Tally` (every row in
+  `Config.CallIns` has one, through `CallInDefinitions`); a district's is
+  `Config.Lobby.Tallies.Districts[<mission id>]` (the old chalk counts, 11, 6, 4, 2, 0). Without
+  the store (Studio without API access) the start values show.
+- **Layout.** Each number sits under its call-in's name on the hull. On MISSIONS HOME the names
+  moved to the board's low-Z half and the numbers to the high-Z half, so from the walk (facing +X,
+  +Z is the right) it reads "DELTA ... 11"; the Blender preview, mirrored, shows the numbers first.
+  The board mesh lost its chalk strokes (re-uploaded, new model id). The days tiles are numbered
+  left to right as read from the lane (hundreds at X 22.5); before, the three fixed digits were
+  placed right to left and would have read "412" in game.
+
 ### Poses and idle animations (for the lobby, R15)
+
+**Built 2026-11-18:** one hand-keyed loop per seller (`assets/animations/build/seller_idles.luau`,
+uploaded to the group; `Config.Animations.Ids.seller_*`), played by `NpcPose` on top of the held
+pose in place of the Rthro breathing idle; off with `Config.Lobby.CarrierV2.Idles = false`. What
+each does is the table below, trimmed to one loop (the Quartermaster's sip and the Loadmaster's
+pencil tap are left out). Not yet seen on the rigs.
+
 
 Each seller is their existing lobby R15 figure, placed at the feet above, posed like the stand-in
 and playing one short looping idle. How to build them with the project's animation pipeline
@@ -304,10 +334,9 @@ How it is built (`claude/carrier-v2-in-lobby`; the old step list is done as belo
   move to X -26.6 (his stool); Call-ins, Loadout and Vehicles lose their counters (their corners
   stand in) and the Loadmaster's old cases and the Call-ins radio block go; each seller is posed
   once by turning its Motor6Ds (`NpcPose`: seated, leaning, feet up), `Config.Lobby.CarrierV2.Poses`.
-  **The idle loops are not made yet** (follow-up: the table above, through
-  `assets/animations/build/`).
-- **Lettering** is SurfaceGui text on invisible cards (53); the days board shows 214 fixed (the
-  count-up is specified in Easter eggs > 4, not built).
+  Each then plays their own looping idle (Poses and idle animations above).
+- **Lettering** is SurfaceGui text on invisible cards (53); the call-in numbers, MISSIONS HOME and the
+  days tiles are painted by `TallyBoards` (Counts above).
 
 To change the ship: edit `carrier_v2.py` / `carrier_kit.py`, run
 `blender --background --python assets/3d/build/carrier_v2.py -- --export-luau`, then `stylua src`;
@@ -360,7 +389,8 @@ flag for it, so it comes back on the next visit to the Carrier).
 - The hangar is still one long hall; no overhead cable trays or hatches.
 - The call-in show floor is #61's row (`CallInDisplay`); v2's own call-in props and placards
   are not placed (they could become each row's `Display.Prop` later).
-- The sellers' idle loops are not made; the poses are one-time joint turns, unseen on the rig.
+- The sellers' poses and idle loops are set blind, unseen on the rigs (a limb through the glass
+  or the hammock is a number in `NpcPose` or `seller_idles.luau`).
 - The city is not yet in `docs/lore/world_map.md` (the lore developer, now that it is approved).
 - The pictures use flat ambient light, so the vendor lights look softer than they will in game.
 
