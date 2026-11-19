@@ -70,6 +70,7 @@ animations, played by `src/client/AnimationController.luau` (players) and
 | warden_bash (Sword And Shield Power Slash) | spare since 2026-11-18 | spun him a full turn (the owner's "goofy spin"); `Config.Animations.Infected.Warden.attack = "warden_bash"` puts it back |
 | warden_shove (keyed) | Warden Shield Bash | `build/keyed.luau`: shield shoulder back, then the shield driven straight out with a step; lands at `Bash.StrikeAt` |
 | warden_leap (keyed) | Warden Leap | `build/keyed.luau`: gather, throw up, tuck, both fists into the ground at `Leap.StrikeAt`; rate fits Windup + Flight |
+| warden_stride (keyed loop) | Warden heavy walk | `build/keyed.luau` (`loop`, `loopPose`): a loaded stride, hips sinking on each heel strike (0.25 / 0.75 of the clip, `Weight.StepMarks`), shield across his front; IndexService sets its rate from his speed |
 | warden_riot | Warden Riot Call roar | held `RiotCallHold` |
 | warden_death | Warden death | |
 | warden_pound (Sword And Shield Jump Attack) | Warden Ground Pound | `in_place`; the fists land at `Pound.StrikeAt` |

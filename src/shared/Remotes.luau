@@ -26,7 +26,7 @@ local REMOTE_NAMES = {
 	"AbilityUsed", -- server -> client: (kind: string, cooldown: number) for the UI countdown | ("callin", slot, id)
 	"Loadout", -- client -> server: ("request", {primary, secondary, grenade, callIns}); server -> client: ("result", ok: boolean, reason: string?) the Arms Room | ("signed", loadout) the lobby's saved Loadout
 	"CoverMove", -- client -> server: (kind: "vault"|"climb"|"roll"|"slide") the body started going over cover, rolling or sliding
-	"BossUpdate", -- server -> client: ("show", name, plateNames) | ("state", body, plates, phase) | ("tell", kind) | ("hide"); client -> server: () resend the state
+	"BossUpdate", -- server -> client: ("show", name, plateNames) | ("state", body, plates, phase) | ("tell", kind) | ("zone" | "incoming" | "shake" | "quake" | "line", ...: Messages.BossUpdate) | ("hide"); client -> server: () resend the state
 	"Impact", -- server -> client: ("knockdown", seconds) the body is knocked down (Squad.knock) | ("push", velocity: Vector3) a shove the client applies to its root
 	"Stance", -- client -> server: (stance: "stand"|"crouch"|"prone"); server -> client: ("prone") stand-up refused under a ceiling
 	"KitMods", -- lobby place, client -> server: ("buy", modId, rank) the next rank of a Kit Mod | ("get"); server -> client: ("state", ranks: { [modId]: rank }) | ("refused", modId, reason) (KitModService, Rules/KitModRules)

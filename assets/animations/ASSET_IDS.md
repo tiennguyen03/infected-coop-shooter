@@ -70,6 +70,7 @@ Mirror every id into `Config.Animations.Ids`. Every id is owned by the Roblox gr
 | warden_hit (Mixamo Sword And Shield Impact, Warden plate break) | 92513440124088 | 2026-11-07 |
 | warden_shove (keyed, build/keyed.luau; Warden Shield Bash, replaces the spinning warden_bash) | 119777822260499 | 2026-11-18 |
 | warden_leap (keyed, build/keyed.luau; Warden Leap) | 129607022708712 | 2026-11-18 |
+| warden_stride (keyed loop, build/keyed.luau; Warden heavy walk) | 128664443037961 | 2026-11-18 |
 | knockdown_back (Mixamo Knocked Out, trimmed to the fall; Assault + bots) | 98193119951691 | 2026-11-07 |
 | getup_back (Mixamo Getting Up from back, trimmed to the rise; Assault + bots) | 136455455125454 | 2026-11-07 |
 | zombie_hit (Mixamo Zombie Reaction Hit) | 73020069431259 | 2026-11-09 |

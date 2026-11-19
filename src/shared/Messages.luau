@@ -71,6 +71,14 @@ local Messages = table.freeze({
 		Tell = "tell",
 		Zone = "zone",
 		Hide = "hide",
+		-- The boss pass (client BossPresence): ("incoming", landing, seconds) the arrival
+		-- warning; ("shake", position, power, radius) a boot or a blow; ("quake", center,
+		-- radius, speed, waves, gap) the Quake's rings; ("line", from, direction, length,
+		-- width, seconds) a Charge lane on the ground.
+		Incoming = "incoming",
+		Shake = "shake",
+		Quake = "quake",
+		Line = "line",
 	}),
 	-- BossUpdate "tell" kinds that are not attacks (attack tells carry the attack's name)
 	BossTell = table.freeze({

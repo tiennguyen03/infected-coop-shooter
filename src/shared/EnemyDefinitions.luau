@@ -144,7 +144,7 @@ local EnemyDefinitions: { [string]: EnemyDefinition } = {
 	-- IndexService steers him; the director never picks him (FirstSpawnTime huge, Boss).
 	Warden = {
 		DisplayName = "The Warden",
-		Scale = 1.9,
+		Scale = 2.2, -- was 1.9; the boss pass (keep equal to Config.Index.Warden.ScaleReach)
 		MaxHealth = 5000, -- was 7000: he hunts now (the aggression pass, 2026-11-18)
 		WalkSpeed = 12, -- was 8; phases raise it (Config.Index.Warden.Phases)
 		Damage = 40, -- Shield Bash; the other attacks carry their own damage in Config.Index

@@ -428,6 +428,19 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 		end
 		print("[DevTest] RageWarden")
 	end,
+	-- The boss pass (docs/sprints/FUN_WARDEN.md): each stage, and each big attack, now.
+	WardenStage2 = function()
+		print("[DevTest] WardenStage2 ->", IndexService.devStage(2))
+	end,
+	WardenStage3 = function()
+		print("[DevTest] WardenStage3 ->", IndexService.devStage(3))
+	end,
+	WardenQuake = function()
+		print("[DevTest] WardenQuake ->", IndexService.devAttack("quake"))
+	end,
+	WardenRampage = function()
+		print("[DevTest] WardenRampage ->", IndexService.devAttack("rampage"))
+	end,
 	-- The Index: the full entrance from the Gate, or the Warden in front of you (no walk).
 	SpawnWarden = function()
 		print("[DevTest] SpawnWarden (the Gate) ->", IndexService.start())
@@ -442,7 +455,10 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 		if root then
 			local flat = Vector3.new(root.CFrame.LookVector.X, 0, root.CFrame.LookVector.Z)
 			local forward = if flat.Magnitude > 0.01 then flat.Unit else Vector3.zAxis
-			print("[DevTest] WardenHere ->", IndexService.spawnAt(root.Position + forward * 24))
+			-- With the entrance on he dives in from over the top, DevDistance ahead.
+			local entrance = Config.Index.Warden.Entrance
+			local ahead = if entrance.Enabled then entrance.DevDistance else 24
+			print("[DevTest] WardenHere ->", IndexService.spawnAt(root.Position + forward * ahead))
 		end
 	end,
 	KillPlayer = function(player)

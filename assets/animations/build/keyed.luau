@@ -62,7 +62,90 @@ local function crouch(key, a)
 	return key
 end
 
+-- One leg of the stride (warden_stride), named by which leg is doing what.
+local function stride(front, back, key)
+	key[front .. "UpperLeg"] = { 40 }
+	key[front .. "LowerLeg"] = { -10 }
+	key[front .. "Foot"] = { -18 }
+	key[back .. "UpperLeg"] = { -28 }
+	key[back .. "LowerLeg"] = { -35 }
+	key[back .. "Foot"] = { 22 }
+	return key
+end
+
+local function passing(lifted, planted, key)
+	key[lifted .. "UpperLeg"] = { 30 }
+	key[lifted .. "LowerLeg"] = { -62 }
+	key[lifted .. "Foot"] = { 12 }
+	key[planted .. "UpperLeg"] = { -4 }
+	key[planted .. "LowerLeg"] = { -6 }
+	key[planted .. "Foot"] = { 4 }
+	return key
+end
+
+-- The shield arm (left) carried across his front through the whole stride.
+local SHIELD_UPPER = { 32, 0, -12 }
+local SHIELD_LOWER = { 82 }
+
 local CLIPS = {
+	-- The heavy walk (the boss pass, 2026-11-18; Config.Animations.Infected.Warden.move): a
+	-- long, loaded stride. He leans into it, the hips sink hard on each heel strike (the
+	-- step sound and the camera shake land there: Config.Index.Warden.Weight.StepMarks 0.25
+	-- and 0.75), the shoulders counter-turn and roll onto the planted side, the shield stays
+	-- across his front and the free arm swings. A loop: it starts and ends on the left
+	-- passing pose (`loopPose`), not the idle.
+	warden_stride = {
+		base = "warden_idle",
+		duration = 1.3,
+		loop = true,
+		loopPose = passing("Left", "Right", {
+			LowerTorso = { 0, 0, 0, pos = { 0, 0.08, 0 } },
+			UpperTorso = { -16, 0, 0 },
+			Head = { 10, 0, 0 },
+			LeftUpperArm = SHIELD_UPPER,
+			LeftLowerArm = SHIELD_LOWER,
+			RightUpperArm = { 4, 0, 10 },
+			RightLowerArm = { 22 },
+		}),
+		keys = {
+			{
+				t = 0.325, -- left heel strike
+				pose = stride("Left", "Right", {
+					LowerTorso = { 3, -9, 0, pos = { 0, -0.42, 0 } },
+					UpperTorso = { -20, 12, 5 },
+					Head = { 12, -8, 0 },
+					LeftUpperArm = SHIELD_UPPER,
+					LeftLowerArm = SHIELD_LOWER,
+					RightUpperArm = { 32, 0, 10 },
+					RightLowerArm = { 30 },
+				}),
+			},
+			{
+				t = 0.65, -- right passing
+				pose = passing("Right", "Left", {
+					LowerTorso = { 0, 0, 0, pos = { 0, 0.08, 0 } },
+					UpperTorso = { -16, 0, 0 },
+					Head = { 10, 0, 0 },
+					LeftUpperArm = SHIELD_UPPER,
+					LeftLowerArm = SHIELD_LOWER,
+					RightUpperArm = { 4, 0, 10 },
+					RightLowerArm = { 22 },
+				}),
+			},
+			{
+				t = 0.975, -- right heel strike
+				pose = stride("Right", "Left", {
+					LowerTorso = { 3, 9, 0, pos = { 0, -0.42, 0 } },
+					UpperTorso = { -20, -12, -5 },
+					Head = { 12, 8, 0 },
+					LeftUpperArm = SHIELD_UPPER,
+					LeftLowerArm = SHIELD_LOWER,
+					RightUpperArm = { -26, 0, 10 },
+					RightLowerArm = { 34 },
+				}),
+			},
+		},
+	},
 	-- The Shield Bash (Config.Index.Warden.Bash, StrikeAt 0.45 -> 0.63 s): he turns the
 	-- shield shoulder back, sinks, then drives the shield straight out with a step. No spin:
 	-- the Mixamo Power Slash it replaces turned him a full circle.
@@ -276,15 +359,17 @@ table.sort(names)
 for _, name in names do
 	local spec = CLIPS[name]
 	local base = basePose(spec.base)
-	local keyframes = { { t = 0, poses = apply(base, nil) } }
+	-- A loop starts and ends on its own loopPose; a one-shot on the base pose.
+	local ends = spec.loopPose
+	local keyframes = { { t = 0, poses = apply(base, ends) } }
 	for _, key in spec.keys do
 		table.insert(keyframes, { t = key.t, poses = apply(base, key.pose) })
 	end
-	table.insert(keyframes, { t = spec.duration, poses = apply(base, nil) })
+	table.insert(keyframes, { t = spec.duration, poses = apply(base, ends) })
 	local clip = {
 		name = name,
 		fps = FPS,
-		loop = false,
+		loop = spec.loop == true,
 		upperBody = false,
 		duration = spec.duration,
 		groundSpeed = 0,
