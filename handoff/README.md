@@ -7,6 +7,7 @@ one note to `handoff/log/` (format in `handoff/log/README.md`). History lives in
 `docs/HISTORY.md`; this page is only "now".
 
 Last updated: 2026-11-17 by Tien, Nova + Claude (the Hocker's spit pool as an uneven puddle, on `claude/spit-puddle`; the objective meter and the HUD layout pass, on `claude/objective-progress-visible`; every desk on the Loadmaster's look, on `claude/npc-ui-prototype2`; the map room opened up, on `claude/open-map-room`; vehicles: the ATV, the motor pool and the ATV's own model, on `nova/vehicles-atv`; the M16A4 optic slot, on `nova/m16a4-optic-slot`; Kit Mods at the Loadmaster, on `nova/loadmaster-kit-mods`; the Quartermaster's GTA gun wall back, on `nova/quartermaster-rack`).
+Last updated: 2026-11-19 by Claude (saves versioned and safe to change, on `claude/save-versioning`).
 Last updated: 2026-11-18 by Claude (breaches and the pressure rhythm, fun sprint 1 of 4, on `claude/fun-breaches`).
 Last updated: 2026-11-18 by Claude (scarcity: fewer spare mags, the flare's long wait, ammo pouches, the squad's reinforcements, on `claude/fun-scarcity`).
 Last updated: 2026-11-18 by Claude (dangerous Infected: the Brute's plated front and charge, the Runner's pounce and pin, the Hocker's barrage and lob, the Walker's grab, on `claude/fun-enemies`).
@@ -87,6 +88,12 @@ that restocks the squad.
   (`docs/PROGRESSION.md` > Kit Mods). **Nova:** `RecordService`'s buy is now
   `change(player, label, edit)` (the same save), `LoadmasterUI` has the tab bar, new
   `KitModsTab`; `LoadoutService.freshState` takes the player.
+- **Saves** (2026-11-19, on `claude/save-versioning`, built on #92; no gameplay change): the
+  record and the signed Loadout are versioned and migrated on read (`Rules/SaveSchema`), written
+  only with UpdateAsync, and never written when the load failed or the save is newer or junk
+  (the visit is read-only; SAVE OFFLINE under the wallet). **Nova:** a new saved field follows
+  `docs/SAVES.md` > How to change the save; `SaveSlot.new` takes a schema, `SaveSlot.save` is
+  now an UpdateAsync, `Record.encode(record, old)` keeps unknown fields.
 - **Keys:** every key is a row of `Config.Keys` and every hint reads it (table: `docs/OWNER.md`);
   a key written into client or server code fails the tests. E interact, C or Ctrl crouch, Z prone.
 - **Movement:** sprint on a stamina bar (8 s; a roll costs 20, a slide 10; winded at zero),
@@ -211,7 +218,7 @@ that restocks the squad.
   those flows (`HudTheme.inLeftColumn`, `MissionLine.attach`); `MissionLine.set` takes a table
   now; `Config.SquadPanel.Top` is gone (`Config.Hud.LeftColumnTop`).
 - **Checks:** stylua, selene, rojo build, 494 Lune tests (rules plus the source-wiring spec, which also reads the lobby's remotes and refuses key literals), luau-lsp, CI on every push.
-- **Checks:** stylua, selene, rojo build, 530 Lune tests (rules plus the source-wiring spec, which also reads the lobby's remotes and refuses key literals), luau-lsp, CI on every push.
+- **Checks:** stylua, selene, rojo build, 687 Lune tests (rules plus the source-wiring spec, which also reads the lobby's remotes and refuses key literals), luau-lsp, CI on every push.
 
 ## Who owns what
 

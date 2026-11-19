@@ -3660,6 +3660,7 @@ local Config = {
 			MinWriteGap = 6, -- seconds between saves per soldier; the newest pick wins
 			Retries = 2, -- extra attempts after a failed DataStore call
 			RetryDelay = 1,
+			LoadWait = 10, -- seconds a check waits for a record still loading (RecordService)
 		},
 		-- Which Carrier desk (LobbyDesks id) sells an item whose own Config row names no `Desk`
 		-- (KitPrices.deskOf). Owner 2026-11-16: the Quartermaster is the main seller (guns, grenades,
