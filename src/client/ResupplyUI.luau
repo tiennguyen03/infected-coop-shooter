@@ -118,7 +118,20 @@ local function updateMeter()
 	end
 	local ratio = math.clamp(pool / math.max(cost, 1), 0, 1)
 	fill.Size = UDim2.fromScale(ratio, 1)
-	if pool >= cost then
+	-- The flare's wait after a pallet (Config.Scarcity.Resupply): paid for, not yet allowed.
+	local readyAt = (workspace:GetAttribute(Attributes.ResupplyFlareReadyAt) :: number?) or 0
+	local wait = readyAt - workspace:GetServerTimeNow()
+	if pool >= cost and wait > 0 then
+		fill.BackgroundColor3 = C.TextDim
+		local seconds = math.ceil(wait)
+		setText(
+			`RESUPPLY  {HudTheme.tint(
+				string.format("FLARE IN %d:%02d", seconds // 60, seconds % 60),
+				C.Yellow
+			)}`,
+			C.Text
+		)
+	elseif pool >= cost then
 		-- Ready: the bar pulses so the eye finds it without a pop-up.
 		local pulse = 0.5 + 0.5 * math.sin(now * 4)
 		fill.BackgroundColor3 = C.Yellow:Lerp(C.White, pulse)

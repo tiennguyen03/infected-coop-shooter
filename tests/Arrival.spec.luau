@@ -92,4 +92,30 @@ return {
 		local early = Arrival.pass(1, 1.5, 10, 0.15)
 		expect.equal(early, 0, "a short delay shortens the approach")
 	end,
+	["a vehicle's crate fits round it with room, in whole steps, bigger for a bigger vehicle"] = function()
+		-- an ATV about 4.4 wide, 3.4 tall, 7.6 long; 0.4 of room each side and over the top
+		local x, y, z = Arrival.crateSize(4.4, 3.4, 7.6, 0.4, 0.5)
+		expect.near(x, 5.5, 0.0001, "width: 4.4 + 0.8 = 5.2, up to 5.5")
+		expect.near(y, 4, 0.0001, "height: 3.4 + 0.4 = 3.8, up to 4")
+		expect.near(z, 8.5, 0.0001, "length: 7.6 + 0.8 = 8.4, up to 8.5")
+		local tx, ty, tz = Arrival.crateSize(7, 6, 14, 0.4, 0.5)
+		expect.equal(tx > x and ty > y and tz > z, true, "a truck's is bigger")
+		local ex = Arrival.crateSize(4.2, 3.6, 7.2, 0.4, 0.5)
+		expect.near(ex, 5, 0.0001, "already a whole step stays")
+	end,
+	["the helo flying over is behind the mark before it and past it after, at its speed"] = function()
+		expect.near(Arrival.flyover(2, 5, 60), -180, 0.0001, "3 s out")
+		expect.near(Arrival.flyover(5, 5, 60), 0, 0.0001, "over the mark")
+		expect.near(Arrival.flyover(6.5, 5, 60), 90, 0.0001, "1.5 s past")
+	end,
+	["a crate wall falls open from upright to flat, gathering speed"] = function()
+		expect.near(Arrival.hinge(0, 1, 2), 0, 0.0001, "upright before")
+		expect.near(
+			Arrival.hinge(1.5, 1, 2),
+			math.pi / 8,
+			0.0001,
+			"a quarter of the way at half time"
+		)
+		expect.near(Arrival.hinge(3, 1, 2), math.pi / 2, 0.0001, "flat after")
+	end,
 }

@@ -121,7 +121,10 @@ function PlayerSetup.attachRifle(character: Model, humanoid: Humanoid)
 	-- Keeps whatever is there when the mesh never loads.
 	local function dress(weaponId: string)
 		local weapon = WeaponDefinitions.get(weaponId)
-		local wanted = weapon.Model
+		-- With an optic fitted (the Loadmaster's EDIT), the gun's mesh with it on its rail.
+		local fittedText = player and player:GetAttribute(Attributes.Fitted)
+		local wanted =
+			WeaponDefinitions.dressed(weapon.Id, WeaponDefinitions.opticIn(fittedText, weapon.Id))
 		-- A gun whose mesh is not uploaded yet wears the rifle.
 		local model = if MeshAssets.isUploaded(wanted) then wanted else "wpn_rifle"
 		local body = MeshAssets.waitFor(model, 5)

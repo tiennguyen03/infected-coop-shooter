@@ -5,7 +5,8 @@
 -- paint and stencils, the deck gear, the vendor corners' props, the Easter eggs, the hidden nook
 -- under the ramp, and the burning city straight ahead. Everything the ship had before stays
 -- where FallowBuilder, FallowArt, DeskService, ArmsRack, CallInDisplay and MotorPool build it;
--- this only adds. Off with Config.Lobby.CarrierV2.Enabled = false.
+-- this only adds. Off with Config.Lobby.CarrierV2.Enabled = false. Lettering rows with a `count`
+-- tag (the call-in numbers, MISSIONS HOME, the days tiles) are painted by TallyBoards.
 --
 -- The kit meshes (CarrierKitMeshes, uploaded as models to the group) are registered with
 -- MeshAssets before its init(), so CarrierV2 boots first; the build itself waits for the
@@ -19,6 +20,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
 local Build = require(script.Parent.Build)
 local Data = require(script.Parent.CarrierV2Data)
+local TallyBoards = require(script.Parent.TallyBoards)
 
 local CarrierV2 = {}
 
@@ -102,7 +104,7 @@ local function buildText(
 	face: string,
 	kindName: string,
 	at: { number }
-)
+): TextLabel
 	local point = Vector3.new(at[1], at[2], at[3])
 	local height = at[4]
 	local normal = FACES[face] or Vector3.yAxis
@@ -122,7 +124,12 @@ local function buildText(
 	)
 	card.CanQuery = false
 	local kind = KINDS[kindName] or GREY
-	Build.text(card, Enum.NormalId.Front, text, { color = kind.color, font = Enum.Font.GothamBold })
+	return Build.text(
+		card,
+		Enum.NormalId.Front,
+		text,
+		{ color = kind.color, font = Enum.Font.GothamBold }
+	)
 end
 
 local function holder(folder: Folder, name: string, size: Vector3, at: Vector3): BasePart
@@ -192,7 +199,12 @@ local function build()
 	local folder = Build.folder(Workspace, "CarrierV2")
 	buildParts(folder)
 	for _, row in Data.texts do
-		buildText(folder, row.text, row.face, row.kind, row.at)
+		local label = buildText(folder, row.text, row.face, row.kind, row.at)
+		-- A count painted from the store and the clock (TallyBoards): call-ins, missions, days.
+		local count = (row :: any).count
+		if typeof(count) == "string" then
+			TallyBoards.register(count, label)
+		end
 	end
 	buildLights(folder)
 	buildFx(folder)

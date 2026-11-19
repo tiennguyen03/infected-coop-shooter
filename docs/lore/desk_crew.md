@@ -76,6 +76,18 @@ The **plotter** behind the Containment Board is ship's company: a young sailor i
 writing backwards in grease pencil, a sound-powered phone headset on with its mouthpiece on
 his chest. He never speaks.
 
+## The Visitor
+
+Canon 2026-11-18 (owner approved: "the visitor is fine for now"). No rank, no unit, no name.
+He is from the government office that funded the program, and he flies in on the one
+helicopter that does not carry the ship's markings. The crew are told not to see him ("Don't go
+under the ramp. Nobody's under the ramp."). He waits in the nook under the ramp's high end,
+behind the tarp: sealed cases, a folding chair with his raincoat over it, a chess game half
+played against nobody, one cold bulb. What he has on his table changes every week; the desks
+never rotate, he does. Polite, quiet, full sentences, no rank, no slang; he is the only person
+on the ship who says "sell" (the rule below is for the crew). The one detail for art: the red
+lanyard badge, ESCORT REQUIRED.
+
 ## Bodies: what each one wears (for the art director)
 
 Simple low-poly accessories that make each body read as a person. Pike grey is only Pike.
@@ -90,6 +102,7 @@ Simple low-poly accessories that make each body read as a person. Pike grey is o
 | The Engineers | Army working dress | work gloves tucked in his belt; wire cutters on the belt; a short coil of wire over one shoulder |
 | The motor sergeant | Army working dress, sleeves rolled | grease to the elbows and the log book under one arm (neither modelled yet); a shop rag |
 | Control's watch officer | Army working dress | headset, one earcup on, one pushed back; a steel mug (the coffee is cold); rank on the chest tab |
+| The Visitor | civilian: a long dark raincoat over a sweater and a collared shirt | no rank, no name tape, no patch; a red lanyard with a badge, ESCORT REQUIRED; no screening band; hands in the coat's pockets |
 | The plotter | ship's dark blue | sound-powered phone headset with a chest mouthpiece; a grease pencil in hand |
 | Ship's company walkers | see [ship_company.md](ship_company.md) | the jersey colour is the read; one prop each (ear defenders, chain, rag, clipboard, smock, rifle) |
 
@@ -194,18 +207,46 @@ Desk id `plot`; she sells nothing, so her BUY lines are only fallbacks.
 
 | Field | Line |
 |---|---|
-| Greeting | "This is the Plot. I'm Control, the voice on your radio when you're down there." |
-| Greeting | "Delta's your mission. Do the job, kill the big one, get to your bird before the Burn." |
+| Greeting | "This is the map room. I'm Control, the voice on your radio when you're down there." |
+| Greeting | "Delta's your mission. Do the job, kill the big one, get to the helicopter before it leaves." |
 | Greeting | "Every number on that board is a place we're holding. I'd like them higher." |
-| Greeting | "Keep it down. Half this room is on the net with a team that's still out." |
+| Greeting | "Keep it down. Half this room is on the radio with a team that's still out." |
 | 1 (open) | Show me the map. |
 | 2 (ask) | What's the board for? |
 | Answer | "How much of each district we hold. Contained isn't clean, it's just stopped spreading." |
 | 3 (leave) | That's all. |
 | Map opens | "The Harlan Corridor. Coast at the bottom, the dam at the top. You start at Delta." |
 | Bought | "That's on your record now. I just keep the map." |
-| Short | "You're short on merits. Nothing I can do about that from the Plot." |
+| Short | "You're short on merits. Nothing I can do about that from the map room." |
 | Refused | "Can't do that from here. Try again in a minute." |
+
+### The Visitor
+
+Desk id `visitor`, no sign; the prompt and the panel read VISITOR, ESCORT REQUIRED. He sells
+nothing yet, so his BUY lines are only fallbacks. The first time a soldier talks to him in a
+visit he says the first-meeting line instead of a greeting; 3 (leave) gets his parting line
+before the panel closes.
+
+| Field | Line |
+|---|---|
+| First meeting | "You walked past twice. Come in." |
+| Greeting | "You found me. Most don't. Have a look, and keep it off the radio." |
+| Greeting | "Bring me something of the Warden's, one day." |
+| Greeting | "Mind the tarp on your way out. It's there for a reason." |
+| Greeting | "Sit, if you like. The chair is the only thing down here that isn't sealed." |
+| Greeting | "I read every report from the ground. Yours are better than most." |
+| 1 (open) | What do you sell? |
+| Nothing yet | "Nothing on the table this week. Come back when the crates are open." |
+| 2 (ask) | Who are you? |
+| Answer | "A visitor. I'm not on the ship's books, and I'd like it to stay that way." |
+| 3 (leave) | Leave. |
+| Parting | "I'll have something else next week. What goes won't come back soon." |
+| Bought | "Yours, then. Look after it. There isn't another." |
+| Short | "Not enough merits. The price doesn't move, I'm afraid." |
+| Refused | "Not today. Come back in a minute." |
+
+The deck hand's walk-by line about him: "Don't go under the ramp. Nobody's under the ramp."
+([ship_company.md](ship_company.md)).
 
 ## Open
 

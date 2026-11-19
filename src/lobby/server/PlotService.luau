@@ -104,7 +104,7 @@ local function buildPanel(): Frame
 	root.BackgroundTransparency = 1
 	root.Size = UDim2.fromScale(1, 1)
 	root.Parent = gui
-	local title = label(root, "CONTAINMENT", 46, Enum.Font.PermanentMarker, PENCIL)
+	local title = label(root, "WHAT WE HOLD", 46, Enum.Font.PermanentMarker, PENCIL)
 	title.Position = UDim2.fromOffset(0, 10)
 
 	local row = Instance.new("Frame")

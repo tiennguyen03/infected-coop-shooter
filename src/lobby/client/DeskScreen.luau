@@ -95,9 +95,13 @@ function DeskScreen.close()
 	end
 end
 
--- Whether this desk has a screen: it sells something (the Plot and the Loadmaster do not).
+-- Whether this desk has a screen: it sells something (the Plot and the Loadmaster do not) and
+-- does not keep its own view (Config.Lobby.DeskScreen.KeepOwnView: the Quartermaster's rack).
 function DeskScreen.sells(desk: LobbyDesks.Desk): boolean
-	return Config.Lobby.DeskScreen.Enabled and #DeskOffer.columns(sectionsFor(desk.id)) > 0
+	local settings = Config.Lobby.DeskScreen
+	return settings.Enabled
+		and not settings.KeepOwnView[desk.id]
+		and #DeskOffer.columns(sectionsFor(desk.id)) > 0
 end
 
 -- Opens desk `desk`'s screen (`from` is its prompt, off while the screen is up); `onClose`
