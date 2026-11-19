@@ -40,6 +40,7 @@ local BOOT: { ModuleScript } = {
 	Server.MineService,
 	Server.EnemyProjectileService,
 	Server.EnemyService,
+	Server.BreachService, -- the alert meter and breaches (after EnemyService, DifficultyService)
 	Server.GoreService,
 	Server.ShockCoilService,
 	Server.VehicleService,

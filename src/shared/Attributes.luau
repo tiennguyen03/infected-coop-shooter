@@ -11,6 +11,12 @@ local Attributes = table.freeze({
 	RunResult = "RunResult",
 	RunStartTime = "RunStartTime",
 	GamePaused = "GamePaused",
+	-- workspace: the breach director (BreachService, Config.Breaches; the dev strip reads them):
+	-- the alert as a share of the breach threshold, the phase (Calm / Tension / Breach /
+	-- Relief), the run's pressure 0..1
+	BreachAlert = "BreachAlert",
+	BreachPhase = "BreachPhase",
+	BreachPressure = "BreachPressure",
 	-- client only, on the local Player: a cutscene holds the soldier (InsertionCutscene); no firing
 	-- or using kit while it is set
 	Cinematic = "Cinematic",

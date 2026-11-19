@@ -1456,10 +1456,39 @@ function EnemyService.groundNear(center: Vector3, minDistance: number, maxDistan
 	return groundPositionNear(center, minDistance, maxDistance)
 end
 
+-- BreachService: one phase-weighted Infected (the run's mix and caps) at `groundPosition`.
+function EnemyService.spawnPicked(groundPosition: Vector3): Model?
+	local zombie = spawnZombie(groundPosition, pickSpawnType())
+	return zombie and zombie.model
+end
+
+-- Noise listeners (BreachService): (position, reach, kind, heard) for every tagged noise, on
+-- every mission; `heard` = living Infected within `reach`.
+local noiseListeners: { (Vector3, number, string, number) -> () } = {}
+function EnemyService.addNoiseListener(listener: (Vector3, number, string, number) -> ())
+	table.insert(noiseListeners, listener)
+end
+
 -- A noise at `position` that carries `reach` studs (a shot: the gun's Noise; a blast; running
 -- feet): on an awareness mission each body that hears it comes for it (inside half the
--- reach) or goes to look (Rules/Awareness.hear). Nothing elsewhere.
-function EnemyService.noise(position: Vector3, reach: number)
+-- reach) or goes to look (Rules/Awareness.hear). `kind` ("shot", "blast") also tells the
+-- breach director (addNoiseListener) on every mission; untagged noise (feet, an engine)
+-- does not.
+function EnemyService.noise(position: Vector3, reach: number, kind: string?)
+	if kind and reach > 0 and #noiseListeners > 0 then
+		local heard = 0
+		for _, zombie in zombies do
+			if
+				zombie.humanoid.Health > 0
+				and (zombie.root.Position - position).Magnitude <= reach
+			then
+				heard += 1
+			end
+		end
+		for _, listener in noiseListeners do
+			listener(position, reach, kind, heard)
+		end
+	end
 	if not awareOn or reach <= 0 then
 		return
 	end
@@ -1659,9 +1688,17 @@ function EnemyService.addKillListener(listener: (supplyValue: number, position: 
 	table.insert(killListeners, listener)
 end
 
+-- BreachService: the roaming spawn interval's multiplier for the breach rhythm (1 = as before).
+local trickleFactor = 1
+function EnemyService.setTrickle(factor: number)
+	trickleFactor = math.max(factor, 0.1)
+end
+
 local function spawnLoop()
 	while true do
 		local interval = DifficultyService.getSpawnInterval()
+		-- The breach rhythm: fewer in the calm and the relief, most in the tension.
+		interval *= trickleFactor
 		-- Extra pressure while the objective is being held.
 		if workspace:GetAttribute(Attributes.ObjectiveActive) == true then
 			interval *= Config.Difficulty.ObjectiveSpawnFactor

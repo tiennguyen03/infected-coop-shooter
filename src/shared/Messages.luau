@@ -5,6 +5,12 @@
 -- the other side silently ignores. The values are the wire strings and never change.
 
 local Messages = table.freeze({
+	-- Breach: server -> every client ("warn", from: Vector3, seconds) a horde is coming from
+	-- that point (BreachUI draws the arrow) | ("clear") a new run
+	Breach = table.freeze({
+		Warn = "warn",
+		Clear = "clear",
+	}),
 	-- Resupply: client -> server ("flare", target) | ("pick", crateId, cardId);
 	-- server -> client ("called", thrower) | ("cards", ...) | ("picked", crateId, cardId) |
 	-- ("refused", crateId, reason) | ("taken", crateId, names) | ("closed", crateId)

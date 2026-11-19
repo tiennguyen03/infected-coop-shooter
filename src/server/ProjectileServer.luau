@@ -403,7 +403,7 @@ local function onFireRequest(
 	lastFireTime[player] = now
 	-- The Infected hear it (Config.Awareness): the gun's reach, or its suppressor's.
 	local barrel = LoadoutService.fitted(player, weapon.Id, "Barrel")
-	EnemyService.noise(root.Position, WeaponDefinitions.shotNoise(weapon, barrel))
+	EnemyService.noise(root.Position, WeaponDefinitions.shotNoise(weapon, barrel), "shot")
 	local exclude = excludeList(character)
 	-- The client says whether it is aiming down sights; that only tightens the cone (the
 	-- speed penalty is client-owned movement either way), so trusting it costs nothing.

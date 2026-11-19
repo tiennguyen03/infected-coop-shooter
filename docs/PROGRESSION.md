@@ -543,7 +543,30 @@ Watch: Hollow Point staggers on every hit; at 12.5 rounds/s it can chain-stun a 
 Flat: `Config.Difficulty` health and damage stay 1x. Pressure is the spawn interval (3 s,
 x0.95 per minute to 1.5 s), the max-alive schedule (10 / 14 / 20 / 26, late 30), the phase mix
 (Walker-only up to W38 R30 B16 H16) and the player count (`Config.PlayerCountScaling`: spawn
-interval x0.8, +3 alive and +1 heavy per extra living player, hard cap 44).
+interval x0.8, +3 alive and +1 heavy per extra living player, hard cap 44). On top of that
+the breaches below give it a rhythm instead of a steady trickle.
+
+### Breaches (built 2026-11-18, not played)
+
+Design and numbers: [FUN_BREACHES.md](sprints/FUN_BREACHES.md); code `BreachService`,
+`Rules/Breach`, `Config.Breaches` (`Enabled = false` is the old trickle).
+
+- **The alert** (one per run, the squad's): shots with Infected in earshot, blasts, call-ins
+  and each Infected first coming close raise it; 8 s of quiet and it falls. Time alone adds
+  a little, and late in the run it never falls below a third of the threshold.
+- **A breach** at the threshold: a siren and screams from one side, Control names the side,
+  a red BREACH arrow on screen; 4 s later a horde of the run's mix floods in from that side
+  over 10 s (10, +4 per extra player, +10 late, at most 32, never past the cap of 44).
+- **The rhythm:** Calm (the trickle at about 60%) → Tension (Control: "You're making
+  noise", the trickle as before) → Breach → Relief (30-50 s, nothing builds, the trickle at
+  40%) → Calm. Pressure (run time, full at 12 minutes) lowers the threshold, shortens the
+  relief and grows the horde.
+- **The main objective** brings one breach at 40% of its work, at its site (after the Warden
+  if he is on the field then).
+- **Never** in a run's first 60 s, while the Warden is on the field, during extraction, on a
+  quiet (awareness) mission.
+- **Dev:** F1 > INFECTED > BREACHES > Breach now; the strip under the title reads
+  "alert 45% Tension, pressure 30%".
 
 ### Stores and the priority pallet
 

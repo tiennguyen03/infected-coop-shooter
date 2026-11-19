@@ -355,6 +355,14 @@ local function tabs(): { Tab }
 				},
 				{ title = "SPAWN AROUND THE SQUAD", rows = spawnRows },
 				{
+					-- The alert, phase and pressure are on the strip under the title.
+					title = "BREACHES",
+					actions = acts({
+						label = "Breach now",
+						send = cmd("BreachNow"),
+					}),
+				},
+				{
 					title = "THE WARDEN",
 					actions = acts({
 						label = "To the objective",
@@ -679,6 +687,18 @@ local function updateInfo(dt: number)
 			then "  ·  SPAWNS OFF"
 			else "")
 		.. (if workspace:GetAttribute(Attributes.GamePaused) == true then "  ·  PAUSED" else "")
+	-- The breach director (BreachService): alert as a share of the threshold, phase, pressure.
+	local phase = workspace:GetAttribute(Attributes.BreachPhase)
+	if Config.Breaches.Enabled and phase ~= nil then
+		local alert = (workspace:GetAttribute(Attributes.BreachAlert) :: number?) or 0
+		local pressure = (workspace:GetAttribute(Attributes.BreachPressure) :: number?) or 0
+		flags ..= string.format(
+			"  ·  alert %d%% %s, pressure %d%%",
+			math.floor(alert * 100 + 0.5),
+			tostring(phase),
+			math.floor(pressure * 100 + 0.5)
+		)
+	end
 	if infoLabel then
 		infoLabel.Text = string.format(
 			"%.0f fps  ·  %s  ·  %d Infected  ·  me %s%s   [%s dev tools]",

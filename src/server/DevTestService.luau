@@ -522,6 +522,10 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 		workspace:SetAttribute(Attributes.DevSpawnsOff, off)
 		print(`[DevTest] Infected spawning {if off then "OFF" else "ON"}`)
 	end,
+	-- A breach round the squad now (BreachService; the alert and pressure are on the strip).
+	BreachNow = function()
+		print("[DevTest] BreachNow ->", require(script.Parent.BreachService).breachNow())
+	end,
 	ActivateObjective = function()
 		require(script.Parent.ObjectiveService).activateNow()
 		print("[DevTest] ActivateObjective")

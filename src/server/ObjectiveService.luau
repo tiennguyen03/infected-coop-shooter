@@ -35,6 +35,7 @@ local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local RunStates = require(ReplicatedStorage.Shared.RunStates)
 local Rules = require(ReplicatedStorage.Shared.Rules.Objectives)
 local BossAct = require(ReplicatedStorage.Shared.Rules.BossAct)
+local BreachService = require(script.Parent.BreachService)
 local DeltaXL = require(script.Parent.DeltaXL)
 local DifficultyService = require(script.Parent.DifficultyService)
 local EnemyService = require(script.Parent.EnemyService)
@@ -691,6 +692,27 @@ local function stepAct(slot: Slot)
 	end
 end
 
+-- The main objective's breach (Config.Breaches.Objective): once per run at At of its work,
+-- at its site. BreachService holds it while the Warden is on the field.
+local breachCalled = false
+local function stepBreach(slot: Slot)
+	local objective = slot.objective
+	if breachCalled or slot.role ~= "main" or not objective or slot.state ~= "active" then
+		return
+	end
+	local share = 0
+	if objective.share then
+		share = objective.share()
+	else
+		local progress = objective.progress()
+		share = BossAct.share(progress.done, progress.total)
+	end
+	if share >= Config.Breaches.Objective.At then
+		breachCalled = true
+		BreachService.objective(positionOf(slot))
+	end
+end
+
 local function stepBoard(deltaTime: number)
 	if #board == 0 or not armed or PauseService.isPaused() or not RunStates.isLive() then
 		return
@@ -724,6 +746,7 @@ local function stepBoard(deltaTime: number)
 					finish(slot, if slot.role == "main" then "done" else "failed")
 				end
 			end
+			stepBreach(slot)
 			stepAct(slot)
 		end
 	end
@@ -882,6 +905,14 @@ local function onHoldHeartbeat(deltaTime: number)
 	local anyone, playersIn, playersLiving = Squad.zoneCount(zone)
 	if anyone then
 		progress += deltaTime
+	end
+	-- The hold's breach (Config.Breaches.Objective), as the pools' main objective has.
+	if
+		not breachCalled
+		and progress >= Config.Objective.RequiredSeconds * Config.Breaches.Objective.At
+	then
+		breachCalled = true
+		BreachService.objective(Config.Objective.ZonePosition)
 	end
 
 	timeSinceSync += deltaTime
@@ -1068,6 +1099,7 @@ function ObjectiveService.reset()
 	teardown()
 	clearHold()
 	completed = false
+	breachCalled = false
 	progress = 0
 	timeSinceSync = 0
 	sinceSync = 0

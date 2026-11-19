@@ -2401,6 +2401,61 @@ local Config = {
 		HeavyCapBonus = 2,
 	},
 
+	-- Breaches and the pressure rhythm (owner 2026-11-18, "it's not really that challenging or
+	-- fun"; docs/PROGRESSION.md > Breaches, docs/sprints/FUN_BREACHES.md; BreachService,
+	-- Rules/Breach). One alert meter per run: being loud (shots with Infected in earshot,
+	-- blasts, call-ins) and fresh contact raise it, going quiet lets it fall. At the threshold
+	-- a breach: a warning (sound + radio + a marker on screen), then a horde from one side over
+	-- FloodSeconds, then a relief where nothing builds. Pressure 0..1 over RampSeconds makes
+	-- breaches bigger and more frequent late. Enabled = false: the old steady trickle.
+	Breaches = {
+		Enabled = true,
+		Threshold = { 150, 90 }, -- alert for a breach { run start, full pressure }
+		Passive = { 0.15, 0.5 }, -- alert a second from time alone { early, late }
+		TensionAt = 0.5, -- share of the threshold: Calm turns to Tension
+		QuietDelay = 8, -- seconds after the last loud moment before the alert falls
+		Decay = 4, -- alert a second while quiet
+		Floor = { 0, 0.35 }, -- share of the threshold the alert never falls below { early, late }
+		MaxGainPerSecond = 5, -- gunfire's most alert in one second, every gun together
+		RampSeconds = 720, -- run seconds (threat clock) to full pressure
+		FirstAfter = 60, -- no breach in a run's first seconds
+		WarnSeconds = 4, -- warning before the first body
+		FloodSeconds = 10, -- the horde arrives over this long
+		Relief = { 50, 30 }, -- seconds of quiet after a breach { early, late }
+		Horde = { Base = 10, PerExtraPlayer = 4, Late = 10, Max = 32 }, -- never past MaxAliveHardCap
+		Distance = 65, -- studs from the squad's middle to the side they come from
+		Spread = 16, -- studs: how wide the side is
+		-- The roaming spawn interval's multiplier per phase (bigger = fewer): the quiet stretches.
+		Trickle = { Calm = 1.6, Tension = 1, Breach = 3, Relief = 2.5 } :: { [string]: number },
+		-- What raises the alert.
+		Sources = {
+			Shot = 0.25, -- per shot at ShotReach studs of noise (scaled by the gun's Noise)
+			ShotReach = 110,
+			Blast = 10, -- a frag, the Goose (anything through KitService.blast)
+			CallIn = 12, -- a call-in going off; a call-in row's own BreachAlert overrides it
+			Spotted = 1.5, -- an Infected coming within SpotRange of a squad member, once each
+			SpotRange = 30,
+		},
+		-- The main objective (or the single hold) brings one breach at this share of its work,
+		-- at its site; it waits while the Warden is on the field.
+		Objective = { Enabled = true, At = 0.4 },
+		-- Heard where they come from (WorldSounds.at at the side, so the direction carries).
+		WarningSounds = {
+			{ Bank = "ambience", Group = "amb_siren", Volume = 0.5 },
+			{ Bank = "brute", Group = "brute_idle", Volume = 1 },
+			{ Bank = "runner", Group = "runner_idle", Volume = 1 },
+		},
+		-- Control's lines (lore developer pass; plain words). `{side}` = a compass word.
+		Radio = {
+			Tension = "Lot of movement on the sensors, Pike. You're making noise.",
+			Breach = "Big group breaking through to your {side}. Brace!",
+			Objective = "They heard the work. Big group coming in from the {side}. Hold the site!",
+			Relief = "That's the worst of it. Catch your breath.",
+		},
+		ReliefLineAt = 0.25, -- the relief line once this share of the horde is left alive
+		Marker = { Seconds = 14, Radius = 0.36 }, -- the on-screen arrow: how long, share of the screen
+	},
+
 	-- Spawn director phases (Sprint 9): type weights per run-time window,
 	-- plus fairness caps. Enemy stats live in shared/EnemyDefinitions.luau.
 	Spawning = {
