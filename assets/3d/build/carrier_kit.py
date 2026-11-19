@@ -687,21 +687,14 @@ def egg_memorial(b):
 
 
 def egg_scoreboard(b):
-    """The districts' tally board: a painted steel sheet, five rows, chalk strokes in fives.
-    (Row names are lettering in carrier_v2 / a SurfaceGui in game.) Origin on the wall."""
+    """The districts' tally board: a painted steel sheet, five ruled rows. Each row's name and
+    its painted number are lettering (carrier_v2 / SurfaceGui in game, counted by TallyBoards;
+    owner 2026-11-18: numbers, not chalk strokes). Origin on the wall."""
     R(b, 0, 0.2, 0, 8.4, -5.6, 5.6, "dark_d")
     R(b, 0.2, 0.26, 7.0, 7.1, -5.3, 5.3, "white_d")
-    counts = (11, 6, 4, 2, 0)
-    for r, n in enumerate(counts):
+    for r in range(5):
         y = 5.9 - r * 1.25
         R(b, 0.2, 0.24, y - 0.42, y - 0.38, -5.3, 5.3, "dark_l")
-        for i in range(n):
-            g, m = divmod(i, 5)
-            z = 0.2 + g * 1.5 + m * 0.24
-            if m == 4:
-                rbc(b, (0.23, y + 0.15, 0.2 + g * 1.5 + 0.4), (0.04, 0.9, 0.08), "white_l", rot=(60, 0, 0))
-            else:
-                R(b, 0.2, 0.25, y - 0.2, y + 0.5, z - 0.04, z + 0.04, "white_l")
     R(b, 0.2, 1.0, 0.0, 0.2, -5.6, 5.6, "gun_d")  # chalk ledge
     R(b, 0.4, 0.8, 0.2, 0.35, -1.0, -0.2, "white_l")
 

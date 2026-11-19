@@ -18,7 +18,8 @@ published from `main`.
 
 | PR | What | What to look at |
 |---|---|---|
-| #77 Carrier v2 in the lobby | The revamped ship in the lobby: frames, pipes, deck gear, Easter eggs, every seller posed in their own corner, the map room open, a hidden nook under the ramp, the burning city straight ahead (`docs/sprints/CARRIER_V2.md` > In the lobby; `Config.Lobby.CarrierV2.Enabled` turns it off) | not yet seen in Studio; the poses are set blind and may need nudging; the sellers' idle loops are still to make |
+| Carrier follow-ups (`claude/carrier-followups`) | The call-in tallies on the hull and the MISSIONS HOME board are numbers now ("HAMMER 1,284"), and they go up for real as squads use call-ins and come home; the DAYS SINCE board counts up every day; every seller plays their own little idle loop (sip of tea, pen toss, hammock rock...) | the lobby: do the numbers read the right way round; do the sellers' moves look natural on their seats (they were keyed blind); in a published game, after a run, the numbers on the Carrier went up |
+| #77 Carrier v2 in the lobby | The revamped ship in the lobby: frames, pipes, deck gear, Easter eggs, every seller posed in their own corner, the map room open, a hidden nook under the ramp, the burning city straight ahead (`docs/sprints/CARRIER_V2.md` > In the lobby; `Config.Lobby.CarrierV2.Enabled` turns it off) | not yet seen in Studio; the poses are set blind and may need nudging; the idle loops are in the Carrier follow-ups row above |
 | #14 | Kill feedback: dark blood burst, soft tick on a kill | does a kill feel better; is the tick annoying |
 | #15 | Rewards crate after the hold, 60 s extraction with a second wave, Warden chest plate 400 | extraction length, the second wave |
 | #16 | Economy: missions pay merits; tabs stored | merits arrive in the lobby after extracting |
