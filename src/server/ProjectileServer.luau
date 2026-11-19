@@ -202,6 +202,10 @@ function ProjectileServer.hitMultiplier(
 	-- The Index's armour (IndexService): a plated part takes the round at the armoured rate
 	-- (DamageService routes it to the plate); a limb whose plate is gone is exposed.
 	if typeof(part:GetAttribute(Attributes.PlateHealth)) == "number" then
+		-- The weak spot (his back) takes the round whole and pops the headshot marker.
+		if typeof(part:GetAttribute(Attributes.WeakSpot)) == "number" then
+			return Config.Index.Warden.WeakSpot.RoundMultiplier, "headshot"
+		end
 		return Config.Index.Warden.ArmouredMultiplier, "plate"
 	end
 	if part.Name ~= "Head" then
@@ -399,7 +403,7 @@ local function onFireRequest(
 	lastFireTime[player] = now
 	-- The Infected hear it (Config.Awareness): the gun's reach, or its suppressor's.
 	local barrel = LoadoutService.fitted(player, weapon.Id, "Barrel")
-	EnemyService.noise(root.Position, WeaponDefinitions.shotNoise(weapon, barrel))
+	EnemyService.noise(root.Position, WeaponDefinitions.shotNoise(weapon, barrel), "shot")
 	local exclude = excludeList(character)
 	-- The client says whether it is aiming down sights; that only tightens the cone (the
 	-- speed penalty is client-owned movement either way), so trusting it costs nothing.

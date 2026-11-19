@@ -23,6 +23,11 @@ local function onImpact(kind: string, ...: any)
 		if typeof(seconds) == "number" and seconds > 0 then
 			AnimationController.playKnockdown(seconds)
 		end
+	elseif kind == Messages.Impact.GetUp then
+		local seconds = ... :: number
+		if typeof(seconds) == "number" and seconds > 0 then
+			AnimationController.getUpNow(seconds)
+		end
 	elseif kind == Messages.Impact.Push then
 		local shove = ... :: Vector3
 		if typeof(shove) == "Vector3" then

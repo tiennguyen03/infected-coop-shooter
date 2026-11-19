@@ -206,8 +206,8 @@ UIScale) and its text through `HudTheme.label`.
   the thumbstick and buttons, DOWNED to 40% down, and drop side objectives' reason line.
 - **Nothing stacks on anything** (2026-11-17, Nova: "the in game UI is clutter and overstack
   each other"): elements whose height changes share one flow instead of fixed offsets. The
-  left column (`HudTheme.inLeftColumn`, `Config.Hud`) is the squad panel, then the objective
-  list; the mission stack (`MissionLine.attach`) is the mission line with its meter, then
+  left column (`HudTheme.inLeftColumn`, `Config.Hud`) is the reinforcements line, the squad
+  panel, then the objective list; the mission stack (`MissionLine.attach`) is the mission line with its meter, then
   subtitles (and on touch the insert card). A new HUD element that grows joins a flow.
 - **Motion:** appear 0.18 s Quad Out (fade + 8 px rise or a 40 px slide for cards),
   disappear 0.3 s fade; the health trail holds 0.35 s then shrinks 0.25 s; pulses are
@@ -220,9 +220,10 @@ UIScale) and its text through `HudTheme.label`.
 |---|---|---|
 | Health stack (`HealthBarUI`) | top left (16,12) | 400x16 red bar, white damage trail; shield 400x6 white bar under it with a "+N" tag; low health: red outline + red edge vignette pulsing; downed: dim fill, vignette held |
 | Abilities (`AbilityUI`) | top left (16,44) | seven 38 px circles G / F / V / 1-4 (frag, shove, stim, the call-ins): key letter from `Config.Keys`, name under (PC); cooling: white fill rising, seconds; grenades, stims and call-in charges as yellow squares under the circle, the circle dims when empty; a diamond marks an upgrade in the slot |
-| Resupply (`ResupplyUI`) | top left (16,108) | 14 pt line + 240x4 bar with quarter ticks; ready: "RESUPPLY READY [X] FLARE" with the bar pulsing; inbound: "PALLET 0:14", bar drains |
+| Resupply (`ResupplyUI`) | top left (16,108) | 14 pt line + 240x4 bar with quarter ticks; ready: "RESUPPLY READY [X] FLARE" with the bar pulsing; paid for but the flare's wait running (`Config.Scarcity.Resupply`): "RESUPPLY  FLARE IN 1:12" (yellow), bar dim; inbound: "PALLET 0:14", bar drains |
+| Reinforcements (`ReinforceUI`, `Config.Scarcity.Reinforce`) | left column, first (over the squad panel) | "REINFORCEMENTS" 12 dim + one 9 px square per reinforcement, 4 apart: yellow left, empty outline spent (one just spent flashes red.l 0.5 s); "NO REINFORCEMENTS" red.l when none; hidden when reinforcements are off |
 | Stamina (`StaminaUI`) | top left (16,38), under the shield bar | 300x4 yellow bar, no label: shorter and thinner than health; hidden until stamina is spent (0.18 s in), fades out 0.3 s once full for 2 s (`Config.Stamina.BarHideAfter`); winded: fill and outline red.l, pulsing twice a second (15 Hz) until sprint is back |
-| Squad panel (`SquadPanelUI`, `Config.SquadPanel`) | left column (16,150), first; as tall as its rows | one 190x32 row per other squad member (max 3, callsign order): name 14 in friendly blue (a player's display name, a bot's callsign), state 12 right-aligned, 190x6 health bar (red; red.l with a red outline under 30%), 190x3 white Armour Plate bar when plated; downed: "DOWN 23s" on a draining red.l bar, "REVIVING" on a filling blue bar; dead: dim, "DEAD 8s" while a bot's respawn runs; a red.l flash on a hit of 25% or a down. Repaints on attribute changes; a 0.25 s timer only while a countdown shows |
+| Squad panel (`SquadPanelUI`, `Config.SquadPanel`) | left column (16,150), under the reinforcements line; as tall as its rows | one 190x32 row per other squad member (max 3, callsign order): name 14 in friendly blue (a player's display name, a bot's callsign), state 12 right-aligned, 190x6 health bar (red; red.l with a red outline under 30%), 190x3 white Armour Plate bar when plated; downed: "DOWN 23s" on a draining red.l bar, "REVIVING" on a filling blue bar; dead: dim, "DEAD 8s" while a bot's respawn runs; a red.l flash on a hit of 25% or a down. Repaints on attribute changes; a 0.25 s timer only while a countdown shows |
 | Run timer (`RunTimerUI`) | top centre (0,8) | 16 pt, no panel |
 | Ammo (`LoadoutUI`) | crosshair (+40,+40) | the gun in hand 12 pt above it with "[Q] PISTOL" dim (the other gun); magazine GothamBlack 26 + " / reserve" 16 dim; yellow low, "RELOADING" + bar, red "DRY [R]"; attribute-driven |
 | Loadout screen (`LoadoutMenu`: the Loadmaster's LOADOUT, the match's ARMS ROOM on B) | centre, fitted to the screen (below) | three columns of rows with the item's shape, and an inspect panel with the item turning in 3D over its stat bars: "The Loadout screen" below |
@@ -235,7 +236,7 @@ UIScale) and its text through `HudTheme.label`.
 | Subtitles (`BuffNoticeUI.subtitle`) | mission stack, under the mission line and meter (touch: the insert card under them) | "CONTROL: radio line" (BuffNotice kind radio), the Warden's "WARDEN: ..." tells |
 | Notification cards (`BuffNoticeUI.card`) | top right (-16,12), y 120 during a boss | dark strip, red-outlined square, bold title; pickups, picks, the flare call, an upgrade landing; max 3 |
 | Boss bar (`BossBarUI`) | top right (-16,12) | name in red right-aligned, 380x16 faceted body bar ending in a round emblem (blue while stunned), six 56x6 plate bars with labels |
-| Downed / K.I.A. (`RunEndUI`) | centre (0.5, 0.22); touch (0.5, 0.4) | "DOWNED" 40 red + 360x4 bleed-out bar + line; "K.I.A." + line; no panel |
+| Downed / K.I.A. (`RunEndUI`) | centre (0.5, 0.22); touch (0.5, 0.4) | "DOWNED" 40 red + 360x4 bleed-out bar + line; "K.I.A." + line ("Reinforcement in 6s · dropping beside PIKE TWO", the name blue; or "No reinforcements left..."); no panel |
 | Results (`RunEndUI`) | full screen | menu style: dark red field, corner L-brackets, "//OPERATION COMPLETE" yellow or "//SQUAD WIPED" red, stats in a red-outlined box, cream READY |
 | Results (`RunEndUI`) wallet | under the "+N MERITS" line | dim 14 pt "ON YOUR RECORD" + the wallet readout; counts up from the balance before the pay; hidden until the match has read the record |
 | Wallet (`WalletReadout`; lobby `WalletUI`) | the Carrier: right end of Roblox's top bar (ScreenInsets TopbarSafeInsets, 16 px in), DisplayOrder 4, always on | medal glyph + merits in yellow, tag glyph + tabs in white, GothamBlack 20, no panel, no words; numbers by `Rules/Wallet` (exact under 10,000, then "12.4k", "1.2M", rounded down); a change counts to the new number over 0.6 s at 15 Hz while the number starts white and the glyph swells 35% and settles |
@@ -662,6 +663,17 @@ stencil. 1,912 tris a bird with both rotors (vehicle cap 5,000). Light: one Poin
 transparency on geometry"**: the rotor blur discs (two flat cylinders a bird, fading
 in to 0.8 transparent over the last 6 s before lift while the blades fade to 0.6, never out;
 `Rules/RotorBlur`) are VFX, like the breach ghost.
+
+**The ATV** (`assets/3d/build/atv.py`, prefix `veh_`, collection `Vehicles`; Nova,
+2026-11-17): the body is Nova's own sculpted model (`assets/3d/atvrbx.obj`, 1.7M tris, not in
+git), cut and reduced once into `assets/3d/source/atv_body.obj` and painted by region in the
+build; the wheel is built from primitives at the model's tyre size (cut from the model it was
+an open shell Roblox showed through). Paint follows Nova's colour reference: `olive_d` on the
+upper panels only (cowl, rear fender tops; `olive` read as lime in the sun), `dark` / `dark_d`
+for the lower body, the middle, the grille and the seat, `gun_d` bars (handlebar, bumper, rack
+rail), `dark_d` lugged tyres with a `gun` lip, `dark` rim, `gun_l` hub and bolts. No markings.
+**Budget exception (Nova, 2026-11-17): ~12k tris**, over the 5,000 vehicle cap: the body
+7,946 + four wheels of 564 = 10,202 an ATV, two at most per squad. Only the body casts a shadow.
 
 **The Doorman** (`assets/3d/build/doorman.py`, prefix `dep_`, collection `Deployables`): a
 belt-fed medium machine gun on a squat tripod, run by a sensor head. Read from 25 studs: the

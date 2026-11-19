@@ -21,8 +21,16 @@ function LightsOn.new(context: Types.Context): Types.Objective
 
 	local function light()
 		local posts: { BasePart } = {}
-		local dressing = workspace:FindFirstChild("Dressing")
-		for _, item in if dressing then dressing:GetDescendants() else {} do
+		-- The map's dressing, and the big map's grey lamp posts (server DeltaXL).
+		local items = {}
+		for _, name in { "Dressing", "DeltaXLBlocks" } do
+			local folder = workspace:FindFirstChild(name)
+			if folder then
+				local list = folder:GetDescendants()
+				table.move(list, 1, #list, #items + 1, items)
+			end
+		end
+		for _, item in items do
 			if
 				item:IsA("BasePart")
 				and item.Name == LAMP_POST

@@ -22,6 +22,7 @@ local KitPrices = require(ReplicatedStorage.Shared.KitPrices)
 local DeskShop = require(script.Parent.DeskShop)
 local DeskTalk = require(script.Parent.DeskTalk)
 local GunsmithUI = require(script.Parent.GunsmithUI)
+local KitModsTab = require(script.Parent.KitModsTab)
 local HoldStill = require(script.Parent.HoldStill)
 local HudTheme = require(script.Parent.HudTheme)
 local LoadoutMenu = require(script.Parent.LoadoutMenu)
@@ -54,6 +55,7 @@ local talkCloseAt = 0
 local signed: Loadout.Loadout? = nil -- the last Loadout the server accepted
 local pending: Loadout.Loadout? = nil -- sent, waiting for the answer
 local menu: LoadoutMenu.Handle? = nil
+local kitTab: KitModsTab.Tab? = nil -- the KIT MODS tab over the Loadout (KitModsTab)
 local remote: RemoteEvent
 
 -- --------------------------------------------------------------- the talk panel
@@ -116,6 +118,10 @@ end
 
 local function closeLoadout(line: string?)
 	ContextActionService:UnbindAction(ACTION_BACK)
+	if kitTab then
+		kitTab.destroy()
+		kitTab = nil
+	end
 	if menu then
 		menu.destroy()
 		menu = nil
@@ -193,6 +199,41 @@ local function openLoadout()
 		end
 	end)
 	menu = handle
+
+	-- LOADOUT | KIT MODS: the Loadout screen's own tab buttons, left of BACK (design pixels).
+	local frameSize = handle.frame.Size
+	local W, H = frameSize.X.Offset, frameSize.Y.Offset
+	local tab = KitModsTab.mount(handle.frame, W, H, if W >= 1200 then 28 else 18)
+	kitTab = tab
+	local tabButtons: { TextButton } = {}
+	local function showTab(index: number)
+		tab.show(index == 2)
+		for i, button in tabButtons do
+			local on = i == index
+			button.BackgroundColor3 = if on then HudTheme.Color.MenuSelect else HudTheme.Color.Track
+			button.BackgroundTransparency = if on then 0 else 0.35
+			button.TextColor3 = if on then HudTheme.Color.MenuSelectText else HudTheme.Color.Text
+		end
+	end
+	local TAB_W = 150
+	for index, label in { "LOADOUT", "KIT MODS" } do
+		local button = Instance.new("TextButton")
+		button.Name = `Tab{index}`
+		button.AutoButtonColor = false
+		button.BorderSizePixel = 0
+		button.Size = UDim2.fromOffset(TAB_W, 36)
+		button.Position = UDim2.fromOffset(W - 24 - 120 - 12 - (3 - index) * (TAB_W + 6), 16)
+		button.Font = HudTheme.Font.Line
+		button.TextSize = 15
+		button.Text = label
+		button.Parent = handle.frame
+		button.Activated:Connect(function()
+			showTab(index)
+		end)
+		table.insert(tabButtons, button)
+	end
+	showTab(1)
+
 	ContextActionService:BindAction(
 		ACTION_BACK,
 		backAction,
