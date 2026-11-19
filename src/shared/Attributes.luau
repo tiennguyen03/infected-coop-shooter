@@ -41,6 +41,14 @@ local Attributes = table.freeze({
 	ObjectiveActive = "ObjectiveActive",
 	ObjectiveCompleted = "ObjectiveCompleted",
 	ExtractionActive = "ExtractionActive",
+	-- workspace: the big map is built (server DeltaXL writes; Config.DeltaXL)
+	DeltaXL = "DeltaXL",
+	-- workspace, Vector3: where this run's squad landed (DeltaXL writes when the draw picks a
+	-- corner; ArenaService's pads and the insertion cutscene read it; none = the LZ)
+	DropPoint = "DropPoint",
+	-- workspace, Vector3: the helicopter's pickup, set when the main objective is done
+	-- (DeltaXL writes; ExtractionService reads; none = the LZ)
+	PickupPoint = "PickupPoint",
 	-- spawn interval multiplier while extracting (ExtractionService writes, EnemyService reads)
 	ExtractionSpawnFactor = "ExtractionSpawnFactor",
 	IndexActive = "IndexActive",
@@ -50,6 +58,7 @@ local Attributes = table.freeze({
 	ResupplyDropIn = "ResupplyDropIn",
 	ResupplyFlareCooling = "ResupplyFlareCooling", -- workspace: true while the flare cooldown runs (RequisitionService)
 	DevSpawnsOff = "DevSpawnsOff",
+	DevMovesOff = "DevMovesOff", -- workspace: true turns Config.InfectedMoves off for the session (dev panel)
 	-- lobby: a Lantern bird model's lift time (server time, workspace:GetServerTimeNow()) while
 	-- its spot counts down; nil otherwise (LaunchService writes, LanternSpool reads)
 	LiftAt = "LiftAt",
@@ -91,6 +100,10 @@ local Attributes = table.freeze({
 	-- Player: what is fitted to each of their guns, Rules/Loadout.encodeFitted
 	-- ("gun.Slot=option;..."; LoadoutService in the match, LoadmasterService on the ship)
 	Fitted = "Fitted",
+	-- Player: the Kit Mod ranks held (match: KitModService from the record; lobby:
+	-- KitModService after a buy), Rules/KitModRules.encode ("stim_carry=2;sprint_roll=1").
+	-- LoadoutService (stims carried) and SprintController (stamina) read it.
+	KitRanks = "KitRanks",
 	LastShotAt = "LastShotAt", -- local only: the client stamps each of its own shots
 	UpgradeKit = "UpgradeKit",
 
@@ -131,6 +144,12 @@ local Attributes = table.freeze({
 	VehicleHealth = "VehicleHealth",
 	VehicleMaxHealth = "VehicleMaxHealth",
 	KnockGraceUntil = "KnockGraceUntil",
+	-- Dangerous Infected (Config.InfectedMoves, EnemyService): on a soldier's character, true
+	-- while a Runner pins them; on a Runner's model, true while it pins someone (bots shoot
+	-- it first); on a soldier's character, the speed factor a Walker crowd's grab leaves.
+	Pinned = "Pinned",
+	Pinning = "Pinning",
+	Grabbed = "Grabbed",
 	CoverMoveUntil = "CoverMoveUntil",
 	RootDrop = "RootDrop",
 	StandHipHeight = "StandHipHeight",
@@ -148,6 +167,7 @@ local Attributes = table.freeze({
 	Cracked = "Cracked",
 	Exposed = "Exposed",
 	Flank = "Flank",
+	WeakSpot = "WeakSpot", -- a plate's share of each round passed to the body (the Warden's back)
 
 	-- Blast visuals (AirStrikeService, KitService, MineService): the server tags each blast
 	-- flash part with the CollectionService tag BlastTag (a tag, not an attribute, kept here

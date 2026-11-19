@@ -20,6 +20,7 @@ local BOOT: { ModuleScript } = {
 	Server.Lifecycle,
 	Server.SkyService,
 	Server.ArenaService,
+	Server.DeltaXL, -- the big map (Config.DeltaXL): after the base it builds round
 	Server.Squad,
 	Server.PauseService,
 	Server.WorldSounds,
@@ -53,6 +54,8 @@ local BOOT: { ModuleScript } = {
 	Server.BotService,
 	Server.HandoffService,
 	Server.MeritService,
+	Server.KitModService, -- the Kit Mod ranks off the record (after MeritService, LoadoutService)
+	Server.TallyService,
 	Server.InsertionService,
 	Server.NightVisionService,
 	Server.RunManager,

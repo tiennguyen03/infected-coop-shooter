@@ -35,6 +35,7 @@ local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local RunStates = require(ReplicatedStorage.Shared.RunStates)
 local Rules = require(ReplicatedStorage.Shared.Rules.Objectives)
 local BossAct = require(ReplicatedStorage.Shared.Rules.BossAct)
+local DeltaXL = require(script.Parent.DeltaXL)
 local DifficultyService = require(script.Parent.DifficultyService)
 local EnemyService = require(script.Parent.EnemyService)
 local IndexService = require(script.Parent.IndexService)
@@ -113,12 +114,18 @@ local forcedMain: string? = nil
 local forcedSide: string? = nil
 local forcedSite: number? = nil
 local revealAll = false
+-- The main objective's card and Control's brief have gone out this draw (ObjectiveService.brief).
+local announced = false
 
 local function vector(vec: ObjectiveDefinitions.Vec): Vector3
 	return Vector3.new(vec[1], vec[2], vec[3])
 end
 
+-- The map whose pools are played: the big map's (Config.DeltaXL.Map) while it is built.
 local function currentMap(): ObjectiveDefinitions.Map?
+	if DeltaXL.active() then
+		return Config.Objectives.Maps[Config.DeltaXL.Map]
+	end
 	return Config.Objectives.Maps[Missions.current().Id]
 end
 
@@ -275,6 +282,11 @@ local function finishMain(center: Vector3, crateOffset: number, after: number, b
 			then "extraction"
 			else "the Warden"}`
 	)
+	-- The big map: the pickup is chosen (and only now revealed) from where the job was done.
+	if DeltaXL.active() then
+		local _, place = DeltaXL.choosePickup(center, IndexService.position())
+		say((string.gsub(Config.DeltaXL.PickupRadio, "{place}", place)))
+	end
 	local generation = runGeneration
 	task.delay(after, function()
 		if generation ~= runGeneration then
@@ -542,6 +554,7 @@ local function teardown()
 	end
 	table.clear(board)
 	act = freshAct()
+	announced = false
 	armed = false
 	sinceArm = 0
 	lastSignature = ""
@@ -601,6 +614,7 @@ local function draw(requested: string?)
 	else
 		mainId = Rules.draw(map.Main, lastMain, math.random())
 	end
+	local mainAt: Vector3? = nil
 	if mainId then
 		lastMain = mainId
 		local slot = newSlot("main", "main", 0, mainId, if forcedMain then forcedSite else nil)
@@ -610,15 +624,39 @@ local function draw(requested: string?)
 				slot.state = "pending"
 			end
 			table.insert(board, slot)
+			mainAt = slot.position
 		end
+	end
+	-- The big map: the squad drops at a corner far from the main objective (Rules/DropPickup).
+	if DeltaXL.active() and mainAt then
+		DeltaXL.chooseDrop(mainAt)
 	end
 	local rolls = {}
 	for _ = 1, Config.Objectives.SideCount do
 		table.insert(rolls, math.random())
 	end
 	local sideForced = if forcedSide and Rules.offers(map.Side, forcedSide) then forcedSide else nil
-	for index, id in Rules.drawSides(map.Side, Config.Objectives.SideCount, rolls, sideForced) do
-		local siteIndex = if id == sideForced and not forcedMain then forcedSite else nil
+	local sideIds = Rules.drawSides(map.Side, Config.Objectives.SideCount, rolls, sideForced)
+	-- The big map: side 1 near the drop, side 2 on the way to the main objective.
+	local planned: { [number]: number } = {}
+	if DeltaXL.active() and mainAt then
+		local options: { { Vector3 } } = {}
+		for _, id in sideIds do
+			local positions = {}
+			for _, site in map.Sites[id] or ({} :: { ObjectiveDefinitions.Site }) do
+				table.insert(positions, vector(site.Position))
+			end
+			table.insert(options, positions)
+		end
+		local plan = DeltaXL.planSides(mainAt, options)
+		if plan.first == 2 then
+			sideIds[1], sideIds[2] = sideIds[2], sideIds[1]
+			plan.sites[1], plan.sites[2] = plan.sites[2], plan.sites[1]
+		end
+		planned = plan.sites
+	end
+	for index, id in sideIds do
+		local siteIndex = if id == sideForced and not forcedMain then forcedSite else planned[index]
 		local slot = newSlot(`side{index}`, "side", index, id, siteIndex)
 		if slot then
 			table.insert(board, slot)
@@ -702,13 +740,25 @@ local function stepBoard(deltaTime: number)
 	end
 end
 
--- RunManager, on Insert: the draw, the main objective's card and Control's lines, while the
--- squad lands. The single hold has nothing to say here.
+-- RunManager, as a run starts (before the squad's bodies and bots are placed): on the big
+-- map the objectives are drawn now, because where the squad drops depends on the main
+-- objective (DeltaXL.chooseDrop). Elsewhere nothing happens until `brief`.
+function ObjectiveService.prepare(requested: string?)
+	if DeltaXL.active() and pooled() and #board == 0 and not completed then
+		draw(requested)
+	end
+end
+
+-- RunManager, on Insert: the draw (unless `prepare` made it), the main objective's card and
+-- Control's lines, while the squad lands. The single hold has nothing to say here.
 function ObjectiveService.brief(requested: string?)
-	if not pooled() or #board > 0 or completed then
+	if not pooled() or announced or completed then
 		return
 	end
-	draw(requested)
+	if #board == 0 then
+		draw(requested)
+	end
+	announced = true
 	local main = mainSlot()
 	say(Config.Objectives.Frame)
 	if main then
@@ -927,9 +977,7 @@ end
 -- zone in instead of after Config.Objective.AppearDelay).
 function ObjectiveService.activateNow()
 	if pooled() then
-		if #board == 0 then
-			ObjectiveService.brief(nil)
-		end
+		ObjectiveService.brief(nil) -- once a draw: nothing if it already went out
 		armed = true
 		local main = mainSlot()
 		if main then
@@ -945,9 +993,7 @@ end
 -- found from now. The single hold: the timer that brings the zone in.
 function ObjectiveService.arm()
 	if pooled() then
-		if #board == 0 then
-			ObjectiveService.brief(nil)
-		end
+		ObjectiveService.brief(nil) -- once a draw: nothing if it already went out
 		armed = true
 		return
 	end

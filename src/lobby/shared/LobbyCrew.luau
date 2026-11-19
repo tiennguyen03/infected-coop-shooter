@@ -26,6 +26,7 @@ local LobbyCrew: { Crew } = {
 		lines = {
 			"Chocks and chains. Every spot, every time.",
 			"They hose the birds before I touch them.",
+			"Don't go under the ramp. Nobody's under the ramp.", -- the Visitor (LobbyDesks)
 		},
 	},
 	{

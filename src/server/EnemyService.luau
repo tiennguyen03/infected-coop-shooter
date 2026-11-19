@@ -46,6 +46,9 @@ local WorldSounds = require(script.Parent.WorldSounds)
 local Squad = require(script.Parent.Squad)
 local Lifecycle = require(script.Parent.Lifecycle)
 local Missions = require(script.Parent.Missions)
+local InfectedMoves = require(ReplicatedStorage.Shared.Rules.InfectedMoves)
+local Messages = require(ReplicatedStorage.Shared.Messages)
+local Remotes = require(ReplicatedStorage.Shared.Remotes)
 
 local ENEMY_TAG = "Enemy"
 local ENEMY_COLLISION_GROUP = "Enemy"
@@ -91,6 +94,7 @@ type Zombie = {
 	-- Projectile forms: the windup in progress and whether the last check had a clear throw.
 	windupUntil: number?,
 	throwClear: boolean,
+	lob: boolean?, -- the clear throw is a high lob over cover (Config.InfectedMoves.Hocker.Lob)
 	sac: BasePart?,
 	voicePart: BasePart,
 	nextIdleVoiceAt: number,
@@ -107,6 +111,27 @@ type Zombie = {
 	crippled: boolean?, -- a leg is gone (GoreService): crawl speed, never climbs
 	moveReference: number, -- the move clip's own speed (its rate is pace / this)
 	aware: Aware?, -- on an awareness mission (Config.Awareness); nil = always chase
+	-- A big move in progress (Config.InfectedMoves: the Brute's charge, the Runner's pounce
+	-- and pin) and when the next may start.
+	move: Move?,
+	nextMoveAt: number,
+	ghosted: { BasePart }?, -- parts made non-solid for a pounce and pin (setSolid)
+}
+
+-- A big move (Config.InfectedMoves). The root is anchored and driven through every stage
+-- but a pin's end; `target` is the soldier it is for.
+type Move = {
+	kind: "chargeWindup" | "charge" | "pounceWindup" | "pounce" | "pin",
+	startedAt: number,
+	untilAt: number,
+	target: Squad.Member,
+	yaw: CFrame, -- facing, at the root's position (windups turn it toward the target)
+	from: Vector3,
+	to: Vector3, -- the charge's end or the pounce's landing
+	direction: Vector3, -- flat unit, the charge
+	hit: { [Humanoid]: boolean }, -- the charge: each body once
+	nextTickAt: number, -- the pin's next claw
+	nextVoiceAt: number,
 }
 
 -- What a body on an awareness mission is doing (Rules/Awareness).
@@ -263,6 +288,453 @@ local function flatDirection(away: Vector3, fallback: Vector3): Vector3
 	return if flat.Magnitude > 0.01 then flat.Unit else fallback
 end
 
+-- --- Big moves (Config.InfectedMoves; Rules/InfectedMoves; docs/sprints/FUN_ENEMIES.md).
+-- The Brute's charge and the Runner's pounce run as a small state machine on the body
+-- (zombie.move): a windup (the tell: a sound and a pose, the root anchored and turning to
+-- follow), then the move itself, then a recovery or a stun. A pounce that lands becomes a
+-- pin until the Runner is shot, shoved or times out. The Walker's grab and the Hocker's lob
+-- and barrage hang off their normal attacks.
+
+local MOVES = Config.InfectedMoves
+local moveParams = RaycastParams.new() -- walls between a body and its target: other Infected never block
+moveParams.FilterType = Enum.RaycastFilterType.Exclude
+moveParams.CollisionGroup = ENEMY_COLLISION_GROUP
+local grabTokens: { [Model]: number } = setmetatable({}, { __mode = "k" }) :: any
+-- Control's lines (Config.InfectedMoves.Radio): which first-time lines this run has had.
+local toldThisRun: { [string]: boolean } = {}
+local lastPinRadioAt = -math.huge
+
+local function radio(text: string)
+	Remotes.get("BuffNotice"):FireAllClients(text, Messages.Notice.Radio)
+end
+
+-- A first-time line (FirstCharge, FirstLob), once a run.
+local function radioOnce(key: string)
+	if toldThisRun[key] then
+		return
+	end
+	toldThisRun[key] = true
+	radio((MOVES.Radio :: any)[key])
+end
+
+-- The form's Config.InfectedMoves row, or nil while the moves are off.
+local function movesRow(typeName: string): any
+	if not MOVES.Enabled or workspace:GetAttribute(Attributes.DevMovesOff) == true then
+		return nil
+	end
+	return (MOVES :: any)[typeName]
+end
+
+-- The form's big move ("charge" | "pounce") and its settings, when it has one on.
+local function bigMove(typeName: string): (string?, any)
+	local row = movesRow(typeName)
+	if row and row.Charge and row.Charge.Enabled then
+		return "charge", row.Charge
+	elseif row and row.Pounce and row.Pounce.Enabled then
+		return "pounce", row.Pounce
+	end
+	return nil, nil
+end
+
+local function firstMoveDelay(typeName: string): number
+	local _, settings = bigMove(typeName)
+	return if settings then settings.FirstDelay or 0 else 0
+end
+
+-- Nothing but the target (or open air) between `from` and the target's root.
+local function lineClear(zombie: Zombie, from: Vector3, targetRoot: BasePart): boolean
+	moveParams.FilterDescendantsInstances = { zombie.model }
+	local hit = workspace:Raycast(from, targetRoot.Position - from, moveParams)
+	local character = targetRoot.Parent
+	return hit == nil or (character ~= nil and hit.Instance:IsDescendantOf(character))
+end
+
+-- A soldier a big move may go for: alive, on their feet, not riding, not already pinned.
+local function canBeTaken(member: Squad.Member): boolean
+	local character = member.character
+	return Squad.isAlive(member)
+		and character ~= nil
+		and member.root ~= nil
+		and member.humanoid ~= nil
+		and character:GetAttribute(Attributes.KnockedUntil) == nil
+		and character:GetAttribute(Attributes.Pinned) == nil
+		and character:GetAttribute(Attributes.Riding) == nil
+end
+
+-- A pouncing or pinning Runner is not solid: an anchored body on a soldier would shove
+-- their physics about. Solid again when the move ends.
+local function setSolid(zombie: Zombie, solid: boolean)
+	local ghosted = zombie.ghosted
+	if solid then
+		if ghosted then
+			for _, part in ghosted do
+				part.CanCollide = true
+			end
+		end
+		zombie.ghosted = nil
+	elseif not ghosted then
+		local parts: { BasePart } = {}
+		for _, part in zombie.model:GetDescendants() do
+			if part:IsA("BasePart") and part.CanCollide then
+				part.CanCollide = false
+				table.insert(parts, part)
+			end
+		end
+		zombie.ghosted = parts
+	end
+end
+
+local function moveTrackSpeed(zombie: Zombie, speed: number)
+	local track = zombie.moveTrack
+	if track then
+		track:AdjustSpeed(math.clamp(speed / zombie.moveReference, 0, 3))
+	end
+end
+
+-- Ends the body's big move: a pin lets go (the soldier gets up), the root is free again,
+-- the next move waits its cooldown, and `stun` seconds of stagger follow (a wall, a miss,
+-- a shove). Safe to call on a dead body (the death hands its limp body back the same way).
+local function endMove(zombie: Zombie, now: number, stun: number)
+	local move = zombie.move
+	if not move then
+		return
+	end
+	zombie.move = nil
+	local root = zombie.root
+	local alive = zombie.humanoid.Health > 0
+	if move.kind == "pin" then
+		zombie.model:SetAttribute(Attributes.Pinning, nil)
+		local character = move.target.character
+		if character and character.Parent then
+			character:SetAttribute(Attributes.Pinned, nil)
+		end
+		Squad.standUp(move.target, Config.Knockdown.GetUp)
+		local _, settings = bigMove(zombie.typeName)
+		if alive and settings then
+			-- Thrown clear of the body, short of any wall behind.
+			local back = -move.yaw.LookVector
+			moveParams.FilterDescendantsInstances = { zombie.model }
+			local hop = settings.HopOff or 0
+			local hit = workspace:Raycast(root.Position, back * hop, moveParams)
+			local distance = if hit then math.max(hit.Distance - 1.5, 0) else hop
+			root.CFrame = CFrame.new(root.Position + back * distance) * move.yaw.Rotation
+		end
+	else
+		root.CFrame = CFrame.new(root.Position) * move.yaw.Rotation -- upright again
+	end
+	setSolid(zombie, true) -- a limp body needs its collisions too
+	root.Anchored = false
+	root.AssemblyLinearVelocity = Vector3.zero
+	moveTrackSpeed(zombie, zombie.walkSpeed)
+	local _, settings = bigMove(zombie.typeName)
+	zombie.nextMoveAt = now + (if settings then settings.Cooldown else 5)
+	zombie.nextRepathTime = now
+	zombie.lastRepathPosition = Vector3.new(1e9, 0, 0)
+	if stun > 0 and alive then
+		EnemyService.stagger(zombie.humanoid, stun)
+	end
+end
+
+-- A Brute or Runner with its move ready and a soldier in its band in the open: the windup
+-- starts (the tell). True when it did.
+local function tryStartMove(zombie: Zombie, now: number): boolean
+	if now < zombie.nextMoveAt or zombie.crippled or slowGeneration[zombie.humanoid] then
+		return false
+	end
+	local kind, settings = bigMove(zombie.typeName)
+	if not kind then
+		zombie.nextMoveAt = now + 1
+		return false
+	end
+	zombie.nextMoveAt = now + 0.25 -- not now: look again shortly
+	local root = zombie.root
+	local member, distance = Squad.nearestLiving(root.Position)
+	if not member or not canBeTaken(member) then
+		return false
+	end
+	local targetRoot = member.root :: BasePart
+	if
+		not InfectedMoves.inBand(distance, settings.MinRange, settings.MaxRange)
+		or math.abs(targetRoot.Position.Y - root.Position.Y) > 6
+		or not lineClear(zombie, root.Position, targetRoot)
+	then
+		return false
+	end
+	local here = root.Position
+	local direction = flatDirection(targetRoot.Position - here, root.CFrame.LookVector)
+	zombie.humanoid:MoveTo(here)
+	root.AssemblyLinearVelocity = Vector3.zero
+	root.Anchored = true
+	zombie.move = {
+		kind = if kind == "charge" then "chargeWindup" else "pounceWindup",
+		startedAt = now,
+		untilAt = now + settings.Windup,
+		target = member,
+		yaw = CFrame.lookAt(here, here + direction),
+		from = here,
+		to = here,
+		direction = direction,
+		hit = {},
+		nextTickAt = 0,
+		nextVoiceAt = 0,
+	}
+	moveTrackSpeed(zombie, 0)
+	-- The tell's sound: the Brute bellows, the Runner shrieks.
+	voice(zombie, if kind == "charge" then "idle" else "attack")
+	zombie.nextIdleVoiceAt = math.max(zombie.nextIdleVoiceAt, now + 3)
+	return true
+end
+
+-- Thrown off the side of the charge's line it stands on (the squad scatters).
+local function scatter(member: Squad.Member, direction: Vector3, offset: Vector3, settings: any)
+	local targetRoot = member.root
+	if not targetRoot then
+		return
+	end
+	local right = Vector3.new(direction.Z, 0, -direction.X)
+	local x, z =
+		InfectedMoves.scatter(direction.X, direction.Z, offset:Dot(right), settings.ThrowAlong)
+	local velocity = Vector3.new(x, 0, z) * settings.Throw
+		+ Vector3.new(0, settings.Throw * 0.25, 0)
+	if member.owner then
+		Remotes.get("Impact"):FireClient(member.owner, Messages.Impact.Push, velocity)
+	else
+		targetRoot.AssemblyLinearVelocity = velocity
+	end
+end
+
+-- The feet's height under a root.
+local function feetY(zombie: Zombie): number
+	return zombie.root.Position.Y - zombie.humanoid.HipHeight - zombie.root.Size.Y / 2
+end
+
+local function stepCharge(zombie: Zombie, move: Move, settings: any, now: number)
+	local root = zombie.root
+	local length = (move.to - move.from).Magnitude
+	local travelled = math.min((now - move.startedAt) * settings.Speed, length)
+	local nextPosition = move.from + move.direction * travelled
+	-- Hard cover ahead (at the chest and at the knee) stops him dead: stunned, open to a flank.
+	moveParams.FilterDescendantsInstances = { zombie.model }
+	local probe = move.direction * ((nextPosition - root.Position).Magnitude + settings.Probe)
+	local knee = Vector3.new(root.Position.X, feetY(zombie) + 1.5, root.Position.Z)
+	for _, from in { root.Position, knee } do
+		local hit = workspace:Raycast(from, probe, moveParams)
+		if hit then
+			local model = hit.Instance:FindFirstAncestorOfClass("Model")
+			if not (model and model:FindFirstChildOfClass("Humanoid")) then
+				voice(zombie, "hurt")
+				endMove(zombie, now, settings.WallStun)
+				return
+			end
+		end
+	end
+	root.CFrame = CFrame.new(nextPosition) * move.yaw.Rotation
+	-- Everyone inside the width is hit once: knocked down and thrown aside.
+	local vehicleDamage = EnemyDefinitions[zombie.typeName].VehicleDamage
+	for _, member in Squad.living() do
+		local humanoid, targetRoot = member.humanoid, member.root
+		if not humanoid or not targetRoot or move.hit[humanoid] then
+			continue
+		end
+		local offset = targetRoot.Position - nextPosition
+		local flat = Vector3.new(offset.X, 0, offset.Z)
+		if flat.Magnitude <= settings.Width and math.abs(offset.Y) <= settings.HitHeight then
+			move.hit[humanoid] = true
+			EnemyProjectileService.damagePlayer(humanoid, settings.Damage, nil, vehicleDamage)
+			scatter(member, move.direction, flat, settings)
+			Squad.knock(member, settings.Knockdown)
+		end
+	end
+	if travelled >= length then
+		endMove(zombie, now, settings.Recovery)
+	end
+end
+
+local function startPin(zombie: Zombie, move: Move, settings: any, now: number)
+	move.kind = "pin"
+	move.startedAt = now
+	move.untilAt = now + settings.PinSeconds
+	move.nextTickAt = now + settings.PinTick
+	move.nextVoiceAt = now + 1.2
+	zombie.model:SetAttribute(Attributes.Pinning, true)
+	local character = move.target.character
+	if character then
+		character:SetAttribute(Attributes.Pinned, true)
+	end
+	if zombie.attackTrack then
+		zombie.attackTrack:Play(0.05)
+	end
+	local lines = MOVES.Radio
+	if now - lastPinRadioAt >= lines.PinGap then
+		lastPinRadioAt = now
+		radio((string.gsub(lines.Pinned, "{name}", move.target.name)))
+	end
+end
+
+local function stepPounce(zombie: Zombie, move: Move, settings: any, now: number)
+	local t = math.clamp((now - move.startedAt) / settings.Flight, 0, 1)
+	local from, to = move.from, move.to
+	local x, y, z = InfectedMoves.arc(from.X, from.Y, from.Z, to.X, to.Y, to.Z, settings.Arc, t)
+	zombie.root.CFrame = CFrame.new(x, y, z) * move.yaw.Rotation
+	if t < 1 then
+		return
+	end
+	-- Landed: on the soldier still standing there (not mid-roll), or on nothing.
+	local target = move.target
+	local targetRoot, humanoid, character = target.root, target.humanoid, target.character
+	if targetRoot and humanoid and character and canBeTaken(target) then
+		local offset = targetRoot.Position - to
+		local coverUntil = character:GetAttribute(Attributes.CoverMoveUntil) :: number?
+		local rolling = coverUntil ~= nil and os.clock() < coverUntil
+		if
+			not rolling
+			and Vector3.new(offset.X, 0, offset.Z).Magnitude <= settings.LandRadius
+			and math.abs(offset.Y) <= 5
+		then
+			EnemyProjectileService.damagePlayer(
+				humanoid,
+				settings.Damage,
+				nil,
+				EnemyDefinitions[zombie.typeName].VehicleDamage
+			)
+			if Squad.isAlive(target) and Squad.knock(target, settings.PinSeconds) then
+				startPin(zombie, move, settings, now)
+				return
+			end
+		end
+	end
+	endMove(zombie, now, settings.Miss)
+end
+
+local function stepPin(zombie: Zombie, move: Move, settings: any, now: number)
+	local target = move.target
+	local targetRoot, humanoid, character = target.root, target.humanoid, target.character
+	if
+		not targetRoot
+		or not humanoid
+		or not character
+		or not Squad.isAlive(target)
+		or character:GetAttribute(Attributes.KnockedUntil) == nil
+		or now >= move.untilAt
+	then
+		endMove(zombie, now, settings.ThrownOff)
+		return
+	end
+	-- On top of the body, clawing.
+	zombie.root.CFrame = CFrame.new(targetRoot.Position + Vector3.new(0, settings.Lift, 0))
+		* move.yaw.Rotation
+	if now >= move.nextTickAt then
+		move.nextTickAt = now + settings.PinTick
+		EnemyProjectileService.damagePlayer(humanoid, settings.PinDamage)
+		if zombie.attackTrack then
+			zombie.attackTrack:Play(0.05)
+		end
+	end
+	if now >= move.nextVoiceAt then
+		move.nextVoiceAt = now + 1.5
+		voice(zombie, "attack")
+	end
+end
+
+-- One frame of the body's big move.
+local function stepMove(zombie: Zombie, move: Move, now: number)
+	local _, settings = bigMove(zombie.typeName)
+	if not settings then
+		endMove(zombie, now, 0) -- the moves were turned off mid-move
+		return
+	end
+	local root = zombie.root
+	if move.kind == "chargeWindup" or move.kind == "pounceWindup" then
+		local targetRoot = move.target.root
+		if not targetRoot or not Squad.isAlive(move.target) then
+			endMove(zombie, now, 0)
+			return
+		end
+		-- The tell's pose: he rears back / it drops into a crouch, turning to follow.
+		move.direction = flatDirection(targetRoot.Position - move.from, move.direction)
+		move.yaw = CFrame.lookAt(move.from, move.from + move.direction)
+		local progress = math.clamp((now - move.startedAt) / settings.Windup, 0, 1)
+		local tilt = if move.kind == "chargeWindup"
+			then settings.RearTilt * progress
+			else -settings.CrouchTilt * progress
+		root.CFrame = move.yaw * CFrame.Angles(math.rad(tilt), 0, 0)
+		if now < move.untilAt then
+			return
+		end
+		root.CFrame = move.yaw
+		move.startedAt = now
+		if move.kind == "chargeWindup" then
+			local offset = targetRoot.Position - move.from
+			local length = InfectedMoves.chargeLength(
+				Vector3.new(offset.X, 0, offset.Z).Magnitude,
+				settings.Overrun,
+				settings.Distance
+			)
+			move.kind = "charge"
+			move.to = move.from + move.direction * length
+			move.untilAt = now + length / settings.Speed
+			moveTrackSpeed(zombie, settings.Speed)
+			voice(zombie, "attack")
+			radioOnce("FirstCharge")
+		else
+			-- At where they stand now: moving or rolling as it leaves beats it.
+			move.kind = "pounce"
+			setSolid(zombie, false)
+			move.to = targetRoot.Position
+			move.yaw = CFrame.lookAt(move.from, move.from + move.direction)
+			move.untilAt = now + settings.Flight
+			if zombie.attackTrack then
+				zombie.attackTrack:Play(0.05)
+			end
+		end
+		return
+	end
+	if move.kind == "charge" then
+		stepCharge(zombie, move, settings, now)
+	elseif move.kind == "pounce" then
+		stepPounce(zombie, move, settings, now)
+	elseif move.kind == "pin" then
+		stepPin(zombie, move, settings, now)
+	end
+end
+
+-- A Walker's claw landed on `character`: with a crowd round them it holds them, slower for
+-- a moment (Attributes.Grabbed; SprintController and BotService read it).
+local function grab(zombie: Zombie, character: Model, at: Vector3)
+	local row = movesRow(zombie.typeName)
+	local settings = row and row.Grab
+	if not settings or not settings.Enabled then
+		return
+	end
+	local crowd = 0
+	for _, other in zombies do
+		if
+			other.humanoid.Health > 0
+			and other.behaviour.Attack == "melee"
+			and (other.root.Position - at).Magnitude <= settings.Radius
+		then
+			crowd += 1
+		end
+	end
+	local factor = InfectedMoves.grabFactor(crowd, {
+		crowd = settings.Crowd,
+		slow = settings.Slow,
+		slowPerExtra = settings.SlowPerExtra,
+		minFactor = settings.MinFactor,
+	})
+	if factor >= 1 then
+		return
+	end
+	local token = (grabTokens[character] or 0) + 1
+	grabTokens[character] = token
+	character:SetAttribute(Attributes.Grabbed, factor)
+	task.delay(settings.Seconds, function()
+		if grabTokens[character] == token and character.Parent then
+			character:SetAttribute(Attributes.Grabbed, nil)
+		end
+	end)
+end
+
 -- Loosens a dead body and throws it along its push. False when the rig has no ball sockets
 -- to hold it together (then the death clip plays instead).
 local function goLimp(zombie: Zombie): boolean
@@ -380,6 +852,12 @@ local function onHit(info: DamageService.HitInfo)
 		if zombie and zombie.aware and zombie.aware.state ~= "Chase" then
 			setAware(zombie, "Chase", os.clock())
 		end
+		-- A pinning Runner hit by a squadmate lets go (Config.InfectedMoves.Runner.Pounce).
+		local move = zombie and zombie.move
+		if zombie and move and move.kind == "pin" then
+			local _, settings = bigMove(zombie.typeName)
+			endMove(zombie, os.clock(), if settings then settings.ThrownOff else 0)
+		end
 		if zombie and not zombie.climb then
 			flinch(zombie, info)
 		end
@@ -404,6 +882,8 @@ end
 local function onZombieDied(zombie: Zombie)
 	CollectionService:RemoveTag(zombie.model, ENEMY_TAG)
 	voice(zombie, "death")
+	-- Killed mid-move: a pin lets go, the root falls free.
+	endMove(zombie, os.clock(), 0)
 	-- Shot mid-climb: the corpse falls instead of hanging in the air.
 	if zombie.climb then
 		zombie.climb = nil
@@ -598,6 +1078,8 @@ local function spawnZombie(
 		lastHurtVoiceAt = 0,
 		climb = nil,
 		climbTracks = {},
+		move = nil,
+		nextMoveAt = os.clock() + firstMoveDelay(typeName),
 		pathing = false,
 		path = nil,
 		pathPending = false,
@@ -764,6 +1246,11 @@ local function attackIfTouching(zombie: Zombie, now: number)
 			if zombie.attackTrack then
 				zombie.attackTrack:Play(0.1)
 			end
+			-- In a crowd the claw holds (the Walker's grab); a rolling body slipped it.
+			local coverUntil = character:GetAttribute(Attributes.CoverMoveUntil) :: number?
+			if targetHumanoid.Health > 0 and not (coverUntil and os.clock() < coverUntil) then
+				grab(zombie, character, targetRoot.Position)
+			end
 		end
 	end
 end
@@ -782,6 +1269,14 @@ local function throwIsClear(zombie: Zombie, targetRoot: BasePart): boolean
 	local origin = zombie.root.Position + Vector3.new(0, 1.5, 0)
 	return clear(origin, targetRoot.Position)
 		or clear(origin + Vector3.new(0, 7, 0), targetRoot.Position + Vector3.new(0, 1, 0))
+end
+
+-- Open sky `height` studs over the spitter and over the target: room for a high lob.
+local function skyOpen(zombie: Zombie, targetRoot: BasePart, height: number): boolean
+	local up = Vector3.new(0, height, 0)
+	moveParams.FilterDescendantsInstances = { zombie.model, targetRoot.Parent :: Instance }
+	return workspace:Raycast(zombie.root.Position, up, moveParams) == nil
+		and workspace:Raycast(targetRoot.Position, up, moveParams) == nil
 end
 
 local function setSacScale(zombie: Zombie, scale: number)
@@ -815,14 +1310,29 @@ local function stepProjectileZombie(zombie: Zombie, now: number)
 			local head = zombie.model:FindFirstChild("Head") :: BasePart?
 			local origin = if head then head.Position else zombie.root.Position
 			voice(zombie, "spit")
-			EnemyProjectileService.fire(
-				origin,
-				targetRoot.Position,
-				targetRoot.AssemblyLinearVelocity,
-				spec,
-				zombie.damage,
-				EnemyDefinitions[zombie.typeName].VehicleDamage
-			)
+			-- The barrage (Config.InfectedMoves.Hocker): one glob on the mark, the rest either
+			-- side across the line; over cover, a high lob.
+			local row = movesRow(zombie.typeName)
+			local barrage = row and row.Barrage
+			local count = if barrage and barrage.Enabled then barrage.Globs else 1
+			local flight = if zombie.lob and row and row.Lob then row.Lob.Flight else nil
+			if flight then
+				radioOnce("FirstLob")
+			end
+			local line = flatDirection(targetRoot.Position - origin, zombie.root.CFrame.LookVector)
+			local spots =
+				InfectedMoves.barrage(count, if barrage then barrage.Spread else 0, line.X, line.Z)
+			for index, spot in spots do
+				EnemyProjectileService.fire(
+					origin,
+					targetRoot.Position + Vector3.new(spot.x, 0, spot.z),
+					if index == 1 then targetRoot.AssemblyLinearVelocity else nil,
+					spec,
+					zombie.damage,
+					EnemyDefinitions[zombie.typeName].VehicleDamage,
+					flight
+				)
+			end
 		end
 		return
 	end
@@ -835,9 +1345,24 @@ local function stepProjectileZombie(zombie: Zombie, now: number)
 	local distance = offset.Magnitude
 	local standOff = behaviour.StandOff or 0
 	zombie.throwClear = distance <= zombie.attackRange and throwIsClear(zombie, targetRoot)
+	-- No clear line but open sky over both ends: it lobs high over the cover instead.
+	local row = movesRow(zombie.typeName)
+	local lob = row and row.Lob
+	zombie.lob = false
+	if
+		not zombie.throwClear
+		and lob
+		and lob.Enabled
+		and distance <= zombie.attackRange
+		and skyOpen(zombie, targetRoot, lob.SkyCheck)
+	then
+		zombie.throwClear = true
+		zombie.lob = true
+	end
+	local backOff = if row and row.BackOffShare then row.BackOffShare else 0.5
 	if not zombie.throwClear then
 		zombie.humanoid:MoveTo(targetRoot.Position)
-	elseif distance < standOff * 0.5 then
+	elseif distance < standOff * backOff then
 		-- Too close: scuttle back so the lob has room (and the player has a chase).
 		local away = Vector3.new(-offset.X, 0, -offset.Z)
 		if away.Magnitude > 0.1 then
@@ -1174,6 +1699,16 @@ local function stepZombies()
 			continue -- IndexService steers the Index hosts
 		end
 
+		-- A big move owns the body while it runs (Config.InfectedMoves).
+		local move = zombie.move
+		if move then
+			stepMove(zombie, move, now)
+			continue
+		end
+		if now >= zombie.nextMoveAt and tryStartMove(zombie, now) then
+			continue
+		end
+
 		if now >= zombie.nextRepathTime then
 			zombie.nextRepathTime = now + REPATH_INTERVAL
 			local activeLure: Lure? = nil
@@ -1293,8 +1828,9 @@ groundPositionNear = function(center: Vector3, minDistance: number, maxDistance:
 	for _ = 1, Config.Spawning.SpawnAttempts do
 		local angle = math.random() * math.pi * 2
 		local distance = math.random(minDistance, maxDistance)
-		-- Inside the perimeter (Config.Arena.SpawnInset): no spawn in the fence band or past it.
-		local inset = Config.Arena.SpawnInset
+		-- Inside the perimeter (Config.Arena.SpawnInset, the big map's edge on Delta XL): no
+		-- spawn in the fence band or past it.
+		local inset = ArenaService.spawnInset()
 		local x = math.clamp(center.X + math.cos(angle) * distance, -inset, inset)
 		local z = math.clamp(center.Z + math.sin(angle) * distance, -inset, inset)
 		local result =
@@ -1303,6 +1839,8 @@ groundPositionNear = function(center: Vector3, minDistance: number, maxDistance:
 		candidate = Vector3.new(x, groundY, z)
 		if
 			isOpenGround(result)
+			-- never in the big map's river channel (no map has ground this low elsewhere)
+			and groundY >= Config.DeltaXL.LowGround
 			and not ArenaService.insideBuilding(candidate, Config.Spawning.SpawnBuildingMargin)
 		then
 			return candidate
@@ -1647,13 +2185,34 @@ function EnemyService.cripple(model: Model, factor: number)
 end
 
 -- Hollow Point: the body stops for `seconds`.
+-- A pinning Runner staggered (a shove, Hollow Point) is knocked off the soldier first.
 function EnemyService.stagger(humanoid: Humanoid, seconds: number)
+	local zombie = zombieOfHumanoid(humanoid)
+	local move = zombie and zombie.move
+	if zombie and move and move.kind == "pin" then
+		local _, settings = bigMove(zombie.typeName)
+		endMove(zombie, os.clock(), 0)
+		seconds = math.max(seconds, if settings then settings.ThrownOff else 0)
+	end
 	EnemyService.slow(humanoid, 0, seconds)
 end
 
 -- RequisitionService: fired on every death with the form's SupplyValue and where it fell.
 function EnemyService.addKillListener(listener: (supplyValue: number, position: Vector3) -> ())
 	table.insert(killListeners, listener)
+end
+
+-- The director's pick at `position`; a pack form (Config.InfectedMoves.<form>.Pack, the
+-- Runner) brings its pack-mates beside it.
+local function spawnDirected(position: Vector3, typeName: string)
+	spawnZombie(position, typeName)
+	local row = movesRow(typeName)
+	local pack = row and row.Pack
+	if pack and pack.Enabled then
+		for _ = 1, math.random(pack.Extra[1], pack.Extra[2]) do
+			spawnZombie(groundPositionNear(position, 1, pack.Spread), typeName)
+		end
+	end
 end
 
 local function spawnLoop()
@@ -1688,7 +2247,7 @@ local function spawnLoop()
 		then
 			local position = randomSpawnPosition()
 			if position and not quietSkips(position) then
-				spawnZombie(position, pickSpawnType())
+				spawnDirected(position, pickSpawnType())
 			end
 		end
 	end
@@ -1712,6 +2271,15 @@ end
 -- Destroys all enemies without scheduling a new wave (dev ClearEnemies).
 function EnemyService.clearAll()
 	for _, zombie in zombies do
+		-- A pinned soldier is let go before the Runner on them goes.
+		local move = zombie.move
+		if move and move.kind == "pin" then
+			local character = move.target.character
+			if character then
+				character:SetAttribute(Attributes.Pinned, nil)
+			end
+			Squad.standUp(move.target, Config.Knockdown.GetUp)
+		end
 		zombie.model:Destroy()
 	end
 	table.clear(zombies)
@@ -1730,6 +2298,8 @@ end
 -- Clears all enemies for a fresh run.
 function EnemyService.reset()
 	table.clear(lures)
+	table.clear(toldThisRun)
+	lastPinRadioAt = -math.huge
 	table.clear(slowGeneration)
 	quiet = nil
 	missionGeneration += 1

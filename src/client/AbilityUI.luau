@@ -19,6 +19,7 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local CallInDefinitions = require(Shared:WaitForChild("CallInDefinitions"))
 local Attributes = require(Shared:WaitForChild("Attributes"))
 local Config = require(Shared:WaitForChild("Config"))
+local KitMods = require(Shared:WaitForChild("KitMods"))
 local KeyBindings = require(Shared:WaitForChild("Rules"):WaitForChild("KeyBindings"))
 local Remotes = require(Shared:WaitForChild("Remotes"))
 local UpgradeDefinitions = require(Shared:WaitForChild("UpgradeDefinitions"))
@@ -323,7 +324,7 @@ function AbilityUI.init()
 		updateCount(
 			circles.stim,
 			(player:GetAttribute(Attributes.Stims) :: number?) or 0,
-			Config.Stim.Carried
+			Config.Stim.Carried + KitMods.bonusFor(player, "StimsCarried") -- Kit Mods
 		)
 		for slot = 1, Config.CallIns.Slots do
 			updateCallIn(circles[`callin{slot}`], slot)

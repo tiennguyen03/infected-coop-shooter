@@ -19,6 +19,8 @@ local CallInDefinitions =
 	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("CallInDefinitions"))
 local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attributes"))
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
+local DeltaXLLayout =
+	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("DeltaXLLayout"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
 local WeaponDefinitions =
 	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("WeaponDefinitions"))
@@ -216,6 +218,25 @@ local function tabs(): { Tab }
 			end,
 		})
 	end
+	-- The big map's drops and pickups (open ground by design; Shared.DeltaXLLayout).
+	local bigTeleports: { Action } = {}
+	type PointGroup = { kind: string, points: { DeltaXLLayout.Point } }
+	local pointGroups: { PointGroup } = {
+		{ kind = "Drop", points = DeltaXLLayout.Drops },
+		{ kind = "Pickup", points = DeltaXLLayout.Pickups },
+	}
+	for _, pointGroup in pointGroups do
+		for _, point in pointGroup.points do
+			local label = `{pointGroup.kind}: {point.name}`
+			table.insert(bigTeleports, {
+				label = label,
+				echo = `Teleport: {label}`,
+				run = function()
+					teleport(point.x, point.z)
+				end,
+			})
+		end
+	end
 
 	return {
 		{
@@ -237,6 +258,17 @@ local function tabs(): { Tab }
 						{ label = "Extract (win)", send = cmd("ForceMissionSuccess") },
 						{ label = "Wipe (lose)", send = cmd("ForceWipe") }
 					),
+				},
+				{
+					-- Config.DeltaXL: on until Stop; a fresh run follows.
+					title = "THE BIG MAP (grey test)",
+					actions = acts({
+						label = "Big map on (restarts the run)",
+						send = cmd("BigMap"),
+						on = function()
+							return workspace:GetAttribute(Attributes.DeltaXL) == true
+						end,
+					}),
 				},
 				{
 					title = "THE FIELD",
@@ -323,6 +355,33 @@ local function tabs(): { Tab }
 				},
 				{ title = "SPAWN AROUND THE SQUAD", rows = spawnRows },
 				{
+					-- Config.InfectedMoves: each form placed where its move fires.
+					title = "THE MOVES (in front of me)",
+					actions = acts({
+						label = "Brute charge",
+						send = cmd("MoveTest", "Brute"),
+						echo = "Brute: charge",
+					}, {
+						label = "Runner pounce",
+						send = cmd("MoveTest", "Runner"),
+						echo = "Runner: pounce",
+					}, {
+						label = "Hocker barrage",
+						send = cmd("MoveTest", "Hocker"),
+						echo = "Hocker: barrage",
+					}, {
+						label = "Walker grab",
+						send = cmd("MoveTest", "Walker"),
+						echo = "Walkers: grab",
+					}, {
+						label = "Moves off",
+						send = cmd("ToggleMoves"),
+						on = function()
+							return workspace:GetAttribute(Attributes.DevMovesOff) == true
+						end,
+					}),
+				},
+				{
 					title = "THE WARDEN",
 					actions = acts({
 						label = "To the objective",
@@ -337,6 +396,10 @@ local function tabs(): { Tab }
 						send = cmd("WardenHere"),
 						hotkey = Enum.KeyCode.F9,
 						echo = "Warden here",
+					}, {
+						label = "To the rage",
+						send = cmd("RageWarden"),
+						echo = "Warden to the rage",
 					}, {
 						label = "Kill him",
 						send = cmd("KillWarden"),
@@ -370,7 +433,13 @@ local function tabs(): { Tab }
 			},
 		},
 		{ title = "UPGRADES", groups = upgradeGroups },
-		{ title = "TELEPORT", groups = { { title = "CHECKPOINT DELTA", actions = teleports } } },
+		{
+			title = "TELEPORT",
+			groups = {
+				{ title = "CHECKPOINT DELTA", actions = teleports },
+				{ title = "THE BIG MAP (turn it on in RUN)", actions = bigTeleports },
+			},
+		},
 	}
 end
 

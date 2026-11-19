@@ -4,7 +4,10 @@
 -- Behaviour table and has no per-type branches. The curve is flat (Config.Difficulty is
 -- 1x since the the loadout rework); spawn weights and caps from Config.Spawning.
 -- Health and damage sit on the realistic time-to-kill in Config.Weapon (rifle 20, head x3):
--- Walker 3 body / 1 head, Runner 2 / 1, Hocker 4 / 2, Brute 13 / 11.
+-- Walker 3 body / 1 head, Runner 2 / 1, Hocker 4 / 2, Brute from behind 20 / 16, from the
+-- plated front 63 (Config.InfectedMoves.Brute.Armour). The "make it fun" pass (2026-11-18,
+-- docs/sprints/FUN_ENEMIES.md) raised each form; the old numbers sit on each line. The big
+-- moves (charge, pounce, lob, grab) are in Config.InfectedMoves.
 
 export type PuddleSpec = {
 	Radius: number,
@@ -63,9 +66,9 @@ local EnemyDefinitions: { [string]: EnemyDefinition } = {
 	Walker = {
 		DisplayName = "Walker",
 		Scale = 1,
-		MaxHealth = 55,
-		WalkSpeed = 9.5,
-		Damage = 10,
+		MaxHealth = 60, -- was 55; still one M110 round, one rifle headshot
+		WalkSpeed = 10, -- was 9.5
+		Damage = 12, -- was 10
 		AttackRange = 4,
 		AttackCooldown = 1.1,
 		SupplyValue = 10,
@@ -78,9 +81,9 @@ local EnemyDefinitions: { [string]: EnemyDefinition } = {
 	Runner = {
 		DisplayName = "Runner",
 		Scale = 0.9,
-		MaxHealth = 35,
-		WalkSpeed = 17,
-		Damage = 8,
+		MaxHealth = 40, -- was 35; still two rifle rounds
+		WalkSpeed = 19, -- was 17 (the soldier sprints 24)
+		Damage = 9, -- was 8; the pounce and the pin carry their own (Config.InfectedMoves)
 		AttackRange = 3.5,
 		AttackCooldown = 0.85,
 		SupplyValue = 12,
@@ -93,9 +96,9 @@ local EnemyDefinitions: { [string]: EnemyDefinition } = {
 	Brute = {
 		DisplayName = "Brute",
 		Scale = 2,
-		MaxHealth = 260,
-		WalkSpeed = 6.5,
-		Damage = 30,
+		MaxHealth = 500, -- was 260; the front is plated too (Config.InfectedMoves.Brute)
+		WalkSpeed = 7.5, -- was 6.5; the charge closes the rest
+		Damage = 35, -- was 30
 		AttackRange = 5.5,
 		AttackCooldown = 1.6,
 		SupplyValue = 35,
@@ -112,26 +115,26 @@ local EnemyDefinitions: { [string]: EnemyDefinition } = {
 	Hocker = {
 		DisplayName = "Hocker",
 		Scale = 1,
-		MaxHealth = 75,
+		MaxHealth = 80, -- was 75; a frag still kills it
 		WalkSpeed = 8,
-		Damage = 15,
-		AttackRange = 55,
-		AttackCooldown = 3.0,
+		Damage = 18, -- was 15, per glob that lands on you
+		AttackRange = 65, -- was 55
+		AttackCooldown = 3.5, -- was 3.0; each spit is a barrage now
 		SupplyValue = 18,
 		SpawnCost = 2.5,
 		FirstSpawnTime = 480,
 		Color = Color3.fromRGB(176, 170, 84),
 		Behaviour = {
 			Attack = "projectile",
-			StandOff = 40,
-			Windup = 0.8,
+			StandOff = 45, -- was 40
+			Windup = 0.9, -- was 0.8
 			Projectile = {
 				Speed = 45,
 				Size = 1.4,
 				Color = Color3.fromRGB(190, 215, 60),
 				SplashRadius = 4,
 				Lead = 0.5,
-				Puddle = { Radius = 6, Duration = 4, DamagePerSecond = 8 },
+				Puddle = { Radius = 7, Duration = 7, DamagePerSecond = 12 }, -- was 6, 4, 8
 			},
 		},
 		ThroatSac = true,
@@ -142,8 +145,8 @@ local EnemyDefinitions: { [string]: EnemyDefinition } = {
 	Warden = {
 		DisplayName = "The Warden",
 		Scale = 1.9,
-		MaxHealth = 7000,
-		WalkSpeed = 8,
+		MaxHealth = 5000, -- was 7000: he hunts now (the aggression pass, 2026-11-18)
+		WalkSpeed = 12, -- was 8; phases raise it (Config.Index.Warden.Phases)
 		Damage = 40, -- Shield Bash; the other attacks carry their own damage in Config.Index
 		AttackRange = 8,
 		AttackCooldown = 3,
