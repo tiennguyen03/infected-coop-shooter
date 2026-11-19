@@ -27,6 +27,7 @@ local Magazine = require(ReplicatedStorage.Shared.Rules.Magazine)
 local Messages = require(ReplicatedStorage.Shared.Messages)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local Reward = require(ReplicatedStorage.Shared.Rules.Reward)
+local Scarcity = require(ReplicatedStorage.Shared.Rules.Scarcity)
 local RunStates = require(ReplicatedStorage.Shared.RunStates)
 local SoundBanks = require(ReplicatedStorage.Shared.SoundBanks)
 local UpgradeDefinitions = require(ReplicatedStorage.Shared.UpgradeDefinitions)
@@ -332,6 +333,52 @@ function LoadoutService.refillAmmo(player: Player)
 	state.grenades = Config.Grenade.Carried
 	publishAmmo(player, state)
 	publishKit(player, state)
+end
+
+-- A fallen squadmate's ammo pouch (ReinforceService, Config.Scarcity.Pouch): whole magazines
+-- of each gun into its reserve, up to ReserveMax. False when both were already full.
+function LoadoutService.addMags(player: Player, primaryMags: number, secondaryMags: number): boolean
+	local state = get(player)
+	local function fill(gun: Gun, mags: number): boolean
+		local weapon = WeaponDefinitions.get(gun.id)
+		local after = Scarcity.addMags(gun.reserve, weapon.MagazineSize, weapon.ReserveMax, mags)
+		local grew = after > gun.reserve
+		gun.reserve = after
+		return grew
+	end
+	local primaryGrew = fill(state.primary, primaryMags)
+	local secondaryGrew = fill(state.secondary, secondaryMags)
+	publishAmmo(player, state)
+	return primaryGrew or secondaryGrew
+end
+
+-- A reinforced soldier lands with what a soldier lands with at insert: both magazines full,
+-- the insert reserve (more if they died with more), grenades and stims back. Call-ins and
+-- field upgrades stay as they were.
+function LoadoutService.reinforce(player: Player)
+	local state = get(player)
+	for _, gun in { state.primary, state.secondary } do
+		local weapon = WeaponDefinitions.get(gun.id)
+		gun.mag = weapon.MagazineSize
+		gun.reserve = math.max(gun.reserve, weapon.ReserveStart)
+	end
+	state.active = "primary"
+	state.reloadUntil = nil
+	state.swapUntil = nil
+	state.grenades = Config.Grenade.Carried
+	state.stims = stimCap(player)
+	publishAmmo(player, state)
+	publishKit(player, state)
+end
+
+-- Dev (DevTestService): both guns' reserve set to `mags` magazines (capped at ReserveMax).
+function LoadoutService.setSpareMags(player: Player, mags: number)
+	local state = get(player)
+	for _, gun in { state.primary, state.secondary } do
+		local weapon = WeaponDefinitions.get(gun.id)
+		gun.reserve = math.clamp(weapon.MagazineSize * mags, 0, weapon.ReserveMax)
+	end
+	publishAmmo(player, state)
 end
 
 ----------------------------------------------------------------------

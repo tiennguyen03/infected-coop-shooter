@@ -57,6 +57,14 @@ local Attributes = table.freeze({
 	ResupplyPool = "ResupplyPool",
 	ResupplyDropIn = "ResupplyDropIn",
 	ResupplyFlareCooling = "ResupplyFlareCooling", -- workspace: true while the flare cooldown runs (RequisitionService)
+	ResupplyFlareReadyAt = "ResupplyFlareReadyAt", -- workspace: server time the flare cooldown ends, 0 = none (RequisitionService)
+	-- Reinforcements (ReinforceService, Config.Scarcity.Reinforce): the squad's pool on the
+	-- workspace; on a dead Player, when the helicopter drops them (server time, 0 = none) and
+	-- beside whom (a callsign, "" = none).
+	ReinforceLeft = "ReinforceLeft",
+	ReinforceTotal = "ReinforceTotal",
+	ReinforceAt = "ReinforceAt",
+	ReinforceTo = "ReinforceTo",
 	DevSpawnsOff = "DevSpawnsOff",
 	-- lobby: a Lantern bird model's lift time (server time, workspace:GetServerTimeNow()) while
 	-- its spot counts down; nil otherwise (LaunchService writes, LanternSpool reads)
@@ -123,7 +131,7 @@ local Attributes = table.freeze({
 	SquadHealth = "SquadHealth",
 	SquadMaxHealth = "SquadMaxHealth",
 	ReviveEndsAt = "ReviveEndsAt", -- when the revive in progress completes
-	RespawnAt = "RespawnAt", -- when a dead bot rejoins
+	RespawnAt = "RespawnAt", -- when a dead bot rejoins or a dead player is reinforced
 	-- The revive animation (ReviveAnimService): "" | "treat" | "finish" on the reviver,
 	-- "treated" | "recover" on the casualty; where the reviver kneels and what they face.
 	ReviveRole = "ReviveRole",

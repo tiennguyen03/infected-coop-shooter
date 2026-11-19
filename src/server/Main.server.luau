@@ -52,6 +52,7 @@ local BOOT: { ModuleScript } = {
 	Server.IndexService,
 	Server.ReviveAnimService,
 	Server.BotService,
+	Server.ReinforceService, -- the squad's reinforcements and ammo pouches (Config.Scarcity)
 	Server.HandoffService,
 	Server.MeritService,
 	Server.KitModService, -- the Kit Mod ranks off the record (after MeritService, LoadoutService)

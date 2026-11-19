@@ -336,8 +336,14 @@ local function spawnBot(bot: Bot, position: Vector3)
 		end
 		stopTracks(bot)
 		stopReviving(bot)
-		bot.respawnAt = os.clock() + Config.Bots.RespawnSeconds
-		Squad.setRespawnIn(bot.member, Config.Bots.RespawnSeconds)
+		-- Bots never spend the squad's reinforcements (Config.Scarcity.Reinforce): they come
+		-- back on their own, slower while reinforcements are on.
+		local scarcity = Config.Scarcity
+		local respawnSeconds = if scarcity.Enabled and scarcity.Reinforce.Enabled
+			then scarcity.Reinforce.BotRespawnSeconds
+			else Config.Bots.RespawnSeconds
+		bot.respawnAt = os.clock() + respawnSeconds
+		Squad.setRespawnIn(bot.member, respawnSeconds)
 		task.delay(4, function()
 			if bot.model == rig then
 				despawn(bot)

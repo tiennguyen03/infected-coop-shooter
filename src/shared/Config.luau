@@ -641,6 +641,51 @@ local Config = {
 		MaxRevives = 2, -- per mission; the next lethal hit after that kills outright
 		CrawlSpeed = 3, -- studs/s: a downed body crawls on hands and knees toward cover or help
 	},
+
+	-- Scarcity ("make it fun" sprint, PR 4 of 4; docs/sprints/FUN_SCARCITY.md, Rules/Scarcity):
+	-- mistakes cost something. Fewer spare magazines, the Resupply flare as the main refill on
+	-- a long cooldown, ammo pouches off fallen squadmates, and a squad pool of reinforcements
+	-- per run. Each part has its own switch; Enabled = false is the game before the sprint.
+	Scarcity = {
+		Enabled = true,
+		-- Spare rounds from each gun's own row (Weapons.<Gun>.Scarce); a row without one keeps
+		-- its ReserveStart / ReserveMax. Fire rates never change (real guns).
+		Ammo = { Enabled = true },
+		-- The flare's wait after a pallet lands (was Requisition.FlareCooldown 20): one pallet
+		-- every ~2 min at most, so when to throw it is a squad decision.
+		Resupply = { Enabled = true, FlareCooldown = 90 },
+		-- A squadmate (player or bot) who dies drops their ammo pouch at the body: a living
+		-- player holds Keys.Interact on it for magazines of both their guns, once each.
+		Pouch = {
+			Enabled = true,
+			PrimaryMags = 2, -- magazines (a belt, a tube load) of the long gun
+			SecondaryMags = 1,
+			Hold = 0.5, -- seconds of holding the key
+			Radius = 8, -- studs
+			LifeSeconds = 120, -- the pouch is gone after this
+			FromBots = true, -- a bot's death drops one too
+		},
+		-- Reinforcements: a pool shared by the squad per run (Base + PerPlayer x players who
+		-- joined). A player who dies (bled out, or killed with no revives left) spends one and
+		-- is dropped by the helicopter beside the nearest standing squadmate after Delay
+		-- seconds; with the pool empty they stay dead until the squad extracts. Nobody left
+		-- standing to drop to (players and bots) is a wipe. Bots never spend it: they come back
+		-- on their own slower timer (BotRespawnSeconds; was Bots.RespawnSeconds 10).
+		Reinforce = {
+			Enabled = true,
+			Base = 2,
+			PerPlayer = 1, -- solo 3, four players 6
+			Delay = 8, -- seconds from the death to the drop
+			Distance = 10, -- studs from the squadmate the soldier lands
+			DropHeight = 22, -- studs above the ground the soldier falls from (no fall damage)
+			BotRespawnSeconds = 30,
+			Radio = {
+				Inbound = "Control: Reinforcement on the way for %s. Dropping on %s.",
+				Last = "Control: That was the last reinforcement, Pike. Nobody else goes down.",
+				Empty = "Control: No more reinforcements. Get your people home.",
+			},
+		},
+	},
 	-- The revive animation (ReviveAnimService, Shared.ReviveAnimation, Rules/ReviveAnim;
 	-- docs/PROGRESSION.md > Downed and revive). Looks only: the hold, the radius and what
 	-- interrupts a revive stay in Downed above. The kneel and the lying body are existing
@@ -964,6 +1009,7 @@ local Config = {
 			ReloadTime = 2.2,
 			ReserveStart = 120,
 			ReserveMax = 240,
+			Scarce = { ReserveStart = 90, ReserveMax = 150 }, -- Config.Scarcity.Ammo on: 3 spare mags at insert, 5 at most
 			HipSpread = 1.5, -- about a stud off at 40 studs
 			AdsSpread = 0.3,
 			BloomPerShot = 0.3, -- ADS: 3 rounds stay on a head at 40 studs
@@ -990,6 +1036,7 @@ local Config = {
 			ReloadTime = 1.8,
 			ReserveStart = 120,
 			ReserveMax = 210,
+			Scarce = { ReserveStart = 90, ReserveMax = 150 }, -- Config.Scarcity.Ammo on: 3 spare mags at insert, 5 at most
 			HipSpread = 0.9,
 			AdsSpread = 0.6,
 			BloomPerShot = 0.15,
@@ -1021,6 +1068,7 @@ local Config = {
 			ReloadTime = 5.5,
 			ReserveStart = 150,
 			ReserveMax = 300,
+			Scarce = { ReserveStart = 100, ReserveMax = 200 }, -- Config.Scarcity.Ammo on: 1 spare belt at insert, 2 at most
 			HipSpread = 3.0,
 			AdsSpread = 0.5,
 			BloomPerShot = 0.15,
@@ -1051,6 +1099,7 @@ local Config = {
 			ReloadTime = 3.5,
 			ReserveStart = 20,
 			ReserveMax = 40,
+			Scarce = { ReserveStart = 16, ReserveMax = 32 }, -- Config.Scarcity.Ammo on: 2 tube loads at insert, 4 at most
 			HipSpread = 5.0,
 			AdsSpread = 3.5,
 			BloomPerShot = 0,
@@ -1085,6 +1134,7 @@ local Config = {
 			ReloadTime = 2.6,
 			ReserveStart = 40,
 			ReserveMax = 80,
+			Scarce = { ReserveStart = 40, ReserveMax = 60 }, -- Config.Scarcity.Ammo on: 2 spare mags at insert, 3 at most
 			HipSpread = 4.0,
 			AdsSpread = 0.1,
 			BloomPerShot = 1.2,
@@ -1117,6 +1167,7 @@ local Config = {
 			ReloadTime = 1.5,
 			ReserveStart = 34,
 			ReserveMax = 68,
+			Scarce = { ReserveStart = 34, ReserveMax = 51 }, -- Config.Scarcity.Ammo on: 2 spare mags at insert, 3 at most
 			HipSpread = 1.2,
 			AdsSpread = 0.5,
 			BloomPerShot = 0.6,
@@ -1153,6 +1204,7 @@ local Config = {
 			ReloadTime = 2.8, -- speedloader
 			ReserveStart = 18,
 			ReserveMax = 30,
+			Scarce = { ReserveStart = 12, ReserveMax = 24 }, -- Config.Scarcity.Ammo on: 2 cylinders at insert, 4 at most
 			HipSpread = 1.8,
 			AdsSpread = 0.4,
 			BloomPerShot = 1.5,
@@ -1191,6 +1243,7 @@ local Config = {
 			ReloadTime = 3.2,
 			ReserveStart = 15,
 			ReserveMax = 30,
+			Scarce = { ReserveStart = 10, ReserveMax = 20 }, -- Config.Scarcity.Ammo on: 2 spare mags at insert, 4 at most
 			HipSpread = 6.0,
 			AdsSpread = 0.05,
 			BloomPerShot = 0, -- the bolt cycle outlasts any bloom

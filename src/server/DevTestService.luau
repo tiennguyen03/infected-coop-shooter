@@ -30,6 +30,7 @@ local KitModRules = require(ReplicatedStorage.Shared.Rules.KitModRules)
 local LoadoutService = require(script.Parent.LoadoutService)
 local PlayerStatsService = require(script.Parent.PlayerStatsService)
 local RequisitionService = require(script.Parent.RequisitionService)
+local ReinforceService = require(script.Parent.ReinforceService)
 local RunManager = require(script.Parent.RunManager)
 local DifficultyService = require(script.Parent.DifficultyService)
 local PauseService = require(script.Parent.PauseService)
@@ -350,6 +351,15 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 	RefillAmmo = function(player)
 		LoadoutService.refillAmmo(player)
 		print(`[DevTest] RefillAmmo -> {player.Name}`)
+	end,
+	-- Scarcity (Config.Scarcity): both guns' spare magazines, and the squad's reinforcements.
+	SetSpareMags = function(player, mags)
+		LoadoutService.setSpareMags(player, tonumber(mags) or 0)
+		print(`[DevTest] SetSpareMags {tostring(mags)} -> {player.Name}`)
+	end,
+	SetReinforcements = function(_player, count)
+		ReinforceService.setLeft(tonumber(count) or 0)
+		print(`[DevTest] SetReinforcements -> {ReinforceService.left()} left`)
 	end,
 	-- Kit Mod ranks for this soldier without the record ("stim_carry=2;sprint_roll=3"; "" for
 	-- none), through KitModService like the record's own (stims and stamina follow).

@@ -201,6 +201,26 @@ revive looks like (owner 2026-11-11: "the revive is just us standing there";
   the kneel point, server), `Shared.ReviveAnimation` (clips by the body's owner, arms on
   every client), `Rules/ReviveAnim` (kneel point and phases, tested).
 
+### Reinforcements and ammo pouches (2026-11-18, not yet played)
+
+`Config.Scarcity` (`Reinforce`, `Pouch`), `ReinforceService`, `Rules/Scarcity`; the design
+and numbers: `docs/sprints/FUN_SCARCITY.md`.
+
+- **Reinforcements:** one pool per run for the squad, 2 + 1 per player who joined (solo 3,
+  four players 6), shown as yellow squares at the top of the left column ("NO
+  REINFORCEMENTS" in red when spent). A player who dies spends one; 8 s later the helicopter
+  drops them beside the nearest standing player (else a bot), falling from 22 studs where
+  the sky is open, with the insert kit and fresh revives (call-ins and upgrades kept). Their
+  K.I.A. line counts down and names who they drop beside; squadmates read "DEAD 8s". Pool
+  empty: dead until the squad extracts.
+- **Wipe:** no player up and nobody to drop back to (nobody, bots included, up or down; or
+  the pool empty with nobody inbound). Reinforcements off: every player dead, as before.
+- **Bots** never spend the pool; they come back on their own after 30 s
+  (`Reinforce.BotRespawnSeconds`; 10 with reinforcements off).
+- **Ammo pouches:** any squadmate who dies (bots too) leaves a pouch labelled AMMO at the
+  body for 120 s; each living player holds E 0.5 s on it once for 2 magazines of the long gun
+  and 1 of the sidearm, up to the gun's max ("AMMO FULL" takes nothing).
+
 ### Guns
 
 Numbers in `Config.Weapons.<Gun>`, rows in `WeaponDefinitions`. Semi guns fire once per click.
@@ -230,6 +250,11 @@ Numbers in `Config.Weapons.<Gun>`, rows in `WeaponDefinitions`. Semi guns fire o
 - A soldier lands with about half the reserve (`ReserveStart` on the gun's row,
   2026-11-10; was the full `ReserveMax`), so the first pallet is wanted; a pallet or the
   Index kill fills it to `ReserveMax`. The Goose keeps its one spare round.
+- **Scarcity** (2026-11-18, `Config.Scarcity.Ammo`, on): the table's reserves are replaced by
+  each row's `Scarce` block, about two thirds: M16 and MP5 90 / 150, M249 100 / 200, Mossberg
+  16 / 32, M110 40 / 60, M17 34 / 51, revolver 12 / 24, M2010 10 / 20, Goose unchanged
+  (`docs/sprints/FUN_SCARCITY.md`). A fallen squadmate's ammo pouch adds magazines (below,
+  Reinforcements and ammo pouches).
 - Bots fire the rifle slower (`Bots.FireCooldown` 0.30: three bots on sustained fire ~ one
   player), same magazine, infinite reserve.
 - Bots walk (2026-11-11): straight to the formation slot when it is close and in sight, else
@@ -480,6 +505,10 @@ Built, **not played**.
   per extra player; spawn interval x0.7 for 30 s).
 - **The pallet is the ammo box:** every living player within `RearmRadius` 6 is re-armed
   once (both guns full, grenades back).
+- **The flare waits** 90 s after a pallet lands before it can be thrown again while scarcity
+  is on (`Config.Scarcity.Resupply.FlareCooldown`; `Requisition.FlareCooldown` 20 when off):
+  the pallet is the main refill, so when to throw it is the squad's call. The meter reads
+  "RESUPPLY  FLARE IN 1:12" while the pool is paid for but the wait runs.
 - Three cards, the same for everyone (`Crates.SupplyCards`; what each gives is its row in
   `Crates.Cards`, and the card text is built from the row): **Medkit** (full heal, stims
   back), **Restock** (every call-in slot full, grenades and stims too), **Armour Plate** (+75

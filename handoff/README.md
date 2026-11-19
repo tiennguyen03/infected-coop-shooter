@@ -7,6 +7,7 @@ one note to `handoff/log/` (format in `handoff/log/README.md`). History lives in
 `docs/HISTORY.md`; this page is only "now".
 
 Last updated: 2026-11-17 by Tien, Nova + Claude (the Hocker's spit pool as an uneven puddle, on `claude/spit-puddle`; the objective meter and the HUD layout pass, on `claude/objective-progress-visible`; every desk on the Loadmaster's look, on `claude/npc-ui-prototype2`; the map room opened up, on `claude/open-map-room`; vehicles: the ATV, the motor pool and the ATV's own model, on `nova/vehicles-atv`; the M16A4 optic slot, on `nova/m16a4-optic-slot`; Kit Mods at the Loadmaster, on `nova/loadmaster-kit-mods`; the Quartermaster's GTA gun wall back, on `nova/quartermaster-rack`).
+Last updated: 2026-11-18 by Claude (scarcity: fewer spare mags, the flare's long wait, ammo pouches, the squad's reinforcements, on `claude/fun-scarcity`).
 Last updated: 2026-11-18 by Claude (the Visitor, dialog only, on `claude/the-visitor`).
 Last updated: 2026-11-18 by Claude (Carrier counts as numbers, the days board counting, the sellers' idle loops, on `claude/carrier-followups`).
 Last updated: 2026-11-17 by Claude (the map room opened up, on `claude/open-map-room`).
@@ -35,6 +36,17 @@ that restocks the squad.
   (not yet seen in a playtest).
   No floating health bars or name tags; squadmates' health, armour, DOWN /
   REVIVING / DEAD on a panel on the left edge (`SquadPanelUI`, `Config.SquadPanel`).
+- **Scarcity** (2026-11-18, "make it fun" PR 4 of 4, on `claude/fun-scarcity`, **not yet
+  played**): about two thirds of the spare magazines (each gun's `Scarce` row), the flare
+  waits 90 s after a pallet, a dead squadmate (bots too) leaves an AMMO pouch (hold E), and
+  the squad shares 2 + 1 per player reinforcements a run: a dead player is dropped back by
+  the helicopter beside a standing squadmate after 8 s; none left = dead until extraction;
+  bots never spend them (back in 30 s). Pool at the top of the left column. Design and
+  numbers: `docs/sprints/FUN_SCARCITY.md`; off: `Config.Scarcity.Enabled = false` (or each
+  part's own switch). **Nova:** `RunManager`'s wipe check is now `ReinforceService.wiped`
+  (also runs on a bot's death); `WeaponDefinitions` reserves come through `Rules/Scarcity`;
+  `LoadoutService` gained `addMags`, `reinforce`, `setSpareMags`; the left column has a new
+  first element (`ReinforceUI`, order 0).
 - **Kit:** six real guns (M16A4, MP5, M249, Mossberg 590, M110, M17) plus three samples in the
   dev panel (S&W 686 revolver, M2010 sniper, the Goose rocket), each with its own Blender model
   and own shot and reload sounds; Q swap, G frag (hold to aim, release to throw), F shove,
@@ -197,6 +209,7 @@ The plan beyond this table, in phases, with the owner's open decisions: [docs/RO
 | 1a2 | Vehicles: play the ATV (built 2026-11-17, unplayed), then the motor sergeant's radio lines, more vehicles once the maps grow | Nova + Claude | check list in `handoff/log/2026-11-17-nova-vehicles-atv.md`; **Tien heads-up:** small hooks in your files (`CallInService`, `ProjectileServer`, `KitService`, `RequisitionService`, `BotService`, `Squad` revive, `EnemyProjectileService.damagePlayer` 4th arg, `LoadoutService.usePrimary`, the client movement/stance/sprint/ability/weapon gates on the `Riding` attribute) |
 | 1a3 | Look at the objective meter and the HUD layout (2026-11-17, unplayed) | Tien + Claude | check list in `handoff/log/2026-11-17-claude-objective-meter.md`; numbers in `Config.Objectives.Meter` and `Config.Hud` |
 | 1a4 | Play the big map (2026-11-18, unplayed), then spawning at scale (plan step 3) | Tien + Claude | how to play and what still breaks: `docs/sprints/DELTA_XL.md`; check list in `handoff/log/2026-11-18-claude-delta-xl.md` |
+| 1a5 | Play scarcity (2026-11-18, `claude/fun-scarcity`, unplayed): does ammo run short before the second pallet, does a death hurt, is 3 reinforcements solo right | Tien + Claude | check list in `handoff/log/2026-11-18-claude-fun-scarcity.md`; numbers in `Config.Scarcity` and each gun's `Scarce` |
 | 1b | Play the away-review fixes (2026-11-16, `claude/review-fixes`, unplayed) | Tien + Claude | check list in `handoff/log/2026-11-16-claude-review-fixes.md`; Nova: the lobby now buys through `SaveSlot.update` |
 | 2 | Tune the feel by playing it | Tien | the 2026-11-11 reward panel, unplayed: is the panel readable and small enough during a fight, is E right, does the objective reward feel better than a pallet, is the full call-in restock before the Warden too much (`Config.Requisition.Pick`, `Config.Crates`); the 2026-11-10 rewards pass, unplayed: half reserve at insert, the second upgrade crate at the hold's end, the 60 s extraction and its second wave (`Config.Extraction.Waves`); Infected spacing first (`Config.Enemies.Spacing`: `Radius`, `Steer.EngageDistance`, `Steer.Strength`; fewer bodies reach a player at once now, so check the damage still bites; what to look for: `handoff/log/2026-11-11-tien-infected-spacing.md`); kick and shake strength, the low-health look (overlaps HealthBarUI's red pulse), the crawl; heartbeat asset was in moderation |
 | 3 | Checklist pass of every call-in and gun | Tien + Claude | dev `FireCallIn <id>`, `SetWeapon <id>`; each call-in's new arrival has not been seen in Studio yet (list: `handoff/log/2026-11-10-tien-callin-arrivals.md`), nor have the Anvil's binoculars (`handoff/log/2026-11-11-tien-anvil-binoculars.md`); throw timing (0.5 s wind-up, release from the hand) is unplayed and needs tuning (`handoff/log/2026-11-11-tien-throw-sync.md`); Gore stumps sit off the Runner/Brute arms; Brute/Walker hitboxes; the remade Infected have not been seen in game (which side the wounds are on, the bigger head boxes: `docs/STYLES.md` §7 "Infected v2") |
