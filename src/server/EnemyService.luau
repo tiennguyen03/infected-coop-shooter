@@ -145,6 +145,9 @@ export type BossHandle = {
 	humanoid: Humanoid,
 	root: BasePart,
 	attackTrack: AnimationTrack?,
+	-- The walk clip and its 1x ground speed: IndexService sets its rate from his real speed.
+	moveTrack: AnimationTrack?,
+	moveReference: number,
 }
 
 local zombieTemplate: Model?
@@ -340,6 +343,12 @@ local function flinch(zombie: Zombie, info: DamageService.HitInfo)
 	local cfg = Config.Enemies.Flinch
 	local now = os.clock()
 	if not Feel.canFlinch(now, zombie.lastFlinchAt, cfg.Cooldown) then
+		return
+	end
+	-- A boss never flinches from rounds (Config.Index.Warden.Weight.NoFlinch, the boss
+	-- pass): only his plates coming off stagger him (IndexService).
+	local definition = EnemyDefinitions[zombie.typeName]
+	if definition and definition.Boss and Config.Index.Warden.Weight.NoFlinch then
 		return
 	end
 	if (cfg.HeavyOnly :: { [string]: boolean })[zombie.typeName] then
@@ -1293,8 +1302,9 @@ groundPositionNear = function(center: Vector3, minDistance: number, maxDistance:
 	for _ = 1, Config.Spawning.SpawnAttempts do
 		local angle = math.random() * math.pi * 2
 		local distance = math.random(minDistance, maxDistance)
-		-- Inside the perimeter (Config.Arena.SpawnInset): no spawn in the fence band or past it.
-		local inset = Config.Arena.SpawnInset
+		-- Inside the perimeter (Config.Arena.SpawnInset, the big map's edge on Delta XL): no
+		-- spawn in the fence band or past it.
+		local inset = ArenaService.spawnInset()
 		local x = math.clamp(center.X + math.cos(angle) * distance, -inset, inset)
 		local z = math.clamp(center.Z + math.sin(angle) * distance, -inset, inset)
 		local result =
@@ -1303,6 +1313,8 @@ groundPositionNear = function(center: Vector3, minDistance: number, maxDistance:
 		candidate = Vector3.new(x, groundY, z)
 		if
 			isOpenGround(result)
+			-- never in the big map's river channel (no map has ground this low elsewhere)
+			and groundY >= Config.DeltaXL.LowGround
 			and not ArenaService.insideBuilding(candidate, Config.Spawning.SpawnBuildingMargin)
 		then
 			return candidate
@@ -1412,6 +1424,8 @@ function EnemyService.spawnBoss(
 		humanoid = zombie.humanoid,
 		root = zombie.root,
 		attackTrack = zombie.attackTrack,
+		moveTrack = zombie.moveTrack,
+		moveReference = zombie.moveReference,
 	}
 end
 

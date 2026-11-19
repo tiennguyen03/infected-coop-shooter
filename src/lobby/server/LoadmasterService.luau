@@ -72,6 +72,43 @@ function LoadmasterService.loadoutsFor(players: { Player }): { [number]: Loadout
 	return out
 end
 
+-- Fits `option` to `gunId`'s `slot` on the soldier's signed Loadout (nil takes it off), the
+-- way SIGN FOR IT would: checked against the catalog and the record, saved, and sent back as
+-- the signed Loadout (OpticService's equip). A soldier who never signed starts from the
+-- default. (true) or (false, reason).
+function LoadmasterService.fit(
+	player: Player,
+	gunId: string,
+	slotName: string,
+	option: string?
+): (boolean, string?)
+	local pick = copy(signed[player] or ArmsRoom.default())
+	local attachments: Loadout.Attachments = pick.attachments or {}
+	local fitted: { [string]: string } = table.clone(attachments[gunId] or {})
+	if option then
+		fitted[slotName] = option
+	else
+		fitted[slotName] = nil
+	end
+	if next(fitted) then
+		attachments[gunId] = fitted
+	else
+		attachments[gunId] = nil
+	end
+	pick.attachments = if next(attachments) then attachments else nil
+	local valid, reason = Loadout.validate(pick, ArmsRoom.catalog())
+	if valid then
+		valid, reason = RecordService.allows(player, pick)
+	end
+	if not valid then
+		return false, reason
+	end
+	sign(player, pick)
+	slot:save(player, LoadoutSave.encode(pick))
+	remote:FireClient(player, Messages.Loadout.Signed, pick)
+	return true, nil
+end
+
 function LoadmasterService.init()
 	remote = Remotes.get("Loadout")
 	slot = SaveSlot.new(Config.Lobby.Save.Store, "u_")

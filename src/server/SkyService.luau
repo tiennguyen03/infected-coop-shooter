@@ -201,15 +201,37 @@ local function placeTower(model: Model, tower: Tower, index: number)
 	end
 end
 
-local function buildSkyline()
+local function buildSkyline(towers: { Tower })
 	local model = Instance.new("Model")
 	model.Name = "DistantCity"
 	model.ModelStreamingMode = Enum.ModelStreamingMode.Persistent -- the skyline never streams out
 	model.Parent = workspace
 	-- Mesh templates build asynchronously at boot: place without holding up the boot.
-	for index, tower in SKYLINE do
+	for index, tower in towers do
 		task.spawn(placeTower, model, tower, index)
 	end
+end
+
+-- The big map (Config.DeltaXL.Skyline): the same towers squeezed into an arc to the south,
+-- pushed out past the map's edge and scaled up so they still read. Replaces the ring.
+function SkyService.skylineSouth()
+	local old = workspace:FindFirstChild("DistantCity")
+	if old then
+		old:Destroy()
+	end
+	local settings = Config.DeltaXL.Skyline
+	local towers: { Tower } = {}
+	for _, tower in SKYLINE do
+		table.insert(towers, {
+			a = settings.ArcFrom + tower.a / 360 * (settings.ArcTo - settings.ArcFrom),
+			d = tower.d + settings.Push,
+			kind = tower.kind,
+			s = tower.s * settings.Scale,
+			yaw = tower.yaw,
+			smoke = tower.smoke,
+		})
+	end
+	buildSkyline(towers)
 end
 
 function SkyService.init()
@@ -309,7 +331,7 @@ function SkyService.init()
 		end
 	end
 
-	buildSkyline()
+	buildSkyline(SKYLINE)
 end
 
 return SkyService

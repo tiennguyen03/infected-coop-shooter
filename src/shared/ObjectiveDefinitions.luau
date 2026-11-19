@@ -85,6 +85,7 @@ export type Row = {
 export type Pick = { Id: string, Weight: number }
 
 export type Map = {
+	Of: string?, -- a bigger version of that map: it plays that map's signature objectives
 	Main: { Pick }, -- drawn by weight, never the same twice in a row on a server
 	Side: { Pick },
 	Sites: { [string]: { Site } }, -- by objective id: where it can be played here
@@ -348,6 +349,65 @@ local MAPS: { [string]: Map } = {
 		},
 	},
 }
+
+-- The big map (docs/sprints/DELTA_XL.md, Config.DeltaXL): today's Delta in the middle with
+-- eight areas round it. Every site of `delta` is kept; the outer areas add theirs (data only,
+-- no new objective types). Coordinates: docs/LEVELS.md > E. Checkpoint Delta XL.
+local OUTER: { [string]: { Site } } = {
+	secure_site = {
+		{ Name = "the truck stop", Position = { 60, 0.8, 735 }, Size = { 46, 1, 46 } },
+		{ Name = "the interchange", Position = { 90, 0.5, -640 }, Size = { 46, 1, 46 } },
+	},
+	restore_comms = {
+		{ Name = "the water tower", Position = { 820, 1.2, 772 } },
+	},
+	confirm_casualties = {
+		{
+			Name = "the freight wagons",
+			Position = { 607, 0.5, -60 },
+			-- between the sidings, at the wagons' ends
+			Spawns = {
+				{ 607, 0, -145 },
+				{ 607, 0, -95 },
+				{ 607, 0, 5 },
+				{ 607, 0, 55 },
+				{ 582, 0, -110 },
+				{ 582, 0, -20 },
+			},
+		},
+	},
+	lights_on = {
+		{ Name = "the fuel farm", Position = { 540, 3, -647.6 } },
+		{ Name = "the water works", Position = { 720, 3, 652.6 } },
+		{ Name = "the camp", Position = { -440, 3, 37.6 } },
+	},
+	misdrop = {
+		{ Name = "the farms", Position = { -780, 0, 580 } },
+		{ Name = "the truck stop", Position = { 200, 0, 640 } },
+		{ Name = "the water works", Position = { 560, 0, 380 } },
+		{ Name = "the camp", Position = { -520, 0, 240 } },
+		{ Name = "the rail yard", Position = { 420, 0, -200 } },
+		{ Name = "the houses", Position = { -480, 0, -760 } },
+		{ Name = "the interchange", Position = { 200, 0, -760 } },
+		{ Name = "the fuel farm", Position = { 420, 0, -420 } },
+	},
+	clear_spitters = {
+		{ Name = "the flyover", Position = { -110, 24.2, -560 } },
+		{ Name = "the bridge", Position = { -30, 0, 425 } },
+		{ Name = "the grain silos", Position = { -470, 0, 760 } },
+	},
+}
+
+local deltaXL: Map = { Of = "delta", Main = MAPS.delta.Main, Side = MAPS.delta.Side, Sites = {} }
+for id, sites in MAPS.delta.Sites do
+	deltaXL.Sites[id] = table.clone(sites)
+end
+for id, sites in OUTER do
+	local list = deltaXL.Sites[id] or {}
+	table.move(sites, 1, #sites, #list + 1, list)
+	deltaXL.Sites[id] = list
+end
+MAPS.delta_xl = deltaXL
 
 return {
 	Rows = ROWS,
