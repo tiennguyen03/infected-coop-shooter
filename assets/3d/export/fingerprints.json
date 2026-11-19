@@ -2,6 +2,7 @@
  "dep_doorman_base": "98e9117232dd15e5d77c80cd77ee356b6ed7253c",
  "dep_doorman_cradle": "9751b4b125d6a95be4a1973db1c84efa055fdf2c",
  "dep_doorman_gun": "a77a1b35984e6bd01ccd74eb32f9131dc29474b5",
+ "egg_carrier_scoreboard": "ddae728be5050bb40d75bc87cbbebd9401734f12",
  "env_barrier_jersey": "f70a1f65e0b62c788029287bbc2a893a8a18f8176040946209896a1f90699b5a236c813793ddbc43",
  "env_bus": "8e21f7e8f1a5c57defe4e12842d0a67fee7511f66040946209896a1f90699b5a236c813793ddbc43",
  "env_checkpoint": "007de5c2f351dd36d6bfd0305affdced5acdd5226040946209896a1f90699b5a236c813793ddbc43",
