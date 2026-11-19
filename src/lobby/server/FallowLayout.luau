@@ -137,6 +137,21 @@ FallowLayout.Desks = {
 	},
 } :: { DeskPlace }
 
+-- The Visitor (Carrier v2 only: his nook under the ramp's high end exists only there): just
+-- inside the tarp's gap at the nook's port end, facing out, where the stand-in stood
+-- (carrier_v2.py `npc_carrier_contractor`). Talked to only from inside the gap: a short reach,
+-- and the prompt needs a line of sight (LobbyDesks `unmarked`), so nobody finds him through the
+-- tarp or from the ramp above.
+if V2 then
+	table.insert(FallowLayout.Desks, {
+		id = "visitor",
+		feet = Vector3.new(-25.5, FallowLayout.HangarY, 21.2),
+		facing = Vector3.new(0, 0, -1),
+		counter = false,
+		reach = 8,
+	})
+end
+
 -- The motor pool (Nova 2026-11-17: "the open space on the other side of the hangar"; plan
 -- by the level designer; MotorPool builds it): three painted bays across the aft hangar, the
 -- ATV parked in the middle one on the spawn's centre line (seen down the aisle past the

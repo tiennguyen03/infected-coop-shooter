@@ -11,6 +11,12 @@ local Attributes = table.freeze({
 	RunResult = "RunResult",
 	RunStartTime = "RunStartTime",
 	GamePaused = "GamePaused",
+	-- workspace: the breach director (BreachService, Config.Breaches; the dev strip reads them):
+	-- the alert as a share of the breach threshold, the phase (Calm / Tension / Breach /
+	-- Relief), the run's pressure 0..1
+	BreachAlert = "BreachAlert",
+	BreachPhase = "BreachPhase",
+	BreachPressure = "BreachPressure",
 	-- client only, on the local Player: a cutscene holds the soldier (InsertionCutscene); no firing
 	-- or using kit while it is set
 	Cinematic = "Cinematic",
@@ -41,6 +47,14 @@ local Attributes = table.freeze({
 	ObjectiveActive = "ObjectiveActive",
 	ObjectiveCompleted = "ObjectiveCompleted",
 	ExtractionActive = "ExtractionActive",
+	-- workspace: the big map is built (server DeltaXL writes; Config.DeltaXL)
+	DeltaXL = "DeltaXL",
+	-- workspace, Vector3: where this run's squad landed (DeltaXL writes when the draw picks a
+	-- corner; ArenaService's pads and the insertion cutscene read it; none = the LZ)
+	DropPoint = "DropPoint",
+	-- workspace, Vector3: the helicopter's pickup, set when the main objective is done
+	-- (DeltaXL writes; ExtractionService reads; none = the LZ)
+	PickupPoint = "PickupPoint",
 	-- spawn interval multiplier while extracting (ExtractionService writes, EnemyService reads)
 	ExtractionSpawnFactor = "ExtractionSpawnFactor",
 	IndexActive = "IndexActive",
@@ -91,6 +105,10 @@ local Attributes = table.freeze({
 	-- Player: what is fitted to each of their guns, Rules/Loadout.encodeFitted
 	-- ("gun.Slot=option;..."; LoadoutService in the match, LoadmasterService on the ship)
 	Fitted = "Fitted",
+	-- Player: the Kit Mod ranks held (match: KitModService from the record; lobby:
+	-- KitModService after a buy), Rules/KitModRules.encode ("stim_carry=2;sprint_roll=1").
+	-- LoadoutService (stims carried) and SprintController (stamina) read it.
+	KitRanks = "KitRanks",
 	LastShotAt = "LastShotAt", -- local only: the client stamps each of its own shots
 	UpgradeKit = "UpgradeKit",
 
@@ -148,6 +166,7 @@ local Attributes = table.freeze({
 	Cracked = "Cracked",
 	Exposed = "Exposed",
 	Flank = "Flank",
+	WeakSpot = "WeakSpot", -- a plate's share of each round passed to the body (the Warden's back)
 
 	-- Blast visuals (AirStrikeService, KitService, MineService): the server tags each blast
 	-- flash part with the CollectionService tag BlastTag (a tag, not an attribute, kept here

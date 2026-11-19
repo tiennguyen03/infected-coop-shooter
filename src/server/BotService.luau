@@ -464,7 +464,7 @@ local function shoot(bot: Bot, origin: Vector3, aim: Vector3, params: RaycastPar
 		end
 	end
 	tracerRemote:FireAllClients(origin, endPoint)
-	EnemyService.noise(origin, WeaponDefinitions.get(WeaponDefinitions.DEFAULT).Noise)
+	EnemyService.noise(origin, WeaponDefinitions.get(WeaponDefinitions.DEFAULT).Noise, "shot")
 	local fire = bot.tracks.fire
 	if fire then
 		fire:Play(0.05)

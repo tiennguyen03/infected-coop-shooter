@@ -7,7 +7,7 @@
 -- MCP runtime eval, e.g.:
 --   require(game.ServerScriptService.Server.DevTestService).spawnEnemy("Brute", 1)
 -- Loadout rework: SetCallIn / FireCallIn / GiveUpgrade / ClearUpgrades / RefillAmmo /
--- RestockCallIns / SetWeapon / DropUpgradeCrate / DropSupplyCrate / DropObjectiveCrate drive LoadoutService,
+-- RestockCallIns / SetKitRanks / SetWeapon / DropUpgradeCrate / DropSupplyCrate / DropObjectiveCrate drive LoadoutService,
 -- CallInService and RequisitionService directly.
 
 local CollectionService = game:GetService("CollectionService")
@@ -15,6 +15,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local Config = require(ReplicatedStorage.Shared.Config)
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local CallInDefinitions = require(ReplicatedStorage.Shared.CallInDefinitions)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
@@ -24,6 +25,8 @@ local CallInService = require(script.Parent.CallInService)
 local EnemyService = require(script.Parent.EnemyService)
 local HandoffService = require(script.Parent.HandoffService)
 local IndexService = require(script.Parent.IndexService)
+local KitModService = require(script.Parent.KitModService)
+local KitModRules = require(ReplicatedStorage.Shared.Rules.KitModRules)
 local LoadoutService = require(script.Parent.LoadoutService)
 local PlayerStatsService = require(script.Parent.PlayerStatsService)
 local RequisitionService = require(script.Parent.RequisitionService)
@@ -348,6 +351,12 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 		LoadoutService.refillAmmo(player)
 		print(`[DevTest] RefillAmmo -> {player.Name}`)
 	end,
+	-- Kit Mod ranks for this soldier without the record ("stim_carry=2;sprint_roll=3"; "" for
+	-- none), through KitModService like the record's own (stims and stamina follow).
+	SetKitRanks = function(player, text)
+		KitModService.apply(player, KitModRules.decode(tostring(text or "")))
+		print(`[DevTest] SetKitRanks "{tostring(text or "")}" -> {player.Name}`)
+	end,
 	RestockCallIns = function(player)
 		CallInService.refill(player)
 		print(`[DevTest] RestockCallIns -> {player.Name}`)
@@ -395,6 +404,20 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 		end
 		print("[DevTest] KillWarden")
 	end,
+	-- The Warden's body just under the rage threshold (the last Phases row): see the rage now.
+	RageWarden = function()
+		local phases = Config.Index.Warden.Phases
+		local below = phases[#phases].Below
+		for _, model in CollectionService:GetTagged("Enemy") do
+			if model:GetAttribute(Attributes.EnemyType) == "Warden" then
+				local humanoid = model:FindFirstChildOfClass("Humanoid")
+				if humanoid and humanoid.Health > 0 then
+					humanoid.Health = humanoid.MaxHealth * (below - 0.01)
+				end
+			end
+		end
+		print("[DevTest] RageWarden")
+	end,
 	-- The Index: the full entrance from the Gate, or the Warden in front of you (no walk).
 	SpawnWarden = function()
 		print("[DevTest] SpawnWarden (the Gate) ->", IndexService.start())
@@ -434,6 +457,12 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 		end
 	end,
 	RestartRun = function(player)
+		DevTestService.restartRun(player)
+	end,
+	-- The big map (Config.DeltaXL, server DeltaXL) for the rest of this session, then a fresh
+	-- run so the squad drops at a corner. One way: Stop and Play goes back to Config.
+	BigMap = function(player)
+		print("[DevTest] BigMap ->", require(script.Parent.DeltaXL).apply())
 		DevTestService.restartRun(player)
 	end,
 	-- Flies the caller to this match's lobby (HandoffService.lobbyPlaceId: Config.Places), for
@@ -492,6 +521,10 @@ local DISPATCH: { [string]: (player: Player, ...any) -> () } = {
 		local off = workspace:GetAttribute(Attributes.DevSpawnsOff) ~= true
 		workspace:SetAttribute(Attributes.DevSpawnsOff, off)
 		print(`[DevTest] Infected spawning {if off then "OFF" else "ON"}`)
+	end,
+	-- A breach round the squad now (BreachService; the alert and pressure are on the strip).
+	BreachNow = function()
+		print("[DevTest] BreachNow ->", require(script.Parent.BreachService).breachNow())
 	end,
 	ActivateObjective = function()
 		require(script.Parent.ObjectiveService).activateNow()
