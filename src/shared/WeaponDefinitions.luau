@@ -92,6 +92,8 @@ export type WeaponDefinition = {
 	-- merged stats in the fields above and in these (as issued: 1, 1, 0, "standard", false).
 	Family: string?,
 	Caliber: string?,
+	-- Where its attachments' parts sit (Config.Weapons.<gun>.Mounts; Shared.Attachments.MountPoints).
+	Mounts: { [string]: { at: Vector3, yaw: number? } }?,
 	AdsTimeFactor: number, -- on the time into the sights (CameraController)
 	ArmourPenetration: number, -- 0..1 of a plate's reduction ignored (DamageService)
 	AmmoBehaviour: string, -- the round's behaviour (AmmoTypes)
@@ -158,6 +160,7 @@ type Tuning = {
 	Sight: Sight.Raw?,
 	Family: string?,
 	Caliber: string?,
+	Mounts: { [string]: { at: Vector3, yaw: number? } }?,
 }
 
 local DEFAULT_ARMS_ORDER = 100
@@ -216,6 +219,7 @@ local function row(
 		Suppressor = tuning.Suppressor,
 		Family = tuning.Family,
 		Caliber = tuning.Caliber,
+		Mounts = tuning.Mounts,
 		AdsTimeFactor = 1,
 		ArmourPenetration = 0,
 		AmmoBehaviour = "standard",

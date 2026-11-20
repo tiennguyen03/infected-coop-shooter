@@ -170,6 +170,41 @@ wall kept as up to three pieces. Broken walls come back at the next run's start.
 (`Config.Weapon.RoundLook`): Dragon's Breath draws orange tracers and a spark where each pellet
 lands, the breaching slug a fat tracer and a puff of grit.
 
+**Every gun on v2** (Nova, 2026-11-20; the Goose stays off). Rows in `Config.AttachmentsV2`
+(`smg_*`, `lmg_*`, `dmr_*`, `sr_*`, `m82_*`, `m17_*`, `r686_*`; the red dot, CompM2 and ACOG
+rows list more guns, stats only where a gun has no `Fit`; the suppressed barrel fits every gun
+that took one). 2-4 options a slot; issued parts free, the rest 80-300 merits.
+
+| Gun (family, caliber) | Slots | Rounds |
+|---|---|---|
+| MP5 (smg, 9mm) | all 7: long / K barrel, flash hider, comp, 40 / drum 50, grip, handstop, laser, A3 / no stock | FMJ, HP, AP, Subsonic |
+| M249 (lmg, 5.56) | 6, no underbarrel (the bipod is the gun's); the magazine slot is the **belt box**: 100, 200 (slow), soft pouch 70 (fast) | FMJ, AP, HP, Tracer-heavy (its own) |
+| M110 (dmr, 7.62) | all 7: issued scope or LPVO, 16" / heavy barrel, comp, brake, 25 / 10 mags, grip, bipod, laser, two stocks | FMJ, AP, HP, Subsonic |
+| M2010 (sniper, 7.62) | 6, no underbarrel: low-power scope, 20", heavy brake, 10 mag, light / adjustable stock | the 7.62 four, plus Magnum (.300 Win Mag, its own) |
+| the Fifty (fifty, .50 BMG) | 6, no underbarrel (no grip to tame it): low-power scope, 20" CQ barrel, tactical brake, 5 mag, recoil pad | Ball, AP |
+| M17 (pistol, 9mm) | 4: irons / red dot, suppressed or compensated barrel, 21 / 32 mags | the 9mm four |
+| S&W 686 (revolver, .357) | 3: irons / red dot, 6" or 2.5" barrel (range and loudness) | Standard, +P |
+
+Ammo is defined once per caliber family. A shared family's round scales each gun's own damage
+(`DamageScale`: one FMJ is the MP5's 14 and the M17's 25); a round for one gun names it (`Guns`).
+Refused, with the reason shown: the shotgun's above; magnum + the M2010's lightweight stock;
+.50 AP + the 20" barrel; the suppressed barrel + any muzzle device. **Warned, not refused**
+(`Rules/GunCompatibility`, a row's `Advice`): subsonic rounds without the suppressed barrel.
+The revolver has no speedloader yet: its three slots leave nowhere to put one.
+
+**Visuals** (client only): `Shared.Attachments.MountPoints` (six mounts on a long gun, three on
+a sidearm; each gun row's `Mounts`, estimated from its mesh, to tune in Studio),
+`Rules/MountPointResolution` (spec first), `Shared.Attachments.VisualRegistry` (an option row's
+`Visual` names a free Creator Store mesh, `assets/3d/ASSET_IDS.md`), `AttachmentMeshService`
+(builds them on the server into `ReplicatedStorage.AttachmentMeshes`), `VisualApplier` and
+`AttachmentVisuals` (every soldier's gun, from the replicated `Fitted` attribute), and
+FirstPersonView copies the parts; an optic's part hides down the sights. Shown so far: the
+vertical grip (M16A4, Mossberg, MP5, M110), the MP5's flash hider, the M110's bipod, the MP5's
+CompM2 and the M249's ACOG. Everything else is stats only: barrels, magazines, stocks and the
+scoped guns' optics replace part of a one-piece gun mesh (the generators must split the guns
+first), and no usable free model was found for the rest (the PR lists them). The M16A4's
+optics stay its own meshes and the suppressor stays PlayerSetup's.
+
 ### Kit Mods
 
 Allowed by the owner 2026-11-18 (an exception to "never stat items"). A Kit Mod

@@ -27,6 +27,12 @@
 -- gained adsSpread (the aimed cone, a shotgun's pattern) and breachPower (a breaching round's
 -- push on a wall, Rules/WallBreach). The row helpers (optionFromRow, opticFromRow, ammoFromRow,
 -- gunStats) turn Config rows into these records, for Shared.Attachments and the specs alike.
+--
+-- The rollout to every gun (2026-11-20) added, as small: a round shared by a caliber family
+-- may carry damageScale (a factor on the gun's own damage, so one 9mm FMJ is the MP5's 14 and
+-- the M17's 25) instead of a fixed damage; a round may name compatibleGuns (the M249's
+-- tracer-heavy belt, the M2010's magnum): another gun refuses it ("gun:<id>"); any row may
+-- carry advice (Rules/GunCompatibility: a warning, never a refusal).
 
 local AttachmentMerge = {}
 
@@ -112,6 +118,7 @@ export type DamageProfile = {
 	spreadMultiplier: number?, -- on the gun's cones; nil = 1
 	recoilMultiplier: number?, -- on the kick; nil = 1
 	burn: Burn?,
+	damageScale: number?, -- set: damage is the gun's own times this (a shared caliber family)
 }
 
 export type Ammo = {
@@ -120,6 +127,7 @@ export type Ammo = {
 	damageProfile: DamageProfile,
 	incompatibleWith: { string },
 	clashReasons: { [string]: string }?,
+	compatibleGuns: { string }?, -- set: only these guns take it (else every gun of its caliber)
 }
 
 export type Gun = { id: string, caliber: string?, stats: GunStats }
@@ -183,6 +191,9 @@ function AttachmentMerge.merge(
 	if ammo and ammo.caliberFamily ~= gun.caliber then
 		return nil, `caliber:{ammo.id}`
 	end
+	if ammo and ammo.compatibleGuns and not names(ammo.compatibleGuns, gun.id) then
+		return nil, `gun:{ammo.id}`
+	end
 	local pair = clash(fitted, ammo)
 	if pair then
 		return nil, `incompatible:{pair}`
@@ -191,7 +202,9 @@ function AttachmentMerge.merge(
 	local stats = table.clone(gun.stats)
 	if ammo then
 		local profile = ammo.damageProfile
-		stats.damage = profile.damage
+		stats.damage = if profile.damageScale
+			then gun.stats.damage * factor(profile.damageScale)
+			else profile.damage
 		stats.projectileCount = profile.projectileCount
 		stats.headshotMultiplier = profile.headshotMultiplier
 		stats.armorPenetration = profile.armorPenetration
@@ -254,11 +267,18 @@ end
 ----------------------------------------------------------------------
 
 -- What Rules/AttachmentUnlock also needs of each.
-export type OptionEntry = Option & { meritCost: number, base: boolean }
-export type AmmoEntry = Ammo & { slot: string, meritCost: number, base: boolean }
+type Advice = { unless: { string }, text: string }
+export type OptionEntry = Option & { meritCost: number, base: boolean, advice: Advice? }
+export type AmmoEntry = Ammo & { slot: string, meritCost: number, base: boolean, advice: Advice? }
 
 local function reasons(row: any): { [string]: string }
 	return if row.ClashReasons then table.clone(row.ClashReasons) else {}
+end
+
+-- A row's Advice = { Unless = ids, Text } (Rules/GunCompatibility), nil when none.
+local function advice(row: any): { unless: { string }, text: string }?
+	local a = row.Advice
+	return if a then { unless = table.clone(a.Unless), text = a.Text } else nil
 end
 
 -- A Config.AttachmentsV2.Options row.
@@ -276,6 +296,7 @@ function AttachmentMerge.optionFromRow(id: string, row: any): OptionEntry
 		clashReasons = reasons(row),
 		meritCost = row.Price,
 		base = row.Base == true,
+		advice = advice(row),
 	}
 end
 
@@ -305,10 +326,13 @@ function AttachmentMerge.ammoFromRow(id: string, row: any, slot: string): AmmoEn
 		slot = slot,
 		incompatibleWith = table.clone(row.IncompatibleWith or {}),
 		clashReasons = reasons(row),
+		compatibleGuns = if row.Guns then table.clone(row.Guns) else nil,
 		meritCost = row.Price,
 		base = row.Base == true,
+		advice = advice(row),
 		damageProfile = {
-			damage = row.Damage,
+			damage = row.Damage or 0,
+			damageScale = row.DamageScale,
 			projectileCount = row.Projectiles,
 			headshotMultiplier = row.HeadshotMultiplier,
 			armorPenetration = row.ArmourPenetration,

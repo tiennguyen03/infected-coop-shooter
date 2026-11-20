@@ -34,6 +34,7 @@ local BOOT: { ModuleScript } = {
 	Server.CoverMoveService,
 	Server.StanceService,
 	Server.ProjectileServer,
+	Server.AttachmentMeshService, -- the attachment models, built once for every client
 	Server.SentryService,
 	Server.ConcertinaService,
 	Server.SupplyDropService,

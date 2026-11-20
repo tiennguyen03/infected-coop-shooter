@@ -148,7 +148,7 @@ local Config = {
 			Description = "No magnification, but the fastest into the sights. Close range, first shot first.",
 			-- The Mossberg's too (attachment system v2): stats only, no Fit row yet, so its mesh
 			-- and sight stay the irons' (the visuals are a later PR for every gun).
-			Guns = { "service_rifle", "shotgun" },
+			Guns = { "service_rifle", "shotgun", "smg", "lmg", "pistol", "revolver" },
 			ZoomMultiplier = 1.0, -- 1.35: the irons' picture
 			AdsTimeMultiplier = 0.75, -- 0.11 s
 			Price = 150,
@@ -170,10 +170,11 @@ local Config = {
 		compm2 = {
 			Name = "CompM2 (M68)",
 			Description = "2x and no slower to raise. The general-purpose sight.",
-			Guns = { "service_rifle" },
+			Guns = { "service_rifle", "smg" },
 			ZoomMultiplier = 1.48, -- 2.0 (a sight that is not a scope stops at 2x, Rules/Sight)
 			AdsTimeMultiplier = 1.0, -- 0.15 s
 			Price = 250,
+			Visual = "att_compm2", -- its part on a gun without a Fit (VisualRegistry)
 			Reticle = { Size = 5, Glow = 6, Color = Color3.fromRGB(255, 48, 40) }, -- the 2 MOA dot
 			Fit = {
 				service_rifle = {
@@ -188,10 +189,11 @@ local Config = {
 		acog = {
 			Name = "ACOG 4x",
 			Description = "4x for picking off the Infected at range. Slower into the sights.",
-			Guns = { "service_rifle" },
+			Guns = { "service_rifle", "lmg" },
 			ZoomMultiplier = 3.0, -- 4.05
 			AdsTimeMultiplier = 1.6, -- 0.24 s, about a scope's ScopeTime
 			Price = 400,
+			Visual = "att_acog", -- its part on a gun without a Fit (VisualRegistry)
 			Fit = {
 				-- A scope: aimed, the scope picture (ScopeView) as on the M110.
 				service_rifle = {
@@ -212,6 +214,7 @@ local Config = {
 			ZoomMultiplier: number,
 			AdsTimeMultiplier: number,
 			Price: number,
+			Visual: string?, -- its part on a gun it has no Fit for (Shared.Attachments.VisualRegistry)
 			-- A red-dot sight's dot (DotSightView); nil: none (a scope draws its own, ScopeView).
 			Reticle: { Size: number, Glow: number, Color: Color3 }?,
 			Fit: {
@@ -227,8 +230,10 @@ local Config = {
 	-- (Shared.Attachments.Schema), each option a row (Shared.Attachments.Options; the Optic
 	-- slot's options are Config.Optics' rows), each ammo type a row (Shared.Attachments.AmmoTypes).
 	-- A gun takes the slots whose Families list its row's Family (Config.Weapons.<gun>.Family;
-	-- the M16A4 and the Mossberg 590 so far, one PR per gun) and, in each, the options that
-	-- list it.
+	-- every gun but the Goose since the rollout of 2026-11-20) and, in each, the options that
+	-- list it. A slot's NameFor gives it another name on one family (the M249's belt box).
+	-- Ammo is defined once per caliber family (Caliber); a shared family's rounds scale each
+	-- gun's own damage (DamageScale) and a round meant for one gun names it (Guns).
 	-- Unlocked once with merits at the Loadmaster's EDIT (Price; 0 = the issued part, always
 	-- owned) and kept for good on the record; never tabs or Robux. Stats only: nothing on the
 	-- gun's model changes yet (a later PR). The merge rule is Rules/AttachmentMerge.merge: an
@@ -239,39 +244,80 @@ local Config = {
 	-- moveSpeed, adsTime and zoom are factors on the gun's own: 1 = as issued).
 	AttachmentsV2 = {
 		Slots = {
-			Optic = { Name = "Optic", Order = 1, Families = { "rifle", "shotgun" }, MaxOptions = 4 },
+			Optic = {
+				Name = "Optic",
+				Order = 1,
+				Families = {
+					"rifle",
+					"shotgun",
+					"smg",
+					"lmg",
+					"dmr",
+					"sniper",
+					"fifty",
+					"pistol",
+					"revolver",
+				},
+				MaxOptions = 4,
+			},
 			Barrel = {
 				Name = "Barrel",
 				Order = 2,
-				Families = { "rifle", "shotgun" },
+				Families = {
+					"rifle",
+					"shotgun",
+					"smg",
+					"lmg",
+					"dmr",
+					"sniper",
+					"fifty",
+					"pistol",
+					"revolver",
+				},
 				MaxOptions = 4,
 			},
 			Muzzle = {
 				Name = "Muzzle",
 				Order = 3,
-				Families = { "rifle", "shotgun" },
+				Families = { "rifle", "shotgun", "smg", "lmg", "dmr", "sniper", "fifty" },
 				MaxOptions = 4,
 			},
 			Magazine = {
 				Name = "Magazine",
 				Order = 4,
-				Families = { "rifle", "shotgun" },
+				Families = { "rifle", "shotgun", "smg", "lmg", "dmr", "sniper", "fifty", "pistol" },
 				MaxOptions = 4,
+				NameFor = { lmg = "Belt box" },
 			},
 			Ammo = {
 				Name = "Ammo type",
 				Order = 5,
-				Families = { "rifle", "shotgun" },
-				MaxOptions = 4,
+				Families = {
+					"rifle",
+					"shotgun",
+					"smg",
+					"lmg",
+					"dmr",
+					"sniper",
+					"fifty",
+					"pistol",
+					"revolver",
+				},
+				MaxOptions = 5,
 				Ammo = true,
 			},
 			Underbarrel = {
 				Name = "Underbarrel",
 				Order = 6,
-				Families = { "rifle", "shotgun" },
+				Families = { "rifle", "shotgun", "smg", "dmr" },
 				MaxOptions = 4,
 			},
-			Stock = { Name = "Stock", Order = 7, Families = { "rifle", "shotgun" }, MaxOptions = 4 },
+			Stock = {
+				Name = "Stock",
+				Order = 7,
+				Families = { "rifle", "shotgun", "smg", "lmg", "dmr", "sniper", "fifty" },
+				MaxOptions = 4,
+			},
 		},
 		-- Options per slot, the M16A4's (Guns). Base = the issued part: what the slot holds when
 		-- nothing else is fitted (Price 0). IncompatibleWith: ids it cannot be fitted with (the
@@ -319,7 +365,7 @@ local Config = {
 				Name = "Suppressed barrel",
 				Description = "Quiet: the Infected hear it only close in. Shorter reach, a little less punch, no muzzle device.",
 				Slot = "Barrel",
-				Guns = { "service_rifle", "shotgun" },
+				Guns = { "service_rifle", "shotgun", "smg", "lmg", "dmr", "sniper", "pistol" },
 				Price = 0,
 				Deltas = {
 					{ Field = "range", Op = "multiply", Value = 0.80 },
@@ -330,12 +376,26 @@ local Config = {
 					"muzzle_brake",
 					"m590_muzzle_compensator",
 					"m590_muzzle_breacher",
+					"smg_muzzle_flash",
+					"smg_muzzle_comp",
+					"lmg_muzzle_comp",
+					"lmg_muzzle_brake",
+					"dmr_muzzle_comp",
+					"dmr_muzzle_brake",
+					"sr_muzzle_brake_heavy",
 				},
 				ClashReasons = {
 					muzzle_compensator = "The suppressed barrel has no thread for a muzzle device.",
 					muzzle_brake = "The suppressed barrel has no thread for a muzzle device.",
 					m590_muzzle_compensator = "The suppressed barrel has no thread for a muzzle device.",
 					m590_muzzle_breacher = "The suppressed barrel has no thread for a muzzle device.",
+					smg_muzzle_flash = "The suppressed barrel has no thread for a muzzle device.",
+					smg_muzzle_comp = "The suppressed barrel has no thread for a muzzle device.",
+					lmg_muzzle_comp = "The suppressed barrel has no thread for a muzzle device.",
+					lmg_muzzle_brake = "The suppressed barrel has no thread for a muzzle device.",
+					dmr_muzzle_comp = "The suppressed barrel has no thread for a muzzle device.",
+					dmr_muzzle_brake = "The suppressed barrel has no thread for a muzzle device.",
+					sr_muzzle_brake_heavy = "The suppressed barrel has no thread for a muzzle device.",
 				},
 			},
 			muzzle_flash_hider = {
@@ -402,11 +462,15 @@ local Config = {
 					{ Field = "moveSpeed", Op = "multiply", Value = 0.90 },
 				},
 				IncompatibleWith = { "stock_collapsed" },
+				ClashReasons = {
+					stock_collapsed = "The drum fouls the collapsed stock. Fit another stock.",
+				},
 			},
 			grip_vertical = {
 				Name = "Vertical grip",
 				Description = "The sights come back on target faster.",
 				Slot = "Underbarrel",
+				Visual = "att_vertical_grip", -- Shared.Attachments.VisualRegistry
 				Guns = { "service_rifle" },
 				Price = 100,
 				Deltas = { { Field = "recoilRecovery", Op = "multiply", Value = 1.20 } },
@@ -577,6 +641,7 @@ local Config = {
 				Name = "Vertical grip",
 				Description = "Back on target faster: the slug's follow-up shot.",
 				Slot = "Underbarrel",
+				Visual = "att_vertical_grip", -- Shared.Attachments.VisualRegistry
 				Guns = { "shotgun" },
 				Price = 100,
 				Deltas = { { Field = "recoilRecovery", Op = "multiply", Value = 1.20 } },
@@ -626,6 +691,795 @@ local Config = {
 				Deltas = {
 					{ Field = "moveSpeed", Op = "multiply", Value = 1.10 },
 					{ Field = "recoilRecovery", Op = "multiply", Value = 0.90 },
+				},
+			},
+			-- smg (the rollout to every gun, Nova 2026-11-20)
+			smg_barrel_std = {
+				Name = "Standard barrel",
+				Description = "The issued 225 mm barrel.",
+				Slot = "Barrel",
+				Guns = { "smg" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			smg_barrel_long = {
+				Name = "Long barrel",
+				Description = "Reaches further and sits steadier, a little slower to swing.",
+				Slot = "Barrel",
+				Guns = { "smg" },
+				Price = 150,
+				Deltas = {
+					{ Field = "range", Op = "multiply", Value = 1.2 },
+					{ Field = "recoil", Op = "multiply", Value = 0.95 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 0.97 },
+				},
+			},
+			smg_barrel_k = {
+				Name = "Short barrel (K)",
+				Description = "The MP5K's stub: fast into a room, falls off sooner.",
+				Slot = "Barrel",
+				Guns = { "smg" },
+				Price = 150,
+				Deltas = {
+					{ Field = "range", Op = "multiply", Value = 0.8 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 1.05 },
+					{ Field = "adsTime", Op = "multiply", Value = 0.9 },
+					{ Field = "recoil", Op = "multiply", Value = 1.1 },
+				},
+			},
+			smg_muzzle_std = {
+				Name = "Standard muzzle",
+				Description = "The plain issued muzzle.",
+				Slot = "Muzzle",
+				Guns = { "smg" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			smg_muzzle_flash = {
+				Name = "Three-prong flash hider",
+				Description = "Hides the flash, steadies the muzzle a touch.",
+				Slot = "Muzzle",
+				Visual = "att_flash_hider", -- Shared.Attachments.VisualRegistry
+				Guns = { "smg" },
+				Price = 80,
+				Deltas = {
+					{ Field = "recoil", Op = "multiply", Value = 0.95 },
+				},
+			},
+			smg_muzzle_comp = {
+				Name = "Compensator",
+				Description = "Holds the muzzle down. A little louder.",
+				Slot = "Muzzle",
+				Guns = { "smg" },
+				Price = 120,
+				Deltas = {
+					{ Field = "recoil", Op = "multiply", Value = 0.85 },
+					{ Field = "alertRadius", Op = "multiply", Value = 1.05 },
+				},
+			},
+			smg_mag_30 = {
+				Name = "Standard 30",
+				Description = "The issued 30-round magazine.",
+				Slot = "Magazine",
+				Guns = { "smg" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			smg_mag_40 = {
+				Name = "Extended 40",
+				Description = "Ten more rounds, a slower change.",
+				Slot = "Magazine",
+				Guns = { "smg" },
+				Price = 150,
+				Deltas = {
+					{ Field = "magazineSize", Op = "add", Value = 10 },
+					{ Field = "reloadTime", Op = "multiply", Value = 1.15 },
+				},
+			},
+			smg_mag_drum = {
+				Name = "Drum 50",
+				Description = "Fifty rounds. Slow to change, heavy to carry.",
+				Slot = "Magazine",
+				Guns = { "smg" },
+				Price = 250,
+				Deltas = {
+					{ Field = "magazineSize", Op = "add", Value = 20 },
+					{ Field = "reloadTime", Op = "multiply", Value = 1.4 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 0.92 },
+				},
+			},
+			smg_grip_vertical = {
+				Name = "Vertical grip",
+				Description = "The sights come back on target faster.",
+				Slot = "Underbarrel",
+				Visual = "att_vertical_grip", -- Shared.Attachments.VisualRegistry
+				Guns = { "smg" },
+				Price = 100,
+				Deltas = {
+					{ Field = "recoilRecovery", Op = "multiply", Value = 1.2 },
+				},
+			},
+			smg_handstop = {
+				Name = "Handstop",
+				Description = "Quicker into the sights.",
+				Slot = "Underbarrel",
+				Guns = { "smg" },
+				Price = 100,
+				Deltas = {
+					{ Field = "adsTime", Op = "multiply", Value = 0.9 },
+				},
+			},
+			smg_laser = {
+				Name = "Laser",
+				Description = "Tighter from the hip.",
+				Slot = "Underbarrel",
+				Guns = { "smg" },
+				Price = 150,
+				Deltas = {
+					{ Field = "hipSpread", Op = "multiply", Value = 0.7 },
+				},
+			},
+			smg_stock_fixed = {
+				Name = "Fixed stock (A2)",
+				Description = "The issued fixed stock.",
+				Slot = "Stock",
+				Guns = { "smg" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			smg_stock_retract = {
+				Name = "Retractable stock (A3)",
+				Description = "Lighter to carry, slower to settle.",
+				Slot = "Stock",
+				Guns = { "smg" },
+				Price = 120,
+				Deltas = {
+					{ Field = "moveSpeed", Op = "multiply", Value = 1.05 },
+					{ Field = "recoilRecovery", Op = "multiply", Value = 0.9 },
+				},
+			},
+			smg_stock_none = {
+				Name = "Endcap, no stock",
+				Description = "Fastest to the eye, hard to hold on target.",
+				Slot = "Stock",
+				Guns = { "smg" },
+				Price = 80,
+				Deltas = {
+					{ Field = "moveSpeed", Op = "multiply", Value = 1.08 },
+					{ Field = "adsTime", Op = "multiply", Value = 0.85 },
+					{ Field = "recoil", Op = "multiply", Value = 1.25 },
+				},
+			},
+			-- lmg (the rollout to every gun, Nova 2026-11-20)
+			lmg_barrel_std = {
+				Name = "Standard barrel",
+				Description = "The issued 465 mm barrel.",
+				Slot = "Barrel",
+				Guns = { "lmg" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			lmg_barrel_para = {
+				Name = "Para barrel",
+				Description = "The short paratrooper barrel: handier, less reach.",
+				Slot = "Barrel",
+				Guns = { "lmg" },
+				Price = 150,
+				Deltas = {
+					{ Field = "range", Op = "multiply", Value = 0.85 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 1.05 },
+					{ Field = "adsTime", Op = "multiply", Value = 0.9 },
+				},
+			},
+			lmg_barrel_heavy = {
+				Name = "Heavy barrel",
+				Description = "Steadier and longer-reaching on a long burst. Heavier.",
+				Slot = "Barrel",
+				Guns = { "lmg" },
+				Price = 150,
+				Deltas = {
+					{ Field = "range", Op = "multiply", Value = 1.15 },
+					{ Field = "recoil", Op = "multiply", Value = 0.9 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 0.95 },
+				},
+			},
+			lmg_muzzle_std = {
+				Name = "Flash hider",
+				Description = "The issued flash hider.",
+				Slot = "Muzzle",
+				Guns = { "lmg" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			lmg_muzzle_comp = {
+				Name = "Compensator",
+				Description = "Holds the muzzle down. A little louder.",
+				Slot = "Muzzle",
+				Guns = { "lmg" },
+				Price = 120,
+				Deltas = {
+					{ Field = "recoil", Op = "multiply", Value = 0.85 },
+					{ Field = "alertRadius", Op = "multiply", Value = 1.05 },
+				},
+			},
+			lmg_muzzle_brake = {
+				Name = "Muzzle brake",
+				Description = "Kills the kick. Everything for a block hears it.",
+				Slot = "Muzzle",
+				Guns = { "lmg" },
+				Price = 200,
+				Deltas = {
+					{ Field = "recoil", Op = "multiply", Value = 0.75 },
+					{ Field = "alertRadius", Op = "multiply", Value = 1.1 },
+				},
+			},
+			lmg_belt_100 = {
+				Name = "100-round box",
+				Description = "The issued belt box.",
+				Slot = "Magazine",
+				Guns = { "lmg" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			lmg_belt_200 = {
+				Name = "200-round box",
+				Description = "Twice the belt: slow to change, heavy to carry.",
+				Slot = "Magazine",
+				Guns = { "lmg" },
+				Price = 250,
+				Deltas = {
+					{ Field = "magazineSize", Op = "add", Value = 100 },
+					{ Field = "reloadTime", Op = "multiply", Value = 1.3 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 0.9 },
+				},
+			},
+			lmg_belt_pouch = {
+				Name = "Soft pouch (70)",
+				Description = "A light cloth pouch: fewer rounds, a much faster change.",
+				Slot = "Magazine",
+				Guns = { "lmg" },
+				Price = 150,
+				Deltas = {
+					{ Field = "magazineSize", Op = "add", Value = -30 },
+					{ Field = "reloadTime", Op = "multiply", Value = 0.75 },
+				},
+			},
+			lmg_stock_std = {
+				Name = "Fixed stock",
+				Description = "The issued fixed stock.",
+				Slot = "Stock",
+				Guns = { "lmg" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			lmg_stock_para = {
+				Name = "Collapsible stock",
+				Description = "The Para's sliding stock: lighter, slower to settle.",
+				Slot = "Stock",
+				Guns = { "lmg" },
+				Price = 120,
+				Deltas = {
+					{ Field = "moveSpeed", Op = "multiply", Value = 1.05 },
+					{ Field = "recoilRecovery", Op = "multiply", Value = 0.9 },
+				},
+			},
+			lmg_stock_riser = {
+				Name = "Stock with cheek riser",
+				Description = "Settles faster after a burst, slower to shoulder.",
+				Slot = "Stock",
+				Guns = { "lmg" },
+				Price = 120,
+				Deltas = {
+					{ Field = "recoilRecovery", Op = "multiply", Value = 1.15 },
+					{ Field = "adsTime", Op = "multiply", Value = 1.1 },
+				},
+			},
+			-- dmr (the rollout to every gun, Nova 2026-11-20)
+			dmr_scope = {
+				Name = "Leupold 3.5-10x (issued)",
+				Description = "The issued scope.",
+				Slot = "Optic",
+				Guns = { "dmr" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			dmr_lpvo = {
+				Name = "1-6x LPVO",
+				Description = "A low-power scope: faster into the sights.",
+				Slot = "Optic",
+				Guns = { "dmr" },
+				Price = 200,
+				Deltas = {
+					{ Field = "adsTime", Op = "multiply", Value = 0.8 },
+				},
+			},
+			dmr_barrel_20 = {
+				Name = "Standard 20-inch",
+				Description = "The issued barrel.",
+				Slot = "Barrel",
+				Guns = { "dmr" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			dmr_barrel_16 = {
+				Name = "Short 16-inch",
+				Description = "The M110K1's: handier, less reach.",
+				Slot = "Barrel",
+				Guns = { "dmr" },
+				Price = 150,
+				Deltas = {
+					{ Field = "range", Op = "multiply", Value = 0.85 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 1.05 },
+					{ Field = "adsTime", Op = "multiply", Value = 0.9 },
+				},
+			},
+			dmr_barrel_heavy = {
+				Name = "Heavy 22-inch",
+				Description = "A heavy profile: further and steadier, heavier.",
+				Slot = "Barrel",
+				Guns = { "dmr" },
+				Price = 150,
+				Deltas = {
+					{ Field = "range", Op = "multiply", Value = 1.15 },
+					{ Field = "recoil", Op = "multiply", Value = 0.9 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 0.95 },
+				},
+			},
+			dmr_muzzle_std = {
+				Name = "Flash hider",
+				Description = "The issued flash hider.",
+				Slot = "Muzzle",
+				Guns = { "dmr" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			dmr_muzzle_comp = {
+				Name = "Compensator",
+				Description = "Holds the muzzle down. A little louder.",
+				Slot = "Muzzle",
+				Guns = { "dmr" },
+				Price = 120,
+				Deltas = {
+					{ Field = "recoil", Op = "multiply", Value = 0.85 },
+					{ Field = "alertRadius", Op = "multiply", Value = 1.05 },
+				},
+			},
+			dmr_muzzle_brake = {
+				Name = "Muzzle brake",
+				Description = "Kills the kick. Everything for a block hears it.",
+				Slot = "Muzzle",
+				Guns = { "dmr" },
+				Price = 200,
+				Deltas = {
+					{ Field = "recoil", Op = "multiply", Value = 0.75 },
+					{ Field = "alertRadius", Op = "multiply", Value = 1.1 },
+				},
+			},
+			dmr_mag_20 = {
+				Name = "Standard 20",
+				Description = "The issued 20-round magazine.",
+				Slot = "Magazine",
+				Guns = { "dmr" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			dmr_mag_25 = {
+				Name = "Extended 25",
+				Description = "Five more rounds, a slower change.",
+				Slot = "Magazine",
+				Guns = { "dmr" },
+				Price = 150,
+				Deltas = {
+					{ Field = "magazineSize", Op = "add", Value = 5 },
+					{ Field = "reloadTime", Op = "multiply", Value = 1.1 },
+				},
+			},
+			dmr_mag_10 = {
+				Name = "Short 10",
+				Description = "Ten rounds: a fast change, a lighter gun.",
+				Slot = "Magazine",
+				Guns = { "dmr" },
+				Price = 80,
+				Deltas = {
+					{ Field = "magazineSize", Op = "add", Value = -10 },
+					{ Field = "reloadTime", Op = "multiply", Value = 0.85 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 1.03 },
+				},
+			},
+			dmr_grip_vertical = {
+				Name = "Vertical grip",
+				Description = "The sights come back on target faster.",
+				Slot = "Underbarrel",
+				Visual = "att_vertical_grip", -- Shared.Attachments.VisualRegistry
+				Guns = { "dmr" },
+				Price = 100,
+				Deltas = {
+					{ Field = "recoilRecovery", Op = "multiply", Value = 1.2 },
+				},
+			},
+			dmr_bipod = {
+				Name = "Harris bipod",
+				Description = "Less kick, a little weight.",
+				Slot = "Underbarrel",
+				Visual = "att_bipod", -- Shared.Attachments.VisualRegistry
+				Guns = { "dmr" },
+				Price = 150,
+				Deltas = {
+					{ Field = "recoil", Op = "multiply", Value = 0.85 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 0.97 },
+				},
+			},
+			dmr_laser = {
+				Name = "Laser",
+				Description = "Tighter from the hip.",
+				Slot = "Underbarrel",
+				Guns = { "dmr" },
+				Price = 150,
+				Deltas = {
+					{ Field = "hipSpread", Op = "multiply", Value = 0.7 },
+				},
+			},
+			dmr_stock_std = {
+				Name = "Standard stock",
+				Description = "The issued stock.",
+				Slot = "Stock",
+				Guns = { "dmr" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			dmr_stock_precision = {
+				Name = "Precision stock",
+				Description = "Settles faster after a shot, slower to shoulder.",
+				Slot = "Stock",
+				Guns = { "dmr" },
+				Price = 120,
+				Deltas = {
+					{ Field = "recoilRecovery", Op = "multiply", Value = 1.15 },
+					{ Field = "adsTime", Op = "multiply", Value = 1.1 },
+				},
+			},
+			dmr_stock_light = {
+				Name = "Lightweight stock",
+				Description = "Lighter to carry, slower to settle.",
+				Slot = "Stock",
+				Guns = { "dmr" },
+				Price = 120,
+				Deltas = {
+					{ Field = "moveSpeed", Op = "multiply", Value = 1.05 },
+					{ Field = "recoilRecovery", Op = "multiply", Value = 0.9 },
+				},
+			},
+			-- sniper (the rollout to every gun, Nova 2026-11-20)
+			sr_scope = {
+				Name = "Leupold Mk 4 6.5-20x (issued)",
+				Description = "The issued scope.",
+				Slot = "Optic",
+				Guns = { "sniper" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			sr_scope_low = {
+				Name = "Low-power scope",
+				Description = "Less magnification: faster into the sights.",
+				Slot = "Optic",
+				Guns = { "sniper" },
+				Price = 200,
+				Deltas = {
+					{ Field = "adsTime", Op = "multiply", Value = 0.8 },
+				},
+			},
+			sr_barrel_24 = {
+				Name = "Standard 24-inch",
+				Description = "The issued barrel.",
+				Slot = "Barrel",
+				Guns = { "sniper" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			sr_barrel_20 = {
+				Name = "Short 20-inch",
+				Description = "Handier, less reach.",
+				Slot = "Barrel",
+				Guns = { "sniper" },
+				Price = 150,
+				Deltas = {
+					{ Field = "range", Op = "multiply", Value = 0.85 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 1.05 },
+					{ Field = "adsTime", Op = "multiply", Value = 0.9 },
+				},
+			},
+			sr_muzzle_std = {
+				Name = "Standard brake",
+				Description = "The issued muzzle brake.",
+				Slot = "Muzzle",
+				Guns = { "sniper" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			sr_muzzle_brake_heavy = {
+				Name = "Heavy brake",
+				Description = "Kills more of the kick, much louder.",
+				Slot = "Muzzle",
+				Guns = { "sniper" },
+				Price = 200,
+				Deltas = {
+					{ Field = "recoil", Op = "multiply", Value = 0.8 },
+					{ Field = "alertRadius", Op = "multiply", Value = 1.1 },
+				},
+			},
+			sr_mag_5 = {
+				Name = "Standard 5",
+				Description = "The issued 5-round magazine.",
+				Slot = "Magazine",
+				Guns = { "sniper" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			sr_mag_10 = {
+				Name = "Extended 10",
+				Description = "Five more rounds, a slower change, heavier.",
+				Slot = "Magazine",
+				Guns = { "sniper" },
+				Price = 200,
+				Deltas = {
+					{ Field = "magazineSize", Op = "add", Value = 5 },
+					{ Field = "reloadTime", Op = "multiply", Value = 1.2 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 0.97 },
+				},
+			},
+			sr_stock_std = {
+				Name = "Folding stock",
+				Description = "The issued folding stock.",
+				Slot = "Stock",
+				Guns = { "sniper" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			sr_stock_light = {
+				Name = "Lightweight stock",
+				Description = "Light to carry, slow to settle. Not with magnum rounds.",
+				Slot = "Stock",
+				Guns = { "sniper" },
+				Price = 120,
+				Deltas = {
+					{ Field = "moveSpeed", Op = "multiply", Value = 1.08 },
+					{ Field = "recoilRecovery", Op = "multiply", Value = 0.85 },
+				},
+			},
+			sr_stock_adjustable = {
+				Name = "Adjustable stock",
+				Description = "Settles faster after a shot, slower to shoulder.",
+				Slot = "Stock",
+				Guns = { "sniper" },
+				Price = 120,
+				Deltas = {
+					{ Field = "recoilRecovery", Op = "multiply", Value = 1.15 },
+					{ Field = "adsTime", Op = "multiply", Value = 1.1 },
+				},
+			},
+			-- fifty (the rollout to every gun, Nova 2026-11-20)
+			m82_scope = {
+				Name = "10x scope (issued)",
+				Description = "The issued 10x scope.",
+				Slot = "Optic",
+				Guns = { "fifty" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			m82_scope_low = {
+				Name = "Low-power scope",
+				Description = "Less magnification: faster into the sights.",
+				Slot = "Optic",
+				Guns = { "fifty" },
+				Price = 300,
+				Deltas = {
+					{ Field = "adsTime", Op = "multiply", Value = 0.8 },
+				},
+			},
+			m82_barrel_29 = {
+				Name = "Standard 29-inch",
+				Description = "The issued barrel.",
+				Slot = "Barrel",
+				Guns = { "fifty" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			m82_barrel_20 = {
+				Name = "Short 20-inch (CQ)",
+				Description = "Handier, less reach. Not for AP.",
+				Slot = "Barrel",
+				Guns = { "fifty" },
+				Price = 300,
+				Deltas = {
+					{ Field = "range", Op = "multiply", Value = 0.8 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 1.05 },
+					{ Field = "adsTime", Op = "multiply", Value = 0.9 },
+				},
+			},
+			m82_muzzle_std = {
+				Name = "Double-chamber brake",
+				Description = "The issued brake.",
+				Slot = "Muzzle",
+				Guns = { "fifty" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			m82_muzzle_tbrake = {
+				Name = "Tactical brake",
+				Description = "Kills a little more kick, louder still.",
+				Slot = "Muzzle",
+				Guns = { "fifty" },
+				Price = 250,
+				Deltas = {
+					{ Field = "recoil", Op = "multiply", Value = 0.9 },
+					{ Field = "alertRadius", Op = "multiply", Value = 1.1 },
+				},
+			},
+			m82_mag_10 = {
+				Name = "Standard 10",
+				Description = "The issued 10-round magazine.",
+				Slot = "Magazine",
+				Guns = { "fifty" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			m82_mag_5 = {
+				Name = "Short 5",
+				Description = "Five rounds: a faster change, a lighter gun.",
+				Slot = "Magazine",
+				Guns = { "fifty" },
+				Price = 150,
+				Deltas = {
+					{ Field = "magazineSize", Op = "add", Value = -5 },
+					{ Field = "reloadTime", Op = "multiply", Value = 0.8 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 1.03 },
+				},
+			},
+			m82_stock_std = {
+				Name = "Standard stock",
+				Description = "The issued stock.",
+				Slot = "Stock",
+				Guns = { "fifty" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			m82_stock_pad = {
+				Name = "Recoil pad",
+				Description = "A thicker pad: settles a little faster.",
+				Slot = "Stock",
+				Guns = { "fifty" },
+				Price = 200,
+				Deltas = {
+					{ Field = "recoilRecovery", Op = "multiply", Value = 1.1 },
+					{ Field = "recoil", Op = "multiply", Value = 0.92 },
+				},
+			},
+			-- pistol (the rollout to every gun, Nova 2026-11-20)
+			m17_irons = {
+				Name = "Iron sights",
+				Description = "The issued night sights.",
+				Slot = "Optic",
+				Guns = { "pistol" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			m17_barrel_std = {
+				Name = "Standard barrel",
+				Description = "The issued barrel.",
+				Slot = "Barrel",
+				Guns = { "pistol" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			m17_barrel_comp = {
+				Name = "Compensated barrel",
+				Description = "Ported: a flatter muzzle, a louder shot.",
+				Slot = "Barrel",
+				Guns = { "pistol" },
+				Price = 150,
+				Deltas = {
+					{ Field = "recoil", Op = "multiply", Value = 0.85 },
+					{ Field = "alertRadius", Op = "multiply", Value = 1.05 },
+				},
+			},
+			m17_mag_17 = {
+				Name = "Standard 17",
+				Description = "The issued 17-round magazine.",
+				Slot = "Magazine",
+				Guns = { "pistol" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			m17_mag_21 = {
+				Name = "Extended 21",
+				Description = "Four more rounds.",
+				Slot = "Magazine",
+				Guns = { "pistol" },
+				Price = 100,
+				Deltas = {
+					{ Field = "magazineSize", Op = "add", Value = 4 },
+					{ Field = "reloadTime", Op = "multiply", Value = 1.05 },
+				},
+			},
+			m17_mag_32 = {
+				Name = "Stick 32",
+				Description = "A long stick: fifteen more, slower to change.",
+				Slot = "Magazine",
+				Guns = { "pistol" },
+				Price = 200,
+				Deltas = {
+					{ Field = "magazineSize", Op = "add", Value = 15 },
+					{ Field = "reloadTime", Op = "multiply", Value = 1.25 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 0.98 },
+				},
+			},
+			-- revolver (the rollout to every gun, Nova 2026-11-20)
+			r686_irons = {
+				Name = "Iron sights",
+				Description = "The issued sights.",
+				Slot = "Optic",
+				Guns = { "revolver" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			r686_barrel_4 = {
+				Name = "Standard 4-inch",
+				Description = "The issued barrel.",
+				Slot = "Barrel",
+				Guns = { "revolver" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			r686_barrel_6 = {
+				Name = "6-inch barrel",
+				Description = "Reaches further, a touch quieter, slower to raise.",
+				Slot = "Barrel",
+				Guns = { "revolver" },
+				Price = 150,
+				Deltas = {
+					{ Field = "range", Op = "multiply", Value = 1.2 },
+					{ Field = "alertRadius", Op = "multiply", Value = 0.95 },
+					{ Field = "adsTime", Op = "multiply", Value = 1.05 },
+				},
+			},
+			r686_barrel_25 = {
+				Name = "2.5-inch barrel",
+				Description = "Snub: fast to raise, short reach, a loud bark.",
+				Slot = "Barrel",
+				Guns = { "revolver" },
+				Price = 120,
+				Deltas = {
+					{ Field = "range", Op = "multiply", Value = 0.8 },
+					{ Field = "alertRadius", Op = "multiply", Value = 1.1 },
+					{ Field = "adsTime", Op = "multiply", Value = 0.9 },
 				},
 			},
 		},
@@ -692,6 +1546,7 @@ local Config = {
 				AlertMultiplier = 1.2,
 				RangeMultiplier = 1.0,
 				Behaviour = "tracer",
+				Guns = { "service_rifle" }, -- the M249 fires its own tracer-heavy belt
 			},
 			------------------------------------------------------------------
 			-- 12-gauge, the Mossberg 590 (Nova, 2026-11-20): four real shells, each a different
@@ -767,6 +1622,213 @@ local Config = {
 				RangeMultiplier = 60 / 45, -- 60 studs
 				SpreadMultiplier = 0.2,
 				Behaviour = "breaching",
+			},
+			-- 5.56 (the M249's), 9mm, 7.62, .50 BMG, .357 (the rollout to every gun, Nova 2026-11-20)
+			ammo_556_tracer_heavy = {
+				Name = "Tracer-heavy belt",
+				Description = "Every other round a tracer: the squad sees where the belt goes. Louder to the Infected.",
+				Caliber = "5.56",
+				Price = 100,
+				Damage = 20,
+				Projectiles = 1,
+				HeadshotMultiplier = 3.0,
+				ArmourPenetration = 0,
+				AlertMultiplier = 1.35,
+				RangeMultiplier = 1.0,
+				Behaviour = "tracer",
+				Guns = { "lmg" },
+			},
+			ammo_9mm_fmj = {
+				Name = "FMJ",
+				Description = "9mm full metal jacket: the issued round.",
+				Caliber = "9mm",
+				Price = 0,
+				Base = true,
+				DamageScale = 1.0,
+				Projectiles = 1,
+				HeadshotMultiplier = 3.0,
+				ArmourPenetration = 0,
+				AlertMultiplier = 1.0,
+				RangeMultiplier = 1.0,
+				Behaviour = "standard",
+			},
+			ammo_9mm_hp = {
+				Name = "HP",
+				Description = "Hollow point: devastating on bare flesh, useless on plates.",
+				Caliber = "9mm",
+				Price = 200,
+				DamageScale = 1.3,
+				Projectiles = 1,
+				HeadshotMultiplier = 4.0,
+				ArmourPenetration = 0,
+				AlertMultiplier = 1.0,
+				RangeMultiplier = 1.0,
+				Behaviour = "standard",
+			},
+			ammo_9mm_ap = {
+				Name = "AP",
+				Description = "Armour-piercing: less in flesh, goes through the Brute's plates.",
+				Caliber = "9mm",
+				Price = 200,
+				DamageScale = 0.85,
+				Projectiles = 1,
+				HeadshotMultiplier = 3.0,
+				ArmourPenetration = 0.6,
+				AlertMultiplier = 1.0,
+				RangeMultiplier = 1.0,
+				Behaviour = "standard",
+			},
+			ammo_9mm_subsonic = {
+				Name = "Subsonic",
+				Description = "Below the speed of sound: quiet through a suppressor, less reach and punch.",
+				Caliber = "9mm",
+				Price = 150,
+				DamageScale = 0.9,
+				Projectiles = 1,
+				HeadshotMultiplier = 3.0,
+				ArmourPenetration = 0,
+				AlertMultiplier = 0.6,
+				RangeMultiplier = 0.8,
+				Behaviour = "subsonic",
+				Advice = {
+					Unless = { "suppressor" },
+					Text = "Subsonic rounds are made for a suppressor: without one the shot is still loud, for less reach and punch.",
+				},
+			},
+			ammo_762_fmj = {
+				Name = "FMJ",
+				Description = "7.62 full metal jacket: the issued round.",
+				Caliber = "7.62",
+				Price = 0,
+				Base = true,
+				DamageScale = 1.0,
+				Projectiles = 1,
+				HeadshotMultiplier = 3.0,
+				ArmourPenetration = 0,
+				AlertMultiplier = 1.0,
+				RangeMultiplier = 1.0,
+				Behaviour = "standard",
+			},
+			ammo_762_hp = {
+				Name = "HP",
+				Description = "Hollow point: devastating on bare flesh, useless on plates.",
+				Caliber = "7.62",
+				Price = 200,
+				DamageScale = 1.25,
+				Projectiles = 1,
+				HeadshotMultiplier = 4.0,
+				ArmourPenetration = 0,
+				AlertMultiplier = 1.0,
+				RangeMultiplier = 1.0,
+				Behaviour = "standard",
+			},
+			ammo_762_ap = {
+				Name = "AP",
+				Description = "Armour-piercing: less in flesh, goes through the Brute's plates.",
+				Caliber = "7.62",
+				Price = 200,
+				DamageScale = 0.85,
+				Projectiles = 1,
+				HeadshotMultiplier = 3.0,
+				ArmourPenetration = 0.8,
+				AlertMultiplier = 1.0,
+				RangeMultiplier = 1.0,
+				Behaviour = "standard",
+			},
+			ammo_762_subsonic = {
+				Name = "Subsonic",
+				Description = "Below the speed of sound: quiet through a suppressor, less reach and punch.",
+				Caliber = "7.62",
+				Price = 150,
+				DamageScale = 0.75,
+				Projectiles = 1,
+				HeadshotMultiplier = 3.0,
+				ArmourPenetration = 0,
+				AlertMultiplier = 0.6,
+				RangeMultiplier = 0.7,
+				Behaviour = "subsonic",
+				Advice = {
+					Unless = { "suppressor" },
+					Text = "Subsonic rounds are made for a suppressor: without one the shot is still loud, for less reach and punch.",
+				},
+			},
+			ammo_762_magnum = {
+				Name = "Magnum (.300 Win Mag)",
+				Description = "The M2010's own magnum load: harder and further, a brutal kick. Not through the lightweight stock.",
+				Caliber = "7.62",
+				Price = 250,
+				DamageScale = 1.2,
+				Projectiles = 1,
+				HeadshotMultiplier = 3.0,
+				ArmourPenetration = 0.2,
+				AlertMultiplier = 1.2,
+				RangeMultiplier = 1.2,
+				RecoilMultiplier = 1.3,
+				Behaviour = "standard",
+				Guns = { "sniper" },
+				IncompatibleWith = { "sr_stock_light" },
+				ClashReasons = {
+					sr_stock_light = "A .300 Win Mag kick through a lightweight stock is uncontrollable. Fit another stock.",
+				},
+			},
+			ammo_50_standard = {
+				Name = "Ball (M33)",
+				Description = ".50 BMG ball: the issued round.",
+				Caliber = ".50 BMG",
+				Price = 0,
+				Base = true,
+				Damage = 180,
+				Projectiles = 1,
+				HeadshotMultiplier = 3.0,
+				ArmourPenetration = 0,
+				AlertMultiplier = 1.0,
+				RangeMultiplier = 1.0,
+				Behaviour = "standard",
+			},
+			ammo_50_ap = {
+				Name = "AP (M2)",
+				Description = "Armour-piercing .50: a little less in flesh, through any plate. Needs the full barrel.",
+				Caliber = ".50 BMG",
+				Price = 300,
+				Damage = 165,
+				Projectiles = 1,
+				HeadshotMultiplier = 3.0,
+				ArmourPenetration = 1.0,
+				AlertMultiplier = 1.0,
+				RangeMultiplier = 1.0,
+				Behaviour = "standard",
+				IncompatibleWith = { "m82_barrel_20" },
+				ClashReasons = {
+					m82_barrel_20 = "AP .50 BMG needs the full 29-inch barrel to stabilise. Fit the standard barrel.",
+				},
+			},
+			ammo_357_standard = {
+				Name = "Standard",
+				Description = ".357 Magnum: the issued load.",
+				Caliber = ".357",
+				Price = 0,
+				Base = true,
+				Damage = 55,
+				Projectiles = 1,
+				HeadshotMultiplier = 3.0,
+				ArmourPenetration = 0,
+				AlertMultiplier = 1.0,
+				RangeMultiplier = 1.0,
+				Behaviour = "standard",
+			},
+			ammo_357_plus_p = {
+				Name = "+P",
+				Description = "Overpressure load: harder, louder, a sharper kick.",
+				Caliber = ".357",
+				Price = 150,
+				Damage = 66,
+				Projectiles = 1,
+				HeadshotMultiplier = 3.0,
+				ArmourPenetration = 0.1,
+				AlertMultiplier = 1.15,
+				RangeMultiplier = 1.1,
+				RecoilMultiplier = 1.2,
+				Behaviour = "standard",
 			},
 		},
 	},
@@ -1663,6 +2725,16 @@ local Config = {
 			-- Attachment system v2 (Config.AttachmentsV2): its slots by family, its ammo by caliber.
 			Family = "rifle",
 			Caliber = "5.56",
+			-- Where its attachments' parts sit (Shared.Attachments.MountPoints; the grip's space, as
+			-- Sight): estimated from wpn_m16's bounds, muzzle and sights; tune in Studio.
+			Mounts = {
+				OpticMount = { at = Vector3.new(0.000, 0.575, -0.160) },
+				BarrelMount = { at = Vector3.new(0.000, 0.360, -1.515) },
+				MuzzleMount = { at = Vector3.new(0.000, 0.360, -2.020) },
+				MagazineMount = { at = Vector3.new(0.000, -0.149, -0.364) },
+				UnderbarrelMount = { at = Vector3.new(0.000, 0.260, -1.212) },
+				StockMount = { at = Vector3.new(0.000, 0.280, 1.060) },
+			},
 		},
 		-- MP5: the best hip-fire; chews Runners, weak on Brutes (Walker 4 / 2, Brute 19 / 15).
 		Smg = {
@@ -1695,6 +2767,19 @@ local Config = {
 			Price = 300, -- merits at the Quartermaster's rack (Rules/Record)
 			ArmsOrder = 2,
 			Sound = "smg",
+			-- Attachment system v2 (Config.AttachmentsV2): its slots by family, its ammo by caliber.
+			Family = "smg",
+			Caliber = "9mm",
+			-- Where its attachments' parts sit (Shared.Attachments.MountPoints; the grip's space, as
+			-- Sight): estimated from wpn_mp5's bounds, muzzle and sights; tune in Studio.
+			Mounts = {
+				OpticMount = { at = Vector3.new(0.000, 0.545, -0.150) },
+				BarrelMount = { at = Vector3.new(0.000, 0.320, -1.117) },
+				MuzzleMount = { at = Vector3.new(0.000, 0.320, -1.490) },
+				MagazineMount = { at = Vector3.new(0.000, -0.033, -0.268) },
+				UnderbarrelMount = { at = Vector3.new(0.000, 0.220, -0.894) },
+				StockMount = { at = Vector3.new(0.000, 0.240, 0.710) },
+			},
 		},
 		-- M249: a 100-round belt, no reload inside a hold; slow to aim on the move.
 		Lmg = {
@@ -1723,6 +2808,18 @@ local Config = {
 			Price = 600, -- merits at the Quartermaster's rack (Rules/Record)
 			ArmsOrder = 3,
 			Sound = "lmg",
+			-- Attachment system v2 (Config.AttachmentsV2): its slots by family, its ammo by caliber.
+			Family = "lmg",
+			Caliber = "5.56",
+			-- Where its attachments' parts sit (Shared.Attachments.MountPoints; the grip's space, as
+			-- Sight): estimated from wpn_m249's bounds, muzzle and sights; tune in Studio.
+			Mounts = {
+				OpticMount = { at = Vector3.new(0.000, 0.640, -0.170) },
+				BarrelMount = { at = Vector3.new(0.000, 0.380, -1.417) },
+				MuzzleMount = { at = Vector3.new(0.000, 0.380, -1.890) },
+				MagazineMount = { at = Vector3.new(0.000, 0.027, -0.340) },
+				StockMount = { at = Vector3.new(0.000, 0.300, 1.050) },
+			},
 		},
 		-- Mossberg 590: point-blank, one decision per pull; one pull drops every form but the
 		-- Brute (3).
@@ -1761,6 +2858,16 @@ local Config = {
 			-- Attachment system v2 (Config.AttachmentsV2): its slots by family, its ammo by caliber.
 			Family = "shotgun",
 			Caliber = "12ga",
+			-- Where its attachments' parts sit (Shared.Attachments.MountPoints; the grip's space, as
+			-- Sight): estimated from wpn_mossberg's bounds, muzzle and sights; tune in Studio.
+			Mounts = {
+				OpticMount = { at = Vector3.new(0.000, 0.460, -0.150) },
+				BarrelMount = { at = Vector3.new(0.000, 0.420, -1.350) },
+				MuzzleMount = { at = Vector3.new(0.000, 0.420, -1.800) },
+				MagazineMount = { at = Vector3.new(0.000, -0.028, -0.324) },
+				UnderbarrelMount = { at = Vector3.new(0.000, 0.320, -1.080) },
+				StockMount = { at = Vector3.new(0.000, 0.340, 1.042) },
+			},
 		},
 		-- M110: one-taps Walkers, hits two in a line, poor up close. Ammo reins it in
 		-- (100 x 60 is the M16's 270 x 20).
@@ -1797,6 +2904,19 @@ local Config = {
 			Price = 500, -- merits at the Quartermaster's rack (Rules/Record)
 			ArmsOrder = 5,
 			Sound = "dmr",
+			-- Attachment system v2 (Config.AttachmentsV2): its slots by family, its ammo by caliber.
+			Family = "dmr",
+			Caliber = "7.62",
+			-- Where its attachments' parts sit (Shared.Attachments.MountPoints; the grip's space, as
+			-- Sight): estimated from wpn_m110's bounds, muzzle and sights; tune in Studio.
+			Mounts = {
+				OpticMount = { at = Vector3.new(0.000, 0.600, -0.030) },
+				BarrelMount = { at = Vector3.new(0.000, 0.400, -1.838) },
+				MuzzleMount = { at = Vector3.new(0.000, 0.400, -2.450) },
+				MagazineMount = { at = Vector3.new(0.000, -0.018, -0.441) },
+				UnderbarrelMount = { at = Vector3.new(0.000, 0.300, -1.470) },
+				StockMount = { at = Vector3.new(0.000, 0.320, 0.802) },
+			},
 		},
 		-- M17: the sidearm, backup when the primary runs dry.
 		Pistol = {
@@ -1830,6 +2950,16 @@ local Config = {
 			Price = 0, -- merits at the Quartermaster's rack (Rules/Record); issued free
 			ArmsOrder = 1,
 			Sound = "pistol",
+			-- Attachment system v2 (Config.AttachmentsV2): its slots by family, its ammo by caliber.
+			Family = "pistol",
+			Caliber = "9mm",
+			-- Where its attachments' parts sit (Shared.Attachments.MountPoints; the grip's space, as
+			-- Sight): estimated from wpn_m17's bounds, muzzle and sights; tune in Studio.
+			Mounts = {
+				OpticMount = { at = Vector3.new(0.000, 0.410, -0.090) },
+				BarrelMount = { at = Vector3.new(0.000, 0.320, -0.364) },
+				MagazineMount = { at = Vector3.new(0.000, -0.082, -0.087) },
+			},
 		},
 		-- Sample guns (2026-11-09, dev menu; the Arms Room lists them once Nova's loadout work
 		-- does). Each wears its own Blender mesh (`Model`, MeshAssets wpn_*) and plays its own
@@ -1870,6 +3000,15 @@ local Config = {
 			Price = 350, -- merits at the Quartermaster's rack (Rules/Record)
 			ArmsOrder = 2,
 			Sound = "revolver",
+			-- Attachment system v2 (Config.AttachmentsV2): its slots by family, its ammo by caliber.
+			Family = "revolver",
+			Caliber = ".357",
+			-- Where its attachments' parts sit (Shared.Attachments.MountPoints; the grip's space, as
+			-- Sight): estimated from wpn_revolver's bounds, muzzle and sights; tune in Studio.
+			Mounts = {
+				OpticMount = { at = Vector3.new(0.000, 0.436, -0.100) },
+				BarrelMount = { at = Vector3.new(0.000, 0.340, -0.570) },
+			},
 		},
 		-- M2010 ESR: one round per form but the Brute (2), through three more in a line. One
 		-- decision per bolt; useless from the hip (Walker 1 / 1, Brute 2 / 2).
@@ -1906,6 +3045,18 @@ local Config = {
 			Price = 700, -- merits at the Quartermaster's rack (Rules/Record)
 			ArmsOrder = 6,
 			Sound = "sniper",
+			-- Attachment system v2 (Config.AttachmentsV2): its slots by family, its ammo by caliber.
+			Family = "sniper",
+			Caliber = "7.62",
+			-- Where its attachments' parts sit (Shared.Attachments.MountPoints; the grip's space, as
+			-- Sight): estimated from wpn_sniper's bounds, muzzle and sights; tune in Studio.
+			Mounts = {
+				OpticMount = { at = Vector3.new(0.000, 0.580, 0.030) },
+				BarrelMount = { at = Vector3.new(0.000, 0.340, -1.965) },
+				MuzzleMount = { at = Vector3.new(0.000, 0.340, -2.620) },
+				MagazineMount = { at = Vector3.new(0.000, 0.032, -0.472) },
+				StockMount = { at = Vector3.new(0.000, 0.260, 1.030) },
+			},
 		},
 		-- Barrett M82A1 ("the Fifty", .50 BMG, semi-auto; Nova 2026-11-20): sold only by the
 		-- Visitor, for merits. A round goes through four bodies in a line (Overpen: squadmates
@@ -1959,6 +3110,18 @@ local Config = {
 			Desk = "visitor", -- LobbyDesks id: his desk screen lists it (KitPrices)
 			ArmsOrder = 8,
 			Sound = "sniper", -- the M2010's shot until the Fifty has its own
+			-- Attachment system v2 (Config.AttachmentsV2): its slots by family, its ammo by caliber.
+			Family = "fifty",
+			Caliber = ".50 BMG",
+			-- Where its attachments' parts sit (Shared.Attachments.MountPoints; the grip's space, as
+			-- Sight): estimated from wpn_sniper's bounds, muzzle and sights; tune in Studio.
+			Mounts = {
+				OpticMount = { at = Vector3.new(0.000, 0.580, 0.030) },
+				BarrelMount = { at = Vector3.new(0.000, 0.340, -1.965) },
+				MuzzleMount = { at = Vector3.new(0.000, 0.340, -2.620) },
+				MagazineMount = { at = Vector3.new(0.000, 0.032, -0.472) },
+				StockMount = { at = Vector3.new(0.000, 0.260, 1.030) },
+			},
 		},
 		-- M3 recoilless ("Goose", the squad's RPG): a visible rocket. A direct hit kills anything
 		-- but the Warden; the blast (the frag's, no friendly fire) drops every form but the Brute

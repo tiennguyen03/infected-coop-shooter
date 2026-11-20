@@ -80,7 +80,16 @@ function RecordService.allows(player: Player, loadout: Signable): (boolean, stri
 	if not ok then
 		return ok, reason
 	end
-	ok, reason = AttachmentRules.fittedAllowed(record, loadout.attachments, Optics.Rows)
+	-- The one-slot optic check, for the guns not on v2 (a v2 gun's Optic slot also holds its
+	-- own rows, the M110's LPVO: AttachmentUnlock checks every slot of those below).
+	local oneSlot: AttachmentRules.Attachments = {}
+	local every: AttachmentRules.Attachments = loadout.attachments or {}
+	for gunId, slots in every do
+		if not (WeaponDefinitions.exists(gunId) and WeaponDefinitions.get(gunId).Family) then
+			oneSlot[gunId] = slots
+		end
+	end
+	ok, reason = AttachmentRules.fittedAllowed(record, oneSlot, Optics.Rows)
 	if not ok then
 		return ok, reason
 	end

@@ -16,6 +16,7 @@ export type Slot = {
 	compatibleGunFamilies: { string },
 	maxOptionsPerGun: number,
 	ammo: boolean, -- the ammo-type slot: its options are Shared.Attachments.AmmoTypes
+	nameFor: { [string]: string }, -- [family] = its name on that family (the M249's belt box)
 }
 
 local ROWS: { [string]: Slot } = {}
@@ -27,6 +28,7 @@ for id, row in Config.AttachmentsV2.Slots :: { [string]: any } do
 		compatibleGunFamilies = table.clone(row.Families),
 		maxOptionsPerGun = row.MaxOptions,
 		ammo = row.Ammo == true,
+		nameFor = if row.NameFor then table.clone(row.NameFor) else {},
 	}
 end
 
@@ -51,6 +53,11 @@ function Schema.forFamily(family: string?): { Slot }
 		return a.order < b.order
 	end)
 	return list
+end
+
+-- What `slot` is called on a gun of `family` ("Belt box" on the M249, else its own name).
+function Schema.nameOn(slot: Slot, family: string?): string
+	return (family and slot.nameFor[family]) or slot.displayName
 end
 
 -- The ammo-type slot's id (the one row marked Ammo).
