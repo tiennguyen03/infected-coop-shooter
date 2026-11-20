@@ -153,9 +153,9 @@ local MESHES: { [string]: MeshDef } = {
 	},
 	wpn_m16_reddot = {
 		meshId = "",
-		modelId = 88119224076426,
-		size = Vector3.new(0.25, 1.15, 3.08),
-		offset = Vector3.new(0.012, 0.075, -0.48),
+		modelId = 80921148772778,
+		size = Vector3.new(0.25, 1.24, 3.08),
+		offset = Vector3.new(0.012, 0.121, -0.48),
 		muzzle = Vector3.new(0, 0.36, -2.02),
 	},
 	wpn_mp5 = {

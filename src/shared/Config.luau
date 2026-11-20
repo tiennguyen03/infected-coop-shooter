@@ -154,12 +154,13 @@ local Config = {
 			-- have a red dot on it"). Size in pixels at 1080p tall, Glow the soft halo's width.
 			Reticle = { Size = 4, Glow = 5, Color = Color3.fromRGB(255, 48, 40) },
 			Fit = {
-				-- The RMR on a riser, its dot on the irons' line, co-witnessed with the front post.
+				-- The RMR on a riser, its dot 0.1 above the irons' line (optics.py REDDOT_LIFT):
+				-- the front post sits low in the glass, under the dot (Nova, 2026-11-20).
 				service_rifle = {
 					Model = "wpn_m16_reddot",
 					Sight = {
-						Rear = Vector3.new(0, 0.615, -0.01),
-						Front = Vector3.new(0, 0.615, -1.345),
+						Rear = Vector3.new(0, 0.715, -0.01),
+						Front = Vector3.new(0, 0.715, -1.345),
 					},
 				},
 			},

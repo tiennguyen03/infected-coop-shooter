@@ -251,7 +251,7 @@ M16 (`wpn_m16_<id>`), uploaded as group Model assets (`build/upload_models.js`, 
 |---|---|---|---|
 | wpn_m16_acog | 112543898025888 | 0.25 x 1.23 x 3.08 | ACOG 4x (1,779 tris with the rifle) |
 | wpn_m16_compm2 | 108280623635703 | 0.25 x 1.28 x 3.08 | CompM2 (1,982 tris) |
-| wpn_m16_reddot | 88119224076426 | 0.25 x 1.15 x 3.08 | Red dot, the RMR on a riser (1,150 tris) |
+| wpn_m16_reddot | 80921148772778 | 0.25 x 1.24 x 3.08 | Red dot, the RMR on a riser, its dot 0.1 above the irons (1,150 tris; 2026-11-20, was 88119224076426) |
 
 Sources:
 

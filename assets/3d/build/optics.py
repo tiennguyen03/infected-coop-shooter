@@ -8,8 +8,8 @@ its material names kept for painting). The build loads that mesh onto the rifle.
 
 One mesh per rifle and optic (`wpn_m16_<optic>`): guns.m16 without its flip-up backup sight
 (a real M16A4 runs an optic without the carry-handle irons), the optic's mount on the rail.
-The red dot (the RMR on its rail mount) sits on a riser so the dot is level with where the irons
-were. Origin = the grip, barrel along -Y, up +Z, like guns.py; MUZZLE is the rifle's.
+The red dot (the RMR on its rail mount) sits on a riser so the dot is REDDOT_LIFT above where
+the irons were (a lower-third co-witness: the front post sits low in the glass, under the dot). Origin = the grip, barrel along -Y, up +Z, like guns.py; MUZZLE is the rifle's.
 
 Frame of a prepared optic: origin under the middle of its mount's foot (x 0, y the foot's
 middle, z the rail contact), front along -Y, up +Z, in studs.
@@ -43,8 +43,12 @@ SWATCH = {
 RAIL_TOP = 0.525
 # Where each optic's origin goes on the rail (y from the grip; the rail runs y -0.58..0.14).
 AT = {"acog": -0.20, "compm2": -0.16, "reddot": -0.08}
-# The irons' line (guns.SIGHT wpn_m16): the red dot's riser lifts the dot to it.
+# The irons' line (guns.SIGHT wpn_m16): the red dot's riser lifts the dot above it.
 IRONS_Z = 0.615
+# How far above the irons' line the dot sits (studs). Nova, 2026-11-20: level with the front
+# post (absolute co-witness), the post "does get in the way"; this drops it to the glass's
+# lower part, under the dot. Config.Optics.reddot.Fit's Sight is on this line.
+REDDOT_LIFT = 0.1
 # The dot above the RMR mount's foot, printed by prepare (studs).
 REDDOT_DOT_Z = 0.071
 
@@ -188,8 +192,8 @@ def _variant(name):
         y = AT[name]
         z = RAIL_TOP
         if name == "reddot":
-            # A riser on the rail lifts the RMR's dot to the irons' line.
-            rise = IRONS_Z - RAIL_TOP - REDDOT_DOT_Z
+            # A riser on the rail lifts the RMR's dot REDDOT_LIFT above the irons' line.
+            rise = IRONS_Z + REDDOT_LIFT - RAIL_TOP - REDDOT_DOT_Z
             b.box((0.1, 0.16, rise), (0, y, RAIL_TOP + rise / 2), swatch="dark")
             z = RAIL_TOP + rise
         _load(b, name, (0, y, z))

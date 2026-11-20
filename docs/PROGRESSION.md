@@ -94,8 +94,9 @@ is 1.48 so the zoom stays at the 2x limit for a sight that is not a scope).
 On the gun: each optic is the free model (`assets/3d/ASSET_IDS.md` > Optics) on
 the M16's rail, one mesh per rifle and optic (`wpn_m16_acog`, `wpn_m16_compm2`,
 `wpn_m16_reddot`, `assets/3d/build/optics.py`): the rifle without its flip-up backup sight, the
-optic's mount on the rail, the glass left open. The red dot sits on a riser so its dot is on
-the irons' line (co-witnessed with the front post); the CompM2 and the ACOG ride a little
+optic's mount on the rail, the glass left open. The red dot sits on a riser so its dot is 0.1 studs
+above the irons' line (2026-11-20, a lower-third co-witness: the front post sits low in the
+glass, under the dot; `optics.py` `REDDOT_LIFT`); the CompM2 and the ACOG ride a little
 higher. Each row's `Fit` names that mesh and its sight on it; `WeaponDefinitions.dressed`
 gives the gun in hand (`PlayerSetup`), the first-person sight line and zoom
 (`CameraController`, `FirstPersonView`) and the EDIT screen's gun (`Showcase` "<gun>+<optic>").
