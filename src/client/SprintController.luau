@@ -60,10 +60,13 @@ function SprintController.getBaseSpeed(): number
 		then Config.Player.SprintSpeed
 		else Config.Player.WalkSpeed
 	local mult = (Players.LocalPlayer:GetAttribute(Attributes.MoveSpeedMult) :: number?) or 1
+	local weapon = WeaponDefinitions.carried(
+		Players.LocalPlayer:GetAttribute(Attributes.Weapon) :: string?,
+		Players.LocalPlayer:GetAttribute(Attributes.Fitted)
+	)
+	mult *= weapon.CarryMoveFactor -- attachment system v2: a long barrel, a drum
 	if isAiming then
-		mult *= WeaponDefinitions.get(
-			Players.LocalPlayer:GetAttribute(Attributes.Weapon) :: string?
-		).AdsMoveFactor
+		mult *= weapon.AdsMoveFactor
 	end
 	-- Grabbed by a Walker crowd (EnemyService; Config.InfectedMoves.Walker.Grab).
 	local character = Players.LocalPlayer.Character
@@ -205,6 +208,7 @@ function SprintController.init()
 	-- Items/buffs can change the multiplier mid-run; reapply immediately.
 	Players.LocalPlayer:GetAttributeChangedSignal(Attributes.MoveSpeedMult):Connect(applySpeed)
 	Players.LocalPlayer:GetAttributeChangedSignal(Attributes.Weapon):Connect(applySpeed)
+	Players.LocalPlayer:GetAttributeChangedSignal(Attributes.Fitted):Connect(applySpeed)
 	-- Carrying an objective item (the screening record): the carrier walks.
 	Players.LocalPlayer:GetAttributeChangedSignal(Attributes.Carrying):Connect(applySpeed)
 end

@@ -105,6 +105,41 @@ The red dot and the CompM2 show their dot (2026-11-20): aimed in first person, `
 draws it at the screen's centre (the optic's axis, so no parallax), fading in over the last 30%
 of the raise; its size, halo and colour are the optic's own `Reticle` row (no row, no dot).
 
+**Attachment system v2** (Nova, 2026-11-20; the M16A4 is the reference gun, one PR per gun
+after it). Up to seven slots per gun, each a row in `Config.AttachmentsV2.Slots`
+(`Shared.Attachments.Schema`): Optic, Barrel, Muzzle, Magazine, Ammo type, Underbarrel, Stock.
+A gun takes the slots of its row's `Family` ("rifle") and, in each, the options that list it.
+Every option is a row (`Config.AttachmentsV2.Options`, `Shared.Attachments.Options`; the
+optics stay `Config.Optics` rows), every ammo type a row (`Config.AttachmentsV2.Ammo`,
+`Shared.Attachments.AmmoTypes`). Unlocked once with merits at the EDIT screen and kept on the
+record (`Rules/AttachmentUnlock`, spec first; Price 0 = the issued part, always owned); never
+tabs or Robux.
+
+| Slot | M16A4 options (merits) |
+|---|---|
+| Optic | iron sights; Red dot 150, CompM2 250, ACOG 400 (above) |
+| Barrel | Standard; Long 150 (+15% range, +10% recoil, -5% move); Short 150 (-15% range, -10% recoil, +5% move); Suppressed (free, as before: quiet, -20% range, -10% damage, no muzzle device) |
+| Muzzle | Flash hider; Compensator 120 (-15% recoil, +5% alert); Muzzle brake 200 (-25% recoil, +10% alert) |
+| Magazine | Standard 30; Extended 40, 150 (+20% reload); Drum 60, 300 (+50% reload, -10% move; not with the collapsed stock) |
+| Ammo type | FMJ (20, x3 head); AP 200 (16, 80% armour pen); HP 200 (28, x4 head, no pen); Tracer 100 (20, +20% alert) |
+| Underbarrel | none; Vertical grip 100 (+20% recoil recovery); Angled grip 100 (-10% ADS time); Laser 150 (-30% hip spread) |
+| Stock | Standard; Adjustable 120 (+15% recovery, +10% ADS time); Collapsed 120 (-10% recovery, -15% ADS time) |
+
+**The merge** (`Rules/AttachmentMerge.merge`, spec first): each option's deltas name a stat
+and an op; multipliers on a stat multiply together and scale the gun's own value, additions
+add after (`value x multipliers + additions`). The ammo type REPLACES the damage profile
+(damage, rounds per shot, headshot, armour penetration, behaviour) and scales range and alert,
+then the attachments apply on top of the new round (so the suppressed barrel's -10% bites on
+HP too). Armour penetration is the share of a plate's cut ignored: the Brute's front
+(`DamageService`) and the Warden's plates (`ProjectileServer.hitMultiplier`). A clash (the
+suppressed barrel with a muzzle device, the drum with the collapsed stock, ammo of another
+caliber, an option for another gun) is refused on the server and its reason shown.
+`WeaponDefinitions.fitted` builds the carried gun's stats from the fitting: the match server
+fires, reloads and makes noise with them; the client reads them only for its camera (ADS time,
+kick) and walk. Saved with the signed Loadout (`Loadout.attachments[gun][slot]`, the ammo in
+its slot), the same save as before. Stats only: the gun's model shows the optic and the
+suppressor as before, nothing else yet (the tracer's beam and the laser's dot too).
+
 ### Kit Mods
 
 Allowed by the owner 2026-11-18 (an exception to "never stat items"). A Kit Mod

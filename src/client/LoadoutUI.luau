@@ -103,7 +103,10 @@ end
 
 local function updateAmmo()
 	local player = Players.LocalPlayer
-	local weapon = WeaponDefinitions.get(player:GetAttribute(Attributes.Weapon) :: string?)
+	local weapon = WeaponDefinitions.carried(
+		player:GetAttribute(Attributes.Weapon) :: string?,
+		player:GetAttribute(Attributes.Fitted)
+	)
 	local mag = (player:GetAttribute(Attributes.Mag) :: number?) or 0
 	local reserve = (player:GetAttribute(Attributes.Reserve) :: number?) or 0
 	local reloadUntil = (player:GetAttribute(Attributes.ReloadUntil) :: number?) or 0

@@ -20,6 +20,8 @@ local Messages = require(ReplicatedStorage.Shared.Messages)
 local Record = require(ReplicatedStorage.Shared.Rules.Record)
 local AttachmentRules = require(ReplicatedStorage.Shared.Rules.AttachmentRules)
 local Optics = require(ReplicatedStorage.Shared.Attachments.Optics)
+local AttachmentUnlock = require(ReplicatedStorage.Shared.Rules.AttachmentUnlock)
+local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local KitPrices = require(ReplicatedStorage.Shared.KitPrices)
 local SaveSchema = require(ReplicatedStorage.Shared.Rules.SaveSchema)
@@ -78,7 +80,22 @@ function RecordService.allows(player: Player, loadout: Signable): (boolean, stri
 	if not ok then
 		return ok, reason
 	end
-	return AttachmentRules.fittedAllowed(record, loadout.attachments, Optics.Rows)
+	ok, reason = AttachmentRules.fittedAllowed(record, loadout.attachments, Optics.Rows)
+	if not ok then
+		return ok, reason
+	end
+	-- Attachment system v2: every slot of a v2 gun unlocked, fitting that gun, no clash.
+	local catalog = WeaponDefinitions.attachmentCatalog()
+	local fittings: AttachmentRules.Attachments = loadout.attachments or {}
+	for gunId, slots in fittings do
+		if WeaponDefinitions.exists(gunId) and WeaponDefinitions.get(gunId).Family then
+			local fine, why = AttachmentUnlock.configAllowed(record, gunId, slots, catalog)
+			if not fine then
+				return false, why
+			end
+		end
+	end
+	return true, nil
 end
 
 local function load(player: Player)

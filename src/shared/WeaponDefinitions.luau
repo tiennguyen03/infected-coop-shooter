@@ -15,6 +15,10 @@ local Optics = require(ReplicatedStorage.Shared.Attachments.Optics)
 local AttachmentMerge = require(ReplicatedStorage.Shared.Rules.AttachmentMerge)
 local Loadout = require(ReplicatedStorage.Shared.Rules.Loadout)
 local Scarcity = require(ReplicatedStorage.Shared.Rules.Scarcity)
+local AttachmentUnlock = require(ReplicatedStorage.Shared.Rules.AttachmentUnlock)
+local AmmoTypes = require(ReplicatedStorage.Shared.Attachments.AmmoTypes)
+local AttachmentOptions = require(ReplicatedStorage.Shared.Attachments.Options)
+local Schema = require(ReplicatedStorage.Shared.Attachments.Schema)
 
 local SCARCE_AMMO = Config.Scarcity.Enabled and Config.Scarcity.Ammo.Enabled
 
@@ -69,6 +73,16 @@ export type WeaponDefinition = {
 	ArmsOrder: number, -- its place in the Arms Room within its slot (lower first; default 100)
 	Noise: number, -- studs a shot carries to the Infected (Config.Awareness; default DefaultNoise)
 	Suppressor: Suppressor?, -- it takes one on the Barrel; nil = it cannot
+	-- Attachment system v2 (Config.AttachmentsV2; WeaponDefinitions.fitted): its slots by
+	-- family (nil: the one-slot fitting), its ammo by caliber. A fitted definition carries the
+	-- merged stats in the fields above and in these (as issued: 1, 1, 0, "standard", false).
+	Family: string?,
+	Caliber: string?,
+	CarryMoveFactor: number, -- walk speed while it is in hand (SprintController)
+	AdsTimeFactor: number, -- on the time into the sights (CameraController)
+	ArmourPenetration: number, -- 0..1 of a plate's reduction ignored (DamageService)
+	AmmoBehaviour: string, -- the round's behaviour (AmmoTypes)
+	Merged: boolean, -- true: built by fitted(); Noise already holds the quiet barrel's reach
 	-- Its sights in first person (Rules/Sight): the two points on the mesh the eye lines up,
 	-- irons or a scope, the eye relief, the zoom and the hip hold, defaults filled in.
 	Sight: Sight.Resolved,
@@ -124,6 +138,8 @@ type Tuning = {
 	Noise: number?,
 	Suppressor: Suppressor?,
 	Sight: Sight.Raw?,
+	Family: string?,
+	Caliber: string?,
 }
 
 local DEFAULT_ARMS_ORDER = 100
@@ -177,6 +193,13 @@ local function row(
 		ArmsOrder = tuning.ArmsOrder or DEFAULT_ARMS_ORDER,
 		Noise = tuning.Noise or Config.Awareness.DefaultNoise,
 		Suppressor = tuning.Suppressor,
+		Family = tuning.Family,
+		Caliber = tuning.Caliber,
+		CarryMoveFactor = 1,
+		AdsTimeFactor = 1,
+		ArmourPenetration = 0,
+		AmmoBehaviour = "standard",
+		Merged = false,
 		Sight = shown(
 			tuning.Model or DEFAULT_MODEL,
 			Sight.resolve(tuning.Sight or DEFAULT_SIGHT, Config.Weapon.Sights)
@@ -328,6 +351,24 @@ end
 function WeaponDefinitions.options(id: string): { [string]: { string } }
 	local options: { [string]: { string } } = {}
 	local gun = ROWS[id]
+	-- A v2 gun: every slot it takes, with every option but the issued part (an empty slot
+	-- holds that one).
+	if gun and gun.Family then
+		local catalog = WeaponDefinitions.attachmentCatalog()
+		for _, slot in WeaponDefinitions.slots(id) do
+			local ids: { string } = {}
+			for _, optionId in AttachmentUnlock.idsIn(catalog, id, slot.id) do
+				local entry = AttachmentOptions.get(optionId) or AmmoTypes.get(optionId)
+				if entry and not entry.base then
+					table.insert(ids, optionId)
+				end
+			end
+			if #ids > 0 then
+				options[slot.id] = ids
+			end
+		end
+		return options
+	end
 	if gun and gun.Suppressor then
 		options.Barrel = { "suppressor" }
 	end
@@ -391,10 +432,151 @@ end
 
 -- How far a shot from `weapon` carries with `barrel` fitted (nil = bare).
 function WeaponDefinitions.shotNoise(weapon: WeaponDefinition, barrel: string?): number
+	if weapon.Merged then
+		return weapon.Noise -- fitted(): the barrel, muzzle and ammo already in it
+	end
 	if barrel == "suppressor" and weapon.Suppressor then
 		return weapon.Suppressor.Noise
 	end
 	return weapon.Noise
+end
+
+----------------------------------------------------------------------
+-- Attachment system v2 (Config.AttachmentsV2; Nova 2026-11-20)
+----------------------------------------------------------------------
+
+-- What Rules/AttachmentUnlock checks against: every option and ammo type, and each gun's
+-- caliber. Built once.
+local catalog: AttachmentUnlock.Catalog? = nil
+function WeaponDefinitions.attachmentCatalog(): AttachmentUnlock.Catalog
+	local built = catalog
+	if built then
+		return built
+	end
+	local made: AttachmentUnlock.Catalog = {
+		options = table.clone(AttachmentOptions.Rows) :: any,
+		ammo = table.clone(AmmoTypes.Rows) :: any,
+		gunCaliber = function(gunId: string): string?
+			local gun = ROWS[gunId]
+			return gun and gun.Caliber
+		end,
+	}
+	catalog = made
+	return made
+end
+
+-- The v2 slots gun `id` takes (its Family's, with at least one option for it), in menu order;
+-- empty for a gun still on the one-slot fitting.
+function WeaponDefinitions.slots(id: string): { Schema.Slot }
+	local gun = ROWS[id]
+	local list: { Schema.Slot } = {}
+	if not gun or not gun.Family then
+		return list
+	end
+	local all = WeaponDefinitions.attachmentCatalog()
+	for _, slot in Schema.forFamily(gun.Family) do
+		if #AttachmentUnlock.idsIn(all, id, slot.id) > 0 then
+			table.insert(list, slot)
+		end
+	end
+	return list
+end
+
+local function baseStats(weapon: WeaponDefinition, quiet: boolean): AttachmentMerge.GunStats
+	return {
+		damage = weapon.Damage,
+		projectileCount = weapon.Pellets or 1,
+		headshotMultiplier = weapon.HeadshotMultiplier,
+		armorPenetration = 0,
+		projectileBehavior = "standard",
+		-- The suppressed barrel's quiet reach replaces the gun's (shotNoise, as before).
+		alertRadius = if quiet and weapon.Suppressor then weapon.Suppressor.Noise else weapon.Noise,
+		range = weapon.Range,
+		recoil = 1,
+		recoilRecovery = 1,
+		moveSpeed = 1,
+		adsTime = 1,
+		zoom = 1,
+		magazineSize = weapon.MagazineSize,
+		reloadTime = weapon.ReloadTime,
+		hipSpread = weapon.HipSpread,
+	}
+end
+
+local fittedCache: { [string]: WeaponDefinition } = {}
+
+-- Gun `id` as `attachments` fit it (Loadout.attachments: [gun][slot] = option or ammo id): its
+-- row with the merged stats (Rules/AttachmentMerge.merge) for a v2 gun, the row itself for any
+-- other gun, no fitting, or a fitting the rule refuses (the server never signs one). The server
+-- fires, reloads and makes noise with this; the client reads it for its camera and walk only.
+function WeaponDefinitions.fitted(id: string?, attachments: Loadout.Attachments?): WeaponDefinition
+	local weapon = WeaponDefinitions.get(id)
+	local slots = attachments and attachments[weapon.Id]
+	if not weapon.Family or not slots or next(slots) == nil then
+		return weapon
+	end
+	local names: { string } = {}
+	for slot, option in slots do
+		table.insert(names, `{slot}={option}`)
+	end
+	table.sort(names)
+	local key = `{weapon.Id}|{table.concat(names, ";")}`
+	local cached = fittedCache[key]
+	if cached then
+		return cached
+	end
+	local equipped: { [string]: AttachmentMerge.Option } = {}
+	local ammo: AttachmentMerge.Ammo? = nil
+	for slot, optionId in slots do
+		if slot == AmmoTypes.SLOT then
+			ammo = AmmoTypes.get(optionId)
+		else
+			local option = AttachmentOptions.get(optionId)
+			if option then
+				equipped[slot] = option
+			end
+		end
+	end
+	local stats = AttachmentMerge.merge({
+		id = weapon.Id,
+		caliber = weapon.Caliber,
+		stats = baseStats(weapon, slots.Barrel == "suppressor"),
+	}, equipped, ammo)
+	if not stats then
+		fittedCache[key] = weapon
+		return weapon
+	end
+	local out = table.clone(weapon)
+	out.Damage = stats.damage
+	out.Pellets = if stats.projectileCount > 1 then stats.projectileCount else nil
+	out.HeadshotMultiplier = stats.headshotMultiplier
+	out.Noise = stats.alertRadius
+	out.Range = stats.range
+	out.MagazineSize = stats.magazineSize
+	out.ReloadTime = stats.reloadTime
+	out.HipSpread = stats.hipSpread
+	out.BloomPerShot = weapon.BloomPerShot * stats.recoil
+	out.BloomRecovery = weapon.BloomRecovery * stats.recoilRecovery
+	out.Kick = {
+		Pitch = weapon.Kick.Pitch * stats.recoil,
+		Yaw = weapon.Kick.Yaw * stats.recoil,
+		Recover = weapon.Kick.Recover / math.max(stats.recoilRecovery, 0.01),
+	}
+	out.CarryMoveFactor = stats.moveSpeed
+	out.AdsTimeFactor = stats.adsTime
+	out.ArmourPenetration = stats.armorPenetration
+	out.AmmoBehaviour = stats.projectileBehavior
+	out.Merged = true
+	fittedCache[key] = out
+	return out
+end
+
+-- The gun `id` a soldier carries, from their Fitted attribute text (Loadout.encodeFitted).
+function WeaponDefinitions.carried(id: string?, fittedText: unknown): WeaponDefinition
+	if typeof(fittedText) ~= "string" or fittedText == "" then
+		return WeaponDefinitions.get(id)
+	end
+	return WeaponDefinitions.fitted(id, Loadout.decodeFitted(fittedText))
 end
 
 return WeaponDefinitions

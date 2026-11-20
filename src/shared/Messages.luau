@@ -129,6 +129,16 @@ local Messages = table.freeze({
 		State = "state", -- server -> client: (ranks) { [modId]: rank }
 		Refused = "refused", -- server -> client: (modId, reason) "short" | "maxed" | "beyond max" | "not next" | "disabled" | "unknown" | "loading" | "busy"
 	}),
+	-- Attachment (lobby place): attachment system v2 at the Loadmaster's EDIT (AttachmentService,
+	-- AttachmentMenuV2; Rules/AttachmentUnlock).
+	Attachment = table.freeze({
+		Unlock = "unlock", -- client -> server: (optionId) buy it with merits
+		Equip = "equip", -- client -> server: (gunId, slot, optionId) "" = the issued part
+		Owned = "owned", -- client -> server: () ask; server -> client: (ownedIds)
+		Config = "config", -- client -> server: (gunId) ask; server -> client: (gunId, fitting)
+		Equipped = "equipped", -- server -> client: (gunId, slot, optionId)
+		Refused = "refused", -- server -> client: (optionId, reason)
+	}),
 	-- Optic (lobby place): the Loadmaster's EDIT, the M16A4's optic slot (OpticService,
 	-- Rules/AttachmentRules). Bought once with merits; the server checks and spends.
 	Optic = table.freeze({
