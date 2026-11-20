@@ -217,6 +217,12 @@ how the other teams are called is open, for the lore developer.
   the Loadmaster (the helicopter crew chief, who rides the door), the sapper sergeant (a
   staff sergeant) and the motor sergeant (a staff sergeant). Voices and lines in
   [lore/desk_crew.md](lore/desk_crew.md).
+- **The Visitor.** (2026-11-18, owner approved.) A man in a long raincoat waits in a nook
+  under the ramp, behind a tarp, with sealed cases nobody else is cleared to open. He is from
+  the government office that funded the program. He flies in on the one helicopter without the
+  ship's markings, and the crew are told not to see him. No sign, no rank, no unit; a red badge
+  that reads ESCORT REQUIRED. What he has on his table changes every week. Lines in
+  [lore/desk_crew.md](lore/desk_crew.md#the-visitor).
 - **The Plot.** Control's map room under the island, lit red. The corridor chart is a paper
   map on the table under tape and grease pencil (what it shows:
   [lore/world_map.md](lore/world_map.md)); the Containment Board on a lit perspex wall, five
@@ -242,7 +248,8 @@ how the other teams are called is open, for the lore developer.
 Keep it ours: the ship is shared and never upgraded by players (no ship modules), the board
 is paper and perspex (no hologram), a team launches by boarding a helo (no drop pods), the
 desks are people at counters (no rotating store: the rack has fixed prices, no sales, no
-daily stock), and the PA is procedural (no propaganda).
+daily stock; the desks never rotate, the Visitor does, once a week), and the PA is procedural
+(no propaganda). "The desks never rotate. He does."
 
 | Cue | Line |
 |---|---|

@@ -33,12 +33,14 @@ local Spotting = require(ReplicatedStorage.Shared.Rules.Spotting)
 local SpotUtil = require(ReplicatedStorage.Shared.SpotUtil)
 local ThrowUtil = require(ReplicatedStorage.Shared.ThrowUtil)
 local AirStrikeService = require(script.Parent.AirStrikeService)
+local BreachService = require(script.Parent.BreachService)
 local ConcertinaService = require(script.Parent.ConcertinaService)
 local LoadoutService = require(script.Parent.LoadoutService)
 local MineService = require(script.Parent.MineService)
 local PauseService = require(script.Parent.PauseService)
 local SentryService = require(script.Parent.SentryService)
 local SupplyDropService = require(script.Parent.SupplyDropService)
+local TallyService = require(script.Parent.TallyService)
 local ThrowWindUp = require(script.Parent.ThrowWindUp)
 local VehicleService = require(script.Parent.VehicleService)
 local Squad = require(script.Parent.Squad)
@@ -246,6 +248,9 @@ local function fire(
 	if fired and arrivals.Enabled then
 		arrivalRemote:FireAllClients(id, player, landing, direction, impacts)
 	end
+	if fired then
+		BreachService.callIn(cfg)
+	end
 	return fired
 end
 
@@ -347,7 +352,10 @@ function CallInService.spotFor(
 		end
 		local flat = Vector3.new(point.X - root.Position.X, 0, point.Z - root.Position.Z)
 		local direction = if flat.Magnitude > 0.5 then flat.Unit else root.CFrame.LookVector
-		local _, impacts = AirStrikeService.fireMission(credit, cfg, point, direction, 0)
+		local fired, impacts = AirStrikeService.fireMission(credit, cfg, point, direction, 0)
+		if fired then
+			BreachService.callIn(cfg)
+		end
 		if Config.CallIns.Arrivals.Enabled then
 			arrivalRemote:FireAllClients(definition.Id, credit, point, direction, impacts)
 		end
@@ -378,7 +386,11 @@ function CallInService.fireMissionFor(member: Squad.Member, id: string, point: V
 	local flat = Vector3.new(landing.X - root.Position.X, 0, landing.Z - root.Position.Z)
 	local direction = if flat.Magnitude > 0.5 then flat.Unit else root.CFrame.LookVector
 	WorldSounds.at(landing, "callins", "callin_throw")
-	return AirStrikeService.fireMission(nil, cfg, landing, direction, 0)
+	local fired = AirStrikeService.fireMission(nil, cfg, landing, direction, 0)
+	if fired then
+		BreachService.callIn(cfg)
+	end
+	return fired
 end
 
 local function onCallIn(player: Player, slot: unknown, requested: unknown)
@@ -436,6 +448,7 @@ local function onCallIn(player: Player, slot: unknown, requested: unknown)
 		)
 		publish(player, slotIndex, state)
 		usedRemote:FireClient(player, Messages.Ability.CallIn, slotIndex, definition.Id)
+		TallyService.callIn(definition.Id) -- the Carrier hull count (Easter egg 6)
 		print(`[CallIn] {player.Name} used {definition.Name} ({state.charges} left)`)
 	end
 	local state = get(player)[slotIndex]

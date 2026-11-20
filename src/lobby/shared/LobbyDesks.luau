@@ -15,6 +15,8 @@ export type Talk = {
 	bought: string, -- a BUY went through
 	short: string, -- a BUY refused: not enough merits
 	refused: string, -- a BUY refused for any other reason (save down, etc.)
+	first: string?, -- said instead of a greeting the first time a soldier talks to them (a visit)
+	farewell: string?, -- said on choice 3 before the panel closes (otherwise it closes at once)
 }
 
 -- The Arms Room's wall of guns (ArmsRackUI): labels only.
@@ -44,6 +46,7 @@ export type Desk = {
 	rack: Rack?,
 	display: Rack?, -- the Call-ins display behind the desk (CallInDisplayUI): its labels
 	kit: Kit?,
+	unmarked: boolean?, -- no sign over them; the prompt needs a line of sight (the Visitor)
 }
 
 local LobbyDesks: { Desk } = {
@@ -107,12 +110,12 @@ local LobbyDesks: { Desk } = {
 	},
 	{
 		id = "plot",
-		title = "THE PLOT",
+		title = "MAP ROOM",
 		who = "Control's watch officer",
 		issues = "The corridor map and the Containment Board",
 		talk = {
 			greetings = {
-				"This is the Plot. I'm Control, the voice on your radio when you're down there.",
+				"This is the map room. I'm Control, the voice on your radio when you're down there.",
 				"Delta's your mission. Do the job, kill the big one, get to your bird before the Burn.",
 				"Every number on that board is a place we're holding. I'd like them higher.",
 				"Keep it down. Half this room is on the net with a team that's still out.",
@@ -123,7 +126,7 @@ local LobbyDesks: { Desk } = {
 			leave = "That's all.",
 			openLine = "The Harlan Corridor. Coast at the bottom, the dam at the top. You start at Delta.",
 			bought = "That's on your record now. I just keep the map.",
-			short = "You're short on merits. Nothing I can do about that from the Plot.",
+			short = "You're short on merits. Nothing I can do about that from the map room.",
 			refused = "Can't do that from here. Try again in a minute.",
 		},
 	},
@@ -181,6 +184,38 @@ local LobbyDesks: { Desk } = {
 			bought = "It's on your record. Bring it back. You too, ideally.",
 			short = "Not enough merits. Fuel's free. The ATV isn't.",
 			refused = "That one's in bits right now. Give me a minute.",
+		},
+	},
+	{
+		-- The Visitor (owner 2026-11-18: "the visitor is fine for now, it should change every
+		-- week and sell like 5 items, do not implement the items yet, just give him some dialog
+		-- for now"; lines by the lore developer, docs/lore/desk_crew.md > The Visitor). He stands
+		-- in the hidden nook under the ramp (FallowLayout.Desks, Carrier v2 only): no sign, no
+		-- marker. He sells nothing yet, so "What do you sell?" only gets openLine; his weekly
+		-- stock of five is written down (docs/sprints/CARRIER_V2.md > The Visitor), not built.
+		id = "visitor",
+		title = "VISITOR",
+		who = "Escort required",
+		issues = "Not on the ship's books",
+		unmarked = true,
+		talk = {
+			first = "You walked past twice. Come in.",
+			greetings = {
+				"You found me. Most don't. Have a look, and keep it off the net.",
+				"Bring me something of the Warden's, one day.",
+				"Mind the tarp on your way out. It's there for a reason.",
+				"Sit, if you like. The chair is the only thing down here that isn't sealed.",
+				"I read every report from the ground. Yours are better than most.",
+			},
+			open = "What do you sell?",
+			ask = "Who are you?",
+			answer = "A visitor. I'm not on the ship's books, and I'd like it to stay that way.",
+			leave = "Leave.",
+			farewell = "I'll have something else next week. What goes won't come back soon.",
+			openLine = "Nothing on the table this week. Come back when the crates are open.",
+			bought = "Yours, then. Look after it. There isn't another.",
+			short = "Not enough merits. The price doesn't move, I'm afraid.",
+			refused = "Not today. Come back in a minute.",
 		},
 	},
 }

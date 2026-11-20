@@ -5,7 +5,8 @@
 -- item's id, built from the item's own row: a gun's Model (WeaponDefinitions), a grenade's
 -- Model, a call-in's Show pieces (CallInDefinitions). The client takes a copy with `get`; an
 -- item with no model yet (or whose mesh has not loaded) gets a plain stand-in: a gun-sized
--- block, a grenade, or a case banded in the call-in's colour.
+-- block, a grenade, a vehicle's own parts body (VehicleBody), or a case banded in the
+-- call-in's colour. The Carrier's desk screens (lobby DeskScreen) show the same models.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -13,6 +14,7 @@ local RunService = game:GetService("RunService")
 local CallInDefinitions = require(ReplicatedStorage.Shared.CallInDefinitions)
 local Config = require(ReplicatedStorage.Shared.Config)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
+local VehicleBody = require(ReplicatedStorage.Shared.VehicleBody)
 local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
 
 local Showcase = {}
@@ -70,8 +72,22 @@ local function standIn(id: string): Model
 			Enum.PartType.Cylinder
 		)
 	else
-		-- A slung case with a band in the call-in's colour and a handle.
+		-- A vehicle call-in (its Config row has a `Vehicle` block) shows its own body, the
+		-- one the match drives and the motor pool parks (VehicleBody, anchored parts).
 		local row = CallInDefinitions.get(id)
+		local tuning = row and (Config.CallIns :: any)[row.ConfigKey]
+		local vehicle = tuning and tuning.Vehicle
+		local body = vehicle and VehicleBody.build(vehicle.Body, CFrame.new(), true)
+		if body then
+			for _, part in body:GetDescendants() do
+				if part:IsA("BasePart") then
+					lookOnly(part)
+				end
+			end
+			body.Name = id
+			return body
+		end
+		-- A slung case with a band in the call-in's colour and a handle.
 		block(model, Vector3.new(1.4, 1.1, 2.2), CFrame.new(0, 0.55, 0), OLIVE)
 		block(
 			model,
@@ -137,6 +153,19 @@ function Showcase.init()
 	folder.Parent = ReplicatedStorage
 	for _, id in WeaponDefinitions.allIds() do
 		task.spawn(build, folder, id, { { Mesh = WeaponDefinitions.get(id).Model } })
+		-- The gun with each optic it takes on (the Loadmaster's EDIT): "<gun>+<optic>".
+		local optics: { string } = WeaponDefinitions.options(id).Optic or {}
+		for _, opticId in optics do
+			local mesh = WeaponDefinitions.dressed(id, opticId)
+			if mesh ~= WeaponDefinitions.get(id).Model then
+				task.spawn(
+					build,
+					folder,
+					WeaponDefinitions.dressedId(id, opticId),
+					{ { Mesh = mesh } }
+				)
+			end
+		end
 	end
 	for id, grenade in WeaponDefinitions.Grenades do
 		local mesh = grenade.Model

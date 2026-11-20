@@ -108,8 +108,22 @@ match place.
   no personality"; lines and voices by the lore developer, `LobbyDesks` `talk`, voice sheets
   in docs/lore/desk_crew.md): a greeting picked at random from four, then 1 their kit, 2 a
   question, 3 leave (click or keys 1-3), plus their own bought / short / refused lines. The
-  Quartermaster talks through `ArmsRackUI`, the Loadmaster through `LoadmasterUI`, Call-ins
-  through `DeskDialogUI` (1 opens its `DeskShop`).
+  Quartermaster talks through `ArmsRackUI`, the Loadmaster through `LoadmasterUI`, Call-ins,
+  Vehicles and the Plot through `DeskDialogUI`; all three build the same talk panel
+  (`DeskTalk`, the Loadout's menu dress since 2026-11-17).
+- **The desk screens** (2026-11-17, owner: "any NPC interaction UI should be using the
+  Prototype 2 UI... the same as the Loadmaster"; not yet seen in game): choice 1 at the
+  Call-ins and Vehicles desks opens `DeskScreen`, the Loadout screen's look (`KitView`). The
+  Quartermaster keeps the GTA gun wall (Nova, 2026-11-18: the desk screen had replaced it by
+  accident; `Config.Lobby.DeskScreen.KeepOwnView = { arms_room = true }`, take him off the list
+  to put him on the desk screen). The desk screen:
+  what the desk sells in the Loadout's columns with each item's shape, the picked one turning
+  in 3D over its stat bars, the person's line under the header in their own voice, and BUY
+  (Enter, gamepad Y) in the footer; Back steps back to the talk. Buying is unchanged: the same
+  `Record` remote, the server decides (`RecordService`). Look: docs/STYLES.md section 5 > The
+  desk screens. `Config.Lobby.DeskScreen.Enabled = false` puts back the camera on the rack, the
+  call-in pallets and the plain `DeskShop` list (the rack and pallets stay in the world either
+  way).
 - **The Plot** (`PlotService`, `ContainmentBoard`, rule `Rules/Containment`): the red-lit
   map room under the island with the Containment Board on a lit perspex panel (five
   districts: percent and band word). It rereads the board every 60 s and wipes and rewrites a
@@ -122,10 +136,12 @@ match place.
   with borders, the river and dam, Route 9, County Road 40, the coast road, the rail line, the
   grease-pencil quarantine line, burned towns, forests, the Carrier offshore with Lantern's
   pencilled track, a title, a legend and a red Plot stamp; about 150 flat parts, built once.
-  **Roomier** (Nova 2026-11-10: "way too cramped", stand in front of the map): the west wall
-  moved out from X 14 to X 4, the table sits at X 19 with about eight studs of floor between it
-  and the door, so you read the map the right way up from its west side; the officer stands
-  across it (26.8, -3) and her prompt reaches 18 studs (`DeskPlace.reach`) to cover the table.
+  **Open floor since 2026-11-17** (owner: the walls were "too awkward to walk in and out of"
+  and a full lobby would be cramped): no walls, door or lintel; the table stands at X 19 in
+  open hangar floor, walked up to from any side (the map reads the right way up from its west
+  side); the board stands on two end posts with flat feet (`PlotService`); the red lamp and the
+  map light still hang from the deckhead. Players read it as **MAP ROOM** (the officer's sign,
+  her lines, the runner's; code keeps "Plot"). The officer stands across the table (26.8, -3) and her prompt reaches 18 studs (`DeskPlace.reach`) to cover the table.
   A white light set flush in the deckhead over the table lights the paper (a hanging lamp
   blocked the map view). While the map is up the talk panel moves to the left edge and the
   map to the right of the screen (the panel covered the map).  **The numbers are placeholders**
@@ -133,7 +149,7 @@ match place.
 
 - **The walking crew** (2026-11-10, Nova: "give the fallow some life"; roles and lines by the
   lore developer, docs/lore/ship_company.md): six of the ship's company and Army staff -
-  plane director (yellow), deck hand (blue), hangar mechanic (green), Plot runner, screening
+  plane director (yellow), deck hand (blue), hangar mechanic (green), map room runner, screening
   medic (white smock), lane sentry - walk there and back along `FallowLayout.Crew`, pausing
   at each end. `CrewService` places NpcBody figures once (tag `Crew`, route as an attribute);
   each client walks its own copy (`CrewWalk`: one `BulkMoveTo` a frame on the anchored roots,
@@ -312,7 +328,8 @@ The rack is where guns are **bought** (merits, onto the soldier's record; owner 
   sold for tabs.
 
 - **Talk** (F on the Quartermaster, `ArmsRackUI` for a desk with a `rack` in `LobbyDesks`): a
-  greeting, then 1 "Show me the guns." (the rack), 2 "How do I get merits?", 3 "That's all." Wording by the lore developer: BUY and a price in
+  greeting, then 1 "Show me the guns." (the camera on the rack, below; since 2026-11-18 he
+  keeps it while the other desks use the desk screen), 2 "How do I get merits?", 3 "That's all." Wording by the lore developer: BUY and a price in
   MERITS may show; never shop, store, wares, sell, lock or unlock.
 - **The corner** (`ArmsRack`, `FallowLayout.ArmsRoom`; Nova 2026-11-10: "use that entire
   corner for him", "the glass case would act as the desk, like in GTA"): the Arms Room fills
@@ -352,8 +369,9 @@ The rack is where guns are **bought** (merits, onto the soldier's record; owner 
      88  Loadmaster (-2), facing the spawn
      80  ┌ramp foot (hangar)┐ well X -30..-10
      20  └ramp top (deck)───┘ comes up facing aft
+     21  the Visitor (-25.5), v2 only: in the nook under the ramp's high end, no sign
      50..-10                        ┌island┐ X 22..34 (deck); Plot under it (hangar,
-                                    └──────┘  X 4..33, Z -10..30)
+                                    └──────┘  X 4..33, Z -10..30, open floor)
     -15  spot 4 (helo X -12, ring radius 14, sign X 2)
     -48  Vehicles: motor sergeant (9), facing the spawn (hangar)
     -52..-78  motor pool bays X -20..-8, -6..6 (the ATV, 0,-64), 12..24
@@ -374,8 +392,8 @@ Layout by the level designer (`FallowLayout.MotorPool`; `MotorPool` builds it fr
 
 - **The motor sergeant** (desk VEHICLES, `LobbyDesks`; lines in docs/lore/desk_crew.md)
   stands at (9, -48) behind the standard counter, facing the soldiers coming round the Plot.
-  She sells every row with `Desk = "vehicles"` (today the ATV, 400 merits) on the plain desk
-  panel (`DeskShop`); it is signed into a call-in slot at the Loadmaster.
+  She sells every row with `Desk = "vehicles"` (today the ATV, 400 merits) on the desk screen
+  (`DeskScreen`: a VEHICLES list, the ATV turning as its own body); it is signed into a call-in slot at the Loadmaster.
 - **Three painted bays** across the aft hangar, Z -78..-52: X -20..-8 and 12..24 empty for
   later vehicles, and the ATV in the middle one on the spawn's centre line (0, -64), nose to
   the spawn, so it shows down the aisle past the Loadmaster. It is the match's own build
@@ -459,8 +477,10 @@ sling across his chest"; the crew's block eyes "dont look right" on the R15 bodi
 | Place | File |
 |---|---|
 | Project | `lobby.project.json` (shares `src/shared`; `src/lobby/shared` as `ReplicatedStorage.Lobby`; maps the match's `src/server/PlayerSetup.luau` into the lobby server and `src/client/HudTheme.luau`, `PaletteController.luau`, `LoadoutMenu.luau` into the lobby client; sets `Lighting.Technology`) |
-| Server | `src/lobby/server/`: `Main.server`, `FallowLayout`, `Build`, `FallowBuilder`, `FallowArt`, `PikeBody`, `NpcBody`, `DeskService`, `ContainmentBoard`, `PlotService`, `LaunchService`, `LanternBird`, `ArmsRack`, `LoadmasterService` |
+| Server | `src/lobby/server/`: `Main.server`, `FallowLayout`, `Build`, `FallowBuilder`, `FallowArt`, `PikeBody`, `NpcBody`, `DeskService`, `ContainmentBoard`, `PlotService`, `LaunchService`, `LanternBird`, `ArmsRack`, `LoadmasterService`, `OpticService` |
 | Client | `src/lobby/client/`: `Main.client`, `LaunchUI`, `DeskDialogUI`, `ArmsRackUI`, `LoadmasterUI`, `DeskShop`, `RecordClient`, `LobbyMusic`, `ShipAmbience`, `SlingHands`, `HoldStill`, `RadarSpin`, `LanternSpool`, `SoldierMoves` |
+| Server | `src/lobby/server/`: `Main.server`, `FallowLayout`, `Build`, `FallowBuilder`, `FallowArt`, `PikeBody`, `NpcBody`, `DeskService`, `VisitorBody`, `ContainmentBoard`, `PlotService`, `LaunchService`, `LanternBird`, `ArmsRack`, `LoadmasterService` |
+| Client | `src/lobby/client/`: `Main.client`, `LaunchUI`, `DeskDialogUI`, `ArmsRackUI`, `LoadmasterUI`, `DeskShop`, `RecordClient`, `LobbyMusic`, `ShipAmbience`, `SlingHands`, `HoldStill`, `RadarSpin`, `LanternSpool`, `SoldierMoves`, `VisitorLook` |
 | Art | `assets/3d/build/fallow.py` (12 `env_fallow_*` meshes), `lantern.py` (4 `veh_lantern_*`); `MeshAssets` entries; `Config.Lobby.Ship`, `Config.Lobby.Lantern`; attribute `LiftAt`; rule `Rules/ArmsStats` (+ spec), `Config.Lobby.Rack` |
 | Shared | `src/lobby/shared/LobbyDesks`; rules `src/shared/Rules/Manifest`, `Rules/Containment`, `Rules/Handoff` (main's, the teleport data both places share); `Config.Lobby`, `Config.Places`, `Config.Containment`; remotes `Launch` + `Messages.Launch`, `Loadout` (shared with the match); attribute `DeskId` |
 | Match side | `HandoffService` reads the teleport data and `RunManager.receive` applies the signed Loadout (2026-11-09; `JoinData` retired); `LoadoutMenu.mount` options (title, hint, confirm) |
@@ -504,7 +524,14 @@ called **Loadout**. Lines by the lore developer (merits, the record, `LobbyDesks
   the rack's copy of the gun turning in a viewport, a list per slot (`Config.Attachments.Slots`:
   the Barrel, NONE or the suppressor), the suppressor shown on the muzzle as it is picked, DONE
   or BACK. The row then reads e.g. "M16A4 +SUP". What is fitted is signed with the rest (the
-  Loadout's `attachments`, saved, flown to the match). The soldier is held still (`HoldStill`, shared with
+  Loadout's `attachments`, saved, flown to the match). **Optic** (2026-11-18, Nova; the M16A4
+  only): under the Barrel, "X/3 OPTICS UNLOCKED" and NONE, Red dot, CompM2, ACOG; a locked
+  optic is greyed with `BUY · <price>`, an owned one reads OWNED, the fitted one is lit
+  EQUIPPED. BUY and picking an optic go to `OpticService` (the `Optic` remote): the server
+  buys onto the record and signs the fitting at once (`LoadmasterService.fit`); the row only
+  changes when it answers, and BACK keeps a fitted optic (rules and numbers:
+  [PROGRESSION.md > Attachments](../PROGRESSION.md#attachments)). Verified live in ZCS Dev
+  2026-11-18: buy, refused buys (owned, short), refused fits (not owned, wrong gun), fit. The soldier is held still (`HoldStill`, shared with
   the rack); BACK or Backspace steps out. Prototype: the whole catalog may be signed for.
   **Bigger, with the item in 3D** (2026-11-16, owner; not yet seen in game): the screen fills
   most of the display (1560x880 at 1080p, a tabbed layout on a phone), each row shows the
@@ -513,6 +540,13 @@ called **Loadout**. Lines by the lore developer (merits, the record, `LobbyDesks
   `Shared.Showcase` (booted in both places), numbers from `Rules/ArmsStats` and
   `Rules/KitCard`; layout in `docs/STYLES.md` §5 > The Loadout screen. Stand-ins: the Hammer,
   Anvil and Aid Bag (a case in their colour) and the frag (a plain grenade) have no model yet.
+  **KIT MODS tab** (2026-11-18, Nova; for the owner to decide, PROGRESSION.md > Kit Mods):
+  LOADOUT | KIT MODS beside BACK, the Loadout screen's own tab buttons (`LoadmasterUI`). KIT
+  MODS covers the lists with `KitModsTab`: a row per mod with its name, what it does, RANK n/3
+  and pips, the next rank's price and BUY (red when affordable), MAXED, or greyed COMING SOON
+  for a mod not switched on. BUY goes to `KitModService` on the `KitMods` remote; the row
+  changes when the server answers. Seen in ZCS Dev (the panel, refusals: disabled, not next,
+  beyond max, short); a bought rank not yet (no test merits on the dev record).
 - **Server** (`LoadmasterService`): checks the request with the match's rules and catalog
   (`Rules/Loadout`, `ArmsRoom`), keeps one signed Loadout per player, answers on the `Loadout`
   remote. **Kept between visits** (2026-11-10): saved in the DataStore `LoadmasterLoadouts`

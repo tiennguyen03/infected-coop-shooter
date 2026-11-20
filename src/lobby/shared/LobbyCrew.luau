@@ -26,6 +26,7 @@ local LobbyCrew: { Crew } = {
 		lines = {
 			"Chocks and chains. Every spot, every time.",
 			"They hose the birds before I touch them.",
+			"Don't go under the ramp. Nobody's under the ramp.", -- the Visitor (LobbyDesks)
 		},
 	},
 	{
@@ -38,10 +39,10 @@ local LobbyCrew: { Crew } = {
 	},
 	{
 		id = "runner",
-		role = "Plot runner",
+		role = "Map room runner",
 		lines = {
 			"Make a hole. Message for the island.",
-			"Plot wants a count. Nobody likes the count.",
+			"The map room wants a count. Nobody likes the count.",
 		},
 	},
 	{

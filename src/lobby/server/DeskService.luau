@@ -1,8 +1,9 @@
 --!strict
 -- The hangar desks (LobbyDesks, placed by FallowLayout.Desks): a crew figure behind a
 -- counter, the desk's stencil over it, its props, and a "Talk" prompt (F). The prompt carries
--- the desk id; the client shows the line (DeskDialogUI), or the desk's own screen (ArmsRackUI,
--- LoadmasterUI). Buying waits for the save service (docs/ARCHITECTURE.md F9).
+-- the desk id; the client shows the talk (DeskTalk, through DeskDialogUI, ArmsRackUI or
+-- LoadmasterUI) and, for a desk that sells kit, the desk screen (DeskScreen). Every buy is
+-- decided by RecordService.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -16,8 +17,12 @@ local Build = require(script.Parent.Build)
 local Layout = require(script.Parent.FallowLayout)
 local MotorPool = require(script.Parent.MotorPool)
 local NpcBody = require(script.Parent.NpcBody)
+local NpcPose = require(script.Parent.NpcPose)
+local VisitorBody = require(script.Parent.VisitorBody)
 
 local DeskService = {}
+
+local V2 = Config.Lobby.CarrierV2.Enabled -- Carrier v2: corners with their own props (CarrierV2)
 
 local COUNTER = Color3.fromRGB(84, 88, 92)
 local CRATE = Color3.fromRGB(86, 92, 66)
@@ -54,6 +59,13 @@ local DRESS: { [string]: NpcBody.Dress } = {
 		trousers = ARMY.trousers,
 		items = { 9482682978, 9482717204 },
 	},
+	-- The Visitor: the raincoat's colour on the torso, dark trousers; the coat, the sweater, the
+	-- collar and the red ESCORT REQUIRED badge are parts (VisitorBody). No catalog items yet.
+	visitor = {
+		shirt = VisitorBody.Coat,
+		trousers = VisitorBody.Trousers,
+		skin = Color3.fromRGB(200, 178, 160), -- pale: he does not work on deck
+	},
 	-- Military shirt, combat pants, a headset (A6 A9 E5).
 	plot = {
 		shirt = ARMY.shirt,
@@ -77,7 +89,7 @@ local function props(folder: Folder, id: string, frame: CFrame)
 		-- The whole corner: the glass counter, the long-gun wall, the fence (ArmsRack,
 		-- FallowLayout.ArmsRoom).
 		ArmsRack.build(folder, id)
-	elseif id == "loadmaster" then
+	elseif id == "loadmaster" and not V2 then
 		-- Slung cases waiting for the door.
 		prop("Case", Vector3.new(4, 3, 3), Vector3.new(-5, 1.5, 5), CRATE)
 		prop("Case", Vector3.new(4, 3, 3), Vector3.new(-5, 4.5, 5), CRATE)
@@ -90,14 +102,17 @@ local function props(folder: Folder, id: string, frame: CFrame)
 			{ collide = false }
 		)
 	elseif id == "callins" then
-		-- The fire-mission radio on the counter (it came over from the Fires desk); behind him
+		-- The fire-mission radio on the counter (it came over from the Fires desk; v2: his field
+		-- telephone on the crate-table, CarrierV2); behind him
 		-- every call-in he sells, laid out on the floor (CallInDisplay, FallowLayout.CallInDisplay).
-		prop(
-			"RadioSet",
-			Vector3.new(2.4, 1.6, 1.2),
-			Vector3.new(2, 4.2, -2.4),
-			Color3.fromRGB(60, 64, 50)
-		)
+		if not V2 then
+			prop(
+				"RadioSet",
+				Vector3.new(2.4, 1.6, 1.2),
+				Vector3.new(2, 4.2, -2.4),
+				Color3.fromRGB(60, 64, 50)
+			)
+		end
 		CallInDisplay.build(folder, id)
 	elseif id == "vehicles" then
 		-- The motor pool behind her: the bays, the parked ATV, chests, tyres, fuel, a light.
@@ -118,20 +133,30 @@ function DeskService.init()
 			warn(`[DeskService] no LobbyDesks entry for {place.id}`)
 			continue
 		end
-		local _, torso = NpcBody.build(
+		local body, torso = NpcBody.build(
 			folder,
 			desk.title,
 			place.feet,
 			place.facing,
 			DRESS[desk.id] or NpcBody.Ship
 		)
+		-- Carrier v2: seated, leaning, feet up, each in their own corner (NpcPose).
+		if V2 and Config.Lobby.CarrierV2.Poses then
+			NpcPose.apply(body, desk.id)
+		end
+		if desk.id == "visitor" then
+			VisitorBody.dress(body)
+		end
 		local frame = CFrame.lookAt(place.feet, place.feet + place.facing)
 		props(folder, desk.id, frame)
 
 		-- The counter in front of the person, the stencil over it (or over the person when the
-		-- place has no counter: the Plot's watch officer works at the map table).
+		-- place has no counter: the Plot's watch officer works at the map table). An unmarked
+		-- desk (the Visitor: no counter) has no sign either; he is found by walking in.
 		if place.counter == false then
-			Build.sign(torso, desk.title, desk.who, 4)
+			if not desk.unmarked then
+				Build.sign(torso, desk.title, desk.who, 4)
+			end
 		else
 			local counter = Build.part(
 				folder,
@@ -149,7 +174,8 @@ function DeskService.init()
 		prompt.KeyboardKeyCode = Config.Keys.Interact
 		prompt.HoldDuration = 0
 		prompt.MaxActivationDistance = place.reach or Config.Lobby.DeskPromptDistance
-		prompt.RequiresLineOfSight = false
+		-- An unmarked desk is not talked to through a wall or the tarp.
+		prompt.RequiresLineOfSight = desk.unmarked == true
 		prompt:SetAttribute(Attributes.DeskId, desk.id)
 		prompt.Parent = torso
 	end

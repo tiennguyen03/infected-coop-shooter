@@ -141,6 +141,22 @@ return {
 			true
 		)
 	end,
+	["a bigger version of a map plays that map's signature objectives"] = function()
+		local rows, maps = sound()
+		maps.delta_xl = {
+			Of = "delta",
+			Main = pool({ "burn", "hold" }),
+			Side = pool({ "lamp" }),
+			Sites = maps.delta.Sites,
+		}
+		expect.equal(#Objectives.validate(rows, maps), 0)
+	end,
+	["a bigger version names a map that exists"] = function()
+		local rows, maps = sound()
+		maps.delta_xl =
+			{ Of = "nowhere", Main = pool({ "burn", "hold" }), Side = {}, Sites = maps.delta.Sites }
+		expect.equal(has(Objectives.validate(rows, maps), 'delta_xl: no map "nowhere"'), true)
+	end,
 	["a listed objective needs a site with everything it needs"] = function()
 		local rows, maps = sound()
 		maps.delta.Sites.lamp = nil
@@ -240,5 +256,66 @@ return {
 		expect.equal(Objectives.isOpen("active"), true, "active")
 		expect.equal(Objectives.isOpen("done"), false, "done")
 		expect.equal(Objectives.isOpen("failed"), false, "failed")
+	end,
+	["the big meter shows what the squad worked on last, else the main objective"] = function()
+		local function entry(
+			slot: string,
+			role: string,
+			total: number,
+			state: string?
+		): Objectives.Entry
+			return {
+				slot = slot,
+				role = role,
+				id = slot,
+				name = slot,
+				why = "",
+				place = "",
+				step = "",
+				done = 0,
+				total = total,
+				unit = "s",
+				state = (state or "active") :: Objectives.State,
+				position = nil :: any,
+			}
+		end
+		local main = entry("main", "main", 60)
+		local side = entry("side1", "side", 3)
+		local board = { main, side }
+		local function slot(picked: Objectives.Entry?): string?
+			return picked and picked.slot
+		end
+		expect.equal(slot(Objectives.meterFocus(board, {}, 10, 4)), "main", "nothing moved: main")
+		expect.equal(
+			slot(Objectives.meterFocus(board, { side1 = 8 }, 10, 4)),
+			"side1",
+			"the side moved 2 s ago"
+		)
+		expect.equal(
+			slot(Objectives.meterFocus(board, { side1 = 5 }, 10, 4)),
+			"main",
+			"the side moved too long ago"
+		)
+		expect.equal(
+			slot(Objectives.meterFocus(board, { main = 9, side1 = 8 }, 10, 4)),
+			"main",
+			"the latest wins"
+		)
+		local pending = { entry("main", "main", 0), side }
+		expect.equal(slot(Objectives.meterFocus(pending, {}, 10, 4)), nil, "nothing to count")
+		local finished = { entry("main", "main", 60, "done"), side }
+		expect.equal(
+			slot(Objectives.meterFocus(finished, { main = 9 }, 10, 4)),
+			nil,
+			"a finished one has no meter"
+		)
+	end,
+	["a hold reads as holding, paused, not begun, or a plain count"] = function()
+		expect.equal(Objectives.holdState("s", 12, 60, 0.5, 1.6), "holding", "moved just now")
+		expect.equal(Objectives.holdState("s", 12, 60, 3, 1.6), "paused", "stopped partway")
+		expect.equal(Objectives.holdState("s", 0, 60, math.huge, 1.6), "idle", "not begun")
+		expect.equal(Objectives.holdState("s", 60, 60, 0.5, 1.6), "count", "full")
+		expect.equal(Objectives.holdState("count", 1, 3, 0.5, 1.6), "count", "a count")
+		expect.equal(Objectives.holdState("", 0, 0, 0.5, 1.6), "count", "nothing to count")
 	end,
 }

@@ -229,3 +229,34 @@ Lobby meshes (12 `env_fallow_*`, 4 `veh_lantern_*`) uploaded 2026-11-09 to the g
 Open Cloud imports the FBX at 100x (1 Blender unit → 100 studs) and clamps any axis to 2048,
 so the imported size is meaningless; `MeshAssets.luau` sets the intended stud size (Blender
 dimensions X, Z, Y) and the MeshPart scales the mesh to it.
+
+## Carrier v2 kit (the lobby, 2026-11-18)
+
+45 meshes from `assets/3d/build/carrier_kit.py`, uploaded without Studio as **Model** assets
+owned by the group (`upload_models.js`, Open Cloud). Their model ids are in
+`assets/3d/build/carrier_uploaded.json` and, with each in-game size and offset, in the generated
+`src/shared/CarrierKitMeshes.luau`; MeshAssets loads each model's MeshPart with
+`InsertService:LoadAsset` (`modelId`), so no MeshId is recorded. Placed by `CarrierV2`
+(`docs/sprints/CARRIER_V2.md` > In the lobby).
+
+## Optics
+
+Free models for the M16A4's optics, all by **notcplkerry** on Sketchfab under **CC BY 4.0**
+(commercial use allowed; credit the author). The downloads (.blend, kept out of git) are cut
+once by `build/optics.py --prepare` into `source/opt_<id>.obj`; the build puts each on the
+M16 (`wpn_m16_<id>`), uploaded as group Model assets (`build/upload_models.js`, ids in
+`build/carrier_uploaded.json`), loaded by MeshAssets `modelId`.
+
+| Mesh | Model asset | Size | Optic |
+|---|---|---|---|
+| wpn_m16_acog | 112543898025888 | 0.25 x 1.23 x 3.08 | ACOG 4x (1,779 tris with the rifle) |
+| wpn_m16_compm2 | 108280623635703 | 0.25 x 1.28 x 3.08 | CompM2 (1,982 tris) |
+| wpn_m16_reddot | 88119224076426 | 0.25 x 1.15 x 3.08 | Red dot, the RMR on a riser (1,150 tris) |
+
+Sources:
+
+| Optic | Model | Licence |
+|---|---|---|
+| ACOG 4x (`acog`) | [Low-Poly Trijicon ACOG scope & RMR reflex sight](https://sketchfab.com/3d-models/low-poly-trijicon-acog-scope-rmr-reflex-sight-bdc3487c2b5b40148347e1f68c2f1c86) (the TA01, ~1.8k tris with the RMR) | CC BY 4.0, notcplkerry |
+| Red dot (`reddot`) | the RMR in the same pack | CC BY 4.0, notcplkerry |
+| CompM2 (`compm2`) | [Low-Poly Aimpoint ECOS-N / CompM2](https://sketchfab.com/3d-models/low-poly-aimpoint-ecos-n-compm2-78e7674c782446aebdb10e89f903b397) (~1.3k tris; the ECOS-N is a CompM2 on another mount) | CC BY 4.0, notcplkerry |

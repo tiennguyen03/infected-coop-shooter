@@ -202,7 +202,13 @@ UIScale) and its text through `HudTheme.label`.
   with RichText (`HudTheme.tint`). Menu headers take the `//` prefix.
 - **Scale and safe areas:** one UIScale per HUD ScreenGui, `clamp(viewport.Y / 1080, 0.62,
   1)`, set on ViewportSize change. 16 px edge margin. Touch-only devices (no keyboard) move
-  the mission line and subtitles to top centre, clear of the thumbstick and buttons.
+  the mission stack (mission line, meter, subtitles, insert card) to top centre, clear of
+  the thumbstick and buttons, DOWNED to 40% down, and drop side objectives' reason line.
+- **Nothing stacks on anything** (2026-11-17, Nova: "the in game UI is clutter and overstack
+  each other"): elements whose height changes share one flow instead of fixed offsets. The
+  left column (`HudTheme.inLeftColumn`, `Config.Hud`) is the reinforcements line, the squad
+  panel, then the objective list; the mission stack (`MissionLine.attach`) is the mission line with its meter, then
+  subtitles (and on touch the insert card). A new HUD element that grows joins a flow.
 - **Motion:** appear 0.18 s Quad Out (fade + 8 px rise or a 40 px slide for cards),
   disappear 0.3 s fade; the health trail holds 0.35 s then shrinks 0.25 s; pulses are
   computed at 15 Hz, not tweened. Nothing on the HUD runs per frame except the crosshair
@@ -214,20 +220,23 @@ UIScale) and its text through `HudTheme.label`.
 |---|---|---|
 | Health stack (`HealthBarUI`) | top left (16,12) | 400x16 red bar, white damage trail; shield 400x6 white bar under it with a "+N" tag; low health: red outline + red edge vignette pulsing; downed: dim fill, vignette held |
 | Abilities (`AbilityUI`) | top left (16,44) | seven 38 px circles G / F / V / 1-4 (frag, shove, stim, the call-ins): key letter from `Config.Keys`, name under (PC); cooling: white fill rising, seconds; grenades, stims and call-in charges as yellow squares under the circle, the circle dims when empty; a diamond marks an upgrade in the slot |
-| Resupply (`ResupplyUI`) | top left (16,108) | 14 pt line + 240x4 bar with quarter ticks; ready: "RESUPPLY READY [X] FLARE" with the bar pulsing; inbound: "PALLET 0:14", bar drains |
+| Resupply (`ResupplyUI`) | top left (16,108) | 14 pt line + 240x4 bar with quarter ticks; ready: "RESUPPLY READY [X] FLARE" with the bar pulsing; paid for but the flare's wait running (`Config.Scarcity.Resupply`): "RESUPPLY  FLARE IN 1:12" (yellow), bar dim; inbound: "PALLET 0:14", bar drains |
+| Reinforcements (`ReinforceUI`, `Config.Scarcity.Reinforce`) | left column, first (over the squad panel) | "REINFORCEMENTS" 12 dim + one 9 px square per reinforcement, 4 apart: yellow left, empty outline spent (one just spent flashes red.l 0.5 s); "NO REINFORCEMENTS" red.l when none; hidden when reinforcements are off |
 | Stamina (`StaminaUI`) | top left (16,38), under the shield bar | 300x4 yellow bar, no label: shorter and thinner than health; hidden until stamina is spent (0.18 s in), fades out 0.3 s once full for 2 s (`Config.Stamina.BarHideAfter`); winded: fill and outline red.l, pulsing twice a second (15 Hz) until sprint is back |
-| Squad panel (`SquadPanelUI`, `Config.SquadPanel`) | left edge (16,176) | one 190x32 row per other squad member (max 3, callsign order): name 14 in friendly blue (a player's display name, a bot's callsign), state 12 right-aligned, 190x6 health bar (red; red.l with a red outline under 30%), 190x3 white Armour Plate bar when plated; downed: "DOWN 23s" on a draining red.l bar, "REVIVING" on a filling blue bar; dead: dim, "DEAD 8s" while a bot's respawn runs; a red.l flash on a hit of 25% or a down. Repaints on attribute changes; a 0.25 s timer only while a countdown shows |
+| Squad panel (`SquadPanelUI`, `Config.SquadPanel`) | left column (16,150), under the reinforcements line; as tall as its rows | one 190x32 row per other squad member (max 3, callsign order): name 14 in friendly blue (a player's display name, a bot's callsign), state 12 right-aligned, 190x6 health bar (red; red.l with a red outline under 30%), 190x3 white Armour Plate bar when plated; downed: "DOWN 23s" on a draining red.l bar, "REVIVING" on a filling blue bar; dead: dim, "DEAD 8s" while a bot's respawn runs; a red.l flash on a hit of 25% or a down. Repaints on attribute changes; a 0.25 s timer only while a countdown shows |
 | Run timer (`RunTimerUI`) | top centre (0,8) | 16 pt, no panel |
 | Ammo (`LoadoutUI`) | crosshair (+40,+40) | the gun in hand 12 pt above it with "[Q] PISTOL" dim (the other gun); magazine GothamBlack 26 + " / reserve" 16 dim; yellow low, "RELOADING" + bar, red "DRY [R]"; attribute-driven |
 | Loadout screen (`LoadoutMenu`: the Loadmaster's LOADOUT, the match's ARMS ROOM on B) | centre, fitted to the screen (below) | three columns of rows with the item's shape, and an inspect panel with the item turning in 3D over its stat bars: "The Loadout screen" below |
+| Desk screens (lobby `DeskScreen`, talk `DeskTalk`) | centre, the Loadout's size | the Loadout's look for the Quartermaster, Call-ins and Vehicles: what the desk sells, the person's line under the header, BUY in the footer: "The desk screens" below |
 | Reward cards (`RewardPanel`, opened by `ResupplyUI` on a crate's prompt) | centre, DisplayOrder 60 | up to three 300x400 cards 16 apart under "//RESUPPLY" 30 yellow, a 18 pt note and a dim "closes in 0:42"; a card: menu fill (22,8,8) at 0.08 with a red.m 1 px box and a 4 px bar in its kind's colour (supply yellow, field upgrade blue), "[1]" 16 yellow, kind tag 16 right, 88 px icon, name GothamBlack 28, one-line description Gotham 20, red.l "REPLACES ..." 16; hover or gamepad selection: cream 3 px box; taken: cream flash, x1.06, the others shrink and fade, gone in 0.45 s; footer 16: yellow squares + callsigns that have taken theirs, the refusal in red.l, "[E] CLOSE (or walk away)"; black layer behind at 0.8 transparency. On a short screen the panel is held at 0.7 scale or more (name 19 px, description 14 px on 844x390) |
-| Mission line (`MissionLine`, driven by `ObjectiveUI` / `ExtractionUI`) | lower centre (0.5, 0.8) | "MAIN OBJECTIVE  NAME" (name yellow), its reason on the second line the whole time, a dim 14 pt third line (what to do now, progress, timer, distance in metres), a 300x3 bar; "HOLD the LZ" / "WAITING FOR SQUAD n/m" / red "RETURN to the LZ"; extraction outranks the objective |
-| Objective list (`ObjectiveUI`) | top left (16,150) | one row per known objective: a needle that turns toward it (up = ahead), "MAIN OBJECTIVE / SIDE OBJECTIVE  NAME  140 m" 14 pt; a side objective adds its reason and its step, 12 pt; DONE yellow, FAILED red.l for 6 s; refreshed at 4 Hz |
-| Objective card (`ObjectiveUI`) | upper centre (0.5, 120) | at insert, 8 s, no panel: "MAIN OBJECTIVE" 14 dim, the name GothamBlack 36 yellow, the reason 18, "at <place>" 16 dim |
-| Subtitles (`BuffNoticeUI.subtitle`) | under the mission line | "CONTROL: radio line" (BuffNotice kind radio), the Warden's "WARDEN: ..." tells |
+| Mission line (`MissionLine`, driven by `ObjectiveUI` / `ExtractionUI`) | mission stack: lower centre from (0.5, 0.72) down; touch top centre (0.5, 40) | "MAIN OBJECTIVE  NAME" (name yellow), its reason on the second line the whole time, a dim 14 pt third line (what to do now, timer, distance in metres), then the meter (below); "HOLD the LZ" / "WAITING FOR SQUAD n/m" / red "RETURN to the LZ"; extraction outranks the objective |
+| Objective meter (`MissionLine`, `Config.Objectives.Meter`) | under the mission line | whenever there is progress: GothamBlack 20 readout over a 440x10 hard-edged bar (track at 0.3, 1 px white outline at 0.75, yellow fill easing 0.25 s to each server step). "HOLDING  23 of 60s" (HOLDING yellow) while a hold's seconds rise; "PAUSED  23 of 60s" (red.l, fill dim, outline red.l) when they stopped partway (`Rules/Objectives.holdState`, 1.6 s); "2 of 3" for a count. Shows the objective whose progress rose in the last 4 s, else the main one (`meterFocus`); a side objective's readout starts "SIDE  NAME". Extraction uses it too (waiting and returning read PAUSED) |
+| Objective list (`ObjectiveUI`) | left column, under the squad panel | one row per known objective: a needle that turns toward it (up = ahead), "MAIN OBJECTIVE / SIDE OBJECTIVE  NAME  140 m" 14 pt; a side objective adds its reason (not on touch), its step 12 pt and a 160x3 yellow progress bar when it counts; DONE yellow, FAILED red.l for 6 s; refreshed at 4 Hz |
+| Objective card (`ObjectiveUI`) | upper centre (0.5, 120); touch: last in the mission stack | at insert, 8 s, no panel: "MAIN OBJECTIVE" 14 dim, the name GothamBlack 36 yellow, the reason 18, "at <place>" 16 dim |
+| Subtitles (`BuffNoticeUI.subtitle`) | mission stack, under the mission line and meter (touch: the insert card under them) | "CONTROL: radio line" (BuffNotice kind radio), the Warden's "WARDEN: ..." tells |
 | Notification cards (`BuffNoticeUI.card`) | top right (-16,12), y 120 during a boss | dark strip, red-outlined square, bold title; pickups, picks, the flare call, an upgrade landing; max 3 |
 | Boss bar (`BossBarUI`) | top right (-16,12) | name in red right-aligned, 380x16 faceted body bar ending in a round emblem (blue while stunned), six 56x6 plate bars with labels |
-| Downed / K.I.A. (`RunEndUI`) | centre (0.5, 0.22) | "DOWNED" 40 red + 360x4 bleed-out bar + line; "K.I.A." + line; no panel |
+| Downed / K.I.A. (`RunEndUI`) | centre (0.5, 0.22); touch (0.5, 0.4) | "DOWNED" 40 red + 360x4 bleed-out bar + line; "K.I.A." + line ("Reinforcement in 6s · dropping beside PIKE TWO", the name blue; or "No reinforcements left..."); no panel |
 | Results (`RunEndUI`) | full screen | menu style: dark red field, corner L-brackets, "//OPERATION COMPLETE" yellow or "//SQUAD WIPED" red, stats in a red-outlined box, cream READY |
 | Results (`RunEndUI`) wallet | under the "+N MERITS" line | dim 14 pt "ON YOUR RECORD" + the wallet readout; counts up from the balance before the pay; hidden until the match has read the record |
 | Wallet (`WalletReadout`; lobby `WalletUI`) | the Carrier: right end of Roblox's top bar (ScreenInsets TopbarSafeInsets, 16 px in), DisplayOrder 4, always on | medal glyph + merits in yellow, tag glyph + tabs in white, GothamBlack 20, no panel, no words; numbers by `Rules/Wallet` (exact under 10,000, then "12.4k", "1.2M", rounded down); a change counts to the new number over 0.6 s at 15 Hz while the number starts white and the glyph swells 35% and settles |
@@ -291,6 +300,45 @@ square cells). Code `src/client/LoadoutMenu.luau`, numbers `Config.LoadoutScreen
   `Show` pieces); no model = a stand-in (a frag, or a case banded in the call-in's colour).
 - **Budget:** one turning ViewportFrame (the only per-frame work, only while open) plus about
   18 static row views; stat rows pooled.
+- **Shared pieces:** the frame, the row and the inspect panel are `src/client/KitView.luau`
+  (the Loadout and the desk screens below build from it; change the look there once).
+
+### The desk screens (2026-11-17)
+
+Owner: "any NPC interaction UI should be using the Prototype 2 UI... the same as the
+Loadmaster". Decision (ui-ux-designer): one screen for every desk that hands out kit, built
+from the Loadout screen's own pieces (`KitView`), so the Quartermaster, the Call-ins sergeant
+and the motor sergeant look and read exactly like the Loadmaster; the talk before it gets the
+same menu dress. Code `src/lobby/client/DeskScreen.luau`, `DeskTalk.luau`, wording
+`Rules/DeskOffer`; `Config.Lobby.DeskScreen.Enabled = false` puts the old views back.
+
+- **Talk panel** (`DeskTalk`, every desk): 560 wide at the bottom centre, menu fill (22,8,8)
+  at 0.06 with a red.m 1 px box; "//ARMS ROOM" GothamBlack 22 + who in dim caps; their line
+  Gotham 18 in quotes; three 40 px choice rows (track at 0.35, white 0.75 outline), the number
+  yellow; under the mouse or a gamepad's selection a row turns cream with dark text.
+- **Desk screen** (`DeskScreen`): the Loadout's frame, size and fit, "//" + the desk's header
+  (THE RACK, THE KIT, or the desk's title: VEHICLES). Under the header, the person's line in
+  their own voice: who in dim caps, then the line in quotes (opens on their `openLine`, then
+  their bought / short / refused line after a buy). Merits and tabs yellow GothamBlack 20 top
+  right beside BACK.
+- **Lists:** the Loadout's columns, kept to what the desk sells (`KitPrices`): PRIMARY |
+  SIDEARM + GRENADE | CALL-INS (VEHICLES when every one is a vehicle); empty sections and
+  columns drop out, and a desk with one column gets a 400-wide list. Rows as the Loadout's:
+  the item's flat shape, name, designation; badge top right: the price "400 MERITS" yellow, or
+  "ON RECORD" dim.
+- **Inspect panel:** the Loadout's (the item turning, name, designation, status, line, stat
+  bars against the whole roster). Status: ON YOUR RECORD yellow, or NOT ON YOUR RECORD red.l
+  + the price yellow. A vehicle turns as its own body (`VehicleBody` via `Showcase`).
+- **Footer:** the keys dim 13 on the left (wide, not touch); on the right the cream BUY
+  button 300x56, "BUY · 400 MERITS"; short: dimmed to 0.5, "(SHORT)", still pressable so the
+  person answers; on the record: no fill, yellow "ON YOUR RECORD" with a yellow 1 px box.
+- **Input:** hover inspects (the row gets the yellow box), leaving the rows returns to the
+  picked one; click / tap / A picks (cream); BUY, Enter or gamepad Y buys what is shown;
+  Back, Backspace or B returns to the talk panel.
+- **Kept as they are:** the rack wall and the call-in pallets stay in the world as dressing
+  (the camera views are the switch's old path); the Plot's map view keeps its camera with the
+  new talk panel; the Gunsmith (EDIT) already had the menu dress and now frames its gun with
+  the same cream corners, from `Showcase`.
 
 ---
 
@@ -547,6 +595,9 @@ Helicopter lamps are the warm notes. The hangar desks must still read at a glanc
 
 ### The Carrier's buying panels (2026-11-10)
 
+Since 2026-11-17 every desk buys on the desk screen (section 5 > The desk screens); what
+follows is the old path behind `Config.Lobby.DeskScreen.Enabled = false`. The words still hold.
+
 The Quartermaster's rack card (above) and `DeskShop` (call-ins at the Call-ins desk; the
 Fires desk and the Loadmaster's drops folded into it 2026-11-16) share one look: the HUD track panel and outline, the item name in GothamBlack
 with its designation dim under it, ON YOUR RECORD in yellow, or a BUY · N MERITS button
@@ -674,11 +725,18 @@ orange (`rgb(255,150,60)`) plus a ball at the landing point.
   on the spit, bile dripping from the mouth. In flight: an amber-brown ellipsoid stretched
   along its path and wobbling, a dark red clot dragging behind, a tapering strand, drops
   falling off. Impact: a burst of drops off the surface and a blotch with an uneven edge
-  (2.5 s); on the ground the pool is a core disc of exactly the damage radius over a dark red
-  rim, bubbling toward the edge, fading over its last second. A splashed player's screen
-  edges smear with bile for 0.8 s. Budget: bodies pooled and reused, nine burst-only
-  emitters in all whatever the number of spitters, drool and drips capped at 40 drops/s
-  together, 6 blotches, pools at `MaxPuddles`. `Enabled = false` is the old Neon ball and disc.
+  (2.5 s); on the floor, low droplets also skim out. The pool on the ground (owner
+  2026-11-17: the disc was "a little too perfect", "a puddle of liquid") is a puddle of low
+  wet domes, a core and six lobes of varied size and turn from `Rules/PuddleShape` (a new
+  layout each time), each over a dark red rim, with a lighter glint on the core: its edge is
+  uneven but honest, every blob inside 1.04x the damage radius and the whole covering at
+  least 3/4 of it in every direction. It spreads out over 0.3 s with the lobes running a
+  little behind, bubbles toward the edge, gives off faint fumes, and shrinks by 30% while it
+  fades over its last second. A splashed player's screen edges smear with bile for 0.8 s.
+  Budget: bodies pooled and reused (a pool is 14 parts, moved only while it spreads and
+  fades), twelve burst-only emitters in all whatever the number of spitters, drool and drips
+  capped at 40 drops/s together, 6 blotches, pools at `MaxPuddles`. `Enabled = false` is the
+  old Neon ball and disc.
 - First person (`CameraController`, `Config.Camera.FirstPerson`; Nova 2026-11-10): T or the
   right stick click toggles it, the wheel in past `MinDistance` enters and back out leaves.
   The eye sits on the Head (0.45 forward, 0.1 up), so crouch and prone carry it; yaw, pitch,

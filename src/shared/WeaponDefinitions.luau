@@ -11,6 +11,12 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local Sight = require(ReplicatedStorage.Shared.Rules.Sight)
 local KeyBindings = require(ReplicatedStorage.Shared.Rules.KeyBindings)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
+local Optics = require(ReplicatedStorage.Shared.Attachments.Optics)
+local AttachmentMerge = require(ReplicatedStorage.Shared.Rules.AttachmentMerge)
+local Loadout = require(ReplicatedStorage.Shared.Rules.Loadout)
+local Scarcity = require(ReplicatedStorage.Shared.Rules.Scarcity)
+
+local SCARCE_AMMO = Config.Scarcity.Enabled and Config.Scarcity.Ammo.Enabled
 
 -- A row's sight points are written on the gun's design (guns.py); the eye lines up where
 -- they show on the uploaded mesh, which Roblox mirrors left-right (MeshAssets.shownPoint).
@@ -94,6 +100,7 @@ type Tuning = {
 	ReloadTime: number,
 	ReserveStart: number,
 	ReserveMax: number,
+	Scarce: { ReserveStart: number, ReserveMax: number }?, -- Config.Scarcity.Ammo
 	HipSpread: number,
 	AdsSpread: number,
 	BloomPerShot: number,
@@ -133,6 +140,8 @@ local function row(
 	description: string,
 	tuning: Tuning
 ): WeaponDefinition
+	-- Spare rounds: the row's Scarce block while Config.Scarcity.Ammo is on (Rules/Scarcity).
+	local reserveStart, reserveMax = Scarcity.reserve(tuning, SCARCE_AMMO)
 	return {
 		Id = id,
 		Name = name,
@@ -144,8 +153,8 @@ local function row(
 		FireCooldown = tuning.FireCooldown,
 		MagazineSize = tuning.MagazineSize,
 		ReloadTime = tuning.ReloadTime,
-		ReserveStart = tuning.ReserveStart,
-		ReserveMax = tuning.ReserveMax,
+		ReserveStart = reserveStart,
+		ReserveMax = reserveMax,
 		HipSpread = tuning.HipSpread,
 		AdsSpread = tuning.AdsSpread,
 		BloomPerShot = tuning.BloomPerShot,
@@ -314,14 +323,70 @@ function WeaponDefinitions.grenade(id: string?): GrenadeDefinition
 	return (id and GRENADES[id]) or GRENADES[WeaponDefinitions.DEFAULT_GRENADE]
 end
 
--- What gun `id` can take: [slot] = its options (Config.Attachments), empty when nothing.
+-- What gun `id` can take: [slot] = its options (Config.Attachments, Config.Optics), empty
+-- when nothing.
 function WeaponDefinitions.options(id: string): { [string]: { string } }
 	local options: { [string]: { string } } = {}
 	local gun = ROWS[id]
 	if gun and gun.Suppressor then
 		options.Barrel = { "suppressor" }
 	end
+	-- Optics: each Config.Optics row that lists this gun (only the M16A4 so far).
+	local optics = Optics.idsFor(id)
+	if gun and #optics > 0 then
+		options[Optics.SLOT] = optics
+	end
 	return options
+end
+
+-- The optic on gun `id` in a soldier's Fitted attribute text (Loadout.encodeFitted), or nil.
+function WeaponDefinitions.opticIn(fittedText: unknown, id: string): string?
+	if typeof(fittedText) ~= "string" or fittedText == "" then
+		return nil
+	end
+	return Loadout.fitted(Loadout.decodeFitted(fittedText), id, Optics.SLOT)
+end
+
+-- The Showcase id of gun `id` with optic `opticId` on ("service_rifle+acog").
+function WeaponDefinitions.dressedId(id: string, opticId: string): string
+	return `{id}+{opticId}`
+end
+
+-- Gun `id` as it is carried with optic `opticId` on (nil: none): its mesh and its sight on
+-- that mesh, the zoom scaled by the optic (Rules/AttachmentMerge). The bare gun's own when the
+-- optic does not fit it or its mesh is not uploaded. Kept per gun and optic (the camera asks
+-- every frame).
+local dressedCache: { [string]: { model: string, sight: Sight.Resolved } } = {}
+function WeaponDefinitions.dressed(id: string?, opticId: string?): (string, Sight.Resolved)
+	local weapon = WeaponDefinitions.get(id)
+	if not opticId then
+		return weapon.Model, weapon.Sight
+	end
+	local key = WeaponDefinitions.dressedId(weapon.Id, opticId)
+	local cached = dressedCache[key]
+	if not cached then
+		local optic = Optics.get(opticId)
+		local fit = Optics.fit(opticId, weapon.Id)
+		if not optic or not fit or not MeshAssets.isUploaded(fit.model) then
+			cached = { model = weapon.Model, sight = weapon.Sight }
+		else
+			local zoom =
+				AttachmentMerge.apply({ zoom = weapon.Sight.Zoom, adsTime = 1 }, { optic }).zoom
+			local raw: Sight.Raw = {
+				Rear = fit.sight.Rear,
+				Front = fit.sight.Front,
+				Kind = fit.sight.Kind,
+				Hold = weapon.Sight.Hold,
+				Zoom = zoom,
+			}
+			cached = {
+				model = fit.model,
+				sight = shown(fit.model, Sight.resolve(raw, Config.Weapon.Sights)),
+			}
+		end
+		dressedCache[key] = cached
+	end
+	return cached.model, cached.sight
 end
 
 -- How far a shot from `weapon` carries with `barrel` fitted (nil = bare).

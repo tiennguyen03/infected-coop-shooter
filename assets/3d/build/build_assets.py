@@ -1353,6 +1353,11 @@ import guns  # noqa: E402
 
 guns.register(sys.modules[__name__])
 
+# The M16A4 with each optic (free models cut once into assets/3d/source/opt_*) live in optics.py.
+import optics  # noqa: E402
+
+optics.register(sys.modules[__name__])
+
 # Aircraft (the Shrike gunship and its rotor) live in aircraft.py (2026-11-09).
 import aircraft  # noqa: E402
 
@@ -1382,6 +1387,14 @@ fallow.register(sys.modules[__name__])
 import lantern  # noqa: E402
 
 lantern.register(sys.modules[__name__])
+
+# Carrier v2 (proposal 2026-11-16, docs/sprints/CARRIER_V2.md): the revamp's kit pieces
+# (`env_carrier_*`, `prop_carrier_*`, `prop_callin_*`, `egg_carrier_*`, `env_shore_*`) are opt-in
+# until the owner approves: `blender --background --python build_assets.py -- --carrier-v2`.
+if "--carrier-v2" in sys.argv:
+    import carrier_kit  # noqa: E402
+
+    carrier_kit.register(sys.modules[__name__])
 
 # The remade common Infected (owner adopted them 2026-11-11) live in infected_v2.py
 # (`inf_v2_*`); the bodies above stay built as the fallback set (Config.Enemies.BodyVersion).

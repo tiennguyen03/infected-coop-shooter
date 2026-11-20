@@ -5,6 +5,12 @@
 -- the other side silently ignores. The values are the wire strings and never change.
 
 local Messages = table.freeze({
+	-- Breach: server -> every client ("warn", from: Vector3, seconds) a horde is coming from
+	-- that point (BreachUI draws the arrow) | ("clear") a new run
+	Breach = table.freeze({
+		Warn = "warn",
+		Clear = "clear",
+	}),
 	-- Resupply: client -> server ("flare", target) | ("pick", crateId, cardId);
 	-- server -> client ("called", thrower) | ("cards", ...) | ("picked", crateId, cardId) |
 	-- ("refused", crateId, reason) | ("taken", crateId, names) | ("closed", crateId)
@@ -65,6 +71,14 @@ local Messages = table.freeze({
 		Tell = "tell",
 		Zone = "zone",
 		Hide = "hide",
+		-- The boss pass (client BossPresence): ("incoming", landing, seconds) the arrival
+		-- warning; ("shake", position, power, radius) a boot or a blow; ("quake", center,
+		-- radius, speed, waves, gap) the Quake's rings; ("line", from, direction, length,
+		-- width, seconds) a Charge lane on the ground.
+		Incoming = "incoming",
+		Shake = "shake",
+		Quake = "quake",
+		Line = "line",
 	}),
 	-- BossUpdate "tell" kinds that are not attacks (attack tells carry the attack's name)
 	BossTell = table.freeze({
@@ -74,6 +88,7 @@ local Messages = table.freeze({
 	Impact = table.freeze({
 		Knockdown = "knockdown",
 		Push = "push",
+		GetUp = "getup", -- (seconds) a knockdown cut short (a Runner shot off): the get-up now
 	}),
 	Stance = table.freeze({
 		Stand = "stand",
@@ -105,6 +120,24 @@ local Messages = table.freeze({
 		Buy = "buy", -- client -> server: (gunId)
 		State = "state", -- server -> client: (merits, ownedIds, tabs) the soldier's record
 		Refused = "refused", -- server -> client: (gunId, reason) "short" | "owned" | "unknown" | "loading"
+	}),
+	-- KitMods (lobby place): the Loadmaster's KIT MODS tab (KitModService, Rules/KitModRules).
+	-- Merits only; the server checks and spends.
+	KitMods = table.freeze({
+		Buy = "buy", -- client -> server: (modId, rank) the rank being bought, the next one
+		Get = "get", -- client -> server: () send my ranks
+		State = "state", -- server -> client: (ranks) { [modId]: rank }
+		Refused = "refused", -- server -> client: (modId, reason) "short" | "maxed" | "beyond max" | "not next" | "disabled" | "unknown" | "loading" | "busy"
+	}),
+	-- Optic (lobby place): the Loadmaster's EDIT, the M16A4's optic slot (OpticService,
+	-- Rules/AttachmentRules). Bought once with merits; the server checks and spends.
+	Optic = table.freeze({
+		Buy = "buy", -- client -> server: (opticId)
+		Equip = "equip", -- client -> server: (gunId, opticId) "" takes the optic off
+		Owned = "owned", -- client -> server: () send the optics on my record
+		State = "state", -- server -> client: (ownedOpticIds)
+		Equipped = "equipped", -- server -> client: (gunId, opticId) fitted and signed
+		Refused = "refused", -- server -> client: (id, reason) "short" | "owned" | "unknown" | "not owned" | "incompatible" | "loading"
 	}),
 	Launch = table.freeze({
 		Manifest = "manifest", -- (spot, names, secondsLeft, squad, isLead) you are aboard; squad 0 = not picked

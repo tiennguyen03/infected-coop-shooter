@@ -41,6 +41,9 @@ export type Row = {
 	Needs: { string },
 }
 export type Map = {
+	-- A bigger version of another map (delta_xl of delta): it plays that map's signature
+	-- objectives too.
+	Of: string?,
 	Main: { Pick },
 	Side: { Pick },
 	Sites: { [string]: { { [string]: any } } },
@@ -168,6 +171,9 @@ function Objectives.validate(rows: { [string]: Row }, maps: { [string]: Map }): 
 	end
 	for mapId, map in maps do
 		local signatureMain = false
+		if map.Of ~= nil and maps[map.Of] == nil then
+			table.insert(problems, `{mapId}: no map "{map.Of}"`)
+		end
 		local pools: { [string]: { Pick } } = { main = map.Main, side = map.Side }
 		for role, pool in pools do
 			local seen: { [string]: boolean } = {}
@@ -192,7 +198,7 @@ function Objectives.validate(rows: { [string]: Row }, maps: { [string]: Map }): 
 					table.insert(problems, `{mapId}: {id} needs a weight above 0`)
 				end
 				if row.Kind == "signature" then
-					if row.Map ~= mapId then
+					if row.Map ~= mapId and row.Map ~= map.Of then
 						table.insert(
 							problems,
 							`{mapId}: {id} is {row.Map or "another map"}'s signature`
@@ -297,6 +303,54 @@ end
 
 function Objectives.isOpen(state: State): boolean
 	return state == "pending" or state == "active"
+end
+
+-- Which objective the HUD's big progress meter shows: the open one with something to count
+-- whose progress went up most recently (within `window` seconds of `now`; `advancedAt` is
+-- each slot's last rise), else the main objective when it has something to count, else none.
+function Objectives.meterFocus(
+	entries: { Entry },
+	advancedAt: { [string]: number },
+	now: number,
+	window: number
+): Entry?
+	local latest: Entry? = nil
+	local latestAt = -math.huge
+	local main: Entry? = nil
+	for _, entry in entries do
+		if not Objectives.isOpen(entry.state) or entry.total <= 0 then
+			continue
+		end
+		if entry.role == "main" then
+			main = entry
+		end
+		local at = advancedAt[entry.slot]
+		if at and now - at <= window and at > latestAt then
+			latest, latestAt = entry, at
+		end
+	end
+	return latest or main
+end
+
+export type HoldState = "holding" | "paused" | "idle" | "count"
+
+-- How a timed hold reads on the meter: "holding" while its seconds still go up (risen within
+-- `pauseAfter` seconds), "paused" when they stopped partway, "idle" before the first second;
+-- anything that is not an unfinished hold in seconds is a plain "count".
+function Objectives.holdState(
+	unit: string,
+	done: number,
+	total: number,
+	sinceAdvanced: number,
+	pauseAfter: number
+): HoldState
+	if unit ~= "s" or total <= 0 or done >= total then
+		return "count"
+	end
+	if sinceAdvanced < pauseAfter then
+		return "holding"
+	end
+	return if done <= 0 then "idle" else "paused"
 end
 
 return Objectives

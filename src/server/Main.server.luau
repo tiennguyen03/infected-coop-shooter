@@ -20,6 +20,7 @@ local BOOT: { ModuleScript } = {
 	Server.Lifecycle,
 	Server.SkyService,
 	Server.ArenaService,
+	Server.DeltaXL, -- the big map (Config.DeltaXL): after the base it builds round
 	Server.Squad,
 	Server.PauseService,
 	Server.WorldSounds,
@@ -39,6 +40,7 @@ local BOOT: { ModuleScript } = {
 	Server.MineService,
 	Server.EnemyProjectileService,
 	Server.EnemyService,
+	Server.BreachService, -- the alert meter and breaches (after EnemyService, DifficultyService)
 	Server.GoreService,
 	Server.ShockCoilService,
 	Server.VehicleService,
@@ -51,8 +53,11 @@ local BOOT: { ModuleScript } = {
 	Server.IndexService,
 	Server.ReviveAnimService,
 	Server.BotService,
+	Server.ReinforceService, -- the squad's reinforcements and ammo pouches (Config.Scarcity)
 	Server.HandoffService,
 	Server.MeritService,
+	Server.KitModService, -- the Kit Mod ranks off the record (after MeritService, LoadoutService)
+	Server.TallyService,
 	Server.InsertionService,
 	Server.NightVisionService,
 	Server.RunManager,

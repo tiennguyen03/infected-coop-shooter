@@ -91,10 +91,13 @@ local function refreshMerits()
 	end
 end
 
+local kiaLine: TextLabel? = nil -- the K.I.A. banner's line (refreshKia)
+
 local function hideBanner()
 	if banner then
 		banner:Destroy()
 		banner = nil
+		kiaLine = nil
 	end
 end
 
@@ -324,7 +327,9 @@ local function bigBanner(
 	local column = Instance.new("Frame")
 	column.BackgroundTransparency = 1
 	column.AnchorPoint = Vector2.new(0.5, 0)
-	column.Position = UDim2.fromScale(0.5, 0.22)
+	-- On touch the mission stack holds the top centre: the banner sits under it.
+	column.Position =
+		UDim2.fromScale(0.5, if HudTheme.isTouch() then Config.Hud.DownedTopTouch else 0.22)
 	column.Size = UDim2.fromOffset(600, 100)
 	column.Parent = gui
 	local layout = Instance.new("UIListLayout")
@@ -360,11 +365,38 @@ local function showDowned()
 	refreshDowned()
 end
 
+-- The K.I.A. line: the helicopter's countdown while a reinforcement is coming for this
+-- player (ReinforceService), else whether the squad has any left (Config.Scarcity.Reinforce).
+local function refreshKia()
+	local line = kiaLine
+	if not line then
+		return
+	end
+	local player = Players.LocalPlayer
+	local at = (player:GetAttribute(Attributes.ReinforceAt) :: number?) or 0
+	local to = (player:GetAttribute(Attributes.ReinforceTo) :: string?) or ""
+	local total = (workspace:GetAttribute(Attributes.ReinforceTotal) :: number?) or 0
+	if at > 0 then
+		local seconds = math.max(math.ceil(at - workspace:GetServerTimeNow()), 0)
+		line.Text = `Reinforcement in {seconds}s · dropping beside {HudTheme.tint(
+			string.upper(to),
+			C.Squad
+		)}`
+	elseif total > 0 then
+		line.Text = "No reinforcements left. The squad fights on; you go home with them."
+	else
+		line.Text = "The squad fights on. You redeploy with them."
+	end
+end
+
 local function showBanner()
 	if banner or results then
 		return
 	end
-	banner = bigBanner("KIABanner", "K.I.A.", "The squad fights on. You redeploy with them.", false)
+	local gui, line = bigBanner("KIABanner", "K.I.A.", "", false)
+	banner = gui
+	kiaLine = line
+	refreshKia()
 end
 
 local function refresh()
@@ -434,6 +466,9 @@ function RunEndUI.init()
 			end
 			if downedTimer then
 				refreshDowned()
+			end
+			if kiaLine then
+				refreshKia()
 			end
 		end
 	end)
