@@ -26,6 +26,9 @@ Last updated: 2026-11-20 by Nova + Claude (playtest fixes: the saved Loadout on 
   Studio match now starts with your Loadmaster Loadout, and Runners no longer shove you or
   lift you on a pile (`docs/PROGRESSION.md` > The Infected roster); the red dot and CompM2 show
   their red dot when aimed (`DotSightView`, PROGRESSION > Attachments).
+- **Attachment system v2** (`nova/attachment-system-v2`, stacked on `nova/playtest-fixes`): seven
+  slots and ammo types on the M16A4 (PROGRESSION > Attachments). Any code that reads a gun's
+  stats for a soldier should read `WeaponDefinitions.fitted` / `carried`, not `get`.
 - **Off switches** exist for every new system (`Config.<System>.Enabled = false`); the
   feature's doc names them. Prefer a switch over a revert.
 - **Next after #92 is played:** difficulty levels, a four-player test with Nova and friends

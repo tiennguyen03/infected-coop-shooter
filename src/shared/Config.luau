@@ -221,6 +221,278 @@ local Config = {
 		},
 	},
 
+	-- Attachment system v2 (Nova, 2026-11-20): up to seven slots per gun, each a row here
+	-- (Shared.Attachments.Schema), each option a row (Shared.Attachments.Options; the Optic
+	-- slot's options are Config.Optics' rows), each ammo type a row (Shared.Attachments.AmmoTypes).
+	-- A gun takes the slots whose Families list its row's Family (Config.Weapons.<gun>.Family;
+	-- only the M16A4 so far, one PR per gun after it) and, in each, the options that list it.
+	-- Unlocked once with merits at the Loadmaster's EDIT (Price; 0 = the issued part, always
+	-- owned) and kept for good on the record; never tabs or Robux. Stats only: nothing on the
+	-- gun's model changes yet (a later PR). The merge rule is Rules/AttachmentMerge.merge: an
+	-- option's Deltas each name a stat, an op ("multiply" or "add") and a value; the ammo type
+	-- replaces the gun's damage profile. Stats a delta may name: damage, projectileCount,
+	-- headshotMultiplier, armorPenetration, alertRadius, range, recoil, recoilRecovery,
+	-- moveSpeed, adsTime, zoom, magazineSize, reloadTime, hipSpread (recoil, recoilRecovery,
+	-- moveSpeed, adsTime and zoom are factors on the gun's own: 1 = as issued).
+	AttachmentsV2 = {
+		Slots = {
+			Optic = { Name = "Optic", Order = 1, Families = { "rifle" }, MaxOptions = 4 },
+			Barrel = { Name = "Barrel", Order = 2, Families = { "rifle" }, MaxOptions = 4 },
+			Muzzle = { Name = "Muzzle", Order = 3, Families = { "rifle" }, MaxOptions = 4 },
+			Magazine = { Name = "Magazine", Order = 4, Families = { "rifle" }, MaxOptions = 4 },
+			Ammo = {
+				Name = "Ammo type",
+				Order = 5,
+				Families = { "rifle" },
+				MaxOptions = 4,
+				Ammo = true,
+			},
+			Underbarrel = {
+				Name = "Underbarrel",
+				Order = 6,
+				Families = { "rifle" },
+				MaxOptions = 4,
+			},
+			Stock = { Name = "Stock", Order = 7, Families = { "rifle" }, MaxOptions = 4 },
+		},
+		-- Options per slot, the M16A4's (Guns). Base = the issued part: what the slot holds when
+		-- nothing else is fitted (Price 0). IncompatibleWith: ids it cannot be fitted with (the
+		-- rule checks both ways); refused on the server, the reason shown in the menu.
+		Options = {
+			barrel_standard = {
+				Name = "Standard barrel",
+				Description = "The 20-inch barrel it was issued with.",
+				Slot = "Barrel",
+				Guns = { "service_rifle" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			barrel_long = {
+				Name = "Long barrel",
+				Description = "Reaches further, kicks harder, a touch heavier.",
+				Slot = "Barrel",
+				Guns = { "service_rifle" },
+				Price = 150,
+				Deltas = {
+					{ Field = "range", Op = "multiply", Value = 1.15 },
+					{ Field = "recoil", Op = "multiply", Value = 1.10 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 0.95 },
+				},
+			},
+			barrel_short = {
+				Name = "Short barrel",
+				Description = "Handier and softer, but the round falls off sooner.",
+				Slot = "Barrel",
+				Guns = { "service_rifle" },
+				Price = 150,
+				Deltas = {
+					{ Field = "range", Op = "multiply", Value = 0.85 },
+					{ Field = "recoil", Op = "multiply", Value = 0.90 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 1.05 },
+				},
+			},
+			-- The integrally suppressed barrel: the Barrel option every gun already takes
+			-- (Config.Attachments.Options.suppressor: its quiet reach is the gun's own
+			-- Suppressor.Noise). On the M16A4 it also costs range and damage, and leaves no
+			-- thread for a muzzle device. Free, as it always was.
+			suppressor = {
+				Name = "Suppressed barrel",
+				Description = "Quiet: the Infected hear it only close in. Shorter reach, a little less punch, no muzzle device.",
+				Slot = "Barrel",
+				Guns = { "service_rifle" },
+				Price = 0,
+				Deltas = {
+					{ Field = "range", Op = "multiply", Value = 0.80 },
+					{ Field = "damage", Op = "multiply", Value = 0.90 },
+				},
+				IncompatibleWith = { "muzzle_compensator", "muzzle_brake" },
+			},
+			muzzle_flash_hider = {
+				Name = "Flash hider",
+				Description = "The issued birdcage.",
+				Slot = "Muzzle",
+				Guns = { "service_rifle" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			muzzle_compensator = {
+				Name = "Compensator",
+				Description = "Holds the muzzle down. A little louder.",
+				Slot = "Muzzle",
+				Guns = { "service_rifle" },
+				Price = 120,
+				Deltas = {
+					{ Field = "recoil", Op = "multiply", Value = 0.85 },
+					{ Field = "alertRadius", Op = "multiply", Value = 1.05 },
+				},
+			},
+			muzzle_brake = {
+				Name = "Muzzle brake",
+				Description = "Kills the kick. Everything for a block hears it.",
+				Slot = "Muzzle",
+				Guns = { "service_rifle" },
+				Price = 200,
+				Deltas = {
+					{ Field = "recoil", Op = "multiply", Value = 0.75 },
+					{ Field = "alertRadius", Op = "multiply", Value = 1.10 },
+				},
+			},
+			mag_standard = {
+				Name = "Standard 30",
+				Description = "The issued 30-round magazine.",
+				Slot = "Magazine",
+				Guns = { "service_rifle" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			mag_extended = {
+				Name = "Extended 40",
+				Description = "Ten more rounds, a slower change.",
+				Slot = "Magazine",
+				Guns = { "service_rifle" },
+				Price = 150,
+				Deltas = {
+					{ Field = "magazineSize", Op = "add", Value = 10 },
+					{ Field = "reloadTime", Op = "multiply", Value = 1.20 },
+				},
+			},
+			-- A drum and a collapsed stock do not fit together (the drum fouls the short stock).
+			mag_drum = {
+				Name = "Drum 60",
+				Description = "Sixty rounds. Slow to change, heavy to carry.",
+				Slot = "Magazine",
+				Guns = { "service_rifle" },
+				Price = 300,
+				Deltas = {
+					{ Field = "magazineSize", Op = "add", Value = 30 },
+					{ Field = "reloadTime", Op = "multiply", Value = 1.50 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 0.90 },
+				},
+				IncompatibleWith = { "stock_collapsed" },
+			},
+			grip_vertical = {
+				Name = "Vertical grip",
+				Description = "The sights come back on target faster.",
+				Slot = "Underbarrel",
+				Guns = { "service_rifle" },
+				Price = 100,
+				Deltas = { { Field = "recoilRecovery", Op = "multiply", Value = 1.20 } },
+			},
+			grip_angled = {
+				Name = "Angled grip",
+				Description = "Quicker into the sights.",
+				Slot = "Underbarrel",
+				Guns = { "service_rifle" },
+				Price = 100,
+				Deltas = { { Field = "adsTime", Op = "multiply", Value = 0.90 } },
+			},
+			laser = {
+				Name = "Laser",
+				Description = "Tighter from the hip.",
+				Slot = "Underbarrel",
+				Guns = { "service_rifle" },
+				Price = 150,
+				Deltas = { { Field = "hipSpread", Op = "multiply", Value = 0.70 } },
+			},
+			stock_standard = {
+				Name = "Standard stock",
+				Description = "The issued fixed stock.",
+				Slot = "Stock",
+				Guns = { "service_rifle" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			stock_adjustable = {
+				Name = "Adjustable stock",
+				Description = "Settles faster after a shot, slower to shoulder.",
+				Slot = "Stock",
+				Guns = { "service_rifle" },
+				Price = 120,
+				Deltas = {
+					{ Field = "recoilRecovery", Op = "multiply", Value = 1.15 },
+					{ Field = "adsTime", Op = "multiply", Value = 1.10 },
+				},
+			},
+			stock_collapsed = {
+				Name = "Collapsed stock",
+				Description = "Fast to the shoulder, slower to settle.",
+				Slot = "Stock",
+				Guns = { "service_rifle" },
+				Price = 120,
+				Deltas = {
+					{ Field = "recoilRecovery", Op = "multiply", Value = 0.90 },
+					{ Field = "adsTime", Op = "multiply", Value = 0.85 },
+				},
+			},
+		},
+		-- Ammo types: each REPLACES the gun's damage profile (Rules/AttachmentMerge). Caliber
+		-- matches Config.Weapons.<gun>.Caliber. ArmourPenetration: the share of a plate's
+		-- reduction the round ignores (the Brute's front, the Warden's plates). Behaviour:
+		-- "standard" | "incendiary" | "tracer" | "breaching" | "subsonic" (the tracer's beam
+		-- is a later, visual PR; its louder shot is here). Planned families (one PR per gun):
+		-- 7.62 FMJ/AP/HP/Subsonic, 12ga Buckshot/Slug/Dragon's Breath/Breaching, 9mm
+		-- FMJ/HP/AP/Subsonic, .357 Standard/+P, .50 BMG Standard/AP, rockets HE/HEDP.
+		Ammo = {
+			ammo_556_fmj = {
+				Name = "FMJ",
+				Description = "Full metal jacket: the issued round.",
+				Caliber = "5.56",
+				Price = 0,
+				Base = true,
+				Damage = 20,
+				Projectiles = 1,
+				HeadshotMultiplier = 3.0,
+				ArmourPenetration = 0,
+				AlertMultiplier = 1.0,
+				RangeMultiplier = 1.0,
+				Behaviour = "standard",
+			},
+			ammo_556_ap = {
+				Name = "AP",
+				Description = "Armour-piercing: less in flesh, goes through the Brute's plates.",
+				Caliber = "5.56",
+				Price = 200,
+				Damage = 16,
+				Projectiles = 1,
+				HeadshotMultiplier = 3.0,
+				ArmourPenetration = 0.8,
+				AlertMultiplier = 1.0,
+				RangeMultiplier = 1.0,
+				Behaviour = "standard",
+			},
+			ammo_556_hp = {
+				Name = "HP",
+				Description = "Hollow point: devastating on bare flesh, useless on plates.",
+				Caliber = "5.56",
+				Price = 200,
+				Damage = 28,
+				Projectiles = 1,
+				HeadshotMultiplier = 4.0,
+				ArmourPenetration = 0,
+				AlertMultiplier = 1.0,
+				RangeMultiplier = 1.0,
+				Behaviour = "standard",
+			},
+			ammo_556_tracer = {
+				Name = "Tracer",
+				Description = "Every third round lights its path for the squad. Louder to the Infected.",
+				Caliber = "5.56",
+				Price = 100,
+				Damage = 20,
+				Projectiles = 1,
+				HeadshotMultiplier = 3.0,
+				ArmourPenetration = 0,
+				AlertMultiplier = 1.2,
+				RangeMultiplier = 1.0,
+				Behaviour = "tracer",
+			},
+		},
+	},
+
 	-- What the Infected notice (Nova, 2026-11-11, the night map: "we go in quiet ... if we mess
 	-- up and it goes loud then its gonna be rough"; Shared.Rules.Awareness, EnemyService). On a
 	-- mission listed in Missions every Infected is Sleeping, Idle, Wandering, Alerted or in
@@ -1041,6 +1313,9 @@ local Config = {
 			Sight = { Rear = Vector3.new(0, 0.615, 0.04), Front = Vector3.new(0, 0.615, -1.345) },
 			Price = 0, -- merits at the Quartermaster's rack (Rules/Record); issued free
 			ArmsOrder = 1, -- Arms Room position in its slot (rack, menu); the first is the default
+			-- Attachment system v2 (Config.AttachmentsV2): its slots by family, its ammo by caliber.
+			Family = "rifle",
+			Caliber = "5.56",
 		},
 		-- MP5: the best hip-fire; chews Runners, weak on Brutes (Walker 4 / 2, Brute 19 / 15).
 		Smg = {

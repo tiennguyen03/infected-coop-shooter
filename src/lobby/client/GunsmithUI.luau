@@ -12,6 +12,10 @@
 -- UNLOCKED" over the list. An optic is bought once with merits and fitted on the `Optic`
 -- remote (OpticService): the server checks and spends, and the row changes only when it
 -- answers; a fitted optic is signed at once, and DONE hands it back to the Loadout too.
+--
+-- Attachment system v2 (Nova, 2026-11-20; the M16A4 first): a gun with v2 slots
+-- (WeaponDefinitions.slots) gets a wider screen whose right column is AttachmentMenuV2, every
+-- slot in one scrolling list; everything there is signed as the server answers.
 
 local ContextActionService = game:GetService("ContextActionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -26,6 +30,7 @@ local Record = require(ReplicatedStorage.Shared.Rules.Record)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local Showcase = require(ReplicatedStorage.Shared.Showcase)
 local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
+local AttachmentMenuV2 = require(script.Parent.AttachmentMenuV2)
 local HudTheme = require(script.Parent.HudTheme)
 local KitView = require(script.Parent.KitView)
 
@@ -35,6 +40,7 @@ export type Fitted = { [string]: string } -- [slot] = option
 
 local C = HudTheme.Color
 local WIDTH, HEIGHT = 780, 460
+local WIDTH_V2 = 960 -- a v2 gun's screen: room for each option's stat line
 local VIEW = Vector2.new(440, 300)
 local ROW = 30
 local FOV = 34
@@ -76,6 +82,8 @@ function GunsmithUI.open(
 	local weapon = WeaponDefinitions.get(gunId)
 	local offers = WeaponDefinitions.options(gunId)
 	local fitted: Fitted = table.clone(current)
+	local v2 = #WeaponDefinitions.slots(gunId) > 0
+	local screenWidth = if v2 then WIDTH_V2 else WIDTH
 
 	-- A dark cover over the Loadout that takes its clicks while this is open.
 	local cover = Instance.new("TextButton")
@@ -90,7 +98,7 @@ function GunsmithUI.open(
 	cover.Modal = true -- the mouse is free while it is open, whoever opened it
 	cover.Parent = parent
 
-	local frame = HudTheme.rect(cover, UDim2.fromOffset(WIDTH, HEIGHT), C.MenuBack, 0)
+	local frame = HudTheme.rect(cover, UDim2.fromOffset(screenWidth, HEIGHT), C.MenuBack, 0)
 	frame.AnchorPoint = Vector2.new(0.5, 0.5)
 	frame.Position = UDim2.fromScale(0.5, 0.5)
 	local stroke = Instance.new("UIStroke")
@@ -333,14 +341,32 @@ function GunsmithUI.open(
 			describe.Text = REFUSED[tostring(b)] or `Refused ({tostring(b)}).`
 		end
 	end)
-	if offers[opticSlot] then
+	if offers[opticSlot] and not v2 then
 		opticRemote:FireServer(Messages.Optic.Owned)
 	end
 
 	local x = 24 + VIEW.X + 24
 	local y = 82
-	local columnWidth = WIDTH - x - 24
-	for _, slot in Config.Attachments.Slots do
+	local columnWidth = screenWidth - x - 24
+	local stopMenu: (() -> ())? = nil
+	if v2 then
+		stopMenu = AttachmentMenuV2.build({
+			parent = frame,
+			gunId = gunId,
+			position = Vector2.new(x, y),
+			size = Vector2.new(columnWidth, HEIGHT - y - 80),
+			fitted = fitted,
+			describe = describe,
+			onFitted = function(slot: string)
+				if slot == opticSlot then
+					showGun()
+				end
+				showFitting()
+			end,
+		})
+	end
+	local oneSlotList: { string } = if v2 then {} else Config.Attachments.Slots
+	for _, slot in oneSlotList do
 		local choices = offers[slot]
 		if not choices then
 			continue
@@ -403,12 +429,21 @@ function GunsmithUI.open(
 		closed = true
 		spin:Disconnect()
 		opticEvents:Disconnect()
+		if stopMenu then
+			stopMenu()
+		end
 		ContextActionService:UnbindAction(ACTION_BACK)
 		cover:Destroy()
 	end
 	-- BACK leaves the other slots as they were, but an optic fitted here is already signed
 	-- (OpticService), so the Loadout is handed that one change.
 	local function leave()
+		-- v2: every slot is signed as the server answers, so the Loadout takes the lot.
+		if v2 then
+			done(table.clone(fitted))
+			close()
+			return
+		end
 		if fitted[opticSlot] ~= current[opticSlot] then
 			local kept = table.clone(current)
 			kept[opticSlot] = fitted[opticSlot]

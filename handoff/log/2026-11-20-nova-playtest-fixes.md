@@ -11,6 +11,10 @@ first person, the red dot and CompM2 now show their red dot (`src/client/DotSigh
 from each optic's `Config.Optics.<id>.Reticle`; CameraController drives it). The RMR rides a
 taller riser (dot 0.1 above the irons, `optics.py` `REDDOT_LIFT`) so the front post sits under
 the dot; `wpn_m16_reddot` re-uploaded as 80921148772778.
+Attachment system v2 (`nova/attachment-system-v2`): `Config.AttachmentsV2`, `Shared.Attachments`
+(Schema, Options, AmmoTypes), `Rules/AttachmentMerge.merge` + `Rules/AttachmentUnlock` (specs
+first), lobby `AttachmentService` on the `Attachment` remote, `AttachmentMenuV2` in GunsmithUI,
+`WeaponDefinitions.fitted/carried` read by LoadoutService, ProjectileServer, the camera and walk.
 **Verified:** stylua, selene, both Rojo builds, both luau-lsp runs, 687/687 Lune tests. Not yet
 seen in Studio: Nova to playtest (the saved Loadout needs Studio API access on).
 **Heads-up:** built on Nova's local merge of #92-#95 (not on `origin/main`). Anything that sets a

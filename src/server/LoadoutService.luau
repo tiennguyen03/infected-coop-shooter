@@ -72,8 +72,17 @@ local callInChangedListeners: { CallInChangedListener } = {}
 local resultRemote: RemoteEvent
 local lastStep = 0
 
-local function fullGun(id: string): Gun
-	local weapon = WeaponDefinitions.get(id)
+-- Gun `id` as `attachments` fit it (attachment system v2: the magazine, reload, noise and
+-- the rest merged; WeaponDefinitions.fitted).
+local function fittedWeapon(
+	id: string,
+	attachments: Loadout.Attachments?
+): WeaponDefinitions.WeaponDefinition
+	return WeaponDefinitions.fitted(id, attachments)
+end
+
+local function fullGun(id: string, attachments: Loadout.Attachments?): Gun
+	local weapon = fittedWeapon(id, attachments)
 	return { id = weapon.Id, mag = weapon.MagazineSize, reserve = weapon.ReserveStart }
 end
 
@@ -109,8 +118,8 @@ end
 
 local function freshState(player: Player, pick: Loadout.Loadout): State
 	return {
-		primary = fullGun(pick.primary),
-		secondary = fullGun(pick.secondary),
+		primary = fullGun(pick.primary, pick.attachments),
+		secondary = fullGun(pick.secondary, pick.attachments),
 		active = "primary",
 		grenade = pick.grenade,
 		grenades = Config.Grenade.Carried,
@@ -195,8 +204,9 @@ function LoadoutService.fitted(player: Player, weaponId: string, slot: string): 
 	return Loadout.fitted(pickFor(player).attachments, weaponId, slot)
 end
 
+-- As fitted (attachment system v2): ProjectileServer fires with these stats.
 function LoadoutService.getWeapon(player: Player): WeaponDefinitions.WeaponDefinition
-	return WeaponDefinitions.get(activeGun(get(player)).id)
+	return fittedWeapon(activeGun(get(player)).id, pickFor(player).attachments)
 end
 
 -- Puts `weaponId` in its slot, full, and in hand (dev panel).
@@ -208,10 +218,10 @@ function LoadoutService.setWeapon(player: Player, weaponId: string): boolean
 	local weapon = WeaponDefinitions.get(weaponId)
 	local pick = pickFor(player)
 	if weapon.Slot == "primary" then
-		state.primary = fullGun(weapon.Id)
+		state.primary = fullGun(weapon.Id, pick.attachments)
 		pick.primary = weapon.Id
 	else
-		state.secondary = fullGun(weapon.Id)
+		state.secondary = fullGun(weapon.Id, pick.attachments)
 		pick.secondary = weapon.Id
 	end
 	state.active = weapon.Slot
@@ -239,7 +249,7 @@ end
 
 local function finishReload(player: Player, state: State)
 	local gun = activeGun(state)
-	local weapon = WeaponDefinitions.get(gun.id)
+	local weapon = fittedWeapon(gun.id, pickFor(player).attachments)
 	gun.mag, gun.reserve = Magazine.reload(gun.mag, gun.reserve, weapon.MagazineSize)
 	state.reloadUntil = nil
 	publishAmmo(player, state)
@@ -249,7 +259,7 @@ end
 function LoadoutService.startReload(player: Player): boolean
 	local state = get(player)
 	local gun = activeGun(state)
-	local weapon = WeaponDefinitions.get(gun.id)
+	local weapon = fittedWeapon(gun.id, pickFor(player).attachments)
 	if
 		swapping(state)
 		or not Magazine.canReload(
@@ -325,7 +335,7 @@ end
 function LoadoutService.refillAmmo(player: Player)
 	local state = get(player)
 	for _, gun in { state.primary, state.secondary } do
-		local weapon = WeaponDefinitions.get(gun.id)
+		local weapon = fittedWeapon(gun.id, pickFor(player).attachments)
 		gun.mag = weapon.MagazineSize
 		gun.reserve = weapon.ReserveMax
 	end
@@ -340,7 +350,7 @@ end
 function LoadoutService.addMags(player: Player, primaryMags: number, secondaryMags: number): boolean
 	local state = get(player)
 	local function fill(gun: Gun, mags: number): boolean
-		local weapon = WeaponDefinitions.get(gun.id)
+		local weapon = fittedWeapon(gun.id, pickFor(player).attachments)
 		local after = Scarcity.addMags(gun.reserve, weapon.MagazineSize, weapon.ReserveMax, mags)
 		local grew = after > gun.reserve
 		gun.reserve = after
@@ -358,7 +368,7 @@ end
 function LoadoutService.reinforce(player: Player)
 	local state = get(player)
 	for _, gun in { state.primary, state.secondary } do
-		local weapon = WeaponDefinitions.get(gun.id)
+		local weapon = fittedWeapon(gun.id, pickFor(player).attachments)
 		gun.mag = weapon.MagazineSize
 		gun.reserve = math.max(gun.reserve, weapon.ReserveStart)
 	end
@@ -375,7 +385,7 @@ end
 function LoadoutService.setSpareMags(player: Player, mags: number)
 	local state = get(player)
 	for _, gun in { state.primary, state.secondary } do
-		local weapon = WeaponDefinitions.get(gun.id)
+		local weapon = fittedWeapon(gun.id, pickFor(player).attachments)
 		gun.reserve = math.clamp(weapon.MagazineSize * mags, 0, weapon.ReserveMax)
 	end
 	publishAmmo(player, state)
@@ -556,15 +566,22 @@ function LoadoutService.apply(player: Player, requested: unknown): (boolean, str
 	if not ok then
 		return false, reason
 	end
+	local previous = pickFor(player).attachments
 	local pick = Loadout.copy(requested :: Loadout.Loadout)
 	picks[player] = pick
 	player:SetAttribute(Attributes.Fitted, Loadout.encodeFitted(pick.attachments))
 	local state = get(player)
-	if state.primary.id ~= pick.primary then
-		state.primary = fullGun(pick.primary)
+	-- A new gun, or the same one with a new magazine fitted (v2), starts full.
+	local function changed(gun: Gun, id: string): boolean
+		return gun.id ~= id
+			or fittedWeapon(id, pick.attachments).MagazineSize
+				~= fittedWeapon(gun.id, previous).MagazineSize
 	end
-	if state.secondary.id ~= pick.secondary then
-		state.secondary = fullGun(pick.secondary)
+	if changed(state.primary, pick.primary) then
+		state.primary = fullGun(pick.primary, pick.attachments)
+	end
+	if changed(state.secondary, pick.secondary) then
+		state.secondary = fullGun(pick.secondary, pick.attachments)
 	end
 	if state.grenade ~= pick.grenade then
 		state.grenade = pick.grenade

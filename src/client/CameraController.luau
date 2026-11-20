@@ -117,6 +117,17 @@ end
 local function aimed(weaponId: string?): (Sight.Resolved, number, Sight.Resolved, Optics.Optic?)
 	local base = WeaponDefinitions.get(weaponId).Sight
 	local optic = fittedOptic(weaponId)
+	-- Attachment system v2: every slot's ADS factor (the optic's included) is in the fitted gun.
+	local carried =
+		WeaponDefinitions.carried(weaponId, Players.LocalPlayer:GetAttribute(Attributes.Fitted))
+	if carried.Merged then
+		local sight = if optic
+			then select(2, WeaponDefinitions.dressed(weaponId, optic.id))
+			else base
+		local scope = firstPerson and sight.Kind == "scope" and not optic
+		local start = if scope then Config.Weapon.Sights.ScopeTime else Config.Weapon.ADS.EnterTime
+		return sight, start * carried.AdsTimeFactor, base, optic
+	end
 	if not optic then
 		local scope = firstPerson and base.Kind == "scope"
 		return base,
@@ -140,7 +151,7 @@ end
 local function onShot()
 	local player = Players.LocalPlayer
 	local weaponId = player:GetAttribute(Attributes.Weapon) :: string?
-	local weapon = WeaponDefinitions.get(weaponId)
+	local weapon = WeaponDefinitions.carried(weaponId, player:GetAttribute(Attributes.Fitted))
 	local kick = weapon.Kick
 	local scale = 1 + (Config.Camera.Kick.AdsScale - 1) * adsBlend
 	if firstPerson then
@@ -439,8 +450,10 @@ local function onRenderStep(deltaTime: number)
 			local shotAt = bloomShotAt or os.clock()
 			local idle = os.clock() - shotAt - Config.Weapon.BloomRecoveryDelay
 			if idle > 0 then
-				local weapon =
-					WeaponDefinitions.get(player:GetAttribute(Attributes.Weapon) :: string?)
+				local weapon = WeaponDefinitions.carried(
+					player:GetAttribute(Attributes.Weapon) :: string?,
+					player:GetAttribute(Attributes.Fitted)
+				)
 				bloomValue = math.max(bloomValue - idle * weapon.BloomRecovery, 0)
 			end
 		end

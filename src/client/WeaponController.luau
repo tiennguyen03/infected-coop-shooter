@@ -132,7 +132,10 @@ end
 
 function WeaponController.requestReload()
 	local player = Players.LocalPlayer
-	local weapon = WeaponDefinitions.get(player:GetAttribute(Attributes.Weapon) :: string?)
+	local weapon = WeaponDefinitions.carried(
+		player:GetAttribute(Attributes.Weapon) :: string?,
+		player:GetAttribute(Attributes.Fitted)
+	)
 	local mag = (player:GetAttribute(Attributes.Mag) :: number?) or 0
 	local reserve = (player:GetAttribute(Attributes.Reserve) :: number?) or 0
 	if WeaponController.isReloading() or mag >= weapon.MagazineSize or reserve <= 0 then
@@ -158,7 +161,10 @@ local function tryFire()
 
 	local player = Players.LocalPlayer
 	local now = os.clock()
-	local weapon = WeaponDefinitions.get(player:GetAttribute(Attributes.Weapon) :: string?)
+	local weapon = WeaponDefinitions.carried(
+		player:GetAttribute(Attributes.Weapon) :: string?,
+		player:GetAttribute(Attributes.Fitted)
+	)
 	local cooldown = weapon.FireCooldown
 	if now - lastFireTime < cooldown then
 		return

@@ -72,7 +72,8 @@ local function armoured(
 	part: Instance,
 	position: Vector3?,
 	amount: number,
-	kind: string
+	kind: string,
+	penetration: number?
 ): (number, string)
 	local moves = Config.InfectedMoves
 	local model = humanoid.Parent
@@ -105,6 +106,10 @@ local function armoured(
 		rule
 	)
 	local multiplier = InfectedMoves.armour(face, part.Name, rule)
+	-- Armour-piercing rounds (attachment system v2): their share of the plate's cut ignored.
+	if multiplier < 1 and penetration and penetration > 0 then
+		multiplier += (1 - multiplier) * math.clamp(penetration, 0, 1)
+	end
 	if multiplier < 1 and kind ~= "headshot" then
 		kind = "plate"
 	end
@@ -117,7 +122,8 @@ function DamageService.dealDamage(
 	amount: number,
 	position: Vector3?,
 	kind: string?,
-	part: Instance?
+	part: Instance?,
+	armourPenetration: number? -- 0..1 of a plate's cut ignored (an AP round; ammo types)
 )
 	if humanoid.Health <= 0 then
 		return
@@ -149,7 +155,7 @@ function DamageService.dealDamage(
 	end
 	-- A plated front (the Brute): a round's share by the face it struck.
 	if part and (kind == "hit" or kind == "headshot") then
-		amount, kind = armoured(humanoid, part, position, amount, kind :: string)
+		amount, kind = armoured(humanoid, part, position, amount, kind :: string, armourPenetration)
 	end
 	-- A bot's hit (no attacker) leaves any player's kill credit on the target in place.
 	if attacker then

@@ -197,7 +197,8 @@ end
 function ProjectileServer.hitMultiplier(
 	part: Instance,
 	humanoid: Humanoid,
-	headshotMultiplier: number?
+	headshotMultiplier: number?,
+	armourPenetration: number? -- an AP round ignores this share of the plate's cut
 ): (number, string)
 	-- The Index's armour (IndexService): a plated part takes the round at the armoured rate
 	-- (DamageService routes it to the plate); a limb whose plate is gone is exposed.
@@ -206,7 +207,9 @@ function ProjectileServer.hitMultiplier(
 		if typeof(part:GetAttribute(Attributes.WeakSpot)) == "number" then
 			return Config.Index.Warden.WeakSpot.RoundMultiplier, "headshot"
 		end
-		return Config.Index.Warden.ArmouredMultiplier, "plate"
+		local armoured = Config.Index.Warden.ArmouredMultiplier
+		local pen = math.clamp(armourPenetration or 0, 0, 1)
+		return armoured + (1 - armoured) * pen, "plate"
 	end
 	if part.Name ~= "Head" then
 		if part:GetAttribute(Attributes.Exposed) == true then
@@ -267,15 +270,20 @@ local function fireHitscan(
 		if not humanoid or humanoid.Health <= 0 then
 			break
 		end
-		local multiplier, kind =
-			ProjectileServer.hitMultiplier(result.Instance, humanoid, weapon.HeadshotMultiplier)
+		local multiplier, kind = ProjectileServer.hitMultiplier(
+			result.Instance,
+			humanoid,
+			weapon.HeadshotMultiplier,
+			weapon.ArmourPenetration
+		)
 		DamageService.dealDamage(
 			player,
 			humanoid,
 			damage * multiplier,
 			result.Position,
 			kind,
-			result.Instance
+			result.Instance,
+			weapon.ArmourPenetration
 		)
 		if stagger and humanoid.Health > 0 then
 			EnemyService.stagger(humanoid, Config.Upgrades.HollowPoint.StaggerSeconds)
