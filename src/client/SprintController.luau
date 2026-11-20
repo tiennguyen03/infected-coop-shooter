@@ -60,10 +60,11 @@ function SprintController.getBaseSpeed(): number
 		then Config.Player.SprintSpeed
 		else Config.Player.WalkSpeed
 	local mult = (Players.LocalPlayer:GetAttribute(Attributes.MoveSpeedMult) :: number?) or 1
+	local weapon =
+		WeaponDefinitions.get(Players.LocalPlayer:GetAttribute(Attributes.Weapon) :: string?)
+	mult *= weapon.CarryMoveFactor -- a heavy gun in hand (the Fifty)
 	if isAiming then
-		mult *= WeaponDefinitions.get(
-			Players.LocalPlayer:GetAttribute(Attributes.Weapon) :: string?
-		).AdsMoveFactor
+		mult *= weapon.AdsMoveFactor
 	end
 	-- Grabbed by a Walker crowd (EnemyService; Config.InfectedMoves.Walker.Grab).
 	local character = Players.LocalPlayer.Character
@@ -118,6 +119,7 @@ function SprintController.isSprinting(): boolean
 	return isSprinting
 		and sprintAllowed
 		and not isAiming
+		and WeaponDefinitions.get(Players.LocalPlayer:GetAttribute(Attributes.Weapon) :: string?).CanSprint
 		and Players.LocalPlayer:GetAttribute(Attributes.Carrying) ~= true
 		and Stamina.canSprint(stamina)
 end
