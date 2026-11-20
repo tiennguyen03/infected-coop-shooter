@@ -1,28 +1,15 @@
-# Roadmap: from one mission to a game people come back to (2026-11-09)
+# Roadmap: from one mission to a game people come back to
 
-Owner's ask: plan "the operations from the lobby, picking loadouts, loading into the game, how
-we keep players playing, player progression, how to make it play and feel more satisfying"
-before building more. Written from four design calls on the same day (systems designer, UI/UX
-designer, playtest critic, lore developer). **Nothing here is canon until the owner decides**;
-the decisions are listed at the end with a recommendation each. Rules that bind all of it:
-[OWNER.md](OWNER.md) (power is the loadout, never stats; the run is the story; grounded; our
-names; modular per-item rows).
+The plan beyond one mission: operations, the lobby, progression, reasons to come back.
+Written from four design calls (systems, UI/UX, playtest critic, lore). **Nothing here is
+canon until the owner decides**; the decisions are at the end with a recommendation each.
+Binding rules: [OWNER.md](OWNER.md). The playtest snapshot it was planned from and the loose
+ends: [sprints/ROADMAP_PLANNING_2026-11-09.md](sprints/ROADMAP_PLANNING_2026-11-09.md).
 
-## Where the game stands (playtest critic)
-
-- **What works, keep leaning on it:** the kill (limp bodies thrown by the killing hit, limbs
-  off, flinch, per-gun kick); the flare lure into a loud pallet landing (the best pacing beat);
-  aimed call-ins, the Anvil shake, the Shrike helicopter; the Warden walking up the road and
-  losing his plates; guns that genuinely play differently.
-- **Why a player would not come back, worst first:**
-  1. Run 2 is run 1 again: same site, same 3:00 trigger, same boss, everything unlocked.
-  2. The first three minutes have no reason to move: a hidden 180 s timer, Walkers only.
-  3. Rewards land when you need nothing (the first pallet at full ammo; the Warden's upgrade
-     cards with 30 s of extraction left); one field-upgrade pick per run.
-  4. Solo doesn't feel like a squad: bots never call anything in (they do since 2026-11-11:
-     frags, stims, Hammer / Anvil), the radio is text only.
-  5. The middle of the Warden fight drags (130 s+ solo); extraction (30 s) ends before it builds.
-  6. The results screen erases the run: four numbers, nothing that happened.
+**Contents:** [The shape](#the-shape-were-building-toward) · [Progression](#progression-systems-designer--lore-developer) ·
+[Reasons to come back](#reasons-to-come-back-systems-designer--lore-developer) ·
+[The player journey](#the-player-journey-uiux-designer) · [Order of work](#order-of-work) ·
+[Decisions](#decisions-for-the-owner-recommendation-first)
 
 ## The shape we're building toward
 
@@ -52,16 +39,16 @@ names; modular per-item rows).
 
 ## Progression (systems designer + lore developer)
 
-- **Merits** (the soft currency; owner 2026-11-10, was "Credits"), kept on your **Service
-  Record**: paid **when a mission ends**, never per kill. Win 120, Partial 60, Loss 0, each
-  Secondary +30 (`Config.Merits`; built 2026-11-10, `MeritService`). Paid to every squad
+- **Merits** (the soft currency), kept on your **Service Record**: paid **when a mission
+  ends**, never per kill. Win 120, Partial 60, Loss 0, each Secondary +30 (`Config.Merits`,
+  `MeritService`; built). Paid to every squad
   member, dead or alive (bots earn nothing; solo pays the same). Not built yet: Stand Down
   +100 (x0.25 in a Secured district), and Secondaries (none is tracked, so they pay 0). A
   perfect operation ~640, a typical first one ~250.
 - **What merits buy:** guns, sidearms, grenades and call-ins, bought at the Carrier's desks. Each
   item's row carries its `Price` (0 = on issue): no list of names anywhere. **Field
   upgrades are never sold** (finds inside a run).
-- **Tabs** (the hard currency; owner 2026-11-10): bought with Robux in packs
+- **Tabs** (the hard currency): bought with Robux in packs
   (`Config.Tabs.Products`) or granted by events, kept on the same record next to merits.
   **Tabs never buy power:** cosmetics and conveniences only. Built so far: the balance on the
   record and on the Carrier's panels, and the receipt handler that pays a pack once
@@ -76,10 +63,10 @@ names; modular per-item rows).
 - **Grade:** real US Army enlisted grades (PV1 ... SGM) earned by windows brought home, shown on
   the name tape in the lobby and on the scoreboard only. **Cosmetic: it gates nothing and adds
   nothing.** On the radio you are still "Pike Three".
-- **The Carrier's desks are shops** (owner and Nova, 2026-11-09: there is no ship to upgrade like
-  Helldivers, so the Carrier sells kit instead). A locked item shows its price ("300 MERITS")
+- **The Carrier's desks are shops** (owner and Nova: no ship to upgrade like Helldivers, so
+  the Carrier sells kit instead). A locked item shows its price ("300 MERITS")
   and a BUY button; bought once, it's yours for good. Only guns, grenades and call-ins are sold:
-  no cosmetics and no one-run consumables for now (owner, 2026-11-09).
+  no cosmetics and no one-run consumables for now (owner).
 
 ## Reasons to come back (systems designer + lore developer)
 
@@ -94,8 +81,7 @@ names; modular per-item rows).
   Lost districts ("battery displaced": no Anvil; fog; heavy hosts; net jammed).
 - **Never:** login streaks that punish a missed day, limited-time guns, paid power, loot
   boxes, per-kill grind, stat upgrades, a battle pass now, ship upgrades.
-- **Names (lore developer):** HRD on the ship = **Harlan Recovery Detachment** (already canon in
-  LORE "Pike"). Other window teams on the Carrier are polearms (Halberd, Glaive, Lance, Bill,
+- **Names (lore developer):** the ship's mark is HARLAN (LORE.md > The Carrier). Other window teams on the Carrier are polearms (Halberd, Glaive, Lance, Bill,
   Partisan, Spontoon, Voulge); on your own net your team is always Pike. Desks get their own
   clerk voice ("Signed for. One Goose. Bring the tube back.").
 
@@ -106,7 +92,7 @@ names; modular per-item rows).
   auto-applied); presets later. The rack stays for browsing and inspecting.
 - **Boarding panel:** seat rows ("PIKE ONE · name · gun · four call-in icons · READY ✓"), READY,
   everyone ready = 5 s lift, 30 s otherwise.
-- **Transitions (owner 2026-11-09: "fine with the Roblox loading screen for now"):** fade to
+- **Transitions (owner: the Roblox loading screen is fine for now):** fade to
   black with the helicopter sound, Roblox's own loading screen while the place teleports, then
   fade in on the pad with the drop-off sound. Between missions on the same server: the same
   fade and rotor, the next map is built, fade in with the drop-off. No custom ride card or
@@ -127,15 +113,11 @@ Each step is small and playtestable on its own. **Phase 1 needs no lobby and no 
 feel it this week.**
 
 **Phase 1: make one mission feel great** (Tien + Claude, match side)
-1. Kill burst colour + a kill-confirm sound. **Built 2026-11-10** (dark blood burst; a soft
-   tick for the killer, `Config.Audio.KillConfirm`); needs a listen in a playtest.
-2. The start becomes a choice: the site marker shows early, the squad starts the Primary;
-   one of the three laid-out sites picked at random; a Misdrop crate ~0:30.
-3. Rewards that land: starting reserve about half (the first pallet matters); the Warden's
-   upgrade cards at the hold's end, not at extraction; Warden chest plate 500 -> 400 (fight
-   100-120 s). **Built 2026-11-10, not yet playtested** (PROGRESSION > Guns, Field upgrades).
-4. Extraction 30 -> 60 s with a second wave; revives per mission. **Built 2026-11-10, not
-   yet playtested** (PROGRESSION > Operation).
+1. Kill burst colour + a kill-confirm sound. **Built.**
+2. The start becomes a choice: the squad starts the Primary at a drawn site. **Built**
+   (objective pools).
+3. Rewards that land: half reserve at insert, the upgrade crate at the hold's end. **Built.**
+4. Extraction 60 s with a second wave. **Built** (PROGRESSION > Extraction).
 5. Readability: world markers, squad roster, call-in inbound/kill cards.
 6. Results that tell the run (squad table, awards).
 7. Voiced Control for five beats (insert, site up, pallet inbound, Index moving, bird inbound),
@@ -153,8 +135,8 @@ feel it this week.**
 11. Publish both places, `Config.Places.Lobby`, the live round trip.
 
 **Phase 4: progression** (Tien + Claude save + match; Nova desks)
-12. Save service (ARCHITECTURE F9, versioned profile), merits paid at mission end (built
-    2026-11-10 on the lobby's record), `Price` on item rows.
+12. Save service (versioned saves: `docs/SAVES.md`), merits paid at mission end (built),
+    `Price` on item rows.
 13. Lobby: desks open items, NOT ON ISSUE rows, the saved loadout, grade on the name tape.
 
 **Phase 5: reasons to return**
@@ -176,15 +158,7 @@ feel it this week.**
 9. **No tutorial level, first-time hints instead?** **Yes.**
 10. **The Goose moves from the primary slot to a support call-in before pricing**? **Yes**
     (a rocket as a primary breaks "sidegrade").
-11. **Names:** the Carrier, merits and tabs (decided by the owner); Service Record, FRAGO, Corridor Order, polearm team callsigns, HRD =
-    Harlan Recovery Detachment. **Yes** (lore developer writes the canon once approved).
+11. **Names:** the Carrier, merits and tabs (decided by the owner); Service Record, FRAGO,
+    Corridor Order, polearm team callsigns. **Yes** (lore developer writes the canon once
+    approved; plain words for players: LORE.md > Naming).
 
-## Loose ends found while planning
-
-- Nova's lobby lore names the default gun the M4A1 carbine; the game issues the M16A4.
-  Recommend the M16A4 (modelled and tuned).
-- Nova's lobby lore calls HRD's meaning open; main's LORE already says Harlan Recovery
-  Detachment. Keep main's.
-- The Primary objective "Recover the Record" shares the word: on screens always say "Service
-  Record" in full for the meta one.
-- The Mile 14 design pack lives only on Tien's machine (branch `claude/mile14`, never pushed).

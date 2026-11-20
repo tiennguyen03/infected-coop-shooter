@@ -46,7 +46,7 @@ serves none of them it is cut; if two conflict, the earlier one wins.
 The MVP sprints 1-7 (move, shoot, enemies, waves, XP, upgrades, polish) shipped and were later
 replaced by the loadout spine; see [HISTORY.md](HISTORY.md).
 
-1. **Content:** the build order in [PROGRESSION.md](PROGRESSION.md) > Build order (objective
+1. **Content:** the build order in [LATER.md](LATER.md) > Build order (objective
    pools, the operation and the Burn, the Containment Board, Mile 14, Kestrel).
 2. **Foundation:** the F6-F11 items in [ARCHITECTURE.md](ARCHITECTURE.md), each right before
    the feature that needs it.
