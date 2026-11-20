@@ -33,6 +33,9 @@ Last updated: 2026-11-20 by Nova + Claude (playtest fixes: the saved Loadout on 
   #97 merges): all seven slots and four 12-gauge shells (PROGRESSION > Attachments). New shared
   rules: `Rules/DoT` (every burn: the Cauterizer and the Leech reuse it) and
   `Rules/WallBreach` (breaching shells open light walls).
+- **The Fifty** (`nova/visitor-fifty`, stacked on `nova/playtest-fixes`): the Barrett, sold by
+  the Visitor; the first friendly fire in the game (its overpen, `Rules/Overpen`). Wears the
+  M2010's mesh until Nova downloads a Barrett model (`docs/BACKLOG.md`).
 - **Off switches** exist for every new system (`Config.<System>.Enabled = false`); the
   feature's doc names them. Prefer a switch over a revert.
 - **Next after #92 is played:** difficulty levels, a four-player test with Nova and friends

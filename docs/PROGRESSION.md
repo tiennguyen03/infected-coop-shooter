@@ -314,6 +314,21 @@ Numbers in `Config.Weapons.<Gun>`, rows in `WeaponDefinitions`. Semi guns fire o
 | **M2010 ESR Sniper** (sample) | one round per kill, Brute in 2, through four in a line; useless from the hip | bolt, 48 (1.25) | 140 | 5 + 15 / 30 | 3.2 | 6.0 / 0.05 | 0 | 800 | 3 |
 | **Goose, M3 recoilless** (sample "RPG", primary slot; later the call-in) | a visible rocket at 220 studs/s: 400 to the Infected struck, then the frag's blast 120 in 6 studs, no friendly fire | single, reload 6 s | 400 + blast | 1 + 1 / 1 | 6.0 | 2.0 / 0.25 | 0 | 300 | 0 |
 
+- **The Fifty, Barrett M82A1** (.50 BMG, primary; Nova 2026-11-20): sold only by the
+  Visitor, 1,500 merits (its row's `Desk = "visitor"`, `Price`; never tabs). Semi, as fast as
+  the trigger is pulled (0.25 s cycle), but each shot throws the sights 2.5 degrees wide and
+  they settle at 1.25 a second, so aimed fire runs about one round in 2 s (~30 rpm). 180 per
+  round, x3 head, mag 10 + 20 / 40 (scarce 10 / 30), reload 4.5, range 800, hip 4.0 (about 2
+  studs off at 30), 10x scope, noise 250. Carried at 65% walk speed and never sprints
+  (`CarryMoveFactor`, `CanSprint`). **Overpen** (`Rules/Overpen`, `Overpen` on its row): a
+  round hits up to 4 bodies in a line, 10% off per body pierced (1, 0.9, 0.8, 0.7), and squadmates
+  in the line are bodies too: friendly fire (the trade-off; `FriendlyFire` share, through
+  `EnemyProjectileService.damagePlayer`, so armour and downing apply). It passes walls up to
+  1 stud thick at no cost; thicker walls and terrain stop it. It breaks the Brute's plated
+  front (`BreaksArmour`: the round lands whole there, he has no plates to count); the Warden's
+  plates take it at the usual `ArmouredMultiplier` (0.25: 45 a round). Stand-ins until its own
+  art: the M2010's mesh, scope points and shot. The M2010 keeps its own `Pierce` count
+  (moving it onto `Rules/Overpen` is a follow-up).
 - ADS move factor: rifle 0.6, SMG 0.85, LMG 0.35, shotgun 0.7, DMR 0.5, pistol 0.9. ADS
   pulls the camera to 5 studs over the shoulder at FOV 55 (`Weapon.ADS`); in first person each
   gun aims through its own sights at its own zoom, the M2010 (6x), M110 (3.5x) and Goose (3x)
