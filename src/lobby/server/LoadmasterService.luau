@@ -23,6 +23,7 @@ local LoadoutSave = require(ReplicatedStorage.Shared.Rules.LoadoutSave)
 local Messages = require(ReplicatedStorage.Shared.Messages)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local RecordService = require(script.Parent.RecordService)
+local SaveSchema = require(ReplicatedStorage.Shared.Rules.SaveSchema)
 local SaveSlot = require(script.Parent.SaveSlot)
 
 local LoadmasterService = {}
@@ -111,7 +112,7 @@ end
 
 function LoadmasterService.init()
 	remote = Remotes.get("Loadout")
-	slot = SaveSlot.new(Config.Lobby.Save.Store, "u_")
+	slot = SaveSlot.new(Config.Lobby.Save.Store, "u_", SaveSchema.Loadout)
 
 	remote.OnServerEvent:Connect(function(player: Player, kind: unknown, requested: unknown)
 		if kind ~= Messages.Loadout.Request then

@@ -108,6 +108,9 @@ local Attributes = table.freeze({
 	-- the merits and tabs on this player's record as the match last read it at a mission's end
 	-- (MeritService; RunEndUI shows the wallet): nil until then, or when the read failed
 	MeritsHeld = "MeritsHeld",
+	-- Player (lobby, server-set): true when this visit is read-only because a save could not be
+	-- read, or is newer than this server's code (SaveSlot; docs/SAVES.md). WalletUI shows it.
+	SaveOffline = "SaveOffline",
 	TabsHeld = "TabsHeld",
 	DevGod = "DevGod",
 	Bloom = "Bloom",

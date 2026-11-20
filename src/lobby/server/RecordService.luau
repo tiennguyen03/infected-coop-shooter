@@ -22,18 +22,19 @@ local AttachmentRules = require(ReplicatedStorage.Shared.Rules.AttachmentRules)
 local Optics = require(ReplicatedStorage.Shared.Attachments.Optics)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local KitPrices = require(ReplicatedStorage.Shared.KitPrices)
+local SaveSchema = require(ReplicatedStorage.Shared.Rules.SaveSchema)
 local SaveSlot = require(script.Parent.SaveSlot)
 
 local RecordService = {}
 
 local SAVE = Config.Lobby.Save
-local LOAD_WAIT = 10 -- seconds `waitFor` waits for a record still loading
+local LOAD_WAIT = SAVE.LoadWait -- seconds `waitFor` waits for a record still loading
 
+-- The record held for each soldier. On a read-only visit (SaveSlot: the saved record could
+-- not be read on join, or is newer than this code, or junk) it is a stand-in, and saving it
+-- would wipe the real one (merits earned on missions, kit, paid tabs). They can still buy for
+-- this visit; nothing of it is saved (docs/SAVES.md).
 local records: { [Player]: Record.Record } = {}
--- Soldiers whose saved record could not be read on join (a DataStore error, or Studio): the
--- record held here is a stand-in, and saving it would wipe the real one (merits earned on
--- missions, kit, paid tabs). They can still buy for this visit; nothing of it is saved.
-local unread: { [Player]: boolean } = {}
 -- Soldiers with a Robux receipt being paid right now: one at a time, and no buy meanwhile.
 local granting: { [Player]: boolean } = {}
 -- Soldiers with a buy being saved right now: one at a time.
@@ -81,17 +82,11 @@ function RecordService.allows(player: Player, loadout: Signable): (boolean, stri
 end
 
 local function load(player: Player)
-	local data, answered = slot:load(player)
+	-- A failed read, or a save this code cannot read (junk, a newer version), makes the visit
+	-- read-only in the slot: never written over. An older save is migrated here on read.
+	local data = slot:load(player)
 	local record = Record.decode(data, SAVE.StartMerits)
 	if player.Parent and not records[player] then
-		-- A save this code cannot read (junk, a newer version) is treated like one that could
-		-- not be read: never written over.
-		if not answered or not Record.canUpdate(data) then
-			unread[player] = true
-			warn(
-				`[RecordService] {player.Name}'s record could not be read: this visit is not saved`
-			)
-		end
 		records[player] = record
 		send(player, record)
 	end
@@ -111,8 +106,8 @@ local function change(player: Player, label: string, edit: Edit): (boolean, stri
 	if not record then
 		return false, "loading"
 	end
-	if unread[player] or not slot.store then
-		-- Nothing is saved this visit (see `unread`; Studio without API access): the change is
+	if slot:isReadOnly(player) or not slot.store then
+		-- Nothing is saved this visit (see `records`; Studio without API access): the change is
 		-- made on the record held here only.
 		local after, ok, reason = edit(record)
 		if not ok then
@@ -137,7 +132,7 @@ local function change(player: Player, label: string, edit: Edit): (boolean, stri
 			refused = reason
 			return nil
 		end
-		return Record.encode(after)
+		return Record.encode(after, old)
 	end)
 	buying[player] = nil
 	if not ok or written == nil then
@@ -195,7 +190,7 @@ local function grant(player: Player, purchaseId: string, tabs: number): boolean
 		if not granted and not Record.hasReceipt(stored, purchaseId) then
 			return nil -- a bad id or amount: nothing to write
 		end
-		return Record.encode(paid)
+		return Record.encode(paid, old)
 	end)
 	if written == nil then
 		return false
@@ -234,7 +229,7 @@ end
 
 function RecordService.init()
 	remote = Remotes.get("Record")
-	slot = SaveSlot.new(SAVE.RecordStore, Record.KEY_PREFIX)
+	slot = SaveSlot.new(SAVE.RecordStore, Record.KEY_PREFIX, SaveSchema.Record)
 	remote.OnServerEvent:Connect(function(player: Player, kind: unknown, id: unknown)
 		if kind == Messages.Record.Buy then
 			buy(player, id)
@@ -248,7 +243,6 @@ function RecordService.init()
 	end
 	Players.PlayerRemoving:Connect(function(player: Player)
 		records[player] = nil
-		unread[player] = nil
 		buying[player] = nil
 	end)
 end

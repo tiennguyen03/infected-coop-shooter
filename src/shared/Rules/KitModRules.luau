@@ -128,7 +128,7 @@ function KitModRules.buyRankStored(
 	if not ok then
 		return nil, reason
 	end
-	return Record.encode(after), nil
+	return Record.encode(after, stored), nil
 end
 
 -- The total `effect` from the ranks held: each enabled mod with that effect, its

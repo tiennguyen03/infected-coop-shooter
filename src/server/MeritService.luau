@@ -3,8 +3,9 @@
 -- when a mission ends, every real player in the server, dead or alive, is paid for its
 -- outcome (Rules/Economy.missionMerits, Config.Merits; never per kill, bots earn nothing).
 -- The pay goes onto the record the lobby reads (DataStore Config.Lobby.Save.RecordStore, key
--- Rules/Record.key, the versioned Rules/Record shape) with UpdateAsync: the stored record is
--- read, credited and written back in one step, never overwritten blind. The lobby buys the same
+-- Rules/Record.key, the versioned Rules/Record shape, older saves migrated on read by
+-- Rules/SaveSchema; docs/SAVES.md) with UpdateAsync: the stored record is read, credited and
+-- written back in one step, never overwritten blind, fields this code does not know kept. The lobby buys the same
 -- way (RecordService, Rules/Record.buyStored), so a pay that lands after the soldier is back in
 -- the lobby is kept, and neither server writes over a save it cannot read (`canUpdate`), so the
 -- two places can be published in either order.
@@ -100,7 +101,7 @@ local function credit(userId: number, amount: number): Record.Record?
 					return nil -- cancels the update
 				end
 				local record = Record.earn(Record.decode(old, SAVE.StartMerits), amount)
-				return Record.encode(record), { userId }
+				return Record.encode(record, old), { userId }
 			end)
 		end)
 		if ok then

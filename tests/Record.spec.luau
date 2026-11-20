@@ -290,4 +290,21 @@ return {
 		expect.equal(Record.key(12345), "r_12345", "key")
 		expect.equal(Record.KEY_PREFIX, "r_", "prefix")
 	end,
+	["an unversioned record is migrated, read and may be updated"] = function()
+		local old = { merits = 450, owned = { "smg" } }
+		expect.equal(Record.canUpdate(old), true, "updatable")
+		local r = Record.decode(old, 1000)
+		expect.equal(r.merits, 450, "merits kept")
+		expect.equal(Record.owns(r, "smg", priceOf), true, "kit kept")
+		expect.equal(r.tabs, 0, "tabs")
+	end,
+	["saving over a stored record keeps fields this code does not know"] = function()
+		local stored =
+			{ version = 2, merits = 600, owned = {}, tabs = 0, receipts = {}, medals = 3 }
+		local saved = Record.encode(Record.earn(Record.decode(stored, 0), 10), stored) :: any
+		expect.equal(saved.merits, 610, "merits")
+		expect.equal(saved.medals, 3, "unknown kept")
+		local bought = Record.buyStored(stored, "smg", priceOf, 0) :: any
+		expect.equal(bought.medals, 3, "kept through a buy")
+	end,
 }
