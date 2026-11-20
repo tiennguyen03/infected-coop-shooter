@@ -146,7 +146,9 @@ local Config = {
 		reddot = {
 			Name = "Red dot",
 			Description = "No magnification, but the fastest into the sights. Close range, first shot first.",
-			Guns = { "service_rifle" },
+			-- The Mossberg's too (attachment system v2): stats only, no Fit row yet, so its mesh
+			-- and sight stay the irons' (the visuals are a later PR for every gun).
+			Guns = { "service_rifle", "shotgun" },
 			ZoomMultiplier = 1.0, -- 1.35: the irons' picture
 			AdsTimeMultiplier = 0.75, -- 0.11 s
 			Price = 150,
@@ -225,7 +227,8 @@ local Config = {
 	-- (Shared.Attachments.Schema), each option a row (Shared.Attachments.Options; the Optic
 	-- slot's options are Config.Optics' rows), each ammo type a row (Shared.Attachments.AmmoTypes).
 	-- A gun takes the slots whose Families list its row's Family (Config.Weapons.<gun>.Family;
-	-- only the M16A4 so far, one PR per gun after it) and, in each, the options that list it.
+	-- the M16A4 and the Mossberg 590 so far, one PR per gun) and, in each, the options that
+	-- list it.
 	-- Unlocked once with merits at the Loadmaster's EDIT (Price; 0 = the issued part, always
 	-- owned) and kept for good on the record; never tabs or Robux. Stats only: nothing on the
 	-- gun's model changes yet (a later PR). The merge rule is Rules/AttachmentMerge.merge: an
@@ -236,24 +239,39 @@ local Config = {
 	-- moveSpeed, adsTime and zoom are factors on the gun's own: 1 = as issued).
 	AttachmentsV2 = {
 		Slots = {
-			Optic = { Name = "Optic", Order = 1, Families = { "rifle" }, MaxOptions = 4 },
-			Barrel = { Name = "Barrel", Order = 2, Families = { "rifle" }, MaxOptions = 4 },
-			Muzzle = { Name = "Muzzle", Order = 3, Families = { "rifle" }, MaxOptions = 4 },
-			Magazine = { Name = "Magazine", Order = 4, Families = { "rifle" }, MaxOptions = 4 },
+			Optic = { Name = "Optic", Order = 1, Families = { "rifle", "shotgun" }, MaxOptions = 4 },
+			Barrel = {
+				Name = "Barrel",
+				Order = 2,
+				Families = { "rifle", "shotgun" },
+				MaxOptions = 4,
+			},
+			Muzzle = {
+				Name = "Muzzle",
+				Order = 3,
+				Families = { "rifle", "shotgun" },
+				MaxOptions = 4,
+			},
+			Magazine = {
+				Name = "Magazine",
+				Order = 4,
+				Families = { "rifle", "shotgun" },
+				MaxOptions = 4,
+			},
 			Ammo = {
 				Name = "Ammo type",
 				Order = 5,
-				Families = { "rifle" },
+				Families = { "rifle", "shotgun" },
 				MaxOptions = 4,
 				Ammo = true,
 			},
 			Underbarrel = {
 				Name = "Underbarrel",
 				Order = 6,
-				Families = { "rifle" },
+				Families = { "rifle", "shotgun" },
 				MaxOptions = 4,
 			},
-			Stock = { Name = "Stock", Order = 7, Families = { "rifle" }, MaxOptions = 4 },
+			Stock = { Name = "Stock", Order = 7, Families = { "rifle", "shotgun" }, MaxOptions = 4 },
 		},
 		-- Options per slot, the M16A4's (Guns). Base = the issued part: what the slot holds when
 		-- nothing else is fitted (Price 0). IncompatibleWith: ids it cannot be fitted with (the
@@ -294,19 +312,31 @@ local Config = {
 			},
 			-- The integrally suppressed barrel: the Barrel option every gun already takes
 			-- (Config.Attachments.Options.suppressor: its quiet reach is the gun's own
-			-- Suppressor.Noise). On the M16A4 it also costs range and damage, and leaves no
-			-- thread for a muzzle device. Free, as it always was.
+			-- Suppressor.Noise). On a v2 gun it also costs range and damage, and leaves no
+			-- thread for a muzzle device. Free, as it always was; the Mossberg keeps it (a saved
+			-- fitting stays good). ClashReasons: what the menu says for each refused pair.
 			suppressor = {
 				Name = "Suppressed barrel",
 				Description = "Quiet: the Infected hear it only close in. Shorter reach, a little less punch, no muzzle device.",
 				Slot = "Barrel",
-				Guns = { "service_rifle" },
+				Guns = { "service_rifle", "shotgun" },
 				Price = 0,
 				Deltas = {
 					{ Field = "range", Op = "multiply", Value = 0.80 },
 					{ Field = "damage", Op = "multiply", Value = 0.90 },
 				},
-				IncompatibleWith = { "muzzle_compensator", "muzzle_brake" },
+				IncompatibleWith = {
+					"muzzle_compensator",
+					"muzzle_brake",
+					"m590_muzzle_compensator",
+					"m590_muzzle_breacher",
+				},
+				ClashReasons = {
+					muzzle_compensator = "The suppressed barrel has no thread for a muzzle device.",
+					muzzle_brake = "The suppressed barrel has no thread for a muzzle device.",
+					m590_muzzle_compensator = "The suppressed barrel has no thread for a muzzle device.",
+					m590_muzzle_breacher = "The suppressed barrel has no thread for a muzzle device.",
+				},
 			},
 			muzzle_flash_hider = {
 				Name = "Flash hider",
@@ -428,12 +458,185 @@ local Config = {
 					{ Field = "adsTime", Op = "multiply", Value = 0.85 },
 				},
 			},
+			------------------------------------------------------------------
+			-- Mossberg 590 (shotgun; Nova, 2026-11-20). Its own rows, so its numbers and prices
+			-- are its own. Spread on a shotgun is the pellet pattern: a barrel scales both
+			-- cones (hipSpread, adsSpread), the laser only the hip. The ammo slot is the
+			-- showcase (the 12-gauge rows under Ammo). Its Optic slot is these irons and
+			-- Config.Optics.reddot; its Barrel slot also takes the suppressed barrel above.
+			------------------------------------------------------------------
+			m590_irons = {
+				Name = "Iron sights",
+				Description = "The bead it was issued with.",
+				Slot = "Optic",
+				Guns = { "shotgun" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			m590_barrel_20 = {
+				Name = "Standard 20-inch",
+				Description = "The issued barrel: the issued pattern and reach.",
+				Slot = "Barrel",
+				Guns = { "shotgun" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			m590_barrel_14 = {
+				Name = "Short 14-inch",
+				Description = "The breaching barrel: quick in a doorway, a wide pattern, a short reach.",
+				Slot = "Barrel",
+				Guns = { "shotgun" },
+				Price = 150,
+				Deltas = {
+					{ Field = "hipSpread", Op = "multiply", Value = 1.25 },
+					{ Field = "adsSpread", Op = "multiply", Value = 1.25 },
+					{ Field = "range", Op = "multiply", Value = 0.80 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 1.10 },
+					{ Field = "adsTime", Op = "multiply", Value = 0.90 },
+				},
+			},
+			-- A full choke: no slugs or incendiary shells through it (the ammo rows say so).
+			m590_barrel_choke = {
+				Name = "Full-choke 24-inch",
+				Description = "A tight pattern that carries further. Heavier. Buckshot only: no slugs or Dragon's Breath.",
+				Slot = "Barrel",
+				Guns = { "shotgun" },
+				Price = 150,
+				Deltas = {
+					{ Field = "hipSpread", Op = "multiply", Value = 0.70 },
+					{ Field = "adsSpread", Op = "multiply", Value = 0.70 },
+					{ Field = "range", Op = "multiply", Value = 1.20 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 0.90 },
+				},
+			},
+			m590_muzzle_standard = {
+				Name = "Standard muzzle",
+				Description = "The plain issued muzzle.",
+				Slot = "Muzzle",
+				Guns = { "shotgun" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			m590_muzzle_compensator = {
+				Name = "Compensator",
+				Description = "Holds the muzzle down for the next shell. A little louder.",
+				Slot = "Muzzle",
+				Guns = { "shotgun" },
+				Price = 120,
+				Deltas = {
+					{ Field = "recoil", Op = "multiply", Value = 0.85 },
+					{ Field = "alertRadius", Op = "multiply", Value = 1.05 },
+				},
+			},
+			-- The standoff breaching muzzle: with breaching shells a light wall opens in one shot
+			-- (two without it; Config.WallBreach). With any other round, a standard muzzle.
+			m590_muzzle_breacher = {
+				Name = "Breaching muzzle",
+				Description = "Toothed standoff: with breaching shells a light wall opens in one shot, not two. Otherwise a plain muzzle.",
+				Slot = "Muzzle",
+				Guns = { "shotgun" },
+				Price = 150,
+				Deltas = { { Field = "breachPower", Op = "multiply", Value = 2 } },
+			},
+			m590_tube_8 = {
+				Name = "Standard tube (8)",
+				Description = "The issued 8-shell tube.",
+				Slot = "Magazine",
+				Guns = { "shotgun" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			m590_tube_10 = {
+				Name = "Extended tube (10)",
+				Description = "Two more shells, a longer reload.",
+				Slot = "Magazine",
+				Guns = { "shotgun" },
+				Price = 150,
+				Deltas = {
+					{ Field = "magazineSize", Op = "add", Value = 2 },
+					{ Field = "reloadTime", Op = "multiply", Value = 1.15 },
+				},
+			},
+			m590_tube_12 = {
+				Name = "High-cap tube (12)",
+				Description = "Four more shells. A long reload and a heavy front end.",
+				Slot = "Magazine",
+				Guns = { "shotgun" },
+				Price = 250,
+				Deltas = {
+					{ Field = "magazineSize", Op = "add", Value = 4 },
+					{ Field = "reloadTime", Op = "multiply", Value = 1.30 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 0.95 },
+				},
+			},
+			m590_grip_vertical = {
+				Name = "Vertical grip",
+				Description = "Back on target faster: the slug's follow-up shot.",
+				Slot = "Underbarrel",
+				Guns = { "shotgun" },
+				Price = 100,
+				Deltas = { { Field = "recoilRecovery", Op = "multiply", Value = 1.20 } },
+			},
+			m590_laser = {
+				Name = "Laser",
+				Description = "Tighter from the hip: run and gun.",
+				Slot = "Underbarrel",
+				Guns = { "shotgun" },
+				Price = 150,
+				Deltas = { { Field = "hipSpread", Op = "multiply", Value = 0.70 } },
+			},
+			m590_sidesaddle = {
+				Name = "Side-saddle",
+				Description = "Shells on the receiver: reloads 15% faster.",
+				Slot = "Underbarrel",
+				Guns = { "shotgun" },
+				Price = 100,
+				Deltas = { { Field = "reloadTime", Op = "multiply", Value = 1 / 1.15 } },
+			},
+			m590_stock_standard = {
+				Name = "Standard stock",
+				Description = "The issued fixed stock.",
+				Slot = "Stock",
+				Guns = { "shotgun" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			m590_stock_pistol = {
+				Name = "Pistol grip",
+				Description = "Quicker to the eye, slower to settle after a shell.",
+				Slot = "Stock",
+				Guns = { "shotgun" },
+				Price = 120,
+				Deltas = {
+					{ Field = "adsTime", Op = "multiply", Value = 0.90 },
+					{ Field = "recoilRecovery", Op = "multiply", Value = 0.85 },
+				},
+			},
+			m590_stock_collapsed = {
+				Name = "Collapsed stock",
+				Description = "Light on the move, slower to settle.",
+				Slot = "Stock",
+				Guns = { "shotgun" },
+				Price = 120,
+				Deltas = {
+					{ Field = "moveSpeed", Op = "multiply", Value = 1.10 },
+					{ Field = "recoilRecovery", Op = "multiply", Value = 0.90 },
+				},
+			},
 		},
 		-- Ammo types: each REPLACES the gun's damage profile (Rules/AttachmentMerge). Caliber
 		-- matches Config.Weapons.<gun>.Caliber. ArmourPenetration: the share of a plate's
 		-- reduction the round ignores (the Brute's front, the Warden's plates). Behaviour:
 		-- "standard" | "incendiary" | "tracer" | "breaching" | "subsonic" (the tracer's beam
-		-- is a later, visual PR; its louder shot is here). Planned families (one PR per gun):
+		-- is a later, visual PR; its louder shot is here). Optional (the Mossberg's):
+		-- SpreadMultiplier on the gun's cones (a slug has no pellet pattern), RecoilMultiplier on
+		-- the kick, Burn = { Damage, Seconds } per projectile hit (Rules/DoT, BurnService);
+		-- ClashReasons, as on the options. Planned families (one PR per gun):
 		-- 7.62 FMJ/AP/HP/Subsonic, 12ga Buckshot/Slug/Dragon's Breath/Breaching, 9mm
 		-- FMJ/HP/AP/Subsonic, .357 Standard/+P, .50 BMG Standard/AP, rockets HE/HEDP.
 		Ammo = {
@@ -490,7 +693,117 @@ local Config = {
 				RangeMultiplier = 1.0,
 				Behaviour = "tracer",
 			},
+			------------------------------------------------------------------
+			-- 12-gauge, the Mossberg 590 (Nova, 2026-11-20): four real shells, each a different
+			-- gun's worth of behaviour. RangeMultiplier on the Mossberg's own 45 studs.
+			------------------------------------------------------------------
+			ammo_12ga_buckshot = {
+				Name = "Buckshot",
+				Description = "00 buck: eight pellets, a crowd stopper up close. The issued shell.",
+				Caliber = "12ga",
+				Price = 0,
+				Base = true,
+				Damage = 11,
+				Projectiles = 8,
+				HeadshotMultiplier = 1.5,
+				ArmourPenetration = 0,
+				AlertMultiplier = 1.0,
+				RangeMultiplier = 1.0,
+				Behaviour = "standard",
+			},
+			-- One lead slug: a poor man's marksman rifle. Not through a full choke.
+			ammo_12ga_slug = {
+				Name = "Slug",
+				Description = "One heavy slug: precise out to 200 studs, hits like a rifle, kicks harder. No crowd control.",
+				Caliber = "12ga",
+				Price = 200,
+				Damage = 80,
+				Projectiles = 1,
+				HeadshotMultiplier = 3.0,
+				ArmourPenetration = 0,
+				AlertMultiplier = 1.0,
+				RangeMultiplier = 200 / 45, -- 200 studs
+				SpreadMultiplier = 0.1, -- one ball, no pattern: what is left is the gun's wander
+				RecoilMultiplier = 1.2,
+				Behaviour = "standard",
+				IncompatibleWith = { "m590_barrel_choke" },
+				ClashReasons = {
+					m590_barrel_choke = "A slug through a full choke can split the barrel. Fit another barrel.",
+				},
+			},
+			-- Magnesium pellets (a real incendiary shell): less up front, each pellet that lands
+			-- burns (stacking, Rules/DoT). Hisses: the Infected hear it further.
+			ammo_12ga_dragons_breath = {
+				Name = "Dragon's Breath",
+				Description = "Magnesium pellets: less up front, but each one that lands sets the Infected burning. Louder.",
+				Caliber = "12ga",
+				Price = 250,
+				Damage = 6,
+				Projectiles = 8,
+				HeadshotMultiplier = 1.5,
+				ArmourPenetration = 0,
+				AlertMultiplier = 1.3,
+				RangeMultiplier = 1.0,
+				Behaviour = "incendiary",
+				Burn = { Damage = 15, Seconds = 5 }, -- per pellet hit
+				IncompatibleWith = { "m590_barrel_choke", "suppressor" },
+				ClashReasons = {
+					m590_barrel_choke = "Burning magnesium would ruin a full choke. Fit another barrel.",
+					suppressor = "Incendiary shells cannot be suppressed: the fire is the round.",
+				},
+			},
+			-- A frangible breaching round (the real door-breaching shell): poor on the Infected,
+			-- opens light walls (Rules/WallBreach; one shot with the breaching muzzle, two without).
+			ammo_12ga_breaching = {
+				Name = "Breaching",
+				Description = "A heavy frangible slug: opens a hut or shed wall in two shots, one with the breaching muzzle. Weak on the Infected.",
+				Caliber = "12ga",
+				Price = 150,
+				Damage = 30,
+				Projectiles = 1,
+				HeadshotMultiplier = 1.0,
+				ArmourPenetration = 0,
+				AlertMultiplier = 1.0,
+				RangeMultiplier = 60 / 45, -- 60 studs
+				SpreadMultiplier = 0.2,
+				Behaviour = "breaching",
+			},
 		},
+	},
+
+	-- Damage over time (Rules/DoT; BurnService): every burn's ticking, first Dragon's Breath
+	-- (each round's own Burn is on its ammo row). Stacks: one per hit, each on its own clock;
+	-- past MaxStacks a fresh one replaces the one ending soonest. Tick: seconds between
+	-- payments (the damage is exact however it is ticked). The Cauterizer and the Leech reuse it.
+	DoT = {
+		Tick = 0.5,
+		MaxStacks = 8, -- one Dragon's Breath pull's worth of pellets
+		-- A burning Infected wears one small Fire on its root (BurnService); past MaxShown at
+		-- once the rest burn unseen (docs/STYLES.md budgets).
+		-- Warning orange (docs/STYLES.md accents), its secondary the same hue darker.
+		Flame = {
+			Size = 2,
+			Heat = 6,
+			Color = Color3.fromRGB(232, 120, 40),
+			SecondaryColor = Color3.fromRGB(116, 60, 20),
+			MaxShown = 6,
+		},
+	},
+
+	-- A breaching round on a wall (Rules/WallBreach; WallBreachService; the Mossberg's breaching
+	-- shell, Nova 2026-11-20). Only building walls (ArenaService's "Wall" parts) this thin, of a
+	-- light material: the huts' planks, the Shed's sheet metal, painted panel. Concrete,
+	-- cinder and brick hold. Each breaching hit pushes by the gun's breachPower (1; the breaching
+	-- muzzle doubles it): at Toughness a door-sized Hole opens from the wall's foot at the hit.
+	-- Every broken wall is put back at the next run's start. Doors on our maps are open gaps
+	-- already, so walls are what open new lanes.
+	WallBreach = {
+		Names = { "Wall" },
+		Materials = { "WoodPlanks", "CorrodedMetal", "Metal" },
+		MaxThickness = 1, -- studs (the kit's walls are 0.6)
+		Toughness = 2,
+		Hole = { Width = 4, Height = 8 }, -- the kit's door
+		MinPiece = 0.2, -- studs: a thinner strip of wall is not kept
 	},
 
 	-- What the Infected notice (Nova, 2026-11-11, the night map: "we go in quiet ... if we mess
@@ -1213,6 +1526,40 @@ local Config = {
 		-- Server-owned (ProjectileServer), mirrored to the crosshair ring (`Bloom` attribute).
 		BloomRecoveryDelay = 0.1,
 		TracerDuration = 0.06,
+		-- How a round shows by its ammo type's behaviour (WeaponController.drawTracer; the
+		-- Mossberg's shells first, stats-only otherwise): the tracer's width and colour, and a
+		-- brief burst where it stopped (nil: none). A behaviour with no row looks standard.
+		RoundLook = {
+			standard = { Width = 0.12, Color = Color3.fromRGB(255, 214, 120) },
+			-- Dragon's Breath: orange streaks, a spark of burning magnesium where each lands.
+			incendiary = {
+				Width = 0.14,
+				Color = Color3.fromRGB(232, 120, 40),
+				Impact = {
+					Size = 0.6,
+					Color = Color3.fromRGB(232, 120, 40),
+					Seconds = 0.15,
+					Light = 8,
+				},
+			},
+			-- The breaching slug: a fat line and a puff of grit at the wall.
+			breaching = {
+				Width = 0.22,
+				Color = Color3.fromRGB(255, 230, 180),
+				Impact = {
+					Size = 1.6,
+					Color = Color3.fromRGB(150, 140, 125),
+					Seconds = 0.12,
+					Light = 0,
+				},
+			},
+		} :: {
+			[string]: {
+				Width: number,
+				Color: Color3,
+				Impact: { Size: number, Color: Color3, Seconds: number, Light: number }?,
+			},
+		},
 		-- Q swaps long gun and sidearm (LoadoutService): no shot and no reload for this long.
 		SwapTime = 0.5,
 		-- Simulated projectiles (ProjectileServer.fire): unused since the drones were retired,
@@ -1411,6 +1758,9 @@ local Config = {
 			Price = 400, -- merits at the Quartermaster's rack (Rules/Record)
 			ArmsOrder = 4,
 			Sound = "shotgun",
+			-- Attachment system v2 (Config.AttachmentsV2): its slots by family, its ammo by caliber.
+			Family = "shotgun",
+			Caliber = "12ga",
 		},
 		-- M110: one-taps Walkers, hits two in a line, poor up close. Ammo reins it in
 		-- (100 x 60 is the M16's 270 x 20).

@@ -29,6 +29,10 @@ Last updated: 2026-11-20 by Nova + Claude (playtest fixes: the saved Loadout on 
 - **Attachment system v2** (`nova/attachment-system-v2`, stacked on `nova/playtest-fixes`): seven
   slots and ammo types on the M16A4 (PROGRESSION > Attachments). Any code that reads a gun's
   stats for a soldier should read `WeaponDefinitions.fitted` / `carried`, not `get`.
+- **The Mossberg on v2** (`nova/attachment-rollout-mossberg`, stacked on v2, PR blocked until
+  #97 merges): all seven slots and four 12-gauge shells (PROGRESSION > Attachments). New shared
+  rules: `Rules/DoT` (every burn: the Cauterizer and the Leech reuse it) and
+  `Rules/WallBreach` (breaching shells open light walls).
 - **Off switches** exist for every new system (`Config.<System>.Enabled = false`); the
   feature's doc names them. Prefer a switch over a revert.
 - **Next after #92 is played:** difficulty levels, a four-player test with Nova and friends

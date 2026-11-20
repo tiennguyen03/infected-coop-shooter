@@ -262,6 +262,13 @@ return {
 				count += 1
 				local label = `{opticId} on {gunId}`
 				local fit = optic.Fit and optic.Fit[gunId]
+				-- A gun on attachment system v2 may take an optic for its stats before its mesh
+				-- has one (the Mossberg's red dot): no Fit, so its view stays the bare gun's
+				-- (WeaponDefinitions.dressed). A Fit that is there is checked in full.
+				local row = weaponRow(gunId)
+				if fit == nil and row and row.Family then
+					continue
+				end
 				if
 					type(fit) ~= "table"
 					or type(fit.Model) ~= "string"

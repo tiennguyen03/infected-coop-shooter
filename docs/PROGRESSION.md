@@ -140,6 +140,36 @@ kick) and walk. Saved with the signed Loadout (`Loadout.attachments[gun][slot]`,
 its slot), the same save as before. Stats only: the gun's model shows the optic and the
 suppressor as before, nothing else yet (the tracer's beam and the laser's dot too).
 
+**The Mossberg 590 on v2** (Nova, 2026-11-20; Family "shotgun", Caliber "12ga"; its rows are
+the `m590_*` options and `ammo_12ga_*` ammo in `Config.AttachmentsV2`). A shotgun's spread is
+its pellet pattern: the barrels scale both cones (`hipSpread`, `adsSpread`), the laser only the
+hip. Tests: `tests/MossbergCompatibility.spec.luau`, `tests/AmmoType12ga.spec.luau`.
+
+| Slot | Mossberg options (merits) |
+|---|---|
+| Optic | Iron sights; Red dot 150 (the M16A4's row: -25% ADS time, no zoom; stats only, no model) |
+| Barrel | Standard 20"; Short 14" 150 (+25% spread, -20% range, +10% move, -10% ADS time); Full-choke 24" 150 (-30% spread, +20% range, -10% move); Suppressed (free, as before) |
+| Muzzle | Standard; Compensator 120 (-15% recoil, +5% alert); Breaching muzzle 150 (breaching shells open a wall in 1 shot, not 2; otherwise standard) |
+| Magazine | Tube 8; Tube 10, 150 (+15% reload); Tube 12, 250 (+30% reload, -5% move) |
+| Ammo type | Buckshot (8 x 11, x1.5 head, 45 studs); Slug 200 (1 x 80, x3 head, 200 studs, +20% recoil, no pellet spread); Dragon's Breath 250 (8 x 6, each pellet hit burns 15 over 5 s and stacks, +30% alert); Breaching 150 (1 x 30, x1 head, 60 studs, opens light walls) |
+| Underbarrel | none; Vertical grip 100 (+20% recovery); Laser 150 (-30% hip spread); Side-saddle 100 (reload 15% faster) |
+| Stock | Standard; Pistol grip 120 (-10% ADS time, -15% recovery); Collapsed 120 (+10% move, -10% recovery) |
+
+Refused pairs, each with its reason in the menu (rows' `ClashReasons`): Dragon's Breath or a
+slug through the full choke; Dragon's Breath with the suppressed barrel; the suppressed barrel
+with either muzzle device. Breaching shells on the standard muzzle are allowed (2 shots a wall).
+**Burning** (`Rules/DoT`, spec first; `BurnService`; `Config.DoT`): the one damage-over-time
+rule. Each hit adds a stack on its own clock, paid every 0.5 s as "fire" damage, at most 8 on
+one Infected (the newest replaces the one ending soonest); a burning Infected wears a small
+Fire in warning orange (at most 6 shown). The Cauterizer and the Leech reuse it. **Breaching walls**
+(`Rules/WallBreach`, spec first; `WallBreachService`; `Config.WallBreach`): a breaching round
+that stops on a building "Wall" no thicker than 1 stud and of planks, sheet metal or panel
+(huts, the Shed, kiosks; concrete, cinder and brick hold) pushes it by `breachPower`; at
+Toughness 2 a door-sized hole (4 x 8) opens from the wall's foot at the hit, the rest of the
+wall kept as up to three pieces. Broken walls come back at the next run's start. On screen
+(`Config.Weapon.RoundLook`): Dragon's Breath draws orange tracers and a spark where each pellet
+lands, the breaching slug a fat tracer and a puff of grit.
+
 ### Kit Mods
 
 Allowed by the owner 2026-11-18 (an exception to "never stat items"). A Kit Mod

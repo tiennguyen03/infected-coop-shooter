@@ -19,6 +19,14 @@
 -- ammo, a damage delta would never matter.
 -- Compatibility: an option for another gun or in another slot, ammo of another caliber, or any
 -- pair where one names the other in incompatibleWith refuses the whole fitting, with a reason.
+-- A row may say why in its clashReasons (clashReason; the Loadmaster's menu shows it).
+--
+-- The Mossberg 590 (2026-11-20) extended this minimally: a damage profile may also carry
+-- spreadMultiplier (a slug's one ball has no pellet pattern), recoilMultiplier (a slug kicks
+-- harder) and burn (Dragon's Breath: each projectile hit burns, Rules/DoT); the stat block
+-- gained adsSpread (the aimed cone, a shotgun's pattern) and breachPower (a breaching round's
+-- push on a wall, Rules/WallBreach). The row helpers (optionFromRow, opticFromRow, ammoFromRow,
+-- gunStats) turn Config rows into these records, for Shared.Attachments and the specs alike.
 
 local AttachmentMerge = {}
 
@@ -73,7 +81,13 @@ export type GunStats = {
 	magazineSize: number,
 	reloadTime: number,
 	hipSpread: number,
+	adsSpread: number?, -- the aimed cone (nil: a gun without one to scale)
+	breachPower: number?, -- a breaching round's push per hit on a wall (Rules/WallBreach); 1 as issued
+	burn: Burn?, -- an incendiary round's burn per projectile hit (Rules/DoT); nil: none
 }
+
+-- Per projectile hit: `damage` in all, over `seconds` (Rules/DoT).
+export type Burn = { damage: number, seconds: number }
 
 export type Op = "multiply" | "add"
 export type Delta = { field: string, op: Op, value: number }
@@ -84,6 +98,7 @@ export type Option = {
 	compatibleGuns: { string },
 	incompatibleWith: { string },
 	deltas: { Delta },
+	clashReasons: { [string]: string }?, -- [other id] = why they cannot go together
 }
 
 export type DamageProfile = {
@@ -94,6 +109,9 @@ export type DamageProfile = {
 	alertRadiusMultiplier: number,
 	projectileBehavior: string,
 	rangeMultiplier: number,
+	spreadMultiplier: number?, -- on the gun's cones; nil = 1
+	recoilMultiplier: number?, -- on the kick; nil = 1
+	burn: Burn?,
 }
 
 export type Ammo = {
@@ -101,6 +119,7 @@ export type Ammo = {
 	caliberFamily: string,
 	damageProfile: DamageProfile,
 	incompatibleWith: { string },
+	clashReasons: { [string]: string }?,
 }
 
 export type Gun = { id: string, caliber: string?, stats: GunStats }
@@ -179,6 +198,14 @@ function AttachmentMerge.merge(
 		stats.projectileBehavior = profile.projectileBehavior
 		stats.alertRadius *= factor(profile.alertRadiusMultiplier)
 		stats.range *= factor(profile.rangeMultiplier)
+		stats.recoil *= factor(profile.recoilMultiplier)
+		local spread = factor(profile.spreadMultiplier)
+		stats.hipSpread *= spread
+		if stats.adsSpread then
+			stats.adsSpread *= spread
+		end
+		local burn = profile.burn
+		stats.burn = if burn then { damage = burn.damage, seconds = burn.seconds } else nil
 	end
 
 	local scale: { [string]: number } = {}
@@ -208,6 +235,118 @@ function AttachmentMerge.merge(
 	stats.projectileCount = math.max(1, math.floor(stats.projectileCount + 0.5))
 	stats.magazineSize = math.max(1, math.floor(stats.magazineSize + 0.5))
 	return stats, nil
+end
+
+-- Why `a` and `b` cannot go together, as either row says it (nil: neither says).
+function AttachmentMerge.clashReason(
+	a: { id: string, clashReasons: { [string]: string }? }?,
+	b: { id: string, clashReasons: { [string]: string }? }?
+): string?
+	if not a or not b then
+		return nil
+	end
+	local mine = a.clashReasons and a.clashReasons[b.id]
+	return mine or (b.clashReasons and b.clashReasons[a.id]) or nil
+end
+
+----------------------------------------------------------------------
+-- Config rows into records (Shared.Attachments.Options / AmmoTypes, and the specs)
+----------------------------------------------------------------------
+
+-- What Rules/AttachmentUnlock also needs of each.
+export type OptionEntry = Option & { meritCost: number, base: boolean }
+export type AmmoEntry = Ammo & { slot: string, meritCost: number, base: boolean }
+
+local function reasons(row: any): { [string]: string }
+	return if row.ClashReasons then table.clone(row.ClashReasons) else {}
+end
+
+-- A Config.AttachmentsV2.Options row.
+function AttachmentMerge.optionFromRow(id: string, row: any): OptionEntry
+	local deltas: { Delta } = {}
+	for _, delta in row.Deltas do
+		table.insert(deltas, { field = delta.Field, op = delta.Op :: Op, value = delta.Value })
+	end
+	return {
+		id = id,
+		slot = row.Slot,
+		compatibleGuns = table.clone(row.Guns),
+		incompatibleWith = table.clone(row.IncompatibleWith or {}),
+		deltas = deltas,
+		clashReasons = reasons(row),
+		meritCost = row.Price,
+		base = row.Base == true,
+	}
+end
+
+-- A Config.Optics row in the Optic slot `slot`: its zoom and ADS multipliers as deltas.
+function AttachmentMerge.opticFromRow(id: string, row: any, slot: string): OptionEntry
+	local deltas: { Delta } = {
+		{ field = "zoom", op = "multiply", value = row.ZoomMultiplier },
+		{ field = "adsTime", op = "multiply", value = row.AdsTimeMultiplier },
+	}
+	return {
+		id = id,
+		slot = slot,
+		compatibleGuns = table.clone(row.Guns),
+		incompatibleWith = {},
+		deltas = deltas,
+		clashReasons = {},
+		meritCost = row.Price,
+		base = false,
+	}
+end
+
+-- A Config.AttachmentsV2.Ammo row in the ammo slot `slot`.
+function AttachmentMerge.ammoFromRow(id: string, row: any, slot: string): AmmoEntry
+	return {
+		id = id,
+		caliberFamily = row.Caliber,
+		slot = slot,
+		incompatibleWith = table.clone(row.IncompatibleWith or {}),
+		clashReasons = reasons(row),
+		meritCost = row.Price,
+		base = row.Base == true,
+		damageProfile = {
+			damage = row.Damage,
+			projectileCount = row.Projectiles,
+			headshotMultiplier = row.HeadshotMultiplier,
+			armorPenetration = row.ArmourPenetration,
+			alertRadiusMultiplier = row.AlertMultiplier,
+			projectileBehavior = row.Behaviour,
+			rangeMultiplier = row.RangeMultiplier,
+			spreadMultiplier = row.SpreadMultiplier,
+			recoilMultiplier = row.RecoilMultiplier,
+			burn = if row.Burn
+				then { damage = row.Burn.Damage, seconds = row.Burn.Seconds }
+				else nil,
+		},
+	}
+end
+
+-- The numbers of a gun row (a Config.Weapons row, or a WeaponDefinition: the same names) as
+-- the stat block, as issued; `noise` replaces its Noise (the suppressed barrel's reach).
+function AttachmentMerge.gunStats(row: any, noise: number?): GunStats
+	return {
+		damage = row.Damage,
+		projectileCount = row.Pellets or 1,
+		headshotMultiplier = row.HeadshotMultiplier,
+		armorPenetration = 0,
+		projectileBehavior = "standard",
+		alertRadius = noise or row.Noise,
+		range = row.Range,
+		recoil = 1,
+		recoilRecovery = 1,
+		moveSpeed = 1,
+		adsTime = 1,
+		zoom = 1,
+		magazineSize = row.MagazineSize,
+		reloadTime = row.ReloadTime,
+		hipSpread = row.HipSpread,
+		adsSpread = row.AdsSpread,
+		breachPower = 1,
+		burn = nil,
+	}
 end
 
 return AttachmentMerge

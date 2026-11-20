@@ -23,42 +23,17 @@ export type Option = AttachmentMerge.Option & {
 local ROWS: { [string]: Option } = {}
 
 for id, row in Config.AttachmentsV2.Options :: { [string]: any } do
-	local deltas: { AttachmentMerge.Delta } = {}
-	for _, delta in row.Deltas do
-		table.insert(
-			deltas,
-			{ field = delta.Field, op = delta.Op :: AttachmentMerge.Op, value = delta.Value }
-		)
-	end
-	ROWS[id] = {
-		id = id,
-		displayName = row.Name,
-		description = row.Description,
-		slot = row.Slot,
-		compatibleGuns = table.clone(row.Guns),
-		incompatibleWith = table.clone(row.IncompatibleWith or {}),
-		deltas = deltas,
-		meritCost = row.Price,
-		base = row.Base == true,
-	}
+	local entry = AttachmentMerge.optionFromRow(id, row) :: any
+	entry.displayName = row.Name
+	entry.description = row.Description
+	ROWS[id] = entry
 end
 
 for id, optic in Optics.Rows :: { [string]: any } do
-	local deltas: { AttachmentMerge.Delta } = {
-		{ field = "zoom", op = "multiply", value = optic.zoomMultiplier },
-		{ field = "adsTime", op = "multiply", value = optic.adsTimeMultiplier },
-	}
-	ROWS[id] = {
-		id = id,
-		displayName = optic.displayName,
-		description = optic.description,
-		slot = Optics.SLOT,
-		compatibleGuns = table.clone(optic.compatibleGuns),
-		incompatibleWith = {},
-		deltas = deltas,
-		meritCost = optic.meritCost,
-		base = false,
-	}
+	local entry = AttachmentMerge.opticFromRow(id, Config.Optics[id], Optics.SLOT) :: any
+	entry.displayName = optic.displayName
+	entry.description = optic.description
+	ROWS[id] = entry
 end
 
 Options.Rows = ROWS
@@ -83,6 +58,8 @@ local LABELS: { [string]: string } = {
 	magazineSize = "rounds",
 	reloadTime = "reload time",
 	hipSpread = "hip spread",
+	adsSpread = "aimed spread",
+	breachPower = "breaching",
 }
 
 function Options.summary(option: Option): string
