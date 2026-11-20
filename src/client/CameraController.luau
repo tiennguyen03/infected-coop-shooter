@@ -49,6 +49,7 @@ local Optics = require(
 	ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attachments"):WaitForChild("Optics")
 )
 local FirstPersonView = require(script.Parent.FirstPersonView)
+local DotSightView = require(script.Parent.DotSightView)
 local ScopeView = require(script.Parent.ScopeView)
 
 local HIP_FOV = 70
@@ -111,22 +112,24 @@ end
 -- The gun's sight as it is carried (with an optic: its mesh's sight and zoom,
 -- WeaponDefinitions.dressed), its time into the sights (an optic scales the irons' time,
 -- Rules/AttachmentMerge; a gun's own scope takes Sights.ScopeTime in first person) and the bare
--- gun's sight (third person narrows the shared ADS view by the optic's share of the zoom).
-local function aimed(weaponId: string?): (Sight.Resolved, number, Sight.Resolved)
+-- gun's sight (third person narrows the shared ADS view by the optic's share of the zoom),
+-- and the optic itself (nil: none fitted).
+local function aimed(weaponId: string?): (Sight.Resolved, number, Sight.Resolved, Optics.Optic?)
 	local base = WeaponDefinitions.get(weaponId).Sight
 	local optic = fittedOptic(weaponId)
 	if not optic then
 		local scope = firstPerson and base.Kind == "scope"
 		return base,
 			if scope then Config.Weapon.Sights.ScopeTime else Config.Weapon.ADS.EnterTime,
-			base
+			base,
+			nil
 	end
 	local _, sight = WeaponDefinitions.dressed(weaponId, optic.id)
 	local adsTime = AttachmentMerge.apply(
 		{ zoom = 1, adsTime = Config.Weapon.ADS.EnterTime },
 		{ optic }
 	).adsTime
-	return sight, adsTime, base
+	return sight, adsTime, base, optic
 end
 
 -- Fraction left after `dt` of an exponential ease that is ~95% done after `over` seconds.
@@ -239,6 +242,7 @@ function CameraController.setFirstPerson(on: boolean)
 	if not on then
 		FirstPersonView.hide()
 		ScopeView.set(0, 0)
+		DotSightView.set(nil, 0)
 	end
 end
 
@@ -367,6 +371,7 @@ local function onRenderStep(deltaTime: number)
 
 	if not camera or not root then
 		ScopeView.set(0, 0)
+		DotSightView.set(nil, 0)
 		return
 	end
 
@@ -377,7 +382,7 @@ local function onRenderStep(deltaTime: number)
 	local player = Players.LocalPlayer
 	local weaponId = player:GetAttribute(Attributes.Weapon) :: string?
 	-- With an optic fitted, its sight on the gun's mesh (an ACOG is a scope).
-	local sight, adsTime, bareSight = aimed(weaponId)
+	local sight, adsTime, bareSight, optic = aimed(weaponId)
 	local gunScoped = firstPerson and sight.Kind == "scope" -- (`scoped` is the binoculars)
 	local target = if aiming then 1 else 0
 	if firstPerson then
@@ -416,6 +421,14 @@ local function onRenderStep(deltaTime: number)
 	else
 		ScopeView.set(shade, Sight.blink(shade))
 	end
+	-- A red-dot sight's dot, in first person only (the camera is on the optic's axis there).
+	local dotReticle = if firstPerson
+			and not gunScoped
+			and not eyeScoped
+			and optic
+		then optic.reticle
+		else nil
+	DotSightView.set(dotReticle, adsBlend)
 	local ring = crosshairRing
 	if ring then
 		local size = CROSSHAIR_HIP + (CROSSHAIR_ADS - CROSSHAIR_HIP) * adsBlend

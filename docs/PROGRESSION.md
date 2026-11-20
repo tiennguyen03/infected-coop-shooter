@@ -100,6 +100,9 @@ higher. Each row's `Fit` names that mesh and its sight on it; `WeaponDefinitions
 gives the gun in hand (`PlayerSetup`), the first-person sight line and zoom
 (`CameraController`, `FirstPersonView`) and the EDIT screen's gun (`Showcase` "<gun>+<optic>").
 The ACOG is a scope: aimed in first person it shows the scope picture, as the M110 does.
+The red dot and the CompM2 show their dot (2026-11-20): aimed in first person, `DotSightView`
+draws it at the screen's centre (the optic's axis, so no parallax), fading in over the last 30%
+of the raise; its size, halo and colour are the optic's own `Reticle` row (no row, no dot).
 
 ### Kit Mods
 

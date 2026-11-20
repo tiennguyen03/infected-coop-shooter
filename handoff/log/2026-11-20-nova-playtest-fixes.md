@@ -6,7 +6,9 @@ Loadout last signed at the Loadmaster instead of the default service rifle and p
 applies it). The Infected no longer collide with soldiers: Runners can't shove you and a pile
 can't lift you into the air. Players and bots sit in a new `Soldier` collision group
 (`src/server/SoldierCollision.luau`, `Config.Player.Collision`); StanceService returns a
-standing body to it; the Hocker's spit casts in `EnemyShot` so it still hits soldiers.
+standing body to it; the Hocker's spit casts in `EnemyShot` so it still hits soldiers. Aimed in
+first person, the red dot and CompM2 now show their red dot (`src/client/DotSightView.luau`,
+from each optic's `Config.Optics.<id>.Reticle`; CameraController drives it).
 **Verified:** stylua, selene, both Rojo builds, both luau-lsp runs, 687/687 Lune tests. Not yet
 seen in Studio: Nova to playtest (the saved Loadout needs Studio API access on).
 **Heads-up:** built on Nova's local merge of #92-#95 (not on `origin/main`). Anything that sets a

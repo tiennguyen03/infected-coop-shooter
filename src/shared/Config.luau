@@ -150,6 +150,9 @@ local Config = {
 			ZoomMultiplier = 1.0, -- 1.35: the irons' picture
 			AdsTimeMultiplier = 0.75, -- 0.11 s
 			Price = 150,
+			-- The dot seen through the glass (DotSightView; Nova, 2026-11-20: "should actually
+			-- have a red dot on it"). Size in pixels at 1080p tall, Glow the soft halo's width.
+			Reticle = { Size = 4, Glow = 5, Color = Color3.fromRGB(255, 48, 40) },
 			Fit = {
 				-- The RMR on a riser, its dot on the irons' line, co-witnessed with the front post.
 				service_rifle = {
@@ -168,6 +171,7 @@ local Config = {
 			ZoomMultiplier = 1.48, -- 2.0 (a sight that is not a scope stops at 2x, Rules/Sight)
 			AdsTimeMultiplier = 1.0, -- 0.15 s
 			Price = 250,
+			Reticle = { Size = 5, Glow = 6, Color = Color3.fromRGB(255, 48, 40) }, -- the 2 MOA dot
 			Fit = {
 				service_rifle = {
 					Model = "wpn_m16_compm2",
@@ -205,6 +209,8 @@ local Config = {
 			ZoomMultiplier: number,
 			AdsTimeMultiplier: number,
 			Price: number,
+			-- A red-dot sight's dot (DotSightView); nil: none (a scope draws its own, ScopeView).
+			Reticle: { Size: number, Glow: number, Color: Color3 }?,
 			Fit: {
 				[string]: {
 					Model: string,

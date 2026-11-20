@@ -6,7 +6,7 @@ last one. **End of a session:** edit this page in place (never append history he
 under 7k) and add one note to `handoff/log/` (format in `handoff/log/README.md`). What
 shipped: `docs/HISTORY.md`. The owner's one page of everything open: [docs/BACKLOG.md](../docs/BACKLOG.md).
 
-Last updated: 2026-11-20 by Nova + Claude (playtest fixes: the saved Loadout on a direct join, the Infected pass through soldiers, on `nova/playtest-fixes`).
+Last updated: 2026-11-20 by Nova + Claude (playtest fixes: the saved Loadout on a direct join, the Infected pass through soldiers, the red dot's dot, on `nova/playtest-fixes`).
 
 ## Now
 
@@ -24,7 +24,8 @@ Last updated: 2026-11-20 by Nova + Claude (playtest fixes: the saved Loadout on 
   lists: `docs/PLAYTEST_CHECKS.md` and each PR's `handoff/log/` note.
 - **Nova's playtest fixes** (`nova/playtest-fixes`, built on the local merge of #92-#95): a
   Studio match now starts with your Loadmaster Loadout, and Runners no longer shove you or
-  lift you on a pile (`docs/PROGRESSION.md` > The Infected roster).
+  lift you on a pile (`docs/PROGRESSION.md` > The Infected roster); the red dot and CompM2 show
+  their red dot when aimed (`DotSightView`, PROGRESSION > Attachments).
 - **Off switches** exist for every new system (`Config.<System>.Enabled = false`); the
   feature's doc names them. Prefer a switch over a revert.
 - **Next after #92 is played:** difficulty levels, a four-player test with Nova and friends

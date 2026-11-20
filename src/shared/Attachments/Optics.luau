@@ -20,8 +20,12 @@ export type Fit = {
 	sight: { Rear: Vector3, Front: Vector3, Kind: string? },
 }
 
+-- A red-dot sight's dot (Config.Optics rows' Reticle; DotSightView draws it).
+export type Reticle = { size: number, glow: number, color: Color3 }
+
 export type Optic = AttachmentRules.Optic & {
 	fits: { [string]: Fit }, -- by gun id
+	reticle: Reticle?,
 }
 
 local ROWS: { [string]: Optic } = {}
@@ -39,6 +43,9 @@ for id, row in Config.Optics do
 		adsTimeMultiplier = row.AdsTimeMultiplier,
 		meritCost = row.Price,
 		fits = fits,
+		reticle = if row.Reticle
+			then { size = row.Reticle.Size, glow = row.Reticle.Glow, color = row.Reticle.Color }
+			else nil,
 	}
 end
 
