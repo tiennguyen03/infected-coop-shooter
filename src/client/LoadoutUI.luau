@@ -49,7 +49,7 @@ for slot = 1, Config.CallIns.Slots do
 end
 -- Why the server refused a change (Rules/Loadout reasons), as the menu says it.
 local REFUSALS: { [string]: string } = {
-	["away from the LZ"] = "GET TO THE LZ TO CHANGE KIT",
+	["away from the LZ"] = "GET TO THE LANDING ZONE TO CHANGE KIT",
 	["in contact"] = "IN CONTACT · WAIT FOR A CALM SPELL",
 	down = "NOT WHILE DOWN",
 }

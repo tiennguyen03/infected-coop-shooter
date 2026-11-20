@@ -207,17 +207,17 @@ Desk id `plot`; she sells nothing, so her BUY lines are only fallbacks.
 
 | Field | Line |
 |---|---|
-| Greeting | "This is the Plot. I'm Control, the voice on your radio when you're down there." |
-| Greeting | "Delta's your mission. Do the job, kill the big one, get to your bird before the Burn." |
+| Greeting | "This is the map room. I'm Control, the voice on your radio when you're down there." |
+| Greeting | "Delta's your mission. Do the job, kill the big one, get to the helicopter before it leaves." |
 | Greeting | "Every number on that board is a place we're holding. I'd like them higher." |
-| Greeting | "Keep it down. Half this room is on the net with a team that's still out." |
+| Greeting | "Keep it down. Half this room is on the radio with a team that's still out." |
 | 1 (open) | Show me the map. |
 | 2 (ask) | What's the board for? |
 | Answer | "How much of each district we hold. Contained isn't clean, it's just stopped spreading." |
 | 3 (leave) | That's all. |
 | Map opens | "The Harlan Corridor. Coast at the bottom, the dam at the top. You start at Delta." |
 | Bought | "That's on your record now. I just keep the map." |
-| Short | "You're short on merits. Nothing I can do about that from the Plot." |
+| Short | "You're short on merits. Nothing I can do about that from the map room." |
 | Refused | "Can't do that from here. Try again in a minute." |
 
 ### The Visitor
@@ -230,7 +230,7 @@ before the panel closes.
 | Field | Line |
 |---|---|
 | First meeting | "You walked past twice. Come in." |
-| Greeting | "You found me. Most don't. Have a look, and keep it off the net." |
+| Greeting | "You found me. Most don't. Have a look, and keep it off the radio." |
 | Greeting | "Bring me something of the Warden's, one day." |
 | Greeting | "Mind the tarp on your way out. It's there for a reason." |
 | Greeting | "Sit, if you like. The chair is the only thing down here that isn't sealed." |

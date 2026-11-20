@@ -3461,7 +3461,7 @@ local Config = {
 			Radio = {
 				PrimaryComplete = "That woke the Gate sergeant. He still guards this post. The Warden is coming up the road.",
 				GateOpen = "Gate's open. Contact in the lane, big. It's wearing riot plate.",
-				Sighting = "Eyes on. That's the Gate NCOIC. Control, the Warden confirmed.",
+				Sighting = "Eyes on. That's the Gate sergeant himself. Control, the Warden confirmed.",
 				BusLine = "Bus line. He's checking buses. Plates first, then the body.",
 				InnerGate = "Inner Gate. He's working his second checkpoint. Flank when he guards.",
 				FirstPlate = "Plate's off. That's bone under it. Keep working the seams.",
@@ -3479,7 +3479,8 @@ local Config = {
 		},
 	},
 
-	-- The Containment Board (docs/PROGRESSION.md > The Containment Board). Read by the
+	-- The Containment Board (players read "WHAT WE HOLD": docs/LORE.md > Naming;
+	-- docs/PROGRESSION.md > The Containment Board). Read by the
 	-- lobby's Plot today; the shared DataStore behind it waits for the save service (F9).
 	Containment = {
 		-- Band minimums in percent (Rules/Containment).

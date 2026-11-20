@@ -51,7 +51,7 @@ type Tab = { title: string, groups: { Group } }
 
 -- Named spots on Checkpoint Delta (x, z); the ground height is found by raycast.
 local TELEPORTS: { { label: string, x: number, z: number } } = {
-	{ label = "LZ", x = -90, z = -90 },
+	{ label = "Landing zone", x = -90, z = -90 },
 	{ label = "Apron", x = 0, z = 0 },
 	{ label = "Compound", x = 50, z = 50 },
 	{ label = "Ridge", x = -100, z = 30 },
