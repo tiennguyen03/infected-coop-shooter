@@ -191,8 +191,9 @@ local LobbyDesks: { Desk } = {
 		-- week and sell like 5 items, do not implement the items yet, just give him some dialog
 		-- for now"; lines by the lore developer, docs/lore/desk_crew.md > The Visitor). He stands
 		-- in the hidden nook under the ramp (FallowLayout.Desks, Carrier v2 only): no sign, no
-		-- marker. He sells nothing yet, so "What do you sell?" only gets openLine; his weekly
-		-- stock of five is written down (docs/sprints/CARRIER_V2.md > The Visitor), not built.
+		-- marker. He sells the Fifty (Config.Weapons.Fifty: Desk "visitor", merits), so "What do
+		-- you sell?" opens his desk screen (DeskScreen); his weekly rotating stock of five is
+		-- written down (docs/sprints/CARRIER_V2.md > The Visitor), not built.
 		id = "visitor",
 		title = "VISITOR",
 		who = "Escort required",

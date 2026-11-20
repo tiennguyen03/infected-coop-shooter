@@ -34,6 +34,17 @@ export type WeaponKick = { Pitch: number, Yaw: number, Recover: number }
 -- The Barrel's suppressor (Config.Attachments): its quiet reach and its size on the muzzle.
 export type Suppressor = { Noise: number, Length: number, Width: number }
 
+-- Overpenetration (Rules/Overpen; the Fifty): bodies hit at most, the share off per body,
+-- the thickest wall passed (studs), a squadmate's share, and whether it breaks the Brute's
+-- plated front.
+export type Overpen = {
+	Bodies: number,
+	Falloff: number,
+	WallThickness: number,
+	FriendlyFire: number,
+	BreaksArmour: boolean,
+}
+
 export type WeaponDefinition = {
 	Id: string,
 	Name: string, -- HUD name
@@ -57,6 +68,9 @@ export type WeaponDefinition = {
 	HeadshotMultiplier: number, -- on a Head hit (EnemyDefinitions may override per form)
 	Pellets: number?, -- rounds per trigger pull (shotguns); nil = 1
 	Pierce: number?, -- Infected a round passes through after the first; nil = 0
+	Overpen: Overpen?, -- the round carries on through bodies and thin walls (Rules/Overpen)
+	CarryMoveFactor: number, -- walk speed multiplier while it is in hand (1 = none)
+	CanSprint: boolean, -- false: too heavy to sprint with
 	Kick: WeaponKick, -- per-shot camera kick (CameraController)
 	Heavy: boolean, -- staggers a Brute (Config.Enemies.Flinch)
 	ReloadClip: string?, -- its own reload clip; nil = Config.Animations.Assault.reload
@@ -111,6 +125,9 @@ type Tuning = {
 	HeadshotMultiplier: number,
 	Pellets: number?,
 	Pierce: number?,
+	Overpen: Overpen?,
+	CarryMoveFactor: number?,
+	CanSprint: boolean?,
 	Kick: WeaponKick,
 	Heavy: boolean?,
 	ReloadClip: string?,
@@ -165,6 +182,9 @@ local function row(
 		HeadshotMultiplier = tuning.HeadshotMultiplier,
 		Pellets = tuning.Pellets,
 		Pierce = tuning.Pierce,
+		Overpen = tuning.Overpen,
+		CarryMoveFactor = tuning.CarryMoveFactor or 1,
+		CanSprint = tuning.CanSprint ~= false,
 		Kick = tuning.Kick,
 		Heavy = tuning.Heavy == true,
 		ReloadClip = tuning.ReloadClip,
@@ -252,6 +272,14 @@ local ROWS: { [string]: WeaponDefinition } = {
 		"M2010 ESR",
 		"One round, one kill, through four in a line. Two for a Brute. Work the bolt.",
 		W.Sniper
+	),
+	fifty = row(
+		"fifty",
+		"primary",
+		"Fifty",
+		"Barrett M82A1",
+		".50 BMG: through four in a line, walls and squadmates too. Heavy, loud, no sprint.",
+		W.Fifty
 	),
 	goose = row(
 		"goose",

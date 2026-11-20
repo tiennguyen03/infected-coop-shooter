@@ -117,7 +117,8 @@ function DamageService.dealDamage(
 	amount: number,
 	position: Vector3?,
 	kind: string?,
-	part: Instance?
+	part: Instance?,
+	breaksArmour: boolean? -- the round breaks a plated front (the Fifty): it lands whole
 )
 	if humanoid.Health <= 0 then
 		return
@@ -148,7 +149,7 @@ function DamageService.dealDamage(
 		return
 	end
 	-- A plated front (the Brute): a round's share by the face it struck.
-	if part and (kind == "hit" or kind == "headshot") then
+	if part and (kind == "hit" or kind == "headshot") and not breaksArmour then
 		amount, kind = armoured(humanoid, part, position, amount, kind :: string)
 	end
 	-- A bot's hit (no attacker) leaves any player's kill credit on the target in place.
