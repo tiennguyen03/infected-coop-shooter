@@ -325,6 +325,16 @@ local Config = {
 		MaxHealth = 100,
 		WalkSpeed = 16,
 		SprintSpeed = 24,
+		-- Soldiers' bodies (players and bots) in their own collision group (SoldierCollision).
+		-- Nova, 2026-11-20: Runners "can just push the player around" and a pile of them lifts a
+		-- soldier into the air; so the Infected pass through soldiers (they still stop at
+		-- AttackRange to hit). BlockInfected = true makes the bodies solid to each other again.
+		-- The Hocker's spit flies in ShotGroup: it skips the Infected and still hits soldiers.
+		Collision = {
+			Group = "Soldier",
+			ShotGroup = "EnemyShot",
+			BlockInfected = false,
+		},
 		-- The soldier's look (Nova, 2026-11-11: "not really a fan of how he looks"; "the new look
 		-- should change in match as well"): Roblox's default R15 body wearing catalog items
 		-- (Shared.AvatarLook), on players and bots in the match and on the ship. Enabled = false

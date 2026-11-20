@@ -926,6 +926,12 @@ type; `EnemyProjectileService` owns lobs and puddles and makes no parts: clients
 spit, docs/STYLES.md §8). Still to add as forms need them:
 `onDeath` (cloud | split), `mover` (none | flyer).
 
+Bodies (2026-11-20): the Infected pass through soldiers and each other, so a Runner never
+shoves a soldier and a pile never lifts one into the air; they still stop at `AttackRange`
+to hit. Soldiers (players and bots) sit in their own collision group (`SoldierCollision`,
+`Config.Player.Collision`; `BlockInfected = true` makes the bodies solid again). The spit
+casts in `ShotGroup`: other Infected never stop it, soldiers do.
+
 ### Moves
 
 Each form forces its own answer, with a tell (a sound and a pose) before it lands. Numbers in

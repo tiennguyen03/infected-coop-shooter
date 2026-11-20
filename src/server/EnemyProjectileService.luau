@@ -305,8 +305,9 @@ function EnemyProjectileService.fire(
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Exclude
 	params.FilterDescendantsInstances = { folder }
-	-- The Enemy group does not collide with itself, so other Infected are skipped.
-	params.CollisionGroup = "Enemy"
+	-- The spit's group (SoldierCollision) skips other Infected but hits soldiers, whose
+	-- bodies do not collide with the Enemy group itself.
+	params.CollisionGroup = Config.Player.Collision.ShotGroup
 
 	local spit: Spit = {
 		id = nextSpitId,

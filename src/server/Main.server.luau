@@ -44,6 +44,7 @@ local BOOT: { ModuleScript } = {
 	Server.GoreService,
 	Server.ShockCoilService,
 	Server.VehicleService,
+	Server.SoldierCollision, -- soldiers pass through the Infected (after every group's owner)
 	Server.ThrowWindUp,
 	Server.KitService,
 	Server.CallInService,

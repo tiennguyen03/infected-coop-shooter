@@ -345,6 +345,18 @@ end
 local function receive(player: Player)
 	local join = HandoffService.joinFor(player)
 	if not join.fromLobby then
+		-- A direct join (Studio, or a live join that skipped the lobby): the Loadout last
+		-- signed at the Loadmaster, when there is one (Nova, 2026-11-20: "I just load in with
+		-- a regular service rifle and pistol").
+		task.spawn(function()
+			local saved = HandoffService.savedLoadout(player.UserId)
+			if saved and player.Parent then
+				local ok, reason = LoadoutService.apply(player, saved)
+				if not ok then
+					warn(`[RunManager] {player.Name}'s saved loadout was refused: {reason}`)
+				end
+			end
+		end)
 		return
 	end
 	local ok, reason = LoadoutService.apply(player, join.loadout)
