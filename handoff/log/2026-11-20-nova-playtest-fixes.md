@@ -15,6 +15,10 @@ Attachment system v2 (`nova/attachment-system-v2`): `Config.AttachmentsV2`, `Sha
 (Schema, Options, AmmoTypes), `Rules/AttachmentMerge.merge` + `Rules/AttachmentUnlock` (specs
 first), lobby `AttachmentService` on the `Attachment` remote, `AttachmentMenuV2` in GunsmithUI,
 `WeaponDefinitions.fitted/carried` read by LoadoutService, ProjectileServer, the camera and walk.
+The Fifty (`nova/visitor-fifty`): `Config.Weapons.Fifty` + `WeaponDefinitions.fifty`, sold at
+the Visitor (`Desk`); overpen through `Rules/Overpen` (`ProjectileServer.fireOverpen`), friendly
+fire via `EnemyProjectileService.damagePlayer`, `DamageService.dealDamage`'s `breaksArmour`,
+`CarryMoveFactor` / `CanSprint` (SprintController).
 **Verified:** stylua, selene, both Rojo builds, both luau-lsp runs, 687/687 Lune tests. Not yet
 seen in Studio: Nova to playtest (the saved Loadout needs Studio API access on).
 **Heads-up:** built on Nova's local merge of #92-#95 (not on `origin/main`). Anything that sets a

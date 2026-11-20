@@ -29,6 +29,9 @@ Last updated: 2026-11-20 by Nova + Claude (playtest fixes: the saved Loadout on 
 - **Attachment system v2** (`nova/attachment-system-v2`, stacked on `nova/playtest-fixes`): seven
   slots and ammo types on the M16A4 (PROGRESSION > Attachments). Any code that reads a gun's
   stats for a soldier should read `WeaponDefinitions.fitted` / `carried`, not `get`.
+- **The Fifty** (`nova/visitor-fifty`, stacked on `nova/playtest-fixes`): the Barrett, sold by
+  the Visitor; the first friendly fire in the game (its overpen, `Rules/Overpen`). Wears the
+  M2010's mesh until Nova downloads a Barrett model (`docs/BACKLOG.md`).
 - **Off switches** exist for every new system (`Config.<System>.Enabled = false`); the
   feature's doc names them. Prefer a switch over a revert.
 - **Next after #92 is played:** difficulty levels, a four-player test with Nova and friends

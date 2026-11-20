@@ -1557,6 +1557,59 @@ local Config = {
 			ArmsOrder = 6,
 			Sound = "sniper",
 		},
+		-- Barrett M82A1 ("the Fifty", .50 BMG, semi-auto; Nova 2026-11-20): sold only by the
+		-- Visitor, for merits. A round goes through four bodies in a line (Overpen: squadmates
+		-- included, and thin walls) and breaks the Brute's plated front; it is heavy to carry
+		-- (no sprint) and the sights take about two seconds to settle after a shot (the bloom
+		-- below), so aimed fire runs about 30 rounds a minute. Walker 1 / 1, Brute 1-2 / 1.
+		Fifty = {
+			Noise = 250, -- the loudest gun but the Goose (Config.Awareness)
+			Heavy = true, -- staggers a Brute (Config.Enemies.Flinch)
+			FireMode = "semi", -- one round per pull, as fast as the trigger is pulled
+			Damage = 180,
+			FireCooldown = 0.25, -- the action's cycle: the bloom, not this, sets the aimed rate
+			MagazineSize = 10,
+			ReloadTime = 4.5,
+			ReserveStart = 20, -- 2 spare mags at insert
+			ReserveMax = 40, -- 4 at most
+			Scarce = { ReserveStart = 10, ReserveMax = 30 }, -- Config.Scarcity.Ammo on: 1 spare at insert, 3 at most
+			HipSpread = 4.0, -- about 2 studs off at 30: unreliable past that from the hip
+			AdsSpread = 0.05,
+			BloomPerShot = 2.5, -- a shot throws the aim 2.5 degrees wide ...
+			BloomMax = 2.5,
+			BloomRecovery = 1.25, -- ... that settles at 1.25 degrees a second: ~2 s back on target
+			AdsMoveFactor = 0.6, -- on top of CarryMoveFactor while aiming
+			CarryMoveFactor = 0.65, -- walk speed while it is in hand (SprintController)
+			CanSprint = false, -- too heavy to run with (SprintController)
+			Range = 800,
+			HeadshotMultiplier = 3.0,
+			-- Heavier than the M2010 (5.0), lighter than the Goose (7.0); back over ~2 s.
+			Kick = { Pitch = 6.5, Yaw = 1.0, Recover = 2.0 },
+			-- The round's path (Rules/Overpen, ProjectileServer): bodies it hits at most (the
+			-- last stops it), the share taken off per body pierced, the thickest wall (studs)
+			-- it passes, a squadmate's share, and whether it breaks the Brute's plated front
+			-- (Config.InfectedMoves.Brute.Armour: the round lands whole on his front).
+			Overpen = {
+				Bodies = 4,
+				Falloff = 0.10,
+				WallThickness = 1.0,
+				FriendlyFire = 1.0,
+				BreaksArmour = true,
+			},
+			-- A stand-in mesh: the M2010's, until the Barrett model is in (docs/BACKLOG.md).
+			Model = "wpn_sniper",
+			-- The M2010's scope points on that mesh, at 10x (Rules/Sight allows 2..10).
+			Sight = {
+				Kind = "scope",
+				Rear = Vector3.new(0, 0.62, 0.23),
+				Front = Vector3.new(0, 0.62, -0.97),
+				Zoom = 10,
+			},
+			Price = 1500, -- merits, at the Visitor only (Desk); never tabs
+			Desk = "visitor", -- LobbyDesks id: his desk screen lists it (KitPrices)
+			ArmsOrder = 8,
+			Sound = "sniper", -- the M2010's shot until the Fifty has its own
+		},
 		-- M3 recoilless ("Goose", the squad's RPG): a visible rocket. A direct hit kills anything
 		-- but the Warden; the blast (the frag's, no friendly fire) drops every form but the Brute
 		-- in 6 studs. Two rounds: a Brute answer, not a call-in (Hammer 6 x 80, Anvil 500).
