@@ -20,6 +20,8 @@ local ShotCone = require(ReplicatedStorage.Shared.ShotCone)
 local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
 local EnemyService = require(script.Parent.EnemyService)
 local KitService = require(script.Parent.KitService)
+local BurnService = require(script.Parent.BurnService)
+local WallBreachService = require(script.Parent.WallBreachService)
 local DamageService = require(script.Parent.DamageService)
 local LoadoutService = require(script.Parent.LoadoutService)
 local PauseService = require(script.Parent.PauseService)
@@ -241,7 +243,9 @@ local function excludeList(character: Model?): { Instance }
 end
 
 -- One hitscan round: raycast, damage on an Infected hit (carrying on through `pierce` more
--- bodies), tracer to everyone else.
+-- bodies), tracer to everyone else. The round's behaviour (its ammo type, AttachmentMerge):
+-- "incendiary" lights each Infected it hits (BurnService, the round's Burn); "breaching" pushes
+-- on the part it stops on (WallBreachService: light walls open).
 local function fireHitscan(
 	player: Player,
 	origin: Vector3,
@@ -260,6 +264,8 @@ local function fireHitscan(
 	local remaining = weapon.Range
 	local endPoint = origin + direction * weapon.Range
 	local bodiesLeft = pierce
+	local stoppedOn: BasePart? = nil
+	local burn = if weapon.AmmoBehaviour == "incendiary" then weapon.Burn else nil
 	while remaining > 0 do
 		local result = workspace:Raycast(from, direction * remaining, params)
 		if not result then
@@ -268,6 +274,9 @@ local function fireHitscan(
 		endPoint = result.Position
 		local humanoid = findEnemyHumanoid(result.Instance)
 		if not humanoid or humanoid.Health <= 0 then
+			if not humanoid and result.Instance:IsA("BasePart") then
+				stoppedOn = result.Instance
+			end
 			break
 		end
 		local multiplier, kind = ProjectileServer.hitMultiplier(
@@ -288,6 +297,9 @@ local function fireHitscan(
 		if stagger and humanoid.Health > 0 then
 			EnemyService.stagger(humanoid, Config.Upgrades.HollowPoint.StaggerSeconds)
 		end
+		if burn then
+			BurnService.ignite(player, humanoid, burn)
+		end
 		if bodiesLeft <= 0 then
 			break
 		end
@@ -301,6 +313,9 @@ local function fireHitscan(
 		remaining -= (result.Position - from).Magnitude
 		from = result.Position
 	end
+	if stoppedOn and weapon.AmmoBehaviour == "breaching" then
+		WallBreachService.hit(stoppedOn, weapon.BreachPower, endPoint)
+	end
 	for _, other in Players:GetPlayers() do
 		if other ~= player then
 			tracerRemote:FireClient(
@@ -308,7 +323,8 @@ local function fireHitscan(
 				origin,
 				endPoint,
 				weapon.Sound,
-				LoadoutService.fitted(player, weapon.Id, "Barrel")
+				LoadoutService.fitted(player, weapon.Id, "Barrel"),
+				weapon.AmmoBehaviour
 			)
 		end
 	end

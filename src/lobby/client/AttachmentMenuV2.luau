@@ -16,6 +16,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local AmmoTypes = require(ReplicatedStorage.Shared.Attachments.AmmoTypes)
+local AttachmentMerge = require(ReplicatedStorage.Shared.Rules.AttachmentMerge)
 local AttachmentOptions = require(ReplicatedStorage.Shared.Attachments.Options)
 local AttachmentUnlock = require(ReplicatedStorage.Shared.Rules.AttachmentUnlock)
 local Messages = require(ReplicatedStorage.Shared.Messages)
@@ -63,11 +64,21 @@ local function nameOf(id: string): string
 	return if ammo then ammo.displayName else id
 end
 
-local function refusal(reason: string?): string
+local function rowOf(id: string): any
+	return AttachmentOptions.get(id) or AmmoTypes.get(id)
+end
+
+-- `id` was refused for `reason`: a clash says why when either row does (its ClashReasons, the
+-- Mossberg's choke and slugs), and what to take off.
+local function refusal(id: unknown, reason: string?): string
 	local text = tostring(reason)
 	local other = string.match(text, "^incompatible:(.+)$")
 	if other then
-		return `Does not fit with the {nameOf(other)}. Take that off first.`
+		local why = if typeof(id) == "string"
+			then AttachmentMerge.clashReason(rowOf(id), rowOf(other))
+			else nil
+		local fix = `Take the {nameOf(other)} off first.`
+		return if why then `{why} {fix}` else `Does not fit with the {nameOf(other)}. {fix}`
 	end
 	return REFUSED[text] or `Refused ({text}).`
 end
@@ -294,7 +305,7 @@ function AttachmentMenuV2.build(args: Args): () -> ()
 			args.onFitted(b)
 			repaint()
 		elseif kind == Messages.Attachment.Refused then
-			describe.Text = refusal(b)
+			describe.Text = refusal(a, b)
 		end
 	end)
 	remote:FireServer(Messages.Attachment.Owned)

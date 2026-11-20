@@ -82,6 +82,8 @@ export type WeaponDefinition = {
 	AdsTimeFactor: number, -- on the time into the sights (CameraController)
 	ArmourPenetration: number, -- 0..1 of a plate's reduction ignored (DamageService)
 	AmmoBehaviour: string, -- the round's behaviour (AmmoTypes)
+	BreachPower: number, -- a breaching round's push on a wall per hit (Rules/WallBreach; 1)
+	Burn: AttachmentMerge.Burn?, -- an incendiary round's burn per hit (Rules/DoT; nil: none)
 	Merged: boolean, -- true: built by fitted(); Noise already holds the quiet barrel's reach
 	-- Its sights in first person (Rules/Sight): the two points on the mesh the eye lines up,
 	-- irons or a scope, the eye relief, the zoom and the hip hold, defaults filled in.
@@ -199,6 +201,8 @@ local function row(
 		AdsTimeFactor = 1,
 		ArmourPenetration = 0,
 		AmmoBehaviour = "standard",
+		BreachPower = 1,
+		Burn = nil,
 		Merged = false,
 		Sight = shown(
 			tuning.Model or DEFAULT_MODEL,
@@ -482,27 +486,6 @@ function WeaponDefinitions.slots(id: string): { Schema.Slot }
 	return list
 end
 
-local function baseStats(weapon: WeaponDefinition, quiet: boolean): AttachmentMerge.GunStats
-	return {
-		damage = weapon.Damage,
-		projectileCount = weapon.Pellets or 1,
-		headshotMultiplier = weapon.HeadshotMultiplier,
-		armorPenetration = 0,
-		projectileBehavior = "standard",
-		-- The suppressed barrel's quiet reach replaces the gun's (shotNoise, as before).
-		alertRadius = if quiet and weapon.Suppressor then weapon.Suppressor.Noise else weapon.Noise,
-		range = weapon.Range,
-		recoil = 1,
-		recoilRecovery = 1,
-		moveSpeed = 1,
-		adsTime = 1,
-		zoom = 1,
-		magazineSize = weapon.MagazineSize,
-		reloadTime = weapon.ReloadTime,
-		hipSpread = weapon.HipSpread,
-	}
-end
-
 local fittedCache: { [string]: WeaponDefinition } = {}
 
 -- Gun `id` as `attachments` fit it (Loadout.attachments: [gun][slot] = option or ammo id): its
@@ -540,7 +523,13 @@ function WeaponDefinitions.fitted(id: string?, attachments: Loadout.Attachments?
 	local stats = AttachmentMerge.merge({
 		id = weapon.Id,
 		caliber = weapon.Caliber,
-		stats = baseStats(weapon, slots.Barrel == "suppressor"),
+		-- The suppressed barrel's quiet reach replaces the gun's (shotNoise, as before).
+		stats = AttachmentMerge.gunStats(
+			weapon,
+			if slots.Barrel == "suppressor" and weapon.Suppressor
+				then weapon.Suppressor.Noise
+				else nil
+		),
 	}, equipped, ammo)
 	if not stats then
 		fittedCache[key] = weapon
@@ -555,6 +544,7 @@ function WeaponDefinitions.fitted(id: string?, attachments: Loadout.Attachments?
 	out.MagazineSize = stats.magazineSize
 	out.ReloadTime = stats.reloadTime
 	out.HipSpread = stats.hipSpread
+	out.AdsSpread = stats.adsSpread or weapon.AdsSpread
 	out.BloomPerShot = weapon.BloomPerShot * stats.recoil
 	out.BloomRecovery = weapon.BloomRecovery * stats.recoilRecovery
 	out.Kick = {
@@ -566,6 +556,8 @@ function WeaponDefinitions.fitted(id: string?, attachments: Loadout.Attachments?
 	out.AdsTimeFactor = stats.adsTime
 	out.ArmourPenetration = stats.armorPenetration
 	out.AmmoBehaviour = stats.projectileBehavior
+	out.BreachPower = stats.breachPower or 1
+	out.Burn = stats.burn
 	out.Merged = true
 	fittedCache[key] = out
 	return out

@@ -3,7 +3,7 @@
 -- Config.AttachmentsV2.Ammo. A separate module from the options because an ammo type is a
 -- different shape: it carries a whole damage profile that REPLACES the gun's own
 -- (Rules/AttachmentMerge), not deltas. The schema is shared; each caliber family has its own
--- rows (only 5.56 so far, on the M16A4).
+-- rows (5.56 on the M16A4, 12-gauge on the Mossberg 590).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -25,25 +25,10 @@ local SLOT = Schema.ammoSlot() or "Ammo"
 
 local ROWS: { [string]: AmmoType } = {}
 for id, row in Config.AttachmentsV2.Ammo :: { [string]: any } do
-	ROWS[id] = {
-		id = id,
-		displayName = row.Name,
-		description = row.Description,
-		caliberFamily = row.Caliber,
-		slot = SLOT,
-		incompatibleWith = table.clone(row.IncompatibleWith or {}),
-		meritCost = row.Price,
-		base = row.Base == true,
-		damageProfile = {
-			damage = row.Damage,
-			projectileCount = row.Projectiles,
-			headshotMultiplier = row.HeadshotMultiplier,
-			armorPenetration = row.ArmourPenetration,
-			alertRadiusMultiplier = row.AlertMultiplier,
-			projectileBehavior = row.Behaviour,
-			rangeMultiplier = row.RangeMultiplier,
-		},
-	}
+	local entry = AttachmentMerge.ammoFromRow(id, row, SLOT) :: any
+	entry.displayName = row.Name
+	entry.description = row.Description
+	ROWS[id] = entry
 end
 
 AmmoTypes.Rows = ROWS
@@ -63,6 +48,13 @@ function AmmoTypes.summary(ammo: AmmoType): string
 	}
 	if profile.projectileCount > 1 then
 		table.insert(parts, 1, `{profile.projectileCount} pellets`)
+	end
+	local burn = profile.burn
+	if burn then
+		table.insert(parts, `+{burn.damage} burn over {burn.seconds} s a hit`)
+	end
+	if profile.projectileBehavior == "breaching" then
+		table.insert(parts, "opens light walls")
 	end
 	if profile.alertRadiusMultiplier ~= 1 then
 		table.insert(

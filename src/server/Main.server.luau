@@ -28,6 +28,8 @@ local BOOT: { ModuleScript } = {
 	Server.PlayerStatsService,
 	Server.LoadoutService,
 	Server.DamageService,
+	Server.BurnService, -- burning Infected (Rules/DoT; after DamageService)
+	Server.WallBreachService, -- breaching rounds open light walls (before ProjectileServer)
 	Server.PlayerSetup,
 	Server.CoverMoveService,
 	Server.StanceService,

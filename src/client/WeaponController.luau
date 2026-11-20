@@ -42,12 +42,63 @@ local tracerFolder: Folder? = nil
 local RELOAD_REQUEST_GAP = 0.5 -- seconds between automatic reload requests on an empty mag
 local blocked = false -- the hands are full (binoculars up): no shot, no sights
 
--- A thin bright line from the muzzle to where the round went, gone in a few frames. Drawn
--- locally for our own shots (instant) and for other players' shots via ShotTracer.
-local function drawTracer(origin: Vector3, endPoint: Vector3)
+-- A brief burst where a round stopped (Config.Weapon.RoundLook: Dragon's Breath's spark, the
+-- breaching slug's grit), the muzzle flash's pattern. `lit`: it carries the shot's one light
+-- (docs/STYLES.md: a handful of dynamic lights at most; bloom carries the rest).
+local function drawImpact(
+	at: Vector3,
+	impact: { Size: number, Color: Color3, Seconds: number, Light: number },
+	lit: boolean
+)
 	local folder = tracerFolder
 	if not folder then
 		return
+	end
+	local burst = Instance.new("Part")
+	burst.Name = "Impact"
+	burst.Shape = Enum.PartType.Ball
+	burst.Size = Vector3.one * impact.Size
+	burst.Position = at
+	burst.Anchored = true
+	burst.CanCollide = false
+	burst.CanQuery = false
+	burst.CanTouch = false
+	burst.CastShadow = false
+	burst.Material = Enum.Material.Neon
+	burst.Color = impact.Color
+	burst.Transparency = 0.3
+	if lit and impact.Light > 0 then
+		local light = Instance.new("PointLight")
+		light.Brightness = 3
+		light.Range = impact.Light
+		light.Color = impact.Color
+		light.Parent = burst
+	end
+	burst.Parent = folder
+	task.delay(impact.Seconds, function()
+		burst:Destroy()
+	end)
+end
+
+-- A thin bright line from the muzzle to where the round went, gone in a few frames. Drawn
+-- locally for our own shots (instant) and for other players' shots via ShotTracer. Its look
+-- follows the round's behaviour (Config.Weapon.RoundLook; nil: standard). `landed`: it hit
+-- something (no burst in the air); `lit`: its burst carries the shot's one light.
+local function drawTracer(
+	origin: Vector3,
+	endPoint: Vector3,
+	behaviour: string?,
+	landed: boolean?,
+	lit: boolean?
+)
+	local folder = tracerFolder
+	if not folder then
+		return
+	end
+	local looks = Config.Weapon.RoundLook
+	local look = (behaviour and looks[behaviour]) or looks.standard
+	if look.Impact and landed then
+		drawImpact(endPoint, look.Impact, lit == true)
 	end
 	local length = (endPoint - origin).Magnitude
 	if length < 1 then
@@ -55,7 +106,7 @@ local function drawTracer(origin: Vector3, endPoint: Vector3)
 	end
 	local tracer = Instance.new("Part")
 	tracer.Name = "Tracer"
-	tracer.Size = Vector3.new(0.12, 0.12, length)
+	tracer.Size = Vector3.new(look.Width, look.Width, length)
 	tracer.CFrame = CFrame.lookAt(origin, endPoint) * CFrame.new(0, 0, -length / 2)
 	tracer.Anchored = true
 	tracer.CanCollide = false
@@ -63,7 +114,7 @@ local function drawTracer(origin: Vector3, endPoint: Vector3)
 	tracer.CanTouch = false
 	tracer.CastShadow = false
 	tracer.Material = Enum.Material.Neon
-	tracer.Color = Color3.fromRGB(255, 214, 120)
+	tracer.Color = look.Color
 	tracer.Transparency = 0.2
 	tracer.Parent = folder
 	task.delay(Config.Weapon.TracerDuration, function()
@@ -251,11 +302,19 @@ local function tryFire()
 		end
 		params.FilterDescendantsInstances = ignore
 		local list = {}
+		local lit = false -- one light per pull, on the first pellet that lands
 		for _ = 1, count do
 			local pellet = ShotCone.random(direction.Unit, cone)
 			table.insert(list, pellet)
 			local hit = workspace:Raycast(origin, pellet * weapon.Range, params)
-			drawTracer(origin, if hit then hit.Position else origin + pellet * weapon.Range)
+			drawTracer(
+				origin,
+				if hit then hit.Position else origin + pellet * weapon.Range,
+				weapon.AmmoBehaviour,
+				hit ~= nil,
+				hit ~= nil and not lit
+			)
+			lit = lit or hit ~= nil
 		end
 		pellets = list
 	end
@@ -268,7 +327,13 @@ local function tryFire()
 			local out = math.min(direction.Magnitude / 2, Config.Weapon.Sights.Scope.TracerStart)
 			from = origin + direction.Unit * out
 		end
-		drawTracer(from, aimPoint)
+		-- A round with a burst stops at its reach (the breaching slug's 60 studs), not at the sky.
+		local stop = aimPoint
+		local landed = direction.Magnitude <= weapon.Range
+		if weapon.AmmoBehaviour ~= "standard" and not landed then
+			stop = origin + direction.Unit * weapon.Range
+		end
+		drawTracer(from, stop, weapon.AmmoBehaviour, landed, true)
 	end
 
 	-- Local-only muzzle flash and shot sound for instant feedback. A suppressor (the
@@ -329,15 +394,29 @@ function WeaponController.init()
 	folder.Parent = workspace
 	tracerFolder = folder
 	-- Another squad member's shot (a player or a bot): the tracer plus a 3D gunshot.
-	Remotes.get("ShotTracer").OnClientEvent
-		:Connect(function(origin: Vector3, endPoint: Vector3, sound: string?, barrel: string?)
-			drawTracer(origin, endPoint)
+	Remotes.get("ShotTracer").OnClientEvent:Connect(
+		function(
+			origin: Vector3,
+			endPoint: Vector3,
+			sound: string?,
+			barrel: string?,
+			behaviour: string?
+		)
+			-- Another's shot: its burst unlit (only our own shot carries a light).
+			drawTracer(
+				origin,
+				endPoint,
+				if typeof(behaviour) == "string" then behaviour else nil,
+				true,
+				false
+			)
 			local option = if typeof(barrel) == "string"
 				then Config.Attachments.Options[barrel]
 				else nil
 			local volume = if option then 0.8 * option.Volume else 0.8
 			SoundFX.gunshot(if typeof(sound) == "string" then sound else nil, origin, volume)
-		end)
+		end
+	)
 
 	UserInputService.InputBegan:Connect(function(input, gameProcessed)
 		if gameProcessed then
