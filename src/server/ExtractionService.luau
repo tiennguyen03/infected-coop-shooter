@@ -13,6 +13,7 @@ local RunService = game:GetService("RunService")
 local Messages = require(ReplicatedStorage.Shared.Messages)
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
+local Missions = require(script.Parent.Missions)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local ExtractionWaves = require(ReplicatedStorage.Shared.Rules.ExtractionWaves)
 local DifficultyService = require(script.Parent.DifficultyService)
@@ -25,10 +26,11 @@ local WorldSounds = require(script.Parent.WorldSounds)
 local ExtractionService = {}
 
 -- Where the helicopter picks the squad up: the big map's pickup (Attributes.PickupPoint, set
--- when the main objective is done), else the LZ.
+-- when the main objective is done), else the mission's pickup pad (Extract, or its Landing).
 local function zonePosition(): Vector3
 	local pickup = workspace:GetAttribute(Attributes.PickupPoint)
-	return if typeof(pickup) == "Vector3" then pickup else Config.Extraction.ZonePosition
+	local mission = Missions.current()
+	return if typeof(pickup) == "Vector3" then pickup else (mission.Extract or mission.Landing)
 end
 
 local extractionRemote: RemoteEvent

@@ -57,6 +57,7 @@ local Messages = require(ReplicatedStorage.Shared.Messages)
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Animations = require(ReplicatedStorage.Shared.Animations)
 local Config = require(ReplicatedStorage.Shared.Config)
+local Missions = require(script.Parent.Missions)
 local EnemyDefinitions = require(ReplicatedStorage.Shared.EnemyDefinitions)
 local GroundUtil = require(ReplicatedStorage.Shared.GroundUtil)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
@@ -2170,8 +2171,8 @@ local function spawnWarden(groundPosition: Vector3, walk: boolean, arrival: Arri
 
 	local current: Fight = {
 		generation = generation,
-		route = if arrival then arrival.route else settings.Waypoints,
-		routeRadio = if arrival then arrival.routeRadio else settings.WaypointRadio,
+		route = if arrival then arrival.route else Missions.current().Boss.Waypoints,
+		routeRadio = if arrival then arrival.routeRadio else Missions.current().Boss.WaypointRadio,
 		target = if arrival then arrival.target else nil,
 		handle = handle,
 		plates = {},
@@ -2284,8 +2285,8 @@ end
 function IndexService.start(): boolean
 	local settings = cfg()
 	radio("PrimaryComplete")
-	local ok = spawnWarden(GroundUtil.GetGroundPosition(settings.SpawnPosition, 0), true)
-	if ok then
+	local ok = spawnWarden(GroundUtil.GetGroundPosition(Missions.current().Boss.Spawn, 0), true)
+	if ok and Missions.current().Boss.GateRadio then
 		task.delay(settings.GateOpenDelay, function()
 			if fight then
 				radio("GateOpen")

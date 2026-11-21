@@ -4741,6 +4741,22 @@ local Config = {
 			ladder = { Material = Enum.Material.Metal, Color = Color3.fromRGB(58, 60, 64) },
 			catwalk = { Material = Enum.Material.DiamondPlate, Color = Color3.fromRGB(92, 94, 98) },
 		},
+		-- A mission's plain blocks (MissionTypes.Part, ArenaService.buildParts): the Mile 14 v2
+		-- generator's kinds (assets/3d/build/mile14_v2.py KINDS, in display colour).
+		PartKinds = {
+			grass = { Material = Enum.Material.Ground, Color = Color3.fromRGB(122, 117, 85) }, -- dead grass
+			slope = { Material = Enum.Material.Ground, Color = Color3.fromRGB(114, 108, 81) },
+			road = { Material = Enum.Material.Asphalt, Color = Color3.fromRGB(95, 97, 101) },
+			concrete = { Material = Enum.Material.Concrete, Color = Color3.fromRGB(160, 159, 155) },
+			building = { Material = Enum.Material.Concrete, Color = Color3.fromRGB(186, 184, 176) },
+			steel = { Material = Enum.Material.Metal, Color = Color3.fromRGB(136, 138, 142) },
+			glass = { Material = Enum.Material.Glass, Color = Color3.fromRGB(71, 85, 94) },
+			red = { Material = Enum.Material.SmoothPlastic, Color = Color3.fromRGB(172, 76, 76) },
+			pad = { Material = Enum.Material.Concrete, Color = Color3.fromRGB(189, 184, 176) },
+			patch = { Material = Enum.Material.Ground, Color = Color3.fromRGB(111, 101, 85) },
+			line = { Material = Enum.Material.SmoothPlastic, Color = Color3.fromRGB(205, 205, 203) },
+			sign = { Material = Enum.Material.SmoothPlastic, Color = Color3.fromRGB(52, 117, 81) }, -- highway green
+		},
 	},
 
 	-- Vertical chase (EQ-B1): the Infected have no pathfinding except here. A

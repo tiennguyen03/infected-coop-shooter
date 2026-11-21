@@ -53,6 +53,9 @@ local Attributes = table.freeze({
 	-- workspace, Vector3: where this run's squad landed (DeltaXL writes when the draw picks a
 	-- corner; ArenaService's pads and the insertion cutscene read it; none = the LZ)
 	DropPoint = "DropPoint",
+	-- workspace, Vector3: the mission's own landing pad (ArenaService at boot, from the mission file),
+	-- for the client's insertion cutscene when no DropPoint is set
+	MissionLanding = "MissionLanding",
 	-- workspace, Vector3: the helicopter's pickup, set when the main objective is done
 	-- (DeltaXL writes; ExtractionService reads; none = the LZ)
 	PickupPoint = "PickupPoint",

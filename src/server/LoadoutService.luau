@@ -21,6 +21,7 @@ local ArmsRoom = require(ReplicatedStorage.Shared.ArmsRoom)
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local CallInDefinitions = require(ReplicatedStorage.Shared.CallInDefinitions)
 local Config = require(ReplicatedStorage.Shared.Config)
+local Missions = require(script.Parent.Missions)
 local KitMods = require(ReplicatedStorage.Shared.KitMods)
 local Loadout = require(ReplicatedStorage.Shared.Rules.Loadout)
 local Magazine = require(ReplicatedStorage.Shared.Rules.Magazine)
@@ -537,7 +538,7 @@ end
 local function gateState(player: Player): Loadout.GateState
 	local member = Squad.fromPlayer(player)
 	local root = member and member.root
-	local lz = Config.Extraction.ZonePosition
+	local lz = Missions.current().Landing
 	local distance = math.huge
 	if root then
 		distance = Vector3.new(root.Position.X - lz.X, 0, root.Position.Z - lz.Z).Magnitude

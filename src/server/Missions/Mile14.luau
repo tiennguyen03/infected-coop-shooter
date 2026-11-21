@@ -153,6 +153,18 @@ local BUILDINGS: { BuildingSpec } = {}
 local mission: MissionTypes.Mission = {
 	Id = "mile14",
 	Name = "Mile 14",
+	-- v1 frame until the v2 rewrite (loop sprint 1, Task 5).
+	Size = Vector2.new(600, 600),
+	Landing = Vector3.new(-90, 0.6, -90),
+	Boss = {
+		Spawn = Vector3.new(0, 12, -280),
+		Waypoints = {},
+		WaypointRadio = {},
+		GateRadio = false,
+	},
+	Hold = Vector3.new(50, 8.5, 50),
+	Parts = {},
+	Features = {},
 	Hills = HILLS,
 	Dressing = DRESSING,
 	Patches = PATCHES,

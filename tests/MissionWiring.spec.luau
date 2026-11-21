@@ -55,4 +55,44 @@ return {
 	["Config.Operation.Missions is read nowhere (the catalog picks the mission)"] = function()
 		none(readers("Operation.Missions", {}), "still read by")
 	end,
+
+	["Extraction.ZonePosition is read only by Delta's mission file and the client's fallback"] = function()
+		none(
+			readers("Extraction.ZonePosition", {
+				"src/server/Missions/Delta.luau",
+				"src/client/InsertionCutscene.luau",
+				"src/shared/Config.luau",
+			}),
+			"Delta's landing pad is still read directly by"
+		)
+	end,
+
+	["Objective.ZonePosition is read only by Delta's mission file"] = function()
+		none(
+			readers(
+				"Objective.ZonePosition",
+				{ "src/server/Missions/Delta.luau", "src/shared/Config.luau" }
+			),
+			"Delta's hold point is still read directly by"
+		)
+	end,
+
+	["the Warden's Delta route is read only by Delta's mission file"] = function()
+		local found = {}
+		for _, needle in
+			{ "settings.SpawnPosition", "settings.Waypoints", "settings.WaypointRadio" }
+		do
+			for _, path in readers(needle, {}) do
+				table.insert(found, `{path} ({needle})`)
+			end
+		end
+		none(found, "the Warden's route is still read from Config by")
+	end,
+
+	["ArenaService has no single HALF constant (each mission has its own frame)"] = function()
+		local text = fs.readFile("src/server/ArenaService.luau")
+		if string.find(text, "local HALF = ", 1, true) then
+			error("ArenaService still fixes the map at one size", 0)
+		end
+	end,
 }

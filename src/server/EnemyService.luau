@@ -2075,7 +2075,7 @@ local missionGeneration = 0
 -- a frame (PerFrame), not all in one.
 local function populate()
 	local settings = AW.Population
-	local lz = Config.Extraction.ZonePosition
+	local lz = Missions.current().Landing
 	local total = 0
 	for _, weight in settings.Types do
 		total += weight
@@ -2100,7 +2100,9 @@ local function populate()
 				break
 			end
 		end
-		local position = groundPositionNear(Vector3.new(0, lz.Y, 0), 0, 300)
+		local size = Missions.current().Size
+		local position =
+			groundPositionNear(Vector3.new(0, lz.Y, 0), 0, math.min(size.X, size.Y) / 2)
 		if
 			Vector3.new(position.X - lz.X, 0, position.Z - lz.Z).Magnitude < settings.MinDistance
 		then

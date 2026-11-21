@@ -22,7 +22,7 @@
 -- nothing is per player. The one thing that outlives a run is `lastMain`.
 --
 -- The single hold (Config.Objectives.Enabled = false, or a map with no pool): one zone at
--- Config.Objective.ZonePosition after AppearDelay, as before the pools.
+-- the mission's Hold (Missions) after AppearDelay, as before the pools.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -821,7 +821,7 @@ local function createZone(): BasePart
 	local part = Instance.new("Part")
 	part.Name = "ObjectiveZone"
 	part.Size = Config.Objective.ZoneSize
-	part.Position = Config.Objective.ZonePosition
+	part.Position = Missions.current().Hold
 	part.Anchored = true
 	part.CanCollide = false
 	-- CanQuery off so weapon raycasts pass through the zone; GetPartsInPart
@@ -892,7 +892,7 @@ local function completeHold()
 		Config.Objective.RequiredSeconds
 	)
 	-- The second upgrade crate lands beside the site crate, toward the nearest soldier.
-	finishMain(Config.Objective.ZonePosition, Config.Objective.CompleteCrateOffset, 0, false)
+	finishMain(Missions.current().Hold, Config.Objective.CompleteCrateOffset, 0, false)
 end
 
 local function onHoldHeartbeat(deltaTime: number)
@@ -912,7 +912,7 @@ local function onHoldHeartbeat(deltaTime: number)
 		and progress >= Config.Objective.RequiredSeconds * Config.Breaches.Objective.At
 	then
 		breachCalled = true
-		BreachService.objective(Config.Objective.ZonePosition)
+		BreachService.objective(Missions.current().Hold)
 	end
 
 	timeSinceSync += deltaTime
@@ -942,14 +942,14 @@ local function activateHold()
 	-- Pressure: faster spawns while active + a typed wave around the zone.
 	workspace:SetAttribute(Attributes.ObjectiveActive, true)
 	for typeName, count in Config.Objective.PressureWave :: { [string]: number } do
-		EnemyService.spawnWave(typeName, count, Config.Objective.ZonePosition)
+		EnemyService.spawnWave(typeName, count, Missions.current().Hold)
 	end
 	if DifficultyService.getElapsed() >= Config.Objective.PressureBruteAfter then
-		EnemyService.spawnWave("Brute", 1, Config.Objective.ZonePosition)
+		EnemyService.spawnWave("Brute", 1, Missions.current().Hold)
 	end
 	-- The site crate: field upgrade cards facing the nearest living member (quiet: the
 	-- pressure wave above is the fight).
-	dropCrate(Config.Objective.ZonePosition, 0, "upgrade")
+	dropCrate(Missions.current().Hold, 0, "upgrade")
 	print("[ObjectiveService] Objective active")
 	for _, listener in activationListeners do
 		listener()
@@ -977,7 +977,7 @@ function ObjectiveService.forceComplete()
 	if main and Rules.isOpen(main.state :: Rules.State) then
 		finish(main, "done")
 	elseif pooled() then
-		finishMain(Config.Objective.ZonePosition, 0, 0, false)
+		finishMain(Missions.current().Hold, 0, 0, false)
 	else
 		completeHold()
 	end

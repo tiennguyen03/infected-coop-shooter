@@ -329,10 +329,14 @@ local function rosterMembers(): { Instance }
 end
 
 -- Where the squad lands this run: the big map's drop corner (Attributes.DropPoint, set by the
--- server as the run starts), else the LZ (ArenaService.landingPoint).
+-- server as the run starts), else the mission's pad (MissionLanding; ArenaService.landingPoint).
 local function landingPoint(): Vector3
 	local drop = Workspace:GetAttribute(Attributes.DropPoint)
-	return if typeof(drop) == "Vector3" then drop else Config.Extraction.ZonePosition
+	if typeof(drop) == "Vector3" then
+		return drop
+	end
+	local landing = Workspace:GetAttribute(Attributes.MissionLanding)
+	return if typeof(landing) == "Vector3" then landing else Config.Extraction.ZonePosition
 end
 
 -- The squad's landing pads (Config.Run.SpawnPads round the LZ; ArenaService.getSpawnPad's
