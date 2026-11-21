@@ -118,6 +118,16 @@ Hard-won gotchas:
   module copy — calling service functions from eval hits nil remotes. Drive the real game by
   firing the `DevCommand` RemoteEvent from `client-1`; use eval only to read Instance/
   attribute state. Stateless modules (GroundUtil) are fine in eval.
+- **Testing a mission (match, Studio, 2026-11-20).** Teleports do not run in Studio, so the
+  Mission Board cannot fly you in there. In the match place, select Workspace and add a string
+  attribute `Mission` = `mile14` (Properties > Attributes), then Play; delete it (or set
+  `delta`) to go back. The output says `[Missions] building <id> (from tag)`. A live server
+  reads the lobby's launch record first (`Missions/init`).
+- **Merits for testing (lobby, Studio only, 2026-11-20).** During a lobby playtest, on the server:
+  `game.ServerStorage.DevSetMerits:Invoke(5000)` (optionally a Player as the second argument)
+  sets the soldier's merits through RecordService's save; it persists and the wallet updates.
+  Do not `require` RecordService from the command bar or MCP: that is a separate copy with no
+  records loaded.
 - **Dev tools v3 (2026-11-11).** In game, F1 opens the dev panel (cursor freed): tabs RUN /
   PLAYER / INFECTED / GUNS / CALL-INS / UPGRADES / TELEPORT. A call-in is one row (slot 1-4,
   FIRE), an Infected form one row (1 / 5 / 10 / 25); god mode, spawning stopped and pause

@@ -49,7 +49,7 @@ for slot = 1, Config.CallIns.Slots do
 end
 -- Why the server refused a change (Rules/Loadout reasons), as the menu says it.
 local REFUSALS: { [string]: string } = {
-	["away from the LZ"] = "GET TO THE LZ TO CHANGE KIT",
+	["away from the LZ"] = "GET TO THE LANDING ZONE TO CHANGE KIT",
 	["in contact"] = "IN CONTACT · WAIT FOR A CALM SPELL",
 	down = "NOT WHILE DOWN",
 }
@@ -103,7 +103,10 @@ end
 
 local function updateAmmo()
 	local player = Players.LocalPlayer
-	local weapon = WeaponDefinitions.get(player:GetAttribute(Attributes.Weapon) :: string?)
+	local weapon = WeaponDefinitions.carried(
+		player:GetAttribute(Attributes.Weapon) :: string?,
+		player:GetAttribute(Attributes.Fitted)
+	)
 	local mag = (player:GetAttribute(Attributes.Mag) :: number?) or 0
 	local reserve = (player:GetAttribute(Attributes.Reserve) :: number?) or 0
 	local reloadUntil = (player:GetAttribute(Attributes.ReloadUntil) :: number?) or 0

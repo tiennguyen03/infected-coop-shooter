@@ -975,6 +975,8 @@ function VehicleService.init()
 	effects.Name = "VehicleEffects" -- shake markers and the wreck's flash
 	effects.Parent = Workspace
 	registerGroups()
+	-- The meshes for the clients' slung stand-in (CallInArrivalFX builds the same body).
+	task.spawn(VehicleBody.publish, Config.VehicleMeshes.Wait)
 	vehicleRemote = Remotes.get("Vehicle")
 	noticeRemote = Remotes.get("BuffNotice")
 	vehicleRemote.OnServerEvent:Connect(onVehicleMessage)

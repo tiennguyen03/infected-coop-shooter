@@ -6,9 +6,10 @@
 -- not, stat bars from Rules/ArmsStats) in the screen the card leaves free, arrows step through
 -- every piece, Back steps out. All local: the camera, the slide and the card are this player's alone, so four
 -- soldiers can look at once. The rack is for buying (merits, after F9); equipping is the
--- Loadmaster's (LoadmasterUI). Since 2026-11-17 (owner: every desk like the Loadmaster) "Show me
--- the guns." opens the desk screen (DeskScreen) instead; the rack view is what
--- Config.Lobby.DeskScreen.Enabled = false puts back, and the wall stays in the world.
+-- Loadmaster's (LoadmasterUI). On 2026-11-17 (owner: every desk like the Loadmaster) "Show me
+-- the guns." went to the desk screen (DeskScreen) by accident; since 2026-11-18 (Nova) the
+-- Quartermaster keeps this rack view (Config.Lobby.DeskScreen.KeepOwnView), and taking
+-- arms_room off that list sends him to the desk screen again.
 
 local ContextActionService = game:GetService("ContextActionService")
 local GuiService = game:GetService("GuiService")
@@ -25,6 +26,7 @@ local ArmsStats = require(ReplicatedStorage.Shared.Rules.ArmsStats)
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local KitPrices = require(ReplicatedStorage.Shared.KitPrices)
+local DistrictUnlock = require(ReplicatedStorage.Shared.Rules.DistrictUnlock)
 local LobbyDesks = require(ReplicatedStorage.Lobby.LobbyDesks)
 local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
 local DeskScreen = require(script.Parent.DeskScreen)
@@ -522,11 +524,14 @@ local function fillCard(id: string)
 	local forSale = not owned and price ~= nil and RecordClient.loaded()
 	cardBuy.Visible = forSale
 	if forSale then
+		-- Kit a district's wins open (Rules/DistrictUnlock): the lock shows before the click.
+		local lock = RecordClient.lockText(id)
 		local short = RecordClient.merits() < (price :: number)
-		cardBuy.Text = if short
-			then `{rack.buy} · {price} {rack.currency} (SHORT)`
+		cardBuy.Text = if lock
+			then `{lock} · {price} {rack.currency}`
+			elseif short then `{rack.buy} · {price} {rack.currency} (SHORT)`
 			else `{rack.buy} · {price} {rack.currency}`
-		cardBuy.TextTransparency = if short then 0.5 else 0
+		cardBuy.TextTransparency = if short or lock then 0.5 else 0
 	end
 	cardLine.Text = line
 	for _, child in cardRows:GetChildren() do
@@ -868,10 +873,11 @@ function ArmsRackUI.init()
 			fillCard(order[selected])
 		end
 	end)
-	RecordClient.Refused:Connect(function(_id: unknown, reason: unknown)
+	RecordClient.Refused:Connect(function(id: unknown, reason: unknown)
 		if desk and desk.rack and (mode == "rack" or mode == "inspect") then
-			rackSay.Text = if reason == "short"
-				then `"{desk.talk.short}"`
+			rackSay.Text = if reason == "locked" and typeof(id) == "string"
+				then DistrictUnlock.need(KitPrices.unlockOf(id))
+				elseif reason == "short" then `"{desk.talk.short}"`
 				else `"{desk.talk.refused}"`
 		end
 	end)

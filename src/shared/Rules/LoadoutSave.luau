@@ -1,14 +1,16 @@
 --!strict
 -- The saved form of a soldier's signed Loadout (LoadmasterService keeps it between visits;
 -- docs/sprints/LOBBY_V1_FALLOW.md > Loadmaster and Loadout). Pure, unit-tested with Lune
--- (tests/LoadoutSave.spec.luau). A version number from day one (docs/ARCHITECTURE.md F9);
--- reading back runs the caller's validator (Rules/Loadout against today's catalog), so a save
--- naming a retired gun, or written in another format, reads as nil and the default is used.
--- Rules modules do not require each other, hence the validator.
+-- (tests/LoadoutSave.spec.luau). Versioned and migrated through Rules/SaveSchema
+-- (docs/SAVES.md); reading back runs the caller's validator (Rules/Loadout against today's
+-- catalog), so a save naming a retired gun, junk, or a newer version reads as nil and the
+-- default is used (a newer one is never written over: SaveSlot).
+
+local SaveSchema = require("./SaveSchema")
 
 local LoadoutSave = {}
 
-LoadoutSave.VERSION = 1
+LoadoutSave.VERSION = SaveSchema.Loadout.version
 
 -- Same shape as Rules/Loadout's Loadout.
 export type Loadout = {
@@ -47,11 +49,8 @@ function LoadoutSave.encode(loadout: Loadout): Saved
 end
 
 function LoadoutSave.decode(data: unknown, isValid: (loadout: unknown) -> boolean): Loadout?
-	if typeof(data) ~= "table" then
-		return nil
-	end
-	local saved = data :: any
-	if saved.version ~= LoadoutSave.VERSION or not isValid(saved.loadout) then
+	local status, saved = SaveSchema.read(SaveSchema.Loadout, data)
+	if status ~= "ok" or not saved or not isValid(saved.loadout) then
 		return nil
 	end
 	return copy(saved.loadout :: Loadout)

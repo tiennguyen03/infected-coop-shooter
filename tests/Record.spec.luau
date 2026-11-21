@@ -227,7 +227,7 @@ return {
 	["tabs and receipts save and read back"] = function()
 		local r = Record.grantReceipt(Record.new(1000), "p1", 80, 50)
 		local saved = Record.encode(r)
-		expect.equal(saved.version, 2, "version")
+		expect.equal(saved.version, Record.VERSION, "version")
 		local back = Record.decode(saved, 1000)
 		expect.equal(back.tabs, 80, "tabs")
 		expect.equal(Record.hasReceipt(back, "p1"), true, "receipt")
@@ -239,7 +239,7 @@ return {
 		expect.equal(Record.owns(r, "smg", priceOf), true, "kit")
 		expect.equal(r.tabs, 0, "tabs")
 		expect.equal(#r.receipts, 0, "receipts")
-		expect.equal(Record.encode(r).version, 2, "saved forward")
+		expect.equal(Record.encode(r).version, Record.VERSION, "saved forward")
 	end,
 	["saved tabs and receipts are cleaned on read"] = function()
 		local data = {
@@ -261,7 +261,11 @@ return {
 		expect.equal(Record.canUpdate({ version = 1, merits = 5, owned = {} }), true, "v1")
 		expect.equal(Record.canUpdate(Record.encode(Record.new(5))), true, "current")
 		expect.equal(Record.canUpdate("junk"), false, "junk")
-		expect.equal(Record.canUpdate({ version = 3, merits = 5 }), false, "a newer version")
+		expect.equal(
+			Record.canUpdate({ version = Record.VERSION + 1, merits = 5 }),
+			false,
+			"a newer version"
+		)
 		expect.equal(Record.canUpdate({ version = 2, merits = "x" }), false, "bad merits")
 	end,
 	["a buy is applied to the stored record, keeping merits the match paid meanwhile"] = function()
@@ -280,7 +284,8 @@ return {
 		expect.equal(reason, "short", "short")
 		local _, owned = Record.buyStored(stored, "pistol", priceOf, 1000)
 		expect.equal(owned, "owned", "free kit")
-		local newer, why = Record.buyStored({ version = 3, merits = 9000 }, "smg", priceOf, 1000)
+		local newer, why =
+			Record.buyStored({ version = Record.VERSION + 1, merits = 9000 }, "smg", priceOf, 1000)
 		expect.equal(newer, nil, "a newer version is left alone")
 		expect.equal(why, "unreadable", "reason")
 		local fresh = Record.buyStored(nil, "smg", priceOf, 1000)
@@ -289,5 +294,72 @@ return {
 	["the DataStore key is the same for the lobby and the match"] = function()
 		expect.equal(Record.key(12345), "r_12345", "key")
 		expect.equal(Record.KEY_PREFIX, "r_", "prefix")
+	end,
+	["an unversioned record is migrated, read and may be updated"] = function()
+		local old = { merits = 450, owned = { "smg" } }
+		expect.equal(Record.canUpdate(old), true, "updatable")
+		local r = Record.decode(old, 1000)
+		expect.equal(r.merits, 450, "merits kept")
+		expect.equal(Record.owns(r, "smg", priceOf), true, "kit kept")
+		expect.equal(r.tabs, 0, "tabs")
+	end,
+	["saving over a stored record keeps fields this code does not know"] = function()
+		local stored =
+			{ version = 2, merits = 600, owned = {}, tabs = 0, receipts = {}, medals = 3 }
+		local saved = Record.encode(Record.earn(Record.decode(stored, 0), 10), stored) :: any
+		expect.equal(saved.merits, 610, "merits")
+		expect.equal(saved.medals, 3, "unknown kept")
+		local bought = Record.buyStored(stored, "smg", priceOf, 0) :: any
+		expect.equal(bought.medals, 3, "kept through a buy")
+	end,
+
+	-- Loop sprint 4: wins per district.
+	["a new record has no wins"] = function()
+		expect.equal(next(Record.new(1000).wins), nil, "empty")
+	end,
+
+	["win counts one for a district and leaves the rest"] = function()
+		local record = Record.win(Record.win(Record.new(0), "MILE 14"), "MILE 14")
+		record = Record.win(record, "DELTA")
+		expect.equal(record.wins["MILE 14"], 2, "mile 14")
+		expect.equal(record.wins.DELTA, 1, "delta")
+	end,
+
+	["wins survive encode and decode"] = function()
+		local record = Record.win(Record.new(50), "DELTA")
+		local back = Record.decode(Record.encode(record), 1000)
+		expect.equal(back.wins.DELTA, 1, "delta")
+		expect.equal(back.merits, 50, "merits")
+	end,
+
+	["decode drops bad win counts"] = function()
+		local back = Record.decode({
+			version = 3,
+			merits = 1,
+			owned = {},
+			tabs = 0,
+			receipts = {},
+			wins = { DELTA = -2, X = "y", [5] = 3, OK = 2.7 },
+		}, 0)
+		expect.equal(back.wins.DELTA, nil, "negative")
+		expect.equal(back.wins.X, nil, "string")
+		expect.equal(back.wins.OK, 2, "fraction floored")
+	end,
+
+	["earning keeps the wins"] = function()
+		local record = Record.earn(Record.win(Record.new(0), "DELTA"), 100)
+		expect.equal(record.wins.DELTA, 1, "kept")
+	end,
+
+	["decode drops an infinite win count"] = function()
+		local back = Record.decode({
+			version = 3,
+			merits = 1,
+			owned = {},
+			tabs = 0,
+			receipts = {},
+			wins = { DELTA = math.huge },
+		}, 0)
+		expect.equal(back.wins.DELTA, nil, "infinite")
 	end,
 }

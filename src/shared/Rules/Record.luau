@@ -10,14 +10,17 @@
 -- events (TabsService) and will buy cosmetics and conveniences, never power. The record also
 -- remembers the last Robux receipts it was paid for, so one purchase never pays twice.
 --
--- The saved form carries a version: 1 = merits and kit, 2 adds tabs and receipts (a version 1
--- save reads with 0 tabs). A missing, junk or newer-version save reads as a new record with
--- the starting merits; a server that updates a save in place checks `canUpdate` first so it
--- never writes over one it cannot read.
+-- The saved form carries a version and is read through Rules/SaveSchema (docs/SAVES.md): 0 =
+-- unversioned, 1 = merits and kit, 2 adds tabs and receipts; any older save is migrated on
+-- read. A missing, junk or newer-version save reads as a new record with the starting merits;
+-- a server that updates a save in place checks `canUpdate` first so it never writes over one
+-- it cannot read, and passes the stored value to `encode` so fields it does not know are kept.
+
+local SaveSchema = require("./SaveSchema")
 
 local Record = {}
 
-Record.VERSION = 2
+Record.VERSION = SaveSchema.Record.version
 -- The record's DataStore key is "r_<UserId>", the same in the lobby and the match.
 Record.KEY_PREFIX = "r_"
 
@@ -26,6 +29,7 @@ export type Record = {
 	owned: { string }, -- bought kit ids: guns, grenades, call-ins (free ones are never listed)
 	tabs: number,
 	receipts: { string }, -- Robux PurchaseIds already paid out, oldest first
+	wins: { [string]: number }, -- missions won per city district ("MILE 14" = 3; loop sprint 4)
 }
 
 export type PriceOf = (id: string) -> number?
@@ -36,6 +40,7 @@ export type Saved = {
 	owned: { string },
 	tabs: number,
 	receipts: { string },
+	wins: { [string]: number },
 }
 
 export type Loadout = { primary: string, secondary: string, grenade: string, callIns: { string } }
@@ -45,7 +50,7 @@ function Record.key(userId: number): string
 end
 
 function Record.new(startMerits: number): Record
-	return { merits = startMerits, owned = {}, tabs = 0, receipts = {} }
+	return { merits = startMerits, owned = {}, tabs = 0, receipts = {}, wins = {} }
 end
 
 -- A whole number above zero (not NaN, not infinite): the only amounts tabs move in.
@@ -67,6 +72,7 @@ local function with(record: Record, changes: { [string]: any }): Record
 		owned = record.owned,
 		tabs = record.tabs,
 		receipts = record.receipts,
+		wins = record.wins,
 	}
 	for key, value in changes do
 		copy[key] = value
@@ -102,6 +108,13 @@ end
 -- Merits earned on a mission (Rules/Economy.missionMerits): whole, never a loss.
 function Record.earn(record: Record, amount: number): Record
 	return with(record, { merits = record.merits + balance(amount) })
+end
+
+-- One more mission won in `district` (MeritService, in the same UpdateAsync as the pay).
+function Record.win(record: Record, district: string): Record
+	local wins = table.clone(record.wins)
+	wins[district] = (wins[district] or 0) + 1
+	return with(record, { wins = wins })
 end
 
 -- (the new record, true) or (the record unchanged, false, "invalid").
@@ -166,32 +179,32 @@ function Record.allows(record: Record, loadout: Loadout, priceOf: PriceOf): (boo
 	return true, nil
 end
 
-function Record.encode(record: Record): Saved
-	return {
+-- The value to save. Pass what is stored (`stored`, the UpdateAsync `old`) so every field this
+-- code does not know is kept; without it (or when it may not be written over) only the
+-- record's own fields are written.
+function Record.encode(record: Record, stored: unknown?): Saved
+	local fields = {
 		version = Record.VERSION,
 		merits = record.merits,
 		owned = table.clone(record.owned),
 		tabs = record.tabs,
 		receipts = table.clone(record.receipts),
+		wins = table.clone(record.wins),
 	}
+	local over = if stored ~= nil then SaveSchema.over(SaveSchema.Record, stored, fields) else nil
+	return (over or fields) :: any
 end
 
--- True for a saved form this code reads: version 1 up to the current one, with merits.
-local function readable(data: unknown): boolean
-	if typeof(data) ~= "table" then
-		return false
-	end
-	local saved = data :: any
-	return typeof(saved.version) == "number"
-		and saved.version >= 1
-		and saved.version <= Record.VERSION
-		and typeof(saved.merits) == "number"
+-- The stored record migrated to the current shape, or nil when it is none this code reads.
+local function readable(data: unknown): SaveSchema.Save?
+	local status, save = SaveSchema.read(SaveSchema.Record, data)
+	return if status == "ok" then save else nil
 end
 
 -- Whether a server may update this stored value in place (UpdateAsync): no save yet, or one
--- this code reads. Junk or a newer version is left alone rather than written over.
+-- this code reads (older ones are migrated). Junk or a newer version is left alone.
 function Record.canUpdate(data: unknown): boolean
-	return data == nil or readable(data)
+	return SaveSchema.writable(SaveSchema.Record, data)
 end
 
 local function strings(list: unknown): { string }
@@ -206,17 +219,36 @@ local function strings(list: unknown): { string }
 	return clean
 end
 
+-- Win counts by district name, cleaned: whole numbers above zero only.
+local function counts(map: unknown): { [string]: number }
+	local clean: { [string]: number } = {}
+	if typeof(map) == "table" then
+		for key, value in map :: { [unknown]: unknown } do
+			if
+				typeof(key) == "string"
+				and typeof(value) == "number"
+				and value == value
+				and value >= 1
+				and value < math.huge
+			then
+				clean[key] = math.floor(value)
+			end
+		end
+	end
+	return clean
+end
+
 function Record.decode(data: unknown, startMerits: number): Record
-	if not readable(data) then
+	local saved: any = readable(data)
+	if not saved then
 		return Record.new(startMerits)
 	end
-	local saved = data :: any
 	return {
 		merits = balance(saved.merits),
 		owned = strings(saved.owned),
-		-- Version 1 had neither: 0 tabs, no receipts.
 		tabs = balance(saved.tabs),
 		receipts = strings(saved.receipts),
+		wins = counts(saved.wins),
 	}
 end
 
@@ -237,7 +269,7 @@ function Record.buyStored(
 	if not ok then
 		return nil, reason
 	end
-	return Record.encode(after), nil
+	return Record.encode(after, stored), nil
 end
 
 return Record

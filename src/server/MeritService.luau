@@ -3,8 +3,9 @@
 -- when a mission ends, every real player in the server, dead or alive, is paid for its
 -- outcome (Rules/Economy.missionMerits, Config.Merits; never per kill, bots earn nothing).
 -- The pay goes onto the record the lobby reads (DataStore Config.Lobby.Save.RecordStore, key
--- Rules/Record.key, the versioned Rules/Record shape) with UpdateAsync: the stored record is
--- read, credited and written back in one step, never overwritten blind. The lobby buys the same
+-- Rules/Record.key, the versioned Rules/Record shape, older saves migrated on read by
+-- Rules/SaveSchema; docs/SAVES.md) with UpdateAsync: the stored record is read, credited and
+-- written back in one step, never overwritten blind, fields this code does not know kept. The lobby buys the same
 -- way (RecordService, Rules/Record.buyStored), so a pay that lands after the soldier is back in
 -- the lobby is kept, and neither server writes over a save it cannot read (`canUpdate`), so the
 -- two places can be published in either order.
@@ -22,8 +23,11 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Economy = require(ReplicatedStorage.Shared.Rules.Economy)
+local Orders = require(ReplicatedStorage.Shared.Rules.Orders)
 local Record = require(ReplicatedStorage.Shared.Rules.Record)
 local Lifecycle = require(script.Parent.Lifecycle)
+local Missions = require(script.Parent.Missions)
+local WarService = require(script.Parent.WarService)
 
 local MeritService = {}
 
@@ -69,6 +73,12 @@ local function held(userId: number): Record.Record?
 	return Record.decode(saved, SAVE.StartMerits)
 end
 
+-- The saved record of `userId` (yields; one try), or nil when it cannot be read: the merit
+-- record the lobby keeps (KitModService reads the Kit Mod ranks on it).
+function MeritService.readRecord(userId: number): Record.Record?
+	return held(userId)
+end
+
 -- The wallet the results screen shows (RunEndUI): what the record holds now.
 local function publish(player: Player, record: Record.Record)
 	if player.Parent then
@@ -80,7 +90,8 @@ end
 -- Adds `amount` merits to the saved record of `userId` (yields). The record once it is
 -- saved; nil when the store is unavailable, every try failed, or the save is one this code
 -- cannot read (left untouched).
-local function credit(userId: number, amount: number): Record.Record?
+-- `wonIn`: the district of a mission won, counted on the record in the same update (Record.win).
+local function credit(userId: number, amount: number, wonIn: string?): Record.Record?
 	local lastError = "the saved record is not one this server can read"
 	for try = 0, PAY.Retries do
 		local data = recordStore()
@@ -94,7 +105,10 @@ local function credit(userId: number, amount: number): Record.Record?
 					return nil -- cancels the update
 				end
 				local record = Record.earn(Record.decode(old, SAVE.StartMerits), amount)
-				return Record.encode(record), { userId }
+				if wonIn then
+					record = Record.win(record, wonIn)
+				end
+				return Record.encode(record, old), { userId }
 			end)
 		end)
 		if ok then
@@ -122,7 +136,16 @@ end
 -- Pays every player here for the mission that just ended. Does not yield: the amount is on
 -- each player's MeritsEarned attribute at once and the saves run on their own.
 function MeritService.pay(outcome: string, secondaries: number)
-	local amount = Economy.missionMerits(outcome, secondaries, PAY)
+	-- The mission's own pay (MissionCatalog `Pay`), a share of it in a Secured district.
+	local pay =
+		Economy.payFor(PAY, Missions.row().Pay, WarService.securedHere(), Config.War.SecuredPay)
+	local district = Missions.row().District
+	local order = Orders.active(Config.War.Orders, os.time())
+	local amount = Economy.boosted(
+		Economy.missionMerits(outcome, secondaries, pay),
+		Orders.bonus(order, district)
+	)
+	local wonIn = if outcome == "win" then district else nil
 	local players = Players:GetPlayers()
 	payRun += 1
 	local run = payRun
@@ -130,7 +153,7 @@ function MeritService.pay(outcome: string, secondaries: number)
 	for _, player in players do
 		player:SetAttribute(Attributes.MeritsEarned, amount)
 		local userId = player.UserId
-		if amount <= 0 then
+		if amount <= 0 and not wonIn then
 			-- Nothing to save: the record is only read, for the wallet on the results screen.
 			task.spawn(function()
 				local ok, record = pcall(held, userId)
@@ -142,7 +165,7 @@ function MeritService.pay(outcome: string, secondaries: number)
 		end
 		pending += 1
 		task.spawn(function()
-			local ok, saved = pcall(credit, userId, amount)
+			local ok, saved = pcall(credit, userId, amount, wonIn)
 			pending -= 1
 			if not ok then
 				warn(`[MeritService] paying {userId} failed: {saved}`)

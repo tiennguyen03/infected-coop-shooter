@@ -9,6 +9,8 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local CallInDefinitions = require(ReplicatedStorage.Shared.CallInDefinitions)
+local DistrictUnlock = require(ReplicatedStorage.Shared.Rules.DistrictUnlock)
+local KitPrices = require(ReplicatedStorage.Shared.KitPrices)
 local LobbyDesks = require(ReplicatedStorage.Lobby.LobbyDesks)
 local HudTheme = require(script.Parent.HudTheme)
 local RecordClient = require(script.Parent.RecordClient)
@@ -111,8 +113,13 @@ local function paint()
 			buy.Font = HudTheme.Font.Headline
 			buy.TextSize = 14
 			buy.TextColor3 = HudTheme.Color.Text
-			buy.TextTransparency = if short then 0.5 else 0
-			buy.Text = if short then `BUY · {price} (SHORT)` else `BUY · {price} MERITS`
+			-- Kit a district's wins open (Rules/DistrictUnlock): the lock shows before the click.
+			local lock = RecordClient.lockText(id)
+			buy.TextTransparency = if short or lock then 0.5 else 0
+			buy.Text = if lock
+				then `{lock} · {price}`
+				elseif short then `BUY · {price} (SHORT)`
+				else `BUY · {price} MERITS`
 			buy.Modal = true -- frees the mouse while the panel is up
 			local stroke = Instance.new("UIStroke")
 			stroke.Color = HudTheme.Color.White
@@ -163,14 +170,15 @@ function DeskShop.init()
 			meritsBefore = RecordClient.merits()
 		end
 	end)
-	RecordClient.Refused:Connect(function(_id: unknown, reason: unknown)
+	RecordClient.Refused:Connect(function(id: unknown, reason: unknown)
 		if panel.Visible then
 			note.TextColor3 = HudTheme.Color.RedLight
 			local line = if said
 				then (if reason == "short" then said.short else said.refused)
 				else nil
-			note.Text = if line
-				then `"{line}"`
+			note.Text = if reason == "locked" and typeof(id) == "string"
+				then DistrictUnlock.need(KitPrices.unlockOf(id))
+				elseif line then `"{line}"`
 				elseif reason == "short" then "Not enough merits."
 				else "Try again in a minute."
 		end

@@ -4,10 +4,24 @@ Design doc for the run loop: Helldivers 2 structure (owner, 2026-11-06), our own
 numbers. Canon and naming: [LORE.md](LORE.md). Tuning: `src/shared/Config.luau`. Map layout
 (positions, pads, stores, sites): [LEVELS.md](LEVELS.md). What shipped: [HISTORY.md](HISTORY.md).
 Pillars: [PLAN.md](PLAN.md). Co-op rules: [MULTIPLAYER_READINESS.md](MULTIPLAYER_READINESS.md).
-Owner rules: [OWNER.md](OWNER.md).
+Owner rules: [OWNER.md](OWNER.md). Designed but not built (the Burn, scoring, the old
+build order, Mile 14, Kestrel): [LATER.md](LATER.md).
 
-Names (owner, 2026-11-08): one map is a **mission**; three missions are an **operation**.
-Code identifiers (`Stage*`, `Operation*`) keep their names.
+Names: one map is a **mission**; three missions are an **operation**. Code identifiers
+(`Stage*`, `Operation*`) keep their names.
+
+**Contents** (read only the section you need): [The loop](#the-loop) ·
+[Attachments](#attachments) · [Kit Mods](#kit-mods) · [The soldier](#the-soldier) ·
+[Downed and revive](#downed-and-revive) · [Reinforcements](#reinforcements-and-ammo-pouches) ·
+[Guns](#guns) · [The Arms Room](#the-arms-room-loadout-menu-key-b) · [Call-ins](#call-ins) ·
+[Binoculars](#binoculars) · [Call-in arrivals](#call-in-arrivals) ·
+[The ATV](#the-atv-vehicle-call-in) · [Pallets](#pallets-resupply) ·
+[Field upgrades](#field-upgrades) · [Threat curve](#threat-curve) · [Breaches](#breaches) ·
+[Extraction](#extraction) · [Containment Board](#the-containment-board-bands-in-code-the-shared-board-not-built) · [Objective pools](#objective-pools) ·
+[The Warden in the objective](#the-warden-in-the-main-objective) · [Missions](#missions) ·
+[Awareness](#awareness-the-quiet-missions) · [Bosses](#index-hosts-bosses) ·
+[The Warden](#the-warden) · [The Infected roster](#the-infected-roster) ·
+[Moves](#moves) · [Hit feedback](#hit-feedback-on-the-infected)
 
 ## The run in one paragraph
 
@@ -39,14 +53,13 @@ extracted still counts. The Burn running out does not end the run.
 
 ## Loadout, pallets and field upgrades
 
-Power is the loadout, never in-run stat growth (owner, 2026-11-07): Helldivers 2, plus one
-Hades-style twist (field upgrades). Retired 2026-11-07/08: XP, levels, orbs, stat items and
-rarity, the class system and the Chosen, Q dash, E breach, Combat Momentum; see
-[HISTORY.md](HISTORY.md).
+Power is the loadout, never in-run stat growth: Helldivers 2, plus one Hades-style twist
+(field upgrades). Retired for good: XP, levels, orbs, stat items and rarity, classes, Q dash,
+E breach, Combat Momentum.
 
 ### Attachments
 
-Nova, 2026-11-11: fitted at the Loadmaster (EDIT on a gun, `GunsmithUI`), kept per gun, signed
+Fitted at the Loadmaster (EDIT on a gun, `GunsmithUI`), kept per gun, signed
 and flown to the match with the Loadout (`Loadout.attachments`, `Attributes.Fitted` on the
 player). One slot so far, the **Barrel**, and one option, the **suppressor**
 (`Config.Attachments`; a gun takes one when its `Config.Weapons` row has `Suppressor`: every gun
@@ -55,6 +68,168 @@ instead of its `Noise` (pistol 12, MP5 15, M16 25, M110 30, M249 35, Mossberg 40
 Infected hear it only close in, [Awareness](#awareness-the-quiet-missions)); the shot plays at
 0.3 volume with no muzzle flash, and a dark cylinder sits on the muzzle (the shot leaves from its
 end) in third and first person. No damage or range cost yet.
+
+**Optic** (the M16A4 only, other guns next): the second slot. Three optics,
+one row each in `Config.Optics` (typed records in `Shared.Attachments.Optics`; a new optic
+appears by having a row that lists its guns). Numbers from the systems designer: the named
+magnification is the final zoom on the M16's 1.35 irons, and each costs less than the gun it
+competes with.
+
+| Optic | Zoom | Into the sights | Merits |
+|---|---|---|---|
+| Red dot (the RMR) | x1.0 (1.35, the irons' picture) | x0.75 (0.11 s) | 150 |
+| CompM2 (M68) | x1.5 (2.0) | x1.0 (0.15 s) | 250 |
+| ACOG 4x | x3.0 (4.05) | x1.6 (0.24 s) | 400 |
+
+Bought once with merits at the EDIT screen and kept for good: it goes on the soldier's record
+like bought kit (`Rules/Record.owned`, the same UpdateAsync save as the Quartermaster's guns;
+never tabs or Robux). The rules (buy, fit, the three states, the unlock count) are
+`Rules/AttachmentRules` (spec first); the server is the lobby's `OpticService` on the `Optic`
+remote, and the Loadmaster refuses to sign an optic not on the record or on a gun it does not
+fit (`RecordService.allows`). On the gun, `Rules/AttachmentMerge` multiplies the gun's zoom and
+its time into the sights (`CameraController`; in third person the shared ADS view narrows by
+the optic's share). The CompM2 is a real 1x sight; 2x here is the owner's call (its multiplier
+is 1.48 so the zoom stays at the 2x limit for a sight that is not a scope).
+
+On the gun: each optic is the free model (`assets/3d/ASSET_IDS.md` > Optics) on
+the M16's rail, one mesh per rifle and optic (`wpn_m16_acog`, `wpn_m16_compm2`,
+`wpn_m16_reddot`, `assets/3d/build/optics.py`): the rifle without its flip-up backup sight, the
+optic's mount on the rail, the glass left open. The red dot sits on a riser so its dot is 0.1 studs
+above the irons' line (2026-11-20, a lower-third co-witness: the front post sits low in the
+glass, under the dot; `optics.py` `REDDOT_LIFT`); the CompM2 and the ACOG ride a little
+higher. Each row's `Fit` names that mesh and its sight on it; `WeaponDefinitions.dressed`
+gives the gun in hand (`PlayerSetup`), the first-person sight line and zoom
+(`CameraController`, `FirstPersonView`) and the EDIT screen's gun (`Showcase` "<gun>+<optic>").
+The ACOG is a scope: aimed in first person it shows the scope picture, as the M110 does.
+The red dot and the CompM2 show their dot (2026-11-20): aimed in first person, `DotSightView`
+draws it at the screen's centre (the optic's axis, so no parallax), fading in over the last 30%
+of the raise; its size, halo and colour are the optic's own `Reticle` row (no row, no dot).
+
+**Attachment system v2** (Nova, 2026-11-20; the M16A4 is the reference gun, one PR per gun
+after it). Up to seven slots per gun, each a row in `Config.AttachmentsV2.Slots`
+(`Shared.Attachments.Schema`): Optic, Barrel, Muzzle, Magazine, Ammo type, Underbarrel, Stock.
+A gun takes the slots of its row's `Family` ("rifle") and, in each, the options that list it.
+Every option is a row (`Config.AttachmentsV2.Options`, `Shared.Attachments.Options`; the
+optics stay `Config.Optics` rows), every ammo type a row (`Config.AttachmentsV2.Ammo`,
+`Shared.Attachments.AmmoTypes`). Unlocked once with merits at the EDIT screen and kept on the
+record (`Rules/AttachmentUnlock`, spec first; Price 0 = the issued part, always owned); never
+tabs or Robux.
+
+| Slot | M16A4 options (merits) |
+|---|---|
+| Optic | iron sights; Red dot 150, CompM2 250, ACOG 400 (above) |
+| Barrel | Standard; Long 150 (+15% range, +10% recoil, -5% move); Short 150 (-15% range, -10% recoil, +5% move); Suppressed (free, as before: quiet, -20% range, -10% damage, no muzzle device) |
+| Muzzle | Flash hider; Compensator 120 (-15% recoil, +5% alert); Muzzle brake 200 (-25% recoil, +10% alert) |
+| Magazine | Standard 30; Extended 40, 150 (+20% reload); Drum 60, 300 (+50% reload, -10% move; not with the collapsed stock) |
+| Ammo type | FMJ (20, x3 head); AP 200 (16, 80% armour pen); HP 200 (28, x4 head, no pen); Tracer 100 (20, +20% alert) |
+| Underbarrel | none; Vertical grip 100 (+20% recoil recovery); Angled grip 100 (-10% ADS time); Laser 150 (-30% hip spread) |
+| Stock | Standard; Adjustable 120 (+15% recovery, +10% ADS time); Collapsed 120 (-10% recovery, -15% ADS time) |
+
+**The merge** (`Rules/AttachmentMerge.merge`, spec first): each option's deltas name a stat
+and an op; multipliers on a stat multiply together and scale the gun's own value, additions
+add after (`value x multipliers + additions`). The ammo type REPLACES the damage profile
+(damage, rounds per shot, headshot, armour penetration, behaviour) and scales range and alert,
+then the attachments apply on top of the new round (so the suppressed barrel's -10% bites on
+HP too). Armour penetration is the share of a plate's cut ignored: the Brute's front
+(`DamageService`) and the Warden's plates (`ProjectileServer.hitMultiplier`). A clash (the
+suppressed barrel with a muzzle device, the drum with the collapsed stock, ammo of another
+caliber, an option for another gun) is refused on the server and its reason shown.
+`WeaponDefinitions.fitted` builds the carried gun's stats from the fitting: the match server
+fires, reloads and makes noise with them; the client reads them only for its camera (ADS time,
+kick) and walk. Saved with the signed Loadout (`Loadout.attachments[gun][slot]`, the ammo in
+its slot), the same save as before. Stats only: the gun's model shows the optic and the
+suppressor as before, nothing else yet (the tracer's beam and the laser's dot too).
+
+**The Mossberg 590 on v2** (Nova, 2026-11-20; Family "shotgun", Caliber "12ga"; its rows are
+the `m590_*` options and `ammo_12ga_*` ammo in `Config.AttachmentsV2`). A shotgun's spread is
+its pellet pattern: the barrels scale both cones (`hipSpread`, `adsSpread`), the laser only the
+hip. Tests: `tests/MossbergCompatibility.spec.luau`, `tests/AmmoType12ga.spec.luau`.
+
+| Slot | Mossberg options (merits) |
+|---|---|
+| Optic | Iron sights; Red dot 150 (the M16A4's row: -25% ADS time, no zoom; stats only, no model) |
+| Barrel | Standard 20"; Short 14" 150 (+25% spread, -20% range, +10% move, -10% ADS time); Full-choke 24" 150 (-30% spread, +20% range, -10% move); Suppressed (free, as before) |
+| Muzzle | Standard; Compensator 120 (-15% recoil, +5% alert); Breaching muzzle 150 (breaching shells open a wall in 1 shot, not 2; otherwise standard) |
+| Magazine | Tube 8; Tube 10, 150 (+15% reload); Tube 12, 250 (+30% reload, -5% move) |
+| Ammo type | Buckshot (8 x 11, x1.5 head, 45 studs); Slug 200 (1 x 80, x3 head, 200 studs, +20% recoil, no pellet spread); Dragon's Breath 250 (8 x 6, each pellet hit burns 15 over 5 s and stacks, +30% alert); Breaching 150 (1 x 30, x1 head, 60 studs, opens light walls) |
+| Underbarrel | none; Vertical grip 100 (+20% recovery); Laser 150 (-30% hip spread); Side-saddle 100 (reload 15% faster) |
+| Stock | Standard; Pistol grip 120 (-10% ADS time, -15% recovery); Collapsed 120 (+10% move, -10% recovery) |
+
+Refused pairs, each with its reason in the menu (rows' `ClashReasons`): Dragon's Breath or a
+slug through the full choke; Dragon's Breath with the suppressed barrel; the suppressed barrel
+with either muzzle device. Breaching shells on the standard muzzle are allowed (2 shots a wall).
+**Burning** (`Rules/DoT`, spec first; `BurnService`; `Config.DoT`): the one damage-over-time
+rule. Each hit adds a stack on its own clock, paid every 0.5 s as "fire" damage, at most 8 on
+one Infected (the newest replaces the one ending soonest); a burning Infected wears a small
+Fire in warning orange (at most 6 shown). The Cauterizer and the Leech reuse it. **Breaching walls**
+(`Rules/WallBreach`, spec first; `WallBreachService`; `Config.WallBreach`): a breaching round
+that stops on a building "Wall" no thicker than 1 stud and of planks, sheet metal or panel
+(huts, the Shed, kiosks; concrete, cinder and brick hold) pushes it by `breachPower`; at
+Toughness 2 a door-sized hole (4 x 8) opens from the wall's foot at the hit, the rest of the
+wall kept as up to three pieces. Broken walls come back at the next run's start. On screen
+(`Config.Weapon.RoundLook`): Dragon's Breath draws orange tracers and a spark where each pellet
+lands, the breaching slug a fat tracer and a puff of grit.
+
+**Every gun on v2** (Nova, 2026-11-20; the Goose stays off). Rows in `Config.AttachmentsV2`
+(`smg_*`, `lmg_*`, `dmr_*`, `sr_*`, `m82_*`, `m17_*`, `r686_*`; the red dot, CompM2 and ACOG
+rows list more guns, stats only where a gun has no `Fit`; the suppressed barrel fits every gun
+that took one). 2-4 options a slot; issued parts free, the rest 80-300 merits.
+
+| Gun (family, caliber) | Slots | Rounds |
+|---|---|---|
+| MP5 (smg, 9mm) | all 7: long / K barrel, flash hider, comp, 40 / drum 50, grip, handstop, laser, A3 / no stock | FMJ, HP, AP, Subsonic |
+| M249 (lmg, 5.56) | 6, no underbarrel (the bipod is the gun's); the magazine slot is the **belt box**: 100, 200 (slow), soft pouch 70 (fast) | FMJ, AP, HP, Tracer-heavy (its own) |
+| M110 (dmr, 7.62) | all 7: issued scope or LPVO, 16" / heavy barrel, comp, brake, 25 / 10 mags, grip, bipod, laser, two stocks | FMJ, AP, HP, Subsonic |
+| M2010 (sniper, 7.62) | 6, no underbarrel: low-power scope, 20", heavy brake, 10 mag, light / adjustable stock | the 7.62 four, plus Magnum (.300 Win Mag, its own) |
+| the Fifty (fifty, .50 BMG) | 6, no underbarrel (no grip to tame it): low-power scope, 20" CQ barrel, tactical brake, 5 mag, recoil pad | Ball, AP |
+| M17 (pistol, 9mm) | 4: irons / red dot, suppressed or compensated barrel, 21 / 32 mags | the 9mm four |
+| S&W 686 (revolver, .357) | 3: irons / red dot, 6" or 2.5" barrel (range and loudness) | Standard, +P |
+
+Ammo is defined once per caliber family. A shared family's round scales each gun's own damage
+(`DamageScale`: one FMJ is the MP5's 14 and the M17's 25); a round for one gun names it (`Guns`).
+Refused, with the reason shown: the shotgun's above; magnum + the M2010's lightweight stock;
+.50 AP + the 20" barrel; the suppressed barrel + any muzzle device. **Warned, not refused**
+(`Rules/GunCompatibility`, a row's `Advice`): subsonic rounds without the suppressed barrel.
+The revolver has no speedloader yet: its three slots leave nowhere to put one.
+
+**Visuals** (client only): `Shared.Attachments.MountPoints` (six mounts on a long gun, three on
+a sidearm; each gun row's `Mounts`, estimated from its mesh, to tune in Studio),
+`Rules/MountPointResolution` (spec first), `Shared.Attachments.VisualRegistry` (an option row's
+`Visual` names a free Creator Store mesh, `assets/3d/ASSET_IDS.md`), `AttachmentMeshService`
+(builds them on the server into `ReplicatedStorage.AttachmentMeshes`), `VisualApplier` and
+`AttachmentVisuals` (every soldier's gun, from the replicated `Fitted` attribute), and
+FirstPersonView copies the parts; an optic's part hides down the sights. Shown so far: the
+vertical grip (M16A4, Mossberg, MP5, M110), the MP5's flash hider, the M110's bipod, the MP5's
+CompM2 and the M249's ACOG. Everything else is stats only: barrels, magazines, stocks and the
+scoped guns' optics replace part of a one-piece gun mesh (the generators must split the guns
+first), and no usable free model was found for the rest (the PR lists them). The M16A4's
+optics stay its own meshes and the suppressor stays PlayerSetup's.
+
+### Kit Mods
+
+Allowed by the owner 2026-11-18 (an exception to "never stat items"). A Kit Mod
+is a passive buff on the soldier whatever gun they carry, bought rank by rank with merits
+(never tabs) at the Loadmaster's KIT MODS tab and kept for good. The line with attachments:
+if a bonus changes how one gun behaves, it is an attachment; if it is on the soldier whatever
+the gun, it is a Kit Mod. Field upgrades stay per-mission picks.
+
+| Mod (`Config.KitMods`) | Per rank (max 3) | Rank 1 / 2 / 3 (merits) | State |
+|---|---|---|---|
+| Extra stim (`stim_carry`) | +1 stim carried (`Config.Stim.Carried` 2 → up to 5) | 200 / 400 / 750 | working |
+| Extra roll (`sprint_roll`) | +1 roll from a full bar: `Stamina.Max` + `RollCost` (100 → up to 160; ~1.7 s more sprint a rank) | 150 / 300 / 500 | working |
+| Quicker call-ins (`callin_cooldown`) | -8 s call-in cooldown (the designer suggests ~5% a rank instead) | 250 / 500 / 850 | greyed, not wired |
+| Faster revives (`revive_speed`) | +15% revive speed | 150 / 300 / 500 | greyed, not wired |
+
+Prices from the systems designer (about 1 : 2 : 3.5 a rank; a full mod is 8-13 wins). One row
+per mod; `Shared.KitMods` builds the typed records, and a service asks
+`KitMods.bonusFor(player, effect)` for the effect it owns. Rules: `Rules/KitModRules` (spec
+first): only the next rank, never past the cap, never a disabled mod, never short. Each rank
+bought is an id on the merit record (`<mod>@<rank>`), bought in one UpdateAsync step with its
+merits (lobby `KitModService` through `RecordService.change`, the Quartermaster's save path).
+The match reads the ranks off the record on join (`src/server/KitModService`,
+`MeritService.readRecord`) into the `KitRanks` attribute: `LoadoutService` carries the extra
+stims (refills fill to the new count; the HUD shows it), `SprintController` grows the bar.
+Bots have none. Dev: `SetKitRanks "stim_carry=2;sprint_roll=1"` (DevCommand).
 
 ### The soldier
 
@@ -69,7 +244,7 @@ prone, Shift sprints, Space vaults and climbs, T switches first and third person
 is a row of `Config.Keys` and every hint reads it (the table: [OWNER.md](OWNER.md) > Rules
 already decided).
 
-**Stamina** (owner 2026-11-11; `Config.Stamina`, `Rules/Stamina`, client-owned like sprint):
+**Stamina** (`Config.Stamina`, `Rules/Stamina`, client-owned like sprint):
 100, sprinting drains 12/s (~8 s from full), back at 22/s after 1 s without spending (empty to
 full ~5.5 s). A roll costs 20, a slide 10 (any stamina left is enough; it floors at zero);
 vault, climb and shove are free. At zero the soldier is **winded**: no sprint, roll or slide
@@ -77,7 +252,7 @@ until 25 (~2.1 s), then a held Shift sprints again. Downed or knocked down nothi
 respawn or a new run refills it. Bots have none.
 
 **Keys:** Shift twice rolls; holding C or Ctrl while sprinting slides until the key is let go.
-**Slides keep momentum** (owner 2026-11-11; `Config.Movement.Slide`, `Rules/Slide`): a slide
+**Slides keep momentum** (`Config.Movement.Slide`, `Rules/Slide`): a slide
 starts at the speed going in + 6 (at least 24, at most 40 studs/s), loses 17/s to friction and
 gains 60/s x the slope's sine from the floor under it: flat from a sprint is the old ~0.95 s,
 about 16 degrees downhill holds its speed, steeper gains up to 40, uphill dies in about half the
@@ -90,15 +265,13 @@ gun row may name its held mesh (`Model`; every gun has one, `assets/3d/build/gun
 clips in the `guns` sound bank (`Sound`) and, for a launcher, `Explosive` +
 `ProjectileSpeed`. Bots carry the service rifle.
 
-**Aiming throws** (owner 2026-11-09: "hold and release ... so I actually know where it
-lands"): G and every thrown call-in (CallInDefinitions Kind "throw") are held to aim and
+**Aiming throws:** G and every thrown call-in (CallInDefinitions Kind "throw") are held to aim and
 thrown on release. A dotted arc from the hand and the item's own marker on the ground
 (`Config.CallIns.<Name>.Aim`: a ring of Radius, or a strip of Length x Width along the throw,
 `Across` for the wire) follow the crosshair. The flare (X) and the "self" call-ins still
 fire on the press. `AbilityController`.
 
-**Throwing** (owner 2026-11-11: things "activate before the actual animation plays"): the
-grenade, every thrown call-in and the flare leave the hand at the throw clip's release, not
+**Throwing:** the grenade, every thrown call-in and the flare leave the hand at the throw clip's release, not
 when the key comes up.
 - **Timing:** `Config.Animations.Throws` has a row per throw clip (`Start`, `Release`,
   `Speed`, over `Default`); `Rules/ThrowTiming` turns it into the wind-up. `grenade_throw`
@@ -123,8 +296,7 @@ when the key comes up.
 
 The rules (bleed-out, hold E for `Config.Downed.ReviveHold`, radius, max revives) are in
 [MULTIPLAYER_READINESS.md](MULTIPLAYER_READINESS.md) decision 3 and `Config.Downed`. What a
-revive looks like (owner 2026-11-11: "the revive is just us standing there";
-`Config.ReviveAnimation`, `Enabled = false` turns it off):
+revive looks like (`Config.ReviveAnimation`, `Enabled = false` turns it off):
 
 - **Reviver:** slides to a kneel point at the casualty's side (the nearer side of the chest;
   the other side when that one is walled off or taken; where they stand when neither will
@@ -140,6 +312,26 @@ revive looks like (owner 2026-11-11: "the revive is just us standing there";
 - Players, bots and any mix of the two use the same code: `ReviveAnimService` (roles and
   the kneel point, server), `Shared.ReviveAnimation` (clips by the body's owner, arms on
   every client), `Rules/ReviveAnim` (kneel point and phases, tested).
+
+### Reinforcements and ammo pouches
+
+`Config.Scarcity` (`Reinforce`, `Pouch`), `ReinforceService`, `Rules/Scarcity`; the design
+and numbers: `docs/sprints/FUN_SCARCITY.md`.
+
+- **Reinforcements:** one pool per run for the squad, 2 + 1 per player who joined (solo 3,
+  four players 6), shown as yellow squares at the top of the left column ("NO
+  REINFORCEMENTS" in red when spent). A player who dies spends one; 8 s later the helicopter
+  drops them beside the nearest standing player (else a bot), falling from 22 studs where
+  the sky is open, with the insert kit and fresh revives (call-ins and upgrades kept). Their
+  K.I.A. line counts down and names who they drop beside; squadmates read "DEAD 8s". Pool
+  empty: dead until the squad extracts.
+- **Wipe:** no player up and nobody to drop back to (nobody, bots included, up or down; or
+  the pool empty with nobody inbound). Reinforcements off: every player dead, as before.
+- **Bots** never spend the pool; they come back on their own after 30 s
+  (`Reinforce.BotRespawnSeconds`; 10 with reinforcements off).
+- **Ammo pouches:** any squadmate who dies (bots too) leaves a pouch labelled AMMO at the
+  body for 120 s; each living player holds E 0.5 s on it once for 2 magazines of the long gun
+  and 1 of the sidearm, up to the gun's max ("AMMO FULL" takes nothing).
 
 ### Guns
 
@@ -157,6 +349,21 @@ Numbers in `Config.Weapons.<Gun>`, rows in `WeaponDefinitions`. Semi guns fire o
 | **M2010 ESR Sniper** (sample) | one round per kill, Brute in 2, through four in a line; useless from the hip | bolt, 48 (1.25) | 140 | 5 + 15 / 30 | 3.2 | 6.0 / 0.05 | 0 | 800 | 3 |
 | **Goose, M3 recoilless** (sample "RPG", primary slot; later the call-in) | a visible rocket at 220 studs/s: 400 to the Infected struck, then the frag's blast 120 in 6 studs, no friendly fire | single, reload 6 s | 400 + blast | 1 + 1 / 1 | 6.0 | 2.0 / 0.25 | 0 | 300 | 0 |
 
+- **The Fifty, Barrett M82A1** (.50 BMG, primary; Nova 2026-11-20): sold only by the
+  Visitor, 1,500 merits (its row's `Desk = "visitor"`, `Price`; never tabs). Semi, as fast as
+  the trigger is pulled (0.25 s cycle), but each shot throws the sights 2.5 degrees wide and
+  they settle at 1.25 a second, so aimed fire runs about one round in 2 s (~30 rpm). 180 per
+  round, x3 head, mag 10 + 20 / 40 (scarce 10 / 30), reload 4.5, range 800, hip 4.0 (about 2
+  studs off at 30), 10x scope, noise 250. Carried at 65% walk speed and never sprints
+  (`CarryMoveFactor`, `CanSprint`). **Overpen** (`Rules/Overpen`, `Overpen` on its row): a
+  round hits up to 4 bodies in a line, 10% off per body pierced (1, 0.9, 0.8, 0.7), and squadmates
+  in the line are bodies too: friendly fire (the trade-off; `FriendlyFire` share, through
+  `EnemyProjectileService.damagePlayer`, so armour and downing apply). It passes walls up to
+  1 stud thick at no cost; thicker walls and terrain stop it. It breaks the Brute's plated
+  front (`BreaksArmour`: the round lands whole there, he has no plates to count); the Warden's
+  plates take it at the usual `ArmouredMultiplier` (0.25: 45 a round). Stand-ins until its own
+  art: the M2010's mesh, scope points and shot. The M2010 keeps its own `Pierce` count
+  (moving it onto `Rules/Overpen` is a follow-up).
 - ADS move factor: rifle 0.6, SMG 0.85, LMG 0.35, shotgun 0.7, DMR 0.5, pistol 0.9. ADS
   pulls the camera to 5 studs over the shoulder at FOV 55 (`Weapon.ADS`); in first person each
   gun aims through its own sights at its own zoom, the M2010 (6x), M110 (3.5x) and Goose (3x)
@@ -164,19 +371,25 @@ Numbers in `Config.Weapons.<Gun>`, rows in `WeaponDefinitions`. Semi guns fire o
   an `aiming` flag with each shot and the server picks the cone.
 - Headshot x3.0 (per gun, `HeadshotMultiplier`); the Brute overrides to 1.25 (plated skull).
   Tracers are client-drawn.
-- Rounds to kill body / head: rifle Walker 3 / 1, Brute 13 / 11; SMG 4 / 2, 19 / 15; DMR
-  1 / 1, 5 / 4; shotgun one pull for every form but the Brute (3). Ammo reins in the DMR
-  (100 x 60 is the M16's 270 x 20).
-- A soldier lands with about half the reserve (`ReserveStart` on the gun's row,
-  2026-11-10; was the full `ReserveMax`), so the first pallet is wanted; a pallet or the
-  Index kill fills it to `ReserveMax`. The Goose keeps its one spare round.
+- Rounds to kill body / head: rifle Walker 3 / 1; DMR Walker 1 / 1; shotgun one pull for
+  every form but the Brute. The Brute (500, plated front, [Moves](#moves)): rifle 63 from the
+  front, 20 from behind, 25 in the legs; shotgun 15 / 5 pulls; DMR 21 / 7. Ammo reins in the
+  DMR (100 x 60 is the M16's 270 x 20).
+- A soldier lands with about half the reserve (`ReserveStart` on the gun's row), so the
+  first pallet is wanted; a pallet or the Index kill fills it to `ReserveMax`. The Goose
+  keeps its one spare round.
+- **Scarcity** (`Config.Scarcity.Ammo`, on): the table's reserves are replaced by
+  each row's `Scarce` block, about two thirds: M16 and MP5 90 / 150, M249 100 / 200, Mossberg
+  16 / 32, M110 40 / 60, M17 34 / 51, revolver 12 / 24, M2010 10 / 20, Goose unchanged
+  (`docs/sprints/FUN_SCARCITY.md`). A fallen squadmate's ammo pouch adds magazines (below,
+  Reinforcements and ammo pouches).
 - Bots fire the rifle slower (`Bots.FireCooldown` 0.30: three bots on sustained fire ~ one
   player), same magazine, infinite reserve.
-- Bots walk (2026-11-11): straight to the formation slot when it is close and in sight, else
+- Bots walk: straight to the formation slot when it is close and in sight, else
   along a path, sprinting when far. They teleport only when far from the leader and stalled
   (or out of the world), to a spot no living player faces. Rules in `Rules/BotBrain`,
   numbers in `Config.Bots`.
-- Bots spread out (Nova, 2026-11-11: "clumped up around the player"): each holds a spot of its
+- Bots spread out: each holds a spot of its
   own 10-18 studs from its leader, in its own sector (behind-left, behind-right, behind, +-40
   degrees), 9 apart and in the leader's line of sight, and keeps it until the leader has moved
   18 studs (or it is 28 away, or the leader walks into it); then it picks again round him.
@@ -192,14 +405,14 @@ Numbers in `Config.Weapons.<Gun>`, rows in `WeaponDefinitions`. Semi guns fire o
   apart on the leader's side, and back off as he comes; they run 5 studs clear of a
   telegraphed disc or line, step out of caustic puddles, stim at 60% health, and revive only
   when the boss is 26+ studs from the downed body.
-- The three sample guns (2026-11-09) are in the Arms Room like every gun: its lists are every
+- The three sample guns are in the Arms Room like every gun: its lists are every
   row of the slot, ordered by the row's `ArmsOrder` (default 100; the first is the default
   gun), so a new gun appears by having a row. ADS move: revolver 0.85, sniper 0.4, Goose 0.4.
   Revolver Walker 1 / 1, Brute 5 / 4; sniper every form 1, Brute 2 / 2.
 - Grenades: **Frag** (110 in 10 studs, 0.8 s fuse; one-shots a Hocker, not a Brute) is
   built. Later: **Incendiary** (3 fire pools, `IncendiaryService`) and **Stun** (0.4x slow
   3 s in 14 studs, `ShockCoilService.stunArea`).
-- Feel (owner: part of the design): every gun, grenade and call-in carries its own `Kick`,
+- Feel: every gun, grenade and call-in carries its own `Kick`,
   `ShakePower` / `ShakeGlobal`, `Heavy` (staggers a Brute) and `ReloadClip` on its own row,
   with a default (`Config.Camera`). Never a hard-coded list of item names in a system.
 
@@ -225,9 +438,8 @@ Module boundary, so the lobby can host it:
 - Remote `Loadout`: `Messages.Loadout.Request` `{primary, secondary, grenade, callIns}` and
   `Messages.Loadout.Result` `(ok, reason)`. The server publishes `Primary`, `Secondary`,
   `Weapon`, `Grenade`, `Grenades`, `Stims`, `SwapUntil`, `CallIn1`-`CallIn4`.
-- The lobby (`nova/lobby`, docs/sprints/LOBBY_V1_FALLOW.md > Loadmaster and Loadout): the
-  Loadmaster hosts the same menu as the **Loadout** (owner's name, 2026-11-09; `mount` options
-  title / hint / confirm), `LoadmasterService` validates with the same Rules module, keeps
+- The lobby (docs/sprints/LOBBY_V1_FALLOW.md > Loadmaster and Loadout): the Loadmaster
+  hosts the same menu as the **Loadout** (`mount` options title / hint / confirm), `LoadmasterService` validates with the same Rules module, keeps
   each soldier's Loadout in a DataStore (a stand-in for F9) and passes it in teleport data.
 
 ### Call-ins
@@ -251,7 +463,7 @@ out of the door; fire missions are someone on the net. HUD names and radio: [LOR
 | Emplacement | **Concertina** (wire) | 16 x 3 strip for 60 s: 0.4x slow, 5 dps; never vaultable | 2 / 90 | yes |
 | Supply | **Speedball** (ammo bundle) | 4 re-arms (a player again only after stepping out), no lure wave | 1 / 180 | yes |
 | Supply | **Aid Bag** (medical drop) | every soldier within 6 studs: full heal, stims refilled, +25 plate; once each | 1 / 180 | yes |
-| Vehicle | **ATV** (two-seat military ATV) | slung in under the helo; a driver and a back-seat gunner; runs the Infected down ([The ATV](#the-atv-vehicle-call-in)) | 1 / 180 | yes, not played |
+| Vehicle | **ATV** (two-seat military ATV) | dropped in a crate by the helo; a driver and a back-seat gunner; runs the Infected down ([The ATV](#the-atv-vehicle-call-in)) | 1 / 180 | yes, not played |
 
 Every built call-in is thrown (`Kind "throw"`, `ThrowUtil` clamp) except the Anvil, which is
 marked through binoculars (below). Services:
@@ -262,27 +474,21 @@ the modelled gun whose pivot is 2.6 up, 1 = the Part tripod at 3.2), `MineServic
 `SupplyDropService` (Speedball, Aid Bag land quiet). The support weapons
 need the support-weapon carry and the explosive projectile hook (ARCHITECTURE F7). Dev:
 `SetCallIn <slot> <id>`, `FireCallIn <id>` (20 studs ahead, no slot or charge).
-Retired 2026-11-08: Magpie (drones) and Pen Coil (shock pulse), too sci-fi; see HISTORY.md.
+Retired as too sci-fi: Magpie (drones) and Pen Coil (shock pulse).
 
-**Landing on the crowd** (owner 2026-11-16: "the zombies move out of the way most of the
-time"; `Rules/StrikeLanding`, `Config.CallIns.Landing`, switch `Enabled`). Nothing dodged:
-the Infected keep chasing the nearest soldier, and from the key to the first impact (Hammer
-0.5 s throw + 3 s, Anvil 0.4 s raise + 5 s, Shrike 0.5 + 4 s) a Walker (9.5 studs/s) walks
-33-51 studs, a Runner (17) 60-92, a Brute (6.5) 23-35, against blasts of 12, 20 and 5 studs.
-So a fire mission's mark now **holds** the Infected within its row's `Landing.Hold` (Hammer
+**Landing on the crowd** (`Rules/StrikeLanding`, `Config.CallIns.Landing`, switch
+`Enabled`). From the key to the first impact the Infected would walk out of the blast, so a
+fire mission's mark **holds** the Infected within its row's `Landing.Hold` (Hammer
 16, the aim ring; Anvil 20; Shrike 16 round the lane's middle): they walk to the marker (the
 lure the Resupply flare uses) until `HoldAfter` seconds after the first impact (Hammer 2,
 three shells; Anvil 0.3; Shrike 1.4, the whole run), then chase again. Only what the mark is
 on or walks into is held: the player still has to put it on a crowd. Blasts (fire missions,
 Tripline trigger and blast) are measured flat along the ground and reach `Landing.Height`
-(8) studs up or down: the old sphere from a centre 1-2 studs off the ground missed a
-Brute's root (about 6 up) under a Shrike burst and never let a Brute trip a mine. Damage
-has no falloff (flat inside the radius, as before). `Enabled = false`: no hold, the sphere.
+(8) studs up or down (so a Brute's root, about 6 up, is reached). Damage has no falloff (flat inside the radius, as before). `Enabled = false`: no hold, the sphere.
 
 ### Binoculars
 
-Owner: "the anvil should be like binoculars and can be called anywhere within your line of
-sight". A call-in whose row says `AimMode = "Binoculars"` (default `"Throw"`; only the Anvil
+A call-in whose row says `AimMode = "Binoculars"` (default `"Throw"`; only the Anvil
 today) is not thrown.
 
 - **Use:** the slot key raises the binoculars (0.4 s): the eye goes to the head, the view
@@ -311,7 +517,7 @@ today) is not thrown.
 
 ### Call-in arrivals
 
-Owner: "Hammer and Anvil look like the same thing". Each call-in now comes in its own way
+Each call-in comes in its own way
 between the throw and the effect: its own shape on the ground, its own timing, colour and
 sound. All of them start the same: the thrown marker (or the kit itself) flies the aim arc
 for 0.45 s and lands (not the Anvil: it is marked through binoculars, so its ring and smoke
@@ -327,7 +533,7 @@ start on the mark at once).
 | **Concertina** | `unroll` | no smoke | the coil splits into two drums that roll out to the ends paying out a strand, with dust | three rattles | the wire stands at 1.05 s |
 | **Speedball** | `tumble` | yellow smoke | the bundle tumbles down from 50 studs with no chute in 0.75 s | the landing thump | one bounce, dust, ready at 1.5 s |
 | **Aid Bag** | `streamer` | pink smoke | the bag comes down steadily from 38 studs under a 9-stud red and white streamer | the landing thump | the streamer falls across the ground; ready at 1.8 s |
-| **ATV** | `sling` | yellow smoke; rotor wash puffs while it comes down | the helicopter (the insertion's) flies in low along the throw with the ATV on a 16-stud line, hovers 34 up and lowers it | the rotor loop | the hook drops at 7.5 s, the real ATV stands there; the helo climbs away ahead |
+| **ATV** | `crate` (`sling` is still a style) | yellow smoke | the helicopter (the insertion's) flies straight over the mark 46 up at 60 studs/s with the crate under its skids, never stopping; it lets go 1.4 s before the landing and the crate drops straight down | the rotor loop | the crate lands at 7.5 s (the real ATV appears inside), its walls fall open flat and the lid kicks off behind; the boards lie 4 s and fade. The crate is the vehicle's size plus 0.4 room, in half-stud steps (`Rules/Arrival.crateSize`: 5.5 x 4 x 8.5 for the ATV); a `Crate` on a Vehicle block sets one |
 
 - **Where the values live:** each call-in's row has an `Arrival` block (`Style` plus any
   value it changes) over `Config.CallIns.Arrivals.Defaults`; `Rules/Arrival` merges them and
@@ -339,21 +545,19 @@ start on the mark at once).
   draws the rest from Parts, Beams, Trails and particle bursts, on the same clock (it holds
   while paused). Damage, the blast flash that shakes the camera, the blast sound (its clip,
   pitch and flash colour from the row) and the gunship stay on the server.
-- **Timing that changed:** Doorman works 2.2 s after the throw, Tripline 0.95 s, Concertina
-  1.05 s (all three were instant); Speedball 1.5 s and Aid Bag 1.8 s (were 0.9 s). Fire
-  missions keep their `Delay`.
+- **Timing:** Doorman works 2.2 s after the throw, Tripline 0.95 s, Concertina 1.05 s,
+  Speedball 1.5 s, Aid Bag 1.8 s. Fire missions keep their `Delay`.
 - **Budget:** at most 8 arrivals drawn at once per client (`MaxActive`); the biggest (Anvil)
   is 22 Parts; smoke and dust are bursts of 2 to 20 particles, no lights.
 - **Switch:** `Config.CallIns.Arrivals.Enabled = false` puts back the flat red discs, the
   stock blast, the one shared whistle and the instant kit.
-- **Needs an in-game look (none of it has been seen running):** `handoff/log/2026-11-10-tien-callin-arrivals.md`.
+- **Needs an in-game look (none of it has been seen running):** [PLAYTEST_CHECKS.md](PLAYTEST_CHECKS.md) > Call-in arrivals.
 
 ### The ATV (vehicle call-in)
 
-Nova and Tien, 2026-11-17: the first vehicle. Design by the systems, level and lore agents;
-Nova's picks: a call-in slot (not a free ride or its own slot), slung under the helo. Maps
-are going to get much bigger, so it is transport as well as a gun platform and a getaway.
-Built, **not played**.
+The first vehicle (Nova): a call-in slot, dropped in a crate on a fly-over (the arrivals
+table). Transport for the bigger maps as well as a gun platform and a getaway. Built, **not
+played**.
 
 - **Getting it:** bought once (400 merits) from the motor sergeant at **Vehicles**, the aft
   end of the Carrier's hangar (docs/sprints/LOBBY_V1_FALLOW.md > Motor pool); signed into a
@@ -374,7 +578,7 @@ Built, **not played**.
   tyres on one chassis; the driver's client simulates it (network owner), the server while
   nobody drives, and the server takes it back for 1 s above 1.25 x top speed. Top 55 studs/s
   (sprint 24, a Runner 17), reverse 16; measured in Studio 26 studs/s after 1 s, 39 after 2,
-  46 after 3 (Nova's first drive at half that accel: "slower than walking"); steering 35
+  46 after 3; steering 35
   degrees standing to 15 at top speed; no drive up ground steeper than 30 degrees (pallet ramps are 33). In the
   air it levels itself. Tipped past 70 degrees and stopped: hold E 1.5 s to flip it back.
 - **Rams:** above 12 studs/s an Infected in front of the bumper (behind when reversing)
@@ -387,6 +591,10 @@ Built, **not played**.
   through, folder `Vehicles`). At 0 it burns 3 s and blows: 120 to the Infected within 10;
   anyone still aboard is thrown off, takes 20 and is knocked down 1.2 s.
 - **HUD:** while riding, a panel over the bottom: the seat, the keys, the ATV's health.
+- **Look** (Nova's own model; `docs/STYLES.md` §6 > The ATV): 7.5 long, 3.3 tall; tyres of radius 1 on a 4.81 wheelbase and a 3.28 track; the chassis
+  stands 1.23 over the ground (`VehicleBody.Bodies.atv`, measured on the model). It wears the
+  meshes once they load (the server copies them to the clients for the slung stand-in; the
+  motor pool waits up to `Config.VehicleMeshes.Wait`); before that it is the first Part body.
 - **How riders look** (client `VehiclePose`, the row's `Pose`; a placeholder until a riding
   clip is authored): both seats sit (hips and knees bent over the clip); the driver's hands
   reach the bars and the gun is put away (hidden on every client, and the first-person gun
@@ -400,7 +608,7 @@ Built, **not played**.
   (`EnemyService.noise`): 35 studs standing, 85 at top speed (guns carry 70-140), so on a
   quiet mission driving trades stealth for speed. The row's `Engine` block.
 - **Not in v1:** swapping seats, the driver's sidearm, grenades from the back, bots driving,
-  a mesh (the body is Parts, `VehicleBody`), other vehicles.
+  other vehicles.
 
 ### Pallets (Resupply)
 
@@ -413,12 +621,16 @@ Built, **not played**.
   per extra player; spawn interval x0.7 for 30 s).
 - **The pallet is the ammo box:** every living player within `RearmRadius` 6 is re-armed
   once (both guns full, grenades back).
+- **The flare waits** 90 s after a pallet lands before it can be thrown again while scarcity
+  is on (`Config.Scarcity.Resupply.FlareCooldown`; `Requisition.FlareCooldown` 20 when off):
+  the pallet is the main refill, so when to throw it is the squad's call. The meter reads
+  "RESUPPLY  FLARE IN 1:12" while the pool is paid for but the wait runs.
 - Three cards, the same for everyone (`Crates.SupplyCards`; what each gives is its row in
   `Crates.Cards`, and the card text is built from the row): **Medkit** (full heal, stims
   back), **Restock** (every call-in slot full, grenades and stims too), **Armour Plate** (+75
-  armour soaked before health, cap 100; was 50, which a full heal always beat). One pick
+  armour soaked before health, cap 100). One pick
   per player per pallet; the pallet closes at 90 s. No rarity, no upgrades from pallets.
-- **Taking a card** (owner 2026-11-11: never by walking over it; `Requisition.Pick`,
+- **Taking a card** (never by walking over it; `Requisition.Pick`,
   `Rules/Reward`, `RewardPanel`): every crate has a label and, when it is worth a walk, a
   light pillar. Within 9 studs hold **E** 0.3 s (gamepad X, tap on touch) and
   a panel of up to three big cards opens at screen centre: key, kind, icon, name, one plain
@@ -448,10 +660,9 @@ percentage, and must stay legible next to the flat curve. Sources: the Primary's
 hold ends, `Objective.CompleteCrate`, 10 studs beside the first), so both picks are made
 before the Index arrives; later Stores and Secondary crates (3-5 per mission). Each offers
 3 the player does not hold, ones for an empty slot before ones that would replace a pick
-(`Rules/Reward.upgradeOffer`); a short offer is filled with supply cards. Until 2026-11-10
-the second set came on the Index pallet, with only the extraction left to use it.
+(`Rules/Reward.upgradeOffer`); a short offer is filled with supply cards.
 
-**The Main objective's reward** (2026-11-11; `Crates.Kinds.objective`): as the crate lands
+**The Main objective's reward** (`Crates.Kinds.objective`): as the crate lands
 every living soldier is restocked without picking anything (`Squad`: full health, ammo,
 every call-in charge, grenades, stims, +50 armour), then each player picks one field
 upgrade from it (open for 180 s). The 500 into the Resupply pool is unchanged. Crate kinds
@@ -476,7 +687,30 @@ Watch: Hollow Point staggers on every hit; at 12.5 rounds/s it can chain-stun a 
 Flat: `Config.Difficulty` health and damage stay 1x. Pressure is the spawn interval (3 s,
 x0.95 per minute to 1.5 s), the max-alive schedule (10 / 14 / 20 / 26, late 30), the phase mix
 (Walker-only up to W38 R30 B16 H16) and the player count (`Config.PlayerCountScaling`: spawn
-interval x0.8, +3 alive and +1 heavy per extra living player, hard cap 44).
+interval x0.8, +3 alive and +1 heavy per extra living player, hard cap 44). On top of that
+the breaches below give it a rhythm instead of a steady trickle.
+
+### Breaches
+
+Design and numbers: [FUN_BREACHES.md](sprints/FUN_BREACHES.md); code `BreachService`,
+`Rules/Breach`, `Config.Breaches` (`Enabled = false` is the old trickle).
+
+- **The alert** (one per run, the squad's): shots with Infected in earshot, blasts, call-ins
+  and each Infected first coming close raise it; 8 s of quiet and it falls. Time alone adds
+  a little, and late in the run it never falls below a third of the threshold.
+- **A breach** at the threshold: a siren and screams from one side, Control names the side,
+  a red BREACH arrow on screen; 4 s later a horde of the run's mix floods in from that side
+  over 10 s (10, +4 per extra player, +10 late, at most 32, never past the cap of 44).
+- **The rhythm:** Calm (the trickle at about 60%) → Tension (Control: "You're making
+  noise", the trickle as before) → Breach → Relief (30-50 s, nothing builds, the trickle at
+  40%) → Calm. Pressure (run time, full at 12 minutes) lowers the threshold, shortens the
+  relief and grows the horde.
+- **The main objective** brings one breach at 40% of its work, at its site (after the Warden
+  if he is on the field then).
+- **Never** in a run's first 60 s, while the Warden is on the field, during extraction, on a
+  quiet (awareness) mission.
+- **Dev:** F1 > INFECTED > BREACHES > Breach now; the strip under the title reads
+  "alert 45% Tension, pressure 30%".
 
 ### Stores and the priority pallet
 
@@ -486,39 +720,42 @@ interval x0.8, +3 alive and +1 heavy per extra living player, hard cap 44).
   quiet pallet at the corpse: re-arm, full heal, the three supply cards
   (`Index.Warden.Drop.Cards`; `"upgrade"` puts the field upgrades back there).
 
-## Operation: the Burn, extraction, scoring (not built)
+### Extraction
 
-- **The Burn** (mission timer, 840 s for 1-4 players; more players split objectives, time is
-  the one resource more-not-tougher does not hand out). Only the Burn counts down on the HUD;
-  run time stays a plain readout. At 0:00 the incendiaries land: burning dressing, no more
-  pallets, spawn interval x0.5, more alive and +2 Brute/Hocker caps (`Config.Overrun`,
-  reserved), the helicopter takes 120 s instead of 90. The run goes on; extracting after the Burn
-  scores Partial. Calling the bird freezes the timer.
-- **Extraction today** (`Config.Extraction`, 2026-11-10): a 60 s hold (was 30). On the
-  call Walker 12, Runner 4, Brute 1 round the pad and spawn interval x0.8; when the hold
-  reaches 30 s a second wave of 12 phase-weighted Infected (+3 per extra player) rings the
-  pad, Control calls it on the radio and the spawn interval goes to x0.6 (`Waves` rows:
-  `At`, `Count`, `PerExtraPlayer`, `SpawnFactor`; `Rules/ExtractionWaves`). A wave is tied
-  to the hold's progress, so it never lands while the squad is off the pad.
-- **Extraction, designed.** A 90 s hold; on call Walker 10 Runner 4 (+3 Walkers per extra player), a
-  second phase-weighted wave of 12 at 45 s, spawn interval x0.6. Progress accrues only while
-  every living player is on the pad (MULTIPLAYER_READINESS #3). Secondaries do not shorten it.
-  Alternate pads come from "Light the Pad".
-- **Secondaries** reward a Secondary crate on site and +3 containment; no timer extension, no
-  Resupply.
-- **Score per mission:** Win (Primary done, extracted before the Burn) 12; Partial (Primary
-  done, extracted or wiped after the Burn) 6; Loss (wiped before the Primary) 0; each
-  Secondary +3. Perfect operation = 18 per district.
+`Config.Extraction`, `Rules/ExtractionWaves`: a 60 s hold, progress only while every living
+player is on the pad. On the call Walker 12, Runner 4, Brute 1 round the pad and spawn
+interval x0.8; when the hold reaches 30 s a second wave of 12 phase-weighted Infected (+3 per
+extra player) rings the pad, Control calls it and the spawn interval goes to x0.6 (`Waves`
+rows: `At`, `Count`, `PerExtraPlayer`, `SpawnFactor`). A wave is tied to the hold's progress,
+so it never lands while the squad is off the pad. The designed 90 s version and the Burn:
+[LATER.md](LATER.md).
 
-## The Containment Board (war map, not built)
+## Operation: the Burn, extraction, scoring
 
-Every district carries a containment % raised by every extracted mission. Delta starts at 25;
-the others at 0; the next district unlocks at 50 of the previous. Perfect play reaches 100 in
-6 operations; a first-timer in 10-12 (a weekend). The board is **shared across all players**
-(owner, 2026-11-06): one global DataStore key per district, written with `UpdateAsync` so
-concurrent servers add, never overwrite; each server reads it at run start and once per
-minute (scaling plan: [ARCHITECTURE.md](ARCHITECTURE.md)). Contained means the district
-stopped exporting hosts, not zero Infected.
+Designed, not built (code comments point here): the Burn timer, the designed 90 s
+extraction, Secondaries' reward and the score per mission are in [LATER.md](LATER.md). The
+extraction that is built: [Extraction](#extraction).
+
+## The Containment Board: the city war (live since loop sprint 3, 2026-11-20; unplayed)
+
+Players read it as the board titled WHAT WE HOLD in the map room, and as the percent on each
+Mission Board card. **One shared board per season** for every server (`Config.War`,
+`Rules/War`, spec first): each district stores its percent, when it was written, whether it is
+open and whether it is Secured (one DataStore per 28-day season, `War_S1`, `War_S2`, ..., key `board`). A mission brought home adds
+points to its district, per mission not per player: **Win 3, Partial 1, Loss 0; 2 points = 1%**
+(a win is +1.5%), written once at the run's end with `UpdateAsync` (`WarService`, so servers
+add, never overwrite). The Infected push back **0.25% an hour** (about 6% a day); a loss takes
+nothing away. **Delta and Mile 14 are open from day one**; each later district opens when the
+one before it reaches **50%** and stays open for the season. **100% is Secured:** no more
+decay. The lobby rereads the board every minute (`ContainmentBoard.read`, published to the
+clients as `Attributes.WarBoard`); the results screen shows the line ("DELTA +1.5%",
+`Attributes.WarLine`). Since loop sprint 4: a Secured district's missions pay x0.25 of their merits
+(`Config.War.SecuredPay`) and give no war points. Not built yet: the band changing the match
+(the table below). **Seasons (loop sprint 5):** the board starts over every 28 days
+(`Config.War.SeasonStart`, `SeasonDays`) in a new store (`War_S1`, `War_S2`, ...; `Rules/War.season`),
+so nothing is wiped; wins, unlocks and kit stay on each record. The Mission Board's header shows
+the season and the days left. Contained means the district stopped exporting
+hosts, not zero Infected.
 
 | Band | % | `InitialCount` | Clock start | Brute / Hocker first spawn | Stores | Visible (cheap) |
 |---|---|---|---|---|---|---|
@@ -531,7 +768,8 @@ stopped exporting hosts, not zero Infected.
 Build cost per band: a PointLight toggle, `burning` flags, a fog tweak, a spawn table keyed by
 band, one ambient swap, one extra helipad. Nothing new to model.
 
-## Objective pools (first slice built on Delta, 2026-11-11)
+
+## Objective pools
 
 Each drop draws one **main objective** and two **side objectives** from the map's own pool
 (`ObjectiveService`; rows, pools and sites in `src/shared/ObjectiveDefinitions.luau`, read as
@@ -593,47 +831,16 @@ Each drop draws one **main objective** and two **side objectives** from the map'
 
 Never on Delta: Evacuate ("CLEARED 0").
 
-### Mile 14 (designed, not built)
+### The words
 
-| Objective | Kind | Idea |
-|---|---|---|
-| Open the Route | signature main | the lead bus blocks the road; destroy 3 props, reach the point beyond (the Bloat is inside) |
-| Burn the Buses | signature main | the sealed buses of the Jam: fire at three, each flushes what is inside |
-| Recover the Record, Restore Comms, Confirm Casualties, Secure the Site | shared main | the toll log to the Overpass; the water tower; Hockers on the deck; its three sites |
-| Kill the Horn | signature side | a bus horn drawing them (its Silence the Alarm) |
-| Sealed Bus (the Jam), toll booth recorder | signature side | |
-| Lights On, Misdrop, Clear the Spitters | shared side | Toll Plaza generator; outer areas; Hockers on the Overpass |
+Each objective's Brief (Control), Why (HUD, 8 words at most) and Done (Control) lines live
+in `src/shared/ObjectiveDefinitions.luau` only (`{place}` is the drawn site, `{to}` where a
+carried item goes). Plain words (OWNER.md).
 
-### Aid Station Kestrel (designed, not built)
+### The Warden in the main objective
 
-| Objective | Kind | Idea |
-|---|---|---|
-| Evacuate the Holdouts | signature main | a transponder in the Ward: 2-3 survivors follow the nearest player to the pad alive |
-| Clear the Ward | signature main | the Ward's bed rows: burn three, each flushes a wave |
-| Recover the Record, Restore Comms, Confirm Casualties, Secure the Site | shared main | the manifest to the roof; the roof mast; Bloats in the Ward; its three sites |
-| Kill the PA | signature side | the PA loop drawing them |
-| Lights On, Misdrop, Light the Pad | shared side | the Field generator; outer areas; the Triage Lot |
-
-### The words (built objectives; source: `ObjectiveDefinitions`)
-
-`{place}` is the drawn site, `{to}` where a carried item goes.
-
-| Objective | Brief (Control) | Why (HUD) | Done (Control) |
-|---|---|---|---|
-| Secure the Site | We lost the perimeter at {place}. Take it back and hold it so the helicopter can land. | Control needs the perimeter back to land | Perimeter is ours again. The helicopter has a way in. |
-| Sanitize the Pens | The checkpoint's screening tents at the Pens are full of people who never got cleared. They will get up. Burn all three before the airstrike. | Bodies in the screening tents will get up | The tents are burning. Nobody in the Pens is getting back up. |
-| Restore Comms | We are blind past the Gate and can't call the helicopter in. Get the radio mast at {place} working, then hold it. | No mast, no way to call the helicopter | Signal is back. We can see past the Gate and call the helicopter. |
-| Confirm Casualties | Heavy Infected are massing in {place}. Left alone they overrun the landing pad. Put them down. | The heavies will overrun the landing pad | The heavies are down. The landing pad is safe from that side. |
-| Recover the Record | The checkpoint's screening record is at {place}. We need to know who got through. Carry it to {to}. | Control must know who got through the checkpoint | Record sent. Now we know who got through before it fell. |
-| Silence the Alarm | The Gate siren has been running since the checkpoint fell, and it is drawing every Infected in the district. Shut it off. | The Gate siren is drawing Infected to you | Siren is off. Fewer of them will come to the Gate now. |
-| Lights On | You are fighting blind and the helicopter needs light to find you. The generator at {place} still works. Start it. | The helicopter needs light to find you | Lights are on. The helicopter can see you, so supplies come sooner. |
-| Misdrop | The helicopter put a supply pallet down in the wrong place: {place}. Get to it before the Infected swarm it. | Your supplies landed in the wrong place | Pallet is yours. Take what you need. (Late: "Too late. The Infected swarmed the pallet. It is gone.") |
-| Clear the Spitters | Spitters at {place} are shelling the landing pad, so the helicopter can't drop supplies. Kill them fast. | Spitters are shelling the helicopter's landing pad | Spitters are down. The supply drop we were holding is yours. (Late: "Out of time. The Spitters dug in. No supply drop.") |
-
-### The Warden in the main objective (built 2026-11-16, not played)
-
-Owner, 2026-11-16: "I want the boss to be more a part of the objectives, because right now
-it just feels like a separate event." The Warden is now the main objective's last act, at
+The Warden is the main objective's last act (owner: part of the objective, not a separate
+event), at
 its site (`Config.Objectives.Boss`, each main row's `Boss` block in `ObjectiveDefinitions`,
 `Rules/BossAct`, `ObjectiveService`, `IndexService.arrive`).
 
@@ -682,11 +889,47 @@ Mile 14's boss in its own objectives.
 
 ## Missions
 
-Every mission is a 600 x 600 map with up to five height levels, built in code (layout and
+Every mission is a map built in code (Delta 600 x 600, Mile 14 640 x 900) with up to five height levels (layout and
 coordinates: [LEVELS.md](LEVELS.md); look: [STYLES.md](STYLES.md)). Each has four to six named
 landmarks, three objective sites, one Index entry, one helo pad plus an alternate, two story
 spots and two to four stores. Lighting moves with the corridor: evening at Delta, full dark at
 Mile 14, dawn at Kestrel. The burning skyline is the districts that already got their Burn.
+
+**Picking a mission (loop sprint 1, 2026-11-20; design:
+[superpowers/specs/2026-11-20-game-loop-design.md](superpowers/specs/2026-11-20-game-loop-design.md)).**
+On the Carrier, the watch officer's "Show me the missions." opens the paper map and the Mission
+Board: one card per mission in `src/shared/MissionCatalog.luau` (a row: id, name, district,
+layout file, objective pool, boss, line, players, an optional `Window` for events and an
+optional own `Place`). **Squads (sprint 2):** every soldier on the Carrier is in a squad, alone
+or up to four (`Rules/Party`, `PartyService`, `PartyUI`). P opens the squad panel: INVITE a
+soldier on the Carrier, or friends anywhere through Roblox (`LaunchData` `party:<leader>:<job>`:
+they join on arrival, or are offered a flight to the leader's Carrier), LEAVE, and KICK for
+the leader. The leader's DEPLOY picks the mission and starts `Config.Lobby.Party.DeployWait`
+(15 s); a member's DEPLOY is READY; the squad flies together when all are ready or the time
+runs out, bots filling the empty seats. The deck rings no longer board
+(`Config.Lobby.Launch.RingsBoard = false` puts them back). One match place builds any mission: the lobby stores
+
+**Reasons to pick a mission (loop sprint 4, 2026-11-20; unplayed).**
+- **Its own pay:** a catalog row's `Pay` (Mile 14: Win 140, Partial 70; Delta keeps
+  `Config.Merits`), a Secured district x0.25 (`Rules/Economy.payFor`).
+- **HARLAN Orders:** one shared goal at a time, rows in `Config.War.Orders` with a window
+  (`Rules/Orders`): its card is gold and tagged ORDER on the Mission Board, its words sit under
+  the officer's line, and its district's missions pay `PayBonus` more (+25%,
+  `Economy.boosted`). The first: "Push Mile 14 to 50% this week" (2026-11-21 to 11-29). Not
+  built: the merits for everyone when an order is reached (needs a claimed list on the record).
+- **District unlocks:** the record counts missions won per district (`wins`, save version 3,
+  counted with the pay); an item row's `Unlock = { District, Wins }` opens its sale
+  (`Rules/DistrictUnlock`, checked on the stored record by `RecordService`; a refused buy says
+  "Win 3 missions at MILE 14 first."). First two: the **M2010** after 3 Mile 14 wins, the
+  **M249** after 3 Delta wins (tuning). Attachments do not read `Unlock` yet (Nova's
+  `AttachmentUnlock`; heads-up).
+`{ mission, party }` in MemoryStore (`Config.Missions.LaunchMap`) under the reserved server's
+PrivateServerId before the teleport, and the match reads it at boot (`Missions/init`,
+`Rules/MissionPick`: the launch record, else the Workspace `Mission` attribute, else Delta;
+a failed read builds Delta and says so in the log). Each mission file carries its own frame,
+pads, boss route, hold point, blocks and which of Delta's builders run
+(`MissionTypes.Mission`: `Size`, `Landing`, `Extract`, `AltPad`, `Boss`, `Hold`, `Parts`,
+`Features`). A new mission is a catalog row, a layout file and an objective pool.
 
 ### Checkpoint Delta (built)
 
@@ -704,10 +947,37 @@ Mile 14, dawn at Kestrel. The burning skyline is the districts that already got 
   smoke, siren silent. Contained: all lamps, Depot pad permanent, intact humvee with
   headlights at the Gate, wind instead of siren.
 
+### Mile 14 (grey frame, 2026-11-20; unplayed)
+
+- **The map:** the Blender v2 layout (owner 2026-11-20), 640 x 900, in grey blocks
+  (`Missions/Mile14Data.luau`, from `assets/3d/build/mile14_v2.py`; pictures
+  `assets/3d/build/previews/mile14_v2_*.png`). A six-lane interstate deck at 12 jammed with 24
+  sealed buses (6 burning), the Overpass span and county road at 26 with four interchange
+  ramps, the Culvert under the deck, the tanker jackknife, the Toll Plaza, the Rest Stop
+  (west) and the Weigh Station (east) at ground level, the water tower knoll.
+- **One way, at night, quiet:** land on the Toll Plaza's admin lot (130, 12.6, 310), get out
+  at the Rest Stop's pad (-262, 0.6, -195), about 640 studs south. Nova's awareness system
+  plays here (`Config.Awareness.Missions.mile14`).
+- **Main objectives** (`ObjectiveDefinitions.Maps.mile14`): **Burn the Buses** (its own: three
+  sealed buses in the jam, the Sanitize module with its own words), Secure the Site (the
+  Overpass, the toll plaza, the rest stop), Restore Comms (the water tower), Confirm
+  Casualties (the weigh station), Recover the Record (the toll office to the Overpass).
+- **Side objectives:** **Kill the Horn** (its own: a stuck bus horn that wakes the Infected,
+  a 200-stud noise every 6 s until killed; the SilenceAlarm module with `Target`, `Noise`;
+  the siren sound stands in for a horn), Lights On (the weigh station's generator), Misdrop,
+  Clear the Spitters.
+- **Boss:** the Warden stands in until the Driver (owner 2026-11-20; design in
+  `docs/sprints/SPRINT_20_MILE14.md` > The Driver, to be refreshed in loop sprint 2b). He
+  comes from a site's `BossFrom` where it has one, else from open ground nearby; with the
+  pools off he walks north up the lane from the south barricade.
+- **Cover (loop sprint 5):** pine clumps and brush in the four fields (about 90 pines, 60
+  shrubs; seeded, clear of roads, lots, pads and objectives; `Mile14Data`).
+- **Not yet:** the kit art (booths, canopies, span mesh, gantries, signs, cars, skyline),
+  sleepers placed at posts.
+
 ### Awareness (the quiet missions)
 
-Nova, 2026-11-11: Mile 14 is played quiet: "we go in quiet, do what we have to, if we mess up
-and it goes loud then its gonna be rough". On a mission in `Config.Awareness.Missions` (Mile
+Nova's design: Mile 14 is played quiet, and going loud is rough. On a mission in `Config.Awareness.Missions` (Mile
 14) every Infected is in one of five states (`Shared.Rules.Awareness`, `EnemyService`):
 
 | State | Does | Notices |
@@ -732,46 +1002,6 @@ and it goes loud then its gonna be rough". On a mission in `Config.Awareness.Mis
   while it is quiet; an objective's or a pallet's waves still come chasing. Going loud (the
   horn, spawns) and the suppressor are next (steps 2 and 4 of the plan).
 
-### Mile 14 (not built)
-
-- **Was:** the evacuation convoy out of Harlan, stalled where the highway crosses the county
-  road. Buses sealed with the bitten aboard; the drivers went over the rail.
-- **Sites:** the Overpass (high, narrow, two approaches, Hockers arc up); the Toll Plaza
-  (lane barriers make chokepoints, booths block sight); the Rest Stop (low, open on all
-  sides, pumps burn when hit).
-- **Primaries:** Secure, Sanitize (sealed buses), Recover the Record, Restore Comms (water
-  tower), Confirm Casualties (Hockers on the deck), Open the Route (lead bus), Evacuate (diner).
-- **Index:** the Bloat bursts out of the lead bus in the Jam and comes down the ramp. Its
-  death cloud sits on the main route.
-- **Story spots:** highway sign hand-amended "HARLAN 14 – NO ENTRY – QUARANTINE IN EFFECT";
-  toll booth radio log ending "they're opening the buses, don't let them".
-- **Band dressing:** Lost: full dark, pumps burning, stuck horn. Held: Toll floodlights,
-  pumps out, one lane cleared through the Jam. Contained: lane lights, sign amended "ROUTE
-  OPEN – HOLD SOUTH", a convoy truck idling at the toll.
-
-### Aid Station Kestrel (not built)
-
-- **Was:** a high school turned forward aid station. Triage kept treating the bitten; the
-  wards became the outbreak. Beds in rows, every one empty, every restraint cut.
-- **Sites:** the Ward (enclosed, two mouths, Shedders among the beds, no room to kite); the
-  Triage Lot (tents as cover, open to the field, Hockers lob from the bleachers); the Roof
-  (highest, one stair up, Runners climb everything).
-- **Primaries:** Secure, Sanitize (Ward beds), Evacuate (the "ALIVE INSIDE" payoff), Recover
-  the Record, Restore Comms (roof), Confirm Casualties (Bloats in the Ward). Not Open the Route.
-- **Index:** the Patient comes out of the Morgue's isolation bay and arrives through the
-  Triage Lot.
-- **Story spots:** triage whiteboard "BITTEN → WARD B", "WARD B" crossed out, "ALL" written
-  over; gym roof painted "ALIVE INSIDE" for the helos, paint still fresh.
-- **Band dressing:** Lost: tents burning, PA looping. Held: Field lights, PA silent, hesco at
-  the Ward doors. Contained: generator hum, a medical tent re-pitched with a Stores crate,
-  "EVAC'D" painted under "ALIVE INSIDE".
-
-### Harlan Yard and Harlan Reservoir Station (canon, not scheduled)
-
-Harlan Yard (rail yard; Index the Lineman; Kites first appear). Harlan Reservoir Station (the
-dam and research station; Index the Specimen; Growths everywhere). When they exist the
-operation is five missions and Second Pass moves after the Reservoir.
-
 ## Index hosts (bosses)
 
 One per district, called by completing the Primary, arriving from a canon entry so the squad
@@ -793,40 +1023,76 @@ A boss is an Infected definition with `Boss = true`, a health bar, an entry path
 mechanic hook (`IndexService`, `EnemyService.spawnBoss`, `BossBarUI`); the Bloat and the
 Patient reuse the frame. Index hosts never dismember: their plates are the mechanic.
 
-### The Warden (built; `Config.Index.Warden`, `IndexService`, [SPRINT_19_WARDEN.md](sprints/SPRINT_19_WARDEN.md))
+### The Warden
 
-- **Entry.** Since 2026-11-16 he comes to the main objective partway through it (Objective
-  pools > The Warden in the main objective). With `Config.Objectives.Boss.Enabled = false`
+`Config.Index.Warden`, `IndexService`, [SPRINT_19_WARDEN.md](sprints/SPRINT_19_WARDEN.md).
+
+- **Entry.** He comes to the main objective partway through it (Objective pools > The
+  Warden in the main objective). With `Config.Objectives.Boss.Enabled = false`
   he comes after it instead: he spawns beyond the Gate, the Gate opens (radio) and he walks
   the screening route: Gate lane, bus line, Inner Gate, under the bridge, the Apron, then the
   hunt (walk times out after 75 s). A member within 90 studs during the walk gets the
   sighting line. Radio lines: LORE.md.
-- **Body.** 7,000 hp at scale 1.9, +33% per extra living player (the one exception to "more
-  Infected, not tougher": one body cannot be more bodies). Headshot x2 once the helmet is off.
-- **Plates** (one rule): helmet 300, chest 400 (was 500 until 2026-11-10), back 400 (the flank), shoulders 300 each,
-  shield 600. A round into a plate does 25% to the plate and nothing to the body; a round into
-  a limb whose plate is gone does 150%. At half a plate cracks (yellow pip); at zero it flies
-  off, he staggers 1.5 s. HUD order: HELM, CHEST, BACK, L SHLD, R SHLD, SHIELD.
+- **Boss pass** ([FUN_WARDEN.md](sprints/FUN_WARDEN.md), not yet played): he
+  arrives over the top (Control's warning, a 2.5 s ring, a dive onto it: 25 and knocked down
+  inside 14 studs, the screen shakes, he roars, the boss bar slams in, his fight loop starts);
+  never flinches from rounds; turns at 150°/s (260° through a windup, locked 0.35 s before the
+  blow); a keyed heavy stride whose rate follows his speed, a boot and a camera shake on each
+  heel strike; impacts shake the screen; every Charge draws its lane. Stage 2 (66%) opens the
+  **Quake** (fists up 1.6 s, a 36-stud ring, then 2 rings at 26 studs/s: 30 and knocked down;
+  jump, roll or be outside; every 14 s) and his charges go through props up to 8 studs a side
+  (back next run). Stage 3 (33%) opens the **Rampage** (three Charges back to back at whoever
+  is furthest). Whoever stands still 4 s is the Leap's first pick.
+- **Body.** 5,000 hp at scale 2.2 ([WARDEN_AGGRESSIVE.md](sprints/WARDEN_AGGRESSIVE.md)),
+  +50% per extra living player (the one exception to "more Infected, not tougher": one body
+  cannot be more bodies). Headshot x2
+  once the helmet is off. Walk 12 studs/s (13 below 66%, 15 in the rage; the soldier walks 16).
+  The reach distances below were written at scale 1.9; at 2.2 each is about 16% longer.
+- **Plates** (one rule): helmet 200, chest 300, back 400 (the flank and the weak spot),
+  shoulders 200 each, shield 400. A round into a plate does 25% to the plate and nothing to
+  the body; a round into a limb whose plate is gone does 150%. At half a plate cracks (yellow
+  pip); at zero it flies off, he staggers 1.5 s. HUD order: HELM, CHEST, BACK, L SHLD, R SHLD,
+  SHIELD.
+- **Weak spot: his back** (the plate over his radio pack, `Plates.Back.WeakSpot`). A round
+  into it counts whole (not 25%), pops the headshot marker, and three quarters of it goes
+  through to his body; it ignores his guard; breaking it staggers him 3 s. Control names it 10 s into
+  the fight.
 - **Attacks**, each announced by his words ("WARDEN: ...") on the boss bar. Where you stand picks
-  his move: **Bash** (0-15 studs, 70° arc, 40, 0.9 s windup; roll through it); **Shield
+  his move: **Bash** (0-15 studs, 70° arc, 40, 0.7 s windup; a shield punch with a step, no
+  spin; roll through it); **Shield
   Sweep** (17 studs, 180°, 25 and a shove; get behind him); **Overhead Slam** (17 x 6 line at
   a body that stopped moving in reach, 60, 1.3 s; step aside); **Ground Pound** (23-stud ring
   drawn through the 1.4 s windup, 30 and 2.4 s knocked down; beat it with distance or a
   ledge, not the roll; he is stuck 2.6 s after); **Stomp** (a body within 7 studs: 8.5-stud
-  disc, 20 and 1.8 s knocked down, 0.6 s; roll it); **Charge** (19-45 studs, 1.2 s windup,
-  45 studs at 40/s, 35; hard cover stuns him 3 s); **Gas Canister** (phase 2+, or any phase
-  at a perched member; furthest member within 70, 10 + a 9-stud puddle 6 s); **Guard** (his
+  disc, 20 and 1.8 s knocked down, 0.6 s; roll it); **Leap** (at the member furthest from the
+  rest, 22-70 studs, every 9 s, 7 below 60%, 5 in the rage: a 0.8 s crouch with the
+  9.5-stud ring already on the ground where they stood, 0.8 s in the air, 35 and 1.2 s
+  knocked down; leave the ring, the roll does not beat it; stay together);
+  **Charge** (19-60 studs, 1.2 s windup,
+  45 studs at 40/s, 35; hard cover stuns him 3 s); **Gas Canister** (every phase; furthest
+  member within 70 when that member is past his reach, 10 + a 9-stud puddle 6 s);
+  **Volley** (the rage only: a canister at every member within 70, every 12 s); **Guard** (his
   plates took 150 inside 3 s: shield up 2.5 s, half speed, frontal plates take 25%; flank
-  him). He walks a beat between attacks (1.0 / 0.7 / 0.4 s by phase), never repeats one
-  except the Bash, never chains two knockdowns. Limb attacks miss a rolling body; the Pound
-  and the Charge do not. Knocked down: no moving, firing or abilities; 1 s immunity on the
-  get-up (`Config.Knockdown`). Bots step out of the ring and the lines.
-- **Phases** by body health: below 60% the **Riot Call** (6 Walkers + 2 Runners, +3 Walkers
-  per extra player); below 25% a second call, charges every 5 s, walk 11. While he is up the
-  wave loop spawns at x1.5 interval, 8 fewer alive, no Brutes.
+  him). Out of reach the order is Volley, Leap, Charge, Canister (`Rules/WardenBrain.farPick`).
+  He walks a beat between attacks (0.5 / 0.35 / 0.15 s by phase), never repeats one
+  except the Bash, never chains two knockdowns (the Leap counts). Limb attacks miss a rolling
+  body; the Pound, the Leap and the Charge do not. Knocked down: no moving, firing or
+  abilities; 1 s immunity on the get-up (`Config.Knockdown`). Bots step out of the rings and
+  the lines.
+- **Phases** by body health (`Rules/WardenBrain.phase`): below 66% stage 2: the stage roar (everyone within 20 studs thrown back) and the **Riot Call** (6
+  Walkers + 2 Runners + 1 Brute, +3 Walkers and +1 Brute per 2 extra players), walk 13, leap
+  every 7 s, the Quake, charges through props; below 33% the **rage**: the roar, a
+  second call (6 Walkers, 3 Runners, 2 Brutes), his words "WEAPONS FREE", Control's warning,
+  walk 15, charges every 5 s, leaps every 5 s, the Volley, the Rampage. While he is up the wave
+  loop spawns at x1.5 interval, 8 fewer alive, no ambient Brutes (his call still brings them).
 - **Kill.** Priority pallet at the corpse, everyone alive healed and re-armed; extraction
   opens (with him in the objective: once its work is done too). Corpse stays 8 s.
-- **Target fight** 100-120 s for a squad that works the plates; retune plate health first.
+- **Target fight** 90-120 s for a solo squad with the adds, 2-3 minutes for four players,
+  more of it moving than shooting. Fallbacks: `Leap.Enabled = false`; `Animations.Infected.Warden.attack
+  = "warden_bash"` puts the old spinning Bash clip back; the boss pass's switches are listed
+  in FUN_WARDEN.md > Off switches.
+- **Dev.** F1 > THE WARDEN: "In front of me" (F9; the full entrance, 30 studs ahead), "To
+  stage 2 (the call)", "To stage 3 (the rage)", "Quake now", "Rampage now", "Kill him".
 
 ## The Infected roster
 
@@ -836,10 +1102,10 @@ lore-accurate poses, no zombie green (OWNER.md); build sheets in [CHARACTERS.md]
 
 | Form | Role | Look | First seen | Engine |
 |---|---|---|---|---|
-| Walker | slow melee | still a person, grey, old wounds closed | Delta | built, 55 HP |
-| Runner | fast melee | dense rebuilt muscle, tendons like cable | Delta | built, 35 HP |
-| Brute | melee tank | bone overgrowth, plated shoulders | Delta | built, 260 HP, headshot x1.25, legs never break |
-| Hocker | ranged | lobs caustic fluid; throat a swollen sac | Delta late | built, 75 HP |
+| Walker | slow melee; the crowd grabs | still a person, grey, old wounds closed | Delta | built, 60 HP |
+| Runner | fast melee; pounces and pins, in packs | dense rebuilt muscle, tendons like cable | Delta | built, 40 HP |
+| Brute | melee tank; plated front, charges | bone overgrowth, plated shoulders | Delta | built, 500 HP, headshot x1.25, legs never break |
+| Hocker | ranged; barrage, lobs over cover | lobs caustic fluid; throat a swollen sac | Delta late | built, 80 HP |
 | Bloat | exploder, area denial | gas-swollen, pale belly, veins showing | Mile 14 Index, common Kestrel | on-death cloud |
 | Shedder | splitter | body seamed into segments, extra limbs | Kestrel | on-death spawns 2-3 Crawlers |
 | Crawler | swarm | shed segment, fast, fragile | Kestrel (from Shedders) | small rig, no attack clip needed |
@@ -852,7 +1118,37 @@ type; `EnemyProjectileService` owns lobs and puddles and makes no parts: clients
 spit, docs/STYLES.md §8). Still to add as forms need them:
 `onDeath` (cloud | split), `mover` (none | flyer).
 
-## Hit feedback on the Infected (owner: it must feel satisfying)
+Bodies (2026-11-20): the Infected pass through soldiers and each other, so a Runner never
+shoves a soldier and a pile never lifts one into the air; they still stop at `AttackRange`
+to hit. Soldiers (players and bots) sit in their own collision group (`SoldierCollision`,
+`Config.Player.Collision`; `BlockInfected = true` makes the bodies solid again). The spit
+casts in `ShotGroup`: other Infected never stop it, soldiers do.
+
+### Moves
+
+Each form forces its own answer, with a tell (a sound and a pose) before it lands. Numbers in
+`Config.InfectedMoves` (`Enabled = false` turns them all off; each move has its own switch),
+the before/after numbers and the reasoning in [FUN_ENEMIES.md](sprints/FUN_ENEMIES.md).
+
+- **Brute: plated front and the charge.** Rounds on the head, torso or arms from the front do
+  40%, in the back 125%, the side and legs 100%; blasts are never plated (the hit shows as a
+  plate hit). At a soldier 14-40 studs off in the open: stops, leans back and bellows 1.1 s,
+  then runs through them at 36 studs/s and 12 past: 25, knocked down 1.4 s, thrown off the
+  side of the line. Hard cover stuns him 2.5 s. Answer: leave the line, cover, flank, explosives.
+- **Runner: pounce and pin, in packs.** At 6-18 studs: a crouch and a shriek 0.55 s, a leap at
+  where you stood (step aside or roll). Caught: 10, pinned on your back (knocked down, no
+  shooting) up to 5 s, 8 a second, until a squadmate hits it or shoves it (F). Bots shoot a
+  pinning Runner first; Control names who is pinned. The director's Runners come with 1-2
+  pack-mates.
+- **Hocker: barrage and lob.** Each spit is three globs (on you and 7 studs either side), each
+  with a puddle (7 studs, 7 s, 12/s). With no clear line but open sky it lobs high over the
+  cover (1.7 s flight). Backs off inside 70% of its 45-stud stand-off.
+- **Walker: the grab.** A claw landing with 3+ Infected within 7 studs of you slows you to 60%
+  (10% less per extra body, 30% floor) for 1.2 s; a roll slips it.
+- Dev: F1 > INFECTED > THE MOVES places each form where its move fires; "Moves off" for the
+  session.
+
+## Hit feedback on the Infected
 
 - **Dismemberment** (`Config.Enemies.Dismember`, `GoreService`). The joint above the part a
   round hits keeps a running damage total; at the form's MaxHealth x the joint's fraction
@@ -869,30 +1165,3 @@ spit, docs/STYLES.md §8). Still to add as forms need them:
   every 0.6 s; a headshot jerks harder and slows it for 0.15 s; the Brute flinches only from a
   `Heavy` gun (shotgun, DMR) or a blast.
 
-## Build order (what is left)
-
-Done: data-driven enemies, Resupply and the loadout, ADS and headshots, the run state machine
-(`Lobby → Insert → Explore → Primary → Index → Extract → Ended`, Co-op Sprint A), bots, the
-Warden. Next, each one playtest-verified feature:
-
-1. **Objective pools.** First slice built 2026-11-11, unplayed (Objective pools above). Left on
-   Delta: Open the Gate, Sealed Bus, Light the Pad, Sample Run, Headcount, Recover Logs.
-2. **Operation.** `RunManager` adds next mission / Stand Down / Second Pass with mission
-   index and pass count; `OperationService` owns the Burn and overrun; extraction becomes the
-   called 90 s hold with waves.
-3. **Containment Board.** `WarMapService` (one shared DataStore board, after F9), band
-   overrides at mission load, the board screen between runs.
-4. **Mission definitions.** `src/shared/StageDefinitions.luau`: landmark/hill/dressing
-   tables, lighting, sites, Index entry, pads, stores, spawn phases, form unlocks, band
-   dressing; `ArenaService` builds whichever is active. Then Mile 14 + Bloat, Kestrel +
-   Shedder/Crawler + Patient, Stand Down and Second Pass, Harlan Yard and the Reservoir.
-
-Co-op Sprint B (shared-pickup rules, event routing) threads through as each system is touched.
-
-Not scheduled:
-- **Meta between runs:** the Containment Board plus unlocks (call-ins, field upgrades, guns;
-  launch target 5 primaries + 3 sidearms, 4 throwables, 2 heavy call-ins, 2 specials; +3-4
-  guns per drop). Today every call-in is unlocked from run 1.
-- **Bots:** vaulting, the other call-ins (Shrike, emplacements, supply), a voiced radio line.
-- **Sound:** Control's voiced radio lines, the Burn, pickup one-shots
-  (`assets/audio/README.md`).

@@ -26,8 +26,8 @@ here and add the HISTORY row.
 
 Re-checked 2026-11-10 (maintenance pass; numbers from `main` that day).
 
-1. **`ArenaService` (1,355 lines) still builds Delta's bespoke pieces**, with the layout tables
-   in `Missions/Delta.luau` (1,013). Two more missions are next. (F6, step 2)
+1. **`ArenaService` still holds Delta's bespoke builders** (roads, highway, landmarks, perches, gantry), now switched by the mission's `Features`; the layout tables
+   are in `Missions/Delta.luau` and `Missions/Mile14Data.luau`. (F6, step 2 done 2026-11-20)
 2. **Upgrades are wired in by name.** `hasUpgrade(...)` is called at 7 sites across
    `ProjectileServer`, `KitService` and `CallInService`. Guns and call-ins will be added,
    swapped and cut, so each new item means editing combat code. (F7)
@@ -69,9 +69,9 @@ hit broadcast to every client.
 
 | # | Item | Before | Notes |
 |---|---|---|---|
-| F6 | **Mission data split** (concern 1): a generic builder plus one data file per mission (`StageDefinitions`, PROGRESSION build order). | objective pools (next on the roadmap) | **Step 1 done 2026-11-09:** Delta's layout tables moved to `src/server/Missions/Delta.luau` (shapes in `Missions/MissionTypes`, registry `Missions`, order in `Config.Operation.Missions`); ArenaService builds `Missions.current()`. **Next:** Delta's bespoke builders and its Config positions (LZ, spawn pads, objective zone, Warden entry, sky) into the mission file, then a clearable mission model for the transition |
+| F6 | **Mission data split** (concern 1): a generic builder plus one data file per mission (`StageDefinitions`, PROGRESSION build order). | objective pools (next on the roadmap) | **Step 1 done 2026-11-09:** Delta's layout tables moved to `src/server/Missions/Delta.luau` (shapes in `Missions/MissionTypes`, registry `Missions`, order in `Config.Operation.Missions`); ArenaService builds `Missions.current()`. **Step 2 done 2026-11-20 (loop sprint 1):** the mission is picked by `MissionCatalog` (order: `Config.Operation.Missions` is gone) and resolved at boot from the lobby's MemoryStore launch record (`Missions/init`, `Rules/MissionPick`); each mission file carries its frame, pads, boss route, hold point, blocks and `Features` (which of Delta's builders run). **Next:** sky per mission from the file |
 | F7 | **Weapon and upgrade hooks** (concern 2): each definition carries its behaviour (`onFire`, `onHit`, `onKill`, ...); combat code calls them generically. Also the support-weapon carry and the explosive projectile hook. | the support-weapon call-ins or the next new gun | |
-| F9 | **Save service**: one server module for per-player data (ProfileStore or similar: session locking, no data loss on crash), a version number in the save format from day one. | unlocks or the Containment Board | the board itself is below |
+| F9 | **Save service**: one server module for per-player data (ProfileStore or similar: session locking, no data loss on crash), a version number in the save format from day one. | unlocks or the Containment Board | the board itself is below. **2026-11-19:** every per-player save is versioned and migrated on read (`Rules/SaveSchema`), written only with UpdateAsync, never written when unreadable or newer; no session lock and why: [SAVES.md](SAVES.md) (the steps to change a save) |
 | F10 | **Lobby place** ([MULTIPLAYER_READINESS.md](MULTIPLAYER_READINESS.md) decision 7) and split `Config` by domain so the lobby loads no match-only tuning. | after F9 | lobby v1 built (Nova, `src/lobby/`) and the start place; teleports in and home per `docs/LOBBY_MATCH_HANDOFF.md`; it saves each signed Loadout (`LoadmasterService`, DataStore `LoadmasterLoadouts`, versioned) as a stand-in F9 should absorb; the `Config` split not started |
 | F11 | **One frame scheduler**: merge the per-system `Heartbeat` connections into one ordered step (concern 3). | when the MicroProfiler shows script time is the problem | measure first |
 

@@ -73,7 +73,7 @@ Rectangles are `{x0, y0, x1, y1}`; points are `{x, y}`. Labels are short for Sur
 - Title: HARLAN CORRIDOR. Under it: QUARANTINE AREA - SHEET 1.
 - Legend: ROAD, RAIL, RIVER, QUARANTINE LINE, DISTRICT BORDER, BURNED.
 - North arrow: N, top right.
-- Stamp (bottom corner, red): HARLAN CONTROL - PLOT COPY - DO NOT REMOVE.
+- Stamp (bottom corner, red): HARLAN CONTROL - MAP ROOM COPY - DO NOT REMOVE.
 - Grease pencil on the paper (the map is used, not printed clean): the five district names
   are the printed map's; the cordon, the district borders, BURNED, the helicopter track and the
   CARRIER mark are grease pencil over it. One pencilled note in the margin: CONTAINED IS NOT

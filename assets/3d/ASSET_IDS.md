@@ -100,6 +100,8 @@ Lobby meshes (12 `env_fallow_*`, 4 `veh_lantern_*`) uploaded 2026-11-09 to the g
 | veh_lantern_trim | 120258286814432 | 120432139146773 | 7.94 x 11.65 x 30.05 | Lantern (`LanternBird`); offset in MeshAssets |
 | veh_lantern_rotor | 72210514497412 | 112438582167862 | 38.01 x 1.14 x 38.01 | Lantern (`LanternBird`); offset in MeshAssets |
 | veh_lantern_tail_rotor | 130131221968255 | 134128773314348 | 0.40 x 5.20 x 0.60 | Lantern (`LanternBird`); offset in MeshAssets |
+| veh_atv_body | 104885762277336 | 127745588345820 | 3.70 x 3.29 x 7.55 | the ATV's body (`atv.py`, `VehicleBody`); origin at the chassis centre, offset in MeshAssets; exported pre-mirrored in X (v3, 2026-11-17: panels `olive_d`) |
+| veh_atv_wheel | 112009155792092 | 77549740642291 | 1.09 x 1.99 x 1.98 | its wheel, about the hub, a right-side wheel (VehicleBody turns the left two half round); built from primitives |
 | dep_doorman_base | 88745683715018 | 105696327827016 | 4.05 x 1.93 x 4.13 | the Doorman's tripod (`doorman.py`, `SentryService`, `Config.CallIns.Doorman.Model = 2`); origin on the ground, offset in MeshAssets; exported pre-mirrored in X |
 | dep_doorman_cradle | 70576240552981 | 127041957980191 | 1.36 x 0.96 x 1.09 | its yoke; origin on the traverse axis 1.9 up; yaws |
 | dep_doorman_gun | 75248273049381 | 86670337644554 | 1.95 x 1.53 x 5.54 | its gun, ammo can and sensor head; origin at the trunnion 2.6 up; pitches; muzzle 3.52 ahead |
@@ -236,3 +238,38 @@ owned by the group (`upload_models.js`, Open Cloud). Their model ids are in
 `src/shared/CarrierKitMeshes.luau`; MeshAssets loads each model's MeshPart with
 `InsertService:LoadAsset` (`modelId`), so no MeshId is recorded. Placed by `CarrierV2`
 (`docs/sprints/CARRIER_V2.md` > In the lobby).
+
+## Optics
+
+Free models for the M16A4's optics, all by **notcplkerry** on Sketchfab under **CC BY 4.0**
+(commercial use allowed; credit the author). The downloads (.blend, kept out of git) are cut
+once by `build/optics.py --prepare` into `source/opt_<id>.obj`; the build puts each on the
+M16 (`wpn_m16_<id>`), uploaded as group Model assets (`build/upload_models.js`, ids in
+`build/carrier_uploaded.json`), loaded by MeshAssets `modelId`.
+
+| Mesh | Model asset | Size | Optic |
+|---|---|---|---|
+| wpn_m16_acog | 112543898025888 | 0.25 x 1.23 x 3.08 | ACOG 4x (1,779 tris with the rifle) |
+| wpn_m16_compm2 | 108280623635703 | 0.25 x 1.28 x 3.08 | CompM2 (1,982 tris) |
+| wpn_m16_reddot | 80921148772778 | 0.25 x 1.24 x 3.08 | Red dot, the RMR on a riser, its dot 0.1 above the irons (1,150 tris; 2026-11-20, was 88119224076426) |
+
+Sources:
+
+| Optic | Model | Licence |
+|---|---|---|
+| ACOG 4x (`acog`) | [Low-Poly Trijicon ACOG scope & RMR reflex sight](https://sketchfab.com/3d-models/low-poly-trijicon-acog-scope-rmr-reflex-sight-bdc3487c2b5b40148347e1f68c2f1c86) (the TA01, ~1.8k tris with the RMR) | CC BY 4.0, notcplkerry |
+| Red dot (`reddot`) | the RMR in the same pack | CC BY 4.0, notcplkerry |
+| CompM2 (`compm2`) | [Low-Poly Aimpoint ECOS-N / CompM2](https://sketchfab.com/3d-models/low-poly-aimpoint-ecos-n-compm2-78e7674c782446aebdb10e89f903b397) (~1.3k tris; the ECOS-N is a CompM2 on another mount) | CC BY 4.0, notcplkerry |
+
+## Attachment models (free Creator Store meshes, 2026-11-20)
+
+Referenced, not uploaded by us: `Shared.Attachments.VisualRegistry.MODELS`, built at boot by
+`AttachmentMeshService`. Free (price 0), no scripts. Each comes facing the gun's way (seen in Studio 2026-11-20);
+the applier scales it to its `length`. The CompM2 tried (76899261380970) is not a valid mesh.
+
+| Key | Asset | MeshId | Source |
+|---|---|---|---|
+| att_acog | 430309581 | 430309559 | Meshes/ACOG, pablospanish |
+| att_flash_hider | 430309776 | 430309763 | Meshes/FLASHHIDER, pablospanish |
+| att_vertical_grip | 10865495614 | 10865495504 | Grip Mesh, turohabaneero |
+| att_bipod | 430309677 | 430309657 | Meshes/BIPOD, pablospanish |

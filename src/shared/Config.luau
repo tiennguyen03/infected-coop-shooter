@@ -24,6 +24,7 @@ local Config = {
 		Reload = Enum.KeyCode.R,
 		CallIns = { Enum.KeyCode.One, Enum.KeyCode.Two, Enum.KeyCode.Three, Enum.KeyCode.Four },
 		Loadout = Enum.KeyCode.B, -- the Arms Room menu
+		Party = Enum.KeyCode.P, -- the Carrier: open or close the squad panel (PartyUI)
 		NightVision = Enum.KeyCode.N, -- the helmet's night vision goggles, on and off
 		-- Driving a vehicle (VehicleController): read when the VehicleSeat has no reading of
 		-- its own. Getting on and off is Interact (E); GetOffPad on a gamepad.
@@ -110,7 +111,7 @@ local Config = {
 	-- them; each option names its slot. A gun offers an option when its row has it (the
 	-- suppressor: Config.Weapons.<id>.Suppressor; not the revolver or the Goose).
 	Attachments = {
-		Slots = { "Barrel" },
+		Slots = { "Barrel", "Optic" }, -- Optic: the rows of Config.Optics (Shared.Attachments.Optics)
 		Options = {
 			suppressor = {
 				Name = "Suppressor",
@@ -128,6 +129,1743 @@ local Config = {
 				Volume: number,
 			},
 		},
+	},
+
+	-- Optics for the Optic slot (Nova, 2026-11-18: the M16A4 first, other guns in a later PR).
+	-- One row per optic; Shared.Attachments.Optics builds the typed records from them, and a
+	-- new optic appears by having a row. Bought once with merits at the Loadmaster's EDIT and
+	-- kept on the record for good (Rules/AttachmentRules; never tabs or Robux). On the gun it
+	-- multiplies the gun's own Sight.Zoom and the time into the sights (Weapon.ADS.EnterTime;
+	-- Rules/AttachmentMerge, CameraController). Numbers from the systems designer: the named
+	-- magnification is the final zoom on the M16's 1.35 irons; each costs less than the gun it
+	-- competes with (2, 3 and 4 wins at 120 merits). Fit: per gun it fits, the mesh of that gun
+	-- with this optic on its rail (assets/3d/build/optics.py, from the free models in
+	-- assets/3d/ASSET_IDS.md > Optics) and its sight on that mesh (Rules/Sight: Rear and Front on
+	-- the optic's axis; the zoom is worked out from ZoomMultiplier). WeaponDefinitions.dressed
+	-- reads it for the gun in hand, first person and the EDIT screen.
+	Optics = {
+		reddot = {
+			Name = "Red dot",
+			Description = "No magnification, but the fastest into the sights. Close range, first shot first.",
+			-- The Mossberg's too (attachment system v2): stats only, no Fit row yet, so its mesh
+			-- and sight stay the irons' (the visuals are a later PR for every gun).
+			Guns = { "service_rifle", "shotgun", "smg", "lmg", "pistol", "revolver" },
+			ZoomMultiplier = 1.0, -- 1.35: the irons' picture
+			AdsTimeMultiplier = 0.75, -- 0.11 s
+			Price = 150,
+			-- The dot seen through the glass (DotSightView; Nova, 2026-11-20: "should actually
+			-- have a red dot on it"). Size in pixels at 1080p tall, Glow the soft halo's width.
+			Reticle = { Size = 4, Glow = 5, Color = Color3.fromRGB(255, 48, 40) },
+			Fit = {
+				-- The RMR on a riser, its dot 0.1 above the irons' line (optics.py REDDOT_LIFT):
+				-- the front post sits low in the glass, under the dot (Nova, 2026-11-20).
+				service_rifle = {
+					Model = "wpn_m16_reddot",
+					Sight = {
+						Rear = Vector3.new(0, 0.715, -0.01),
+						Front = Vector3.new(0, 0.715, -1.345),
+					},
+				},
+			},
+		},
+		compm2 = {
+			Name = "CompM2 (M68)",
+			Description = "2x and no slower to raise. The general-purpose sight.",
+			Guns = { "service_rifle", "smg" },
+			ZoomMultiplier = 1.48, -- 2.0 (a sight that is not a scope stops at 2x, Rules/Sight)
+			AdsTimeMultiplier = 1.0, -- 0.15 s
+			Price = 250,
+			Reticle = { Size = 5, Glow = 6, Color = Color3.fromRGB(255, 48, 40) }, -- the 2 MOA dot
+			Fit = {
+				service_rifle = {
+					Model = "wpn_m16_compm2",
+					Sight = {
+						Rear = Vector3.new(0, 0.651, 0.04),
+						Front = Vector3.new(0, 0.651, -0.307),
+					},
+				},
+			},
+		},
+		acog = {
+			Name = "ACOG 4x",
+			Description = "4x for picking off the Infected at range. Slower into the sights.",
+			Guns = { "service_rifle", "lmg" },
+			ZoomMultiplier = 3.0, -- 4.05
+			AdsTimeMultiplier = 1.6, -- 0.24 s, about a scope's ScopeTime
+			Price = 400,
+			Visual = "att_acog", -- its part on a gun without a Fit (VisualRegistry)
+			Fit = {
+				-- A scope: aimed, the scope picture (ScopeView) as on the M110.
+				service_rifle = {
+					Model = "wpn_m16_acog",
+					Sight = {
+						Kind = "scope",
+						Rear = Vector3.new(0, 0.643, 0.097),
+						Front = Vector3.new(0, 0.643, -0.325),
+					},
+				},
+			},
+		},
+	} :: {
+		[string]: {
+			Name: string,
+			Description: string,
+			Guns: { string },
+			ZoomMultiplier: number,
+			AdsTimeMultiplier: number,
+			Price: number,
+			Visual: string?, -- its part on a gun it has no Fit for (Shared.Attachments.VisualRegistry)
+			-- A red-dot sight's dot (DotSightView); nil: none (a scope draws its own, ScopeView).
+			Reticle: { Size: number, Glow: number, Color: Color3 }?,
+			Fit: {
+				[string]: {
+					Model: string,
+					Sight: { Rear: Vector3, Front: Vector3, Kind: string? },
+				},
+			},
+		},
+	},
+
+	-- Attachment system v2 (Nova, 2026-11-20): up to seven slots per gun, each a row here
+	-- (Shared.Attachments.Schema), each option a row (Shared.Attachments.Options; the Optic
+	-- slot's options are Config.Optics' rows), each ammo type a row (Shared.Attachments.AmmoTypes).
+	-- A gun takes the slots whose Families list its row's Family (Config.Weapons.<gun>.Family;
+	-- every gun but the Goose since the rollout of 2026-11-20) and, in each, the options that
+	-- list it. A slot's NameFor gives it another name on one family (the M249's belt box).
+	-- Ammo is defined once per caliber family (Caliber); a shared family's rounds scale each
+	-- gun's own damage (DamageScale) and a round meant for one gun names it (Guns).
+	-- Unlocked once with merits at the Loadmaster's EDIT (Price; 0 = the issued part, always
+	-- owned) and kept for good on the record; never tabs or Robux. Stats only: nothing on the
+	-- gun's model changes yet (a later PR). The merge rule is Rules/AttachmentMerge.merge: an
+	-- option's Deltas each name a stat, an op ("multiply" or "add") and a value; the ammo type
+	-- replaces the gun's damage profile. Stats a delta may name: damage, projectileCount,
+	-- headshotMultiplier, armorPenetration, alertRadius, range, recoil, recoilRecovery,
+	-- moveSpeed, adsTime, zoom, magazineSize, reloadTime, hipSpread (recoil, recoilRecovery,
+	-- moveSpeed, adsTime and zoom are factors on the gun's own: 1 = as issued).
+	AttachmentsV2 = {
+		Slots = {
+			Optic = {
+				Name = "Optic",
+				Order = 1,
+				Families = {
+					"rifle",
+					"shotgun",
+					"smg",
+					"lmg",
+					"dmr",
+					"sniper",
+					"fifty",
+					"pistol",
+					"revolver",
+				},
+				MaxOptions = 4,
+			},
+			Barrel = {
+				Name = "Barrel",
+				Order = 2,
+				Families = {
+					"rifle",
+					"shotgun",
+					"smg",
+					"lmg",
+					"dmr",
+					"sniper",
+					"fifty",
+					"pistol",
+					"revolver",
+				},
+				MaxOptions = 4,
+			},
+			Muzzle = {
+				Name = "Muzzle",
+				Order = 3,
+				Families = { "rifle", "shotgun", "smg", "lmg", "dmr", "sniper", "fifty" },
+				MaxOptions = 4,
+			},
+			Magazine = {
+				Name = "Magazine",
+				Order = 4,
+				Families = { "rifle", "shotgun", "smg", "lmg", "dmr", "sniper", "fifty", "pistol" },
+				MaxOptions = 4,
+				NameFor = { lmg = "Belt box" },
+			},
+			Ammo = {
+				Name = "Ammo type",
+				Order = 5,
+				Families = {
+					"rifle",
+					"shotgun",
+					"smg",
+					"lmg",
+					"dmr",
+					"sniper",
+					"fifty",
+					"pistol",
+					"revolver",
+				},
+				MaxOptions = 5,
+				Ammo = true,
+			},
+			Underbarrel = {
+				Name = "Underbarrel",
+				Order = 6,
+				Families = { "rifle", "shotgun", "smg", "dmr" },
+				MaxOptions = 4,
+			},
+			Stock = {
+				Name = "Stock",
+				Order = 7,
+				Families = { "rifle", "shotgun", "smg", "lmg", "dmr", "sniper", "fifty" },
+				MaxOptions = 4,
+			},
+		},
+		-- Options per slot, the M16A4's (Guns). Base = the issued part: what the slot holds when
+		-- nothing else is fitted (Price 0). IncompatibleWith: ids it cannot be fitted with (the
+		-- rule checks both ways); refused on the server, the reason shown in the menu.
+		Options = {
+			barrel_standard = {
+				Name = "Standard barrel",
+				Description = "The 20-inch barrel it was issued with.",
+				Slot = "Barrel",
+				Guns = { "service_rifle" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			barrel_long = {
+				Name = "Long barrel",
+				Description = "Reaches further, kicks harder, a touch heavier.",
+				Slot = "Barrel",
+				Guns = { "service_rifle" },
+				Price = 150,
+				Deltas = {
+					{ Field = "range", Op = "multiply", Value = 1.15 },
+					{ Field = "recoil", Op = "multiply", Value = 1.10 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 0.95 },
+				},
+			},
+			barrel_short = {
+				Name = "Short barrel",
+				Description = "Handier and softer, but the round falls off sooner.",
+				Slot = "Barrel",
+				Guns = { "service_rifle" },
+				Price = 150,
+				Deltas = {
+					{ Field = "range", Op = "multiply", Value = 0.85 },
+					{ Field = "recoil", Op = "multiply", Value = 0.90 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 1.05 },
+				},
+			},
+			-- The integrally suppressed barrel: the Barrel option every gun already takes
+			-- (Config.Attachments.Options.suppressor: its quiet reach is the gun's own
+			-- Suppressor.Noise). On a v2 gun it also costs range and damage, and leaves no
+			-- thread for a muzzle device. Free, as it always was; the Mossberg keeps it (a saved
+			-- fitting stays good). ClashReasons: what the menu says for each refused pair.
+			suppressor = {
+				Name = "Suppressed barrel",
+				Description = "Quiet: the Infected hear it only close in. Shorter reach, a little less punch, no muzzle device.",
+				Slot = "Barrel",
+				Guns = { "service_rifle", "shotgun", "smg", "lmg", "dmr", "sniper", "pistol" },
+				Price = 0,
+				Deltas = {
+					{ Field = "range", Op = "multiply", Value = 0.80 },
+					{ Field = "damage", Op = "multiply", Value = 0.90 },
+				},
+				IncompatibleWith = {
+					"muzzle_compensator",
+					"muzzle_brake",
+					"m590_muzzle_compensator",
+					"m590_muzzle_breacher",
+					"smg_muzzle_flash",
+					"smg_muzzle_comp",
+					"lmg_muzzle_comp",
+					"lmg_muzzle_brake",
+					"dmr_muzzle_comp",
+					"dmr_muzzle_brake",
+					"sr_muzzle_brake_heavy",
+				},
+				ClashReasons = {
+					muzzle_compensator = "The suppressed barrel has no thread for a muzzle device.",
+					muzzle_brake = "The suppressed barrel has no thread for a muzzle device.",
+					m590_muzzle_compensator = "The suppressed barrel has no thread for a muzzle device.",
+					m590_muzzle_breacher = "The suppressed barrel has no thread for a muzzle device.",
+					smg_muzzle_flash = "The suppressed barrel has no thread for a muzzle device.",
+					smg_muzzle_comp = "The suppressed barrel has no thread for a muzzle device.",
+					lmg_muzzle_comp = "The suppressed barrel has no thread for a muzzle device.",
+					lmg_muzzle_brake = "The suppressed barrel has no thread for a muzzle device.",
+					dmr_muzzle_comp = "The suppressed barrel has no thread for a muzzle device.",
+					dmr_muzzle_brake = "The suppressed barrel has no thread for a muzzle device.",
+					sr_muzzle_brake_heavy = "The suppressed barrel has no thread for a muzzle device.",
+				},
+			},
+			muzzle_flash_hider = {
+				Name = "Flash hider",
+				Description = "The issued birdcage.",
+				Slot = "Muzzle",
+				Guns = { "service_rifle" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			muzzle_compensator = {
+				Name = "Compensator",
+				Description = "Holds the muzzle down. A little louder.",
+				Slot = "Muzzle",
+				Guns = { "service_rifle" },
+				Price = 120,
+				Deltas = {
+					{ Field = "recoil", Op = "multiply", Value = 0.85 },
+					{ Field = "alertRadius", Op = "multiply", Value = 1.05 },
+				},
+			},
+			muzzle_brake = {
+				Name = "Muzzle brake",
+				Description = "Kills the kick. Everything for a block hears it.",
+				Slot = "Muzzle",
+				Guns = { "service_rifle" },
+				Price = 200,
+				Deltas = {
+					{ Field = "recoil", Op = "multiply", Value = 0.75 },
+					{ Field = "alertRadius", Op = "multiply", Value = 1.10 },
+				},
+			},
+			mag_standard = {
+				Name = "Standard 30",
+				Description = "The issued 30-round magazine.",
+				Slot = "Magazine",
+				Guns = { "service_rifle" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			mag_extended = {
+				Name = "Extended 40",
+				Description = "Ten more rounds, a slower change.",
+				Slot = "Magazine",
+				Guns = { "service_rifle" },
+				Price = 150,
+				Deltas = {
+					{ Field = "magazineSize", Op = "add", Value = 10 },
+					{ Field = "reloadTime", Op = "multiply", Value = 1.20 },
+				},
+			},
+			-- A drum and a collapsed stock do not fit together (the drum fouls the short stock).
+			mag_drum = {
+				Name = "Drum 60",
+				Description = "Sixty rounds. Slow to change, heavy to carry.",
+				Slot = "Magazine",
+				Guns = { "service_rifle" },
+				Price = 300,
+				Deltas = {
+					{ Field = "magazineSize", Op = "add", Value = 30 },
+					{ Field = "reloadTime", Op = "multiply", Value = 1.50 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 0.90 },
+				},
+				IncompatibleWith = { "stock_collapsed" },
+				ClashReasons = {
+					stock_collapsed = "The drum fouls the collapsed stock. Fit another stock.",
+				},
+			},
+			grip_vertical = {
+				Name = "Vertical grip",
+				Description = "The sights come back on target faster.",
+				Slot = "Underbarrel",
+				Visual = "att_vertical_grip", -- Shared.Attachments.VisualRegistry
+				Guns = { "service_rifle" },
+				Price = 100,
+				Deltas = { { Field = "recoilRecovery", Op = "multiply", Value = 1.20 } },
+			},
+			grip_angled = {
+				Name = "Angled grip",
+				Description = "Quicker into the sights.",
+				Slot = "Underbarrel",
+				Guns = { "service_rifle" },
+				Price = 100,
+				Deltas = { { Field = "adsTime", Op = "multiply", Value = 0.90 } },
+			},
+			laser = {
+				Name = "Laser",
+				Description = "Tighter from the hip.",
+				Slot = "Underbarrel",
+				Guns = { "service_rifle" },
+				Price = 150,
+				Deltas = { { Field = "hipSpread", Op = "multiply", Value = 0.70 } },
+			},
+			stock_standard = {
+				Name = "Standard stock",
+				Description = "The issued fixed stock.",
+				Slot = "Stock",
+				Guns = { "service_rifle" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			stock_adjustable = {
+				Name = "Adjustable stock",
+				Description = "Settles faster after a shot, slower to shoulder.",
+				Slot = "Stock",
+				Guns = { "service_rifle" },
+				Price = 120,
+				Deltas = {
+					{ Field = "recoilRecovery", Op = "multiply", Value = 1.15 },
+					{ Field = "adsTime", Op = "multiply", Value = 1.10 },
+				},
+			},
+			stock_collapsed = {
+				Name = "Collapsed stock",
+				Description = "Fast to the shoulder, slower to settle.",
+				Slot = "Stock",
+				Guns = { "service_rifle" },
+				Price = 120,
+				Deltas = {
+					{ Field = "recoilRecovery", Op = "multiply", Value = 0.90 },
+					{ Field = "adsTime", Op = "multiply", Value = 0.85 },
+				},
+			},
+			------------------------------------------------------------------
+			-- Mossberg 590 (shotgun; Nova, 2026-11-20). Its own rows, so its numbers and prices
+			-- are its own. Spread on a shotgun is the pellet pattern: a barrel scales both
+			-- cones (hipSpread, adsSpread), the laser only the hip. The ammo slot is the
+			-- showcase (the 12-gauge rows under Ammo). Its Optic slot is these irons and
+			-- Config.Optics.reddot; its Barrel slot also takes the suppressed barrel above.
+			------------------------------------------------------------------
+			m590_irons = {
+				Name = "Iron sights",
+				Description = "The bead it was issued with.",
+				Slot = "Optic",
+				Guns = { "shotgun" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			m590_barrel_20 = {
+				Name = "Standard 20-inch",
+				Description = "The issued barrel: the issued pattern and reach.",
+				Slot = "Barrel",
+				Guns = { "shotgun" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			m590_barrel_14 = {
+				Name = "Short 14-inch",
+				Description = "The breaching barrel: quick in a doorway, a wide pattern, a short reach.",
+				Slot = "Barrel",
+				Guns = { "shotgun" },
+				Price = 150,
+				Deltas = {
+					{ Field = "hipSpread", Op = "multiply", Value = 1.25 },
+					{ Field = "adsSpread", Op = "multiply", Value = 1.25 },
+					{ Field = "range", Op = "multiply", Value = 0.80 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 1.10 },
+					{ Field = "adsTime", Op = "multiply", Value = 0.90 },
+				},
+			},
+			-- A full choke: no slugs or incendiary shells through it (the ammo rows say so).
+			m590_barrel_choke = {
+				Name = "Full-choke 24-inch",
+				Description = "A tight pattern that carries further. Heavier. Buckshot only: no slugs or Dragon's Breath.",
+				Slot = "Barrel",
+				Guns = { "shotgun" },
+				Price = 150,
+				Deltas = {
+					{ Field = "hipSpread", Op = "multiply", Value = 0.70 },
+					{ Field = "adsSpread", Op = "multiply", Value = 0.70 },
+					{ Field = "range", Op = "multiply", Value = 1.20 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 0.90 },
+				},
+			},
+			m590_muzzle_standard = {
+				Name = "Standard muzzle",
+				Description = "The plain issued muzzle.",
+				Slot = "Muzzle",
+				Guns = { "shotgun" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			m590_muzzle_compensator = {
+				Name = "Compensator",
+				Description = "Holds the muzzle down for the next shell. A little louder.",
+				Slot = "Muzzle",
+				Guns = { "shotgun" },
+				Price = 120,
+				Deltas = {
+					{ Field = "recoil", Op = "multiply", Value = 0.85 },
+					{ Field = "alertRadius", Op = "multiply", Value = 1.05 },
+				},
+			},
+			-- The standoff breaching muzzle: with breaching shells a light wall opens in one shot
+			-- (two without it; Config.WallBreach). With any other round, a standard muzzle.
+			m590_muzzle_breacher = {
+				Name = "Breaching muzzle",
+				Description = "Toothed standoff: with breaching shells a light wall opens in one shot, not two. Otherwise a plain muzzle.",
+				Slot = "Muzzle",
+				Guns = { "shotgun" },
+				Price = 150,
+				Deltas = { { Field = "breachPower", Op = "multiply", Value = 2 } },
+			},
+			m590_tube_8 = {
+				Name = "Standard tube (8)",
+				Description = "The issued 8-shell tube.",
+				Slot = "Magazine",
+				Guns = { "shotgun" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			m590_tube_10 = {
+				Name = "Extended tube (10)",
+				Description = "Two more shells, a longer reload.",
+				Slot = "Magazine",
+				Guns = { "shotgun" },
+				Price = 150,
+				Deltas = {
+					{ Field = "magazineSize", Op = "add", Value = 2 },
+					{ Field = "reloadTime", Op = "multiply", Value = 1.15 },
+				},
+			},
+			m590_tube_12 = {
+				Name = "High-cap tube (12)",
+				Description = "Four more shells. A long reload and a heavy front end.",
+				Slot = "Magazine",
+				Guns = { "shotgun" },
+				Price = 250,
+				Deltas = {
+					{ Field = "magazineSize", Op = "add", Value = 4 },
+					{ Field = "reloadTime", Op = "multiply", Value = 1.30 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 0.95 },
+				},
+			},
+			m590_grip_vertical = {
+				Name = "Vertical grip",
+				Description = "Back on target faster: the slug's follow-up shot.",
+				Slot = "Underbarrel",
+				Visual = "att_vertical_grip", -- Shared.Attachments.VisualRegistry
+				Guns = { "shotgun" },
+				Price = 100,
+				Deltas = { { Field = "recoilRecovery", Op = "multiply", Value = 1.20 } },
+			},
+			m590_laser = {
+				Name = "Laser",
+				Description = "Tighter from the hip: run and gun.",
+				Slot = "Underbarrel",
+				Guns = { "shotgun" },
+				Price = 150,
+				Deltas = { { Field = "hipSpread", Op = "multiply", Value = 0.70 } },
+			},
+			m590_sidesaddle = {
+				Name = "Side-saddle",
+				Description = "Shells on the receiver: reloads 15% faster.",
+				Slot = "Underbarrel",
+				Guns = { "shotgun" },
+				Price = 100,
+				Deltas = { { Field = "reloadTime", Op = "multiply", Value = 1 / 1.15 } },
+			},
+			m590_stock_standard = {
+				Name = "Standard stock",
+				Description = "The issued fixed stock.",
+				Slot = "Stock",
+				Guns = { "shotgun" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			m590_stock_pistol = {
+				Name = "Pistol grip",
+				Description = "Quicker to the eye, slower to settle after a shell.",
+				Slot = "Stock",
+				Guns = { "shotgun" },
+				Price = 120,
+				Deltas = {
+					{ Field = "adsTime", Op = "multiply", Value = 0.90 },
+					{ Field = "recoilRecovery", Op = "multiply", Value = 0.85 },
+				},
+			},
+			m590_stock_collapsed = {
+				Name = "Collapsed stock",
+				Description = "Light on the move, slower to settle.",
+				Slot = "Stock",
+				Guns = { "shotgun" },
+				Price = 120,
+				Deltas = {
+					{ Field = "moveSpeed", Op = "multiply", Value = 1.10 },
+					{ Field = "recoilRecovery", Op = "multiply", Value = 0.90 },
+				},
+			},
+			-- smg (the rollout to every gun, Nova 2026-11-20)
+			smg_barrel_std = {
+				Name = "Standard barrel",
+				Description = "The issued 225 mm barrel.",
+				Slot = "Barrel",
+				Guns = { "smg" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			smg_barrel_long = {
+				Name = "Long barrel",
+				Description = "Reaches further and sits steadier, a little slower to swing.",
+				Slot = "Barrel",
+				Guns = { "smg" },
+				Price = 150,
+				Deltas = {
+					{ Field = "range", Op = "multiply", Value = 1.2 },
+					{ Field = "recoil", Op = "multiply", Value = 0.95 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 0.97 },
+				},
+			},
+			smg_barrel_k = {
+				Name = "Short barrel (K)",
+				Description = "The MP5K's stub: fast into a room, falls off sooner.",
+				Slot = "Barrel",
+				Guns = { "smg" },
+				Price = 150,
+				Deltas = {
+					{ Field = "range", Op = "multiply", Value = 0.8 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 1.05 },
+					{ Field = "adsTime", Op = "multiply", Value = 0.9 },
+					{ Field = "recoil", Op = "multiply", Value = 1.1 },
+				},
+			},
+			smg_muzzle_std = {
+				Name = "Standard muzzle",
+				Description = "The plain issued muzzle.",
+				Slot = "Muzzle",
+				Guns = { "smg" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			smg_muzzle_flash = {
+				Name = "Three-prong flash hider",
+				Description = "Hides the flash, steadies the muzzle a touch.",
+				Slot = "Muzzle",
+				Visual = "att_flash_hider", -- Shared.Attachments.VisualRegistry
+				Guns = { "smg" },
+				Price = 80,
+				Deltas = {
+					{ Field = "recoil", Op = "multiply", Value = 0.95 },
+				},
+			},
+			smg_muzzle_comp = {
+				Name = "Compensator",
+				Description = "Holds the muzzle down. A little louder.",
+				Slot = "Muzzle",
+				Guns = { "smg" },
+				Price = 120,
+				Deltas = {
+					{ Field = "recoil", Op = "multiply", Value = 0.85 },
+					{ Field = "alertRadius", Op = "multiply", Value = 1.05 },
+				},
+			},
+			smg_mag_30 = {
+				Name = "Standard 30",
+				Description = "The issued 30-round magazine.",
+				Slot = "Magazine",
+				Guns = { "smg" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			smg_mag_40 = {
+				Name = "Extended 40",
+				Description = "Ten more rounds, a slower change.",
+				Slot = "Magazine",
+				Guns = { "smg" },
+				Price = 150,
+				Deltas = {
+					{ Field = "magazineSize", Op = "add", Value = 10 },
+					{ Field = "reloadTime", Op = "multiply", Value = 1.15 },
+				},
+			},
+			smg_mag_drum = {
+				Name = "Drum 50",
+				Description = "Fifty rounds. Slow to change, heavy to carry.",
+				Slot = "Magazine",
+				Guns = { "smg" },
+				Price = 250,
+				Deltas = {
+					{ Field = "magazineSize", Op = "add", Value = 20 },
+					{ Field = "reloadTime", Op = "multiply", Value = 1.4 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 0.92 },
+				},
+			},
+			smg_grip_vertical = {
+				Name = "Vertical grip",
+				Description = "The sights come back on target faster.",
+				Slot = "Underbarrel",
+				Visual = "att_vertical_grip", -- Shared.Attachments.VisualRegistry
+				Guns = { "smg" },
+				Price = 100,
+				Deltas = {
+					{ Field = "recoilRecovery", Op = "multiply", Value = 1.2 },
+				},
+			},
+			smg_handstop = {
+				Name = "Handstop",
+				Description = "Quicker into the sights.",
+				Slot = "Underbarrel",
+				Guns = { "smg" },
+				Price = 100,
+				Deltas = {
+					{ Field = "adsTime", Op = "multiply", Value = 0.9 },
+				},
+			},
+			smg_laser = {
+				Name = "Laser",
+				Description = "Tighter from the hip.",
+				Slot = "Underbarrel",
+				Guns = { "smg" },
+				Price = 150,
+				Deltas = {
+					{ Field = "hipSpread", Op = "multiply", Value = 0.7 },
+				},
+			},
+			smg_stock_fixed = {
+				Name = "Fixed stock (A2)",
+				Description = "The issued fixed stock.",
+				Slot = "Stock",
+				Guns = { "smg" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			smg_stock_retract = {
+				Name = "Retractable stock (A3)",
+				Description = "Lighter to carry, slower to settle.",
+				Slot = "Stock",
+				Guns = { "smg" },
+				Price = 120,
+				Deltas = {
+					{ Field = "moveSpeed", Op = "multiply", Value = 1.05 },
+					{ Field = "recoilRecovery", Op = "multiply", Value = 0.9 },
+				},
+			},
+			smg_stock_none = {
+				Name = "Endcap, no stock",
+				Description = "Fastest to the eye, hard to hold on target.",
+				Slot = "Stock",
+				Guns = { "smg" },
+				Price = 80,
+				Deltas = {
+					{ Field = "moveSpeed", Op = "multiply", Value = 1.08 },
+					{ Field = "adsTime", Op = "multiply", Value = 0.85 },
+					{ Field = "recoil", Op = "multiply", Value = 1.25 },
+				},
+			},
+			-- lmg (the rollout to every gun, Nova 2026-11-20)
+			lmg_barrel_std = {
+				Name = "Standard barrel",
+				Description = "The issued 465 mm barrel.",
+				Slot = "Barrel",
+				Guns = { "lmg" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			lmg_barrel_para = {
+				Name = "Para barrel",
+				Description = "The short paratrooper barrel: handier, less reach.",
+				Slot = "Barrel",
+				Guns = { "lmg" },
+				Price = 150,
+				Deltas = {
+					{ Field = "range", Op = "multiply", Value = 0.85 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 1.05 },
+					{ Field = "adsTime", Op = "multiply", Value = 0.9 },
+				},
+			},
+			lmg_barrel_heavy = {
+				Name = "Heavy barrel",
+				Description = "Steadier and longer-reaching on a long burst. Heavier.",
+				Slot = "Barrel",
+				Guns = { "lmg" },
+				Price = 150,
+				Deltas = {
+					{ Field = "range", Op = "multiply", Value = 1.15 },
+					{ Field = "recoil", Op = "multiply", Value = 0.9 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 0.95 },
+				},
+			},
+			lmg_muzzle_std = {
+				Name = "Flash hider",
+				Description = "The issued flash hider.",
+				Slot = "Muzzle",
+				Guns = { "lmg" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			lmg_muzzle_comp = {
+				Name = "Compensator",
+				Description = "Holds the muzzle down. A little louder.",
+				Slot = "Muzzle",
+				Guns = { "lmg" },
+				Price = 120,
+				Deltas = {
+					{ Field = "recoil", Op = "multiply", Value = 0.85 },
+					{ Field = "alertRadius", Op = "multiply", Value = 1.05 },
+				},
+			},
+			lmg_muzzle_brake = {
+				Name = "Muzzle brake",
+				Description = "Kills the kick. Everything for a block hears it.",
+				Slot = "Muzzle",
+				Guns = { "lmg" },
+				Price = 200,
+				Deltas = {
+					{ Field = "recoil", Op = "multiply", Value = 0.75 },
+					{ Field = "alertRadius", Op = "multiply", Value = 1.1 },
+				},
+			},
+			lmg_belt_100 = {
+				Name = "100-round box",
+				Description = "The issued belt box.",
+				Slot = "Magazine",
+				Guns = { "lmg" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			lmg_belt_200 = {
+				Name = "200-round box",
+				Description = "Twice the belt: slow to change, heavy to carry.",
+				Slot = "Magazine",
+				Guns = { "lmg" },
+				Price = 250,
+				Deltas = {
+					{ Field = "magazineSize", Op = "add", Value = 100 },
+					{ Field = "reloadTime", Op = "multiply", Value = 1.3 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 0.9 },
+				},
+			},
+			lmg_belt_pouch = {
+				Name = "Soft pouch (70)",
+				Description = "A light cloth pouch: fewer rounds, a much faster change.",
+				Slot = "Magazine",
+				Guns = { "lmg" },
+				Price = 150,
+				Deltas = {
+					{ Field = "magazineSize", Op = "add", Value = -30 },
+					{ Field = "reloadTime", Op = "multiply", Value = 0.75 },
+				},
+			},
+			lmg_stock_std = {
+				Name = "Fixed stock",
+				Description = "The issued fixed stock.",
+				Slot = "Stock",
+				Guns = { "lmg" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			lmg_stock_para = {
+				Name = "Collapsible stock",
+				Description = "The Para's sliding stock: lighter, slower to settle.",
+				Slot = "Stock",
+				Guns = { "lmg" },
+				Price = 120,
+				Deltas = {
+					{ Field = "moveSpeed", Op = "multiply", Value = 1.05 },
+					{ Field = "recoilRecovery", Op = "multiply", Value = 0.9 },
+				},
+			},
+			lmg_stock_riser = {
+				Name = "Stock with cheek riser",
+				Description = "Settles faster after a burst, slower to shoulder.",
+				Slot = "Stock",
+				Guns = { "lmg" },
+				Price = 120,
+				Deltas = {
+					{ Field = "recoilRecovery", Op = "multiply", Value = 1.15 },
+					{ Field = "adsTime", Op = "multiply", Value = 1.1 },
+				},
+			},
+			-- dmr (the rollout to every gun, Nova 2026-11-20)
+			dmr_scope = {
+				Name = "Leupold 3.5-10x (issued)",
+				Description = "The issued scope.",
+				Slot = "Optic",
+				Guns = { "dmr" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			dmr_lpvo = {
+				Name = "1-6x LPVO",
+				Description = "A low-power scope: faster into the sights.",
+				Slot = "Optic",
+				Guns = { "dmr" },
+				Price = 200,
+				Deltas = {
+					{ Field = "adsTime", Op = "multiply", Value = 0.8 },
+				},
+			},
+			dmr_barrel_20 = {
+				Name = "Standard 20-inch",
+				Description = "The issued barrel.",
+				Slot = "Barrel",
+				Guns = { "dmr" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			dmr_barrel_16 = {
+				Name = "Short 16-inch",
+				Description = "The M110K1's: handier, less reach.",
+				Slot = "Barrel",
+				Guns = { "dmr" },
+				Price = 150,
+				Deltas = {
+					{ Field = "range", Op = "multiply", Value = 0.85 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 1.05 },
+					{ Field = "adsTime", Op = "multiply", Value = 0.9 },
+				},
+			},
+			dmr_barrel_heavy = {
+				Name = "Heavy 22-inch",
+				Description = "A heavy profile: further and steadier, heavier.",
+				Slot = "Barrel",
+				Guns = { "dmr" },
+				Price = 150,
+				Deltas = {
+					{ Field = "range", Op = "multiply", Value = 1.15 },
+					{ Field = "recoil", Op = "multiply", Value = 0.9 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 0.95 },
+				},
+			},
+			dmr_muzzle_std = {
+				Name = "Flash hider",
+				Description = "The issued flash hider.",
+				Slot = "Muzzle",
+				Guns = { "dmr" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			dmr_muzzle_comp = {
+				Name = "Compensator",
+				Description = "Holds the muzzle down. A little louder.",
+				Slot = "Muzzle",
+				Guns = { "dmr" },
+				Price = 120,
+				Deltas = {
+					{ Field = "recoil", Op = "multiply", Value = 0.85 },
+					{ Field = "alertRadius", Op = "multiply", Value = 1.05 },
+				},
+			},
+			dmr_muzzle_brake = {
+				Name = "Muzzle brake",
+				Description = "Kills the kick. Everything for a block hears it.",
+				Slot = "Muzzle",
+				Guns = { "dmr" },
+				Price = 200,
+				Deltas = {
+					{ Field = "recoil", Op = "multiply", Value = 0.75 },
+					{ Field = "alertRadius", Op = "multiply", Value = 1.1 },
+				},
+			},
+			dmr_mag_20 = {
+				Name = "Standard 20",
+				Description = "The issued 20-round magazine.",
+				Slot = "Magazine",
+				Guns = { "dmr" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			dmr_mag_25 = {
+				Name = "Extended 25",
+				Description = "Five more rounds, a slower change.",
+				Slot = "Magazine",
+				Guns = { "dmr" },
+				Price = 150,
+				Deltas = {
+					{ Field = "magazineSize", Op = "add", Value = 5 },
+					{ Field = "reloadTime", Op = "multiply", Value = 1.1 },
+				},
+			},
+			dmr_mag_10 = {
+				Name = "Short 10",
+				Description = "Ten rounds: a fast change, a lighter gun.",
+				Slot = "Magazine",
+				Guns = { "dmr" },
+				Price = 80,
+				Deltas = {
+					{ Field = "magazineSize", Op = "add", Value = -10 },
+					{ Field = "reloadTime", Op = "multiply", Value = 0.85 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 1.03 },
+				},
+			},
+			dmr_grip_vertical = {
+				Name = "Vertical grip",
+				Description = "The sights come back on target faster.",
+				Slot = "Underbarrel",
+				Visual = "att_vertical_grip", -- Shared.Attachments.VisualRegistry
+				Guns = { "dmr" },
+				Price = 100,
+				Deltas = {
+					{ Field = "recoilRecovery", Op = "multiply", Value = 1.2 },
+				},
+			},
+			dmr_bipod = {
+				Name = "Harris bipod",
+				Description = "Less kick, a little weight.",
+				Slot = "Underbarrel",
+				Visual = "att_bipod", -- Shared.Attachments.VisualRegistry
+				Guns = { "dmr" },
+				Price = 150,
+				Deltas = {
+					{ Field = "recoil", Op = "multiply", Value = 0.85 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 0.97 },
+				},
+			},
+			dmr_laser = {
+				Name = "Laser",
+				Description = "Tighter from the hip.",
+				Slot = "Underbarrel",
+				Guns = { "dmr" },
+				Price = 150,
+				Deltas = {
+					{ Field = "hipSpread", Op = "multiply", Value = 0.7 },
+				},
+			},
+			dmr_stock_std = {
+				Name = "Standard stock",
+				Description = "The issued stock.",
+				Slot = "Stock",
+				Guns = { "dmr" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			dmr_stock_precision = {
+				Name = "Precision stock",
+				Description = "Settles faster after a shot, slower to shoulder.",
+				Slot = "Stock",
+				Guns = { "dmr" },
+				Price = 120,
+				Deltas = {
+					{ Field = "recoilRecovery", Op = "multiply", Value = 1.15 },
+					{ Field = "adsTime", Op = "multiply", Value = 1.1 },
+				},
+			},
+			dmr_stock_light = {
+				Name = "Lightweight stock",
+				Description = "Lighter to carry, slower to settle.",
+				Slot = "Stock",
+				Guns = { "dmr" },
+				Price = 120,
+				Deltas = {
+					{ Field = "moveSpeed", Op = "multiply", Value = 1.05 },
+					{ Field = "recoilRecovery", Op = "multiply", Value = 0.9 },
+				},
+			},
+			-- sniper (the rollout to every gun, Nova 2026-11-20)
+			sr_scope = {
+				Name = "Leupold Mk 4 6.5-20x (issued)",
+				Description = "The issued scope.",
+				Slot = "Optic",
+				Guns = { "sniper" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			sr_scope_low = {
+				Name = "Low-power scope",
+				Description = "Less magnification: faster into the sights.",
+				Slot = "Optic",
+				Guns = { "sniper" },
+				Price = 200,
+				Deltas = {
+					{ Field = "adsTime", Op = "multiply", Value = 0.8 },
+				},
+			},
+			sr_barrel_24 = {
+				Name = "Standard 24-inch",
+				Description = "The issued barrel.",
+				Slot = "Barrel",
+				Guns = { "sniper" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			sr_barrel_20 = {
+				Name = "Short 20-inch",
+				Description = "Handier, less reach.",
+				Slot = "Barrel",
+				Guns = { "sniper" },
+				Price = 150,
+				Deltas = {
+					{ Field = "range", Op = "multiply", Value = 0.85 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 1.05 },
+					{ Field = "adsTime", Op = "multiply", Value = 0.9 },
+				},
+			},
+			sr_muzzle_std = {
+				Name = "Standard brake",
+				Description = "The issued muzzle brake.",
+				Slot = "Muzzle",
+				Guns = { "sniper" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			sr_muzzle_brake_heavy = {
+				Name = "Heavy brake",
+				Description = "Kills more of the kick, much louder.",
+				Slot = "Muzzle",
+				Guns = { "sniper" },
+				Price = 200,
+				Deltas = {
+					{ Field = "recoil", Op = "multiply", Value = 0.8 },
+					{ Field = "alertRadius", Op = "multiply", Value = 1.1 },
+				},
+			},
+			sr_mag_5 = {
+				Name = "Standard 5",
+				Description = "The issued 5-round magazine.",
+				Slot = "Magazine",
+				Guns = { "sniper" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			sr_mag_10 = {
+				Name = "Extended 10",
+				Description = "Five more rounds, a slower change, heavier.",
+				Slot = "Magazine",
+				Guns = { "sniper" },
+				Price = 200,
+				Deltas = {
+					{ Field = "magazineSize", Op = "add", Value = 5 },
+					{ Field = "reloadTime", Op = "multiply", Value = 1.2 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 0.97 },
+				},
+			},
+			sr_stock_std = {
+				Name = "Folding stock",
+				Description = "The issued folding stock.",
+				Slot = "Stock",
+				Guns = { "sniper" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			sr_stock_light = {
+				Name = "Lightweight stock",
+				Description = "Light to carry, slow to settle. Not with magnum rounds.",
+				Slot = "Stock",
+				Guns = { "sniper" },
+				Price = 120,
+				Deltas = {
+					{ Field = "moveSpeed", Op = "multiply", Value = 1.08 },
+					{ Field = "recoilRecovery", Op = "multiply", Value = 0.85 },
+				},
+			},
+			sr_stock_adjustable = {
+				Name = "Adjustable stock",
+				Description = "Settles faster after a shot, slower to shoulder.",
+				Slot = "Stock",
+				Guns = { "sniper" },
+				Price = 120,
+				Deltas = {
+					{ Field = "recoilRecovery", Op = "multiply", Value = 1.15 },
+					{ Field = "adsTime", Op = "multiply", Value = 1.1 },
+				},
+			},
+			-- fifty (the rollout to every gun, Nova 2026-11-20)
+			m82_scope = {
+				Name = "10x scope (issued)",
+				Description = "The issued 10x scope.",
+				Slot = "Optic",
+				Guns = { "fifty" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			m82_scope_low = {
+				Name = "Low-power scope",
+				Description = "Less magnification: faster into the sights.",
+				Slot = "Optic",
+				Guns = { "fifty" },
+				Price = 300,
+				Deltas = {
+					{ Field = "adsTime", Op = "multiply", Value = 0.8 },
+				},
+			},
+			m82_barrel_29 = {
+				Name = "Standard 29-inch",
+				Description = "The issued barrel.",
+				Slot = "Barrel",
+				Guns = { "fifty" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			m82_barrel_20 = {
+				Name = "Short 20-inch (CQ)",
+				Description = "Handier, less reach. Not for AP.",
+				Slot = "Barrel",
+				Guns = { "fifty" },
+				Price = 300,
+				Deltas = {
+					{ Field = "range", Op = "multiply", Value = 0.8 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 1.05 },
+					{ Field = "adsTime", Op = "multiply", Value = 0.9 },
+				},
+			},
+			m82_muzzle_std = {
+				Name = "Double-chamber brake",
+				Description = "The issued brake.",
+				Slot = "Muzzle",
+				Guns = { "fifty" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			m82_muzzle_tbrake = {
+				Name = "Tactical brake",
+				Description = "Kills a little more kick, louder still.",
+				Slot = "Muzzle",
+				Guns = { "fifty" },
+				Price = 250,
+				Deltas = {
+					{ Field = "recoil", Op = "multiply", Value = 0.9 },
+					{ Field = "alertRadius", Op = "multiply", Value = 1.1 },
+				},
+			},
+			m82_mag_10 = {
+				Name = "Standard 10",
+				Description = "The issued 10-round magazine.",
+				Slot = "Magazine",
+				Guns = { "fifty" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			m82_mag_5 = {
+				Name = "Short 5",
+				Description = "Five rounds: a faster change, a lighter gun.",
+				Slot = "Magazine",
+				Guns = { "fifty" },
+				Price = 150,
+				Deltas = {
+					{ Field = "magazineSize", Op = "add", Value = -5 },
+					{ Field = "reloadTime", Op = "multiply", Value = 0.8 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 1.03 },
+				},
+			},
+			m82_stock_std = {
+				Name = "Standard stock",
+				Description = "The issued stock.",
+				Slot = "Stock",
+				Guns = { "fifty" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			m82_stock_pad = {
+				Name = "Recoil pad",
+				Description = "A thicker pad: settles a little faster.",
+				Slot = "Stock",
+				Guns = { "fifty" },
+				Price = 200,
+				Deltas = {
+					{ Field = "recoilRecovery", Op = "multiply", Value = 1.1 },
+					{ Field = "recoil", Op = "multiply", Value = 0.92 },
+				},
+			},
+			-- pistol (the rollout to every gun, Nova 2026-11-20)
+			m17_irons = {
+				Name = "Iron sights",
+				Description = "The issued night sights.",
+				Slot = "Optic",
+				Guns = { "pistol" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			m17_barrel_std = {
+				Name = "Standard barrel",
+				Description = "The issued barrel.",
+				Slot = "Barrel",
+				Guns = { "pistol" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			m17_barrel_comp = {
+				Name = "Compensated barrel",
+				Description = "Ported: a flatter muzzle, a louder shot.",
+				Slot = "Barrel",
+				Guns = { "pistol" },
+				Price = 150,
+				Deltas = {
+					{ Field = "recoil", Op = "multiply", Value = 0.85 },
+					{ Field = "alertRadius", Op = "multiply", Value = 1.05 },
+				},
+			},
+			m17_mag_17 = {
+				Name = "Standard 17",
+				Description = "The issued 17-round magazine.",
+				Slot = "Magazine",
+				Guns = { "pistol" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			m17_mag_21 = {
+				Name = "Extended 21",
+				Description = "Four more rounds.",
+				Slot = "Magazine",
+				Guns = { "pistol" },
+				Price = 100,
+				Deltas = {
+					{ Field = "magazineSize", Op = "add", Value = 4 },
+					{ Field = "reloadTime", Op = "multiply", Value = 1.05 },
+				},
+			},
+			m17_mag_32 = {
+				Name = "Stick 32",
+				Description = "A long stick: fifteen more, slower to change.",
+				Slot = "Magazine",
+				Guns = { "pistol" },
+				Price = 200,
+				Deltas = {
+					{ Field = "magazineSize", Op = "add", Value = 15 },
+					{ Field = "reloadTime", Op = "multiply", Value = 1.25 },
+					{ Field = "moveSpeed", Op = "multiply", Value = 0.98 },
+				},
+			},
+			-- revolver (the rollout to every gun, Nova 2026-11-20)
+			r686_irons = {
+				Name = "Iron sights",
+				Description = "The issued sights.",
+				Slot = "Optic",
+				Guns = { "revolver" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			r686_barrel_4 = {
+				Name = "Standard 4-inch",
+				Description = "The issued barrel.",
+				Slot = "Barrel",
+				Guns = { "revolver" },
+				Price = 0,
+				Base = true,
+				Deltas = {},
+			},
+			r686_barrel_6 = {
+				Name = "6-inch barrel",
+				Description = "Reaches further, a touch quieter, slower to raise.",
+				Slot = "Barrel",
+				Guns = { "revolver" },
+				Price = 150,
+				Deltas = {
+					{ Field = "range", Op = "multiply", Value = 1.2 },
+					{ Field = "alertRadius", Op = "multiply", Value = 0.95 },
+					{ Field = "adsTime", Op = "multiply", Value = 1.05 },
+				},
+			},
+			r686_barrel_25 = {
+				Name = "2.5-inch barrel",
+				Description = "Snub: fast to raise, short reach, a loud bark.",
+				Slot = "Barrel",
+				Guns = { "revolver" },
+				Price = 120,
+				Deltas = {
+					{ Field = "range", Op = "multiply", Value = 0.8 },
+					{ Field = "alertRadius", Op = "multiply", Value = 1.1 },
+					{ Field = "adsTime", Op = "multiply", Value = 0.9 },
+				},
+			},
+		},
+		-- Ammo types: each REPLACES the gun's damage profile (Rules/AttachmentMerge). Caliber
+		-- matches Config.Weapons.<gun>.Caliber. ArmourPenetration: the share of a plate's
+		-- reduction the round ignores (the Brute's front, the Warden's plates). Behaviour:
+		-- "standard" | "incendiary" | "tracer" | "breaching" | "subsonic" (the tracer's beam
+		-- is a later, visual PR; its louder shot is here). Optional (the Mossberg's):
+		-- SpreadMultiplier on the gun's cones (a slug has no pellet pattern), RecoilMultiplier on
+		-- the kick, Burn = { Damage, Seconds } per projectile hit (Rules/DoT, BurnService);
+		-- ClashReasons, as on the options. Planned families (one PR per gun):
+		-- 7.62 FMJ/AP/HP/Subsonic, 12ga Buckshot/Slug/Dragon's Breath/Breaching, 9mm
+		-- FMJ/HP/AP/Subsonic, .357 Standard/+P, .50 BMG Standard/AP, rockets HE/HEDP.
+		Ammo = {
+			ammo_556_fmj = {
+				Name = "FMJ",
+				Description = "Full metal jacket: the issued round.",
+				Caliber = "5.56",
+				Price = 0,
+				Base = true,
+				Damage = 20,
+				Projectiles = 1,
+				HeadshotMultiplier = 3.0,
+				ArmourPenetration = 0,
+				AlertMultiplier = 1.0,
+				RangeMultiplier = 1.0,
+				Behaviour = "standard",
+			},
+			ammo_556_ap = {
+				Name = "AP",
+				Description = "Armour-piercing: less in flesh, goes through the Brute's plates.",
+				Caliber = "5.56",
+				Price = 200,
+				Damage = 16,
+				Projectiles = 1,
+				HeadshotMultiplier = 3.0,
+				ArmourPenetration = 0.8,
+				AlertMultiplier = 1.0,
+				RangeMultiplier = 1.0,
+				Behaviour = "standard",
+			},
+			ammo_556_hp = {
+				Name = "HP",
+				Description = "Hollow point: devastating on bare flesh, useless on plates.",
+				Caliber = "5.56",
+				Price = 200,
+				Damage = 28,
+				Projectiles = 1,
+				HeadshotMultiplier = 4.0,
+				ArmourPenetration = 0,
+				AlertMultiplier = 1.0,
+				RangeMultiplier = 1.0,
+				Behaviour = "standard",
+			},
+			ammo_556_tracer = {
+				Name = "Tracer",
+				Description = "Every third round lights its path for the squad. Louder to the Infected.",
+				Caliber = "5.56",
+				Price = 100,
+				Damage = 20,
+				Projectiles = 1,
+				HeadshotMultiplier = 3.0,
+				ArmourPenetration = 0,
+				AlertMultiplier = 1.2,
+				RangeMultiplier = 1.0,
+				Behaviour = "tracer",
+				Guns = { "service_rifle" }, -- the M249 fires its own tracer-heavy belt
+			},
+			------------------------------------------------------------------
+			-- 12-gauge, the Mossberg 590 (Nova, 2026-11-20): four real shells, each a different
+			-- gun's worth of behaviour. RangeMultiplier on the Mossberg's own 45 studs.
+			------------------------------------------------------------------
+			ammo_12ga_buckshot = {
+				Name = "Buckshot",
+				Description = "00 buck: eight pellets, a crowd stopper up close. The issued shell.",
+				Caliber = "12ga",
+				Price = 0,
+				Base = true,
+				Damage = 11,
+				Projectiles = 8,
+				HeadshotMultiplier = 1.5,
+				ArmourPenetration = 0,
+				AlertMultiplier = 1.0,
+				RangeMultiplier = 1.0,
+				Behaviour = "standard",
+			},
+			-- One lead slug: a poor man's marksman rifle. Not through a full choke.
+			ammo_12ga_slug = {
+				Name = "Slug",
+				Description = "One heavy slug: precise out to 200 studs, hits like a rifle, kicks harder. No crowd control.",
+				Caliber = "12ga",
+				Price = 200,
+				Damage = 80,
+				Projectiles = 1,
+				HeadshotMultiplier = 3.0,
+				ArmourPenetration = 0,
+				AlertMultiplier = 1.0,
+				RangeMultiplier = 200 / 45, -- 200 studs
+				SpreadMultiplier = 0.1, -- one ball, no pattern: what is left is the gun's wander
+				RecoilMultiplier = 1.2,
+				Behaviour = "standard",
+				IncompatibleWith = { "m590_barrel_choke" },
+				ClashReasons = {
+					m590_barrel_choke = "A slug through a full choke can split the barrel. Fit another barrel.",
+				},
+			},
+			-- Magnesium pellets (a real incendiary shell): less up front, each pellet that lands
+			-- burns (stacking, Rules/DoT). Hisses: the Infected hear it further.
+			ammo_12ga_dragons_breath = {
+				Name = "Dragon's Breath",
+				Description = "Magnesium pellets: less up front, but each one that lands sets the Infected burning. Louder.",
+				Caliber = "12ga",
+				Price = 250,
+				Damage = 6,
+				Projectiles = 8,
+				HeadshotMultiplier = 1.5,
+				ArmourPenetration = 0,
+				AlertMultiplier = 1.3,
+				RangeMultiplier = 1.0,
+				Behaviour = "incendiary",
+				Burn = { Damage = 15, Seconds = 5 }, -- per pellet hit
+				IncompatibleWith = { "m590_barrel_choke", "suppressor" },
+				ClashReasons = {
+					m590_barrel_choke = "Burning magnesium would ruin a full choke. Fit another barrel.",
+					suppressor = "Incendiary shells cannot be suppressed: the fire is the round.",
+				},
+			},
+			-- A frangible breaching round (the real door-breaching shell): poor on the Infected,
+			-- opens light walls (Rules/WallBreach; one shot with the breaching muzzle, two without).
+			ammo_12ga_breaching = {
+				Name = "Breaching",
+				Description = "A heavy frangible slug: opens a hut or shed wall in two shots, one with the breaching muzzle. Weak on the Infected.",
+				Caliber = "12ga",
+				Price = 150,
+				Damage = 30,
+				Projectiles = 1,
+				HeadshotMultiplier = 1.0,
+				ArmourPenetration = 0,
+				AlertMultiplier = 1.0,
+				RangeMultiplier = 60 / 45, -- 60 studs
+				SpreadMultiplier = 0.2,
+				Behaviour = "breaching",
+			},
+			-- 5.56 (the M249's), 9mm, 7.62, .50 BMG, .357 (the rollout to every gun, Nova 2026-11-20)
+			ammo_556_tracer_heavy = {
+				Name = "Tracer-heavy belt",
+				Description = "Every other round a tracer: the squad sees where the belt goes. Louder to the Infected.",
+				Caliber = "5.56",
+				Price = 100,
+				Damage = 20,
+				Projectiles = 1,
+				HeadshotMultiplier = 3.0,
+				ArmourPenetration = 0,
+				AlertMultiplier = 1.35,
+				RangeMultiplier = 1.0,
+				Behaviour = "tracer",
+				Guns = { "lmg" },
+			},
+			ammo_9mm_fmj = {
+				Name = "FMJ",
+				Description = "9mm full metal jacket: the issued round.",
+				Caliber = "9mm",
+				Price = 0,
+				Base = true,
+				DamageScale = 1.0,
+				Projectiles = 1,
+				HeadshotMultiplier = 3.0,
+				ArmourPenetration = 0,
+				AlertMultiplier = 1.0,
+				RangeMultiplier = 1.0,
+				Behaviour = "standard",
+			},
+			ammo_9mm_hp = {
+				Name = "HP",
+				Description = "Hollow point: devastating on bare flesh, useless on plates.",
+				Caliber = "9mm",
+				Price = 200,
+				DamageScale = 1.3,
+				Projectiles = 1,
+				HeadshotMultiplier = 4.0,
+				ArmourPenetration = 0,
+				AlertMultiplier = 1.0,
+				RangeMultiplier = 1.0,
+				Behaviour = "standard",
+			},
+			ammo_9mm_ap = {
+				Name = "AP",
+				Description = "Armour-piercing: less in flesh, goes through the Brute's plates.",
+				Caliber = "9mm",
+				Price = 200,
+				DamageScale = 0.85,
+				Projectiles = 1,
+				HeadshotMultiplier = 3.0,
+				ArmourPenetration = 0.6,
+				AlertMultiplier = 1.0,
+				RangeMultiplier = 1.0,
+				Behaviour = "standard",
+			},
+			ammo_9mm_subsonic = {
+				Name = "Subsonic",
+				Description = "Below the speed of sound: quiet through a suppressor, less reach and punch.",
+				Caliber = "9mm",
+				Price = 150,
+				DamageScale = 0.9,
+				Projectiles = 1,
+				HeadshotMultiplier = 3.0,
+				ArmourPenetration = 0,
+				AlertMultiplier = 0.6,
+				RangeMultiplier = 0.8,
+				Behaviour = "subsonic",
+				Advice = {
+					Unless = { "suppressor" },
+					Text = "Subsonic rounds are made for a suppressor: without one the shot is still loud, for less reach and punch.",
+				},
+			},
+			ammo_762_fmj = {
+				Name = "FMJ",
+				Description = "7.62 full metal jacket: the issued round.",
+				Caliber = "7.62",
+				Price = 0,
+				Base = true,
+				DamageScale = 1.0,
+				Projectiles = 1,
+				HeadshotMultiplier = 3.0,
+				ArmourPenetration = 0,
+				AlertMultiplier = 1.0,
+				RangeMultiplier = 1.0,
+				Behaviour = "standard",
+			},
+			ammo_762_hp = {
+				Name = "HP",
+				Description = "Hollow point: devastating on bare flesh, useless on plates.",
+				Caliber = "7.62",
+				Price = 200,
+				DamageScale = 1.25,
+				Projectiles = 1,
+				HeadshotMultiplier = 4.0,
+				ArmourPenetration = 0,
+				AlertMultiplier = 1.0,
+				RangeMultiplier = 1.0,
+				Behaviour = "standard",
+			},
+			ammo_762_ap = {
+				Name = "AP",
+				Description = "Armour-piercing: less in flesh, goes through the Brute's plates.",
+				Caliber = "7.62",
+				Price = 200,
+				DamageScale = 0.85,
+				Projectiles = 1,
+				HeadshotMultiplier = 3.0,
+				ArmourPenetration = 0.8,
+				AlertMultiplier = 1.0,
+				RangeMultiplier = 1.0,
+				Behaviour = "standard",
+			},
+			ammo_762_subsonic = {
+				Name = "Subsonic",
+				Description = "Below the speed of sound: quiet through a suppressor, less reach and punch.",
+				Caliber = "7.62",
+				Price = 150,
+				DamageScale = 0.75,
+				Projectiles = 1,
+				HeadshotMultiplier = 3.0,
+				ArmourPenetration = 0,
+				AlertMultiplier = 0.6,
+				RangeMultiplier = 0.7,
+				Behaviour = "subsonic",
+				Advice = {
+					Unless = { "suppressor" },
+					Text = "Subsonic rounds are made for a suppressor: without one the shot is still loud, for less reach and punch.",
+				},
+			},
+			ammo_762_magnum = {
+				Name = "Magnum (.300 Win Mag)",
+				Description = "The M2010's own magnum load: harder and further, a brutal kick. Not through the lightweight stock.",
+				Caliber = "7.62",
+				Price = 250,
+				DamageScale = 1.2,
+				Projectiles = 1,
+				HeadshotMultiplier = 3.0,
+				ArmourPenetration = 0.2,
+				AlertMultiplier = 1.2,
+				RangeMultiplier = 1.2,
+				RecoilMultiplier = 1.3,
+				Behaviour = "standard",
+				Guns = { "sniper" },
+				IncompatibleWith = { "sr_stock_light" },
+				ClashReasons = {
+					sr_stock_light = "A .300 Win Mag kick through a lightweight stock is uncontrollable. Fit another stock.",
+				},
+			},
+			ammo_50_standard = {
+				Name = "Ball (M33)",
+				Description = ".50 BMG ball: the issued round.",
+				Caliber = ".50 BMG",
+				Price = 0,
+				Base = true,
+				Damage = 180,
+				Projectiles = 1,
+				HeadshotMultiplier = 3.0,
+				ArmourPenetration = 0,
+				AlertMultiplier = 1.0,
+				RangeMultiplier = 1.0,
+				Behaviour = "standard",
+			},
+			ammo_50_ap = {
+				Name = "AP (M2)",
+				Description = "Armour-piercing .50: a little less in flesh, through any plate. Needs the full barrel.",
+				Caliber = ".50 BMG",
+				Price = 300,
+				Damage = 165,
+				Projectiles = 1,
+				HeadshotMultiplier = 3.0,
+				ArmourPenetration = 1.0,
+				AlertMultiplier = 1.0,
+				RangeMultiplier = 1.0,
+				Behaviour = "standard",
+				IncompatibleWith = { "m82_barrel_20" },
+				ClashReasons = {
+					m82_barrel_20 = "AP .50 BMG needs the full 29-inch barrel to stabilise. Fit the standard barrel.",
+				},
+			},
+			ammo_357_standard = {
+				Name = "Standard",
+				Description = ".357 Magnum: the issued load.",
+				Caliber = ".357",
+				Price = 0,
+				Base = true,
+				Damage = 55,
+				Projectiles = 1,
+				HeadshotMultiplier = 3.0,
+				ArmourPenetration = 0,
+				AlertMultiplier = 1.0,
+				RangeMultiplier = 1.0,
+				Behaviour = "standard",
+			},
+			ammo_357_plus_p = {
+				Name = "+P",
+				Description = "Overpressure load: harder, louder, a sharper kick.",
+				Caliber = ".357",
+				Price = 150,
+				Damage = 66,
+				Projectiles = 1,
+				HeadshotMultiplier = 3.0,
+				ArmourPenetration = 0.1,
+				AlertMultiplier = 1.15,
+				RangeMultiplier = 1.1,
+				RecoilMultiplier = 1.2,
+				Behaviour = "standard",
+			},
+		},
+	},
+
+	-- Damage over time (Rules/DoT; BurnService): every burn's ticking, first Dragon's Breath
+	-- (each round's own Burn is on its ammo row). Stacks: one per hit, each on its own clock;
+	-- past MaxStacks a fresh one replaces the one ending soonest. Tick: seconds between
+	-- payments (the damage is exact however it is ticked). The Cauterizer and the Leech reuse it.
+	DoT = {
+		Tick = 0.5,
+		MaxStacks = 8, -- one Dragon's Breath pull's worth of pellets
+		-- A burning Infected wears one small Fire on its root (BurnService); past MaxShown at
+		-- once the rest burn unseen (docs/STYLES.md budgets).
+		-- Warning orange (docs/STYLES.md accents), its secondary the same hue darker.
+		Flame = {
+			Size = 2,
+			Heat = 6,
+			Color = Color3.fromRGB(232, 120, 40),
+			SecondaryColor = Color3.fromRGB(116, 60, 20),
+			MaxShown = 6,
+		},
+	},
+
+	-- A breaching round on a wall (Rules/WallBreach; WallBreachService; the Mossberg's breaching
+	-- shell, Nova 2026-11-20). Only building walls (ArenaService's "Wall" parts) this thin, of a
+	-- light material: the huts' planks, the Shed's sheet metal, painted panel. Concrete,
+	-- cinder and brick hold. Each breaching hit pushes by the gun's breachPower (1; the breaching
+	-- muzzle doubles it): at Toughness a door-sized Hole opens from the wall's foot at the hit.
+	-- Every broken wall is put back at the next run's start. Doors on our maps are open gaps
+	-- already, so walls are what open new lanes.
+	WallBreach = {
+		Names = { "Wall" },
+		Materials = { "WoodPlanks", "CorrodedMetal", "Metal" },
+		MaxThickness = 1, -- studs (the kit's walls are 0.6)
+		Toughness = 2,
+		Hole = { Width = 4, Height = 8 }, -- the kit's door
+		MinPiece = 0.2, -- studs: a thinner strip of wall is not kept
 	},
 
 	-- What the Infected notice (Nova, 2026-11-11, the night map: "we go in quiet ... if we mess
@@ -241,6 +1979,16 @@ local Config = {
 		MaxHealth = 100,
 		WalkSpeed = 16,
 		SprintSpeed = 24,
+		-- Soldiers' bodies (players and bots) in their own collision group (SoldierCollision).
+		-- Nova, 2026-11-20: Runners "can just push the player around" and a pile of them lifts a
+		-- soldier into the air; so the Infected pass through soldiers (they still stop at
+		-- AttackRange to hit). BlockInfected = true makes the bodies solid to each other again.
+		-- The Hocker's spit flies in ShotGroup: it skips the Infected and still hits soldiers.
+		Collision = {
+			Group = "Soldier",
+			ShotGroup = "EnemyShot",
+			BlockInfected = false,
+		},
 		-- The soldier's look (Nova, 2026-11-11: "not really a fan of how he looks"; "the new look
 		-- should change in match as well"): Roblox's default R15 body wearing catalog items
 		-- (Shared.AvatarLook), on players and bots in the match and on the ship. Enabled = false
@@ -557,6 +2305,51 @@ local Config = {
 		MaxRevives = 2, -- per mission; the next lethal hit after that kills outright
 		CrawlSpeed = 3, -- studs/s: a downed body crawls on hands and knees toward cover or help
 	},
+
+	-- Scarcity ("make it fun" sprint, PR 4 of 4; docs/sprints/FUN_SCARCITY.md, Rules/Scarcity):
+	-- mistakes cost something. Fewer spare magazines, the Resupply flare as the main refill on
+	-- a long cooldown, ammo pouches off fallen squadmates, and a squad pool of reinforcements
+	-- per run. Each part has its own switch; Enabled = false is the game before the sprint.
+	Scarcity = {
+		Enabled = true,
+		-- Spare rounds from each gun's own row (Weapons.<Gun>.Scarce); a row without one keeps
+		-- its ReserveStart / ReserveMax. Fire rates never change (real guns).
+		Ammo = { Enabled = true },
+		-- The flare's wait after a pallet lands (was Requisition.FlareCooldown 20): one pallet
+		-- every ~2 min at most, so when to throw it is a squad decision.
+		Resupply = { Enabled = true, FlareCooldown = 90 },
+		-- A squadmate (player or bot) who dies drops their ammo pouch at the body: a living
+		-- player holds Keys.Interact on it for magazines of both their guns, once each.
+		Pouch = {
+			Enabled = true,
+			PrimaryMags = 2, -- magazines (a belt, a tube load) of the long gun
+			SecondaryMags = 1,
+			Hold = 0.5, -- seconds of holding the key
+			Radius = 8, -- studs
+			LifeSeconds = 120, -- the pouch is gone after this
+			FromBots = true, -- a bot's death drops one too
+		},
+		-- Reinforcements: a pool shared by the squad per run (Base + PerPlayer x players who
+		-- joined). A player who dies (bled out, or killed with no revives left) spends one and
+		-- is dropped by the helicopter beside the nearest standing squadmate after Delay
+		-- seconds; with the pool empty they stay dead until the squad extracts. Nobody left
+		-- standing to drop to (players and bots) is a wipe. Bots never spend it: they come back
+		-- on their own slower timer (BotRespawnSeconds; was Bots.RespawnSeconds 10).
+		Reinforce = {
+			Enabled = true,
+			Base = 2,
+			PerPlayer = 1, -- solo 3, four players 6
+			Delay = 8, -- seconds from the death to the drop
+			Distance = 10, -- studs from the squadmate the soldier lands
+			DropHeight = 22, -- studs above the ground the soldier falls from (no fall damage)
+			BotRespawnSeconds = 30,
+			Radio = {
+				Inbound = "Control: Reinforcement on the way for %s. Dropping on %s.",
+				Last = "Control: That was the last reinforcement, Pike. Nobody else goes down.",
+				Empty = "Control: No more reinforcements. Get your people home.",
+			},
+		},
+	},
 	-- The revive animation (ReviveAnimService, Shared.ReviveAnimation, Rules/ReviveAnim;
 	-- docs/PROGRESSION.md > Downed and revive). Looks only: the hold, the radius and what
 	-- interrupts a revive stay in Downed above. The kneel and the lying body are existing
@@ -647,12 +2440,11 @@ local Config = {
 		TickSeconds = 0.25, -- countdown refresh, only while someone is down or dead
 	},
 
-	-- Run flow (RunManager, Shared.RunStates). Co-op Sprint A.
-	-- The operation: its missions in play order, each one data file in src/server/Missions
-	-- (docs/LOBBY_MATCH_HANDOFF.md, docs/ARCHITECTURE.md F6). One mission until Mile 14 is
-	-- built in game; the mission-to-mission transition walks this list.
-	Operation = {
-		Missions = { "delta" },
+	-- Which mission a match builds (MissionCatalog; Missions/init, Rules/MissionPick): the lobby
+	-- stores a launch record under the reserved server's PrivateServerId before the teleport.
+	Missions = {
+		LaunchMap = "Launches", -- MemoryStore HashMap name
+		LaunchSeconds = 600, -- a record's expiry: long enough for a slow teleport
 	},
 
 	-- The experience's places (docs/LOBBY_MATCH_HANDOFF.md). Both the lobby and the match read
@@ -795,6 +2587,40 @@ local Config = {
 		-- Server-owned (ProjectileServer), mirrored to the crosshair ring (`Bloom` attribute).
 		BloomRecoveryDelay = 0.1,
 		TracerDuration = 0.06,
+		-- How a round shows by its ammo type's behaviour (WeaponController.drawTracer; the
+		-- Mossberg's shells first, stats-only otherwise): the tracer's width and colour, and a
+		-- brief burst where it stopped (nil: none). A behaviour with no row looks standard.
+		RoundLook = {
+			standard = { Width = 0.12, Color = Color3.fromRGB(255, 214, 120) },
+			-- Dragon's Breath: orange streaks, a spark of burning magnesium where each lands.
+			incendiary = {
+				Width = 0.14,
+				Color = Color3.fromRGB(232, 120, 40),
+				Impact = {
+					Size = 0.6,
+					Color = Color3.fromRGB(232, 120, 40),
+					Seconds = 0.15,
+					Light = 8,
+				},
+			},
+			-- The breaching slug: a fat line and a puff of grit at the wall.
+			breaching = {
+				Width = 0.22,
+				Color = Color3.fromRGB(255, 230, 180),
+				Impact = {
+					Size = 1.6,
+					Color = Color3.fromRGB(150, 140, 125),
+					Seconds = 0.12,
+					Light = 0,
+				},
+			},
+		} :: {
+			[string]: {
+				Width: number,
+				Color: Color3,
+				Impact: { Size: number, Color: Color3, Seconds: number, Light: number }?,
+			},
+		},
 		-- Q swaps long gun and sidearm (LoadoutService): no shot and no reload for this long.
 		SwapTime = 0.5,
 		-- Simulated projectiles (ProjectileServer.fire): unused since the drones were retired,
@@ -880,6 +2706,7 @@ local Config = {
 			ReloadTime = 2.2,
 			ReserveStart = 120,
 			ReserveMax = 240,
+			Scarce = { ReserveStart = 90, ReserveMax = 150 }, -- Config.Scarcity.Ammo on: 3 spare mags at insert, 5 at most
 			HipSpread = 1.5, -- about a stud off at 40 studs
 			AdsSpread = 0.3,
 			BloomPerShot = 0.3, -- ADS: 3 rounds stay on a head at 40 studs
@@ -894,6 +2721,19 @@ local Config = {
 			Sight = { Rear = Vector3.new(0, 0.615, 0.04), Front = Vector3.new(0, 0.615, -1.345) },
 			Price = 0, -- merits at the Quartermaster's rack (Rules/Record); issued free
 			ArmsOrder = 1, -- Arms Room position in its slot (rack, menu); the first is the default
+			-- Attachment system v2 (Config.AttachmentsV2): its slots by family, its ammo by caliber.
+			Family = "rifle",
+			Caliber = "5.56",
+			-- Where its attachments' parts sit (Shared.Attachments.MountPoints; the grip's space, as
+			-- Sight): estimated from wpn_m16's bounds, muzzle and sights; tune in Studio.
+			Mounts = {
+				OpticMount = { at = Vector3.new(0.000, 0.575, -0.160) },
+				BarrelMount = { at = Vector3.new(0.000, 0.360, -1.515) },
+				MuzzleMount = { at = Vector3.new(0.000, 0.360, -2.020) },
+				MagazineMount = { at = Vector3.new(0.000, -0.149, -0.364) },
+				UnderbarrelMount = { at = Vector3.new(0.000, 0.260, -1.212) },
+				StockMount = { at = Vector3.new(0.000, 0.280, 1.060) },
+			},
 		},
 		-- MP5: the best hip-fire; chews Runners, weak on Brutes (Walker 4 / 2, Brute 19 / 15).
 		Smg = {
@@ -906,6 +2746,7 @@ local Config = {
 			ReloadTime = 1.8,
 			ReserveStart = 120,
 			ReserveMax = 210,
+			Scarce = { ReserveStart = 90, ReserveMax = 150 }, -- Config.Scarcity.Ammo on: 3 spare mags at insert, 5 at most
 			HipSpread = 0.9,
 			AdsSpread = 0.6,
 			BloomPerShot = 0.15,
@@ -925,6 +2766,19 @@ local Config = {
 			Price = 300, -- merits at the Quartermaster's rack (Rules/Record)
 			ArmsOrder = 2,
 			Sound = "smg",
+			-- Attachment system v2 (Config.AttachmentsV2): its slots by family, its ammo by caliber.
+			Family = "smg",
+			Caliber = "9mm",
+			-- Where its attachments' parts sit (Shared.Attachments.MountPoints; the grip's space, as
+			-- Sight): estimated from wpn_mp5's bounds, muzzle and sights; tune in Studio.
+			Mounts = {
+				OpticMount = { at = Vector3.new(0.000, 0.545, -0.150) },
+				BarrelMount = { at = Vector3.new(0.000, 0.320, -1.117) },
+				MuzzleMount = { at = Vector3.new(0.000, 0.320, -1.490) },
+				MagazineMount = { at = Vector3.new(0.000, -0.033, -0.268) },
+				UnderbarrelMount = { at = Vector3.new(0.000, 0.220, -0.894) },
+				StockMount = { at = Vector3.new(0.000, 0.240, 0.710) },
+			},
 		},
 		-- M249: a 100-round belt, no reload inside a hold; slow to aim on the move.
 		Lmg = {
@@ -937,6 +2791,7 @@ local Config = {
 			ReloadTime = 5.5,
 			ReserveStart = 150,
 			ReserveMax = 300,
+			Scarce = { ReserveStart = 100, ReserveMax = 200 }, -- Config.Scarcity.Ammo on: 1 spare belt at insert, 2 at most
 			HipSpread = 3.0,
 			AdsSpread = 0.5,
 			BloomPerShot = 0.15,
@@ -950,8 +2805,21 @@ local Config = {
 			-- The leaf's peep on the feed cover and the eared post by the muzzle.
 			Sight = { Rear = Vector3.new(0, 0.68, 0.03), Front = Vector3.new(0, 0.68, -1.68) },
 			Price = 600, -- merits at the Quartermaster's rack (Rules/Record)
+			Unlock = { District = "DELTA", Wins = 3 }, -- the sale opens after 3 Delta wins (Rules/DistrictUnlock)
 			ArmsOrder = 3,
 			Sound = "lmg",
+			-- Attachment system v2 (Config.AttachmentsV2): its slots by family, its ammo by caliber.
+			Family = "lmg",
+			Caliber = "5.56",
+			-- Where its attachments' parts sit (Shared.Attachments.MountPoints; the grip's space, as
+			-- Sight): estimated from wpn_m249's bounds, muzzle and sights; tune in Studio.
+			Mounts = {
+				OpticMount = { at = Vector3.new(0.000, 0.640, -0.170) },
+				BarrelMount = { at = Vector3.new(0.000, 0.380, -1.417) },
+				MuzzleMount = { at = Vector3.new(0.000, 0.380, -1.890) },
+				MagazineMount = { at = Vector3.new(0.000, 0.027, -0.340) },
+				StockMount = { at = Vector3.new(0.000, 0.300, 1.050) },
+			},
 		},
 		-- Mossberg 590: point-blank, one decision per pull; one pull drops every form but the
 		-- Brute (3).
@@ -967,6 +2835,7 @@ local Config = {
 			ReloadTime = 3.5,
 			ReserveStart = 20,
 			ReserveMax = 40,
+			Scarce = { ReserveStart = 16, ReserveMax = 32 }, -- Config.Scarcity.Ammo on: 2 tube loads at insert, 4 at most
 			HipSpread = 5.0,
 			AdsSpread = 3.5,
 			BloomPerShot = 0,
@@ -986,6 +2855,19 @@ local Config = {
 			Price = 400, -- merits at the Quartermaster's rack (Rules/Record)
 			ArmsOrder = 4,
 			Sound = "shotgun",
+			-- Attachment system v2 (Config.AttachmentsV2): its slots by family, its ammo by caliber.
+			Family = "shotgun",
+			Caliber = "12ga",
+			-- Where its attachments' parts sit (Shared.Attachments.MountPoints; the grip's space, as
+			-- Sight): estimated from wpn_mossberg's bounds, muzzle and sights; tune in Studio.
+			Mounts = {
+				OpticMount = { at = Vector3.new(0.000, 0.460, -0.150) },
+				BarrelMount = { at = Vector3.new(0.000, 0.420, -1.350) },
+				MuzzleMount = { at = Vector3.new(0.000, 0.420, -1.800) },
+				MagazineMount = { at = Vector3.new(0.000, -0.028, -0.324) },
+				UnderbarrelMount = { at = Vector3.new(0.000, 0.320, -1.080) },
+				StockMount = { at = Vector3.new(0.000, 0.340, 1.042) },
+			},
 		},
 		-- M110: one-taps Walkers, hits two in a line, poor up close. Ammo reins it in
 		-- (100 x 60 is the M16's 270 x 20).
@@ -1001,6 +2883,7 @@ local Config = {
 			ReloadTime = 2.6,
 			ReserveStart = 40,
 			ReserveMax = 80,
+			Scarce = { ReserveStart = 40, ReserveMax = 60 }, -- Config.Scarcity.Ammo on: 2 spare mags at insert, 3 at most
 			HipSpread = 4.0,
 			AdsSpread = 0.1,
 			BloomPerShot = 1.2,
@@ -1021,6 +2904,19 @@ local Config = {
 			Price = 500, -- merits at the Quartermaster's rack (Rules/Record)
 			ArmsOrder = 5,
 			Sound = "dmr",
+			-- Attachment system v2 (Config.AttachmentsV2): its slots by family, its ammo by caliber.
+			Family = "dmr",
+			Caliber = "7.62",
+			-- Where its attachments' parts sit (Shared.Attachments.MountPoints; the grip's space, as
+			-- Sight): estimated from wpn_m110's bounds, muzzle and sights; tune in Studio.
+			Mounts = {
+				OpticMount = { at = Vector3.new(0.000, 0.600, -0.030) },
+				BarrelMount = { at = Vector3.new(0.000, 0.400, -1.838) },
+				MuzzleMount = { at = Vector3.new(0.000, 0.400, -2.450) },
+				MagazineMount = { at = Vector3.new(0.000, -0.018, -0.441) },
+				UnderbarrelMount = { at = Vector3.new(0.000, 0.300, -1.470) },
+				StockMount = { at = Vector3.new(0.000, 0.320, 0.802) },
+			},
 		},
 		-- M17: the sidearm, backup when the primary runs dry.
 		Pistol = {
@@ -1033,6 +2929,7 @@ local Config = {
 			ReloadTime = 1.5,
 			ReserveStart = 34,
 			ReserveMax = 68,
+			Scarce = { ReserveStart = 34, ReserveMax = 51 }, -- Config.Scarcity.Ammo on: 2 spare mags at insert, 3 at most
 			HipSpread = 1.2,
 			AdsSpread = 0.5,
 			BloomPerShot = 0.6,
@@ -1053,6 +2950,16 @@ local Config = {
 			Price = 0, -- merits at the Quartermaster's rack (Rules/Record); issued free
 			ArmsOrder = 1,
 			Sound = "pistol",
+			-- Attachment system v2 (Config.AttachmentsV2): its slots by family, its ammo by caliber.
+			Family = "pistol",
+			Caliber = "9mm",
+			-- Where its attachments' parts sit (Shared.Attachments.MountPoints; the grip's space, as
+			-- Sight): estimated from wpn_m17's bounds, muzzle and sights; tune in Studio.
+			Mounts = {
+				OpticMount = { at = Vector3.new(0.000, 0.410, -0.090) },
+				BarrelMount = { at = Vector3.new(0.000, 0.320, -0.364) },
+				MagazineMount = { at = Vector3.new(0.000, -0.082, -0.087) },
+			},
 		},
 		-- Sample guns (2026-11-09, dev menu; the Arms Room lists them once Nova's loadout work
 		-- does). Each wears its own Blender mesh (`Model`, MeshAssets wpn_*) and plays its own
@@ -1069,6 +2976,7 @@ local Config = {
 			ReloadTime = 2.8, -- speedloader
 			ReserveStart = 18,
 			ReserveMax = 30,
+			Scarce = { ReserveStart = 12, ReserveMax = 24 }, -- Config.Scarcity.Ammo on: 2 cylinders at insert, 4 at most
 			HipSpread = 1.8,
 			AdsSpread = 0.4,
 			BloomPerShot = 1.5,
@@ -1092,6 +3000,15 @@ local Config = {
 			Price = 350, -- merits at the Quartermaster's rack (Rules/Record)
 			ArmsOrder = 2,
 			Sound = "revolver",
+			-- Attachment system v2 (Config.AttachmentsV2): its slots by family, its ammo by caliber.
+			Family = "revolver",
+			Caliber = ".357",
+			-- Where its attachments' parts sit (Shared.Attachments.MountPoints; the grip's space, as
+			-- Sight): estimated from wpn_revolver's bounds, muzzle and sights; tune in Studio.
+			Mounts = {
+				OpticMount = { at = Vector3.new(0.000, 0.436, -0.100) },
+				BarrelMount = { at = Vector3.new(0.000, 0.340, -0.570) },
+			},
 		},
 		-- M2010 ESR: one round per form but the Brute (2), through three more in a line. One
 		-- decision per bolt; useless from the hip (Walker 1 / 1, Brute 2 / 2).
@@ -1107,6 +3024,7 @@ local Config = {
 			ReloadTime = 3.2,
 			ReserveStart = 15,
 			ReserveMax = 30,
+			Scarce = { ReserveStart = 10, ReserveMax = 20 }, -- Config.Scarcity.Ammo on: 2 spare mags at insert, 4 at most
 			HipSpread = 6.0,
 			AdsSpread = 0.05,
 			BloomPerShot = 0, -- the bolt cycle outlasts any bloom
@@ -1125,8 +3043,86 @@ local Config = {
 				Zoom = 6,
 			},
 			Price = 700, -- merits at the Quartermaster's rack (Rules/Record)
+			Unlock = { District = "MILE 14", Wins = 3 }, -- the sale opens after 3 Mile 14 wins (Rules/DistrictUnlock)
 			ArmsOrder = 6,
 			Sound = "sniper",
+			-- Attachment system v2 (Config.AttachmentsV2): its slots by family, its ammo by caliber.
+			Family = "sniper",
+			Caliber = "7.62",
+			-- Where its attachments' parts sit (Shared.Attachments.MountPoints; the grip's space, as
+			-- Sight): estimated from wpn_sniper's bounds, muzzle and sights; tune in Studio.
+			Mounts = {
+				OpticMount = { at = Vector3.new(0.000, 0.580, 0.030) },
+				BarrelMount = { at = Vector3.new(0.000, 0.340, -1.965) },
+				MuzzleMount = { at = Vector3.new(0.000, 0.340, -2.620) },
+				MagazineMount = { at = Vector3.new(0.000, 0.032, -0.472) },
+				StockMount = { at = Vector3.new(0.000, 0.260, 1.030) },
+			},
+		},
+		-- Barrett M82A1 ("the Fifty", .50 BMG, semi-auto; Nova 2026-11-20): sold only by the
+		-- Visitor, for merits. A round goes through four bodies in a line (Overpen: squadmates
+		-- included, and thin walls) and breaks the Brute's plated front; it is heavy to carry
+		-- (no sprint) and the sights take about two seconds to settle after a shot (the bloom
+		-- below), so aimed fire runs about 30 rounds a minute. Walker 1 / 1, Brute 1-2 / 1.
+		Fifty = {
+			Noise = 250, -- the loudest gun but the Goose (Config.Awareness)
+			Heavy = true, -- staggers a Brute (Config.Enemies.Flinch)
+			FireMode = "semi", -- one round per pull, as fast as the trigger is pulled
+			Damage = 180,
+			FireCooldown = 0.25, -- the action's cycle: the bloom, not this, sets the aimed rate
+			MagazineSize = 10,
+			ReloadTime = 4.5,
+			ReserveStart = 20, -- 2 spare mags at insert
+			ReserveMax = 40, -- 4 at most
+			Scarce = { ReserveStart = 10, ReserveMax = 30 }, -- Config.Scarcity.Ammo on: 1 spare at insert, 3 at most
+			HipSpread = 4.0, -- about 2 studs off at 30: unreliable past that from the hip
+			AdsSpread = 0.05,
+			BloomPerShot = 2.5, -- a shot throws the aim 2.5 degrees wide ...
+			BloomMax = 2.5,
+			BloomRecovery = 1.25, -- ... that settles at 1.25 degrees a second: ~2 s back on target
+			AdsMoveFactor = 0.6, -- on top of CarryMoveFactor while aiming
+			CarryMoveFactor = 0.65, -- walk speed while it is in hand (SprintController)
+			CanSprint = false, -- too heavy to run with (SprintController)
+			Range = 800,
+			HeadshotMultiplier = 3.0,
+			-- Heavier than the M2010 (5.0), lighter than the Goose (7.0); back over ~2 s.
+			Kick = { Pitch = 6.5, Yaw = 1.0, Recover = 2.0 },
+			-- The round's path (Rules/Overpen, ProjectileServer): bodies it hits at most (the
+			-- last stops it), the share taken off per body pierced, the thickest wall (studs)
+			-- it passes, a squadmate's share, and whether it breaks the Brute's plated front
+			-- (Config.InfectedMoves.Brute.Armour: the round lands whole on his front).
+			Overpen = {
+				Bodies = 4,
+				Falloff = 0.10,
+				WallThickness = 1.0,
+				FriendlyFire = 1.0,
+				BreaksArmour = true,
+			},
+			-- A stand-in mesh: the M2010's, until the Barrett model is in (docs/BACKLOG.md).
+			Model = "wpn_sniper",
+			-- The M2010's scope points on that mesh, at 10x (Rules/Sight allows 2..10).
+			Sight = {
+				Kind = "scope",
+				Rear = Vector3.new(0, 0.62, 0.23),
+				Front = Vector3.new(0, 0.62, -0.97),
+				Zoom = 10,
+			},
+			Price = 1500, -- merits, at the Visitor only (Desk); never tabs
+			Desk = "visitor", -- LobbyDesks id: his desk screen lists it (KitPrices)
+			ArmsOrder = 8,
+			Sound = "sniper", -- the M2010's shot until the Fifty has its own
+			-- Attachment system v2 (Config.AttachmentsV2): its slots by family, its ammo by caliber.
+			Family = "fifty",
+			Caliber = ".50 BMG",
+			-- Where its attachments' parts sit (Shared.Attachments.MountPoints; the grip's space, as
+			-- Sight): estimated from wpn_sniper's bounds, muzzle and sights; tune in Studio.
+			Mounts = {
+				OpticMount = { at = Vector3.new(0.000, 0.580, 0.030) },
+				BarrelMount = { at = Vector3.new(0.000, 0.340, -1.965) },
+				MuzzleMount = { at = Vector3.new(0.000, 0.340, -2.620) },
+				MagazineMount = { at = Vector3.new(0.000, 0.032, -0.472) },
+				StockMount = { at = Vector3.new(0.000, 0.260, 1.030) },
+			},
 		},
 		-- M3 recoilless ("Goose", the squad's RPG): a visible rocket. A direct hit kills anything
 		-- but the Warden; the blast (the frag's, no friendly fire) drops every form but the Brute
@@ -1193,6 +3189,68 @@ local Config = {
 		ConeDot = 0.5, -- hits inside ~60 degrees either side of facing
 		Cooldown = 1,
 	},
+	-- Kit Mods (Nova, 2026-11-18; the Loadmaster's KIT MODS tab): passive buffs on the soldier
+	-- whatever gun they carry, bought rank by rank with merits (never tabs) and kept for good on
+	-- the record (Rules/KitModRules, Shared.KitMods). One row per mod: Costs[n] is rank n's
+	-- price, PerRank is added to the row's Effect per rank held; the services that own an
+	-- Effect ask KitMods.bonus for it. Enabled = false: shown greyed, not sold, no effect (its
+	-- effect is a follow-up). Prices from the systems designer (about 1 : 2 : 3.5 a rank; a
+	-- full mod is 8-13 wins at 120 merits). docs/OWNER.md says power is the loadout, never stat
+	-- items: this is built for the owner to decide (docs/BACKLOG.md > Your call).
+	KitMods = {
+		stim_carry = {
+			Name = "Extra stim",
+			Description = "Carry one more stim per rank. Refills fill you to the new count.",
+			Effect = "StimsCarried", -- LoadoutService: stims carried
+			PerRank = 1,
+			MaxRank = 3,
+			Costs = { 200, 400, 750 },
+			Enabled = true,
+			Order = 1,
+		},
+		sprint_roll = {
+			Name = "Extra roll",
+			Description = "One more roll from a full stamina bar per rank (a little more sprint too).",
+			Effect = "StaminaRolls", -- SprintController: Stamina.Max + RollCost per roll
+			PerRank = 1,
+			MaxRank = 3,
+			Costs = { 150, 300, 500 },
+			Enabled = true,
+			Order = 2,
+		},
+		callin_cooldown = {
+			Name = "Quicker call-ins",
+			Description = "Call-ins are back 8 seconds sooner per rank.",
+			Effect = "CallInCooldown", -- seconds (not wired yet; the designer suggests ~5% a rank instead)
+			PerRank = -8,
+			MaxRank = 3,
+			Costs = { 250, 500, 850 },
+			Enabled = false,
+			Order = 3,
+		},
+		revive_speed = {
+			Name = "Faster revives",
+			Description = "Pick a downed squadmate up 15% faster per rank.",
+			Effect = "ReviveSpeed", -- share faster (not wired yet)
+			PerRank = 0.15,
+			MaxRank = 3,
+			Costs = { 150, 300, 500 },
+			Enabled = false,
+			Order = 4,
+		},
+	} :: {
+		[string]: {
+			Name: string,
+			Description: string,
+			Effect: string,
+			PerRank: number,
+			MaxRank: number,
+			Costs: { number },
+			Enabled: boolean,
+			Order: number,
+		},
+	},
+
 	Stim = {
 		Carried = 2,
 		Heal = 60, -- health over Duration
@@ -1219,6 +3277,10 @@ local Config = {
 		Compact = Vector2.new(1180, 680),
 		TemplateWait = 20,
 	},
+	-- Vehicle bodies' meshes (VehicleBody): how long a server waits for them to load before it
+	-- publishes them to the clients (match) or builds the motor pool's display (lobby);
+	-- a body built without them is the Part body.
+	VehicleMeshes = { Wait = 30 },
 
 	-- Body animations: clip names from assets/animations (Mixamo, retargeted by
 	-- assets/animations/build/retarget.py). Ids are the published Roblox animations
@@ -1295,11 +3357,22 @@ local Config = {
 			warden_slam = "rbxassetid://80930861193470",
 			warden_stomp = "rbxassetid://137160328942631",
 			warden_hit = "rbxassetid://92513440124088",
+			-- Keyed by assets/animations/build/keyed.luau (no Mixamo source), 2026-11-18.
+			warden_shove = "rbxassetid://119777822260499",
+			warden_leap = "rbxassetid://129607022708712",
+			warden_stride = "rbxassetid://128664443037961", -- the heavy walk (the boss pass, 2026-11-18)
 			knockdown_back = "rbxassetid://98193119951691",
 			getup_back = "rbxassetid://136455455125454",
 			-- Roblox's stock R15 climb (the Animate script's ClimbAnim): played on a ladder
 			-- (TrussPart) while the Humanoid is in its Climbing state; not a Mixamo clip
 			ladder_climb = "rbxassetid://507765644",
+			-- The Carrier sellers' looping idles (lobby, NpcPose; hand-keyed by
+			-- assets/animations/build/seller_idles.luau, played on top of each seller's pose)
+			seller_quartermaster = "rbxassetid://124934111901603",
+			seller_sapper = "rbxassetid://76071341544718",
+			seller_loadmaster = "rbxassetid://72753754042631",
+			seller_motor_sergeant = "rbxassetid://121963273047523",
+			seller_watch_officer = "rbxassetid://135909242377486",
 		},
 		-- Throw timing, one row per throw clip (Rules/ThrowTiming; docs/PROGRESSION.md >
 		-- Throwing): the clip plays from Start seconds in at Speed, and the grenade, marker or
@@ -1405,9 +3478,12 @@ local Config = {
 			-- The Warden stands upright: his own set. idle plays whenever he stands still,
 			-- guard is an upper-body overlay (shield up) over the walk, charge loops during
 			-- the Gate Charge, riot on each Riot Call, throw on the Gas Canister (upper body).
+			-- attack = "warden_shove" (keyed shield punch, 2026-11-18); "warden_bash" is the old
+			-- Mixamo Power Slash that spun him a full turn. leap = his Leap (keyed).
 			Warden = {
-				move = "warden_walk",
-				attack = "warden_bash",
+				move = "warden_stride", -- the keyed heavy walk (boss pass); "warden_walk" is the old one
+				attack = "warden_shove",
+				leap = "warden_leap",
 				death = "warden_death",
 				idle = "warden_idle",
 				guard = "warden_guard",
@@ -1448,7 +3524,10 @@ local Config = {
 			prone_walk_b = 4,
 			zombie_crawl = 6,
 			-- Downloaded in place (no root motion to measure), so by eye.
-			warden_walk = 6,
+			warden_walk = 13, -- 6 at scale 1 by eye, times his scale (2.2 since the boss pass; was 11 at 1.9)
+			-- Keyed: ~10.5 studs per 1.3 s cycle at scale 2.2 (an estimate; IndexService also
+			-- matches the rate to his real ground speed, so the boots never slide).
+			warden_stride = 8,
 			warden_run = 16,
 		},
 		WalkRunThreshold = 20, -- studs/s: faster than this plays the run clip (walk 16, sprint 24)
@@ -1677,6 +3756,7 @@ local Config = {
 		-- the mark at most. Walk It In steps them Config.Upgrades.WalkingBarrage.Step apart.
 		Hammer = {
 			Price = 0, -- merits on the Carrier (Rules/Record, KitPrices); issued free
+			Tally = 1284, -- uses painted on the Carrier hull before any squad added to it (TallyBoards, Rules/Tally)
 			Display = { Prop = "shells", Width = 3 }, -- how the Call-ins display shows it (CallInDisplay)
 			Charges = 1,
 			Cooldown = 120,
@@ -1717,6 +3797,7 @@ local Config = {
 		-- line of sight; one heavy shell Delay seconds after the mark.
 		Anvil = {
 			Price = 0, -- merits on the Carrier (Rules/Record, KitPrices); issued free
+			Tally = 502,
 			Display = { Prop = "maptable", Width = 4 }, -- how the Call-ins display shows it (CallInDisplay)
 			Charges = 1,
 			Cooldown = 180,
@@ -1762,6 +3843,7 @@ local Config = {
 		-- impacts centred on the mark, Step studs apart along the throw, BurstInterval apart.
 		Shrike = {
 			Price = 0, -- merits on the Carrier (Rules/Record, KitPrices); issued free
+			Tally = 781,
 			Display = { Prop = "gunship", Width = 4.2 }, -- how the Call-ins display shows it (CallInDisplay)
 			Charges = 1,
 			Cooldown = 150,
@@ -1799,6 +3881,7 @@ local Config = {
 		-- FireInterval it shoots the nearest Infected in Range it can see.
 		Doorman = {
 			Price = 400, -- merits on the Carrier (Rules/Record, KitPrices)
+			Tally = 1736,
 			Display = { Prop = "doorman", Width = 4.6 }, -- how the Call-ins display shows it (CallInDisplay)
 			Charges = 1,
 			Cooldown = 150,
@@ -1836,6 +3919,7 @@ local Config = {
 		-- when an Infected steps within TriggerRadius.
 		Tripline = {
 			Price = 0, -- merits on the Carrier (Rules/Record, KitPrices); issued free
+			Tally = 960,
 			Display = { Prop = "mines", Width = 3.4 }, -- how the Call-ins display shows it (CallInDisplay)
 			Charges = 2,
 			Cooldown = 60,
@@ -1864,6 +3948,7 @@ local Config = {
 		-- DamagePerSecond (dealt every TickInterval).
 		Concertina = {
 			Price = 250, -- merits on the Carrier (Rules/Record, KitPrices)
+			Tally = 433,
 			Display = { Prop = "wire", Width = 3.4 }, -- how the Call-ins display shows it (CallInDisplay)
 			Charges = 2,
 			Cooldown = 90,
@@ -1892,6 +3977,7 @@ local Config = {
 		-- times in all. A player re-arms again only after stepping out of the radius.
 		Speedball = {
 			Price = 300, -- merits on the Carrier (Rules/Record, KitPrices)
+			Tally = 1102,
 			Display = { Prop = "ammo", Width = 3.4 }, -- how the Call-ins display shows it (CallInDisplay)
 			Charges = 1,
 			Cooldown = 180,
@@ -1918,6 +4004,7 @@ local Config = {
 		-- full heal, stims refilled, +Plate shield (Config.Crates.ShieldCap still caps it).
 		AidBag = {
 			Price = 300, -- merits on the Carrier (Rules/Record, KitPrices)
+			Tally = 1458,
 			Display = { Prop = "medbag", Width = 3 }, -- how the Call-ins display shows it (CallInDisplay)
 			Charges = 1,
 			Cooldown = 180,
@@ -1945,30 +4032,40 @@ local Config = {
 		-- gun) and the back seat, who fires their primary.
 		ATV = {
 			Price = 400, -- merits on the Carrier (Rules/Record, KitPrices)
+			Tally = 37,
 			Desk = "vehicles", -- sold by the motor sergeant (LobbyDesks), not the Call-ins desk
 			Charges = 1,
 			Cooldown = 180, -- a wrecked or scrapped ATV comes back when the charge does
 			ThrowDistance = 30,
 			Aim = { Shape = "ring", Radius = 5 }, -- where it is set down
-			-- Slung under the helicopter (Nova 2026-11-17): the helo comes in at Height over the
-			-- mark with the ATV on a Line studs long, lowers it to the ground, drops the hook and
-			-- climbs away. Approach and Depart are the flight in and out; the lowering lasts from
-			-- the end of the approach to Time (from the throw), when the server's ATV appears.
+			-- Dropped in a crate (Tien and Nova 2026-11-17; it was slung and lowered, `sling` is
+			-- still a style): the helo flies straight over the mark at Height and Speed from
+			-- Distance out and on as far again, climbing Climb, and never stops; it lets the crate
+			-- go Fall seconds before Time and the crate drops straight down, landing at Time (the
+			-- server's ATV appears inside it). The walls fall open flat over Open, the lid kicks
+			-- off behind; the boards lie Linger seconds and fade over Fade. The crate is the
+			-- vehicle's own size: its extents plus CrateRoom each side and over the top, in
+			-- CrateStep steps (Rules/Arrival.crateSize); a `Crate` (Vector3) on the Vehicle block
+			-- sets one instead.
 			Arrival = {
-				Style = "sling",
+				Style = "crate",
 				Time = 7.5,
 				Smoke = Color3.fromRGB(214, 196, 92),
 				SmokeTime = 8,
-				Approach = 4.5, -- in from Distance studs out to the hover
-				Depart = 3.5, -- the helo climbs away after the hook is dropped
-				Distance = 260,
-				Height = 34, -- the helo's frame above the mark during the hover
-				Line = 16, -- the sling line, studs, from the belly to the ATV's roll bar
-				Climb = 70, -- studs it gains on the way out
+				Distance = 300,
+				Speed = 60,
+				Height = 46, -- the helo's frame over the mark; the crate hangs under its skids
+				Climb = 25,
+				Fall = 1.4,
+				Open = 0.55,
+				Linger = 4,
+				Fade = 1.5,
+				CrateRoom = 0.4,
+				CrateStep = 0.5,
 				RotorVolume = 0.55,
 			},
 			Vehicle = {
-				Body = "atv", -- VehicleBody's build (blocky parts; a mesh later)
+				Body = "atv", -- VehicleBody's build (Nova's model; the Part body while it loads)
 				PerPlayer = 1, -- a second call replaces your empty one (Rules/Vehicle.callCheck)
 				PerSquad = 2, -- two ATVs carry the whole squad
 				Clear = Vector3.new(6, 4, 9), -- the landing box that must be free of walls (no charge spent)
@@ -2034,8 +4131,8 @@ local Config = {
 				-- radio notices: to the squad when it is called, set down and lost; to the caller
 				-- when a call is refused; to the riders when it is about to blow.
 				Radio = {
-					Inbound = "Pike, Control. Helo bringing your ATV in under it. Clear the drop.",
-					Down = "Helo. ATV's on the ground. Hook's clear.",
+					Inbound = "Pike, Control. Helo's coming over with your ATV in a crate. Clear the drop.",
+					Down = "Helo. Crate's down. ATV's yours.",
 					Lost = "Pike, Control. Lost your ATV. You're on foot.",
 					Burning = "It's going up! Get off!",
 					Occupied = "Your ATV's still got people on it.",
@@ -2131,7 +4228,7 @@ local Config = {
 			PauseAfter = 1.6, -- a hold whose seconds have not risen this long reads PAUSED
 			FillSeconds = 0.25, -- the fill eases to each new value (about once a second)
 		},
-		MarkerDistance = 1200, -- studs a world marker is seen from
+		MarkerDistance = 2600, -- studs a world marker is seen from (the big map is 1,800 across)
 		MetresPerStud = 0.28,
 		LampColor = Color3.fromRGB(255, 176, 64), -- Lights On: sodium
 		-- Said once at insert, before the main objective's brief.
@@ -2218,6 +4315,61 @@ local Config = {
 		SpawnFactor = 0.5,
 		MaxAliveBonus = 6,
 		HeavyCapBonus = 2,
+	},
+
+	-- Breaches and the pressure rhythm (owner 2026-11-18, "it's not really that challenging or
+	-- fun"; docs/PROGRESSION.md > Breaches, docs/sprints/FUN_BREACHES.md; BreachService,
+	-- Rules/Breach). One alert meter per run: being loud (shots with Infected in earshot,
+	-- blasts, call-ins) and fresh contact raise it, going quiet lets it fall. At the threshold
+	-- a breach: a warning (sound + radio + a marker on screen), then a horde from one side over
+	-- FloodSeconds, then a relief where nothing builds. Pressure 0..1 over RampSeconds makes
+	-- breaches bigger and more frequent late. Enabled = false: the old steady trickle.
+	Breaches = {
+		Enabled = true,
+		Threshold = { 150, 90 }, -- alert for a breach { run start, full pressure }
+		Passive = { 0.15, 0.5 }, -- alert a second from time alone { early, late }
+		TensionAt = 0.5, -- share of the threshold: Calm turns to Tension
+		QuietDelay = 8, -- seconds after the last loud moment before the alert falls
+		Decay = 4, -- alert a second while quiet
+		Floor = { 0, 0.35 }, -- share of the threshold the alert never falls below { early, late }
+		MaxGainPerSecond = 5, -- gunfire's most alert in one second, every gun together
+		RampSeconds = 720, -- run seconds (threat clock) to full pressure
+		FirstAfter = 60, -- no breach in a run's first seconds
+		WarnSeconds = 4, -- warning before the first body
+		FloodSeconds = 10, -- the horde arrives over this long
+		Relief = { 50, 30 }, -- seconds of quiet after a breach { early, late }
+		Horde = { Base = 10, PerExtraPlayer = 4, Late = 10, Max = 32 }, -- never past MaxAliveHardCap
+		Distance = 65, -- studs from the squad's middle to the side they come from
+		Spread = 16, -- studs: how wide the side is
+		-- The roaming spawn interval's multiplier per phase (bigger = fewer): the quiet stretches.
+		Trickle = { Calm = 1.6, Tension = 1, Breach = 3, Relief = 2.5 } :: { [string]: number },
+		-- What raises the alert.
+		Sources = {
+			Shot = 0.25, -- per shot at ShotReach studs of noise (scaled by the gun's Noise)
+			ShotReach = 110,
+			Blast = 10, -- a frag, the Goose (anything through KitService.blast)
+			CallIn = 12, -- a call-in going off; a call-in row's own BreachAlert overrides it
+			Spotted = 1.5, -- an Infected coming within SpotRange of a squad member, once each
+			SpotRange = 30,
+		},
+		-- The main objective (or the single hold) brings one breach at this share of its work,
+		-- at its site; it waits while the Warden is on the field.
+		Objective = { Enabled = true, At = 0.4 },
+		-- Heard where they come from (WorldSounds.at at the side, so the direction carries).
+		WarningSounds = {
+			{ Bank = "ambience", Group = "amb_siren", Volume = 0.5 },
+			{ Bank = "brute", Group = "brute_idle", Volume = 1 },
+			{ Bank = "runner", Group = "runner_idle", Volume = 1 },
+		},
+		-- Control's lines (lore developer pass; plain words). `{side}` = a compass word.
+		Radio = {
+			Tension = "Lot of movement on the sensors, Pike. You're making noise.",
+			Breach = "Big group breaking through to your {side}. Brace!",
+			Objective = "They heard the work. Big group coming in from the {side}. Hold the site!",
+			Relief = "That's the worst of it. Catch your breath.",
+		},
+		ReliefLineAt = 0.25, -- the relief line once this share of the horde is left alive
+		Marker = { Seconds = 14, Radius = 0.36 }, -- the on-screen arrow: how long, share of the screen
 	},
 
 	-- Spawn director phases (Sprint 9): type weights per run-time window,
@@ -2402,6 +4554,151 @@ local Config = {
 		},
 	},
 
+	-- Dangerous Infected (the "make it fun" sprint, 2026-11-18; docs/sprints/FUN_ENEMIES.md,
+	-- docs/PROGRESSION.md > The Infected roster > Moves). Each form forces its own answer:
+	-- the Brute's plated front and charge (flank it, blow it up, scatter), the Runner's
+	-- pounce and pin (a squadmate shoots or shoves it off), the Hocker's lob over cover and
+	-- its barrage of puddles (move), the Walkers' grab in a crowd (do not let them close).
+	-- Every move has a tell: a sound and a pose before it lands. EnemyService runs them,
+	-- DamageService the armour, Rules/InfectedMoves the maths. Enabled = false turns every
+	-- move off (the forms keep their new health and damage in EnemyDefinitions); each move
+	-- has its own Enabled too. Numbers: systems designer pass in the design note.
+	InfectedMoves = {
+		Enabled = true,
+		-- Control on the radio (subtitles): the first charge and the first lob of a run say
+		-- what beats them; every pin names who needs help ({name}), at most every PinGap s.
+		Radio = {
+			FirstCharge = "Big one charging. Get out of its line and hit it from behind.",
+			FirstLob = "Spitter's lobbing over your cover. Move off the spot.",
+			Pinned = "{name} is pinned. Shoot it off them.",
+			PinGap = 6,
+		},
+		Brute = {
+			-- The plated front: a round on the head, torso or arms from the front does
+			-- FrontShare; from behind BackMultiplier; the side and the legs full. Blasts are
+			-- never plated (explosives are the answer). The hit marker shows "plate".
+			Armour = {
+				Enabled = true,
+				FrontShare = 0.4,
+				BackMultiplier = 1.25,
+				FrontDot = 0.5, -- the face a round lands on points this far forward: front (~60 deg)
+				BackDot = -0.5,
+			},
+			-- The charge: a soldier 14-40 studs off in the open. Tell: he stops, rears back
+			-- (the body tilts) and bellows for Windup seconds, turning to follow; then runs a
+			-- straight line through them and Overrun past. Everyone in Width is hit once:
+			-- Damage, knocked down Knockdown seconds and thrown off the side of the line
+			-- (the squad scatters). Hard cover stops him dead, stunned WallStun: the flank.
+			Charge = {
+				Enabled = true,
+				MinRange = 14,
+				MaxRange = 40,
+				Cooldown = 9, -- seconds between charges, per Brute
+				FirstDelay = 4, -- seconds after a Brute spawns before its first
+				Windup = 1.1,
+				RearTilt = 14, -- degrees he leans back through the windup
+				Speed = 36, -- studs/s (the soldier sprints 24)
+				Overrun = 12, -- studs past where the target stood
+				Distance = 48, -- the most one runs
+				Width = 4.5, -- studs either side of the line that are hit
+				HitHeight = 6,
+				Damage = 25,
+				Knockdown = 1.4,
+				Throw = 34, -- studs/s, the scatter
+				ThrowAlong = 0.6, -- share of the throw along the charge
+				WallStun = 2.5,
+				Recovery = 0.8, -- seconds he stands after a clean run
+				Probe = 3, -- studs ahead he looks for a wall
+			},
+		},
+		Runner = {
+			-- The pounce: a soldier 6-18 studs off. Tell: a crouch and a shriek for Windup;
+			-- then a leap at where they stood (step aside or roll and it lands on nothing).
+			-- A hit pins them on their back: knocked down until a squadmate kills the Runner
+			-- or shoves it off (F), or PinSeconds pass; it claws PinDamage every PinTick.
+			Pounce = {
+				Enabled = true,
+				MinRange = 6,
+				MaxRange = 18,
+				Cooldown = 8,
+				FirstDelay = 2,
+				Windup = 0.55,
+				CrouchTilt = 18, -- degrees it drops forward through the windup
+				Flight = 0.45, -- seconds in the air
+				Arc = 3.5, -- studs above the line at half way
+				LandRadius = 4, -- the soldier within this of the landing is caught
+				Damage = 10, -- the landing
+				PinSeconds = 5, -- the most a pin lasts
+				PinTick = 0.5,
+				PinDamage = 4, -- per tick (8 a second)
+				Miss = 0.7, -- seconds it stumbles after landing on nothing
+				ThrownOff = 1.0, -- seconds it is stunned when shoved off or the pin runs out
+				HopOff = 5, -- studs it is thrown clear
+				Lift = 1.2, -- studs above the pinned body's root it crouches
+			},
+			-- Runners come in packs: the spawn director's Runner brings PackExtra more (dev
+			-- spawns and objective waves do not).
+			Pack = { Enabled = true, Extra = { 1, 2 }, Spread = 4 },
+		},
+		Hocker = {
+			-- Out of a clear line it lobs high over the cover instead (Flight seconds in the
+			-- air: a long, readable arc), when the sky above both ends is open.
+			Lob = { Enabled = true, Flight = 1.7, SkyCheck = 30 },
+			-- Each spit is Globs globs: one on the mark, the rest Spread studs either side
+			-- across the line, each with its puddle. The squad has to move.
+			Barrage = { Enabled = true, Globs = 3, Spread = 7 },
+			BackOffShare = 0.7, -- backs off when a soldier is inside this share of its stand-off
+		},
+		Walker = {
+			-- The grab: a Walker's claw landing with Crowd or more Infected within Radius of
+			-- the soldier (the hitter counted) holds them: their speed drops to the factor
+			-- (Rules/InfectedMoves.grabFactor) for Seconds. Bots too, while they walk to their spot.
+			Grab = {
+				Enabled = true,
+				Radius = 7,
+				Crowd = 3,
+				Slow = 0.6,
+				SlowPerExtra = 0.1,
+				MinFactor = 0.3,
+				Seconds = 1.2,
+			},
+		},
+	},
+
+	-- Checkpoint Delta XL, the grey test map (docs/sprints/DELTA_XL.md; server DeltaXL, layout
+	-- Shared.DeltaXLLayout): today's Delta in the middle of 1,800 x 1,800 studs with eight
+	-- areas round it. Off: today's map, exactly as before. On (here, or the dev panel's RUN >
+	-- "Big map (grey test)" for one session): the fence opens, the outer areas are built,
+	-- the squad drops at a corner far from the main objective and the helicopter's pickup is
+	-- chosen and called only when the main objective is done.
+	DeltaXL = {
+		Enabled = false,
+		Map = "delta_xl", -- ObjectiveDefinitions map played while it is on (Of = "delta")
+		BoundaryHeight = 120, -- the invisible walls at the map's edge
+		SpawnInset = 892, -- Infected spawns stay this far inside the centre on each axis
+		-- A spawn whose ground is lower than this is refused: the river channel (bed -12).
+		LowGround = -1,
+		-- The Burn on the big map (PROGRESSION.md > Operation; 840 s elsewhere). Nothing
+		-- counts the Burn down yet: this is the number it will use.
+		BurnSeconds = 1200,
+		-- Picking (Rules/DropPickup; plan section 3).
+		DropMinDistance = 900, -- the drop corner is at least this far from the main site
+		Sides = { FirstMin = 150, FirstMax = 450, SecondFromFirst = 300, SecondFromLine = 350 },
+		Pickup = {
+			HalfwayShare = 0.5, -- of runs: a pickup halfway back
+			HalfwayMin = 400,
+			HalfwayMax = 700,
+			BackMin = 800, -- else all the way back: this far from the main objective or more
+			AvoidDrop = 300, -- ... and never this close to where the squad landed
+			AvoidRadius = 200, -- a pickup this close to the Warden is skipped
+		},
+		-- Control, when the main objective is done and the pickup is chosen ({place}).
+		PickupRadio = "Pike, Control. The helicopter will pick you up at {place}. Move.",
+		-- The distant city: only to the south, pushed out past the map and scaled up.
+		Skyline = { ArcFrom = 200, ArcTo = 340, Push = 800, Scale = 1.5 },
+		StoryMarkers = true, -- amber cubes on the environmental-story spots (grey pass only)
+	},
+
 	-- Stage 1 building kit (ArenaService.buildBuilding; docs/LEVELS.md section B).
 	-- Studs. A storey is 9 with a 0.6 slab (8.4 clear: a 2x Brute needs a room built taller,
 	-- like the Shed's 12.5); doors 4 x 8; windows 5 wide at sill 3.2 / head 8.6 (a vault over
@@ -2446,6 +4743,22 @@ local Config = {
 			roof = { Material = Enum.Material.Concrete, Color = Color3.fromRGB(84, 82, 78) },
 			ladder = { Material = Enum.Material.Metal, Color = Color3.fromRGB(58, 60, 64) },
 			catwalk = { Material = Enum.Material.DiamondPlate, Color = Color3.fromRGB(92, 94, 98) },
+		},
+		-- A mission's plain blocks (MissionTypes.Part, ArenaService.buildParts): the Mile 14 v2
+		-- generator's kinds (assets/3d/build/mile14_v2.py KINDS, in display colour).
+		PartKinds = {
+			grass = { Material = Enum.Material.Ground, Color = Color3.fromRGB(122, 117, 85) }, -- dead grass
+			slope = { Material = Enum.Material.Ground, Color = Color3.fromRGB(114, 108, 81) },
+			road = { Material = Enum.Material.Asphalt, Color = Color3.fromRGB(95, 97, 101) },
+			concrete = { Material = Enum.Material.Concrete, Color = Color3.fromRGB(160, 159, 155) },
+			building = { Material = Enum.Material.Concrete, Color = Color3.fromRGB(186, 184, 176) },
+			steel = { Material = Enum.Material.Metal, Color = Color3.fromRGB(136, 138, 142) },
+			glass = { Material = Enum.Material.Glass, Color = Color3.fromRGB(71, 85, 94) },
+			red = { Material = Enum.Material.SmoothPlastic, Color = Color3.fromRGB(172, 76, 76) },
+			pad = { Material = Enum.Material.Concrete, Color = Color3.fromRGB(189, 184, 176) },
+			patch = { Material = Enum.Material.Ground, Color = Color3.fromRGB(111, 101, 85) },
+			line = { Material = Enum.Material.SmoothPlastic, Color = Color3.fromRGB(205, 205, 203) },
+			sign = { Material = Enum.Material.SmoothPlastic, Color = Color3.fromRGB(52, 117, 81) }, -- highway green
 		},
 	},
 
@@ -2535,7 +4848,7 @@ local Config = {
 			HeavyOnly = { Brute = true },
 		},
 		BossCorpseLifetime = 8, -- an Index host's body stays long enough to read
-		MaxPuddles = 8, -- caustic puddles alive at once (perf); the oldest goes first
+		MaxPuddles = 12, -- caustic puddles alive at once (perf); the oldest goes first (was 8 before the Hocker barrage)
 		ThroatSacSwell = 1.8, -- Hocker sac size multiplier at the end of the windup
 		-- How a spit looks (owner 2026-11-11: "just a yellow circle"; bile and pus, no green,
 		-- no cartoon yellow). Drawn on each client (SpitFX; curves in Rules/SpitShape); the
@@ -2697,60 +5010,97 @@ local Config = {
 			WaypointReach = 6,
 			WalkTimeout = 75, -- the hunt starts anyway after this long on the lane
 			SightingRange = 90, -- a living member this close during the walk: the sighting line
-			SpawnDelay = 1.5, -- stands still after spawning
+			SpawnDelay = 0.8, -- stands still after spawning (was 1.5: the aggression pass)
 			GateOpenDelay = 3,
 			HideDelay = 2.5, -- boss bar stays this long after the fight
+			WeakSpotHintDelay = 10, -- seconds after he spawns that Control names his weak spot (Radio.WeakSpot)
 			TellHold = 1.6, -- seconds a tell line stays on the boss bar
 			RiotCallSpacing = 1, -- frames between the bodies of a Riot Call (one burst would hitch)
 			RiotCallHold = 2.0, -- seconds he stands and roars on a Riot Call (the riot clip)
 			IdleSpeed = 1, -- studs/s of root speed below which the idle clip plays over the walk
 			SyncInterval = 0.2,
-			HealthPerExtraPlayer = 0.33,
-			ScaleReach = 1.9, -- the body's scale: reach distances below are at scale 1
+			-- Boss pass (2026-11-18): 0.33 -> 0.5, so four players get a 2-3 minute fight
+			-- (x2.5 body and plates) while solo with bots stays 5,000.
+			HealthPerExtraPlayer = 0.5,
+			-- The body's scale (keep equal to EnemyDefinitions.Warden.Scale): reach distances
+			-- below are at scale 1. 1.9 -> 2.2 in the boss pass: he reads bigger.
+			ScaleReach = 2.2,
 			ArmouredMultiplier = 0.25, -- a round into a plate (the plate takes it, not the body)
 			ExposedMultiplier = 1.5, -- a round into a limb whose plate is gone
 			-- Plates: { Limb = the R15 part it welds to, Mesh = assets/3d piece, Health }.
-			-- Flank: full damage even while he guards (the back).
+			-- Flank: full damage even while he guards (the back). WeakSpot (the back plate over
+			-- his radio pack): the share of each round that also goes through to his body; the
+			-- round is taken whole (WeakSpot.RoundMultiplier below, not ArmouredMultiplier).
+			-- Aggression pass (2026-11-18): plates lighter (old: helmet 300, chest 400,
+			-- shoulders 300, shield 600) now that he hunts.
 			Plates = {
-				Helmet = { Limb = "Head", Mesh = "inf_warden_plate_helmet", Health = 300 },
-				Chest = { Limb = "UpperTorso", Mesh = "inf_warden_plate_chest", Health = 400 },
+				Helmet = { Limb = "Head", Mesh = "inf_warden_plate_helmet", Health = 200 },
+				Chest = { Limb = "UpperTorso", Mesh = "inf_warden_plate_chest", Health = 300 },
 				Back = {
 					Limb = "UpperTorso",
 					Mesh = "inf_warden_plate_back",
 					Health = 400,
 					Flank = true,
+					WeakSpot = 0.75, -- was 0.5: the boss pass rewards getting behind him more
 				},
 				ShoulderL = {
 					Limb = "LeftUpperArm",
 					Mesh = "inf_warden_plate_shoulder_l",
-					Health = 300,
+					Health = 200,
 				},
 				ShoulderR = {
 					Limb = "RightUpperArm",
 					Mesh = "inf_warden_plate_shoulder_r",
-					Health = 300,
+					Health = 200,
 				},
-				Shield = { Limb = "LeftLowerArm", Mesh = "inf_warden_plate_shield", Health = 600 },
+				Shield = { Limb = "LeftLowerArm", Mesh = "inf_warden_plate_shield", Health = 400 },
 			},
 			PlateOrder = { "Helmet", "Chest", "Back", "ShoulderL", "ShoulderR", "Shield" }, -- boss bar pips
 			CrackFraction = 0.5, -- a plate below this fraction reads cracked
 			PlateBreakStagger = 1.5,
 			PlateBreakImpulse = 30, -- studs/s the plate flies off at
 			PlateDebris = 5, -- seconds a fallen plate lies there
-			-- Shield Bash: close, frontal arc. Roll out of it.
+			-- The weak spot (Plates.Back.WeakSpot): a round into it counts whole; breaking it
+			-- staggers him BreakStagger seconds instead of PlateBreakStagger.
+			WeakSpot = { RoundMultiplier = 1, BreakStagger = 3 },
+			-- Shield Bash: close, frontal arc. Roll out of it. The clip is warden_shove (a
+			-- shield punch, keyed); the Mixamo Power Slash spun him a full turn.
 			Bash = {
 				Range = 8,
-				Windup = 0.9,
+				Windup = 0.7, -- was 0.9
 				ArcDegrees = 70, -- narrower since the Sweep: Bash = step aside, Sweep = get behind
 				Damage = 40,
 				Cooldown = 3,
-				Recovery = 0.6,
+				Recovery = 0.4, -- was 0.6
 				StrikeAt = 0.45, -- fraction of the bash clip where the blow lands (rate-scaled to Windup)
 			},
+			-- Leap: at the straggler (Rules/WardenBrain.isolated) between MinRange and MaxRange.
+			-- The tell: he crouches Windup seconds while the landing ring is already on the
+			-- ground where they stood; he lands Flight seconds later. Everyone on the ground inside
+			-- Radius (x ScaleReach) is hit and knocked down; the roll does not beat it, leaving
+			-- the ring does. Counts as a knockdown attack (never two in a row).
+			Leap = {
+				Enabled = true, -- false: no Leap (the fallback switch)
+				MinRange = 22,
+				MaxRange = 70,
+				Windup = 0.8,
+				Flight = 0.8,
+				Height = 14, -- studs at the top of the arc
+				Radius = 5,
+				Damage = 35,
+				Knockdown = 1.2,
+				Recovery = 1.0,
+				Cooldown = 9, -- Phases override (LeapCooldown)
+				FirstDelay = 3, -- seconds after spawning before the first leap
+				StrikeAt = 0.75, -- fraction of the warden_leap clip where he lands
+			},
+			-- Rage volley (phase MinPhase on): a canister at every member inside
+			-- Canister.MaxRange at once (Canister's damage and puddle).
+			Volley = { MinPhase = 3, Windup = 1.0, Recovery = 0.6, Cooldown = 12 },
 			-- Gate Charge: a straight line at speed; hard cover in the way stuns him (WallStun).
 			Charge = {
 				MinRange = 19, -- leaves the ring just past the Bash to the Pound
-				MaxRange = 45,
+				MaxRange = 60, -- was 45
 				Windup = 1.2,
 				Distance = 45,
 				Speed = 40,
@@ -2758,19 +5108,20 @@ local Config = {
 				Damage = 35,
 				Cooldown = 10,
 				FirstDelay = 6, -- seconds after spawning before the first charge
-				Recovery = 0.8,
+				Recovery = 0.5, -- was 0.8
 				WallStun = 3,
 				Probe = 3, -- studs ahead of the root (at scale 1) the charge looks for hard cover
 				HitHeight = 8, -- height difference inside which the charge still hits a body
 			},
-			-- Gas Canister (phase 2+): lobbed at the furthest member in range; a puddle.
+			-- Gas Canister (every phase since the aggression pass; was phase 2+): lobbed at the
+			-- furthest member in range; a puddle.
 			Canister = {
-				MinPhase = 2,
+				MinPhase = 1,
 				MaxRange = 70,
 				Windup = 1,
 				Damage = 10,
 				Cooldown = 8,
-				Recovery = 0.5,
+				Recovery = 0.3, -- was 0.5
 				Projectile = {
 					Speed = 50,
 					Size = 1.2,
@@ -2793,7 +5144,7 @@ local Config = {
 			-- Kit expansion (systems-designer pass): where you stand picks his move.
 			-- Beat (IndexService.chooseAttack): seconds he walks between one recovery ending
 			-- and the next decision, by phase. The pause is what makes a rhythm, not a spam.
-			AttackGap = { 1.0, 0.7, 0.4 },
+			AttackGap = { 0.5, 0.35, 0.15 }, -- was { 1.0, 0.7, 0.4 }: the aggression pass
 			-- Close-band weights among ready attacks; a crowd (CrowdCount members inside the
 			-- shape) doubles Sweep and Pound. Never the same attack twice in a row except the
 			-- Bash; a knockdown attack is never followed by another.
@@ -2822,7 +5173,7 @@ local Config = {
 				Range = 9,
 				ArcDegrees = 180,
 				Windup = 1.1,
-				Recovery = 0.8,
+				Recovery = 0.6, -- was 0.8
 				Cooldown = 8,
 				Damage = 25,
 				Pushback = 40, -- studs/s shove away from him (client Impact "push")
@@ -2833,7 +5184,7 @@ local Config = {
 				Length = 9,
 				Width = 3,
 				Windup = 1.3,
-				Recovery = 1.2,
+				Recovery = 0.9, -- was 1.2
 				Cooldown = 10,
 				Damage = 60,
 				StrikeAt = 0.5,
@@ -2849,23 +5200,131 @@ local Config = {
 				StrikeAt = 0.45,
 			},
 			-- Phases, entered at or below a body fraction; each opens with a Riot Call
-			-- (spawnWave round him, 25-35 studs) and may retune him.
+			-- (spawnWave round him, 25-35 studs) and may retune him (Rules/WardenBrain.phase).
+			-- The last is the rage (Rage = true: the rage tell, and the Volley opens): faster
+			-- feet, shorter cooldowns. Base walk is EnemyDefinitions.Warden.WalkSpeed (12).
+			-- Boss pass (2026-11-18): the stages at two thirds and one third (were 60% and
+			-- 30%); each call brings Brutes (RiotCall.Brute; PerExtraPlayer adds bodies per
+			-- extra living player, rounded down: Rules/WardenBrain.summon) and opens with the
+			-- stage roar (StageRoar). Stage 2 opens the Quake and the charge through cover
+			-- (Smash), stage 3 (the rage) the Rampage.
 			Phases = {
 				{
-					Below = 0.6,
-					RiotCall = { Walker = 6, Runner = 2 },
-					WalkersPerExtraPlayer = 3,
+					Below = 0.66, -- was 0.6
+					Radio = "Stage2", -- Control's line (Radio below; was "RiotCall")
+					RiotCall = { Walker = 6, Runner = 2, Brute = 1 },
+					PerExtraPlayer = { Walker = 3, Brute = 0.5 },
 					PoundCooldown = 11,
+					LeapCooldown = 7,
+					WalkSpeed = 13,
 				},
 				{
-					Below = 0.25,
-					RiotCall = { Walker = 6, Runner = 2 },
-					WalkersPerExtraPlayer = 3,
+					Below = 0.33, -- was 0.3
+					Radio = "Rage",
+					Rage = true,
+					RiotCall = { Walker = 6, Runner = 3, Brute = 2 },
+					PerExtraPlayer = { Walker = 3, Brute = 0.5 },
 					ChargeCooldown = 5,
 					PoundCooldown = 8,
-					WalkSpeed = 11,
+					LeapCooldown = 5,
+					WalkSpeed = 15, -- was 11; the soldier walks 16, sprints 24
 				},
 			},
+			-- The boss pass (2026-11-18, docs/sprints/FUN_WARDEN.md; owner: "he doesn't move
+			-- like a boss"). Each block has its own off switch. Studs here are not
+			-- reach-scaled unless the line says so.
+			-- Entrance: he comes over the top. The landing ring shows Warn seconds (Control's
+			-- warning, his roar far off, the music starts), then he dives FromHeight studs in
+			-- Fall seconds onto it: everyone inside Radius is hit and knocked down, everyone
+			-- feels the shake. He roars RoarHold seconds and the boss bar slams in. Enabled =
+			-- false: he appears where he spawns, as before.
+			Entrance = {
+				Enabled = true,
+				Warn = 2.5,
+				Fall = 1.1,
+				FromHeight = 110,
+				FromBack = 40, -- studs back along the line from the nearest member to the ring
+				Radius = 14,
+				Damage = 25,
+				Knockdown = 1.5,
+				Shake = 4, -- degrees of camera shake for everyone, any distance
+				RoarHold = 2.4,
+				DevDistance = 30, -- F1 "In front of me": he lands this far ahead of you
+			},
+			-- Weight: how he moves. NoFlinch: rounds never play a flinch on him (EnemyService).
+			-- TurnRate: degrees a second he turns walking (WindupTurnRate tracking his target
+			-- through a windup); 0 = the Humanoid's instant turn, as before. StepMarks: points
+			-- in the walk clip (fractions) where a boot lands: the step sound and a camera
+			-- shake (StepShake degrees at his feet, nothing at StepShakeRadius). ImpactShake:
+			-- the Pound, the Stomp, a landing, the Quake, a wall: degrees at the centre, nothing
+			-- at ImpactShakeRadius. Markers: the Charge and the Rampage draw their lane on the
+			-- ground for the squad (the Pound, Leap and Quake draw rings).
+			Weight = {
+				NoFlinch = true,
+				TurnRate = 150,
+				WindupTurnRate = 260,
+				TrackLock = 0.35, -- seconds before a blow lands that he stops turning (step aside)
+				StepMarks = { 0.25, 0.75 },
+				StepShake = 1.2,
+				StepShakeRadius = 45,
+				ImpactShake = 3.5,
+				ImpactShakeRadius = 70,
+				Markers = true,
+				RateMin = 0.4, -- the walk clip's rate is his ground speed / its MoveClipSpeed,
+				RateMax = 2.2, -- clamped here
+			},
+			-- His fight loop (client BossPresence; assets/audio/build/warden_drone.js, uploaded
+			-- 2026-11-18): starts with the landing warning, louder and faster each stage, fades
+			-- out on his death.
+			Music = {
+				Enabled = true,
+				Id = "rbxassetid://122577606238229",
+				Volume = { 0.35, 0.45, 0.6 }, -- by stage
+				Speed = { 1, 1.04, 1.08 }, -- PlaybackSpeed by stage
+				FadeIn = 2,
+				FadeOut = 3,
+			},
+			-- Stage roar (each Phases row): he stands RiotCallHold seconds and roars; everyone
+			-- inside Radius is shoved Push studs/s away (no damage); the shake is felt by all.
+			StageRoar = { Radius = 20, Push = 45, Shake = 3 },
+			-- Quake (stage MinPhase on): fists up for Windup seconds (the ring of its reach on
+			-- the ground), then Waves rings run out from him at Speed studs/s, WaveGap seconds
+			-- apart, to Radius. A ring hits each body on the ground it crosses (Damage and a
+			-- knockdown); jump it, roll it or be outside. Chosen for a crowd round him (CrowdCount
+			-- on the ground inside Radius) or anyone in it out of his reach.
+			Quake = {
+				Enabled = true,
+				MinPhase = 2,
+				Radius = 36,
+				Windup = 1.6,
+				Waves = 2,
+				WaveGap = 0.75,
+				Speed = 26,
+				Damage = 30,
+				Knockdown = 1.2,
+				AirHeight = 1.5, -- studs of feet above the ground that count as in the air
+				CrowdCount = 2,
+				Recovery = 1.0, -- after the last ring has run out
+				Cooldown = 14,
+				StrikeAt = 0.55, -- fraction of the pound clip where the fists land
+			},
+			-- Rampage (the rage on): Charges Gate Charges back to back, each at the member
+			-- furthest from where the last ended, ReWindup seconds to turn and mark the lane.
+			Rampage = { Enabled = true, MinPhase = 3, Charges = 3, ReWindup = 0.6, Cooldown = 20 },
+			-- Smash (stage MinPhase on): a charge into cover no bigger than MaxSize studs on
+			-- every side goes through it (it flies apart, comes back next run) instead of the
+			-- WallStun. Tagged parts, people and the ground are never smashed.
+			Smash = {
+				Enabled = true,
+				MinPhase = 2,
+				MaxSize = 8,
+				MaxParts = 30,
+				Fling = 45,
+				Debris = 6,
+			},
+			-- Camp: a member who has not moved MoveStuds in Seconds is the Leap's first pick
+			-- (Rules/WardenBrain.camper), before the straggler. Standing still is how you die.
+			Camp = { Enabled = true, Seconds = 4, MoveStuds = 3, Sample = 0.5 },
 			-- The field while he is up: fewer ambient spawns, a smaller horde, no Brutes.
 			Pressure = { SpawnFactor = 1.5, MaxAliveReduction = 8, Caps = { Brute = 0 } },
 			-- The priority pallet on death: a full heal, a re-arm and a quiet pallet with the
@@ -2877,19 +5336,65 @@ local Config = {
 			Radio = {
 				PrimaryComplete = "That woke the Gate sergeant. He still guards this post. The Warden is coming up the road.",
 				GateOpen = "Gate's open. Contact in the lane, big. It's wearing riot plate.",
-				Sighting = "Eyes on. That's the Gate NCOIC. Control, the Warden confirmed.",
+				Sighting = "Eyes on. That's the Gate sergeant himself. Control, the Warden confirmed.",
 				BusLine = "Bus line. He's checking buses. Plates first, then the body.",
 				InnerGate = "Inner Gate. He's working his second checkpoint. Flank when he guards.",
 				FirstPlate = "Plate's off. That's bone under it. Keep working the seams.",
 				LastPlate = "Last plate. He's just a man again. Put him down.",
 				RiotCall = "...all posts, Gate. Crowd at the wire. Send the reserve...",
+				-- Aggression pass placeholders (2026-11-18) until the lore developer's pass.
+				WeakSpot = "Control: the radio pack on his back. Rounds go through it. Get behind him.",
+				-- The boss pass (2026-11-18; plain words, placeholders until the lore pass).
+				Rage = "He's going through cover now. Don't hide behind it. Keep moving, stay together.",
+				Incoming = "Control: something big just came over the wall. It's coming down on you. Get off the marker!",
+				Landed = "That's the Warden. Still in his riot plate, still on duty. Put him down.",
+				Stage2 = "He's calling the reserve. Brutes in that crowd. When his fists go up, jump the shockwave or get clear.",
 				Kill = "The Warden is down. Control copies. Gate's yours, Pike. Pallet inbound.",
 			},
 		},
 	},
 
-	-- The Containment Board (docs/PROGRESSION.md > The Containment Board). Read by the
+	-- The Containment Board (players read "WHAT WE HOLD": docs/LORE.md > Naming;
+	-- docs/PROGRESSION.md > The Containment Board). Read by the
 	-- lobby's Plot today; the shared DataStore behind it waits for the save service (F9).
+	-- The city war (Rules/War; WarService writes at a run's end, the lobby's ContainmentBoard
+	-- reads): one shared board per season, district by district (Containment.Districts gives
+	-- the order and start values). Loop sprint 3.
+	War = {
+		Enabled = true, -- false: no mission moves the board (it shows the start values)
+		-- Seasons: the board starts over every SeasonDays from SeasonStart in a new store
+		-- (StorePrefix .. season: War_S1, War_S2, ...); personal unlocks live on each record and stay.
+		StorePrefix = "War_S",
+		SeasonStart = 1795219200, -- 2026-11-21 00:00 UTC: season 1
+		SeasonDays = 28,
+		Key = "board",
+		Retries = 2,
+		RetryDelay = 2,
+		Points = { win = 3, partial = 1, loss = 0 }, -- per mission brought home, not per player
+		PointsPerPercent = 2, -- a win = +1.5%
+		DecayPerHour = 0.25, -- the Infected push back about 6% a day; a loss takes nothing
+		UnlockAt = 50, -- the next district opens when this one reaches it (and stays open)
+		OpenAtStart = 2, -- Delta and Mile 14 are open from day one (owner 2026-11-20)
+		SecuredPay = 0.25, -- a Secured district's missions pay this share of their merits
+		-- HARLAN Orders (Rules/Orders): one at a time; its district's card is gold on the Mission
+		-- Board and its missions pay PayBonus more. From / To are os.time() (UTC).
+		Orders = {
+			{
+				Id = "mile14_push_1",
+				District = "MILE 14",
+				Target = 50,
+				From = 1795219200, -- 2026-11-21
+				To = 1795910400, -- 2026-11-29
+				PayBonus = 0.25,
+				Text = "Push Mile 14 to 50% this week. Clear the convoy.",
+			},
+		},
+		MaxWritesPerServerHour = 6, -- backstop: a match server never writes the board more often
+		ShutdownWait = 10, -- seconds a closing server waits for a war save still in flight
+		StudioWrites = false, -- true: a Studio playtest with API access writes the live board (testing only)
+		-- Renaming or removing a district in Containment.Districts resets its progress this season.
+	},
+
 	Containment = {
 		-- Band minimums in percent (Rules/Containment).
 		Bands = {
@@ -3069,12 +5574,26 @@ local Config = {
 			MinWriteGap = 6, -- seconds between saves per soldier; the newest pick wins
 			Retries = 2, -- extra attempts after a failed DataStore call
 			RetryDelay = 1,
+			LoadWait = 10, -- seconds a check waits for a record still loading (RecordService)
+			-- Studio only: a BindableFunction of this name in ServerStorage sets a soldier's merits
+			-- (RecordService; for testing buys). Never made on a live server.
+			DevMeritsHook = "DevSetMerits",
 		},
 		-- Which Carrier desk (LobbyDesks id) sells an item whose own Config row names no `Desk`
 		-- (KitPrices.deskOf). Owner 2026-11-16: the Quartermaster is the main seller (guns, grenades,
 		-- any kit that is not a call-in), one desk sells every call-in, the Loadmaster only signs
 		-- Loadouts. `Desk = "<id>"` on a gun, grenade or call-in row moves just that item.
 		Sellers = { Gun = "arms_room", Grenade = "arms_room", CallIn = "callins" },
+		-- Squads on the Carrier (Rules/Party, PartyService, PartyUI; loop sprint 2).
+		Party = {
+			InviteSeconds = 60, -- an invite can be accepted this long
+			DeployWait = 15, -- after the leader's DEPLOY the squad flies when all are ready, or after this
+			LiftTimeout = 30, -- seconds a lifting squad stays locked if its teleport never lands
+		},
+		-- The map room's Mission Board (MissionBoardService, MissionBoardUI): pick a mission, DEPLOY.
+		MissionBoard = {
+			DeployCooldown = 5, -- seconds between one soldier's DEPLOYs
+		},
 		Launch = {
 			Spots = 4, -- numbered Lantern spots on the flight deck
 			Capacity = 4, -- soldiers per bird (one squad)
@@ -3088,6 +5607,9 @@ local Config = {
 			Retries = 2, -- extra teleport attempts after a failure
 			RetryDelay = 2,
 			Cooldown = 6, -- seconds a spot rests after a lift or a failed one
+			-- Standing in a ring boards that bird (the old way, before the party panel). Off since
+			-- loop sprint 2: squads form in the party panel and fly from the Mission Board.
+			RingsBoard = false,
 		},
 		-- Lantern, the lift bird on each spot (LanternBird, LanternSpool; docs/LORE.md > Lantern).
 		-- Players read "the helicopter" / "Helo"; this key keeps the old name (docs/LORE.md > Naming).
@@ -3147,6 +5669,10 @@ local Config = {
 		-- the old views back: the camera on the rack and the pallets, the plain DeskShop list.
 		DeskScreen = {
 			Enabled = true,
+			-- Desks that keep their own view (LobbyDesks ids). The Quartermaster keeps the GTA
+			-- gun wall (Nova, 2026-11-18: the desk screen replaced it by accident): "Show me the
+			-- guns." glides the camera onto his rack and counter (ArmsRackUI) as before.
+			KeepOwnView = { arms_room = true } :: { [string]: boolean },
 		},
 		DeskPromptDistance = 10, -- studs a soldier can talk to a desk from
 		DialogSeconds = 8, -- a desk's line stays up this long
@@ -3158,9 +5684,36 @@ local Config = {
 		CarrierV2 = {
 			Enabled = true,
 			Poses = true,
+			Idles = true, -- each posed seller plays their own looping idle (NpcPose); off: the breathing idle
 			RampSplit = 44, -- Z where the ramp's solid wedge stops; a plate covers the nook above it
 			FireRate = 6, -- city fire particles a second per emitter
 		},
+		-- The Visitor in the nook under the ramp (LobbyDesks `visitor`, Carrier v2 only): his head
+		-- slowly follows the nearest soldier in range (VisitorLook, each client); nothing else moves.
+		Visitor = {
+			LookRange = 22, -- studs: a soldier nearer than this is watched
+			LookMaxYaw = 55, -- degrees his head turns either way, at most
+			LookSpeed = 1.5, -- how fast the head catches up (higher is quicker; about 1/s)
+		},
+		-- The Carrier's painted counts (docs/sprints/CARRIER_V2.md > Easter eggs 3, 4, 6; owner
+		-- 2026-11-18: numbers, not tally marks). Each match adds its run's counts to one DataStore
+		-- key at run end (server TallyService: every call-in a player fires, one MISSIONS HOME for
+		-- an extraction); the lobby paints start + stored (TallyBoards) on start and every
+		-- RefreshSeconds. A call-in's start value is its own row's Tally (Config.CallIns); a
+		-- district's is here (the board's rows, by mission id). Without the store (Studio
+		-- without API access) the start values show.
+		Tallies = {
+			Enabled = true,
+			Store = "CarrierTallies",
+			Key = "totals",
+			RefreshSeconds = 300,
+			Retries = 2,
+			RetryDelay = 2,
+			Districts = { delta = 11, mile14 = 6, kestrel = 4, yard = 2, reservoir = 0 },
+		},
+		-- DAYS SINCE ONE GOT ABOARD (egg 4): whole UTC days since Start ("YYYY-MM-DD"), painted
+		-- on start and every RefreshSeconds. Start is 214 days before 2026-11-18.
+		DaysSince = { Start = "2026-04-18", RefreshSeconds = 3600 },
 		-- The Fallow's sky: a clear afternoon at sea (owner and Nova, 2026-11-09). One table
 		-- so a day/night cycle can later drive these values instead of FallowBuilder.
 		-- Gloomy (Tien, 2026-11-10): an overcast, cold late afternoon on a grey sea, the sun low

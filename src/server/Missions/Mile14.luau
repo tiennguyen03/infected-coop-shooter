@@ -1,165 +1,99 @@
 --!strict
--- Mile 14's layout (docs/LEVELS.md C1; Nova, 2026-11-11: the night map, played quiet, "mainly
--- a highway" with "some wooded areas in it"). The stalled evacuation convoy on Route 9: the
--- highway deck runs the map south to north at 12, jammed with sealed buses in both lanes and
--- broken by the Culvert, the one crossing under it. West of the deck the Rest Stop, east the
--- Toll Plaza, woods on both shoulders to go round the Jam unseen.
--- First pass (built with the stealth Infected as the test bed): the deck, the Jam, the Toll
--- booths, the Rest Stop's diner and the woods (pines, some broadleaf, brush: build/trees.py). Still to come from C1: the Overpass span, the off-ramp, pumps and canopy, the
--- water tower, the sleepers' places and the objectives.
--- TODO(Nova, review PR-52 finding 3): this file only builds the scenery. Until Mile 14 has its
--- own row in Config.Objectives.Maps, its own Warden spawn and route, and its own landing zone,
--- a run here falls back to Checkpoint Delta's: the hold at (50, 8.5, 50) cuts into the road
--- embankment, and the Warden uses Delta's gate and route. Nothing launches into Mile 14 yet.
+-- Mile 14 (docs/LEVELS.md > Mile 14; owner 2026-11-20: the v2 layout, one-way, at night,
+-- played quiet with Nova's awareness system, Config.Awareness.Missions.mile14). The stalled
+-- evacuation convoy on the interstate: land on the Toll Plaza's admin lot with Harlan burning
+-- behind you, get to the Rest Stop's pad about 640 studs south past 24 sealed buses. Every
+-- number is in Mile14Data (the v2 generator's layout, plain data for tests/Mile14.spec);
+-- this file turns it into a MissionTypes.Mission. Grey blocks for now; the art pass and the
+-- woods and brush in the fields come with loop sprint 5.
 
+local Data = require(script.Parent.Mile14Data)
 local MissionTypes = require(script.Parent.MissionTypes)
 
-type Hill = MissionTypes.Hill
-type Dressing = MissionTypes.Dressing
-type Patch = MissionTypes.Patch
-type Ramp = MissionTypes.Ramp
-type FencePanel = MissionTypes.FencePanel
-type BuildingSpec = MissionTypes.BuildingSpec
+type Vec = { number }
 
-local DECK = 12 -- the highway deck's height
-local CULVERT = { -60, -20 } -- z band of the gap under the deck (the Culvert)
-
-local HILLS: { Hill } = {
-	-- The deck, x -30..30, in two halves with vertical abutments at the Culvert and open ends
-	-- at the map's edges (the road runs on past the fence).
-	{
-		name = "HighwayS",
-		x = 0,
-		z = (-300 + CULVERT[1]) / 2,
-		top = Vector2.new(60, CULVERT[1] + 300),
-		height = DECK,
-		open = { north = true, south = true },
-	},
-	{
-		name = "HighwayN",
-		x = 0,
-		z = (CULVERT[2] + 300) / 2,
-		top = Vector2.new(60, 300 - CULVERT[2]),
-		height = DECK,
-		open = { north = true, south = true },
-	},
-	-- The Toll Plaza's raised lot east of the deck.
-	{ name = "TollPlaza", x = 160, z = 60, top = Vector2.new(120, 80), height = 6 },
-}
-
-local DRESSING: { Dressing } = {
-	-- The Rest Stop's diner, west of the deck.
-	{ name = "env_ruin_building", x = -170, z = -200, yaw = 0 },
-	-- The Toll Plaza: four booths across the lanes, jersey pairs at the lane mouths.
-	{ name = "env_checkpoint", x = 160, z = 32, yaw = 90 },
-	{ name = "env_checkpoint", x = 160, z = 48, yaw = 90 },
-	{ name = "env_checkpoint", x = 160, z = 64, yaw = 90 },
-	{ name = "env_checkpoint", x = 160, z = 80, yaw = 90 },
-	{ name = "env_barrier_jersey", x = 132, z = 40, yaw = 90 },
-	{ name = "env_barrier_jersey", x = 132, z = 72, yaw = 90 },
-	{ name = "env_barrier_jersey", x = 188, z = 40, yaw = 90 },
-	{ name = "env_barrier_jersey", x = 188, z = 72, yaw = 90 },
-}
-
--- The Jam: sealed buses nose to tail in both lanes, every 48 studs, none over the Culvert.
-for k = 0, 11 do
-	local z = -276 + 48 * k
-	if z > CULVERT[1] - 10 and z < CULVERT[2] + 10 then
-		continue
-	end
-	table.insert(DRESSING, { name = "env_bus", x = -14, z = z, yaw = 90 })
-	table.insert(DRESSING, { name = "env_bus", x = 14, z = z + 20, yaw = 90 })
+local function v3(vec: Vec): Vector3
+	return Vector3.new(vec[1], vec[2], vec[3])
 end
 
--- The woods: stands of trees on both shoulders and round the Rest Stop, scattered from a
--- fixed seed so the map is the same every run. Clear of the deck's embankments (x -45..45).
-local WOODS = {
-	{ x0 = 60, x1 = 130, z0 = -270, z1 = -90, count = 34 }, -- east shoulder, south
-	{ x0 = -140, x1 = -60, z0 = 60, z1 = 270, count = 40 }, -- west shoulder, north
-	{ x0 = 235, x1 = 285, z0 = 110, z1 = 270, count = 24 }, -- east edge behind the Toll Plaza (clear of its lot and the edge stub at z -45)
-	{ x0 = -285, x1 = -110, z0 = -285, z1 = -245, count = 24 }, -- behind the Rest Stop
-}
-local scatter = Random.new(14)
--- Mostly tall pines, young ones between, a broadleaf now and then; a shrub for every third tree.
-local function treeKind(): string
-	local roll = scatter:NextNumber()
-	return if roll < 0.6
-		then "env_pine_tall"
-		elseif roll < 0.82 then "env_pine_small"
-		else "env_tree_leafy"
+local hills: { MissionTypes.Hill } = {}
+for _, hill in Data.Hills do
+	table.insert(hills, {
+		name = hill.name,
+		x = hill.x,
+		z = hill.z,
+		top = Vector2.new(hill.top[1], hill.top[2]),
+		height = hill.height,
+		open = hill.open,
+	})
 end
-for _, wood in WOODS do
-	for k = 1, wood.count do
-		table.insert(DRESSING, {
-			name = treeKind(),
-			x = math.floor(scatter:NextNumber(wood.x0, wood.x1)),
-			z = math.floor(scatter:NextNumber(wood.z0, wood.z1)),
-			yaw = scatter:NextInteger(0, 359),
-		})
-		if k % 3 == 0 then
-			table.insert(DRESSING, {
-				name = "env_shrub",
-				x = math.floor(scatter:NextNumber(wood.x0, wood.x1)),
-				z = math.floor(scatter:NextNumber(wood.z0, wood.z1)),
-				yaw = scatter:NextInteger(0, 359),
-			})
+
+local parts: { MissionTypes.Part } = {}
+for _, part in Data.Parts do
+	table.insert(parts, {
+		name = part.name,
+		kind = part.kind,
+		at = v3(part.at),
+		size = v3(part.size),
+		yaw = part.yaw,
+	})
+end
+
+local dressing: { MissionTypes.Dressing } = {}
+for _, piece in Data.Dressing do
+	table.insert(dressing, {
+		name = piece.name,
+		x = piece.x,
+		z = piece.z,
+		yaw = piece.yaw,
+		burning = piece.burning,
+		floor = piece.floor,
+	})
+end
+
+-- The fence round the frame, open where the deck runs out at the north and south edges.
+local halfX, halfZ = Data.Size[1] / 2, Data.Size[2] / 2
+local fence: { MissionTypes.FencePanel } = {}
+for along = -halfX + 6, halfX - 6, 12 do
+	for _, z in { halfZ - Data.FenceInset, -halfZ + Data.FenceInset } do
+		if math.abs(along) >= Data.DeckGap then
+			table.insert(fence, { x = along, z = z, yaw = 0 })
 		end
 	end
 end
--- Brush along both foots of the deck's embankments: cover to creep past the Jam.
-for k = 0, 17 do
-	local z = -285 + k * 33
-	for _, x in { -52, 52 } do
-		if z > CULVERT[1] - 12 and z < CULVERT[2] + 12 then
-			continue -- the abutments' corners
-		end
-		table.insert(DRESSING, {
-			name = "env_shrub",
-			x = x + scatter:NextInteger(-4, 4),
-			z = z + scatter:NextInteger(-6, 6),
-			yaw = scatter:NextInteger(0, 359),
-		})
+for along = -halfZ + 6, halfZ - 6, 12 do
+	for _, x in { halfX - Data.FenceInset, -halfX + Data.FenceInset } do
+		table.insert(fence, { x = x, z = along, yaw = 90 })
 	end
 end
 
-local PATCHES: { Patch } = {
-	{ x = -170, z = -170, w = 120, d = 100, kind = "rock" }, -- the Rest Stop's lot
-}
-
-local RAMPS: { Ramp } = {}
-
--- The fence round the map, open where the deck runs out at the north and south edges.
-local FENCE_LINE = 299.6
-local FENCE: { FencePanel } = {}
-for k = 0, 49 do
-	local along = -294 + 12 * k
-	for _, edge in
-		{
-			{ x = along, z = FENCE_LINE, yaw = 0 },
-			{ x = along, z = -FENCE_LINE, yaw = 0 },
-			{ x = FENCE_LINE, z = along, yaw = 90 },
-			{ x = -FENCE_LINE, z = along, yaw = 90 },
-		}
-	do
-		local acrossDeck = edge.yaw == 0 and math.abs(along) < 46
-		if not acrossDeck then
-			table.insert(FENCE, edge)
-		end
-	end
+local waypoints: { Vector3 } = {}
+for _, point in Data.Boss.Waypoints do
+	table.insert(waypoints, v3(point))
 end
-
-local BUILDINGS: { BuildingSpec } = {}
 
 local mission: MissionTypes.Mission = {
 	Id = "mile14",
 	Name = "Mile 14",
-	Hills = HILLS,
-	Dressing = DRESSING,
-	Patches = PATCHES,
-	Ramps = RAMPS,
+	Size = Vector2.new(Data.Size[1], Data.Size[2]),
+	Landing = v3(Data.Landing),
+	Extract = v3(Data.Extract),
+	Boss = {
+		Spawn = v3(Data.Boss.Spawn),
+		Waypoints = waypoints,
+		WaypointRadio = {},
+		GateRadio = false,
+	},
+	Hold = v3(Data.Hold),
+	Parts = parts,
+	Features = {},
+	Hills = hills,
+	Dressing = dressing,
+	Patches = {},
+	Ramps = {},
 	Perimeter = {},
-	Fence = FENCE,
-	Buildings = BUILDINGS,
+	Fence = fence,
+	Buildings = {},
 }
 
 return mission

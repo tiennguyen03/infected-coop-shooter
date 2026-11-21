@@ -135,6 +135,29 @@ local MESHES: { [string]: MeshDef } = {
 		offset = Vector3.new(0.012, 0.083, -0.48),
 		muzzle = Vector3.new(0, 0.36, -2.02),
 	},
+	-- The M16A4 with each optic on its rail (assets/3d/build/optics.py; Config.Optics `Fit`),
+	-- uploaded as Model assets (build/upload_models.js). The rifle's muzzle.
+	wpn_m16_acog = {
+		meshId = "",
+		modelId = 112543898025888,
+		size = Vector3.new(0.25, 1.23, 3.08),
+		offset = Vector3.new(0.012, 0.114, -0.48),
+		muzzle = Vector3.new(0, 0.36, -2.02),
+	},
+	wpn_m16_compm2 = {
+		meshId = "",
+		modelId = 108280623635703,
+		size = Vector3.new(0.25, 1.28, 3.08),
+		offset = Vector3.new(0.012, 0.139, -0.48),
+		muzzle = Vector3.new(0, 0.36, -2.02),
+	},
+	wpn_m16_reddot = {
+		meshId = "",
+		modelId = 80921148772778,
+		size = Vector3.new(0.25, 1.24, 3.08),
+		offset = Vector3.new(0.012, 0.121, -0.48),
+		muzzle = Vector3.new(0, 0.36, -2.02),
+	},
 	wpn_mp5 = {
 		meshId = "rbxassetid://97053083297242",
 		size = Vector3.new(0.24, 0.97, 2.2),
@@ -1372,6 +1395,22 @@ local MESHES: { [string]: MeshDef } = {
 		size = Vector3.new(1.95, 1.53, 5.54),
 		offset = Vector3.new(-0.105, 0.145, -0.75),
 		castShadow = true,
+	},
+	-- The ATV (assets/3d/build/atv.py: the owner's model for the body, the wheel built from
+	-- primitives; VehicleBody dresses the chassis with them). The body's offset is from the
+	-- chassis centre; the wheel is about its hub, a right-side wheel (VehicleBody turns it half
+	-- round for the left). Look only.
+	veh_atv_body = {
+		meshId = "rbxassetid://104885762277336",
+		size = Vector3.new(3.70, 3.29, 7.55),
+		offset = Vector3.new(0.148, 0.552, -0.188),
+		castShadow = true,
+	},
+	veh_atv_wheel = {
+		meshId = "rbxassetid://112009155792092",
+		size = Vector3.new(1.09, 1.99, 1.98),
+		offset = Vector3.new(0.06, 0, 0),
+		castShadow = false,
 	},
 }
 
