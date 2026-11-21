@@ -13,7 +13,9 @@
 local PhysicsService = game:GetService("PhysicsService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
+local DeltaXLLayout = require(ReplicatedStorage.Shared.DeltaXLLayout)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
 local SkyService = require(script.Parent.SkyService)
 
@@ -38,7 +40,6 @@ local ArenaService = {}
 
 local FENCE_STEP = 12 -- one chain-link panel (12.06 wide) every 12 studs
 
-local HALF = 300 -- half-extent: arena spans -300..+300 on X/Z (600 studs)
 local BASEPLATE_GRACE = 5 -- seconds the hidden Studio baseplate stays solid at boot
 
 -- Dusty ground, asphalt roads, concrete pads: the muted "field-kit" palette (docs/STYLES.md).
@@ -85,6 +86,18 @@ local PERIMETER = mission.Perimeter
 local FENCE = mission.Fence
 local BUILDINGS = mission.Buildings
 
+-- The big map (Config.DeltaXL, server DeltaXL): on at boot, the perimeter's scenery and its
+-- walls are never built and the fence opens at DeltaXLLayout.FenceGaps; switched on later
+-- (the dev panel), `openPerimeter` takes them away.
+local FEATURES = mission.Features
+local XL_AT_BOOT = Config.DeltaXL.Enabled and FEATURES.BigMap == true
+-- Half the mission's frame on each axis: the floor, the boundary walls.
+local HALF_X = mission.Size.X / 2
+local HALF_Z = mission.Size.Y / 2
+local function bigMap(): boolean
+	return XL_AT_BOOT or workspace:GetAttribute(Attributes.DeltaXL) == true
+end
+
 local function makePart(
 	name: string,
 	size: Vector3,
@@ -103,6 +116,30 @@ local function makePart(
 	part.TopSurface = Enum.SurfaceType.Smooth
 	part.BottomSurface = Enum.SurfaceType.Smooth
 	return part
+end
+
+local PAD_LIFT = 0.6 -- a mission's pad point (Landing, Extract, AltPad) above the pad's ground
+
+-- The mission's plain blocks (MissionTypes.Part; the v2 generator's PARTS): each `kind` is a
+-- row of Config.Arena.PartKinds; a name with "wedge" in it is a WedgePart rising toward +Z.
+local function buildParts(parent: Instance)
+	if #mission.Parts == 0 then
+		return
+	end
+	local folder = Instance.new("Folder")
+	folder.Name = "Parts"
+	for _, spec in mission.Parts do
+		local look = Config.Arena.PartKinds[spec.kind] or Config.Arena.PartKinds.concrete
+		local class = if string.find(string.lower(spec.name), "wedge", 1, true)
+			then "WedgePart"
+			else nil
+		local cframe = CFrame.new(spec.at) * CFrame.Angles(0, math.rad(spec.yaw or 0), 0)
+		local part = makePart(spec.name, spec.size, cframe, look.Color, class)
+		part.Material = look.Material
+		part.CastShadow = spec.size.Y >= 1 -- paving, paint and lines are flat: no shadow work
+		part.Parent = folder
+	end
+	folder.Parent = parent
 end
 
 local function buildHill(parent: Instance, hill: Hill)
@@ -452,29 +489,34 @@ local function buildPerimeter(arena: Instance)
 	local model = Instance.new("Model")
 	model.Name = "Perimeter"
 	model.ModelStreamingMode = Enum.ModelStreamingMode.Persistent
+	if XL_AT_BOOT then
+		-- The big map: only the fence stands here (placeDressing); DeltaXL builds the rest.
+		model.Parent = workspace
+		return model
+	end
 	-- What stops the squad: invisible walls just behind the fence (inner face at 300).
 	local height = Config.Arena.BoundaryHeight
 	for _, side in
 		{
 			{
 				name = "BoundaryPosX",
-				size = Vector3.new(2, height, 640),
-				at = Vector3.new(HALF + 1, height / 2, 0),
+				size = Vector3.new(2, height, HALF_Z * 2 + 40),
+				at = Vector3.new(HALF_X + 1, height / 2, 0),
 			},
 			{
 				name = "BoundaryNegX",
-				size = Vector3.new(2, height, 640),
-				at = Vector3.new(-HALF - 1, height / 2, 0),
+				size = Vector3.new(2, height, HALF_Z * 2 + 40),
+				at = Vector3.new(-HALF_X - 1, height / 2, 0),
 			},
 			{
 				name = "BoundaryPosZ",
-				size = Vector3.new(640, height, 2),
-				at = Vector3.new(0, height / 2, HALF + 1),
+				size = Vector3.new(HALF_X * 2 + 40, height, 2),
+				at = Vector3.new(0, height / 2, HALF_Z + 1),
 			},
 			{
 				name = "BoundaryNegZ",
-				size = Vector3.new(640, height, 2),
-				at = Vector3.new(0, height / 2, -HALF - 1),
+				size = Vector3.new(HALF_X * 2 + 40, height, 2),
+				at = Vector3.new(0, height / 2, -HALF_Z - 1),
 			},
 		}
 	do
@@ -484,6 +526,12 @@ local function buildPerimeter(arena: Instance)
 		wall.CanTouch = false
 		wall.CastShadow = false
 		wall.Parent = arena -- the boundary is part of the arena itself
+	end
+	-- Past the fence: Delta's outskirts (its ground, berm, highway run-on and Pens fill). Another
+	-- mission has only its walls here.
+	if not FEATURES.Outskirts then
+		model.Parent = workspace
+		return model
 	end
 	-- The ground carries on to 700 out (the play floor is 600 x 600).
 	decorPart(
@@ -675,6 +723,9 @@ local function placePiece(folder: Folder, params: RaycastParams, entry: Dressing
 	return part
 end
 
+-- The fence's own pieces in the Perimeter model (kept when the big map clears the rest).
+local fenceParts: { [Instance]: boolean } = {}
+
 local function placeFence(folder: Instance, params: RaycastParams, panel: FencePanel)
 	local rotation = CFrame.Angles(0, math.rad(panel.yaw), 0)
 	local half = rotation:VectorToWorldSpace(Vector3.new(FENCE_STEP / 2, 0, 0))
@@ -689,15 +740,26 @@ local function placeFence(folder: Instance, params: RaycastParams, panel: FenceP
 	end
 	local fence = MeshAssets.waitFor("prop_chainlink_panel", 20)
 	local wire = MeshAssets.waitFor("prop_concertina", 20)
+	-- The big map opens the fence where a road leaves or the crowd broke out.
+	if bigMap() and DeltaXLLayout.inFenceGap(panel.x, panel.z) then
+		for _, piece in { fence, wire } do
+			if piece then
+				piece:Destroy()
+			end
+		end
+		return
+	end
 	if fence then
 		fence.CFrame = CFrame.new(panel.x, ground + fence.Size.Y / 2, panel.z) * rotation
 		fence.Parent = folder
+		fenceParts[fence] = true
 	end
 	if wire then
 		local top = ground + (if fence then fence.Size.Y else 7)
 		wire.CFrame = CFrame.new(panel.x, top + wire.Size.Y / 2, panel.z) * rotation
 		wire.CastShadow = false
 		wire.Parent = folder
+		fenceParts[wire] = true
 	end
 end
 
@@ -718,6 +780,9 @@ local function placeDressing()
 		perimeterParams.FilterType = Enum.RaycastFilterType.Exclude
 		perimeterParams.FilterDescendantsInstances = { folder, perimeter }
 		for _, entry in PERIMETER do
+			if bigMap() then
+				break -- the big map's outer areas stand where this scenery was
+			end
 			placePiece(perimeter :: any, perimeterParams, entry)
 		end
 		for _, panel in FENCE do
@@ -1246,18 +1311,76 @@ function ArenaService.getSpawnLocation(index: number): SpawnLocation?
 	return spawnPads[((index - 1) % #Config.Run.SpawnPads) + 1]
 end
 
--- The landing pad for squad slot `index` (1..4): a standing CFrame on the LZ helipad,
+-- Where the squad lands this run: the big map's drop corner (Attributes.DropPoint), else the
+-- mission's Landing pad.
+function ArenaService.landingPoint(): Vector3
+	local drop = workspace:GetAttribute(Attributes.DropPoint)
+	return if typeof(drop) == "Vector3" then drop else mission.Landing
+end
+
+-- The landing pad for squad slot `index` (1..4): a standing CFrame round the landing point,
 -- facing the middle of the arena.
 function ArenaService.getSpawnPad(index: number): CFrame
 	local pads = Config.Run.SpawnPads
 	local offset = pads[((index - 1) % #pads) + 1]
-	local lz = Config.Extraction.ZonePosition
-	local position = Vector3.new(lz.X + offset.X, 3.5, lz.Z + offset.Z)
+	local lz = ArenaService.landingPoint()
+	local position = Vector3.new(lz.X + offset.X, lz.Y + 2.9, lz.Z + offset.Z)
 	local toward = Vector3.new(-position.X, 0, -position.Z)
 	if toward.Magnitude < 0.01 then
 		toward = Vector3.new(0, 0, -1)
 	end
 	return CFrame.lookAlong(position, toward.Unit)
+end
+
+-- The SpawnLocations follow the landing point (the big map moves it every run).
+function ArenaService.moveSpawnPads()
+	for index, pad in spawnPads do
+		pad.CFrame = ArenaService.getSpawnPad(index) - Vector3.new(0, 2.9, 0)
+	end
+end
+
+-- How far from the centre an Infected may spawn, on x and on z: the mission's frame less the
+-- fence band (Config.Arena.SpawnInset is Delta's: 300 less the band), or the big map's edge.
+function ArenaService.spawnInset(): (number, number)
+	if bigMap() then
+		return Config.DeltaXL.SpawnInset, Config.DeltaXL.SpawnInset
+	end
+	local band = 300 - Config.Arena.SpawnInset
+	return HALF_X - band, HALF_Z - band
+end
+
+-- The big map switched on after boot: the walls at 300 and the scenery past the fence go,
+-- the fence opens at its gaps (DeltaXLLayout.FenceGaps). Pieces still being placed check
+-- bigMap() themselves.
+function ArenaService.openPerimeter()
+	local arena = workspace:FindFirstChild("TestArena")
+	if arena then
+		for _, child in arena:GetChildren() do
+			if string.sub(child.Name, 1, 8) == "Boundary" then
+				child:Destroy()
+			end
+		end
+	end
+	local perimeter = workspace:FindFirstChild("Perimeter")
+	if not perimeter then
+		return
+	end
+	for _, child in perimeter:GetChildren() do
+		local keep = fenceParts[child] == true
+		if keep and child:IsA("BasePart") then
+			keep = not DeltaXLLayout.inFenceGap(child.Position.X, child.Position.Z)
+		end
+		if not keep then
+			fenceParts[child] = nil
+			child:Destroy()
+		end
+	end
+end
+
+-- Builders the big map (DeltaXL) shares with the base, so its grey pieces match.
+ArenaService.makePart = makePart
+function ArenaService.buildBuilding(parent: Instance, spec: BuildingSpec): Model
+	return buildBuilding(parent, spec)
 end
 
 function ArenaService.init()
@@ -1303,23 +1426,44 @@ function ArenaService.init()
 	arena.ModelStreamingMode = Enum.ModelStreamingMode.Persistent
 
 	-- Floor: top surface at y=0 (ground raycasts and spawns assume it).
-	makePart("Floor", Vector3.new(HALF * 2, 1, HALF * 2), CFrame.new(0, -0.5, 0), GROUND_COLOR).Parent =
+	makePart("Floor", Vector3.new(HALF_X * 2, 1, HALF_Z * 2), CFrame.new(0, -0.5, 0), GROUND_COLOR).Parent =
 		arena
 
-	buildRoads(arena)
+	if FEATURES.Roads then
+		buildRoads(arena)
+	end
 	for _, hill in HILLS do
 		buildHill(arena, hill)
 	end
-	buildHighway(arena)
-	-- The LZ: insert and extract (Config.Extraction.ZonePosition). The Depot's alternate pad
-	-- sits on the DepotPad concrete (top 0.3).
-	local lz = Config.Extraction.ZonePosition
-	buildHelipad(arena, "Helipad", lz.X, lz.Z, 0)
-	buildHelipad(arena, "AltHelipad", 255, 85, 0.3)
-	buildLandmarks(arena)
+	buildParts(arena)
+	if FEATURES.Highway then
+		buildHighway(arena)
+	end
+	-- The pads (the mission's Landing, Extract and AltPad). A pad's point stands PAD_LIFT
+	-- above the ground the pad is built on.
+	local lz = mission.Landing
+	buildHelipad(arena, "Helipad", lz.X, lz.Z, lz.Y - PAD_LIFT)
+	local extract = mission.Extract
+	if extract and (extract - lz).Magnitude > 1 then
+		buildHelipad(arena, "ExtractHelipad", extract.X, extract.Z, extract.Y - PAD_LIFT)
+	end
+	local alt = mission.AltPad
+	if alt then
+		buildHelipad(arena, "AltHelipad", alt.X, alt.Z, alt.Y - PAD_LIFT)
+	end
+	-- The client's insertion cutscene reads the mission's landing from here (it has no
+	-- Missions module); Delta XL's DropPoint still wins over it.
+	workspace:SetAttribute(Attributes.MissionLanding, lz)
+	if FEATURES.Landmarks then
+		buildLandmarks(arena)
+	end
 	buildGroundPatches(arena)
-	buildPerches(arena)
-	buildGantry(arena)
+	if FEATURES.Perches then
+		buildPerches(arena)
+	end
+	if FEATURES.Gantry then
+		buildGantry(arena)
+	end
 
 	-- Four invisible SpawnLocations on the LZ, one per squad slot (Config.Run.SpawnPads).
 	-- Squad points each player's RespawnLocation at their own pad, so the engine lands them

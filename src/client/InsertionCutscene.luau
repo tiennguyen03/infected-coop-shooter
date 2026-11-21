@@ -328,13 +328,24 @@ local function rosterMembers(): { Instance }
 	return list
 end
 
+-- Where the squad lands this run: the big map's drop corner (Attributes.DropPoint, set by the
+-- server as the run starts), else the mission's pad (MissionLanding; ArenaService.landingPoint).
+local function landingPoint(): Vector3
+	local drop = Workspace:GetAttribute(Attributes.DropPoint)
+	if typeof(drop) == "Vector3" then
+		return drop
+	end
+	local landing = Workspace:GetAttribute(Attributes.MissionLanding)
+	return if typeof(landing) == "Vector3" then landing else Config.Extraction.ZonePosition
+end
+
 -- The squad's landing pads (Config.Run.SpawnPads round the LZ; ArenaService.getSpawnPad's
 -- standing CFrames), for a stand-in whose bot has no body yet.
 local function padFrames(): { CFrame }
-	local lz = Config.Extraction.ZonePosition
+	local lz = landingPoint()
 	local list = {}
 	for _, offset in Config.Run.SpawnPads do
-		local position = Vector3.new(lz.X + offset.X, 3.5, lz.Z + offset.Z)
+		local position = Vector3.new(lz.X + offset.X, lz.Y + 2.9, lz.Z + offset.Z)
 		local toward = Vector3.new(-position.X, 0, -position.Z)
 		if toward.Magnitude < 0.01 then
 			toward = Vector3.new(0, 0, -1)
@@ -419,7 +430,7 @@ local function play()
 	local camera = Workspace.CurrentCamera
 
 	-- The scene's frame: the pad, out toward the map's edge, and across.
-	local pad = Config.Extraction.ZonePosition
+	local pad = landingPoint()
 	local flatOut = Vector3.new(pad.X, 0, pad.Z)
 	local outward = if flatOut.Magnitude > 1 then flatOut.Unit else Vector3.new(0, 0, 1)
 	local facing = -outward -- the squad faces the middle of the map

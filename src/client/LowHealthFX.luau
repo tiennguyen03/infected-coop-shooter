@@ -135,15 +135,7 @@ local function step(dt: number)
 		return -- settled; the last apply already showed it
 	end
 	-- Linear approach: a full 0 -> 1 swing takes Ease seconds.
-	local stepSize = if CFG.Ease > 0 then dt / CFG.Ease else 1
-	if goal > shown then
-		shown = math.min(shown + stepSize, goal)
-	else
-		shown = math.max(shown - stepSize, goal)
-	end
-	if shown <= OFF and goal == 0 then
-		shown = 0
-	end
+	shown = Feel.easeToward(shown, goal, dt, CFG.Ease, OFF)
 	apply(shown)
 end
 

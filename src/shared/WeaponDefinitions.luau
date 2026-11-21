@@ -11,6 +11,16 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local Sight = require(ReplicatedStorage.Shared.Rules.Sight)
 local KeyBindings = require(ReplicatedStorage.Shared.Rules.KeyBindings)
 local MeshAssets = require(ReplicatedStorage.Shared.MeshAssets)
+local Optics = require(ReplicatedStorage.Shared.Attachments.Optics)
+local AttachmentMerge = require(ReplicatedStorage.Shared.Rules.AttachmentMerge)
+local Loadout = require(ReplicatedStorage.Shared.Rules.Loadout)
+local Scarcity = require(ReplicatedStorage.Shared.Rules.Scarcity)
+local AttachmentUnlock = require(ReplicatedStorage.Shared.Rules.AttachmentUnlock)
+local AmmoTypes = require(ReplicatedStorage.Shared.Attachments.AmmoTypes)
+local AttachmentOptions = require(ReplicatedStorage.Shared.Attachments.Options)
+local Schema = require(ReplicatedStorage.Shared.Attachments.Schema)
+
+local SCARCE_AMMO = Config.Scarcity.Enabled and Config.Scarcity.Ammo.Enabled
 
 -- A row's sight points are written on the gun's design (guns.py); the eye lines up where
 -- they show on the uploaded mesh, which Roblox mirrors left-right (MeshAssets.shownPoint).
@@ -27,6 +37,17 @@ export type FireMode = "auto" | "semi"
 export type WeaponKick = { Pitch: number, Yaw: number, Recover: number }
 -- The Barrel's suppressor (Config.Attachments): its quiet reach and its size on the muzzle.
 export type Suppressor = { Noise: number, Length: number, Width: number }
+
+-- Overpenetration (Rules/Overpen; the Fifty): bodies hit at most, the share off per body,
+-- the thickest wall passed (studs), a squadmate's share, and whether it breaks the Brute's
+-- plated front.
+export type Overpen = {
+	Bodies: number,
+	Falloff: number,
+	WallThickness: number,
+	FriendlyFire: number,
+	BreaksArmour: boolean,
+}
 
 export type WeaponDefinition = {
 	Id: string,
@@ -51,6 +72,9 @@ export type WeaponDefinition = {
 	HeadshotMultiplier: number, -- on a Head hit (EnemyDefinitions may override per form)
 	Pellets: number?, -- rounds per trigger pull (shotguns); nil = 1
 	Pierce: number?, -- Infected a round passes through after the first; nil = 0
+	Overpen: Overpen?, -- the round carries on through bodies and thin walls (Rules/Overpen)
+	CarryMoveFactor: number, -- walk speed multiplier while it is in hand (1 = none)
+	CanSprint: boolean, -- false: too heavy to sprint with
 	Kick: WeaponKick, -- per-shot camera kick (CameraController)
 	Heavy: boolean, -- staggers a Brute (Config.Enemies.Flinch)
 	ReloadClip: string?, -- its own reload clip; nil = Config.Animations.Assault.reload
@@ -63,6 +87,19 @@ export type WeaponDefinition = {
 	ArmsOrder: number, -- its place in the Arms Room within its slot (lower first; default 100)
 	Noise: number, -- studs a shot carries to the Infected (Config.Awareness; default DefaultNoise)
 	Suppressor: Suppressor?, -- it takes one on the Barrel; nil = it cannot
+	-- Attachment system v2 (Config.AttachmentsV2; WeaponDefinitions.fitted): its slots by
+	-- family (nil: the one-slot fitting), its ammo by caliber. A fitted definition carries the
+	-- merged stats in the fields above and in these (as issued: 1, 1, 0, "standard", false).
+	Family: string?,
+	Caliber: string?,
+	-- Where its attachments' parts sit (Config.Weapons.<gun>.Mounts; Shared.Attachments.MountPoints).
+	Mounts: { [string]: { at: Vector3, yaw: number? } }?,
+	AdsTimeFactor: number, -- on the time into the sights (CameraController)
+	ArmourPenetration: number, -- 0..1 of a plate's reduction ignored (DamageService)
+	AmmoBehaviour: string, -- the round's behaviour (AmmoTypes)
+	BreachPower: number, -- a breaching round's push on a wall per hit (Rules/WallBreach; 1)
+	Burn: AttachmentMerge.Burn?, -- an incendiary round's burn per hit (Rules/DoT; nil: none)
+	Merged: boolean, -- true: built by fitted(); Noise already holds the quiet barrel's reach
 	-- Its sights in first person (Rules/Sight): the two points on the mesh the eye lines up,
 	-- irons or a scope, the eye relief, the zoom and the hip hold, defaults filled in.
 	Sight: Sight.Resolved,
@@ -94,6 +131,7 @@ type Tuning = {
 	ReloadTime: number,
 	ReserveStart: number,
 	ReserveMax: number,
+	Scarce: { ReserveStart: number, ReserveMax: number }?, -- Config.Scarcity.Ammo
 	HipSpread: number,
 	AdsSpread: number,
 	BloomPerShot: number,
@@ -104,6 +142,9 @@ type Tuning = {
 	HeadshotMultiplier: number,
 	Pellets: number?,
 	Pierce: number?,
+	Overpen: Overpen?,
+	CarryMoveFactor: number?,
+	CanSprint: boolean?,
 	Kick: WeaponKick,
 	Heavy: boolean?,
 	ReloadClip: string?,
@@ -117,6 +158,9 @@ type Tuning = {
 	Noise: number?,
 	Suppressor: Suppressor?,
 	Sight: Sight.Raw?,
+	Family: string?,
+	Caliber: string?,
+	Mounts: { [string]: { at: Vector3, yaw: number? } }?,
 }
 
 local DEFAULT_ARMS_ORDER = 100
@@ -133,6 +177,8 @@ local function row(
 	description: string,
 	tuning: Tuning
 ): WeaponDefinition
+	-- Spare rounds: the row's Scarce block while Config.Scarcity.Ammo is on (Rules/Scarcity).
+	local reserveStart, reserveMax = Scarcity.reserve(tuning, SCARCE_AMMO)
 	return {
 		Id = id,
 		Name = name,
@@ -144,8 +190,8 @@ local function row(
 		FireCooldown = tuning.FireCooldown,
 		MagazineSize = tuning.MagazineSize,
 		ReloadTime = tuning.ReloadTime,
-		ReserveStart = tuning.ReserveStart,
-		ReserveMax = tuning.ReserveMax,
+		ReserveStart = reserveStart,
+		ReserveMax = reserveMax,
 		HipSpread = tuning.HipSpread,
 		AdsSpread = tuning.AdsSpread,
 		BloomPerShot = tuning.BloomPerShot,
@@ -156,6 +202,9 @@ local function row(
 		HeadshotMultiplier = tuning.HeadshotMultiplier,
 		Pellets = tuning.Pellets,
 		Pierce = tuning.Pierce,
+		Overpen = tuning.Overpen,
+		CarryMoveFactor = tuning.CarryMoveFactor or 1,
+		CanSprint = tuning.CanSprint ~= false,
 		Kick = tuning.Kick,
 		Heavy = tuning.Heavy == true,
 		ReloadClip = tuning.ReloadClip,
@@ -168,6 +217,15 @@ local function row(
 		ArmsOrder = tuning.ArmsOrder or DEFAULT_ARMS_ORDER,
 		Noise = tuning.Noise or Config.Awareness.DefaultNoise,
 		Suppressor = tuning.Suppressor,
+		Family = tuning.Family,
+		Caliber = tuning.Caliber,
+		Mounts = tuning.Mounts,
+		AdsTimeFactor = 1,
+		ArmourPenetration = 0,
+		AmmoBehaviour = "standard",
+		BreachPower = 1,
+		Burn = nil,
+		Merged = false,
 		Sight = shown(
 			tuning.Model or DEFAULT_MODEL,
 			Sight.resolve(tuning.Sight or DEFAULT_SIGHT, Config.Weapon.Sights)
@@ -244,6 +302,14 @@ local ROWS: { [string]: WeaponDefinition } = {
 		"One round, one kill, through four in a line. Two for a Brute. Work the bolt.",
 		W.Sniper
 	),
+	fifty = row(
+		"fifty",
+		"primary",
+		"Fifty",
+		"Barrett M82A1",
+		".50 BMG: through four in a line, walls and squadmates too. Heavy, loud, no sprint.",
+		W.Fifty
+	),
 	goose = row(
 		"goose",
 		"primary",
@@ -314,22 +380,225 @@ function WeaponDefinitions.grenade(id: string?): GrenadeDefinition
 	return (id and GRENADES[id]) or GRENADES[WeaponDefinitions.DEFAULT_GRENADE]
 end
 
--- What gun `id` can take: [slot] = its options (Config.Attachments), empty when nothing.
+-- What gun `id` can take: [slot] = its options (Config.Attachments, Config.Optics), empty
+-- when nothing.
 function WeaponDefinitions.options(id: string): { [string]: { string } }
 	local options: { [string]: { string } } = {}
 	local gun = ROWS[id]
+	-- A v2 gun: every slot it takes, with every option but the issued part (an empty slot
+	-- holds that one).
+	if gun and gun.Family then
+		local catalog = WeaponDefinitions.attachmentCatalog()
+		for _, slot in WeaponDefinitions.slots(id) do
+			local ids: { string } = {}
+			for _, optionId in AttachmentUnlock.idsIn(catalog, id, slot.id) do
+				local entry = AttachmentOptions.get(optionId) or AmmoTypes.get(optionId)
+				if entry and not entry.base then
+					table.insert(ids, optionId)
+				end
+			end
+			if #ids > 0 then
+				options[slot.id] = ids
+			end
+		end
+		return options
+	end
 	if gun and gun.Suppressor then
 		options.Barrel = { "suppressor" }
+	end
+	-- Optics: each Config.Optics row that lists this gun (only the M16A4 so far).
+	local optics = Optics.idsFor(id)
+	if gun and #optics > 0 then
+		options[Optics.SLOT] = optics
 	end
 	return options
 end
 
+-- The optic on gun `id` in a soldier's Fitted attribute text (Loadout.encodeFitted), or nil.
+function WeaponDefinitions.opticIn(fittedText: unknown, id: string): string?
+	if typeof(fittedText) ~= "string" or fittedText == "" then
+		return nil
+	end
+	return Loadout.fitted(Loadout.decodeFitted(fittedText), id, Optics.SLOT)
+end
+
+-- The Showcase id of gun `id` with optic `opticId` on ("service_rifle+acog").
+function WeaponDefinitions.dressedId(id: string, opticId: string): string
+	return `{id}+{opticId}`
+end
+
+-- Gun `id` as it is carried with optic `opticId` on (nil: none): its mesh and its sight on
+-- that mesh, the zoom scaled by the optic (Rules/AttachmentMerge). The bare gun's own when the
+-- optic does not fit it or its mesh is not uploaded. Kept per gun and optic (the camera asks
+-- every frame).
+local dressedCache: { [string]: { model: string, sight: Sight.Resolved } } = {}
+function WeaponDefinitions.dressed(id: string?, opticId: string?): (string, Sight.Resolved)
+	local weapon = WeaponDefinitions.get(id)
+	if not opticId then
+		return weapon.Model, weapon.Sight
+	end
+	local key = WeaponDefinitions.dressedId(weapon.Id, opticId)
+	local cached = dressedCache[key]
+	if not cached then
+		local optic = Optics.get(opticId)
+		local fit = Optics.fit(opticId, weapon.Id)
+		if not optic or not fit or not MeshAssets.isUploaded(fit.model) then
+			cached = { model = weapon.Model, sight = weapon.Sight }
+		else
+			local zoom =
+				AttachmentMerge.apply({ zoom = weapon.Sight.Zoom, adsTime = 1 }, { optic }).zoom
+			local raw: Sight.Raw = {
+				Rear = fit.sight.Rear,
+				Front = fit.sight.Front,
+				Kind = fit.sight.Kind,
+				Hold = weapon.Sight.Hold,
+				Zoom = zoom,
+			}
+			cached = {
+				model = fit.model,
+				sight = shown(fit.model, Sight.resolve(raw, Config.Weapon.Sights)),
+			}
+		end
+		dressedCache[key] = cached
+	end
+	return cached.model, cached.sight
+end
+
 -- How far a shot from `weapon` carries with `barrel` fitted (nil = bare).
 function WeaponDefinitions.shotNoise(weapon: WeaponDefinition, barrel: string?): number
+	if weapon.Merged then
+		return weapon.Noise -- fitted(): the barrel, muzzle and ammo already in it
+	end
 	if barrel == "suppressor" and weapon.Suppressor then
 		return weapon.Suppressor.Noise
 	end
 	return weapon.Noise
+end
+
+----------------------------------------------------------------------
+-- Attachment system v2 (Config.AttachmentsV2; Nova 2026-11-20)
+----------------------------------------------------------------------
+
+-- What Rules/AttachmentUnlock checks against: every option and ammo type, and each gun's
+-- caliber. Built once.
+local catalog: AttachmentUnlock.Catalog? = nil
+function WeaponDefinitions.attachmentCatalog(): AttachmentUnlock.Catalog
+	local built = catalog
+	if built then
+		return built
+	end
+	local made: AttachmentUnlock.Catalog = {
+		options = table.clone(AttachmentOptions.Rows) :: any,
+		ammo = table.clone(AmmoTypes.Rows) :: any,
+		gunCaliber = function(gunId: string): string?
+			local gun = ROWS[gunId]
+			return gun and gun.Caliber
+		end,
+	}
+	catalog = made
+	return made
+end
+
+-- The v2 slots gun `id` takes (its Family's, with at least one option for it), in menu order;
+-- empty for a gun still on the one-slot fitting.
+function WeaponDefinitions.slots(id: string): { Schema.Slot }
+	local gun = ROWS[id]
+	local list: { Schema.Slot } = {}
+	if not gun or not gun.Family then
+		return list
+	end
+	local all = WeaponDefinitions.attachmentCatalog()
+	for _, slot in Schema.forFamily(gun.Family) do
+		if #AttachmentUnlock.idsIn(all, id, slot.id) > 0 then
+			table.insert(list, slot)
+		end
+	end
+	return list
+end
+
+local fittedCache: { [string]: WeaponDefinition } = {}
+
+-- Gun `id` as `attachments` fit it (Loadout.attachments: [gun][slot] = option or ammo id): its
+-- row with the merged stats (Rules/AttachmentMerge.merge) for a v2 gun, the row itself for any
+-- other gun, no fitting, or a fitting the rule refuses (the server never signs one). The server
+-- fires, reloads and makes noise with this; the client reads it for its camera and walk only.
+function WeaponDefinitions.fitted(id: string?, attachments: Loadout.Attachments?): WeaponDefinition
+	local weapon = WeaponDefinitions.get(id)
+	local slots = attachments and attachments[weapon.Id]
+	if not weapon.Family or not slots or next(slots) == nil then
+		return weapon
+	end
+	local names: { string } = {}
+	for slot, option in slots do
+		table.insert(names, `{slot}={option}`)
+	end
+	table.sort(names)
+	local key = `{weapon.Id}|{table.concat(names, ";")}`
+	local cached = fittedCache[key]
+	if cached then
+		return cached
+	end
+	local equipped: { [string]: AttachmentMerge.Option } = {}
+	local ammo: AttachmentMerge.Ammo? = nil
+	for slot, optionId in slots do
+		if slot == AmmoTypes.SLOT then
+			ammo = AmmoTypes.get(optionId)
+		else
+			local option = AttachmentOptions.get(optionId)
+			if option then
+				equipped[slot] = option
+			end
+		end
+	end
+	local stats = AttachmentMerge.merge({
+		id = weapon.Id,
+		caliber = weapon.Caliber,
+		-- The suppressed barrel's quiet reach replaces the gun's (shotNoise, as before).
+		stats = AttachmentMerge.gunStats(
+			weapon,
+			if slots.Barrel == "suppressor" and weapon.Suppressor
+				then weapon.Suppressor.Noise
+				else nil
+		),
+	}, equipped, ammo)
+	if not stats then
+		fittedCache[key] = weapon
+		return weapon
+	end
+	local out = table.clone(weapon)
+	out.Damage = stats.damage
+	out.Pellets = if stats.projectileCount > 1 then stats.projectileCount else nil
+	out.HeadshotMultiplier = stats.headshotMultiplier
+	out.Noise = stats.alertRadius
+	out.Range = stats.range
+	out.MagazineSize = stats.magazineSize
+	out.ReloadTime = stats.reloadTime
+	out.HipSpread = stats.hipSpread
+	out.AdsSpread = stats.adsSpread or weapon.AdsSpread
+	out.BloomPerShot = weapon.BloomPerShot * stats.recoil
+	out.BloomRecovery = weapon.BloomRecovery * stats.recoilRecovery
+	out.Kick = {
+		Pitch = weapon.Kick.Pitch * stats.recoil,
+		Yaw = weapon.Kick.Yaw * stats.recoil,
+		Recover = weapon.Kick.Recover / math.max(stats.recoilRecovery, 0.01),
+	}
+	out.CarryMoveFactor = weapon.CarryMoveFactor * stats.moveSpeed -- its own (the Fifty) x the fitting
+	out.AdsTimeFactor = stats.adsTime
+	out.ArmourPenetration = stats.armorPenetration
+	out.AmmoBehaviour = stats.projectileBehavior
+	out.BreachPower = stats.breachPower or 1
+	out.Burn = stats.burn
+	out.Merged = true
+	fittedCache[key] = out
+	return out
+end
+
+-- The gun `id` a soldier carries, from their Fitted attribute text (Loadout.encodeFitted).
+function WeaponDefinitions.carried(id: string?, fittedText: unknown): WeaponDefinition
+	if typeof(fittedText) ~= "string" or fittedText == "" then
+		return WeaponDefinitions.get(id)
+	end
+	return WeaponDefinitions.fitted(id, Loadout.decodeFitted(fittedText))
 end
 
 return WeaponDefinitions

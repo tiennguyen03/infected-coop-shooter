@@ -26,6 +26,9 @@
         "$path": "src/lobby/server",
         "PlayerSetup": {
           "$path": "src/server/PlayerSetup.luau"
+        },
+        "AttachmentMeshService": {
+          "$path": "src/server/AttachmentMeshService.luau"
         }
       }
     },
@@ -48,6 +51,12 @@
           },
           "KitView": {
             "$path": "src/client/KitView.luau"
+          },
+          "Attachments": {
+            "$className": "Folder",
+            "VisualApplier": {
+              "$path": "src/client/Attachments/VisualApplier.luau"
+            }
           }
         }
       }

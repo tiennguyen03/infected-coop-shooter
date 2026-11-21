@@ -14,7 +14,7 @@ No names, no rank on screen.
 | Role | Dress | Walks | Overheard (bubble) |
 |---|---|---|---|
 | Plane director | ship; yellow jersey and cloth helmet, ear defenders | the flight deck, spot to spot along the island side | "Stay behind the line. Spot three's turning." / "Mind the tail rotor. You won't see it." |
-| Deck hand | ship; blue jersey and cloth helmet, chocks and a tie-down chain over one shoulder | the flight deck, between the spots and the deck edge | "Chocks and chains. Every spot, every time." / "They hose the birds before I touch them." |
+| Deck hand | ship; blue jersey and cloth helmet, chocks and a tie-down chain over one shoulder | the flight deck, between the spots and the deck edge | "Chocks and chains. Every spot, every time." / "They hose the birds before I touch them." / "Don't go under the ramp. Nobody's under the ramp." (the Visitor, 2026-11-18) |
 | Hangar mechanic | ship; green jersey, coveralls rolled to the waist, a rag in the back pocket | the hangar deck, the ramp foot and along the bay | "Mind your feet. Hose water's in everything down here." / "New tail rotor on that one. Don't ask." |
 | Plot runner | ship; dark blue, no jersey, message forms on a clipboard | the hangar deck, from the Plot door to the ramp and back | "Make a hole. Message for the island." / "Plot wants a count. Nobody likes the count." |
 | Screening medic | Army; working dress under a white smock, blue gloves, mask round the neck | the screening lane and the deck edge by it | "Hands out, sleeves up. Same as every time." / "Nobody's failed my lane. Let's keep it that way." |

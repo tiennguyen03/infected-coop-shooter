@@ -68,7 +68,10 @@ local data = {
 in one place (`RunManager`):
 
 - **No data** (Studio, a direct join) or **another `version`**: today's defaults, so Studio
-  testing never needs the lobby.
+  testing never needs the lobby. A direct join still gets the Loadout last signed at the
+  Loadmaster (2026-11-20): `HandoffService.savedLoadout` reads the lobby's save
+  (`Config.Lobby.Save.Store`, key `u_<UserId>`) and `RunManager` applies it. Studio needs
+  "Enable Studio Access to API Services"; without it (or with no save) the default stays.
 - **A loadout the catalog does not offer** (old lobby, forged data): that player gets the
   default loadout; everything else still works.
 - **A player missing from `party`, or a late joiner:** plays on the defaults. Missing players

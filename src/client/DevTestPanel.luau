@@ -19,6 +19,8 @@ local CallInDefinitions =
 	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("CallInDefinitions"))
 local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attributes"))
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
+local DeltaXLLayout =
+	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("DeltaXLLayout"))
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
 local WeaponDefinitions =
 	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("WeaponDefinitions"))
@@ -49,7 +51,7 @@ type Tab = { title: string, groups: { Group } }
 
 -- Named spots on Checkpoint Delta (x, z); the ground height is found by raycast.
 local TELEPORTS: { { label: string, x: number, z: number } } = {
-	{ label = "LZ", x = -90, z = -90 },
+	{ label = "Landing zone", x = -90, z = -90 },
 	{ label = "Apron", x = 0, z = 0 },
 	{ label = "Compound", x = 50, z = 50 },
 	{ label = "Ridge", x = -100, z = 30 },
@@ -206,6 +208,24 @@ local function tabs(): { Tab }
 		)
 	end
 
+	-- Scarcity (Config.Scarcity): the squad's reinforcements left and both guns' spare mags.
+	local reinforceButtons: { Action } = {}
+	for _, count in { 0, 1, 3, 6 } do
+		table.insert(reinforceButtons, {
+			label = tostring(count),
+			send = cmd("SetReinforcements", count),
+			echo = `Reinforcements: {count}`,
+		})
+	end
+	local magButtons: { Action } = {}
+	for _, mags in { 0, 1, 3 } do
+		table.insert(magButtons, {
+			label = tostring(mags),
+			send = cmd("SetSpareMags", mags),
+			echo = `Spare mags: {mags}`,
+		})
+	end
+
 	local teleports: { Action } = {}
 	for _, spot in TELEPORTS do
 		table.insert(teleports, {
@@ -215,6 +235,25 @@ local function tabs(): { Tab }
 				teleport(spot.x, spot.z)
 			end,
 		})
+	end
+	-- The big map's drops and pickups (open ground by design; Shared.DeltaXLLayout).
+	local bigTeleports: { Action } = {}
+	type PointGroup = { kind: string, points: { DeltaXLLayout.Point } }
+	local pointGroups: { PointGroup } = {
+		{ kind = "Drop", points = DeltaXLLayout.Drops },
+		{ kind = "Pickup", points = DeltaXLLayout.Pickups },
+	}
+	for _, pointGroup in pointGroups do
+		for _, point in pointGroup.points do
+			local label = `{pointGroup.kind}: {point.name}`
+			table.insert(bigTeleports, {
+				label = label,
+				echo = `Teleport: {label}`,
+				run = function()
+					teleport(point.x, point.z)
+				end,
+			})
+		end
 	end
 
 	return {
@@ -237,6 +276,17 @@ local function tabs(): { Tab }
 						{ label = "Extract (win)", send = cmd("ForceMissionSuccess") },
 						{ label = "Wipe (lose)", send = cmd("ForceWipe") }
 					),
+				},
+				{
+					-- Config.DeltaXL: on until Stop; a fresh run follows.
+					title = "THE BIG MAP (grey test)",
+					actions = acts({
+						label = "Big map on (restarts the run)",
+						send = cmd("BigMap"),
+						on = function()
+							return workspace:GetAttribute(Attributes.DeltaXL) == true
+						end,
+					}),
 				},
 				{
 					title = "THE FIELD",
@@ -294,6 +344,14 @@ local function tabs(): { Tab }
 					),
 				},
 				{
+					-- Kill me spends a reinforcement; with none left you stay dead.
+					title = "SCARCITY",
+					rows = {
+						{ label = "Reinforcements left", buttons = reinforceButtons },
+						{ label = "Spare mags (both guns)", buttons = magButtons },
+					},
+				},
+				{
 					title = "BOTS",
 					rows = { { label = "How many", buttons = botButtons } },
 					actions = acts(
@@ -323,6 +381,41 @@ local function tabs(): { Tab }
 				},
 				{ title = "SPAWN AROUND THE SQUAD", rows = spawnRows },
 				{
+					-- The alert, phase and pressure are on the strip under the title.
+					title = "BREACHES",
+					actions = acts({
+						label = "Breach now",
+						send = cmd("BreachNow"),
+					}),
+				},
+				{
+					-- Config.InfectedMoves: each form placed where its move fires.
+					title = "THE MOVES (in front of me)",
+					actions = acts({
+						label = "Brute charge",
+						send = cmd("MoveTest", "Brute"),
+						echo = "Brute: charge",
+					}, {
+						label = "Runner pounce",
+						send = cmd("MoveTest", "Runner"),
+						echo = "Runner: pounce",
+					}, {
+						label = "Hocker barrage",
+						send = cmd("MoveTest", "Hocker"),
+						echo = "Hocker: barrage",
+					}, {
+						label = "Walker grab",
+						send = cmd("MoveTest", "Walker"),
+						echo = "Walkers: grab",
+					}, {
+						label = "Moves off",
+						send = cmd("ToggleMoves"),
+						on = function()
+							return workspace:GetAttribute(Attributes.DevMovesOff) == true
+						end,
+					}),
+				},
+				{
 					title = "THE WARDEN",
 					actions = acts({
 						label = "To the objective",
@@ -337,6 +430,22 @@ local function tabs(): { Tab }
 						send = cmd("WardenHere"),
 						hotkey = Enum.KeyCode.F9,
 						echo = "Warden here",
+					}, {
+						label = "To stage 2 (the call)",
+						send = cmd("WardenStage2"),
+						echo = "Warden stage 2",
+					}, {
+						label = "To stage 3 (the rage)",
+						send = cmd("WardenStage3"),
+						echo = "Warden stage 3",
+					}, {
+						label = "Quake now",
+						send = cmd("WardenQuake"),
+						echo = "Warden quake",
+					}, {
+						label = "Rampage now",
+						send = cmd("WardenRampage"),
+						echo = "Warden rampage",
 					}, {
 						label = "Kill him",
 						send = cmd("KillWarden"),
@@ -370,7 +479,13 @@ local function tabs(): { Tab }
 			},
 		},
 		{ title = "UPGRADES", groups = upgradeGroups },
-		{ title = "TELEPORT", groups = { { title = "CHECKPOINT DELTA", actions = teleports } } },
+		{
+			title = "TELEPORT",
+			groups = {
+				{ title = "CHECKPOINT DELTA", actions = teleports },
+				{ title = "THE BIG MAP (turn it on in RUN)", actions = bigTeleports },
+			},
+		},
 	}
 end
 
@@ -637,6 +752,18 @@ local function updateInfo(dt: number)
 			then "  ·  SPAWNS OFF"
 			else "")
 		.. (if workspace:GetAttribute(Attributes.GamePaused) == true then "  ·  PAUSED" else "")
+	-- The breach director (BreachService): alert as a share of the threshold, phase, pressure.
+	local phase = workspace:GetAttribute(Attributes.BreachPhase)
+	if Config.Breaches.Enabled and phase ~= nil then
+		local alert = (workspace:GetAttribute(Attributes.BreachAlert) :: number?) or 0
+		local pressure = (workspace:GetAttribute(Attributes.BreachPressure) :: number?) or 0
+		flags ..= string.format(
+			"  ·  alert %d%% %s, pressure %d%%",
+			math.floor(alert * 100 + 0.5),
+			tostring(phase),
+			math.floor(pressure * 100 + 0.5)
+		)
+	end
 	if infoLabel then
 		infoLabel.Text = string.format(
 			"%.0f fps  ·  %s  ·  %d Infected  ·  me %s%s   [%s dev tools]",

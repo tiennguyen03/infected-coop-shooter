@@ -13,6 +13,7 @@ local Server = script.Parent
 
 local BOOT: { ModuleScript } = {
 	Server.CarrierV2, -- registers Carrier v2's kit meshes before MeshAssets builds; places them later
+	Server.TallyBoards, -- paints the counted lettering CarrierV2 registers (store + clock)
 	Shared.MeshAssets, -- the Pike body's limb meshes (PikeBody)
 	Shared.Showcase, -- the Loadmaster's Loadout screen's turning models (LoadoutMenu)
 	Server.FallowBuilder,
@@ -23,7 +24,12 @@ local BOOT: { ModuleScript } = {
 	Server.RecordService,
 	Server.TabsService,
 	Server.LoadmasterService,
+	Server.KitModService, -- after RecordService (ranks are bought onto the record)
+	Server.OpticService, -- after RecordService and LoadmasterService (buys onto one, fits through the other)
+	Server.AttachmentService, -- attachment system v2 (the same two, the same way)
+	Server.AttachmentMeshService, -- the attachment models the EDIT preview shows (VisualApplier)
 	Server.LaunchService,
+	Server.MissionBoardService, -- after LaunchService (it launches through LaunchService.send)
 }
 
 local started: { string } = {}
