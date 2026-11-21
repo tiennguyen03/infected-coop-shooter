@@ -125,6 +125,7 @@ something; never delete one without the owner.
   | Swap gun, grenade, reload | Q, G, R |
   | Call-ins | 1-4 |
   | Arms Room | B |
+  | Squad panel (the Carrier) | P |
   | Ping (not built) | middle mouse, kept free |
 
 - Movement keys: roll is Shift twice; slide is holding C or Ctrl while sprinting (owner,

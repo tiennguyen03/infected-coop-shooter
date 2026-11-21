@@ -503,6 +503,13 @@ sling across his chest"; the crew's block eyes "dont look right" on the R15 bodi
 5. Launch for real: publish the place, join it from the Roblox app (with a friend for a
    two-person bird), board a spot. You should land in a match server together.
 
+## Boarding since loop sprint 2 (2026-11-20)
+
+Squads form in the squad panel (P) and fly from the Mission Board in the map room
+(PROGRESSION.md > Missions). The helicopter spots stay as scenery; their rings no longer board
+(`Config.Lobby.Launch.RingsBoard = false`; `true` puts the old boarding back) and the sign
+reads "Pick a mission in the map room". Both ways fly through `LaunchService.send`.
+
 ## Open (next steps, in order)
 
 - **Re-check the new loop and the Pike body** (the steps above). Since 2026-11-10 a lift reserves its server

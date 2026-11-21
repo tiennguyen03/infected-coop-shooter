@@ -891,8 +891,14 @@ Mile 14, dawn at Kestrel. The burning skyline is the districts that already got 
 On the Carrier, the watch officer's "Show me the missions." opens the paper map and the Mission
 Board: one card per mission in `src/shared/MissionCatalog.luau` (a row: id, name, district,
 layout file, objective pool, boss, line, players, an optional `Window` for events and an
-optional own `Place`). DEPLOY flies the soldier alone with bots (the party comes in sprint 2;
-the deck's rings still fly to Delta). One match place builds any mission: the lobby stores
+optional own `Place`). **Squads (sprint 2):** every soldier on the Carrier is in a squad, alone
+or up to four (`Rules/Party`, `PartyService`, `PartyUI`). P opens the squad panel: INVITE a
+soldier on the Carrier, or friends anywhere through Roblox (`LaunchData` `party:<leader>:<job>`:
+they join on arrival, or are offered a flight to the leader's Carrier), LEAVE, and KICK for
+the leader. The leader's DEPLOY picks the mission and starts `Config.Lobby.Party.DeployWait`
+(15 s); a member's DEPLOY is READY; the squad flies together when all are ready or the time
+runs out, bots filling the empty seats. The deck rings no longer board
+(`Config.Lobby.Launch.RingsBoard = false` puts them back). One match place builds any mission: the lobby stores
 `{ mission, party }` in MemoryStore (`Config.Missions.LaunchMap`) under the reserved server's
 PrivateServerId before the teleport, and the match reads it at boot (`Missions/init`,
 `Rules/MissionPick`: the launch record, else the Workspace `Mission` attribute, else Delta;
