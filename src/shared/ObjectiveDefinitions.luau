@@ -77,6 +77,13 @@ export type Row = {
 	ReachRadius: number?,
 	SpawnFactor: number?,
 	MaxLamps: number?,
+	-- Words for a module two maps share (Sanitize, SilenceAlarm); nil = the module's own.
+	Prompt: string?, -- the hold prompt's action ("Burn the bus")
+	Object: string?, -- the prompt's object ("Fuel can")
+	Step: string?, -- the HUD step after "Hold E " ("at each fuel can to burn the buses")
+	Target: string?, -- SilenceAlarm: the map part the noise comes from ("Siren")
+	Sound: string?, -- SilenceAlarm: its loop (WorldSounds key)
+	Noise: { Reach: number, Every: number }?, -- SilenceAlarm: wakes the Infected until off
 	LampRange: number?,
 	LampBrightness: number?,
 	Boss: Boss?, -- main only: the Warden's last act (defaults Config.Objectives.Boss)
