@@ -736,17 +736,22 @@ Designed, not built (code comments point here): the Burn timer, the designed 90 
 extraction, Secondaries' reward and the score per mission are in [LATER.md](LATER.md). The
 extraction that is built: [Extraction](#extraction).
 
-## The Containment Board (bands in code; the shared board not built)
+## The Containment Board: the city war (live since loop sprint 3, 2026-11-20; unplayed)
 
-Players read it as the board titled WHAT WE HOLD in the map room. The bands are code (`Config.Containment`, `Rules/Containment`, the lobby's `ContainmentBoard`); the shared DataStore board is not built.
-
-Every district carries a containment % raised by every extracted mission. Delta starts at 25;
-the others at 0; the next district unlocks at 50 of the previous. Perfect play reaches 100 in
-6 operations; a first-timer in 10-12 (a weekend). The board is **shared across all players**
-(owner, 2026-11-06): one global DataStore key per district, written with `UpdateAsync` so
-concurrent servers add, never overwrite; each server reads it at run start and once per
-minute (scaling plan: [ARCHITECTURE.md](ARCHITECTURE.md)). Contained means the district
-stopped exporting hosts, not zero Infected.
+Players read it as the board titled WHAT WE HOLD in the map room, and as the percent on each
+Mission Board card. **One shared board per season** for every server (`Config.War`,
+`Rules/War`, spec first): each district stores its percent, when it was written, whether it is
+open and whether it is Secured (DataStore `War_S1`, key `board`). A mission brought home adds
+points to its district, per mission not per player: **Win 3, Partial 1, Loss 0; 2 points = 1%**
+(a win is +1.5%), written once at the run's end with `UpdateAsync` (`WarService`, so servers
+add, never overwrite). The Infected push back **0.25% an hour** (about 6% a day); a loss takes
+nothing away. **Delta and Mile 14 are open from day one**; each later district opens when the
+one before it reaches **50%** and stays open for the season. **100% is Secured:** no more
+decay. The lobby rereads the board every minute (`ContainmentBoard.read`, published to the
+clients as `Attributes.WarBoard`); the results screen shows the line ("DELTA +1.5%",
+`Attributes.WarLine`). Not built yet: the band changing the match (the table below), Secured
+pay x0.25, seasons ending (loop sprints 4-5). Contained means the district stopped exporting
+hosts, not zero Infected.
 
 | Band | % | `InitialCount` | Clock start | Brute / Hocker first spawn | Stores | Visible (cheap) |
 |---|---|---|---|---|---|---|

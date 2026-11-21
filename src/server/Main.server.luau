@@ -62,6 +62,7 @@ local BOOT: { ModuleScript } = {
 	Server.MeritService,
 	Server.KitModService, -- the Kit Mod ranks off the record (after MeritService, LoadoutService)
 	Server.TallyService,
+	Server.WarService, -- the city war board (Rules/War; after Missions, before RunManager)
 	Server.InsertionService,
 	Server.NightVisionService,
 	Server.RunManager,

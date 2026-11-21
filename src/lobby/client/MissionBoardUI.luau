@@ -9,6 +9,7 @@
 -- percent, a lock, an Order border and the party (loop sprints 2-4).
 
 local ContextActionService = game:GetService("ContextActionService")
+local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -17,6 +18,9 @@ local HudTheme = require(script.Parent.HudTheme)
 local Messages = require(ReplicatedStorage.Shared.Messages)
 local MissionCatalog = require(ReplicatedStorage.Shared.MissionCatalog)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
+local Attributes = require(ReplicatedStorage.Shared.Attributes)
+local Config = require(ReplicatedStorage.Shared.Config)
+local Containment = require(ReplicatedStorage.Shared.Rules.Containment)
 local PartyUI = require(script.Parent.PartyUI)
 
 local MissionBoardUI = {}
@@ -37,6 +41,31 @@ local BACK_KEYS = { Enum.KeyCode.Backspace, Enum.KeyCode.ButtonB }
 local FADE = TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
 type Card = { id: string, button: TextButton, labels: { TextLabel }, stroke: UIStroke }
+
+-- Each card's district on the city war board (ContainmentBoard publishes Attributes.WarBoard).
+local function refreshBadges(cardList: { Card })
+	local raw = workspace:GetAttribute(Attributes.WarBoard)
+	local ok, districts = pcall(function()
+		return HttpService:JSONDecode(if typeof(raw) == "string" then raw else "[]")
+	end)
+	local byName: { [string]: any } = {}
+	for _, district in (if ok and typeof(districts) == "table" then districts else {}) :: { any } do
+		byName[district.name] = district
+	end
+	for _, card in cardList do
+		local badge = card.button:FindFirstChild("Badge") :: TextLabel?
+		if badge then
+			local district = byName[badge:GetAttribute("District") :: string]
+			if district and typeof(district.percent) == "number" then
+				local shown = Containment.percent(district.percent)
+				local band = Containment.band(district.percent, Config.Containment.Bands)
+				badge.Text = `{shown}% · {string.upper(band)}`
+			else
+				badge.Text = ""
+			end
+		end
+	end
+end
 
 local gui: ScreenGui
 local frame: Frame
@@ -146,6 +175,13 @@ local function buildCard(parent: Instance, row: MissionCatalog.Row, order: numbe
 	blurb.TextWrapped = true
 	blurb.TextYAlignment = Enum.TextYAlignment.Top
 	table.insert(labels, blurb)
+	-- The district's percent and band on the city war board (refreshBadges).
+	local badge =
+		HudTheme.label(button, { size = 16, font = HudTheme.Font.Headline, color = C.Yellow })
+	badge.Name = "Badge"
+	badge.AnchorPoint = Vector2.new(1, 0)
+	badge.Position = UDim2.new(1, -12, 0, 10)
+	badge:SetAttribute("District", row.District)
 	local function hover(on: boolean)
 		stroke.Thickness = if on then 2 else 1
 		stroke.Color = if on then C.Text else C.White
@@ -344,6 +380,12 @@ function MissionBoardUI.init()
 			lifting = false
 			say(text or "Not now.", C.RedLight)
 		end
+		paint()
+	end)
+
+	refreshBadges(cards)
+	workspace:GetAttributeChangedSignal(Attributes.WarBoard):Connect(function()
+		refreshBadges(cards)
 		paint()
 	end)
 

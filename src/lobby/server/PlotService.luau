@@ -184,12 +184,11 @@ end
 
 function PlotService.init()
 	local row = buildPanel()
-	buildColumns(row, ContainmentBoard.read())
-	refresh()
+	buildColumns(row, ContainmentBoard.layout())
 	task.spawn(function()
 		while true do
-			task.wait(Config.Containment.RefreshSeconds)
 			refresh()
+			task.wait(Config.Containment.RefreshSeconds)
 		end
 	end)
 end

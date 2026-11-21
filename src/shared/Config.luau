@@ -5355,6 +5355,22 @@ local Config = {
 	-- The Containment Board (players read "WHAT WE HOLD": docs/LORE.md > Naming;
 	-- docs/PROGRESSION.md > The Containment Board). Read by the
 	-- lobby's Plot today; the shared DataStore behind it waits for the save service (F9).
+	-- The city war (Rules/War; WarService writes at a run's end, the lobby's ContainmentBoard
+	-- reads): one shared board per season, district by district (Containment.Districts gives
+	-- the order and start values). Loop sprint 3.
+	War = {
+		Enabled = true, -- false: no mission moves the board (it shows the start values)
+		Store = "War_S1", -- DataStore: the season (a new season = a new store name)
+		Key = "board",
+		Retries = 2,
+		RetryDelay = 2,
+		Points = { win = 3, partial = 1, loss = 0 }, -- per mission brought home, not per player
+		PointsPerPercent = 2, -- a win = +1.5%
+		DecayPerHour = 0.25, -- the Infected push back about 6% a day; a loss takes nothing
+		UnlockAt = 50, -- the next district opens when this one reaches it (and stays open)
+		OpenAtStart = 2, -- Delta and Mile 14 are open from day one (owner 2026-11-20)
+	},
+
 	Containment = {
 		-- Band minimums in percent (Rules/Containment).
 		Bands = {

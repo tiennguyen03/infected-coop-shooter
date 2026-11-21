@@ -34,6 +34,7 @@ local Missions = require(script.Parent.Missions)
 local ReinforceService = require(script.Parent.ReinforceService)
 local Squad = require(script.Parent.Squad)
 local TallyService = require(script.Parent.TallyService)
+local WarService = require(script.Parent.WarService)
 local Lifecycle = require(script.Parent.Lifecycle)
 local Handoff = require(ReplicatedStorage.Shared.Rules.Handoff)
 local Messages = require(ReplicatedStorage.Shared.Messages)
@@ -176,6 +177,13 @@ function RunManager.endRun(result: RunStates.RunResult)
 	end)
 	if not counted then
 		warn(`[RunManager] the Carrier counts were not added: {countError}`)
+	end
+	-- The city war (WarService): the mission's district gets its points on the shared board.
+	local warred, warError = pcall(function()
+		WarService.flush(Handoff.outcome(result, primaryDone))
+	end)
+	if not warred then
+		warn(`[RunManager] the war board was not moved: {warError}`)
 	end
 	setState("Ended", result)
 	-- A squad from the lobby goes home: READY now means "back to the Carrier", and the bird

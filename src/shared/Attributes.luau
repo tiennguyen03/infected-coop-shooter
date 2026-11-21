@@ -109,6 +109,13 @@ local Attributes = table.freeze({
 	-- the merits the mission that just ended paid this player (MeritService; RunEndUI shows
 	-- it): the amount, -1 when it could not be saved, nil while a run is live
 	MeritsEarned = "MeritsEarned",
+	-- workspace, string: the city war line for this mission's end ("MILE 14 +1.5%"; "" for none):
+	-- WarService at run end, RunEndUI shows it under the merits
+	WarLine = "WarLine",
+	-- workspace (lobby place), string: the city war board as JSON, [{ name, percent, open, secured,
+	-- opensWith }] in board order (ContainmentBoard.read, every Config.Containment.RefreshSeconds);
+	-- the Mission Board's cards read it
+	WarBoard = "WarBoard",
 	-- the merits and tabs on this player's record as the match last read it at a mission's end
 	-- (MeritService; RunEndUI shows the wallet): nil until then, or when the read failed
 	MeritsHeld = "MeritsHeld",

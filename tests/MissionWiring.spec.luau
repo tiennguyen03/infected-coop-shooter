@@ -222,4 +222,26 @@ return {
 			error("launch clears flying even when the teleport went", 0)
 		end
 	end,
+
+	-- Loop sprint 3: the city war.
+	["the run end moves the war board"] = function()
+		local text = fs.readFile("src/server/RunManager.luau")
+		if not string.find(text, "WarService.flush(", 1, true) then
+			error("RunManager never calls WarService.flush", 0)
+		end
+	end,
+
+	["the lobby reads the war board from the shared store"] = function()
+		local text = fs.readFile("src/lobby/server/ContainmentBoard.luau")
+		if not string.find(text, "Config.War.Store", 1, true) then
+			error("ContainmentBoard does not read the war store", 0)
+		end
+	end,
+
+	["the Mission Board's cards show their district's percent"] = function()
+		local text = fs.readFile("src/lobby/client/MissionBoardUI.luau")
+		if not string.find(text, "Attributes.WarBoard", 1, true) then
+			error("MissionBoardUI does not read the war board", 0)
+		end
+	end,
 }
