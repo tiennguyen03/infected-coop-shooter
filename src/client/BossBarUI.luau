@@ -48,6 +48,13 @@ local TELL_TEXT: { [string]: string } = {
 	sweep = "...clear the lane. CLEAR THE LANE...",
 	slam = "...hold still. HOLD STILL...",
 	stomp = "...off the wire. OFF THE WIRE...",
+	-- Aggression pass (2026-11-18; placeholders until the lore pass).
+	leap = "...you. YOU. Stay where you are...",
+	volley = "...gas, gas, GAS. All of you...",
+	rage = "...ALL POSTS. WEAPONS FREE. WEAPONS FREE...",
+	-- The boss pass (2026-11-18; placeholders until the lore pass).
+	quake = "...GET BACK. EVERYBODY GET BACK...",
+	rampage = "...CLEAR THE ROAD. CLEAR THE ROAD. CLEAR IT...",
 }
 
 local frame: Frame = nil :: any
@@ -57,6 +64,18 @@ local emblemStroke: UIStroke = nil :: any
 local pipRow: Frame = nil :: any
 local pips: { { holder: Frame, fill: Frame, label: TextLabel } } = {}
 local stunUntil = 0
+-- The slam-in (the boss pass): the bar lands big and settles; each stage punches it.
+local barScale: UIScale = nil :: any
+local shownPhase = 1
+
+local function punch(from: number, seconds: number)
+	barScale.Scale = from
+	TweenService:Create(
+		barScale,
+		TweenInfo.new(seconds, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+		{ Scale = 1 }
+	):Play()
+end
 
 local C = HudTheme.Color
 local BAR_WIDTH = 380
@@ -93,12 +112,23 @@ local function show(name: string, plateNames: { string })
 		table.insert(pips, makePip(plateName, index))
 	end
 	bodyFill.Size = UDim2.fromScale(1, 1)
+	local first = not frame.Visible
 	frame.Visible = true
+	shownPhase = 1
+	if first then
+		punch(1.6, 0.45)
+	end
 	BuffNoticeUI.setCardTop(120)
 end
 
-local function state(bodyFraction: number, plateFractions: { number }, _phase: number)
+local function state(bodyFraction: number, plateFractions: { number }, phase: number)
 	bodyFill.Size = UDim2.fromScale(math.clamp(bodyFraction, 0, 1), 1)
+	if typeof(phase) == "number" and phase > shownPhase then
+		shownPhase = phase
+		if frame.Visible then
+			punch(1.25, 0.35)
+		end
+	end
 	local crackAt = Config.Index.Warden.CrackFraction
 	for index, pip in pips do
 		local fraction = plateFractions[index] or 0
@@ -200,6 +230,8 @@ function BossBarUI.init()
 	frame.Size = UDim2.fromOffset(BAR_WIDTH + 44, 92)
 	frame.Visible = false
 	frame.Parent = gui
+	barScale = Instance.new("UIScale")
+	barScale.Parent = frame
 
 	nameLabel = HudTheme.label(frame, {
 		text = "THE WARDEN",

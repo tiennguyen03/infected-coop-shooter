@@ -13,6 +13,13 @@ export type Wave = {
 	SpawnFactor: number?, -- spawn interval multiplier from this wave on
 }
 
+-- The bird lifts the whole squad (docs/MULTIPLAYER_READINESS.md #3): the hold runs only
+-- while every living player is on the pad. ExtractionService counts them (downed players and
+-- bots excluded); with nobody living there is no squad to hold it.
+function ExtractionWaves.squadHolding(playersIn: number, playersLiving: number): boolean
+	return playersLiving > 0 and playersIn >= playersLiving
+end
+
 -- Indexes of the waves whose mark the hold passed going from `before` to `after` seconds,
 -- in list order. Each wave is due on exactly one step.
 function ExtractionWaves.due(waves: { Wave }, before: number, after: number): { number }

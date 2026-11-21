@@ -244,11 +244,11 @@ def tapered_stock(b, y0, y1, ztop, h_front, h_back, w, swatch="dark", pad="dark_
     b.box((w + 0.02, 0.06, h_back + 0.02), (0, y1 + 0.03, ztop - h_back / 2), swatch=pad)  # butt
 
 
-def m16(b):
+def m16(b, rear_sight=True):
     # M16A4: black, fixed A2 stock, flat-top upper with a round ribbed handguard, M4-style iron
     # sights (a flip-up peep on the rail, the triangle front sight with its post between two
     # wings; Nova 2026-11-10: "should look like a real m4's iron sights"), a curved 30-round
-    # magazine. 3.1 long.
+    # magazine. 3.1 long. rear_sight=False: the flat-top bare for an optic (optics.py).
     grip(b, (0.15, 0.24, 0.44), (0, 0.02, -0.02))
     b.box((0.17, 0.6, 0.18), (0, -0.2, 0.2), swatch="dark")  # lower receiver
     b.box((0.19, 0.24, 0.16), (0, -0.42, 0.07), swatch="dark")  # flared magwell
@@ -257,7 +257,8 @@ def m16(b):
     b.box((0.09, 0.72, 0.05), (0, -0.22, 0.485), swatch="gun_d")  # flat-top rail
     for i in range(7):
         b.box((0.11, 0.03, 0.02), (0, 0.1 - i * 0.1, 0.515), swatch="dark_d")  # rail slots
-    m4_rear_sight(b)
+    if rear_sight:
+        m4_rear_sight(b)
     b.box((0.12, 0.06, 0.04), (0, 0.12, 0.46), swatch="gun_d")  # charging handle
     b.box((0.02, 0.2, 0.1), (0.09, -0.2, 0.37), swatch="gun")  # ejection port cover
     b.cyl(0.03, 0.08, (0.1, -0.02, 0.36), segs=6, rot=(0, 90, 0), swatch="gun_d")  # forward assist

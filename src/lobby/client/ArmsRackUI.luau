@@ -6,9 +6,10 @@
 -- not, stat bars from Rules/ArmsStats) in the screen the card leaves free, arrows step through
 -- every piece, Back steps out. All local: the camera, the slide and the card are this player's alone, so four
 -- soldiers can look at once. The rack is for buying (merits, after F9); equipping is the
--- Loadmaster's (LoadmasterUI). Since 2026-11-17 (owner: every desk like the Loadmaster) "Show me
--- the guns." opens the desk screen (DeskScreen) instead; the rack view is what
--- Config.Lobby.DeskScreen.Enabled = false puts back, and the wall stays in the world.
+-- Loadmaster's (LoadmasterUI). On 2026-11-17 (owner: every desk like the Loadmaster) "Show me
+-- the guns." went to the desk screen (DeskScreen) by accident; since 2026-11-18 (Nova) the
+-- Quartermaster keeps this rack view (Config.Lobby.DeskScreen.KeepOwnView), and taking
+-- arms_room off that list sends him to the desk screen again.
 
 local ContextActionService = game:GetService("ContextActionService")
 local GuiService = game:GetService("GuiService")

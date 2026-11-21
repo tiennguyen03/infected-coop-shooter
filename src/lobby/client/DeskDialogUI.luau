@@ -1,5 +1,5 @@
 --!strict
--- Talking to the Call-ins, Vehicles and Plot desks (DeskService, LobbyDesks; the Quartermaster
+-- Talking to the Call-ins, Vehicles, Plot and Visitor desks (DeskService, LobbyDesks; the Quartermaster
 -- and the Loadmaster have their own hosts, ArmsRackUI and LoadmasterUI). F on the desk's prompt
 -- opens the same talk as every desk (DeskTalk): a greeting picked at random, then 1 their kit
 -- (the desk screen, DeskScreen, with what the desk sells, KitPrices: each row's `Desk` or the
@@ -25,6 +25,7 @@ local DeskShop = require(script.Parent.DeskShop)
 local DeskTalk = require(script.Parent.DeskTalk)
 local HoldStill = require(script.Parent.HoldStill)
 local HudTheme = require(script.Parent.HudTheme)
+local MissionBoardUI = require(script.Parent.MissionBoardUI)
 
 local DeskDialogUI = {}
 
@@ -94,6 +95,10 @@ function DeskDialogUI.init()
 	local desk: LobbyDesks.Desk? = nil
 	local openPrompt: ProximityPrompt? = nil
 	local closeAt = 0
+	local saidFarewell = false
+	-- Desks this soldier has talked to this visit: a desk's `first` line is said once (no flag
+	-- on the record yet, so a new visit to the Carrier meets the Visitor anew).
+	local met: { [string]: boolean } = {}
 
 	local function say(text: string)
 		talk.say(text)
@@ -108,6 +113,7 @@ function DeskDialogUI.init()
 		openPrompt = nil
 		DeskShop.hide()
 		leaveMap()
+		MissionBoardUI.close() -- its own close calls back here once: a no-op the second time
 	end
 
 	local openTalk: (chosen: LobbyDesks.Desk, prompt: ProximityPrompt) -> ()
@@ -136,11 +142,16 @@ function DeskDialogUI.init()
 				close()
 				return
 			end
-			say(current.talk.openLine)
 			if current.id == "plot" then
+				-- The Mission Board takes the talk panel's place over the map (loop sprint 1).
 				viewMap()
 				closeAt = math.huge -- stays up while you read the map
+				ContextActionService:UnbindAction(ACTION_CHOOSE)
+				panel.Visible = false
+				MissionBoardUI.open(current.talk.openLine, current.who, close)
+				return
 			end
+			say(current.talk.openLine)
 			local sells = KitPrices.soldAt(current.id)
 			if #sells > 0 then
 				DeskShop.show(current.title, sells, current.talk)
@@ -149,7 +160,15 @@ function DeskDialogUI.init()
 		elseif index == 2 then
 			say(current.talk.answer)
 		elseif index == 3 then
-			close()
+			-- A parting line (the Visitor) stays up a moment, then the panel closes.
+			local farewell = current.talk.farewell
+			if farewell and not saidFarewell then
+				saidFarewell = true
+				say(farewell)
+				closeAt = os.clock() + Config.Lobby.DialogSeconds / 2
+			else
+				close()
+			end
 		end
 	end
 
@@ -169,7 +188,13 @@ function DeskDialogUI.init()
 		openPrompt = prompt
 		local said = chosen.talk
 		talk.show(chosen)
-		say(said.greetings[math.random(1, #said.greetings)])
+		saidFarewell = false
+		if said.first and not met[chosen.id] then
+			say(said.first)
+		else
+			say(said.greetings[math.random(1, #said.greetings)])
+		end
+		met[chosen.id] = true
 		panel.Visible = true
 		choices[3].Modal = true -- frees the mouse even zoomed into first person
 		ContextActionService:BindAction(
@@ -203,7 +228,7 @@ function DeskDialogUI.init()
 	end)
 
 	RunService.Heartbeat:Connect(function()
-		if not panel.Visible then
+		if not panel.Visible and not MissionBoardUI.isOpen() then
 			return
 		end
 		local tooFar = false

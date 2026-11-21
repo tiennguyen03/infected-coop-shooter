@@ -20,6 +20,10 @@ local FIRE_COLOR = Color3.fromRGB(255, 140, 40)
 
 function Sanitize.new(context: Types.Context): Types.Objective
 	local row = context.row
+	-- The words on the prompt and the HUD (the row's, else the Pens' tents).
+	local action = row.Prompt or "Burn the tent"
+	local object = row.Object or "Fuel can"
+	local stepText = row.Step or "at each fuel can to burn the tents"
 	local points: { Vector3 } = {}
 	local tents: { ObjectiveDefinitions.Vec } = context.site.Points or {}
 	for _, vec in tents do
@@ -64,8 +68,8 @@ function Sanitize.new(context: Types.Context): Types.Objective
 	for index, point in points do
 		local can = Kit.block(context.folder, "FuelCan", CAN_SIZE, CFrame.new(point), CAN_COLOR)
 		cans[index] = can
-		Kit.marker(can, context, "Burn the tent", 4)
-		prompts[index] = Kit.prompt(can, "Burn the tent", "Fuel can", row.Hold or 3, function()
+		Kit.marker(can, context, action, 4)
+		prompts[index] = Kit.prompt(can, action, object, row.Hold or 3, function()
 			burn(index)
 		end)
 	end
@@ -82,7 +86,7 @@ function Sanitize.new(context: Types.Context): Types.Objective
 		end,
 		progress = function(): Types.Progress
 			return {
-				step = `Hold {Kit.InteractLabel} at each fuel can to burn the tents`,
+				step = `Hold {Kit.InteractLabel} {stepText}`,
 				done = burnt,
 				total = total,
 				unit = "count",

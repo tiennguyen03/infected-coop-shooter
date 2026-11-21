@@ -80,7 +80,8 @@ end
 local function setBodyGroup(character: Model, prone: boolean)
 	for _, part in character:GetDescendants() do
 		if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-			part.CollisionGroup = if prone then PRONE_GROUP else "Default"
+			-- Standing: back in the soldiers' group (SoldierCollision), not "Default".
+			part.CollisionGroup = if prone then PRONE_GROUP else Config.Player.Collision.Group
 		end
 	end
 end

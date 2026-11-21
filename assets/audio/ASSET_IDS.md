@@ -20,4 +20,5 @@ built-in `rbxasset://` fallback per sound until the id loads.
 | bank `ui_radio` | 71130678294211 | 2026-11-08 | `SoundBanks.IDS` (radio squelch, objective complete, card pick, KIA, click; the click pitched up is the kill confirm) |
 | bank `ambience` | 98770253514208 | 2026-11-08 | `SoundBanks.IDS` (Lantern rotor, city and wind beds, the Gate siren) |
 | heartbeat (`build/heartbeat.py`) | 117572779728629 | 2026-11-09 | `Config.Audio.LowHealth.HeartbeatId` (`LowHealthFX`) |
+| warden_drone (`build/warden_drone.js`, node, no model; uploaded with `build/upload_audio.js`) | 122577606238229 | 2026-11-18 | `Config.Index.Warden.Music.Id` (`BossPresence`) |
 | bank `guns` | 138267385221045 | 2026-11-09 | `SoundBanks.IDS` (each gun row's `Sound`: smg, lmg, shotgun, dmr, pistol, revolver, sniper, goose shot + reload; the M16 keeps the shared rifle shot; `SoundFX.gunshot`, `LoadoutService.startReload`). Replaces the first upload 97998220606581 (three guns) |

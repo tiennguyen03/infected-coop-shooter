@@ -15,6 +15,7 @@ local UserInputService = game:GetService("UserInputService")
 
 local Attributes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Attributes"))
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
+local KitMods = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("KitMods"))
 local RunStates = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("RunStates"))
 local Stamina =
 	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Rules"):WaitForChild("Stamina"))
@@ -30,6 +31,24 @@ local sprintAllowed = true
 local overrideSpeed: number? = nil -- a roll or slide (MovementController) owns the speed
 local stamina = Stamina.new(Config.Stamina)
 
+-- Config.Stamina with this soldier's Kit Mods: each extra roll (Effect "StaminaRolls",
+-- Config.KitMods) adds one RollCost to the bar. Worked out again only when the KitRanks
+-- attribute changes (this runs every frame).
+local settingsFor: string? = nil
+local settings: typeof(Config.Stamina) = Config.Stamina
+local function staminaSettings(): typeof(Config.Stamina)
+	local text = Players.LocalPlayer:GetAttribute(Attributes.KitRanks)
+	local current = if typeof(text) == "string" then text else ""
+	if current ~= settingsFor then
+		settingsFor = current
+		local rolls = KitMods.bonusFor(Players.LocalPlayer, "StaminaRolls")
+		local grown = table.clone(Config.Stamina)
+		grown.Max = Config.Stamina.Max + Config.Stamina.RollCost * rolls
+		settings = grown
+	end
+	return settings
+end
+
 local function getHumanoid(): Humanoid?
 	local character = Players.LocalPlayer.Character
 	return character and character:FindFirstChildOfClass("Humanoid")
@@ -41,10 +60,19 @@ function SprintController.getBaseSpeed(): number
 		then Config.Player.SprintSpeed
 		else Config.Player.WalkSpeed
 	local mult = (Players.LocalPlayer:GetAttribute(Attributes.MoveSpeedMult) :: number?) or 1
+	local weapon = WeaponDefinitions.carried(
+		Players.LocalPlayer:GetAttribute(Attributes.Weapon) :: string?,
+		Players.LocalPlayer:GetAttribute(Attributes.Fitted)
+	)
+	mult *= weapon.CarryMoveFactor -- attachment system v2: a long barrel, a drum
 	if isAiming then
-		mult *= WeaponDefinitions.get(
-			Players.LocalPlayer:GetAttribute(Attributes.Weapon) :: string?
-		).AdsMoveFactor
+		mult *= weapon.AdsMoveFactor
+	end
+	-- Grabbed by a Walker crowd (EnemyService; Config.InfectedMoves.Walker.Grab).
+	local character = Players.LocalPlayer.Character
+	local grabbed = character and character:GetAttribute(Attributes.Grabbed)
+	if typeof(grabbed) == "number" then
+		mult *= grabbed
 	end
 	return base * mult * stanceFactor
 end
@@ -93,6 +121,10 @@ function SprintController.isSprinting(): boolean
 	return isSprinting
 		and sprintAllowed
 		and not isAiming
+		and WeaponDefinitions.carried(
+			Players.LocalPlayer:GetAttribute(Attributes.Weapon) :: string?,
+			Players.LocalPlayer:GetAttribute(Attributes.Fitted)
+		).CanSprint
 		and Players.LocalPlayer:GetAttribute(Attributes.Carrying) ~= true
 		and Stamina.canSprint(stamina)
 end
@@ -108,7 +140,7 @@ end
 
 -- For the bar: how full (0..1) and whether the body is winded.
 function SprintController.getStamina(): (number, boolean)
-	return Stamina.fraction(stamina, Config.Stamina), stamina.winded
+	return Stamina.fraction(stamina, staminaSettings()), stamina.winded
 end
 
 -- Sprint drains only while it is really carrying the body: moving, on its feet, and not in
@@ -128,7 +160,7 @@ local function stepStamina(dt: number)
 			and character:GetAttribute(Attributes.Riding) == nil
 	end
 	local wasWinded = stamina.winded
-	Stamina.step(stamina, dt, draining, Config.Stamina)
+	Stamina.step(stamina, dt, draining, staminaSettings())
 	if stamina.winded ~= wasWinded then
 		applySpeed() -- winded drops to a walk; recovered picks the sprint back up if held
 	end
@@ -153,15 +185,17 @@ function SprintController.init()
 	if player.Character then
 		player.Character:GetAttributeChangedSignal(Attributes.SquadState):Connect(applySpeed)
 		player.Character:GetAttributeChangedSignal(Attributes.KnockedUntil):Connect(applySpeed)
+		player.Character:GetAttributeChangedSignal(Attributes.Grabbed):Connect(applySpeed)
 	end
 	player.CharacterAdded:Connect(function(character)
 		character:GetAttributeChangedSignal(Attributes.SquadState):Connect(applySpeed)
 		character:GetAttributeChangedSignal(Attributes.KnockedUntil):Connect(applySpeed)
+		character:GetAttributeChangedSignal(Attributes.Grabbed):Connect(applySpeed)
 		isAiming = false
 		overrideSpeed = nil
 		stanceFactor = 1
 		sprintAllowed = true
-		Stamina.refill(stamina, Config.Stamina)
+		Stamina.refill(stamina, staminaSettings())
 		setSprinting(false)
 	end)
 
@@ -169,7 +203,7 @@ function SprintController.init()
 	workspace:GetAttributeChangedSignal(Attributes.RunState):Connect(function()
 		local state = RunStates.current()
 		if state == "Lobby" or state == "Insert" then
-			Stamina.refill(stamina, Config.Stamina)
+			Stamina.refill(stamina, staminaSettings())
 			applySpeed()
 		end
 	end)
@@ -178,6 +212,7 @@ function SprintController.init()
 	-- Items/buffs can change the multiplier mid-run; reapply immediately.
 	Players.LocalPlayer:GetAttributeChangedSignal(Attributes.MoveSpeedMult):Connect(applySpeed)
 	Players.LocalPlayer:GetAttributeChangedSignal(Attributes.Weapon):Connect(applySpeed)
+	Players.LocalPlayer:GetAttributeChangedSignal(Attributes.Fitted):Connect(applySpeed)
 	-- Carrying an objective item (the screening record): the carrier walks.
 	Players.LocalPlayer:GetAttributeChangedSignal(Attributes.Carrying):Connect(applySpeed)
 end

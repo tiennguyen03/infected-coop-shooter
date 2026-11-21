@@ -21,11 +21,14 @@ local ArmsRoom = require(ReplicatedStorage.Shared.ArmsRoom)
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local CallInDefinitions = require(ReplicatedStorage.Shared.CallInDefinitions)
 local Config = require(ReplicatedStorage.Shared.Config)
+local Missions = require(script.Parent.Missions)
+local KitMods = require(ReplicatedStorage.Shared.KitMods)
 local Loadout = require(ReplicatedStorage.Shared.Rules.Loadout)
 local Magazine = require(ReplicatedStorage.Shared.Rules.Magazine)
 local Messages = require(ReplicatedStorage.Shared.Messages)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local Reward = require(ReplicatedStorage.Shared.Rules.Reward)
+local Scarcity = require(ReplicatedStorage.Shared.Rules.Scarcity)
 local RunStates = require(ReplicatedStorage.Shared.RunStates)
 local SoundBanks = require(ReplicatedStorage.Shared.SoundBanks)
 local UpgradeDefinitions = require(ReplicatedStorage.Shared.UpgradeDefinitions)
@@ -70,8 +73,17 @@ local callInChangedListeners: { CallInChangedListener } = {}
 local resultRemote: RemoteEvent
 local lastStep = 0
 
-local function fullGun(id: string): Gun
-	local weapon = WeaponDefinitions.get(id)
+-- Gun `id` as `attachments` fit it (attachment system v2: the magazine, reload, noise and
+-- the rest merged; WeaponDefinitions.fitted).
+local function fittedWeapon(
+	id: string,
+	attachments: Loadout.Attachments?
+): WeaponDefinitions.WeaponDefinition
+	return WeaponDefinitions.fitted(id, attachments)
+end
+
+local function fullGun(id: string, attachments: Loadout.Attachments?): Gun
+	local weapon = fittedWeapon(id, attachments)
 	return { id = weapon.Id, mag = weapon.MagazineSize, reserve = weapon.ReserveStart }
 end
 
@@ -99,14 +111,20 @@ local function pickFor(player: Player): Loadout.Loadout
 	return pick
 end
 
-local function freshState(pick: Loadout.Loadout): State
+-- Stims a soldier carries: Config.Stim.Carried plus their Kit Mods (Config.KitMods rows with
+-- Effect "StimsCarried"; KitMods.bonusFor reads the KitRanks attribute).
+local function stimCap(player: Player): number
+	return Config.Stim.Carried + KitMods.bonusFor(player, "StimsCarried")
+end
+
+local function freshState(player: Player, pick: Loadout.Loadout): State
 	return {
-		primary = fullGun(pick.primary),
-		secondary = fullGun(pick.secondary),
+		primary = fullGun(pick.primary, pick.attachments),
+		secondary = fullGun(pick.secondary, pick.attachments),
 		active = "primary",
 		grenade = pick.grenade,
 		grenades = Config.Grenade.Carried,
-		stims = Config.Stim.Carried,
+		stims = stimCap(player),
 		callIns = table.clone(pick.callIns),
 		upgrades = {},
 		reloadUntil = nil,
@@ -119,7 +137,7 @@ end
 local function get(player: Player): State
 	local state = states[player]
 	if not state then
-		state = freshState(pickFor(player))
+		state = freshState(player, pickFor(player))
 		states[player] = state
 	end
 	return state
@@ -187,8 +205,9 @@ function LoadoutService.fitted(player: Player, weaponId: string, slot: string): 
 	return Loadout.fitted(pickFor(player).attachments, weaponId, slot)
 end
 
+-- As fitted (attachment system v2): ProjectileServer fires with these stats.
 function LoadoutService.getWeapon(player: Player): WeaponDefinitions.WeaponDefinition
-	return WeaponDefinitions.get(activeGun(get(player)).id)
+	return fittedWeapon(activeGun(get(player)).id, pickFor(player).attachments)
 end
 
 -- Puts `weaponId` in its slot, full, and in hand (dev panel).
@@ -200,10 +219,10 @@ function LoadoutService.setWeapon(player: Player, weaponId: string): boolean
 	local weapon = WeaponDefinitions.get(weaponId)
 	local pick = pickFor(player)
 	if weapon.Slot == "primary" then
-		state.primary = fullGun(weapon.Id)
+		state.primary = fullGun(weapon.Id, pick.attachments)
 		pick.primary = weapon.Id
 	else
-		state.secondary = fullGun(weapon.Id)
+		state.secondary = fullGun(weapon.Id, pick.attachments)
 		pick.secondary = weapon.Id
 	end
 	state.active = weapon.Slot
@@ -231,7 +250,7 @@ end
 
 local function finishReload(player: Player, state: State)
 	local gun = activeGun(state)
-	local weapon = WeaponDefinitions.get(gun.id)
+	local weapon = fittedWeapon(gun.id, pickFor(player).attachments)
 	gun.mag, gun.reserve = Magazine.reload(gun.mag, gun.reserve, weapon.MagazineSize)
 	state.reloadUntil = nil
 	publishAmmo(player, state)
@@ -241,7 +260,7 @@ end
 function LoadoutService.startReload(player: Player): boolean
 	local state = get(player)
 	local gun = activeGun(state)
-	local weapon = WeaponDefinitions.get(gun.id)
+	local weapon = fittedWeapon(gun.id, pickFor(player).attachments)
 	if
 		swapping(state)
 		or not Magazine.canReload(
@@ -317,7 +336,7 @@ end
 function LoadoutService.refillAmmo(player: Player)
 	local state = get(player)
 	for _, gun in { state.primary, state.secondary } do
-		local weapon = WeaponDefinitions.get(gun.id)
+		local weapon = fittedWeapon(gun.id, pickFor(player).attachments)
 		gun.mag = weapon.MagazineSize
 		gun.reserve = weapon.ReserveMax
 	end
@@ -325,6 +344,52 @@ function LoadoutService.refillAmmo(player: Player)
 	state.grenades = Config.Grenade.Carried
 	publishAmmo(player, state)
 	publishKit(player, state)
+end
+
+-- A fallen squadmate's ammo pouch (ReinforceService, Config.Scarcity.Pouch): whole magazines
+-- of each gun into its reserve, up to ReserveMax. False when both were already full.
+function LoadoutService.addMags(player: Player, primaryMags: number, secondaryMags: number): boolean
+	local state = get(player)
+	local function fill(gun: Gun, mags: number): boolean
+		local weapon = fittedWeapon(gun.id, pickFor(player).attachments)
+		local after = Scarcity.addMags(gun.reserve, weapon.MagazineSize, weapon.ReserveMax, mags)
+		local grew = after > gun.reserve
+		gun.reserve = after
+		return grew
+	end
+	local primaryGrew = fill(state.primary, primaryMags)
+	local secondaryGrew = fill(state.secondary, secondaryMags)
+	publishAmmo(player, state)
+	return primaryGrew or secondaryGrew
+end
+
+-- A reinforced soldier lands with what a soldier lands with at insert: both magazines full,
+-- the insert reserve (more if they died with more), grenades and stims back. Call-ins and
+-- field upgrades stay as they were.
+function LoadoutService.reinforce(player: Player)
+	local state = get(player)
+	for _, gun in { state.primary, state.secondary } do
+		local weapon = fittedWeapon(gun.id, pickFor(player).attachments)
+		gun.mag = weapon.MagazineSize
+		gun.reserve = math.max(gun.reserve, weapon.ReserveStart)
+	end
+	state.active = "primary"
+	state.reloadUntil = nil
+	state.swapUntil = nil
+	state.grenades = Config.Grenade.Carried
+	state.stims = stimCap(player)
+	publishAmmo(player, state)
+	publishKit(player, state)
+end
+
+-- Dev (DevTestService): both guns' reserve set to `mags` magazines (capped at ReserveMax).
+function LoadoutService.setSpareMags(player: Player, mags: number)
+	local state = get(player)
+	for _, gun in { state.primary, state.secondary } do
+		local weapon = fittedWeapon(gun.id, pickFor(player).attachments)
+		gun.reserve = math.clamp(weapon.MagazineSize * mags, 0, weapon.ReserveMax)
+	end
+	publishAmmo(player, state)
 end
 
 ----------------------------------------------------------------------
@@ -368,7 +433,19 @@ end
 
 function LoadoutService.refillStims(player: Player)
 	local state = get(player)
-	state.stims = Config.Stim.Carried
+	state.stims = stimCap(player)
+	publishKit(player, state)
+end
+
+-- The soldier's Kit Mod ranks arrived (KitModService, after join): a stim cap that grew by
+-- `added` gives the soldier those stims now (never more than the cap). Nothing before the
+-- soldier has a kit.
+function LoadoutService.addKitStims(player: Player, added: number)
+	local state = states[player]
+	if not state or added <= 0 then
+		return
+	end
+	state.stims = math.min(state.stims + added, stimCap(player))
 	publishKit(player, state)
 end
 
@@ -461,7 +538,7 @@ end
 local function gateState(player: Player): Loadout.GateState
 	local member = Squad.fromPlayer(player)
 	local root = member and member.root
-	local lz = Config.Extraction.ZonePosition
+	local lz = Missions.current().Landing
 	local distance = math.huge
 	if root then
 		distance = Vector3.new(root.Position.X - lz.X, 0, root.Position.Z - lz.Z).Magnitude
@@ -490,15 +567,22 @@ function LoadoutService.apply(player: Player, requested: unknown): (boolean, str
 	if not ok then
 		return false, reason
 	end
+	local previous = pickFor(player).attachments
 	local pick = Loadout.copy(requested :: Loadout.Loadout)
 	picks[player] = pick
 	player:SetAttribute(Attributes.Fitted, Loadout.encodeFitted(pick.attachments))
 	local state = get(player)
-	if state.primary.id ~= pick.primary then
-		state.primary = fullGun(pick.primary)
+	-- A new gun, or the same one with a new magazine fitted (v2), starts full.
+	local function changed(gun: Gun, id: string): boolean
+		return gun.id ~= id
+			or fittedWeapon(id, pick.attachments).MagazineSize
+				~= fittedWeapon(gun.id, previous).MagazineSize
 	end
-	if state.secondary.id ~= pick.secondary then
-		state.secondary = fullGun(pick.secondary)
+	if changed(state.primary, pick.primary) then
+		state.primary = fullGun(pick.primary, pick.attachments)
+	end
+	if changed(state.secondary, pick.secondary) then
+		state.secondary = fullGun(pick.secondary, pick.attachments)
 	end
 	if state.grenade ~= pick.grenade then
 		state.grenade = pick.grenade
@@ -660,7 +744,7 @@ end
 
 -- A run start: the Arms Room pick re-armed full, no upgrades, no plate.
 function LoadoutService.resetPlayer(player: Player)
-	local state = freshState(pickFor(player))
+	local state = freshState(player, pickFor(player))
 	states[player] = state
 	publish(player, state)
 end

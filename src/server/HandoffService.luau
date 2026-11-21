@@ -7,7 +7,10 @@
 -- Studio: teleports do not run, so join data is empty and the match plays as a direct join.
 -- To stand in for the lobby there, put a teleport-data table as JSON in the ServerStorage
 -- attribute MockTeleportData before Play (Studio only; read once per player).
+-- A direct join (no teleport data: Studio, or a live join that skipped the lobby) still gets
+-- the Loadout its soldier last signed at the Loadmaster: savedLoadout reads the lobby's save.
 
+local DataStoreService = game:GetService("DataStoreService")
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -20,6 +23,7 @@ local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Handoff = require(ReplicatedStorage.Shared.Rules.Handoff)
 local Loadout = require(ReplicatedStorage.Shared.Rules.Loadout)
+local LoadoutSave = require(ReplicatedStorage.Shared.Rules.LoadoutSave)
 local Lifecycle = require(script.Parent.Lifecycle)
 
 local HandoffService = {}
@@ -66,6 +70,30 @@ function HandoffService.joinFor(player: Player): Handoff.Join
 		joins[player] = join
 	end
 	return join
+end
+
+-- The Loadout `userId` last signed at the Loadmaster: the lobby's save (DataStore
+-- Config.Lobby.Save.Store, key "u_<UserId>" as LoadmasterService writes it, Rules/LoadoutSave),
+-- checked against today's catalog. For a direct join only: a lobby trip carries the Loadout in
+-- its teleport data. Yields; nil when there is no save, it is unreadable, or the store is
+-- unavailable (Studio without "Enable Studio Access to API Services"), so the default stays.
+function HandoffService.savedLoadout(userId: number): LoadoutSave.Loadout?
+	local save = Config.Lobby.Save
+	local lastError: unknown = nil
+	for try = 0, save.Retries do
+		local ok, value = pcall(function(): unknown
+			return DataStoreService:GetDataStore(save.Store):GetAsync("u_" .. userId)
+		end)
+		if ok then
+			return LoadoutSave.decode(value, loadoutCheck().isValid)
+		end
+		lastError = value
+		if try < save.Retries then
+			task.wait(save.RetryDelay)
+		end
+	end
+	warn(`[Handoff] could not read the saved Loadout, using the default: {lastError}`)
+	return nil
 end
 
 -- True when anyone in this server was sent by the lobby.

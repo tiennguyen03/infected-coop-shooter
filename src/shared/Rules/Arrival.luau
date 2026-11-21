@@ -126,6 +126,36 @@ function Arrival.pass(
 	return delay - lead, lead * 2 + interval * math.max(bursts - 1, 0)
 end
 
+-- The crate a vehicle drops in (arrival "crate"): the vehicle's extents with `margin` of
+-- room each side and over the top, each side rounded up to a whole `step`, so every
+-- vehicle gets a crate its own size. Returns (width, height, length).
+function Arrival.crateSize(
+	width: number,
+	height: number,
+	length: number,
+	margin: number,
+	step: number
+): (number, number, number)
+	local function up(value: number): number
+		-- A hair under a whole step (float noise) counts as that step.
+		return math.ceil(value / step - 1e-6) * step
+	end
+	return up(width + margin * 2), up(height + margin), up(length + margin * 2)
+end
+
+-- Studs past the mark along its track of something flying straight over at `speed`, over
+-- the mark at `over` (negative before: still on the way in).
+function Arrival.flyover(t: number, over: number, speed: number): number
+	return (t - over) * speed
+end
+
+-- How far a crate wall has fallen open (radians, 0 upright to pi/2 flat) between `from`
+-- and `to`: it tips slowly and slaps down, like anything falling over.
+function Arrival.hinge(t: number, from: number, to: number): number
+	local u = Arrival.progress(t, from, to)
+	return u * u * math.pi / 2
+end
+
 -- How far along its pass the gunship is at `t` (0 to 1), nil while it is not in the air.
 function Arrival.passFraction(t: number, startsAt: number, seconds: number): number?
 	if seconds <= 0 or t < startsAt or t > startsAt + seconds then

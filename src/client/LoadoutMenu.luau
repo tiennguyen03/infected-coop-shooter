@@ -92,7 +92,7 @@ function LoadoutMenu.mount(
 
 	-- --------------------------------------------------------------- size and layout
 	local hintText = opts.hint
-		or `[{keyLabel(Config.Keys.Loadout)}] CLOSE   ·   CHANGES AT INSERT, READY-UP, OR AT THE LZ WHEN CALM`
+		or `[{keyLabel(Config.Keys.Loadout)}] CLOSE   ·   CHANGES AT INSERT, READY-UP, OR AT THE LANDING ZONE WHEN CALM`
 	if UserInputService.GamepadEnabled then
 		hintText ..= "   ·   [A] PICK   [Y] CONFIRM   [B] BACK"
 	end
