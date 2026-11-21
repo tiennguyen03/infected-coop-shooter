@@ -139,4 +139,37 @@ return {
 			error("MissionBoardService does not check MissionCatalog.isOpen", 0)
 		end
 	end,
+
+	-- Final review fixes (loop sprint 1).
+	["Infected spawns are clamped per axis to the mission's frame"] = function()
+		local arena = fs.readFile("src/server/ArenaService.luau")
+		if
+			not string.find(arena, "function ArenaService.spawnInset(): (number, number)", 1, true)
+		then
+			error("spawnInset must return an x and a z inset (the frame is not square)", 0)
+		end
+		local enemy = fs.readFile("src/server/EnemyService.luau")
+		if not string.find(enemy, "local insetX, insetZ = ArenaService.spawnInset()", 1, true) then
+			error("EnemyService must clamp x and z by their own insets", 0)
+		end
+	end,
+
+	["Delta's outer scenery is built only where the mission asks for it"] = function()
+		local arena = fs.readFile("src/server/ArenaService.luau")
+		local perimeter = string.match(arena, "local function buildPerimeter%(.-\nend\n") or ""
+		if not string.find(perimeter, "FEATURES.Outskirts", 1, true) then
+			error("buildPerimeter builds Delta's outskirts on every mission", 0)
+		end
+	end,
+
+	["the match builds the catalog row's Layout and plays its Pool"] = function()
+		local init = fs.readFile("src/server/Missions/init.luau")
+		if not string.find(init, "byLayout[row.Layout]", 1, true) then
+			error("Missions.current ignores the row's Layout", 0)
+		end
+		local objectives = fs.readFile("src/server/ObjectiveService.luau")
+		if not string.find(objectives, "Missions.row().Pool", 1, true) then
+			error("ObjectiveService ignores the row's Pool", 0)
+		end
+	end,
 }

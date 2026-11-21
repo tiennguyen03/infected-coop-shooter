@@ -426,8 +426,8 @@ local MAPS: { [string]: Map } = {
 				{
 					Name = "the jam",
 					Position = { 16, 12, -246 },
-					-- a fuel can by each sealed bus's door
-					Points = { { -11.5, 12.6, -160 }, { 20.5, 12.6, -246 }, { -11.5, 12.6, -366 } },
+					-- a fuel can 2 studs clear of each sealed bus
+					Points = { { -8.5, 12.6, -160 }, { 23.5, 12.6, -246 }, { -8.5, 12.6, -366 } },
 					BossFrom = { -16, 12, -400 }, -- out of the lead bus
 				},
 			},
@@ -477,7 +477,7 @@ local MAPS: { [string]: Map } = {
 				},
 			},
 			kill_horn = {
-				{ Name = "the jam", Position = { 21.5, 13, 168 } },
+				{ Name = "the jam", Position = { 23.5, 13, 168 } },
 			},
 			lights_on = {
 				{ Name = "the weigh station", Position = { 142, 3, -172.8 } },

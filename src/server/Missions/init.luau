@@ -20,18 +20,28 @@ local MissionTypes = require(script.MissionTypes)
 
 local Missions = {}
 
-local byId: { [string]: MissionTypes.Mission } = {}
+-- Every mission file by its module name (a catalog row's Layout). A mission's plain-data file
+-- (Mile14Data) is read by its mission, not a mission itself.
+local byLayout: { [string]: MissionTypes.Mission } = {}
 for _, child in script:GetChildren() do
-	-- A mission's plain-data file (Mile14Data) is read by its mission, not a mission itself.
 	if
 		child:IsA("ModuleScript")
 		and child.Name ~= "MissionTypes"
 		and string.sub(child.Name, -4) ~= "Data"
 	then
-		local mission = (require :: any)(child) :: MissionTypes.Mission
-		byId[mission.Id] = mission
+		byLayout[child.Name] = (require :: any)(child) :: MissionTypes.Mission
 	end
 end
+
+-- The catalog as the pick rule sees it: a row whose layout file is missing is never open,
+-- so an event row added without its map falls through instead of stopping the boot.
+local catalog = {
+	DEFAULT = MissionCatalog.DEFAULT,
+	get = MissionCatalog.get,
+	isOpen = function(row: MissionCatalog.Row, now: number): boolean
+		return byLayout[row.Layout] ~= nil and MissionCatalog.isOpen(row, now)
+	end,
+}
 
 -- The lobby's launch record for this server, or nil (not a reserved server, none stored,
 -- or MemoryStore failed twice).
@@ -59,23 +69,25 @@ end
 
 local stored = storedLaunch()
 local tagged = workspace:GetAttribute(Attributes.Mission)
-local currentId = MissionPick.choose(stored, tagged, os.time(), MissionCatalog)
+local currentId = MissionPick.choose(stored, tagged, os.time(), catalog)
 local source = if typeof(stored) == "table" and (stored :: any).mission == currentId
 	then "launch"
 	elseif tagged == currentId then "tag"
 	else "default"
 print(`[Missions] building {currentId} (from {source})`)
 
--- The mission with `id`, or nil.
-function Missions.get(id: string): MissionTypes.Mission?
-	return byId[id]
+-- The catalog row this server plays (its Pool, District, Name).
+function Missions.row(): MissionCatalog.Row
+	local row = MissionCatalog.get(currentId)
+	assert(row, `[Missions] '{currentId}' is not in MissionCatalog`)
+	return row
 end
 
--- The mission this server builds.
+-- The mission this server builds: the row's Layout file.
 function Missions.current(): MissionTypes.Mission
-	local row = MissionCatalog.get(currentId)
-	local mission = row and byId[row.Id]
-	assert(mission, `[Missions] no mission file for '{currentId}' (MissionCatalog)`)
+	local row = Missions.row()
+	local mission = byLayout[row.Layout]
+	assert(mission, `[Missions] no layout file '{row.Layout}' for '{currentId}'`)
 	return mission
 end
 

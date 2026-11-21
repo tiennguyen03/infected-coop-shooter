@@ -1020,6 +1020,7 @@ local mission: MissionTypes.Mission = {
 		Perches = true,
 		Gantry = true,
 		BigMap = true,
+		Outskirts = true,
 	},
 	Hills = HILLS,
 	Dressing = DRESSING,

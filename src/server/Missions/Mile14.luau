@@ -47,6 +47,7 @@ for _, piece in Data.Dressing do
 		z = piece.z,
 		yaw = piece.yaw,
 		burning = piece.burning,
+		floor = piece.floor,
 	})
 end
 

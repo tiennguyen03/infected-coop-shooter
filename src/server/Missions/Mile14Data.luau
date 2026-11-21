@@ -24,7 +24,16 @@ export type HillData = {
 	open: { [string]: boolean }?,
 }
 export type PartData = { name: string, kind: string, at: Vec, size: Vec, yaw: number? }
-export type DressingData = { name: string, x: number, z: number, yaw: number, burning: boolean? }
+export type DressingData = {
+	name: string,
+	x: number,
+	z: number,
+	yaw: number,
+	burning: boolean?,
+	floor: number?,
+}
+-- The road's top on the deck: buses under the span or a toll canopy would raycast onto the roof.
+local ROAD_TOP = DECK + 0.1
 
 local NS = { north = true, south = true }
 local EW = { east = true, west = true }
@@ -305,21 +314,26 @@ for _, lane in { { side = -1, zs = WEST }, { side = 1, zs = EAST } } do
 			z = z,
 			yaw = SOUTH,
 			burning = BURNT[`{side}:{z}`] == true,
+			floor = ROAD_TOP,
 		})
 	end
 end
-for _, bus in
-	{
-		{ x = -17.2, z = TOLL_Z + 4, yaw = SOUTH },
-		{ x = 17.2, z = TOLL_Z - 30, yaw = SOUTH - 5, burning = true },
-		{ x = -128, z = -310, yaw = 8 }, -- made it down the ramp
-		{ x = -150, z = -44, yaw = 100 }, -- the Drop: over the rail
-	}
-do
-	table.insert(
-		DRESSING,
-		{ name = "env_bus", x = bus.x, z = bus.z, yaw = bus.yaw, burning = bus.burning }
-	)
+type Bus = { x: number, z: number, yaw: number, burning: boolean?, floor: number? }
+local BUSES: { Bus } = {
+	{ x = -17.2, z = TOLL_Z + 4, yaw = SOUTH, floor = ROAD_TOP },
+	{ x = 17.2, z = TOLL_Z - 30, yaw = SOUTH - 5, burning = true, floor = ROAD_TOP },
+	{ x = -128, z = -310, yaw = 8 }, -- made it down the ramp
+	{ x = -150, z = -44, yaw = 100 }, -- the Drop: over the rail
+}
+for _, bus in BUSES do
+	table.insert(DRESSING, {
+		name = "env_bus",
+		x = bus.x,
+		z = bus.z,
+		yaw = bus.yaw,
+		burning = bus.burning,
+		floor = bus.floor,
+	})
 end
 -- Lamp posts the Weigh Station's generator lights (Lights On) and the Rest Stop's.
 for _, lamp in

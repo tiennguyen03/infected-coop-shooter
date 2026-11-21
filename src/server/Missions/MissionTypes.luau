@@ -114,6 +114,7 @@ export type Features = {
 	Perches: boolean?,
 	Gantry: boolean?,
 	BigMap: boolean?,
+	Outskirts: boolean?, -- Delta's ground, berm and highway run-on past the fence
 }
 
 -- One mission: its id and name, where things are on its map, and the layout tables

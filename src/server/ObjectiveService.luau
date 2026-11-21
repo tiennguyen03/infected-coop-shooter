@@ -127,7 +127,7 @@ local function currentMap(): ObjectiveDefinitions.Map?
 	if DeltaXL.active() then
 		return Config.Objectives.Maps[Config.DeltaXL.Map]
 	end
-	return Config.Objectives.Maps[Missions.current().Id]
+	return Config.Objectives.Maps[Missions.row().Pool]
 end
 
 -- Whether this run plays the pools (else the single hold).

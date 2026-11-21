@@ -114,4 +114,38 @@ return {
 			check(kinds[part.kind] == true, `{part.name}: unknown kind {part.kind}`)
 		end
 	end,
+
+	-- A bus (env_bus, 42.9 x 10.9) facing south covers x +-5.45 and z +-21.45 round its spot.
+	["no objective prop or switch is inside a bus"] = function()
+		local function insideBus(point: { number }): string?
+			for _, piece in Data.Dressing do
+				if piece.name == "env_bus" and math.abs(piece.yaw + 90) < 10 then
+					if
+						math.abs(point[1] - piece.x) < 5.45 + 1.5
+						and math.abs(point[3] - piece.z) < 21.45 + 1.5
+					then
+						return `bus at ({piece.x}, {piece.z})`
+					end
+				end
+			end
+			return nil
+		end
+		local map = Definitions.Maps.mile14
+		for _, id in { "burn_buses", "kill_horn" } do
+			for _, site in map.Sites[id] do
+				for _, point in site.Points or { site.Position } do
+					local hit = insideBus(point)
+					check(hit == nil, `{id} point ({point[1]}, {point[3]}) is inside the {hit}`)
+				end
+			end
+		end
+	end,
+
+	["buses on the deck stand on the road, not on a roof above them"] = function()
+		for _, piece in Data.Dressing do
+			if piece.name == "env_bus" and math.abs(piece.x) < 56 then
+				check(piece.floor ~= nil, `bus at ({piece.x}, {piece.z}) has no floor`)
+			end
+		end
+	end,
 }

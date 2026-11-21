@@ -1839,9 +1839,9 @@ groundPositionNear = function(center: Vector3, minDistance: number, maxDistance:
 		local distance = math.random(minDistance, maxDistance)
 		-- Inside the perimeter (Config.Arena.SpawnInset, the big map's edge on Delta XL): no
 		-- spawn in the fence band or past it.
-		local inset = ArenaService.spawnInset()
-		local x = math.clamp(center.X + math.cos(angle) * distance, -inset, inset)
-		local z = math.clamp(center.Z + math.sin(angle) * distance, -inset, inset)
+		local insetX, insetZ = ArenaService.spawnInset()
+		local x = math.clamp(center.X + math.cos(angle) * distance, -insetX, insetX)
+		local z = math.clamp(center.Z + math.sin(angle) * distance, -insetZ, insetZ)
 		local result =
 			workspace:Raycast(Vector3.new(x, center.Y + 50, z), Vector3.new(0, -200, 0), params)
 		local groundY = if result then result.Position.Y else 0

@@ -527,6 +527,12 @@ local function buildPerimeter(arena: Instance)
 		wall.CastShadow = false
 		wall.Parent = arena -- the boundary is part of the arena itself
 	end
+	-- Past the fence: Delta's outskirts (its ground, berm, highway run-on and Pens fill). Another
+	-- mission has only its walls here.
+	if not FEATURES.Outskirts then
+		model.Parent = workspace
+		return model
+	end
 	-- The ground carries on to 700 out (the play floor is 600 x 600).
 	decorPart(
 		model,
@@ -1333,9 +1339,14 @@ function ArenaService.moveSpawnPads()
 	end
 end
 
--- How far from the centre (each axis) an Infected may spawn.
-function ArenaService.spawnInset(): number
-	return if bigMap() then Config.DeltaXL.SpawnInset else Config.Arena.SpawnInset
+-- How far from the centre an Infected may spawn, on x and on z: the mission's frame less the
+-- fence band (Config.Arena.SpawnInset is Delta's: 300 less the band), or the big map's edge.
+function ArenaService.spawnInset(): (number, number)
+	if bigMap() then
+		return Config.DeltaXL.SpawnInset, Config.DeltaXL.SpawnInset
+	end
+	local band = 300 - Config.Arena.SpawnInset
+	return HALF_X - band, HALF_Z - band
 end
 
 -- The big map switched on after boot: the walls at 300 and the scenery past the fence go,
