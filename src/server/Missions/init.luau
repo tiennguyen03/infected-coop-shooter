@@ -22,7 +22,12 @@ local Missions = {}
 
 local byId: { [string]: MissionTypes.Mission } = {}
 for _, child in script:GetChildren() do
-	if child:IsA("ModuleScript") and child.Name ~= "MissionTypes" then
+	-- A mission's plain-data file (Mile14Data) is read by its mission, not a mission itself.
+	if
+		child:IsA("ModuleScript")
+		and child.Name ~= "MissionTypes"
+		and string.sub(child.Name, -4) ~= "Data"
+	then
 		local mission = (require :: any)(child) :: MissionTypes.Mission
 		byId[mission.Id] = mission
 	end
