@@ -9,11 +9,11 @@ before adding or renaming any saved field. The code: `src/shared/Rules/SaveSchem
 
 | Save | DataStore (Config) | Key | Version | Fields | Written by |
 |---|---|---|---|---|---|
-| The record | `Config.Lobby.Save.RecordStore` (`PikeRecords`) | `r_<UserId>` | 2 (`SaveSchema.Record`) | `merits`, `owned` (kit, optics, Kit Mod ranks `<mod>@<rank>`), `tabs`, `receipts` | lobby `RecordService` (buys, Robux receipts), match `MeritService` (mission pay) |
+| The record | `Config.Lobby.Save.RecordStore` (`PikeRecords`) | `r_<UserId>` | 3 (`SaveSchema.Record`) | `merits`, `owned` (kit, optics, Kit Mod ranks `<mod>@<rank>`), `tabs`, `receipts`, `wins` (missions won per district, `"MILE 14" = 3`) | lobby `RecordService` (buys, Robux receipts), match `MeritService` (mission pay and the win, one UpdateAsync) |
 | The signed Loadout | `Config.Lobby.Save.Store` (`LoadmasterLoadouts`) | `u_<UserId>` | 1 (`SaveSchema.Loadout`) | `loadout` (`Rules/Loadout` shape, with `attachments`) | lobby `LoadmasterService` only |
 | Carrier counts | `Config.Lobby.Tallies.Store` | one shared key | none (not per player) | counts by `kind:id`, only ever added to (`Rules/Tally.merge`) | match `TallyService`; the lobby only reads |
 
-The Containment Board is not saved yet (`ContainmentBoard.read` returns Config's numbers).
+| The city war board | `Config.War.Store` (`War_S1`, one season) | `board` | `Rules/War.VERSION` 1 | per district `pct`, `at`, `unlocked`, `secured` | match `WarService` (UpdateAsync at run end, never from Studio); the lobby only reads |
 Retries and timings: `Config.Lobby.Save` (`Retries`, `RetryDelay`, `MinWriteGap`,
 `LoadWait`), `Config.Merits` (`Retries`, `RetryDelay`, `SettleSeconds`), `Config.Lobby.Tallies`.
 

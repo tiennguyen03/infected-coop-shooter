@@ -749,8 +749,9 @@ nothing away. **Delta and Mile 14 are open from day one**; each later district o
 one before it reaches **50%** and stays open for the season. **100% is Secured:** no more
 decay. The lobby rereads the board every minute (`ContainmentBoard.read`, published to the
 clients as `Attributes.WarBoard`); the results screen shows the line ("DELTA +1.5%",
-`Attributes.WarLine`). Not built yet: the band changing the match (the table below), Secured
-pay x0.25, seasons ending (loop sprints 4-5). Contained means the district stopped exporting
+`Attributes.WarLine`). Since loop sprint 4: a Secured district's missions pay x0.25 of their merits
+(`Config.War.SecuredPay`) and give no war points. Not built yet: the band changing the match
+(the table below), seasons ending (loop sprint 5). Contained means the district stopped exporting
 hosts, not zero Infected.
 
 | Band | % | `InitialCount` | Clock start | Brute / Hocker first spawn | Stores | Visible (cheap) |
@@ -904,6 +905,21 @@ the leader. The leader's DEPLOY picks the mission and starts `Config.Lobby.Party
 (15 s); a member's DEPLOY is READY; the squad flies together when all are ready or the time
 runs out, bots filling the empty seats. The deck rings no longer board
 (`Config.Lobby.Launch.RingsBoard = false` puts them back). One match place builds any mission: the lobby stores
+
+**Reasons to pick a mission (loop sprint 4, 2026-11-20; unplayed).**
+- **Its own pay:** a catalog row's `Pay` (Mile 14: Win 140, Partial 70; Delta keeps
+  `Config.Merits`), a Secured district x0.25 (`Rules/Economy.payFor`).
+- **HARLAN Orders:** one shared goal at a time, rows in `Config.War.Orders` with a window
+  (`Rules/Orders`): its card is gold and tagged ORDER on the Mission Board, its words sit under
+  the officer's line, and its district's missions pay `PayBonus` more (+25%,
+  `Economy.boosted`). The first: "Push Mile 14 to 50% this week" (2026-11-21 to 11-29). Not
+  built: the merits for everyone when an order is reached (needs a claimed list on the record).
+- **District unlocks:** the record counts missions won per district (`wins`, save version 3,
+  counted with the pay); an item row's `Unlock = { District, Wins }` opens its sale
+  (`Rules/DistrictUnlock`, checked on the stored record by `RecordService`; a refused buy says
+  "Win 3 missions at MILE 14 first."). First two: the **M2010** after 3 Mile 14 wins, the
+  **M249** after 3 Delta wins (tuning). Attachments do not read `Unlock` yet (Nova's
+  `AttachmentUnlock`; heads-up).
 `{ mission, party }` in MemoryStore (`Config.Missions.LaunchMap`) under the reserved server's
 PrivateServerId before the teleport, and the match reads it at boot (`Missions/init`,
 `Rules/MissionPick`: the launch record, else the Workspace `Mission` attribute, else Delta;
