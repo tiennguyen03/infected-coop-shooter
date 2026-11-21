@@ -2439,12 +2439,11 @@ local Config = {
 		TickSeconds = 0.25, -- countdown refresh, only while someone is down or dead
 	},
 
-	-- Run flow (RunManager, Shared.RunStates). Co-op Sprint A.
-	-- The operation: its missions in play order, each one data file in src/server/Missions
-	-- (docs/LOBBY_MATCH_HANDOFF.md, docs/ARCHITECTURE.md F6). One mission until Mile 14 is
-	-- built in game; the mission-to-mission transition walks this list.
-	Operation = {
-		Missions = { "delta" },
+	-- Which mission a match builds (MissionCatalog; Missions/init, Rules/MissionPick): the lobby
+	-- stores a launch record under the reserved server's PrivateServerId before the teleport.
+	Missions = {
+		LaunchMap = "Launches", -- MemoryStore HashMap name
+		LaunchSeconds = 600, -- a record's expiry: long enough for a slow teleport
 	},
 
 	-- The experience's places (docs/LOBBY_MATCH_HANDOFF.md). Both the lobby and the match read

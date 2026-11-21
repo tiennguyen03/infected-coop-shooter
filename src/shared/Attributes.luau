@@ -24,7 +24,8 @@ local Attributes = table.freeze({
 	-- moment after Insert begins so every client is ready, InsertionCutscene reads it)
 	InsertStartsAt = "InsertStartsAt",
 	-- workspace, set by the place's Rojo project (mile14.project.json): the mission this place
-	-- builds (Missions.current); none = the operation's first (Config.Operation.Missions)
+	-- builds (Missions.current). Studio: set it on Workspace to test a mission; a live server
+	-- reads the lobby's launch record first (Missions/init)
 	Mission = "Mission",
 	-- a soldier's character: their night vision is on (NightVisionService writes it from the
 	-- client's toggle; every client lowers that body's goggles, client NightVision)
