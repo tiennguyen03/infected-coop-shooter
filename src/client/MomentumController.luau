@@ -13,6 +13,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
+local Momentum =
+	require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Rules"):WaitForChild("Momentum"))
 
 local STEP_NAME = "Momentum"
 
@@ -63,15 +65,6 @@ local function inputDirection(): Vector3
 	return world
 end
 
-local function moveToward(current: Vector3, target: Vector3, maxDelta: number): Vector3
-	local delta = target - current
-	local distance = delta.Magnitude
-	if distance <= maxDelta or distance < 1e-4 then
-		return target
-	end
-	return current + delta / distance * maxDelta
-end
-
 local function step(dt: number)
 	if suspended then
 		return
@@ -90,15 +83,10 @@ local function step(dt: number)
 	end
 	local settings = Config.Movement.Momentum
 	local target = inputDirection() * speed
-	-- Speeding up uses Acceleration; slowing down, stopping or turning against the current
-	-- heading uses Deceleration.
-	local braking = target.Magnitude < velocity.Magnitude - 0.01 or target:Dot(velocity) < 0
-	local rate = if braking then settings.Deceleration else settings.Acceleration
-	velocity = moveToward(velocity, target, rate * dt)
-	-- A lower WalkSpeed (stance, ADS, end of sprint) caps the carried velocity at once.
-	if velocity.Magnitude > speed then
-		velocity = velocity.Unit * speed
-	end
+	-- Eases toward the input (Rules/Momentum: Acceleration up, Deceleration down or
+	-- against the heading) and caps at a lower WalkSpeed at once.
+	velocity =
+		Momentum.step(velocity, target, speed, settings.Acceleration, settings.Deceleration, dt)
 	humanoid:Move(velocity / speed, false)
 end
 

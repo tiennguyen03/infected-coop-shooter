@@ -43,4 +43,15 @@ return {
 		expect.near(ExtractionWaves.spawnFactor(WAVES, 30, 0.8), 0.6, 1e-9, "at the wave")
 		expect.near(ExtractionWaves.spawnFactor(WAVES, 55, 0.8), 0.6, 1e-9, "past a wave with none")
 	end,
+	["the hold runs when every living player is on the pad"] = function()
+		expect.equal(ExtractionWaves.squadHolding(1, 1), true, "solo")
+		expect.equal(ExtractionWaves.squadHolding(4, 4), true, "full squad")
+	end,
+	["the hold waits while any living player is off the pad"] = function()
+		expect.equal(ExtractionWaves.squadHolding(3, 4), false, "one missing")
+		expect.equal(ExtractionWaves.squadHolding(0, 2), false, "nobody on it")
+	end,
+	["no living player never holds the pad"] = function()
+		expect.equal(ExtractionWaves.squadHolding(0, 0), false)
+	end,
 }

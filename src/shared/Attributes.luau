@@ -11,6 +11,12 @@ local Attributes = table.freeze({
 	RunResult = "RunResult",
 	RunStartTime = "RunStartTime",
 	GamePaused = "GamePaused",
+	-- workspace: the breach director (BreachService, Config.Breaches; the dev strip reads them):
+	-- the alert as a share of the breach threshold, the phase (Calm / Tension / Breach /
+	-- Relief), the run's pressure 0..1
+	BreachAlert = "BreachAlert",
+	BreachPhase = "BreachPhase",
+	BreachPressure = "BreachPressure",
 	-- client only, on the local Player: a cutscene holds the soldier (InsertionCutscene); no firing
 	-- or using kit while it is set
 	Cinematic = "Cinematic",
@@ -18,7 +24,8 @@ local Attributes = table.freeze({
 	-- moment after Insert begins so every client is ready, InsertionCutscene reads it)
 	InsertStartsAt = "InsertStartsAt",
 	-- workspace, set by the place's Rojo project (mile14.project.json): the mission this place
-	-- builds (Missions.current); none = the operation's first (Config.Operation.Missions)
+	-- builds (Missions.current). Studio: set it on Workspace to test a mission; a live server
+	-- reads the lobby's launch record first (Missions/init)
 	Mission = "Mission",
 	-- a soldier's character: their night vision is on (NightVisionService writes it from the
 	-- client's toggle; every client lowers that body's goggles, client NightVision)
@@ -41,6 +48,17 @@ local Attributes = table.freeze({
 	ObjectiveActive = "ObjectiveActive",
 	ObjectiveCompleted = "ObjectiveCompleted",
 	ExtractionActive = "ExtractionActive",
+	-- workspace: the big map is built (server DeltaXL writes; Config.DeltaXL)
+	DeltaXL = "DeltaXL",
+	-- workspace, Vector3: where this run's squad landed (DeltaXL writes when the draw picks a
+	-- corner; ArenaService's pads and the insertion cutscene read it; none = the LZ)
+	DropPoint = "DropPoint",
+	-- workspace, Vector3: the mission's own landing pad (ArenaService at boot, from the mission file),
+	-- for the client's insertion cutscene when no DropPoint is set
+	MissionLanding = "MissionLanding",
+	-- workspace, Vector3: the helicopter's pickup, set when the main objective is done
+	-- (DeltaXL writes; ExtractionService reads; none = the LZ)
+	PickupPoint = "PickupPoint",
 	-- spawn interval multiplier while extracting (ExtractionService writes, EnemyService reads)
 	ExtractionSpawnFactor = "ExtractionSpawnFactor",
 	IndexActive = "IndexActive",
@@ -49,7 +67,16 @@ local Attributes = table.freeze({
 	ResupplyPool = "ResupplyPool",
 	ResupplyDropIn = "ResupplyDropIn",
 	ResupplyFlareCooling = "ResupplyFlareCooling", -- workspace: true while the flare cooldown runs (RequisitionService)
+	ResupplyFlareReadyAt = "ResupplyFlareReadyAt", -- workspace: server time the flare cooldown ends, 0 = none (RequisitionService)
+	-- Reinforcements (ReinforceService, Config.Scarcity.Reinforce): the squad's pool on the
+	-- workspace; on a dead Player, when the helicopter drops them (server time, 0 = none) and
+	-- beside whom (a callsign, "" = none).
+	ReinforceLeft = "ReinforceLeft",
+	ReinforceTotal = "ReinforceTotal",
+	ReinforceAt = "ReinforceAt",
+	ReinforceTo = "ReinforceTo",
 	DevSpawnsOff = "DevSpawnsOff",
+	DevMovesOff = "DevMovesOff", -- workspace: true turns Config.InfectedMoves off for the session (dev panel)
 	-- lobby: a Lantern bird model's lift time (server time, workspace:GetServerTimeNow()) while
 	-- its spot counts down; nil otherwise (LaunchService writes, LanternSpool reads)
 	LiftAt = "LiftAt",
@@ -82,15 +109,29 @@ local Attributes = table.freeze({
 	-- the merits the mission that just ended paid this player (MeritService; RunEndUI shows
 	-- it): the amount, -1 when it could not be saved, nil while a run is live
 	MeritsEarned = "MeritsEarned",
+	-- workspace, string: the city war line for this mission's end ("MILE 14 +1.5%"; "" for none):
+	-- WarService at run end, RunEndUI shows it under the merits
+	WarLine = "WarLine",
+	-- workspace (lobby place), string: the city war board as JSON, [{ name, percent, open, secured,
+	-- opensWith }] in board order (ContainmentBoard.read, every Config.Containment.RefreshSeconds);
+	-- the Mission Board's cards read it
+	WarBoard = "WarBoard",
 	-- the merits and tabs on this player's record as the match last read it at a mission's end
 	-- (MeritService; RunEndUI shows the wallet): nil until then, or when the read failed
 	MeritsHeld = "MeritsHeld",
+	-- Player (lobby, server-set): true when this visit is read-only because a save could not be
+	-- read, or is newer than this server's code (SaveSlot; docs/SAVES.md). WalletUI shows it.
+	SaveOffline = "SaveOffline",
 	TabsHeld = "TabsHeld",
 	DevGod = "DevGod",
 	Bloom = "Bloom",
 	-- Player: what is fitted to each of their guns, Rules/Loadout.encodeFitted
 	-- ("gun.Slot=option;..."; LoadoutService in the match, LoadmasterService on the ship)
 	Fitted = "Fitted",
+	-- Player: the Kit Mod ranks held (match: KitModService from the record; lobby:
+	-- KitModService after a buy), Rules/KitModRules.encode ("stim_carry=2;sprint_roll=1").
+	-- LoadoutService (stims carried) and SprintController (stamina) read it.
+	KitRanks = "KitRanks",
 	LastShotAt = "LastShotAt", -- local only: the client stamps each of its own shots
 	UpgradeKit = "UpgradeKit",
 
@@ -111,7 +152,7 @@ local Attributes = table.freeze({
 	SquadHealth = "SquadHealth",
 	SquadMaxHealth = "SquadMaxHealth",
 	ReviveEndsAt = "ReviveEndsAt", -- when the revive in progress completes
-	RespawnAt = "RespawnAt", -- when a dead bot rejoins
+	RespawnAt = "RespawnAt", -- when a dead bot rejoins or a dead player is reinforced
 	-- The revive animation (ReviveAnimService): "" | "treat" | "finish" on the reviver,
 	-- "treated" | "recover" on the casualty; where the reviver kneels and what they face.
 	ReviveRole = "ReviveRole",
@@ -131,6 +172,12 @@ local Attributes = table.freeze({
 	VehicleHealth = "VehicleHealth",
 	VehicleMaxHealth = "VehicleMaxHealth",
 	KnockGraceUntil = "KnockGraceUntil",
+	-- Dangerous Infected (Config.InfectedMoves, EnemyService): on a soldier's character, true
+	-- while a Runner pins them; on a Runner's model, true while it pins someone (bots shoot
+	-- it first); on a soldier's character, the speed factor a Walker crowd's grab leaves.
+	Pinned = "Pinned",
+	Pinning = "Pinning",
+	Grabbed = "Grabbed",
 	CoverMoveUntil = "CoverMoveUntil",
 	RootDrop = "RootDrop",
 	StandHipHeight = "StandHipHeight",
@@ -148,6 +195,7 @@ local Attributes = table.freeze({
 	Cracked = "Cracked",
 	Exposed = "Exposed",
 	Flank = "Flank",
+	WeakSpot = "WeakSpot", -- a plate's share of each round passed to the body (the Warden's back)
 
 	-- Blast visuals (AirStrikeService, KitService, MineService): the server tags each blast
 	-- flash part with the CollectionService tag BlastTag (a tag, not an attribute, kept here

@@ -247,6 +247,67 @@ return {
 			error("\n  " .. table.concat(problems, "\n  "))
 		end
 	end,
+	["every optic fits each gun it lists with a sane sight on its own mesh"] = function()
+		local problems = {}
+		local count = 0
+		-- A gun id ("service_rifle") is its Config.Weapons key in snake case ("ServiceRifle").
+		local function weaponRow(id: string): any
+			local key = string.gsub(id, "(%a)(%w*)_?", function(first: string, rest: string)
+				return string.upper(first) .. rest
+			end)
+			return Config.Weapons[key]
+		end
+		for opticId, optic in Config.Optics do
+			for _, gunId in optic.Guns do
+				count += 1
+				local label = `{opticId} on {gunId}`
+				local fit = optic.Fit and optic.Fit[gunId]
+				-- A gun on attachment system v2 may take an optic for its stats before its mesh
+				-- has one (the Mossberg's red dot): no Fit, so its view stays the bare gun's
+				-- (WeaponDefinitions.dressed). A Fit that is there is checked in full.
+				local row = weaponRow(gunId)
+				if fit == nil and row and row.Family then
+					continue
+				end
+				if
+					type(fit) ~= "table"
+					or type(fit.Model) ~= "string"
+					or type(fit.Sight) ~= "table"
+				then
+					table.insert(problems, `{label}: no Fit with a Model and a Sight`)
+					continue
+				end
+				local gun = weaponRow(gunId)
+				local base = (gun and gun.Sight and gun.Sight.Zoom) or DEFAULTS.Zoom
+				local raw = table.clone(fit.Sight)
+				raw.Zoom = base * optic.ZoomMultiplier
+				local sight = Sight.resolve(raw, DEFAULTS)
+				local ok, muzzle = pcall(meshVector, fit.Model, "muzzle")
+				if not ok then
+					table.insert(problems, `{label}: {muzzle}`)
+					continue
+				end
+				for _, problem in Sight.problems(sight, muzzle, DEFAULTS.ZeroDistance) do
+					table.insert(problems, `{label}: {problem}`)
+				end
+				local size, offset = meshVector(fit.Model, "size"), meshVector(fit.Model, "offset")
+				for name, point in { Rear = sight.Rear, Front = sight.Front } do
+					local from = point - offset
+					if
+						math.abs(from.X) > size.X / 2 + 0.03
+						or math.abs(from.Y) > size.Y / 2 + 0.03
+						or math.abs(from.Z) > size.Z / 2 + 0.03
+					then
+						table.insert(problems, `{label}: {name} is outside the {fit.Model} mesh`)
+					end
+				end
+			end
+		end
+		expect.equal(count >= 3, true, "found the optics")
+		if #problems > 0 then
+			error("\n  " .. table.concat(problems, "\n  "))
+		end
+	end,
 	["every gun's aimed view is narrower than the hip and its sights clear the near plane"] = function()
 		local first = Config.Camera.FirstPerson
 		for key, row in Config.Weapons do

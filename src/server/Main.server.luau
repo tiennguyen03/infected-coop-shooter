@@ -20,6 +20,7 @@ local BOOT: { ModuleScript } = {
 	Server.Lifecycle,
 	Server.SkyService,
 	Server.ArenaService,
+	Server.DeltaXL, -- the big map (Config.DeltaXL): after the base it builds round
 	Server.Squad,
 	Server.PauseService,
 	Server.WorldSounds,
@@ -27,10 +28,13 @@ local BOOT: { ModuleScript } = {
 	Server.PlayerStatsService,
 	Server.LoadoutService,
 	Server.DamageService,
+	Server.BurnService, -- burning Infected (Rules/DoT; after DamageService)
+	Server.WallBreachService, -- breaching rounds open light walls (before ProjectileServer)
 	Server.PlayerSetup,
 	Server.CoverMoveService,
 	Server.StanceService,
 	Server.ProjectileServer,
+	Server.AttachmentMeshService, -- the attachment models, built once for every client
 	Server.SentryService,
 	Server.ConcertinaService,
 	Server.SupplyDropService,
@@ -39,9 +43,11 @@ local BOOT: { ModuleScript } = {
 	Server.MineService,
 	Server.EnemyProjectileService,
 	Server.EnemyService,
+	Server.BreachService, -- the alert meter and breaches (after EnemyService, DifficultyService)
 	Server.GoreService,
 	Server.ShockCoilService,
 	Server.VehicleService,
+	Server.SoldierCollision, -- soldiers pass through the Infected (after every group's owner)
 	Server.ThrowWindUp,
 	Server.KitService,
 	Server.CallInService,
@@ -51,8 +57,12 @@ local BOOT: { ModuleScript } = {
 	Server.IndexService,
 	Server.ReviveAnimService,
 	Server.BotService,
+	Server.ReinforceService, -- the squad's reinforcements and ammo pouches (Config.Scarcity)
 	Server.HandoffService,
 	Server.MeritService,
+	Server.KitModService, -- the Kit Mod ranks off the record (after MeritService, LoadoutService)
+	Server.TallyService,
+	Server.WarService, -- the city war board (Rules/War; after Missions, before RunManager)
 	Server.InsertionService,
 	Server.NightVisionService,
 	Server.RunManager,

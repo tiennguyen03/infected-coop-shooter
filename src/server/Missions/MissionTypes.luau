@@ -92,10 +92,44 @@ export type BuildingSpec = {
 	lips: boolean?, -- default true
 }
 
--- One mission: its id and name and the layout tables ArenaService builds from.
+-- A plain block (the v2 generator's PARTS): anchored, Box collision. `kind` picks its look
+-- (ArenaService PART_KINDS); a name containing "wedge" builds a WedgePart rising toward +Z.
+export type Part = { name: string, kind: string, at: Vector3, size: Vector3, yaw: number? }
+
+-- The Warden's walk in when the main objective is done and he comes without one of its own
+-- arrivals (IndexService.start, the old order: Config.Objectives.Boss.Enabled = false).
+export type BossRoute = {
+	Spawn: Vector3,
+	Waypoints: { Vector3 },
+	WaypointRadio: { [number]: string }, -- Config.Radio key read on reaching that waypoint
+	GateRadio: boolean, -- Control's "Gate's open" line (Delta's gate)
+}
+
+-- Which of Checkpoint Delta's own builders run (ArenaService): every other mission leaves
+-- them off. BigMap: Delta XL may build round it (Config.DeltaXL).
+export type Features = {
+	Roads: boolean?,
+	Highway: boolean?,
+	Landmarks: boolean?,
+	Perches: boolean?,
+	Gantry: boolean?,
+	BigMap: boolean?,
+	Outskirts: boolean?, -- Delta's ground, berm and highway run-on past the fence
+}
+
+-- One mission: its id and name, where things are on its map, and the layout tables
+-- ArenaService builds from.
 export type Mission = {
 	Id: string,
 	Name: string,
+	Size: Vector2, -- the playable frame, x by z, centred on the origin
+	Landing: Vector3, -- the insert pad (the squad lands here; Delta XL may move it per run)
+	Extract: Vector3?, -- the pickup pad; nil = Landing (Delta XL may move it per run)
+	AltPad: Vector3?, -- a second pad to build (Delta's Depot pad)
+	Boss: BossRoute,
+	Hold: Vector3, -- the single hold zone when the objective pools are off
+	Parts: { Part },
+	Features: Features,
 	Hills: { Hill },
 	Dressing: { Dressing }, -- placed pieces (props already merged in)
 	Patches: { Patch },

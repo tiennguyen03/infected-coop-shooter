@@ -22,6 +22,45 @@ return {
 	["the pools are sound"] = function()
 		fail(Objectives.validate(Definitions.Rows :: any, Definitions.Maps :: any))
 	end,
+	-- A module shared by two maps' signature rows (Sanitize: the Pens' tents, Mile 14's
+	-- buses; SilenceAlarm: the Gate siren, Mile 14's horn) takes its words from the row; the
+	-- literals stand only as the `or` default (Delta's words).
+	["prompt words come from the row"] = function()
+		local problems = {}
+		for module, words in
+			{
+				Sanitize = {
+					'"Burn the tent"',
+					'"Fuel can"',
+					'"at each fuel can to burn the tents"',
+				},
+				SilenceAlarm = {
+					'"Shut off the siren"',
+					'"Siren switch"',
+					'"on the siren switch"',
+					'"Siren"',
+					'"amb_siren"',
+				},
+			}
+		do
+			local text = fs.readFile(`src/server/Objectives/{module}.luau`)
+			for _, word in words do
+				local start = 1
+				while true do
+					local at = string.find(text, word, start, true)
+					if not at then
+						break
+					end
+					local before = string.sub(text, math.max(1, at - 40), at - 1)
+					if not string.match(before, "row%.%a+ or $") then
+						table.insert(problems, `{module}: {word} is not a row default`)
+					end
+					start = at + #word
+				end
+			end
+		end
+		fail(problems)
+	end,
 	["every objective's module exists"] = function()
 		local problems = {}
 		for id, row in Definitions.Rows do

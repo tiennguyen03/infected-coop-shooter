@@ -54,6 +54,10 @@ type View = {
 	canSource: BasePart?,
 	canFrame: CFrame, -- in the gun's space at full size
 	canFull: Vector3,
+	-- The attachments' parts on it (VisualApplier's AttachmentVisuals folder), copied with it:
+	-- each its copy, its frame in the gun's space at full size, its full size, its slot.
+	extras: { { part: BasePart, frame: CFrame, full: Vector3, optic: boolean } },
+	extrasVersion: number, -- the folder's Version when they were copied (-1: none)
 	full: Vector3, -- the held gun's real size
 	muzzle: Vector3, -- its barrel tip, in its own space at full size
 	origin: CFrame, -- the grip (the Tool's Handle, the mesh's design origin) in the gun's space
@@ -151,6 +155,8 @@ local function build(character: Model): View
 		canSource = nil,
 		canFrame = CFrame.new(),
 		canFull = Vector3.one,
+		extras = {},
+		extrasVersion = -1,
 		full = Vector3.one,
 		muzzle = Vector3.zero,
 		origin = CFrame.new(),
@@ -168,13 +174,21 @@ local function fitGun(current: View)
 	local sourceTool = source and source:FindFirstAncestorOfClass("Tool")
 	local found = sourceTool and sourceTool:FindFirstChild("Suppressor")
 	local canSource = if found and found:IsA("BasePart") then found else nil
+	local visuals = sourceTool and sourceTool:FindFirstChild("AttachmentVisuals")
+	local version = if visuals then (visuals:GetAttribute("Version") :: number?) or 0 else -1
 	if
 		source == current.gunSource
 		and (current.gun ~= nil) == (source ~= nil)
 		and canSource == current.canSource
+		and version == current.extrasVersion
 	then
 		return
 	end
+	for _, extra in current.extras do
+		extra.part:Destroy()
+	end
+	table.clear(current.extras)
+	current.extrasVersion = version
 	if current.gun then
 		current.gun:Destroy()
 		current.gun = nil
@@ -206,6 +220,23 @@ local function fitGun(current: View)
 		can.Parent = current.model
 		current.can = can
 	end
+	if visuals then
+		for _, piece in visuals:GetChildren() do
+			if piece:IsA("BasePart") then
+				local extra = piece:Clone()
+				extra:ClearAllChildren()
+				quiet(extra)
+				extra.Size = piece.Size * current.scale
+				extra.Parent = current.model
+				table.insert(current.extras, {
+					part = extra,
+					frame = source.CFrame:ToObjectSpace(piece.CFrame),
+					full = piece.Size,
+					optic = piece:GetAttribute("Slot") == "Optic",
+				})
+			end
+		end
+	end
 	-- The barrel tip: the tool's Muzzle part (PlayerSetup), else the gun's front end.
 	local tool = source:FindFirstAncestorOfClass("Tool")
 	local muzzle = tool and tool:FindFirstChild("Muzzle", true)
@@ -231,6 +262,9 @@ local function rescale(current: View, scale: number)
 	end
 	if current.can then
 		current.can.Size = current.canFull * scale
+	end
+	for _, extra in current.extras do
+		extra.part.Size = extra.full * scale
 	end
 	for _, hand in current.hands do
 		hand.Size = HAND * scale
@@ -391,6 +425,12 @@ function FirstPersonView.update(
 	gun.CFrame = world(gunCFrame)
 	if active.can then
 		active.can.CFrame = world(gunCFrame * active.canFrame)
+	end
+	for _, extra in active.extras do
+		extra.part.CFrame = world(gunCFrame * extra.frame)
+		-- An optic's part stands over the irons' line (its sight picture is a later PR): it
+		-- gets out of the way down the sights.
+		extra.part.LocalTransparencyModifier = if extra.optic and ads > 0.3 then 1 else 0
 	end
 	muzzleAt = world(gunCFrame * CFrame.new(active.muzzle)).Position
 

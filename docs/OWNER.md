@@ -30,7 +30,13 @@ something; never delete one without the owner.
 - **Names:** one map is a **mission**, three missions are an **operation** (the Helldivers
   convention). (2026-11-08)
 - **Power is the loadout,** never stat items: guns, grenade, kit, call-ins, a few big field
-  upgrades. (2026-11-07)
+  upgrades. (2026-11-07) Exception (Tien, 2026-11-18): **Kit Mods**, small ranked soldier
+  upgrades bought with merits at the Loadmaster (Nova's progression; e.g. one more stim, more
+  stamina), are allowed. Still no random stat drops in a run.
+- **Make it fun before making it bigger.** After playing a lot (2026-11-18): Checkpoint Delta
+  was "not really that challenging or fun", the Warden "doesn't feel like a boss", Brutes die
+  too easily, and the big map is "a bunch of empty space". Danger, bad surprises, scarcity and
+  a build-and-release rhythm come before more maps, sellers or vehicles.
 - **Real guns.** Each gun fires at its real-world rate (M16A4 750 rpm, M249 ~800, ...);
   balance damage and ammo around that, not the other way. (2026-11-08)
 - **The run is the story.** The story is what the squad lived through on that run, not
@@ -54,7 +60,8 @@ something; never delete one without the owner.
 - **Two currencies: merits and tabs.** (2026-11-10; replaces the single "Credits".)
   - **Merits** are the soft currency: earned by playing (paid when a mission ends, never per
     kill) and spent at the Carrier's desks on kit: guns, grenades and call-ins, permanent
-    unlocks (new options, never stronger versions). There is no ship to upgrade like
+    unlocks (new options, never stronger versions; the one exception is Kit Mods' ranks,
+    Tien 2026-11-18). There is no ship to upgrade like
     Helldivers; the Carrier sells kit instead (Tien and Nova, 2026-11-09).
   - **Tabs** are the hard currency (the owner's name, "tabs for now"): bought with Robux or
     granted by events. **Tabs never buy power:** cosmetics and conveniences only. Nothing is
@@ -118,6 +125,7 @@ something; never delete one without the owner.
   | Swap gun, grenade, reload | Q, G, R |
   | Call-ins | 1-4 |
   | Arms Room | B |
+  | Squad panel (the Carrier) | P |
   | Ping (not built) | middle mouse, kept free |
 
 - Movement keys: roll is Shift twice; slide is holding C or Ctrl while sprinting (owner,

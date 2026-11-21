@@ -13,6 +13,7 @@ local RunService = game:GetService("RunService")
 local Messages = require(ReplicatedStorage.Shared.Messages)
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
+local Missions = require(script.Parent.Missions)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local ExtractionWaves = require(ReplicatedStorage.Shared.Rules.ExtractionWaves)
 local DifficultyService = require(script.Parent.DifficultyService)
@@ -23,6 +24,14 @@ local Lifecycle = require(script.Parent.Lifecycle)
 local WorldSounds = require(script.Parent.WorldSounds)
 
 local ExtractionService = {}
+
+-- Where the helicopter picks the squad up: the big map's pickup (Attributes.PickupPoint, set
+-- when the main objective is done), else the mission's pickup pad (Extract, or its Landing).
+local function zonePosition(): Vector3
+	local pickup = workspace:GetAttribute(Attributes.PickupPoint)
+	local mission = Missions.current()
+	return if typeof(pickup) == "Vector3" then pickup else (mission.Extract or mission.Landing)
+end
 
 local extractionRemote: RemoteEvent
 local noticeRemote: RemoteEvent
@@ -39,7 +48,7 @@ local function createZone(): BasePart
 	local part = Instance.new("Part")
 	part.Name = "ExtractionZone"
 	part.Size = Config.Extraction.ZoneSize
-	part.Position = Config.Extraction.ZonePosition
+	part.Position = zonePosition()
 	part.Anchored = true
 	part.CanCollide = false
 	part.CanQuery = false
@@ -52,7 +61,7 @@ local function createZone(): BasePart
 	marker.Size = UDim2.fromOffset(240, 50)
 	marker.StudsOffset = Vector3.new(0, 12, 0)
 	marker.AlwaysOnTop = true
-	marker.MaxDistance = 2000
+	marker.MaxDistance = 3000
 
 	local label = Instance.new("TextLabel")
 	label.Size = UDim2.fromScale(1, 1)
@@ -86,11 +95,7 @@ local function complete()
 		zonePart = nil
 	end
 
-	WorldSounds.at(
-		Config.Extraction.ZonePosition + Vector3.new(0, 20, 0),
-		"ambience",
-		"lantern_rotor"
-	)
+	WorldSounds.at(zonePosition() + Vector3.new(0, 20, 0), "ambience", "lantern_rotor")
 	extractionRemote:FireAllClients(
 		Messages.ExtractionUpdate.Complete,
 		Config.Extraction.HoldDuration
@@ -120,7 +125,7 @@ end
 -- The hold passed a wave's mark: its bodies ring the pad and the spawns quicken.
 local function callWave(wave: ExtractionWaves.Wave)
 	local count = ExtractionWaves.count(wave, DifficultyService.getExtraPlayers())
-	task.spawn(EnemyService.spawnMixedWave, count, Config.Extraction.ZonePosition)
+	task.spawn(EnemyService.spawnMixedWave, count, zonePosition())
 	noticeRemote:FireAllClients(Config.Extraction.WaveRadio, Messages.Notice.Radio)
 	print(`[ExtractionService] wave at {wave.At}s: {count} Infected`)
 end
@@ -135,7 +140,7 @@ local function onHeartbeat(deltaTime: number)
 	-- every living player is on the pad. Some of them on it: "waiting for squad". Downed
 	-- players and bots do not hold it up.
 	local _, playersIn, playersLiving = Squad.zoneCount(zone)
-	local everyone = playersLiving > 0 and playersIn >= playersLiving
+	local everyone = ExtractionWaves.squadHolding(playersIn, playersLiving)
 	if everyone then
 		local before = progress
 		progress += deltaTime
@@ -178,15 +183,11 @@ function ExtractionService.start()
 	publishSpawnFactor()
 	workspace:SetAttribute(Attributes.ExtractionActive, true)
 	zonePart = createZone()
-	WorldSounds.at(
-		Config.Extraction.ZonePosition + Vector3.new(0, 40, 0),
-		"ambience",
-		"lantern_rotor"
-	)
+	WorldSounds.at(zonePosition() + Vector3.new(0, 40, 0), "ambience", "lantern_rotor")
 	extractionRemote:FireAllClients(Messages.ExtractionUpdate.Available, 0)
 
 	for typeName, count in Config.Extraction.PressureWave :: { [string]: number } do
-		EnemyService.spawnWave(typeName, count, Config.Extraction.ZonePosition)
+		EnemyService.spawnWave(typeName, count, zonePosition())
 	end
 
 	heartbeatConnection = RunService.Heartbeat:Connect(onHeartbeat)

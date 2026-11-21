@@ -1001,6 +1001,27 @@ local BUILDINGS: { BuildingSpec } = {
 local mission: MissionTypes.Mission = {
 	Id = "delta",
 	Name = "Checkpoint Delta",
+	-- Where things are: the same Config values every system read before missions were data.
+	Size = Vector2.new(600, 600),
+	Landing = Config.Extraction.ZonePosition,
+	AltPad = Vector3.new(255, 0.9, 85), -- the Depot pad, on the DepotPad concrete (top 0.3)
+	Boss = {
+		Spawn = Config.Index.Warden.SpawnPosition,
+		Waypoints = Config.Index.Warden.Waypoints,
+		WaypointRadio = Config.Index.Warden.WaypointRadio,
+		GateRadio = true,
+	},
+	Hold = Config.Objective.ZonePosition,
+	Parts = {},
+	Features = {
+		Roads = true,
+		Highway = true,
+		Landmarks = true,
+		Perches = true,
+		Gantry = true,
+		BigMap = true,
+		Outskirts = true,
+	},
 	Hills = HILLS,
 	Dressing = DRESSING,
 	Patches = PATCHES,
