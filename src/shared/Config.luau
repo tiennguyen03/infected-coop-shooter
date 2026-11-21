@@ -5369,6 +5369,7 @@ local Config = {
 		DecayPerHour = 0.25, -- the Infected push back about 6% a day; a loss takes nothing
 		UnlockAt = 50, -- the next district opens when this one reaches it (and stays open)
 		OpenAtStart = 2, -- Delta and Mile 14 are open from day one (owner 2026-11-20)
+		SecuredPay = 0.25, -- a Secured district's missions pay this share of their merits
 	},
 
 	Containment = {

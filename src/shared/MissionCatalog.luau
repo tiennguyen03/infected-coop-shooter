@@ -18,6 +18,7 @@ export type Row = {
 	Players: { number }, -- { min, max } soldiers
 	Window: { From: number, To: number }?, -- os.time() range it can be picked in; nil = always
 	Place: number?, -- its own match place; nil = the shared match place (Config.Places)
+	Pay: { Win: number?, Partial: number? }?, -- its own merits; nil = Config.Merits (loop sprint 4)
 }
 
 local MissionCatalog = {}
@@ -44,6 +45,7 @@ MissionCatalog.Rows = {
 		Boss = "warden", -- a stand-in until the Driver (owner, 2026-11-20)
 		Blurb = "A dead convoy at night. Land at the toll plaza, get to the rest stop. Stay quiet.",
 		Players = { 1, 4 },
+		Pay = { Win = 140, Partial = 70 }, -- quieter and longer than Delta, and it pays for it
 	},
 } :: { [string]: Row }
 

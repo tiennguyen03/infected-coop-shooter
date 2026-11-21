@@ -6,7 +6,8 @@
 -- lobby reads the same key (ContainmentBoard). Only this server writes, once a run: clients
 -- never send progress. A failed save is warned once and dropped. The results screen shows
 -- the line (Attributes.WarLine).
--- Caller: RunManager (`flush` at run end).
+-- Callers: RunManager (`flush` at run end), MeritService (`securedHere`: a Secured district
+-- pays Config.War.SecuredPay of its merits).
 
 local DataStoreService = game:GetService("DataStoreService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -77,7 +78,24 @@ function WarService.flush(outcome: string)
 	end
 end
 
+-- Whether this mission's district is Secured on the board (read once at boot; false until the
+-- read lands, or when it fails).
+local secured = false
+function WarService.securedHere(): boolean
+	return secured
+end
+
 function WarService.init()
+	task.spawn(function()
+		local ok, raw = pcall(function()
+			return DataStoreService:GetDataStore(CFG.Store):GetAsync(CFG.Key)
+		end)
+		if ok then
+			local board = War.merge(raw, {}, os.time(), WarService.settings())
+			local record = board.districts[Missions.row().District]
+			secured = record ~= nil and record.secured == true
+		end
+	end)
 	Lifecycle.register("WarService", {
 		onRunStart = function()
 			workspace:SetAttribute(Attributes.WarLine, "")

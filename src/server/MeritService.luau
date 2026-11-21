@@ -25,6 +25,8 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local Economy = require(ReplicatedStorage.Shared.Rules.Economy)
 local Record = require(ReplicatedStorage.Shared.Rules.Record)
 local Lifecycle = require(script.Parent.Lifecycle)
+local Missions = require(script.Parent.Missions)
+local WarService = require(script.Parent.WarService)
 
 local MeritService = {}
 
@@ -129,7 +131,10 @@ end
 -- Pays every player here for the mission that just ended. Does not yield: the amount is on
 -- each player's MeritsEarned attribute at once and the saves run on their own.
 function MeritService.pay(outcome: string, secondaries: number)
-	local amount = Economy.missionMerits(outcome, secondaries, PAY)
+	-- The mission's own pay (MissionCatalog `Pay`), a share of it in a Secured district.
+	local pay =
+		Economy.payFor(PAY, Missions.row().Pay, WarService.securedHere(), Config.War.SecuredPay)
+	local amount = Economy.missionMerits(outcome, secondaries, pay)
 	local players = Players:GetPlayers()
 	payRun += 1
 	local run = payRun

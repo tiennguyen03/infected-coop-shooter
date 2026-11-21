@@ -46,4 +46,26 @@ return {
 		expect.equal(Economy.tabsFor(5, bad), nil, "zero")
 		expect.equal(Economy.tabsFor(6, bad), nil, "fraction")
 	end,
+
+	-- Loop sprint 4: a mission's own pay (MissionCatalog row `Pay`) and a Secured district.
+	["payFor takes a mission's own Win and Partial"] = function()
+		local pay = Economy.payFor(PAY, { Win = 140, Partial = 70 }, false, 0.25)
+		expect.equal(pay.Win, 140, "win")
+		expect.equal(pay.Partial, 70, "partial")
+		expect.equal(pay.Secondary, 30, "secondary kept")
+		expect.equal(PAY.Win, 120, "the base table is untouched")
+	end,
+
+	["payFor with no override is the base pay"] = function()
+		local pay = Economy.payFor(PAY, nil, false, 0.25)
+		expect.equal(pay.Win, 120, "win")
+		expect.equal(pay.Partial, 60, "partial")
+	end,
+
+	["a Secured district pays a quarter, rounded down"] = function()
+		local pay = Economy.payFor(PAY, { Win = 140, Partial = 70 }, true, 0.25)
+		expect.equal(pay.Win, 35, "win")
+		expect.equal(pay.Partial, 17, "partial")
+		expect.equal(pay.Secondary, 7, "secondary")
+	end,
 }
