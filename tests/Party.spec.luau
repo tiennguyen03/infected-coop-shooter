@@ -215,4 +215,47 @@ return {
 		eq(leader, 77, "leader")
 		eq(job, "job-1", "job")
 	end,
+
+	-- Review fixes (sprint 2).
+	["accepting is refused while you lead a squad of two or more"] = function()
+		local parties, invites = world()
+		join(parties, invites, 2, 3)
+		assert(Party.invite(parties, invites, 1, 9, 0, CAP))
+		invites[2] = { from = 1, at = 0 } -- an invite that reached 2 before they built a squad
+		eq((Party.accept(parties, invites, 2, 0, TTL, CAP)), false, "leader of two accepts")
+		eq(
+			Party.of(parties, 3) and (Party.of(parties, 3) :: any).leader,
+			2,
+			"their squad is intact"
+		)
+	end,
+
+	["accepting after the inviter stopped leading fails"] = function()
+		local parties, invites = world()
+		join(parties, invites, 1, 2)
+		assert(Party.invite(parties, invites, 1, 5, 0, CAP))
+		Party.leave(parties, 1)
+		eq((Party.accept(parties, invites, 5, 0, TTL, CAP)), false, "inviter gone")
+	end,
+
+	["a handover clears everyone's ready"] = function()
+		local parties, invites = world()
+		join(parties, invites, 1, 2)
+		join(parties, invites, 1, 3)
+		local party = Party.of(parties, 1) :: any
+		Party.pick(party, 1, "delta")
+		Party.setReady(party, 3, true)
+		Party.leave(parties, 1)
+		eq(party.ready[3], nil, "ready cleared on handover")
+	end,
+
+	["deploying again with the same mission keeps the countdown"] = function()
+		local parties = world()
+		local party = Party.ensure(parties, 1) :: any
+		join(parties, {}, 1, 2)
+		Party.pick(party, 1, "delta")
+		Party.deploy(party, 1, 0, 15)
+		Party.deploy(party, 1, 10, 15)
+		eq(party.deployAt, 15, "not restarted")
+	end,
 }

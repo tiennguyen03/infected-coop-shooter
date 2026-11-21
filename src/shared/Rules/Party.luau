@@ -63,8 +63,10 @@ function Party.leave(parties: Parties, userId: number)
 		return
 	end
 	if party.leader == userId then
+		-- A new leader starts the launch over: no countdown, nobody ready.
 		party.leader = party.members[1]
 		party.deployAt = nil
+		table.clear(party.ready)
 	end
 	parties[party.leader] = party
 end
@@ -122,6 +124,10 @@ function Party.accept(
 	if #party.members >= capacity then
 		return false, "That squad is full."
 	end
+	local mine = Party.of(parties, to)
+	if mine and #mine.members > 1 then
+		return false, "Leave your squad first."
+	end
 	Party.leave(parties, to)
 	table.insert(party.members, to)
 	return true, nil
@@ -152,6 +158,9 @@ end
 function Party.deploy(party: Party, by: number, now: number, wait: number): boolean
 	if by ~= party.leader or party.mission == nil then
 		return false
+	end
+	if party.deployAt then
+		return true -- already counting down: pressing again changes nothing
 	end
 	party.ready[by] = true
 	party.deployAt = now + wait

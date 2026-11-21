@@ -5548,6 +5548,7 @@ local Config = {
 		Party = {
 			InviteSeconds = 60, -- an invite can be accepted this long
 			DeployWait = 15, -- after the leader's DEPLOY the squad flies when all are ready, or after this
+			LiftTimeout = 30, -- seconds a lifting squad stays locked if its teleport never lands
 		},
 		-- The map room's Mission Board (MissionBoardService, MissionBoardUI): pick a mission, DEPLOY.
 		MissionBoard = {

@@ -198,4 +198,28 @@ return {
 			error("LaunchService boards from the rings regardless of RingsBoard", 0)
 		end
 	end,
+
+	["a flying squad cannot change (no invite, accept, leave or kick mid-launch)"] = function()
+		local text = fs.readFile("src/lobby/server/PartyService.luau")
+		if not string.find(text, "local function busy(", 1, true) then
+			error("PartyService has no busy() guard for a squad that is lifting", 0)
+		end
+	end,
+
+	["a squad stays lifting after a teleport that went (no second DEPLOY)"] = function()
+		local text = fs.readFile("src/lobby/server/PartyService.luau")
+		local launch = string.match(text, "local function launch%(.-\nend\n") or ""
+		-- Right after the send the squad must not be marked idle: only the failure branch and
+		-- the LiftTimeout may clear it.
+		if
+			launch == ""
+			or string.find(
+				launch,
+				"LaunchService%.send%(going, mission, nil%)%s*\n%s*flying%[party%] = nil"
+			)
+			or not string.find(launch, "LiftTimeout", 1, true)
+		then
+			error("launch clears flying even when the teleport went", 0)
+		end
+	end,
 }

@@ -131,10 +131,23 @@ local function launch(party: Party.Party)
 	local mission = party.mission :: string
 	task.spawn(function()
 		local ok, reason = LaunchService.send(going, mission, nil)
-		flying[party] = nil
-		party.deployAt = nil
-		table.clear(party.ready)
-		if not ok then
+		-- Gone: the squad stays "lifting" until its soldiers leave the server, so nobody can
+		-- deploy it twice or join it on the way out. Failed: it is idle again.
+		if ok then
+			-- A teleport can still fail after it started (TeleportInitFailed): whoever is still
+			-- here after LiftTimeout gets their squad back.
+			task.delay(CFG.LiftTimeout, function()
+				if flying[party] then
+					flying[party] = nil
+					party.deployAt = nil
+					table.clear(party.ready)
+					push(party)
+				end
+			end)
+		else
+			flying[party] = nil
+			party.deployAt = nil
+			table.clear(party.ready)
 			for _, member in going do
 				if member.Parent then
 					boardRemote:FireClient(
@@ -149,8 +162,33 @@ local function launch(party: Party.Party)
 	end)
 end
 
+-- Whether `userId`'s squad is lifting: it cannot change until the teleport is over.
+local function busy(userId: number): boolean
+	local party = Party.of(parties, userId)
+	return party ~= nil and flying[party] == true
+end
+
+local SQUAD_CHANGES = {
+	[Messages.Party.Invite] = true,
+	[Messages.Party.Accept] = true,
+	[Messages.Party.Leave] = true,
+	[Messages.Party.Kick] = true,
+}
+
 local function onIntent(player: Player, kind: unknown, arg: unknown)
 	local me = player.UserId
+	if SQUAD_CHANGES[kind :: any] then
+		local invite = invites[me]
+		local target = if typeof(arg) == "number" then arg else nil
+		if
+			busy(me)
+			or (target ~= nil and busy(target))
+			or (kind == Messages.Party.Accept and invite ~= nil and busy(invite.from))
+		then
+			notice(player, "Not while the squad is lifting.")
+			return
+		end
+	end
 	if kind == Messages.Party.Invite then
 		local target = if typeof(arg) == "number" then playerOf(arg) else nil
 		if not target then
