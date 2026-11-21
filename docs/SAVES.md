@@ -13,7 +13,7 @@ before adding or renaming any saved field. The code: `src/shared/Rules/SaveSchem
 | The signed Loadout | `Config.Lobby.Save.Store` (`LoadmasterLoadouts`) | `u_<UserId>` | 1 (`SaveSchema.Loadout`) | `loadout` (`Rules/Loadout` shape, with `attachments`) | lobby `LoadmasterService` only |
 | Carrier counts | `Config.Lobby.Tallies.Store` | one shared key | none (not per player) | counts by `kind:id`, only ever added to (`Rules/Tally.merge`) | match `TallyService`; the lobby only reads |
 
-| The city war board | `Config.War.Store` (`War_S1`, one season) | `board` | `Rules/War.VERSION` 1 | per district `pct`, `at`, `unlocked`, `secured` | match `WarService` (UpdateAsync at run end, never from Studio); the lobby only reads |
+| The city war board | one store per 28-day season (`Config.War.StorePrefix` + season: `War_S1`, `War_S2`, ...; `Rules/War.storeAt`) | `board` | `Rules/War.VERSION` 1 | per district `pct`, `at`, `unlocked`, `secured` | match `WarService` (UpdateAsync at run end, never from Studio); the lobby only reads |
 Retries and timings: `Config.Lobby.Save` (`Retries`, `RetryDelay`, `MinWriteGap`,
 `LoadWait`), `Config.Merits` (`Retries`, `RetryDelay`, `SettleSeconds`), `Config.Lobby.Tallies`.
 

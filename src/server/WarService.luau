@@ -28,6 +28,7 @@ local warned = false
 local inFlight = 0
 local writes: { number } = {} -- os.clock of this server's writes in the last hour
 local secured = false -- this district on the board read at boot
+local bootSeason = War.season(os.time(), CFG.SeasonStart, CFG.SeasonDays) -- the season of that read
 
 -- Rules/War's settings: Config.War plus the board's districts (Config.Containment).
 function WarService.settings(): War.Settings
@@ -38,12 +39,13 @@ end
 
 -- This season's store (Rules/War.season: a new store every Config.War.SeasonDays).
 function WarService.storeName(): string
-	return War.storeFor(CFG.StorePrefix, War.season(os.time(), CFG.SeasonStart, CFG.SeasonDays))
+	return War.storeAt(os.time(), CFG)
 end
 
 -- Whether this mission's district is Secured (read once at boot; false until it lands).
 function WarService.securedHere(): boolean
-	return secured
+	-- A Secured flag from last season means nothing on this season's fresh board.
+	return secured and War.season(os.time(), CFG.SeasonStart, CFG.SeasonDays) == bootSeason
 end
 
 local function warnOnce(message: string)
@@ -113,10 +115,11 @@ end
 function WarService.flush(outcome: string)
 	local district = Missions.row().District
 	local settings = WarService.settings()
-	local points = if CFG.Enabled and not secured then War.points(outcome, settings) else 0
+	local securedNow = WarService.securedHere()
+	local points = if CFG.Enabled and not securedNow then War.points(outcome, settings) else 0
 	workspace:SetAttribute(
 		Attributes.WarLine,
-		War.gainText(district, points, settings, secured and CFG.Enabled)
+		War.gainText(district, points, settings, securedNow and CFG.Enabled)
 	)
 	if points > 0 and mayWrite() then
 		inFlight += 1

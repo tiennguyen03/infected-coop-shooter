@@ -364,9 +364,9 @@ end
 -- (tests/Mile14.spec checks the same boxes).
 local CLEAR = {
 	{ 0, 0, 82, 450 }, -- the deck, its slopes and ramps
-	{ 0, 80, 320, 28 }, -- the county road and the Overpass
-	{ 0, 310, 92, 87 }, -- the toll apron
-	{ 125, 310, 52, 62 }, -- the admin lot (insert pad)
+	{ 0, 80, 320, 52 }, -- the county road, the Overpass and their embankment slopes
+	{ 0, 310, 102, 87 }, -- the toll apron and its slopes
+	{ 128, 310, 56, 62 }, -- the admin lot (insert pad) and its slopes
 	{ -172.5, -252.5, 127, 92 }, -- the Rest Stop lot (extract pad)
 	{ 150, -185, 105, 70 }, -- the Weigh Station lot
 	{ -200, 250, 72, 52 }, -- the Halt
@@ -457,15 +457,12 @@ for _ = 1, 400 do
 	local z = (roll() - 0.5) * 884
 	if not blocked(x, z) then
 		shrubs += 1
-		table.insert(
-			DRESSING,
-			{
-				name = "env_shrub",
-				x = math.floor(x),
-				z = math.floor(z),
-				yaw = math.floor(roll() * 360),
-			}
-		)
+		table.insert(DRESSING, {
+			name = "env_shrub",
+			x = math.floor(x),
+			z = math.floor(z),
+			yaw = math.floor(roll() * 360),
+		})
 	end
 end
 

@@ -265,12 +265,14 @@ function MissionBoardUI.open(line: string, who: string, closed: () -> ())
 	local header = frame:FindFirstChild("Header") :: TextLabel
 	-- The season (Rules/War): the board starts over when it ends; unlocks stay.
 	local war = Config.War
-	local now = os.time()
+	local now = workspace:GetServerTimeNow() -- the server's clock, not the device's
 	local season = War.season(now, war.SeasonStart, war.SeasonDays)
 	local daysLeft =
 		math.max(0, math.ceil((War.seasonEnds(now, war.SeasonStart, war.SeasonDays) - now) / 86400))
 	header.Text = `//MISSION BOARD  {HudTheme.tint(
-		`{string.upper(who)} · SEASON {season} · {daysLeft} DAYS LEFT`,
+		`{string.upper(who)} · SEASON {season} · {daysLeft} {if daysLeft == 1
+			then "DAY"
+			else "DAYS"} LEFT`,
 		C.TextDim
 	)}`
 	-- The first open card starts picked, so DEPLOY is never dead on arrival.

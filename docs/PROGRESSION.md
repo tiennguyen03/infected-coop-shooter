@@ -741,7 +741,7 @@ extraction that is built: [Extraction](#extraction).
 Players read it as the board titled WHAT WE HOLD in the map room, and as the percent on each
 Mission Board card. **One shared board per season** for every server (`Config.War`,
 `Rules/War`, spec first): each district stores its percent, when it was written, whether it is
-open and whether it is Secured (DataStore `War_S1`, key `board`). A mission brought home adds
+open and whether it is Secured (one DataStore per 28-day season, `War_S1`, `War_S2`, ..., key `board`). A mission brought home adds
 points to its district, per mission not per player: **Win 3, Partial 1, Loss 0; 2 points = 1%**
 (a win is +1.5%), written once at the run's end with `UpdateAsync` (`WarService`, so servers
 add, never overwrite). The Infected push back **0.25% an hour** (about 6% a day); a loss takes

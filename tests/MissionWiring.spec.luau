@@ -233,7 +233,7 @@ return {
 
 	["the lobby reads the war board from the shared store"] = function()
 		for _, path in { "src/lobby/server/ContainmentBoard.luau", "src/server/WarService.luau" } do
-			if not string.find(fs.readFile(path), "War.storeFor(", 1, true) then
+			if not string.find(fs.readFile(path), "War.storeAt(", 1, true) then
 				error(`{path} does not use this season's store`, 0)
 			end
 		end
@@ -292,6 +292,21 @@ return {
 		local text = fs.readFile("src/server/MeritService.luau")
 		if not string.find(text, "if amount <= 0 and not wonIn then", 1, true) then
 			error("MeritService skips the save (and the win) when the pay is 0", 0)
+		end
+	end,
+
+	["one store name everywhere, the season checked at write time, the header on server time"] = function()
+		for _, path in { "src/lobby/server/ContainmentBoard.luau", "src/server/WarService.luau" } do
+			if not string.find(fs.readFile(path), "War.storeAt(", 1, true) then
+				error(`{path} builds the store name itself`, 0)
+			end
+		end
+		if not string.find(fs.readFile("src/server/WarService.luau"), "bootSeason", 1, true) then
+			error("WarService trusts a Secured flag read in another season", 0)
+		end
+		local board = fs.readFile("src/lobby/client/MissionBoardUI.luau")
+		if string.find(board, "local now = os.time()", 1, true) then
+			error("the season header uses the device clock", 0)
 		end
 	end,
 }

@@ -167,9 +167,9 @@ return {
 		-- { x, z, half-width, half-depth } boxes kept clear.
 		local clear = {
 			{ 0, 0, 80, 450 }, -- the deck, its slopes and ramps
-			{ 0, 80, 320, 26 }, -- the county road and the Overpass
-			{ 0, 310, 90, 85 }, -- the toll apron
-			{ 125, 310, 50, 60 }, -- the admin lot (insert pad)
+			{ 0, 80, 320, 50 }, -- the county road, the Overpass and their embankment slopes
+			{ 0, 310, 100, 85 }, -- the toll apron and its slopes
+			{ 128, 310, 54, 60 }, -- the admin lot (insert pad) and its slopes
 			{ -172.5, -252.5, 125, 90 }, -- the Rest Stop lot (extract pad)
 			{ 150, -185, 103, 68 }, -- the Weigh Station lot
 			{ -200, 250, 70, 50 }, -- the Halt

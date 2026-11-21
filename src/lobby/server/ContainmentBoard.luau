@@ -26,6 +26,7 @@ export type District = {
 }
 
 local last: War.Board? = nil
+local lastStore = "" -- the season store `last` was read from
 local warned = false
 
 local function settings(): War.Settings
@@ -56,11 +57,14 @@ end
 -- Every district in board order, as the shared board holds it now. Yields on the DataStore;
 -- callers run it off the main thread.
 function ContainmentBoard.read(): { District }
+	local store = War.storeAt(os.time(), Config.War)
+	if store ~= lastStore then
+		-- A new season: last season's board never shows on it.
+		lastStore = store
+		last = nil
+	end
 	local ok, raw = pcall(function()
-		local cfg = Config.War
-		local store =
-			War.storeFor(cfg.StorePrefix, War.season(os.time(), cfg.SeasonStart, cfg.SeasonDays))
-		return DataStoreService:GetDataStore(store):GetAsync(cfg.Key)
+		return DataStoreService:GetDataStore(store):GetAsync(Config.War.Key)
 	end)
 	if ok then
 		last = War.merge(raw, {}, os.time(), settings())

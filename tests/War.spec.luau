@@ -155,4 +155,10 @@ return {
 	["season end time"] = function()
 		eq(War.seasonEnds(1000 + 5, 1000, 28), 1000 + 28 * 86400, "first season ends")
 	end,
+
+	["storeAt names the store for a moment, from the settings"] = function()
+		local cfg = { StorePrefix = "War_S", SeasonStart = 1000, SeasonDays = 28 } :: any
+		eq(War.storeAt(1000, cfg), "War_S1", "season 1")
+		eq(War.storeAt(1000 + 28 * 86400, cfg), "War_S2", "season 2")
+	end,
 }

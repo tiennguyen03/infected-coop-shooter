@@ -140,6 +140,15 @@ function War.storeFor(prefix: string, season: number): string
 	return `{prefix}{season}`
 end
 
+-- The board's store at `now` from Config.War (StorePrefix, SeasonStart, SeasonDays): the one
+-- place the name is made, for the match's writer and the lobby's reader.
+function War.storeAt(
+	now: number,
+	cfg: { StorePrefix: string, SeasonStart: number, SeasonDays: number }
+): string
+	return War.storeFor(cfg.StorePrefix, War.season(now, cfg.SeasonStart, cfg.SeasonDays))
+end
+
 -- When the season running at `now` ends (os.time()).
 function War.seasonEnds(now: number, start: number, days: number): number
 	return start + War.season(now, start, days) * days * 86400
