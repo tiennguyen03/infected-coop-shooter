@@ -10,6 +10,7 @@
 -- never trusts it for progress).
 -- Teleports do not run in Studio: there the spot reports it and resets.
 
+local MemoryStoreService = game:GetService("MemoryStoreService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -21,6 +22,8 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local Handoff = require(ReplicatedStorage.Shared.Rules.Handoff)
 local Manifest = require(ReplicatedStorage.Shared.Rules.Manifest)
 local Messages = require(ReplicatedStorage.Shared.Messages)
+local MissionCatalog = require(ReplicatedStorage.Shared.MissionCatalog)
+local MissionPick = require(ReplicatedStorage.Shared.Rules.MissionPick)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local Build = require(script.Parent.Build)
 local LanternBird = require(script.Parent.LanternBird)
@@ -180,6 +183,91 @@ local function fail(players: { Player }, reason: string)
 	end
 end
 
+-- Fly `party` into one new private server of the mission's match place (a catalog row's own
+-- Place, else the shared match place or a Dev pair's), together, with the shared handoff as
+-- teleport data. Before the teleport, the mission and the party are stored in MemoryStore
+-- under the reserved server's PrivateServerId (Rules/MissionPick.launchRecord), so the
+-- match builds the mission at boot and no client can change it; a failed write still flies
+-- (the match then builds the default and says so in its log). `spot` is the pad number for
+-- the match's logs (nil from the Mission Board). Returns false and the reason to show when
+-- nobody flew (always in Studio: teleports don't run there).
+function LaunchService.send(party: { Player }, missionId: string, spot: number?): (boolean, string?)
+	if RunService:IsStudio() then
+		return false,
+			"Teleports don't run in Studio. Publish the lobby and launch from the live game."
+	end
+	local row = MissionCatalog.get(missionId)
+	if not row then
+		return false, "That mission isn't on the board."
+	end
+	local ids: { number } = {}
+	for _, player in party do
+		table.insert(ids, player.UserId)
+	end
+	local data =
+		Handoff.departure(Handoff.DEFAULT_OPERATION, ids, LoadmasterService.loadoutsFor(party))
+	data.spot = spot or 0 -- extra for the match's logs; readJoin ignores it
+	local placeId = row.Place or Config.Places.Dev[game.PlaceId] or Config.Places.Match
+	local options = Instance.new("TeleportOptions")
+	options:SetTeleportData(data)
+	local label = if spot then `spot {spot}` else `board {missionId}`
+	-- One private server per launch, reserved once and reused for every retry, so a retry
+	-- never splits the squad across two servers.
+	local code: string? = nil
+	local lastError = ""
+	for _ = 0, LAUNCH.Retries do
+		if not code then
+			local ok, reserved, privateId = pcall(function()
+				return TeleportService:ReserveServer(placeId)
+			end)
+			if ok then
+				code = reserved
+				-- A documented TeleportOptions property the luau-lsp definitions do not list.
+				local reserve: any = options
+				reserve.ReservedServerAccessCode = reserved
+				-- The mission, stored for the match to read at boot (Missions/init).
+				local stored, err = pcall(function()
+					MemoryStoreService:GetHashMap(Config.Missions.LaunchMap):SetAsync(
+						privateId,
+						MissionPick.launchRecord(missionId, ids),
+						Config.Missions.LaunchSeconds
+					)
+				end)
+				if not stored then
+					warn(
+						`[LaunchService] {label}: couldn't store the mission ({err}); the match builds the default`
+					)
+				end
+			else
+				lastError = tostring(reserved)
+				warn(`[LaunchService] {label} reserve failed: {lastError}`)
+				task.wait(LAUNCH.RetryDelay)
+				continue
+			end
+		end
+		-- Only those still in the server go (a soldier who left mid-countdown is dropped).
+		local going: { Player } = {}
+		for _, player in party do
+			if player.Parent then
+				table.insert(going, player)
+			end
+		end
+		if #going == 0 then
+			return true
+		end
+		local ok, err = pcall(function()
+			TeleportService:TeleportAsync(placeId, going, options)
+		end)
+		if ok then
+			return true
+		end
+		lastError = tostring(err)
+		warn(`[LaunchService] {label} teleport failed: {lastError}`)
+		task.wait(LAUNCH.RetryDelay)
+	end
+	return false, "The helicopter couldn't lift. Try again."
+end
+
 local function lift(state: SpotState)
 	state.lifting = true
 	local party = playersFor(state.manifest.aboard)
@@ -188,68 +276,11 @@ local function lift(state: SpotState)
 	end
 	table.clear(state.sent)
 
-	if RunService:IsStudio() then
-		fail(
-			party,
-			"Teleports don't run in Studio. Publish the lobby and launch from the live game."
-		)
-	else
-		local data = Handoff.departure(
-			Handoff.DEFAULT_OPERATION,
-			state.manifest.aboard,
-			LoadmasterService.loadoutsFor(party)
-		)
-		data.spot = state.spot.index -- extra for the match's logs; readJoin ignores it
-		local matchPlaceId = Config.Places.Dev[game.PlaceId] or Config.Places.Match
-		local options = Instance.new("TeleportOptions")
-		options:SetTeleportData(data)
-		-- One private server per lift, reserved once and reused for every retry, so a retry
-		-- never splits the squad across two servers.
-		local code: string? = nil
-		local sent = false
-		local lastError = ""
-		for _ = 0, LAUNCH.Retries do
-			if not code then
-				local ok, reserved = pcall(function()
-					return TeleportService:ReserveServer(matchPlaceId)
-				end)
-				if ok then
-					code = reserved
-					-- A documented TeleportOptions property the luau-lsp definitions do not list.
-					local reserve: any = options
-					reserve.ReservedServerAccessCode = reserved
-				else
-					lastError = tostring(reserved)
-					warn(`[LaunchService] spot {state.spot.index} reserve failed: {lastError}`)
-					task.wait(LAUNCH.RetryDelay)
-					continue
-				end
-			end
-			-- Only those still in the server go (a soldier who left mid-countdown is dropped).
-			local going: { Player } = {}
-			for _, player in party do
-				if player.Parent then
-					table.insert(going, player)
-				end
-			end
-			if #going == 0 then
-				sent = true
-				break
-			end
-			local ok, err = pcall(function()
-				TeleportService:TeleportAsync(matchPlaceId, going, options)
-			end)
-			if ok then
-				sent = true
-				break
-			end
-			lastError = tostring(err)
-			warn(`[LaunchService] spot {state.spot.index} teleport failed: {lastError}`)
-			task.wait(LAUNCH.RetryDelay)
-		end
-		if not sent then
-			fail(party, "The helicopter couldn't lift. Try again.")
-		end
+	-- The pad rings fly to Checkpoint Delta, as before the Mission Board (loop sprint 2 moves
+	-- them onto the board's party).
+	local ok, reason = LaunchService.send(party, MissionCatalog.DEFAULT, state.spot.index)
+	if not ok then
+		fail(party, reason or "The helicopter couldn't lift. Try again.")
 	end
 
 	state.manifest = Manifest.new()

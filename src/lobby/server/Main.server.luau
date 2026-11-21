@@ -29,6 +29,7 @@ local BOOT: { ModuleScript } = {
 	Server.AttachmentService, -- attachment system v2 (the same two, the same way)
 	Server.AttachmentMeshService, -- the attachment models the EDIT preview shows (VisualApplier)
 	Server.LaunchService,
+	Server.MissionBoardService, -- after LaunchService (it launches through LaunchService.send)
 }
 
 local started: { string } = {}

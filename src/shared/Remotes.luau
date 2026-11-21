@@ -38,6 +38,7 @@ local REMOTE_NAMES = {
 	"Vehicle", -- client -> server: ("exit") off the vehicle this soldier rides; server -> client: ("ram", keep: number) the driver's client scales the ATV's speed by keep after a ram
 	"Breach", -- server -> every client: ("warn", from: Vector3, seconds: number) a breach horde is coming from that point (BreachUI points at it) | ("clear") (BreachService, Messages.Breach)
 	"InsertSkip", -- client -> server: () this player skipped the insertion cutscene (RunManager cuts Insert short once every player has)
+	"MissionBoard", -- lobby place, client -> server: ("deploy", missionId) launch this soldier into that mission (MissionBoardService); server -> client: ("lifting") | ("refused", text)
 	"Launch", -- lobby place, server -> client: ("manifest", spot, names, secondsLeft, squad, isLead) | ("lifting", spot) | ("failed", reason) | ("cleared"); client -> server: ("squad", size)
 }
 

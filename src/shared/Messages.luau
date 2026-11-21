@@ -149,6 +149,12 @@ local Messages = table.freeze({
 		Equipped = "equipped", -- server -> client: (gunId, opticId) fitted and signed
 		Refused = "refused", -- server -> client: (id, reason) "short" | "owned" | "unknown" | "not owned" | "incompatible" | "loading"
 	}),
+	-- MissionBoard (lobby place): the map room's Mission Board (MissionBoardService, MissionBoardUI).
+	MissionBoard = table.freeze({
+		Deploy = "deploy", -- client -> server: (missionId) launch me into that mission
+		Lifting = "lifting", -- server -> client: () the helicopter is lifting; the teleport is under way
+		Refused = "refused", -- server -> client: (text) why not, in plain words
+	}),
 	Launch = table.freeze({
 		Manifest = "manifest", -- (spot, names, secondsLeft, squad, isLead) you are aboard; squad 0 = not picked
 		Squad = "squad", -- client -> server: (size) the first aboard picks the squad size, 1 to Capacity

@@ -95,4 +95,48 @@ return {
 			error("ArenaService still fixes the map at one size", 0)
 		end
 	end,
+
+	["the MissionBoard remote is used by the board's service and UI"] = function()
+		for _, path in
+			{ "src/lobby/server/MissionBoardService.luau", "src/lobby/client/MissionBoardUI.luau" }
+		do
+			if not fs.isFile(path) then
+				error(`{path} is missing`, 0)
+			end
+			if not string.find(fs.readFile(path), 'Remotes.get("MissionBoard")', 1, true) then
+				error(`{path} does not use the MissionBoard remote`, 0)
+			end
+		end
+	end,
+
+	["LaunchService writes the launch record before teleporting"] = function()
+		local text = fs.readFile("src/lobby/server/LaunchService.luau")
+		local body = string.match(text, "function LaunchService%.send%(.-\nend\n")
+		if not body then
+			error("no LaunchService.send", 0)
+		end
+		local write = string.find(body, ":SetAsync(", 1, true)
+		local teleport = string.find(body, "TeleportAsync(", 1, true)
+		if not write or not teleport or write > teleport then
+			error("send must store the launch record (SetAsync) before TeleportAsync", 0)
+		end
+	end,
+
+	["the pad rings launch through LaunchService.send"] = function()
+		local text = fs.readFile("src/lobby/server/LaunchService.luau")
+		local lift = string.match(text, "local function lift%(.-\nend\n") or ""
+		if string.find(lift, "TeleportAsync(", 1, true) then
+			error("lift teleports by itself; it should call send", 0)
+		end
+	end,
+
+	["MissionBoardService refuses a mission that is not open"] = function()
+		local path = "src/lobby/server/MissionBoardService.luau"
+		if
+			not fs.isFile(path)
+			or not string.find(fs.readFile(path), "MissionCatalog.isOpen(", 1, true)
+		then
+			error("MissionBoardService does not check MissionCatalog.isOpen", 0)
+		end
+	end,
 }

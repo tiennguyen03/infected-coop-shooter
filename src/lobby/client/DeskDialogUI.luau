@@ -25,6 +25,7 @@ local DeskShop = require(script.Parent.DeskShop)
 local DeskTalk = require(script.Parent.DeskTalk)
 local HoldStill = require(script.Parent.HoldStill)
 local HudTheme = require(script.Parent.HudTheme)
+local MissionBoardUI = require(script.Parent.MissionBoardUI)
 
 local DeskDialogUI = {}
 
@@ -112,6 +113,7 @@ function DeskDialogUI.init()
 		openPrompt = nil
 		DeskShop.hide()
 		leaveMap()
+		MissionBoardUI.close() -- its own close calls back here once: a no-op the second time
 	end
 
 	local openTalk: (chosen: LobbyDesks.Desk, prompt: ProximityPrompt) -> ()
@@ -140,11 +142,16 @@ function DeskDialogUI.init()
 				close()
 				return
 			end
-			say(current.talk.openLine)
 			if current.id == "plot" then
+				-- The Mission Board takes the talk panel's place over the map (loop sprint 1).
 				viewMap()
 				closeAt = math.huge -- stays up while you read the map
+				ContextActionService:UnbindAction(ACTION_CHOOSE)
+				panel.Visible = false
+				MissionBoardUI.open(current.talk.openLine, current.who, close)
+				return
 			end
+			say(current.talk.openLine)
 			local sells = KitPrices.soldAt(current.id)
 			if #sells > 0 then
 				DeskShop.show(current.title, sells, current.talk)
@@ -221,7 +228,7 @@ function DeskDialogUI.init()
 	end)
 
 	RunService.Heartbeat:Connect(function()
-		if not panel.Visible then
+		if not panel.Visible and not MissionBoardUI.isOpen() then
 			return
 		end
 		local tooFar = false

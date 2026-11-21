@@ -5543,6 +5543,10 @@ local Config = {
 		-- any kit that is not a call-in), one desk sells every call-in, the Loadmaster only signs
 		-- Loadouts. `Desk = "<id>"` on a gun, grenade or call-in row moves just that item.
 		Sellers = { Gun = "arms_room", Grenade = "arms_room", CallIn = "callins" },
+		-- The map room's Mission Board (MissionBoardService, MissionBoardUI): pick a mission, DEPLOY.
+		MissionBoard = {
+			DeployCooldown = 5, -- seconds between one soldier's DEPLOYs
+		},
 		Launch = {
 			Spots = 4, -- numbered Lantern spots on the flight deck
 			Capacity = 4, -- soldiers per bird (one squad)

@@ -7,6 +7,7 @@ require(script.Parent.DefaultStepMute).init()
 require(script.Parent.SoldierMoves).init()
 require(script.Parent.SlingHands).init()
 require(script.Parent.LaunchUI).init()
+require(script.Parent.MissionBoardUI).init() -- before DeskDialogUI, which opens it
 require(script.Parent.DeskDialogUI).init()
 require(script.Parent.RecordClient).init()
 require(script.Parent.WalletUI).init()
