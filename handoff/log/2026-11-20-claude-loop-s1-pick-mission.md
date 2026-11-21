@@ -12,7 +12,11 @@ Stop, Burn the Buses + Kill the Horn (Sanitize / SilenceAlarm with row words, `T
 `Noise`) and the shared objectives, the Warden as a stand-in. `Config.Operation` is gone.
 **Verified:** specs first (`MissionCatalog`, `MissionPick`, `Mile14`, `MissionWiring`, the row
 words check), 839/839, stylua, selene, both builds and type checks; performance review: nothing
-blocking. Studio checks: see the PR (Delta fingerprint, Mile 14 walk, the board).
+blocking; a fresh whole-branch review (4 important findings fixed, test first). Studio, live: Delta builds
+part for part as before (fingerprint of 1,739 parts identical), all 52 systems start; Mile 14 boots
+from the Workspace tag, every objective draws and starts, the Warden comes to the jam, extraction
+opens at the Rest Stop pad. Not checked live: the Mission Board (lobby not connected), a real
+teleport (Studio cannot), the night look and frame rate on the owner's PC.
 **Heads-up:** **Nova:** your area changed: `LaunchService` (the teleport moved into
 `LaunchService.send(party, missionId, spot?)`, `lift` calls it), new `MissionBoardService` and
 `MissionBoardUI`, `DeskDialogUI` (the plot's choice 1 opens the board and hides the talk; its
