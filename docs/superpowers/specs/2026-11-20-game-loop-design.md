@@ -228,6 +228,14 @@ New lobby `PartyService` (state per leader, up to 4) and `PartyUI`.
    table prompt and Mission Board UI; `LaunchService` takes a mission id (pad rings still
    work this sprint).
 2. **Party panel and invites.** `PartyService`, `PartyUI`, DEPLOY; the rings retire.
+2b. **The Driver, Mile 14's boss** (owner 2026-11-20: "where is the design for the other
+   boss"). His design exists in `docs/sprints/SPRINT_20_MILE14.md` > The Driver (on
+   `origin/claude/mile14`, carried by PR #26, never approved): the lead-bus driver belted
+   into his seat, 9,000 HP, Vent / Crush / Retch, the "Passengers" phase, the death cloud
+   the pallet lands in, fire flashes his gas; body built in `driver.py`, not uploaded.
+   First the systems designer refreshes it against the Warden rework (#91: entrance,
+   weight, stages) and the v2 coordinates (his entry path is v1's), the owner approves, then
+   it is built and replaces the Warden stand-in before players get Mile 14.
 3. **The war goes live.** `Rules/War` + spec, `WarService` flush at run end, the board's real
    read, the map shading, the debrief line.
 4. **Reasons to pick.** Orders, `wins.<district>` on the record (SaveSchema bump,
