@@ -29,6 +29,7 @@ local Optics = require(ReplicatedStorage.Shared.Attachments.Optics)
 local Record = require(ReplicatedStorage.Shared.Rules.Record)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local Showcase = require(ReplicatedStorage.Shared.Showcase)
+local VisualApplier = require(script.Parent.Attachments.VisualApplier)
 local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
 local AttachmentMenuV2 = require(script.Parent.AttachmentMenuV2)
 local HudTheme = require(script.Parent.HudTheme)
@@ -174,9 +175,44 @@ function GunsmithUI.open(
 	end
 	showGun()
 
+	-- The attachments' parts (VisualApplier, as on the gun in a match): the preview's gun is
+	-- built at the grip's origin, so a Handle there is all the applier needs. A model still
+	-- loading on the server is put on when it arrives.
+	local holder = Instance.new("Model")
+	holder.Name = "Fitting"
+	local grip = Instance.new("Part")
+	grip.Name = "Handle"
+	grip.Anchored = true
+	grip.Transparency = 1
+	grip.Size = Vector3.one * 0.1
+	grip.CFrame = CFrame.new()
+	grip.Parent = holder
+	holder.Parent = shown
+	local function showParts()
+		local body = gunBody
+		if body and body:IsA("BasePart") then
+			VisualApplier.apply(holder, body, gunId, fitted)
+			local folder = holder:FindFirstChild(VisualApplier.FOLDER)
+			if folder then
+				for _, part in folder:GetChildren() do
+					if part:IsA("BasePart") then
+						part.Anchored = true
+					end
+				end
+			end
+		end
+	end
+	local meshes = ReplicatedStorage:FindFirstChild("AttachmentMeshes")
+	local arrived = if meshes
+		then meshes.ChildAdded:Connect(function()
+			showParts()
+		end)
+		else nil
+
 	-- The suppressor as it would sit (PlayerSetup's Suppressor part).
 	local can: Part? = nil
 	local function showFitting()
+		showParts()
 		if can then
 			can:Destroy()
 			can = nil
@@ -428,6 +464,9 @@ function GunsmithUI.open(
 		end
 		closed = true
 		spin:Disconnect()
+		if arrived then
+			arrived:Disconnect()
+		end
 		opticEvents:Disconnect()
 		if stopMenu then
 			stopMenu()

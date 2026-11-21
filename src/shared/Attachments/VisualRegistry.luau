@@ -18,7 +18,8 @@ local VisualRegistry = {}
 -- it (`down`: a grip, a bipod's legs) or across it (`side`). `length` is the studs that long
 -- axis is scaled to (the gun's scale: the M16A4 is 3.1 long). `anchor`: the face that meets the
 -- mount (`bottom`: sits on the rail; `top`: hangs under it; `back`: out from the muzzle).
--- The meshes' own facing is unverified until seen in Studio: only the long axis is matched.
+-- Each mesh comes facing the gun's way (seen in Studio 2026-11-20): it is scaled along that
+-- axis, never turned. The CompM2 found (Aimpoint1, 76899261380970) is not a valid mesh asset.
 export type Model = {
 	assetId: number, -- the Creator Store asset (free)
 	meshId: string,
@@ -37,15 +38,6 @@ VisualRegistry.MODELS = {
 		length = 0.5,
 		anchor = "bottom",
 		source = "Meshes/ACOG by pablospanish",
-	},
-	att_compm2 = {
-		assetId = 76899261380970,
-		meshId = "rbxassetid://78302610426977",
-		textureId = "rbxassetid://83384019987649",
-		long = "forward",
-		length = 0.45,
-		anchor = "bottom",
-		source = "Aimpoint1 by Drynpypkin",
 	},
 	att_flash_hider = {
 		assetId = 430309776,

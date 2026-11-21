@@ -174,7 +174,6 @@ local Config = {
 			ZoomMultiplier = 1.48, -- 2.0 (a sight that is not a scope stops at 2x, Rules/Sight)
 			AdsTimeMultiplier = 1.0, -- 0.15 s
 			Price = 250,
-			Visual = "att_compm2", -- its part on a gun without a Fit (VisualRegistry)
 			Reticle = { Size = 5, Glow = 6, Color = Color3.fromRGB(255, 48, 40) }, -- the 2 MOA dot
 			Fit = {
 				service_rifle = {

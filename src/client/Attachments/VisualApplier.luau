@@ -2,10 +2,10 @@
 -- Puts a fitting's attachment parts on a gun (attachment visuals, Nova 2026-11-20). Shared by
 -- every gun: nothing here names one. For each slot of `fitting` whose option has a model
 -- (Shared.Attachments.VisualRegistry) and whose gun has that mount (Shared.Attachments
--- .MountPoints), a copy of the model (ReplicatedStorage.AttachmentMeshes) is turned so its long
--- axis lies the way the registry says, scaled to its length, set against the mount by its
--- anchor face and welded to the gun's Body, in the tool's AttachmentVisuals folder (whose
--- Version attribute FirstPersonView watches). Client side only: the server never renders.
+-- .MountPoints), a copy of the model (ReplicatedStorage.AttachmentMeshes) is scaled to its
+-- length along the axis the registry names, set against the mount by its anchor face and
+-- welded to the gun's Body, in the tool's AttachmentVisuals folder (whose Version attribute
+-- FirstPersonView watches). Client side only: the server never renders.
 -- The M16A4's optics stay its own meshes (an optic with a Fit for this gun is skipped) and the
 -- suppressor stays PlayerSetup's. A missing model or mount is skipped, never an error.
 
@@ -19,28 +19,15 @@ local VisualApplier = {}
 
 VisualApplier.FOLDER = "AttachmentVisuals"
 
-local WANT: { [string]: string } = { forward = "Z", down = "Y", side = "X" }
-
-local function longestAxis(size: Vector3): string
-	if size.X >= size.Y and size.X >= size.Z then
-		return "X"
+-- The model's own axis its `long` names (the meshes come facing the gun's way: measured in
+-- Studio 2026-11-20, the scopes and muzzle devices along Z, the grip down Y, the bipod across X).
+local function along(size: Vector3, long: string): number
+	if long == "down" then
+		return size.Y
+	elseif long == "side" then
+		return size.X
 	end
-	return if size.Y >= size.Z then "Y" else "Z"
-end
-
--- The quarter turn that lays local axis `from` along `to` (about the third axis), and the
--- size it then spans in the gun's axes.
-local function turn(from: string, to: string, size: Vector3): (CFrame, Vector3)
-	if from == to then
-		return CFrame.new(), size
-	end
-	local pair = from .. to
-	if pair == "XY" or pair == "YX" then
-		return CFrame.Angles(0, 0, math.pi / 2), Vector3.new(size.Y, size.X, size.Z)
-	elseif pair == "XZ" or pair == "ZX" then
-		return CFrame.Angles(0, math.pi / 2, 0), Vector3.new(size.Z, size.Y, size.X)
-	end
-	return CFrame.Angles(math.pi / 2, 0, 0), Vector3.new(size.X, size.Z, size.Y)
+	return size.Z
 end
 
 local function offsetFor(anchor: string, spans: Vector3): Vector3
@@ -89,13 +76,10 @@ function VisualApplier.apply(
 			then
 				local part = template:Clone()
 				local raw = part.Size
-				local from = longestAxis(raw)
-				local longest = if from == "X" then raw.X elseif from == "Y" then raw.Y else raw.Z
-				local scale = model.length / math.max(longest, 1e-3)
-				local rotation, spans = turn(from, WANT[model.long], raw * scale)
+				local scale = model.length / math.max(along(raw, model.long), 1e-3)
 				part.Size = raw * scale
-				local at = (mount.at :: Vector3) + offsetFor(model.anchor, spans)
-				part.CFrame = handle.CFrame * CFrame.new(at) * rotation
+				local at = (mount.at :: Vector3) + offsetFor(model.anchor, part.Size)
+				part.CFrame = handle.CFrame * CFrame.new(at)
 				part:SetAttribute("Slot", slot)
 				local weld = Instance.new("WeldConstraint")
 				weld.Part0 = body
