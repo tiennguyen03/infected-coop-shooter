@@ -137,4 +137,22 @@ return {
 		local behind = War.merge(board, { DELTA = 2 }, 900, CFG)
 		eq(behind.districts.DELTA.at, 1000, "kept the later time")
 	end,
+
+	-- Loop sprint 5: seasons.
+	["season numbers count from the first season's start"] = function()
+		local DAY = 86400
+		eq(War.season(1000, 1000, 28), 1, "the first day")
+		eq(War.season(1000 + 27 * DAY, 1000, 28), 1, "day 28")
+		eq(War.season(1000 + 28 * DAY, 1000, 28), 2, "day 29 is season 2")
+		eq(War.season(500, 1000, 28), 1, "before the start counts as the first")
+	end,
+
+	["each season has its own store"] = function()
+		eq(War.storeFor("War_S", 1), "War_S1", "one")
+		eq(War.storeFor("War_S", 12), "War_S12", "twelve")
+	end,
+
+	["season end time"] = function()
+		eq(War.seasonEnds(1000 + 5, 1000, 28), 1000 + 28 * 86400, "first season ends")
+	end,
 }

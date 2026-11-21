@@ -232,9 +232,10 @@ return {
 	end,
 
 	["the lobby reads the war board from the shared store"] = function()
-		local text = fs.readFile("src/lobby/server/ContainmentBoard.luau")
-		if not string.find(text, "Config.War.Store", 1, true) then
-			error("ContainmentBoard does not read the war store", 0)
+		for _, path in { "src/lobby/server/ContainmentBoard.luau", "src/server/WarService.luau" } do
+			if not string.find(fs.readFile(path), "War.storeFor(", 1, true) then
+				error(`{path} does not use this season's store`, 0)
+			end
 		end
 	end,
 

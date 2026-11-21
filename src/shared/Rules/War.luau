@@ -130,4 +130,19 @@ function War.gainText(district: string, points: number, cfg: Settings, secured: 
 	return `{district} +{text}%`
 end
 
+-- Seasons (loop sprint 5): the board starts over every `days` days from `start` (os.time()),
+-- in a new store, so nothing has to wipe anything; personal unlocks live on each record and stay.
+function War.season(now: number, start: number, days: number): number
+	return math.max(0, math.floor((now - start) / (days * 86400))) + 1
+end
+
+function War.storeFor(prefix: string, season: number): string
+	return `{prefix}{season}`
+end
+
+-- When the season running at `now` ends (os.time()).
+function War.seasonEnds(now: number, start: number, days: number): number
+	return start + War.season(now, start, days) * days * 86400
+end
+
 return War

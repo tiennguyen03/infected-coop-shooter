@@ -57,7 +57,10 @@ end
 -- callers run it off the main thread.
 function ContainmentBoard.read(): { District }
 	local ok, raw = pcall(function()
-		return DataStoreService:GetDataStore(Config.War.Store):GetAsync(Config.War.Key)
+		local cfg = Config.War
+		local store =
+			War.storeFor(cfg.StorePrefix, War.season(os.time(), cfg.SeasonStart, cfg.SeasonDays))
+		return DataStoreService:GetDataStore(store):GetAsync(cfg.Key)
 	end)
 	if ok then
 		last = War.merge(raw, {}, os.time(), settings())

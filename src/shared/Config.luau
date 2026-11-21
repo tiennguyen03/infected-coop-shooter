@@ -5362,7 +5362,11 @@ local Config = {
 	-- the order and start values). Loop sprint 3.
 	War = {
 		Enabled = true, -- false: no mission moves the board (it shows the start values)
-		Store = "War_S1", -- DataStore: the season (a new season = a new store name)
+		-- Seasons: the board starts over every SeasonDays from SeasonStart in a new store
+		-- (StorePrefix .. season: War_S1, War_S2, ...); personal unlocks live on each record and stay.
+		StorePrefix = "War_S",
+		SeasonStart = 1795219200, -- 2026-11-21 00:00 UTC: season 1
+		SeasonDays = 28,
 		Key = "board",
 		Retries = 2,
 		RetryDelay = 2,

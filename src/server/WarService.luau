@@ -36,6 +36,11 @@ function WarService.settings(): War.Settings
 	return settings
 end
 
+-- This season's store (Rules/War.season: a new store every Config.War.SeasonDays).
+function WarService.storeName(): string
+	return War.storeFor(CFG.StorePrefix, War.season(os.time(), CFG.SeasonStart, CFG.SeasonDays))
+end
+
 -- Whether this mission's district is Secured (read once at boot; false until it lands).
 function WarService.securedHere(): boolean
 	return secured
@@ -50,7 +55,7 @@ end
 
 local function store(): GlobalDataStore?
 	local ok, result = pcall(function()
-		return DataStoreService:GetDataStore(CFG.Store)
+		return DataStoreService:GetDataStore(WarService.storeName())
 	end)
 	if not ok then
 		warnOnce(tostring(result))

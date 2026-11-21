@@ -22,6 +22,7 @@ local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Containment = require(ReplicatedStorage.Shared.Rules.Containment)
 local Orders = require(ReplicatedStorage.Shared.Rules.Orders)
+local War = require(ReplicatedStorage.Shared.Rules.War)
 local PartyUI = require(script.Parent.PartyUI)
 
 local MissionBoardUI = {}
@@ -257,7 +258,16 @@ function MissionBoardUI.open(line: string, who: string, closed: () -> ())
 		else ""
 	voice.Text = `"{line}"{orderLine}`
 	local header = frame:FindFirstChild("Header") :: TextLabel
-	header.Text = `//MISSION BOARD  {HudTheme.tint(string.upper(who), C.TextDim)}`
+	-- The season (Rules/War): the board starts over when it ends; unlocks stay.
+	local war = Config.War
+	local now = os.time()
+	local season = War.season(now, war.SeasonStart, war.SeasonDays)
+	local daysLeft =
+		math.max(0, math.ceil((War.seasonEnds(now, war.SeasonStart, war.SeasonDays) - now) / 86400))
+	header.Text = `//MISSION BOARD  {HudTheme.tint(
+		`{string.upper(who)} · SEASON {season} · {daysLeft} DAYS LEFT`,
+		C.TextDim
+	)}`
 	-- The first open card starts picked, so DEPLOY is never dead on arrival.
 	selected = nil
 	for _, card in cards do
