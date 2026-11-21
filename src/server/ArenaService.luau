@@ -136,6 +136,7 @@ local function buildParts(parent: Instance)
 		local cframe = CFrame.new(spec.at) * CFrame.Angles(0, math.rad(spec.yaw or 0), 0)
 		local part = makePart(spec.name, spec.size, cframe, look.Color, class)
 		part.Material = look.Material
+		part.CastShadow = spec.size.Y >= 1 -- paving, paint and lines are flat: no shadow work
 		part.Parent = folder
 	end
 	folder.Parent = parent

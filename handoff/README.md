@@ -6,7 +6,7 @@ last one. **End of a session:** edit this page in place (never append history he
 under 7k) and add one note to `handoff/log/` (format in `handoff/log/README.md`). What
 shipped: `docs/HISTORY.md`. The owner's one page of everything open: [docs/BACKLOG.md](../docs/BACKLOG.md).
 
-Last updated: 2026-11-20 by Nova + Claude (playtest fixes: the saved Loadout on a direct join, the Infected pass through soldiers, the red dot's dot, on `nova/playtest-fixes`).
+Last updated: 2026-11-20 by Tien + Claude (loop sprint 1: the Mission Board and Mile 14, on `claude/loop-s1-pick-mission`).
 
 ## Now
 
@@ -40,6 +40,13 @@ Last updated: 2026-11-20 by Nova + Claude (playtest fixes: the saved Loadout on 
 - **The Fifty** (`nova/visitor-fifty`, stacked on `nova/playtest-fixes`): the Barrett, sold by
   the Visitor; the first friendly fire in the game (its overpen, `Rules/Overpen`). Wears the
   M2010's mesh until Nova downloads a Barrett model (`docs/BACKLOG.md`).
+- **The game loop, sprint 1 of 5** (`claude/loop-s1-pick-mission`, built on Nova's stack #96-#99;
+  plan: `docs/superpowers/specs/2026-11-20-game-loop-design.md`): the map room's watch officer
+  opens the **Mission Board** (pick Delta or Mile 14, DEPLOY alone with bots); **Mile 14** is the
+  v2 layout in grey blocks with its own objectives (PROGRESSION > Missions). One match place
+  builds any mission from `MissionCatalog` (the lobby's MemoryStore launch record). **Nova:**
+  lobby files touched, listed in `handoff/log/2026-11-20-claude-loop-s1-pick-mission.md`.
+  Next: party invites (sprint 2), the Driver (2b), the live city war (3).
 - **Off switches** exist for every new system (`Config.<System>.Enabled = false`); the
   feature's doc names them. Prefer a switch over a revert.
 - **Next after #92 is played:** difficulty levels, a four-player test with Nova and friends
@@ -77,7 +84,7 @@ Claim a line before starting it; delete it when it ships. Details live in the li
 ## Checks
 
 After every change, all clean (exact commands: `AGENTS.md` > Commands): stylua, selene, both
-Rojo builds, 687 Lune tests (rules plus the source-wiring spec, which also reads the lobby's
+Rojo builds, 839 Lune tests (rules plus the source-wiring spec, which also reads the lobby's
 remotes and refuses key literals), luau-lsp on both places. CI runs the same on every push.
 
 ## Where to look

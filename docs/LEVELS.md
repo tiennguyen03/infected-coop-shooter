@@ -4,7 +4,10 @@ Layout spec from the level designer ([PROGRESSION.md](PROGRESSION.md)). Frame: 6
 (the big Delta test map is 1,800 x 1,800: section E), origin centre, +X east, +Z north
 (ArenaService convention). Positions are (x, z) of a piece's bounds centre; y only where it
 matters. Ground is raycast. Visual rules (materials, colours, sky) are in
-[STYLES.md](STYLES.md) §6-7. Mile 14 and Kestrel (not built, was section C):
+[STYLES.md](STYLES.md) §6-7. **Mile 14 is now the v2 layout in grey blocks** (2026-11-20): every
+number in `src/server/Missions/Mile14Data.luau`, sites in `ObjectiveDefinitions.Maps.mile14`,
+summary in PROGRESSION.md > Missions > Mile 14; v2 sizes and pictures in
+`docs/sprints/SPRINT_20_MILE14.md` > "Mile 14 v2". Kestrel (not built, was section C):
 [LATER.md](LATER.md).
 
 **Contents** (read only the section you need): A Checkpoint Delta (A2 landmarks, A3 sites,

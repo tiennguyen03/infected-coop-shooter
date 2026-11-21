@@ -880,11 +880,26 @@ Mile 14's boss in its own objectives.
 
 ## Missions
 
-Every mission is a 600 x 600 map with up to five height levels, built in code (layout and
+Every mission is a map built in code (Delta 600 x 600, Mile 14 640 x 900) with up to five height levels (layout and
 coordinates: [LEVELS.md](LEVELS.md); look: [STYLES.md](STYLES.md)). Each has four to six named
 landmarks, three objective sites, one Index entry, one helo pad plus an alternate, two story
 spots and two to four stores. Lighting moves with the corridor: evening at Delta, full dark at
 Mile 14, dawn at Kestrel. The burning skyline is the districts that already got their Burn.
+
+**Picking a mission (loop sprint 1, 2026-11-20; design:
+[superpowers/specs/2026-11-20-game-loop-design.md](superpowers/specs/2026-11-20-game-loop-design.md)).**
+On the Carrier, the watch officer's "Show me the missions." opens the paper map and the Mission
+Board: one card per mission in `src/shared/MissionCatalog.luau` (a row: id, name, district,
+layout file, objective pool, boss, line, players, an optional `Window` for events and an
+optional own `Place`). DEPLOY flies the soldier alone with bots (the party comes in sprint 2;
+the deck's rings still fly to Delta). One match place builds any mission: the lobby stores
+`{ mission, party }` in MemoryStore (`Config.Missions.LaunchMap`) under the reserved server's
+PrivateServerId before the teleport, and the match reads it at boot (`Missions/init`,
+`Rules/MissionPick`: the launch record, else the Workspace `Mission` attribute, else Delta;
+a failed read builds Delta and says so in the log). Each mission file carries its own frame,
+pads, boss route, hold point, blocks and which of Delta's builders run
+(`MissionTypes.Mission`: `Size`, `Landing`, `Extract`, `AltPad`, `Boss`, `Hold`, `Parts`,
+`Features`). A new mission is a catalog row, a layout file and an objective pool.
 
 ### Checkpoint Delta (built)
 
@@ -901,6 +916,32 @@ Mile 14, dawn at Kestrel. The burning skyline is the districts that already got 
 - **Band dressing:** Lost: Gate siren looping. Held: main-road lamps lit, Ridge fire to
   smoke, siren silent. Contained: all lamps, Depot pad permanent, intact humvee with
   headlights at the Gate, wind instead of siren.
+
+### Mile 14 (grey frame, 2026-11-20; unplayed)
+
+- **The map:** the Blender v2 layout (owner 2026-11-20), 640 x 900, in grey blocks
+  (`Missions/Mile14Data.luau`, from `assets/3d/build/mile14_v2.py`; pictures
+  `assets/3d/build/previews/mile14_v2_*.png`). A six-lane interstate deck at 12 jammed with 24
+  sealed buses (6 burning), the Overpass span and county road at 26 with four interchange
+  ramps, the Culvert under the deck, the tanker jackknife, the Toll Plaza, the Rest Stop
+  (west) and the Weigh Station (east) at ground level, the water tower knoll.
+- **One way, at night, quiet:** land on the Toll Plaza's admin lot (130, 12.6, 310), get out
+  at the Rest Stop's pad (-262, 0.6, -195), about 640 studs south. Nova's awareness system
+  plays here (`Config.Awareness.Missions.mile14`).
+- **Main objectives** (`ObjectiveDefinitions.Maps.mile14`): **Burn the Buses** (its own: three
+  sealed buses in the jam, the Sanitize module with its own words), Secure the Site (the
+  Overpass, the toll plaza, the rest stop), Restore Comms (the water tower), Confirm
+  Casualties (the weigh station), Recover the Record (the toll office to the Overpass).
+- **Side objectives:** **Kill the Horn** (its own: a stuck bus horn that wakes the Infected,
+  a 200-stud noise every 6 s until killed; the SilenceAlarm module with `Target`, `Noise`;
+  the siren sound stands in for a horn), Lights On (the weigh station's generator), Misdrop,
+  Clear the Spitters.
+- **Boss:** the Warden stands in until the Driver (owner 2026-11-20; design in
+  `docs/sprints/SPRINT_20_MILE14.md` > The Driver, to be refreshed in loop sprint 2b). He
+  comes from a site's `BossFrom` where it has one, else from open ground nearby; with the
+  pools off he walks north up the lane from the south barricade.
+- **Not yet:** the kit art (booths, canopies, span mesh, gantries, signs, cars, skyline), the
+  woods and brush in the four fields, sleepers placed at posts (loop sprint 5).
 
 ### Awareness (the quiet missions)
 

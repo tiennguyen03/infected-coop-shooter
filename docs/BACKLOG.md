@@ -24,6 +24,7 @@ Merging #92 (Integration 5, "Create a merge commit") brings in #86 and #88-#91 a
 | #90 Dangerous Infected | Brute: armoured front, charges and knocks the squad down; Runners in packs pounce and pin you; Hockers spit three globs and lob over cover; a Walker crowd grabs and slows (`docs/sprints/FUN_ENEMIES.md`) | F1 > INFECTED > THE MOVES; can you see the charge and pounce coming; is a pin scary but fair; hard enough solo with bots? "Moves off" if too much |
 | #91 The Warden as a boss | An entrance (dive, shake, roar, boss bar, his music); bigger, no flinch, a heavy walk; at 66% and 33% he roars and calls Brutes; the Quake (jump or roll the rings) and the Rampage; charges smash small cover (`docs/sprints/FUN_WARDEN.md`) | F1 > THE WARDEN > "In front of me", then the stage, Quake and Rampage buttons. Boss now? walk heavy, not goofy? shakes too much? music audible? fight length with the squad |
 | #94 Safe saves (built on #92) | Nothing you see changes. Every save has a version, so new saved things never wipe a player; a save the game cannot read is never written over and shows SAVE OFFLINE under the wallet (`docs/SAVES.md`) | play the lobby once after merging: merits, kit and Loadout still there, no SAVE OFFLINE (it also shows in Studio without API access) |
+| Loop sprint 1: pick a mission (`claude/loop-s1-pick-mission`, built on #92-#99) | The map room's watch officer opens the **Mission Board**: pick Checkpoint Delta or **Mile 14**, DEPLOY flies you in alone with bots. Mile 14 is the Blender v2 layout in grey blocks, at night and quiet, one way from the Toll Plaza to the Rest Stop; its own Burn the Buses and Kill the Horn, the shared objectives, the Warden as a stand-in (`docs/PROGRESSION.md` > Missions) | live (Studio can't teleport): talk to the watch officer, pick Mile 14, DEPLOY; walk Mile 14 pad to pad; is the night walk tense; is the horn a reason to go; does Delta still play the same. In Studio: Workspace attribute `Mission` = `mile14` |
 | Attachment system v2 (`nova/attachment-system-v2`, Nova) | The M16A4's EDIT: seven slots, each option bought once with merits; ammo types change the round. Stats only | buy and fit a few; a clash (suppressed barrel + muzzle brake); the drum, AP on a Brute, the laser |
 | The Mossberg on v2 (`nova/attachment-rollout-mossberg`, Nova; waits for #97) | Seven slots; four shells: buckshot, slug, Dragon's Breath (sets them burning), breaching (opens hut and shed walls). Stats only | slug + full choke: refused, with why; burn a crowd; breach a hut wall (2 shots, 1 with the breaching muzzle) |
 | Every gun on v2 (`nova/attachment-rollout-all-guns`, Nova; after the Mossberg and #96) | Every gun but the Goose gets its slots and rounds (the M249's belt box, the M2010's magnum, the Fifty's AP); a few parts now show on the gun (grips, the MP5's flash hider and CompM2, the M110's bipod, the M249's ACOG) | fit a vertical grip: is it under the handguard, the right way up, the right size; subsonic without a suppressor warns; magnum + light stock refused. **Next:** split the gun meshes so barrels, mags and stocks can show; the missing models in the PR |
@@ -61,12 +62,11 @@ Merging #92 (Integration 5, "Create a merge commit") brings in #86 and #88-#91 a
 | 8 | Doorman: a smooth turn and a muzzle flash? | yes |
 | 9 | Tab packs: sizes and Robux prices (placeholders 100 / 550 / 1200) | decide with Nova |
 | 10 | Shedder and Kite: another Blender pass before the game? | yes |
-| 11 | Mile 14: v1, v2, or v2's skyline on v1's frame? | look at the pictures first |
 | 12 | Generator to 4.8; light-tower collision as two boxes | older calls still open |
 | 13 | The big map's river runs east-west, the map room's paper map has it down the west side: call it a side river that joins it? | yes |
 | 14 | Big map on for everyone after you play it, or a test until the Infected are spread for it? | a test until then |
 
-Decided: game picks the main objective for now; two side objectives per run; tabs will buy
+Decided: Mile 14 is the v2 layout (2026-11-20); the game loop design (2026-11-20, docs/superpowers/specs); game picks the main objective for now; two side objectives per run; tabs will buy
 guns and upgrades; keep HARLAN; yellow stamina bar; shove is free; the Open Cloud key stays
 (2026-11-11). Kit Mods allowed (2026-11-18). Plain words for players done (2026-11-19,
 `docs/LORE.md` > Naming).
@@ -107,7 +107,7 @@ extract, back or keep going).
 3. Difficulty levels chosen in the lobby.
 4. Bloat and Crawler in the game.
 5. A real four-player test with Nova and two friends.
-6. Choosing the mission in the lobby (after Mile 14 is in).
+6. The rest of the game loop (sprints 2-5 of `docs/superpowers/specs/2026-11-20-game-loop-design.md`): party invites from a menu, the Driver as Mile 14's boss, the live city war on the map, reasons to pick a mission (Orders, district unlocks), seasons and Mile 14's art.
 7. Delta's second signature objective, Open the Gate.
 8. Checkpoint Delta v2 and Mile 14 in the game once the pictures are approved.
 
