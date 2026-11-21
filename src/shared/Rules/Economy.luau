@@ -43,6 +43,11 @@ function Economy.payFor(
 	end
 	return pay
 end
+-- A mission's merits with a HARLAN Order's bonus (Rules/Orders.bonus: 0.25 = +25%), rounded down.
+function Economy.boosted(amount: number, bonus: number): number
+	return math.floor(amount * (1 + math.max(0, bonus)))
+end
+
 -- The tabs a developer product pays, or nil when no pack has that id. ProductId 0 marks a
 -- pack not created on Roblox yet and never matches.
 function Economy.tabsFor(productId: number, packs: { TabPack }): number?

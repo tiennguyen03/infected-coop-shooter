@@ -5372,6 +5372,19 @@ local Config = {
 		UnlockAt = 50, -- the next district opens when this one reaches it (and stays open)
 		OpenAtStart = 2, -- Delta and Mile 14 are open from day one (owner 2026-11-20)
 		SecuredPay = 0.25, -- a Secured district's missions pay this share of their merits
+		-- HARLAN Orders (Rules/Orders): one at a time; its district's card is gold on the Mission
+		-- Board and its missions pay PayBonus more. From / To are os.time() (UTC).
+		Orders = {
+			{
+				Id = "mile14_push_1",
+				District = "MILE 14",
+				Target = 50,
+				From = 1795219200, -- 2026-11-21
+				To = 1795910400, -- 2026-11-29
+				PayBonus = 0.25,
+				Text = "Push Mile 14 to 50% this week. Clear the convoy.",
+			},
+		},
 		MaxWritesPerServerHour = 6, -- backstop: a match server never writes the board more often
 		ShutdownWait = 10, -- seconds a closing server waits for a war save still in flight
 		StudioWrites = false, -- true: a Studio playtest with API access writes the live board (testing only)

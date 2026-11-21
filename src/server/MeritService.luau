@@ -23,6 +23,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Economy = require(ReplicatedStorage.Shared.Rules.Economy)
+local Orders = require(ReplicatedStorage.Shared.Rules.Orders)
 local Record = require(ReplicatedStorage.Shared.Rules.Record)
 local Lifecycle = require(script.Parent.Lifecycle)
 local Missions = require(script.Parent.Missions)
@@ -138,8 +139,13 @@ function MeritService.pay(outcome: string, secondaries: number)
 	-- The mission's own pay (MissionCatalog `Pay`), a share of it in a Secured district.
 	local pay =
 		Economy.payFor(PAY, Missions.row().Pay, WarService.securedHere(), Config.War.SecuredPay)
-	local amount = Economy.missionMerits(outcome, secondaries, pay)
-	local wonIn = if outcome == "win" then Missions.row().District else nil
+	local district = Missions.row().District
+	local order = Orders.active(Config.War.Orders, os.time())
+	local amount = Economy.boosted(
+		Economy.missionMerits(outcome, secondaries, pay),
+		Orders.bonus(order, district)
+	)
+	local wonIn = if outcome == "win" then district else nil
 	local players = Players:GetPlayers()
 	payRun += 1
 	local run = payRun

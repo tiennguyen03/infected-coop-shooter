@@ -21,6 +21,7 @@ local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Containment = require(ReplicatedStorage.Shared.Rules.Containment)
+local Orders = require(ReplicatedStorage.Shared.Rules.Orders)
 local PartyUI = require(script.Parent.PartyUI)
 
 local MissionBoardUI = {}
@@ -61,7 +62,10 @@ local function refreshBadges(cardList: { Card })
 			if district and typeof(district.percent) == "number" then
 				local shown = Containment.percent(district.percent)
 				local band = Containment.band(district.percent, Config.Containment.Bands)
-				badge.Text = `{shown}% · {string.upper(band)}`
+				local order = Orders.active(Config.War.Orders, os.time())
+				local tag = if order and order.District == district.name then "ORDER · " else ""
+				badge.Text = `{tag}{shown}% · {string.upper(band)}`
+				card.button:SetAttribute("Order", tag ~= "")
 			else
 				badge.Text = ""
 			end
@@ -185,10 +189,15 @@ local function buildCard(parent: Instance, row: MissionCatalog.Row, order: numbe
 	badge.Position = UDim2.new(1, -12, 0, 10)
 	badge:SetAttribute("District", row.District)
 	local function hover(on: boolean)
-		stroke.Thickness = if on then 2 else 1
-		stroke.Color = if on then C.Text else C.White
-		stroke.Transparency = if on then 0 else HudTheme.OutlineTransparency
+		-- A HARLAN Order's card keeps its gold border (Rules/Orders; refreshOrder).
+		local ordered = button:GetAttribute("Order") == true
+		stroke.Thickness = if on or ordered then 2 else 1
+		stroke.Color = if on then C.Text elseif ordered then C.Yellow else C.White
+		stroke.Transparency = if on or ordered then 0 else HudTheme.OutlineTransparency
 	end
+	button:GetAttributeChangedSignal("Order"):Connect(function()
+		hover(false)
+	end)
 	button.MouseEnter:Connect(function()
 		hover(true)
 	end)
@@ -241,7 +250,12 @@ function MissionBoardUI.open(line: string, who: string, closed: () -> ())
 	open = true
 	onClosed = closed
 	lifting = false
-	voice.Text = `"{line}"`
+	-- The HARLAN Order running now, under the officer's line (Rules/Orders).
+	local order = Orders.active(Config.War.Orders, os.time())
+	local orderLine = if order
+		then `\nORDER: {order.Text} (+{math.floor(order.PayBonus * 100)}% merits at {order.District})`
+		else ""
+	voice.Text = `"{line}"{orderLine}`
 	local header = frame:FindFirstChild("Header") :: TextLabel
 	header.Text = `//MISSION BOARD  {HudTheme.tint(string.upper(who), C.TextDim)}`
 	-- The first open card starts picked, so DEPLOY is never dead on arrival.

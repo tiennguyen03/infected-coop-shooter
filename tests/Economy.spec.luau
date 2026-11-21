@@ -68,4 +68,11 @@ return {
 		expect.equal(pay.Partial, 17, "partial")
 		expect.equal(pay.Secondary, 7, "secondary")
 	end,
+
+	["boosted adds an Order's bonus, rounded down"] = function()
+		expect.equal(Economy.boosted(140, 0.25), 175, "+25%")
+		expect.equal(Economy.boosted(35, 0.25), 43, "rounded down")
+		expect.equal(Economy.boosted(120, 0), 120, "no order")
+		expect.equal(Economy.boosted(0, 0.25), 0, "nothing stays nothing")
+	end,
 }
