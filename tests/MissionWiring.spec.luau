@@ -244,4 +244,20 @@ return {
 			error("MissionBoardUI does not read the war board", 0)
 		end
 	end,
+
+	["the war save is waited for at shutdown, capped per hour, and never from Studio"] = function()
+		local text = fs.readFile("src/server/WarService.luau")
+		for _, needle in { "game:BindToClose(", "MaxWritesPerServerHour", "IsStudio()" } do
+			if not string.find(text, needle, 1, true) then
+				error(`WarService is missing {needle}`, 0)
+			end
+		end
+	end,
+
+	["the client badge parser skips malformed districts"] = function()
+		local text = fs.readFile("src/lobby/client/MissionBoardUI.luau")
+		if not string.find(text, 'typeof(district.name) == "string"', 1, true) then
+			error("MissionBoardUI indexes districts without checking them", 0)
+		end
+	end,
 }
