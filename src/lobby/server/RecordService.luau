@@ -13,6 +13,8 @@
 -- `grantReceipt`); nothing is bought with tabs yet.
 
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local ServerStorage = game:GetService("ServerStorage")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
@@ -271,6 +273,33 @@ function RecordService.init()
 		records[player] = nil
 		buying[player] = nil
 	end)
+	-- Studio only (testing buys): ServerStorage.<DevMeritsHook>:Invoke(merits, player?) sets the
+	-- soldier's merits (the first player when none is named) through the same save as a buy,
+	-- so it persists and the wallet updates. Returns (ok, reason). Code run from the command
+	-- bar gets its own copy of this module, so it must come in through this hook.
+	if RunService:IsStudio() then
+		local hook = Instance.new("BindableFunction")
+		hook.Name = SAVE.DevMeritsHook
+		hook.OnInvoke = function(merits: unknown, who: unknown): (boolean, string?)
+			local player = if typeof(who) == "Instance" and who:IsA("Player")
+				then who
+				else Players:GetPlayers()[1]
+			if
+				typeof(merits) ~= "number"
+				or merits < 0
+				or merits ~= math.floor(merits)
+				or not player
+			then
+				return false, "merits must be a whole number, with a player in the game"
+			end
+			return change(player, "dev merits", function(record)
+				local after = table.clone(record)
+				after.merits = merits
+				return after, true, nil
+			end)
+		end
+		hook.Parent = ServerStorage
+	end
 end
 
 return RecordService

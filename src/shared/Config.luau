@@ -5519,6 +5519,9 @@ local Config = {
 			Retries = 2, -- extra attempts after a failed DataStore call
 			RetryDelay = 1,
 			LoadWait = 10, -- seconds a check waits for a record still loading (RecordService)
+			-- Studio only: a BindableFunction of this name in ServerStorage sets a soldier's merits
+			-- (RecordService; for testing buys). Never made on a live server.
+			DevMeritsHook = "DevSetMerits",
 		},
 		-- Which Carrier desk (LobbyDesks id) sells an item whose own Config row names no `Desk`
 		-- (KitPrices.deskOf). Owner 2026-11-16: the Quartermaster is the main seller (guns, grenades,
