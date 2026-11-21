@@ -18,7 +18,9 @@ Retries and timings: `Config.Lobby.Save` (`Retries`, `RetryDelay`, `MinWriteGap`
 `LoadWait`), `Config.Merits` (`Retries`, `RetryDelay`, `SettleSeconds`), `Config.Lobby.Tallies`.
 
 Version history. Record: 0 = no `version` field (merits, owned), 1 = merits and kit, 2 adds
-`tabs` and `receipts`. Loadout: 0 = no `version` (a bare Loadout, or `{ loadout }`), 1 =
+`tabs` and `receipts`, 3 adds `wins` (loop sprint 4). **Version 3: publish the lobby and the match
+together.** An old server reads a v3 record as newer and goes read-only for that soldier (a buy
+there is not saved, a pay there is dropped) until it is replaced. Loadout: 0 = no `version` (a bare Loadout, or `{ loadout }`), 1 =
 `{ version, loadout }`.
 
 ## The rules every save follows

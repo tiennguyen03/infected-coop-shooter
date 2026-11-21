@@ -59,14 +59,19 @@ local function refreshBadges(cardList: { Card })
 	for _, card in cardList do
 		local badge = card.button:FindFirstChild("Badge") :: TextLabel?
 		if badge then
+			-- The Order's gold border does not wait for the board's numbers.
+			local running = Orders.active(Config.War.Orders, workspace:GetServerTimeNow())
+			card.button:SetAttribute(
+				"Order",
+				running ~= nil and running.District == badge:GetAttribute("District")
+			)
 			local district = byName[badge:GetAttribute("District") :: string]
 			if district and typeof(district.percent) == "number" then
 				local shown = Containment.percent(district.percent)
 				local band = Containment.band(district.percent, Config.Containment.Bands)
-				local order = Orders.active(Config.War.Orders, os.time())
+				local order = Orders.active(Config.War.Orders, workspace:GetServerTimeNow())
 				local tag = if order and order.District == district.name then "ORDER · " else ""
 				badge.Text = `{tag}{shown}% · {string.upper(band)}`
-				card.button:SetAttribute("Order", tag ~= "")
 			else
 				badge.Text = ""
 			end
@@ -190,7 +195,7 @@ local function buildCard(parent: Instance, row: MissionCatalog.Row, order: numbe
 	badge.Position = UDim2.new(1, -12, 0, 10)
 	badge:SetAttribute("District", row.District)
 	local function hover(on: boolean)
-		-- A HARLAN Order's card keeps its gold border (Rules/Orders; refreshOrder).
+		-- A HARLAN Order's card keeps its gold border (Rules/Orders; refreshBadges sets it).
 		local ordered = button:GetAttribute("Order") == true
 		stroke.Thickness = if on or ordered then 2 else 1
 		stroke.Color = if on then C.Text elseif ordered then C.Yellow else C.White
@@ -252,7 +257,7 @@ function MissionBoardUI.open(line: string, who: string, closed: () -> ())
 	onClosed = closed
 	lifting = false
 	-- The HARLAN Order running now, under the officer's line (Rules/Orders).
-	local order = Orders.active(Config.War.Orders, os.time())
+	local order = Orders.active(Config.War.Orders, workspace:GetServerTimeNow())
 	local orderLine = if order
 		then `\nORDER: {order.Text} (+{math.floor(order.PayBonus * 100)}% merits at {order.District})`
 		else ""

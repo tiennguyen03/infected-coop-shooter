@@ -269,4 +269,29 @@ return {
 			error("RecordService sells district-locked kit to anyone", 0)
 		end
 	end,
+
+	["the shop sees the soldier's wins (to show a lock before the click)"] = function()
+		local client = fs.readFile("src/lobby/client/RecordClient.luau")
+		if string.find(client, "wins = {}, -- not sent", 1, true) then
+			error("RecordClient still fills wins with nothing", 0)
+		end
+		for _, path in
+			{
+				"src/lobby/client/ArmsRackUI.luau",
+				"src/lobby/client/DeskShop.luau",
+				"src/lobby/client/CallInDisplayUI.luau",
+			}
+		do
+			if not string.find(fs.readFile(path), "RecordClient.lockText(", 1, true) then
+				error(`{path} shows a buyable price on locked kit`, 0)
+			end
+		end
+	end,
+
+	["a win is counted even when it pays nothing"] = function()
+		local text = fs.readFile("src/server/MeritService.luau")
+		if not string.find(text, "if amount <= 0 and not wonIn then", 1, true) then
+			error("MeritService skips the save (and the win) when the pay is 0", 0)
+		end
+	end,
 }

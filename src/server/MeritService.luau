@@ -153,7 +153,7 @@ function MeritService.pay(outcome: string, secondaries: number)
 	for _, player in players do
 		player:SetAttribute(Attributes.MeritsEarned, amount)
 		local userId = player.UserId
-		if amount <= 0 then
+		if amount <= 0 and not wonIn then
 			-- Nothing to save: the record is only read, for the wallet on the results screen.
 			task.spawn(function()
 				local ok, record = pcall(held, userId)

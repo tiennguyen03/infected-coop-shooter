@@ -23,7 +23,7 @@ end
 
 -- What it takes, for the shop: "WIN 3 AT MILE 14 (1/3)" ("" when there is nothing to win).
 function DistrictUnlock.text(unlock: Unlock?, wins: { [string]: number }): string
-	if unlock == nil then
+	if unlock == nil or typeof(unlock.District) ~= "string" or typeof(unlock.Wins) ~= "number" then
 		return ""
 	end
 	local have = math.min(wins[unlock.District] or 0, unlock.Wins)

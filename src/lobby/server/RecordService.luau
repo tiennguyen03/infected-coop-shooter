@@ -57,7 +57,8 @@ local function send(player: Player, record: Record.Record)
 		Messages.Record.State,
 		record.merits,
 		table.clone(record.owned),
-		record.tabs
+		record.tabs,
+		table.clone(record.wins)
 	)
 end
 
