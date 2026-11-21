@@ -19,6 +19,8 @@ local AmmoTypes = require(ReplicatedStorage.Shared.Attachments.AmmoTypes)
 local AttachmentMerge = require(ReplicatedStorage.Shared.Rules.AttachmentMerge)
 local AttachmentOptions = require(ReplicatedStorage.Shared.Attachments.Options)
 local AttachmentUnlock = require(ReplicatedStorage.Shared.Rules.AttachmentUnlock)
+local GunCompatibility = require(ReplicatedStorage.Shared.Rules.GunCompatibility)
+local Schema = require(ReplicatedStorage.Shared.Attachments.Schema)
 local Messages = require(ReplicatedStorage.Shared.Messages)
 local Record = require(ReplicatedStorage.Shared.Rules.Record)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
@@ -106,6 +108,7 @@ function AttachmentMenuV2.build(args: Args): () -> ()
 	local catalog = WeaponDefinitions.attachmentCatalog()
 	local remote = Remotes.get("Attachment")
 	local slots = WeaponDefinitions.slots(gunId)
+	local family = WeaponDefinitions.get(gunId).Family
 
 	-- What the server says is on the record (nil until it answers).
 	local owned: { string }? = nil
@@ -189,7 +192,7 @@ function AttachmentMenuV2.build(args: Args): () -> ()
 				end)()
 				else "None"
 			local arrow = if open == slot.id then "v" else ">"
-			head.Text = `{arrow}  {string.upper(slot.displayName)}  ·  {shown}`
+			head.Text = `{arrow}  {string.upper(Schema.nameOn(slot, family))}  ·  {shown}`
 			local have, all = AttachmentUnlock.unlockedIn(record(), gunId, slot.id, catalog)
 			count.Text = if owned then `{have}/{all}` else `-/{all}`
 			local isOpen = open == slot.id
@@ -244,7 +247,7 @@ function AttachmentMenuV2.build(args: Args): () -> ()
 					then `{entry.description}{if cost > 0
 						then ` {cost} merits, yours for good.`
 						else ""}`
-					else `Nothing on the {string.lower(slot.displayName)}.`
+					else `Nothing on the {string.lower(Schema.nameOn(slot, family))}.`
 			end)
 			row.Activated:Connect(function()
 				if
@@ -301,7 +304,10 @@ function AttachmentMenuV2.build(args: Args): () -> ()
 		elseif kind == Messages.Attachment.Equipped and a == gunId and typeof(b) == "string" then
 			local now: string? = if typeof(c) == "string" and c ~= "" then c else nil
 			(fitted :: any)[b] = now
-			describe.Text = if now then `{nameOf(now)} fitted.` else "Back to the issued part."
+			local said = if now then `{nameOf(now)} fitted.` else "Back to the issued part."
+			-- Allowed but worth a word (Rules/GunCompatibility: subsonic without a suppressor).
+			local warnings = GunCompatibility.warnings(gunId, fitted, catalog :: any)
+			describe.Text = if #warnings > 0 then `{said} {table.concat(warnings, " ")}` else said
 			args.onFitted(b)
 			repaint()
 		elseif kind == Messages.Attachment.Refused then

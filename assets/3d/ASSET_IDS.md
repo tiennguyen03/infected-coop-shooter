@@ -260,3 +260,16 @@ Sources:
 | ACOG 4x (`acog`) | [Low-Poly Trijicon ACOG scope & RMR reflex sight](https://sketchfab.com/3d-models/low-poly-trijicon-acog-scope-rmr-reflex-sight-bdc3487c2b5b40148347e1f68c2f1c86) (the TA01, ~1.8k tris with the RMR) | CC BY 4.0, notcplkerry |
 | Red dot (`reddot`) | the RMR in the same pack | CC BY 4.0, notcplkerry |
 | CompM2 (`compm2`) | [Low-Poly Aimpoint ECOS-N / CompM2](https://sketchfab.com/3d-models/low-poly-aimpoint-ecos-n-compm2-78e7674c782446aebdb10e89f903b397) (~1.3k tris; the ECOS-N is a CompM2 on another mount) | CC BY 4.0, notcplkerry |
+
+## Attachment models (free Creator Store meshes, 2026-11-20)
+
+Referenced, not uploaded by us: `Shared.Attachments.VisualRegistry.MODELS`, built at boot by
+`AttachmentMeshService`. Free (price 0), no scripts. Each comes facing the gun's way (seen in Studio 2026-11-20);
+the applier scales it to its `length`. The CompM2 tried (76899261380970) is not a valid mesh.
+
+| Key | Asset | MeshId | Source |
+|---|---|---|---|
+| att_acog | 430309581 | 430309559 | Meshes/ACOG, pablospanish |
+| att_flash_hider | 430309776 | 430309763 | Meshes/FLASHHIDER, pablospanish |
+| att_vertical_grip | 10865495614 | 10865495504 | Grip Mesh, turohabaneero |
+| att_bipod | 430309677 | 430309657 | Meshes/BIPOD, pablospanish |

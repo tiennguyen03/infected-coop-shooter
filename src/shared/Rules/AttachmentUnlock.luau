@@ -23,6 +23,7 @@ export type AmmoEntry = {
 	id: string,
 	slot: string, -- the ammo slot
 	caliberFamily: string,
+	compatibleGuns: { string }?, -- set: only these guns of the caliber take it
 	incompatibleWith: { string },
 	meritCost: number,
 }
@@ -80,6 +81,9 @@ local function offered(
 		end
 		if ammo.caliberFamily ~= catalog.gunCaliber(gunId) then
 			return false, "wrong caliber"
+		end
+		if ammo.compatibleGuns and table.find(ammo.compatibleGuns, gunId) == nil then
+			return false, "incompatible gun"
 		end
 		return true, nil
 	end

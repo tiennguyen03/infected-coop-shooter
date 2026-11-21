@@ -121,6 +121,10 @@ function SprintController.isSprinting(): boolean
 	return isSprinting
 		and sprintAllowed
 		and not isAiming
+		and WeaponDefinitions.carried(
+			Players.LocalPlayer:GetAttribute(Attributes.Weapon) :: string?,
+			Players.LocalPlayer:GetAttribute(Attributes.Fitted)
+		).CanSprint
 		and Players.LocalPlayer:GetAttribute(Attributes.Carrying) ~= true
 		and Stamina.canSprint(stamina)
 end

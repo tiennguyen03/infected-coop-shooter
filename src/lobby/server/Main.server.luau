@@ -27,6 +27,7 @@ local BOOT: { ModuleScript } = {
 	Server.KitModService, -- after RecordService (ranks are bought onto the record)
 	Server.OpticService, -- after RecordService and LoadmasterService (buys onto one, fits through the other)
 	Server.AttachmentService, -- attachment system v2 (the same two, the same way)
+	Server.AttachmentMeshService, -- the attachment models the EDIT preview shows (VisualApplier)
 	Server.LaunchService,
 }
 
