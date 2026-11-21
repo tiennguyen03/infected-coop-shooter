@@ -24,6 +24,7 @@ local Config = {
 		Reload = Enum.KeyCode.R,
 		CallIns = { Enum.KeyCode.One, Enum.KeyCode.Two, Enum.KeyCode.Three, Enum.KeyCode.Four },
 		Loadout = Enum.KeyCode.B, -- the Arms Room menu
+		Party = Enum.KeyCode.P, -- the Carrier: open or close the squad panel (PartyUI)
 		NightVision = Enum.KeyCode.N, -- the helmet's night vision goggles, on and off
 		-- Driving a vehicle (VehicleController): read when the VehicleSeat has no reading of
 		-- its own. Getting on and off is Interact (E); GetOffPad on a gamepad.
@@ -5543,6 +5544,11 @@ local Config = {
 		-- any kit that is not a call-in), one desk sells every call-in, the Loadmaster only signs
 		-- Loadouts. `Desk = "<id>"` on a gun, grenade or call-in row moves just that item.
 		Sellers = { Gun = "arms_room", Grenade = "arms_room", CallIn = "callins" },
+		-- Squads on the Carrier (Rules/Party, PartyService, PartyUI; loop sprint 2).
+		Party = {
+			InviteSeconds = 60, -- an invite can be accepted this long
+			DeployWait = 15, -- after the leader's DEPLOY the squad flies when all are ready, or after this
+		},
 		-- The map room's Mission Board (MissionBoardService, MissionBoardUI): pick a mission, DEPLOY.
 		MissionBoard = {
 			DeployCooldown = 5, -- seconds between one soldier's DEPLOYs
@@ -5560,6 +5566,9 @@ local Config = {
 			Retries = 2, -- extra teleport attempts after a failure
 			RetryDelay = 2,
 			Cooldown = 6, -- seconds a spot rests after a lift or a failed one
+			-- Standing in a ring boards that bird (the old way, before the party panel). Off since
+			-- loop sprint 2: squads form in the party panel and fly from the Mission Board.
+			RingsBoard = false,
 		},
 		-- Lantern, the lift bird on each spot (LanternBird, LanternSpool; docs/LORE.md > Lantern).
 		-- Players read "the helicopter" / "Helo"; this key keeps the old name (docs/LORE.md > Naming).

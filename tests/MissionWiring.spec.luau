@@ -172,4 +172,30 @@ return {
 			error("ObjectiveService ignores the row's Pool", 0)
 		end
 	end,
+
+	-- Loop sprint 2: parties.
+	["the Party remote is used by PartyService and PartyUI"] = function()
+		for _, path in { "src/lobby/server/PartyService.luau", "src/lobby/client/PartyUI.luau" } do
+			if not fs.isFile(path) then
+				error(`{path} is missing`, 0)
+			end
+			if not string.find(fs.readFile(path), 'Remotes.get("Party")', 1, true) then
+				error(`{path} does not use the Party remote`, 0)
+			end
+		end
+	end,
+
+	["the Mission Board launches through the party"] = function()
+		local text = fs.readFile("src/lobby/server/MissionBoardService.luau")
+		if not string.find(text, "PartyService.", 1, true) then
+			error("MissionBoardService does not go through PartyService", 0)
+		end
+	end,
+
+	["the deck rings board only when Config.Lobby.Launch.RingsBoard is on"] = function()
+		local text = fs.readFile("src/lobby/server/LaunchService.luau")
+		if not string.find(text, "LAUNCH.RingsBoard", 1, true) then
+			error("LaunchService boards from the rings regardless of RingsBoard", 0)
+		end
+	end,
 }

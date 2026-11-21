@@ -150,6 +150,19 @@ local Messages = table.freeze({
 		Refused = "refused", -- server -> client: (id, reason) "short" | "owned" | "unknown" | "not owned" | "incompatible" | "loading"
 	}),
 	-- MissionBoard (lobby place): the map room's Mission Board (MissionBoardService, MissionBoardUI).
+	-- Party (lobby place): squads on the Carrier (Rules/Party, PartyService, PartyUI).
+	Party = table.freeze({
+		Invite = "invite", -- client -> server: (userId)
+		Accept = "accept", -- client -> server: ()
+		Decline = "decline", -- client -> server: ()
+		Leave = "leave", -- client -> server: ()
+		Kick = "kick", -- client -> server: (userId) the leader removes a member
+		Ready = "ready", -- client -> server: (on)
+		Follow = "follow", -- client -> server: () fly to the leader's Carrier; server -> client: (leaderName) offer it
+		State = "state", -- server -> client: (view) your squad (PartyService.view)
+		Invited = "invited", -- server -> client: (fromId, fromName, seconds)
+		Notice = "notice", -- server -> client: (text)
+	}),
 	MissionBoard = table.freeze({
 		Deploy = "deploy", -- client -> server: (missionId) launch me into that mission
 		Lifting = "lifting", -- server -> client: () the helicopter is lifting; the teleport is under way

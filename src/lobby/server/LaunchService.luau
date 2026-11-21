@@ -98,7 +98,10 @@ local function buildSpot(parent: Instance, spot: Layout.Spot): Model
 		{ transparency = 1, collide = false }
 	)
 	sign.CanQuery = false
-	Build.sign(sign, `HELO · SPOT {spot.index}`, "Stand in the circle to board", 5)
+	local how = if LAUNCH.RingsBoard
+		then "Stand in the circle to board"
+		else "Pick a mission in the map room"
+	Build.sign(sign, `HELO · SPOT {spot.index}`, how, 5)
 	return bird
 end
 
@@ -308,7 +311,11 @@ local function scan()
 		if state.lifting then
 			continue
 		end
-		local ids = if now < state.restUntil then {} else present(state.spot)
+		-- The rings board only with RingsBoard on (loop sprint 2: squads form in the party
+		-- panel and fly from the Mission Board; the birds stay as scenery).
+		local ids = if not LAUNCH.RingsBoard or now < state.restUntil
+			then {}
+			else present(state.spot)
 		state.manifest = Manifest.update(state.manifest, ids, now, SETTINGS)
 		tell(state, now)
 		publishLift(state, now)

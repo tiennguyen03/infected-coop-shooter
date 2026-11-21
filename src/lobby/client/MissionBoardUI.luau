@@ -17,6 +17,7 @@ local HudTheme = require(script.Parent.HudTheme)
 local Messages = require(ReplicatedStorage.Shared.Messages)
 local MissionCatalog = require(ReplicatedStorage.Shared.MissionCatalog)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
+local PartyUI = require(script.Parent.PartyUI)
 
 local MissionBoardUI = {}
 
@@ -60,7 +61,19 @@ local function paint()
 				else label:GetAttribute("Dim") and C.TextDim or C.Text
 		end
 	end
-	local ready = selected ~= nil and not lifting
+	-- The squad (PartyUI): a member sees the leader's pick and their DEPLOY is READY.
+	local view = PartyUI.view()
+	local size = if view then #view.members else 1
+	local follower = view ~= nil and not view.isLeader
+	if follower then
+		selected = view and view.mission
+		deploy.Text = if view and view.deployIn then "READY" else "WAITING FOR YOUR LEADER"
+	else
+		deploy.Text = if size > 1 then `DEPLOY · SQUAD OF {size}` else "DEPLOY · ALONE WITH BOTS"
+	end
+	local ready = selected ~= nil
+		and not lifting
+		and not (follower and not (view and view.deployIn))
 	deploy.Active = ready
 	deploy.AutoButtonColor = ready
 	deploy.BackgroundTransparency = if ready then 0 else 0.5
@@ -74,7 +87,8 @@ local function say(text: string, color: Color3)
 end
 
 local function pick(id: string)
-	if lifting then
+	local view = PartyUI.view()
+	if lifting or (view ~= nil and not view.isLeader) then
 		return
 	end
 	selected = id
@@ -307,7 +321,7 @@ function MissionBoardUI.init()
 	deploy.Font = HudTheme.Font.Headline
 	deploy.TextSize = 22
 	deploy.TextColor3 = C.MenuSelectText
-	deploy.Text = "DEPLOY · ALONE WITH BOTS"
+	deploy.Text = "DEPLOY · ALONE WITH BOTS" -- paint() sets it from the squad
 	deploy.Modal = true -- frees the mouse even zoomed into first person
 	deploy.Parent = frame
 	deploy.Activated:Connect(send)
@@ -329,6 +343,26 @@ function MissionBoardUI.init()
 		elseif kind == Messages.MissionBoard.Refused then
 			lifting = false
 			say(text or "Not now.", C.RedLight)
+		end
+		paint()
+	end)
+
+	-- The squad changed: repaint, and show the countdown while the squad is deploying.
+	PartyUI.onChange(function(view)
+		if not open then
+			return
+		end
+		if view.flying then
+			say("Lifting...", C.Yellow)
+		elseif view.deployIn then
+			local ready = 0
+			for _, member in view.members do
+				ready += if member.ready then 1 else 0
+			end
+			say(
+				`Leaving in {math.ceil(view.deployIn)} s  ·  {ready}/{#view.members} ready`,
+				C.Yellow
+			)
 		end
 		paint()
 	end)
