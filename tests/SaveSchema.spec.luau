@@ -65,7 +65,7 @@ return {
 		local status, save = SaveSchema.read(RECORD, { version = 1, merits = 10, owned = {} })
 		expect.equal(status, "ok", "status")
 		expect.equal((save :: any).tabs, 0, "tabs")
-		expect.equal((save :: any).version, 2, "version")
+		expect.equal((save :: any).version, RECORD.version, "version")
 	end,
 	["a current record with bad merits is junk"] = function()
 		expect.equal((SaveSchema.read(RECORD, { version = 2, merits = "x" })), "junk", "string")
@@ -154,5 +154,26 @@ return {
 		for _, schema in { RECORD, LOADOUT } do
 			expect.equal(#schema.steps, schema.version, schema.name)
 		end
+	end,
+
+	-- Loop sprint 4: wins per district (version 3).
+	["a version 2 record gains empty wins and keeps the rest"] = function()
+		local status, save = SaveSchema.read(
+			RECORD,
+			{ version = 2, merits = 10, owned = { "smg" }, tabs = 4, receipts = {} }
+		)
+		expect.equal(status, "ok", "status")
+		expect.equal(typeof((save :: any).wins), "table", "wins")
+		expect.equal(next((save :: any).wins), nil, "empty")
+		expect.equal((save :: any).tabs, 4, "tabs kept")
+		expect.equal((save :: any).merits, 10, "merits kept")
+	end,
+
+	["wins already there are kept"] = function()
+		local _, save = SaveSchema.read(
+			RECORD,
+			{ version = 2, merits = 1, owned = {}, tabs = 0, receipts = {}, wins = { DELTA = 4 } }
+		)
+		expect.equal((save :: any).wins.DELTA, 4, "kept")
 	end,
 }

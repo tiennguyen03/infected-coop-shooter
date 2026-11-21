@@ -29,6 +29,7 @@ export type Record = {
 	owned: { string }, -- bought kit ids: guns, grenades, call-ins (free ones are never listed)
 	tabs: number,
 	receipts: { string }, -- Robux PurchaseIds already paid out, oldest first
+	wins: { [string]: number }, -- missions won per city district ("MILE 14" = 3; loop sprint 4)
 }
 
 export type PriceOf = (id: string) -> number?
@@ -39,6 +40,7 @@ export type Saved = {
 	owned: { string },
 	tabs: number,
 	receipts: { string },
+	wins: { [string]: number },
 }
 
 export type Loadout = { primary: string, secondary: string, grenade: string, callIns: { string } }
@@ -48,7 +50,7 @@ function Record.key(userId: number): string
 end
 
 function Record.new(startMerits: number): Record
-	return { merits = startMerits, owned = {}, tabs = 0, receipts = {} }
+	return { merits = startMerits, owned = {}, tabs = 0, receipts = {}, wins = {} }
 end
 
 -- A whole number above zero (not NaN, not infinite): the only amounts tabs move in.
@@ -70,6 +72,7 @@ local function with(record: Record, changes: { [string]: any }): Record
 		owned = record.owned,
 		tabs = record.tabs,
 		receipts = record.receipts,
+		wins = record.wins,
 	}
 	for key, value in changes do
 		copy[key] = value
@@ -105,6 +108,13 @@ end
 -- Merits earned on a mission (Rules/Economy.missionMerits): whole, never a loss.
 function Record.earn(record: Record, amount: number): Record
 	return with(record, { merits = record.merits + balance(amount) })
+end
+
+-- One more mission won in `district` (MeritService, in the same UpdateAsync as the pay).
+function Record.win(record: Record, district: string): Record
+	local wins = table.clone(record.wins)
+	wins[district] = (wins[district] or 0) + 1
+	return with(record, { wins = wins })
 end
 
 -- (the new record, true) or (the record unchanged, false, "invalid").
@@ -179,6 +189,7 @@ function Record.encode(record: Record, stored: unknown?): Saved
 		owned = table.clone(record.owned),
 		tabs = record.tabs,
 		receipts = table.clone(record.receipts),
+		wins = table.clone(record.wins),
 	}
 	local over = if stored ~= nil then SaveSchema.over(SaveSchema.Record, stored, fields) else nil
 	return (over or fields) :: any
@@ -208,6 +219,24 @@ local function strings(list: unknown): { string }
 	return clean
 end
 
+-- Win counts by district name, cleaned: whole numbers above zero only.
+local function counts(map: unknown): { [string]: number }
+	local clean: { [string]: number } = {}
+	if typeof(map) == "table" then
+		for key, value in map :: { [unknown]: unknown } do
+			if
+				typeof(key) == "string"
+				and typeof(value) == "number"
+				and value == value
+				and value >= 1
+			then
+				clean[key] = math.floor(value)
+			end
+		end
+	end
+	return clean
+end
+
 function Record.decode(data: unknown, startMerits: number): Record
 	local saved: any = readable(data)
 	if not saved then
@@ -218,6 +247,7 @@ function Record.decode(data: unknown, startMerits: number): Record
 		owned = strings(saved.owned),
 		tabs = balance(saved.tabs),
 		receipts = strings(saved.receipts),
+		wins = counts(saved.wins),
 	}
 end
 

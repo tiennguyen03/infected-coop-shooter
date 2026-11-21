@@ -89,7 +89,8 @@ end
 -- Adds `amount` merits to the saved record of `userId` (yields). The record once it is
 -- saved; nil when the store is unavailable, every try failed, or the save is one this code
 -- cannot read (left untouched).
-local function credit(userId: number, amount: number): Record.Record?
+-- `wonIn`: the district of a mission won, counted on the record in the same update (Record.win).
+local function credit(userId: number, amount: number, wonIn: string?): Record.Record?
 	local lastError = "the saved record is not one this server can read"
 	for try = 0, PAY.Retries do
 		local data = recordStore()
@@ -103,6 +104,9 @@ local function credit(userId: number, amount: number): Record.Record?
 					return nil -- cancels the update
 				end
 				local record = Record.earn(Record.decode(old, SAVE.StartMerits), amount)
+				if wonIn then
+					record = Record.win(record, wonIn)
+				end
 				return Record.encode(record, old), { userId }
 			end)
 		end)
@@ -135,6 +139,7 @@ function MeritService.pay(outcome: string, secondaries: number)
 	local pay =
 		Economy.payFor(PAY, Missions.row().Pay, WarService.securedHere(), Config.War.SecuredPay)
 	local amount = Economy.missionMerits(outcome, secondaries, pay)
+	local wonIn = if outcome == "win" then Missions.row().District else nil
 	local players = Players:GetPlayers()
 	payRun += 1
 	local run = payRun
@@ -154,7 +159,7 @@ function MeritService.pay(outcome: string, secondaries: number)
 		end
 		pending += 1
 		task.spawn(function()
-			local ok, saved = pcall(credit, userId, amount)
+			local ok, saved = pcall(credit, userId, amount, wonIn)
 			pending -= 1
 			if not ok then
 				warn(`[MeritService] paying {userId} failed: {saved}`)

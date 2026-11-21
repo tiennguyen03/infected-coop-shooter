@@ -30,7 +30,7 @@ export type Status = "empty" | "ok" | "newer" | "junk"
 -- The soldier's record (Rules/Record; DataStore Config.Lobby.Save.RecordStore, "r_<UserId>").
 SaveSchema.Record = {
 	name = "record",
-	version = 2,
+	version = 3,
 	steps = {
 		-- 0 -> 1: an unversioned record. Merits and kit as they were.
 		function(save: Save): Save?
@@ -49,6 +49,13 @@ SaveSchema.Record = {
 			end
 			if save.receipts == nil then
 				save.receipts = {}
+			end
+			return save
+		end,
+		-- 2 -> 3: missions won per city district (loop sprint 4; Rules/Record.win); counts kept.
+		function(save: Save): Save?
+			if save.wins == nil then
+				save.wins = {}
 			end
 			return save
 		end,

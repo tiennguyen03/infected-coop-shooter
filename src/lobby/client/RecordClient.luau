@@ -64,6 +64,7 @@ function RecordClient.init()
 				owned = b,
 				tabs = if typeof(c) == "number" then c else 0,
 				receipts = {},
+				wins = {}, -- not sent to the client yet (the shop gate reads them on the server)
 			}
 			changed:Fire()
 		elseif kind == Messages.Record.Refused then
