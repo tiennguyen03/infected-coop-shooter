@@ -125,4 +125,16 @@ return {
 		eq(War.gainText("DELTA", 1, CFG), "DELTA +0.5%", "partial")
 		eq(War.gainText("DELTA", 0, CFG), "", "nothing")
 	end,
+
+	-- Review fixes (sprint 3).
+	["a Secured district's line says so instead of a gain"] = function()
+		eq(War.gainText("DELTA", 3, CFG, true), "DELTA SECURED", "secured")
+		eq(War.gainText("DELTA", 3, CFG, false), "DELTA +1.5%", "not secured")
+	end,
+
+	["a server with a slow clock never moves a record's time back"] = function()
+		local board = War.merge(nil, { DELTA = 2 }, 1000, CFG)
+		local behind = War.merge(board, { DELTA = 2 }, 900, CFG)
+		eq(behind.districts.DELTA.at, 1000, "kept the later time")
+	end,
 }

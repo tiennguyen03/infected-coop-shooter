@@ -5369,6 +5369,10 @@ local Config = {
 		DecayPerHour = 0.25, -- the Infected push back about 6% a day; a loss takes nothing
 		UnlockAt = 50, -- the next district opens when this one reaches it (and stays open)
 		OpenAtStart = 2, -- Delta and Mile 14 are open from day one (owner 2026-11-20)
+		MaxWritesPerServerHour = 6, -- backstop: a match server never writes the board more often
+		ShutdownWait = 10, -- seconds a closing server waits for a war save still in flight
+		StudioWrites = false, -- true: a Studio playtest with API access writes the live board (testing only)
+		-- Renaming or removing a district in Containment.Districts resets its progress this season.
 	},
 
 	Containment = {

@@ -82,9 +82,10 @@ function War.merge(old: unknown, add: { [string]: number }, now: number, cfg: Se
 	local board = read(old, cfg, now)
 	for index, entry in cfg.Districts do
 		local record = board.districts[entry.name]
-		local pct = War.decayed(record, now, cfg) + (add[entry.name] or 0) / cfg.PointsPerPercent
+		local points = if record.secured then 0 else (add[entry.name] or 0) -- Secured takes no more
+		local pct = War.decayed(record, now, cfg) + points / cfg.PointsPerPercent
 		record.pct = math.clamp(pct, 0, 100)
-		record.at = now
+		record.at = math.max(record.at, now) -- a server whose clock is behind never moves it back
 		if record.pct >= 100 then
 			record.secured = true
 		end
@@ -113,8 +114,12 @@ function War.shown(board: Board, now: number, cfg: Settings): { Shown }
 	return out
 end
 
--- The debrief line for a mission's points: "MILE 14 +1.5%" ("" for none).
-function War.gainText(district: string, points: number, cfg: Settings): string
+-- The debrief line for a mission's points: "MILE 14 +1.5%" ("" for none; "DELTA SECURED" when
+-- the district is already Secured and takes no more).
+function War.gainText(district: string, points: number, cfg: Settings, secured: boolean?): string
+	if secured then
+		return `{district} SECURED`
+	end
 	if points <= 0 then
 		return ""
 	end

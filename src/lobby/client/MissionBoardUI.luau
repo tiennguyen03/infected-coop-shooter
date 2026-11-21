@@ -50,7 +50,9 @@ local function refreshBadges(cardList: { Card })
 	end)
 	local byName: { [string]: any } = {}
 	for _, district in (if ok and typeof(districts) == "table" then districts else {}) :: { any } do
-		byName[district.name] = district
+		if typeof(district) == "table" and typeof(district.name) == "string" then
+			byName[district.name] = district
+		end
 	end
 	for _, card in cardList do
 		local badge = card.button:FindFirstChild("Badge") :: TextLabel?
