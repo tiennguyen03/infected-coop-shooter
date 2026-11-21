@@ -524,11 +524,14 @@ local function fillCard(id: string)
 	local forSale = not owned and price ~= nil and RecordClient.loaded()
 	cardBuy.Visible = forSale
 	if forSale then
+		-- Kit a district's wins open (Rules/DistrictUnlock): the lock shows before the click.
+		local lock = RecordClient.lockText(id)
 		local short = RecordClient.merits() < (price :: number)
-		cardBuy.Text = if short
-			then `{rack.buy} · {price} {rack.currency} (SHORT)`
+		cardBuy.Text = if lock
+			then `{lock} · {price} {rack.currency}`
+			elseif short then `{rack.buy} · {price} {rack.currency} (SHORT)`
 			else `{rack.buy} · {price} {rack.currency}`
-		cardBuy.TextTransparency = if short then 0.5 else 0
+		cardBuy.TextTransparency = if short or lock then 0.5 else 0
 	end
 	cardLine.Text = line
 	for _, child in cardRows:GetChildren() do

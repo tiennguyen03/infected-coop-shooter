@@ -65,4 +65,9 @@ return {
 		)
 		eq(DistrictUnlock.need(nil), "", "none")
 	end,
+
+	["text never throws on a malformed Unlock"] = function()
+		eq(DistrictUnlock.text({ District = "DELTA" } :: any, {}), "", "no Wins")
+		eq(DistrictUnlock.text({ Wins = 2 } :: any, {}), "", "no District")
+	end,
 }

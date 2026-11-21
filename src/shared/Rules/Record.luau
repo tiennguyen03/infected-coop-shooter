@@ -229,6 +229,7 @@ local function counts(map: unknown): { [string]: number }
 				and typeof(value) == "number"
 				and value == value
 				and value >= 1
+				and value < math.huge
 			then
 				clean[key] = math.floor(value)
 			end

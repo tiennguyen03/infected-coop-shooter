@@ -350,4 +350,16 @@ return {
 		local record = Record.earn(Record.win(Record.new(0), "DELTA"), 100)
 		expect.equal(record.wins.DELTA, 1, "kept")
 	end,
+
+	["decode drops an infinite win count"] = function()
+		local back = Record.decode({
+			version = 3,
+			merits = 1,
+			owned = {},
+			tabs = 0,
+			receipts = {},
+			wins = { DELTA = math.huge },
+		}, 0)
+		expect.equal(back.wins.DELTA, nil, "infinite")
+	end,
 }

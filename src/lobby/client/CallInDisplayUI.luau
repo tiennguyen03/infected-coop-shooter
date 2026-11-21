@@ -407,10 +407,12 @@ local function fillCard(id: string)
 	cardBuy.Visible = forSale
 	if forSale then
 		local short = RecordClient.merits() < (price :: number)
-		cardBuy.Text = if short
-			then `{labels.buy} · {price} {labels.currency} (SHORT)`
+		local lock = RecordClient.lockText(id)
+		cardBuy.Text = if lock
+			then `{lock} · {price} {labels.currency}`
+			elseif short then `{labels.buy} · {price} {labels.currency} (SHORT)`
 			else `{labels.buy} · {price} {labels.currency}`
-		cardBuy.TextTransparency = if short then 0.5 else 0
+		cardBuy.TextTransparency = if short or lock then 0.5 else 0
 	end
 	cardLine.Text = def.Description
 	local row = (Config.CallIns :: any)[def.ConfigKey] or {}
