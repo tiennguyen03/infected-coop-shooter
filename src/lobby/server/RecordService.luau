@@ -19,6 +19,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local Messages = require(ReplicatedStorage.Shared.Messages)
+local DistrictUnlock = require(ReplicatedStorage.Shared.Rules.DistrictUnlock)
 local Record = require(ReplicatedStorage.Shared.Rules.Record)
 local AttachmentRules = require(ReplicatedStorage.Shared.Rules.AttachmentRules)
 local Optics = require(ReplicatedStorage.Shared.Attachments.Optics)
@@ -181,6 +182,10 @@ local function buy(player: Player, id: unknown)
 		return
 	end
 	local ok, reason = change(player, `bought {id}`, function(record)
+		-- Kit a district's wins open (Rules/DistrictUnlock): checked on the stored record.
+		if not DistrictUnlock.met(KitPrices.unlockOf(id), record.wins) then
+			return record, false, "locked"
+		end
 		return Record.buy(record, id, RecordService.priceOf)
 	end)
 	if not ok then

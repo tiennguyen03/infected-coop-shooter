@@ -20,6 +20,7 @@ local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local CallInDefinitions = require(ReplicatedStorage.Shared.CallInDefinitions)
 local Config = require(ReplicatedStorage.Shared.Config)
 local KitPrices = require(ReplicatedStorage.Shared.KitPrices)
+local DistrictUnlock = require(ReplicatedStorage.Shared.Rules.DistrictUnlock)
 local LobbyDesks = require(ReplicatedStorage.Lobby.LobbyDesks)
 local HoldStill = require(script.Parent.HoldStill)
 local HudTheme = require(script.Parent.HudTheme)
@@ -648,9 +649,12 @@ function CallInDisplayUI.init()
 			fillCard(order[selected])
 		end
 	end)
-	RecordClient.Refused:Connect(function(_id: unknown, reason: unknown)
+	RecordClient.Refused:Connect(function(id: unknown, reason: unknown)
 		if desk and mode ~= "closed" then
-			say.Text = if reason == "short" then `"{desk.talk.short}"` else `"{desk.talk.refused}"`
+			say.Text = if reason == "locked" and typeof(id) == "string"
+				then DistrictUnlock.need(KitPrices.unlockOf(id))
+				elseif reason == "short" then `"{desk.talk.short}"`
+				else `"{desk.talk.refused}"`
 		end
 	end)
 

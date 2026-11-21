@@ -26,6 +26,7 @@ local ArmsStats = require(ReplicatedStorage.Shared.Rules.ArmsStats)
 local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local KitPrices = require(ReplicatedStorage.Shared.KitPrices)
+local DistrictUnlock = require(ReplicatedStorage.Shared.Rules.DistrictUnlock)
 local LobbyDesks = require(ReplicatedStorage.Lobby.LobbyDesks)
 local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
 local DeskScreen = require(script.Parent.DeskScreen)
@@ -869,10 +870,11 @@ function ArmsRackUI.init()
 			fillCard(order[selected])
 		end
 	end)
-	RecordClient.Refused:Connect(function(_id: unknown, reason: unknown)
+	RecordClient.Refused:Connect(function(id: unknown, reason: unknown)
 		if desk and desk.rack and (mode == "rack" or mode == "inspect") then
-			rackSay.Text = if reason == "short"
-				then `"{desk.talk.short}"`
+			rackSay.Text = if reason == "locked" and typeof(id) == "string"
+				then DistrictUnlock.need(KitPrices.unlockOf(id))
+				elseif reason == "short" then `"{desk.talk.short}"`
 				else `"{desk.talk.refused}"`
 		end
 	end)

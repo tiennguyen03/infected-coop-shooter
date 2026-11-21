@@ -39,6 +39,19 @@ function KitPrices.of(id: string): number?
 	return row and row.Price
 end
 
+-- What opens the item's sale (Rules/DistrictUnlock), or nil when nothing has to be won.
+function KitPrices.unlockOf(id: string): { District: string, Wins: number }?
+	if WeaponDefinitions.exists(id) then
+		return WeaponDefinitions.get(id).Unlock
+	end
+	if WeaponDefinitions.Grenades[id] then
+		local tuning = grenadeRow(id)
+		return tuning and tuning.Unlock
+	end
+	local row = callInRow(id)
+	return row and row.Unlock
+end
+
 -- The desk that sells the item (LobbyDesks id), or nil for an id that is not kit.
 function KitPrices.deskOf(id: string): string?
 	local sellers = Config.Lobby.Sellers

@@ -2805,6 +2805,7 @@ local Config = {
 			-- The leaf's peep on the feed cover and the eared post by the muzzle.
 			Sight = { Rear = Vector3.new(0, 0.68, 0.03), Front = Vector3.new(0, 0.68, -1.68) },
 			Price = 600, -- merits at the Quartermaster's rack (Rules/Record)
+			Unlock = { District = "DELTA", Wins = 3 }, -- the sale opens after 3 Delta wins (Rules/DistrictUnlock)
 			ArmsOrder = 3,
 			Sound = "lmg",
 			-- Attachment system v2 (Config.AttachmentsV2): its slots by family, its ammo by caliber.
@@ -3042,6 +3043,7 @@ local Config = {
 				Zoom = 6,
 			},
 			Price = 700, -- merits at the Quartermaster's rack (Rules/Record)
+			Unlock = { District = "MILE 14", Wins = 3 }, -- the sale opens after 3 Mile 14 wins (Rules/DistrictUnlock)
 			ArmsOrder = 6,
 			Sound = "sniper",
 			-- Attachment system v2 (Config.AttachmentsV2): its slots by family, its ammo by caliber.

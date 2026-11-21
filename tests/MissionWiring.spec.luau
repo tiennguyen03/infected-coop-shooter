@@ -260,4 +260,12 @@ return {
 			error("MissionBoardUI indexes districts without checking them", 0)
 		end
 	end,
+
+	-- Loop sprint 4: district unlocks.
+	["a desk buy is refused until the district's wins are met"] = function()
+		local text = fs.readFile("src/lobby/server/RecordService.luau")
+		if not string.find(text, "DistrictUnlock.met(", 1, true) then
+			error("RecordService sells district-locked kit to anyone", 0)
+		end
+	end,
 }
