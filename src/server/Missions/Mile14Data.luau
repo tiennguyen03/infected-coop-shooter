@@ -358,6 +358,117 @@ for x = -51, 51, 6 do
 	end
 end
 
+-- Cover in the four fields (loop sprint 5; Nova's v1 woods idea on the v2 frame): pines in
+-- clumps and brush between them, so a quiet squad can go round the Jam unseen. Seeded, so the
+-- map is the same every time; nothing on the roads, lots, pads or objective sites
+-- (tests/Mile14.spec checks the same boxes).
+local CLEAR = {
+	{ 0, 0, 82, 450 }, -- the deck, its slopes and ramps
+	{ 0, 80, 320, 28 }, -- the county road and the Overpass
+	{ 0, 310, 92, 87 }, -- the toll apron
+	{ 125, 310, 52, 62 }, -- the admin lot (insert pad)
+	{ -172.5, -252.5, 127, 92 }, -- the Rest Stop lot (extract pad)
+	{ 150, -185, 105, 70 }, -- the Weigh Station lot
+	{ -200, 250, 72, 52 }, -- the Halt
+	{ 225, -370, 37, 37 }, -- the water tower knoll
+}
+-- Every objective site, x and z (ObjectiveDefinitions.Maps.mile14; the spec checks the pair).
+local SITES: { { number } } = {
+	{ 16, -246 },
+	{ -8.5, -160 },
+	{ 23.5, -246 },
+	{ -8.5, -366 }, -- Burn the Buses
+	{ 0, 80 },
+	{ 0, 260 },
+	{ -190, -255 }, -- Secure the Site
+	{ 225, -350 },
+	{ 150, -185 },
+	{ 154, 341 }, -- Comms, Casualties, Record
+	{ 23.5, 168 },
+	{ 142, -172.8 }, -- the horn, Lights On
+	{ -200, 250 },
+	{ 230, 10 },
+	{ -250, 80 }, -- Misdrop
+	{ 0, -425 },
+	{ -110, -50 }, -- Clear the Spitters
+}
+local seed = 14
+local function roll(): number -- 0..1, a small LCG (the map must not change between servers)
+	seed = (seed * 1103515245 + 12345) % 2147483648
+	return seed / 2147483648
+end
+local function blocked(x: number, z: number): boolean
+	if math.abs(x) > 312 or math.abs(z) > 442 then
+		return true
+	end
+	for _, box in CLEAR do
+		if math.abs(x - box[1]) < box[3] and math.abs(z - box[2]) < box[4] then
+			return true
+		end
+	end
+	for _, site in SITES do
+		local dx, dz = x - site[1], z - site[2]
+		if dx * dx + dz * dz < 20 * 20 then
+			return true
+		end
+	end
+	return false
+end
+-- Clump centres, two or three per field, then trees round each and brush between.
+local CLUMPS = {
+	{ -150, 330 },
+	{ -260, 170 },
+	{ -230, 10 },
+	{ -120, -90 },
+	{ -270, -120 },
+	{ -150, -400 },
+	{ 160, 400 },
+	{ 250, 200 },
+	{ 160, 10 },
+	{ 270, -60 },
+	{ 110, -300 },
+	{ 260, -280 },
+}
+for _, clump in CLUMPS do
+	local placed = 0
+	for _ = 1, 30 do
+		if placed >= 8 then
+			break
+		end
+		local x = clump[1] + (roll() - 0.5) * 70
+		local z = clump[2] + (roll() - 0.5) * 70
+		if not blocked(x, z) then
+			placed += 1
+			table.insert(DRESSING, {
+				name = if roll() < 0.6 then "env_pine_tall" else "env_pine_small",
+				x = math.floor(x),
+				z = math.floor(z),
+				yaw = math.floor(roll() * 360),
+			})
+		end
+	end
+end
+local shrubs = 0
+for _ = 1, 400 do
+	if shrubs >= 60 then
+		break
+	end
+	local x = (roll() - 0.5) * 624
+	local z = (roll() - 0.5) * 884
+	if not blocked(x, z) then
+		shrubs += 1
+		table.insert(
+			DRESSING,
+			{
+				name = "env_shrub",
+				x = math.floor(x),
+				z = math.floor(z),
+				yaw = math.floor(roll() * 360),
+			}
+		)
+	end
+end
+
 return {
 	Size = { 640, 900 },
 	Landing = { 130, DECK + 0.6, TOLL_Z }, -- the admin lot

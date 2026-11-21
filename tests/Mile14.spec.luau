@@ -148,4 +148,59 @@ return {
 			end
 		end
 	end,
+
+	-- Loop sprint 5: cover in the four fields (woods and brush; a quiet map needs it).
+	["the fields have woods and brush, within budget"] = function()
+		local trees, brush = 0, 0
+		for _, piece in Data.Dressing do
+			if piece.name == "env_pine_tall" or piece.name == "env_pine_small" then
+				trees += 1
+			elseif piece.name == "env_shrub" then
+				brush += 1
+			end
+		end
+		check(trees >= 60 and trees <= 120, `{trees} trees (60-120)`)
+		check(brush >= 30 and brush <= 80, `{brush} shrubs (30-80)`)
+	end,
+
+	["no cover on the roads, lots, pads or objectives"] = function()
+		-- { x, z, half-width, half-depth } boxes kept clear.
+		local clear = {
+			{ 0, 0, 80, 450 }, -- the deck, its slopes and ramps
+			{ 0, 80, 320, 26 }, -- the county road and the Overpass
+			{ 0, 310, 90, 85 }, -- the toll apron
+			{ 125, 310, 50, 60 }, -- the admin lot (insert pad)
+			{ -172.5, -252.5, 125, 90 }, -- the Rest Stop lot (extract pad)
+			{ 150, -185, 103, 68 }, -- the Weigh Station lot
+			{ -200, 250, 70, 50 }, -- the Halt
+			{ 225, -370, 35, 35 }, -- the water tower knoll
+		}
+		local map = Definitions.Maps.mile14
+		for _, piece in Data.Dressing do
+			if
+				piece.name == "env_pine_tall"
+				or piece.name == "env_pine_small"
+				or piece.name == "env_shrub"
+			then
+				check(
+					math.abs(piece.x) <= 312 and math.abs(piece.z) <= 442,
+					`cover outside the frame at ({piece.x}, {piece.z})`
+				)
+				for _, box in clear do
+					local inside = math.abs(piece.x - box[1]) < box[3]
+						and math.abs(piece.z - box[2]) < box[4]
+					check(not inside, `cover at ({piece.x}, {piece.z}) blocks a kept-clear area`)
+				end
+				for id, sites in map.Sites do
+					for _, site in sites do
+						local dx, dz = piece.x - site.Position[1], piece.z - site.Position[3]
+						check(
+							dx * dx + dz * dz >= 18 * 18,
+							`cover at ({piece.x}, {piece.z}) is on {id}`
+						)
+					end
+				end
+			end
+		end
+	end,
 }
