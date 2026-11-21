@@ -6,7 +6,7 @@ last one. **End of a session:** edit this page in place (never append history he
 under 7k) and add one note to `handoff/log/` (format in `handoff/log/README.md`). What
 shipped: `docs/HISTORY.md`. The owner's one page of everything open: [docs/BACKLOG.md](../docs/BACKLOG.md).
 
-Last updated: 2026-11-20 by Tien + Claude (loop sprint 4: reasons to pick, on `claude/loop-s4-reasons`).
+Last updated: 2026-11-20 by Tien + Claude (loop sprint 5: seasons and Mile 14 cover, on `claude/loop-s5-seasons`).
 
 ## Now
 
@@ -51,7 +51,9 @@ Last updated: 2026-11-20 by Tien + Claude (loop sprint 4: reasons to pick, on `c
   (`claude/loop-s3-war`, on sprint 2): the city war board is live (`Rules/War`, `WarService`,
   `ContainmentBoard`). **Sprint 4** (`claude/loop-s4-reasons`): pay per mission, HARLAN Orders,
   wins per district on the record (**save version 3: publish both places together**) and kit
-  they unlock. Next: the Driver (2b, design waiting for the owner), seasons and Mile 14's art (5).
+  they unlock. **Sprint 5** (`claude/loop-s5-seasons`): 28-day seasons, woods in Mile 14. Next:
+  the Driver (2b, design waiting for the owner: `docs/superpowers/specs/2026-11-20-driver-design.md`),
+  Mile 14's art, the Order reward.
 - **Off switches** exist for every new system (`Config.<System>.Enabled = false`); the
   feature's doc names them. Prefer a switch over a revert.
 - **Next after #92 is played:** difficulty levels, a four-player test with Nova and friends

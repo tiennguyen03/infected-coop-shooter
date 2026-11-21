@@ -751,7 +751,10 @@ decay. The lobby rereads the board every minute (`ContainmentBoard.read`, publis
 clients as `Attributes.WarBoard`); the results screen shows the line ("DELTA +1.5%",
 `Attributes.WarLine`). Since loop sprint 4: a Secured district's missions pay x0.25 of their merits
 (`Config.War.SecuredPay`) and give no war points. Not built yet: the band changing the match
-(the table below), seasons ending (loop sprint 5). Contained means the district stopped exporting
+(the table below). **Seasons (loop sprint 5):** the board starts over every 28 days
+(`Config.War.SeasonStart`, `SeasonDays`) in a new store (`War_S1`, `War_S2`, ...; `Rules/War.season`),
+so nothing is wiped; wins, unlocks and kit stay on each record. The Mission Board's header shows
+the season and the days left. Contained means the district stopped exporting
 hosts, not zero Infected.
 
 | Band | % | `InitialCount` | Clock start | Brute / Hocker first spawn | Stores | Visible (cheap) |
@@ -967,8 +970,10 @@ pads, boss route, hold point, blocks and which of Delta's builders run
   `docs/sprints/SPRINT_20_MILE14.md` > The Driver, to be refreshed in loop sprint 2b). He
   comes from a site's `BossFrom` where it has one, else from open ground nearby; with the
   pools off he walks north up the lane from the south barricade.
-- **Not yet:** the kit art (booths, canopies, span mesh, gantries, signs, cars, skyline), the
-  woods and brush in the four fields, sleepers placed at posts (loop sprint 5).
+- **Cover (loop sprint 5):** pine clumps and brush in the four fields (about 90 pines, 60
+  shrubs; seeded, clear of roads, lots, pads and objectives; `Mile14Data`).
+- **Not yet:** the kit art (booths, canopies, span mesh, gantries, signs, cars, skyline),
+  sleepers placed at posts.
 
 ### Awareness (the quiet missions)
 
