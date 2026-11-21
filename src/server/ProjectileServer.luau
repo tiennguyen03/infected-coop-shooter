@@ -16,11 +16,15 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local EnemyDefinitions = require(ReplicatedStorage.Shared.EnemyDefinitions)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local Spread = require(ReplicatedStorage.Shared.Rules.Spread)
+local Overpen = require(ReplicatedStorage.Shared.Rules.Overpen)
 local ShotCone = require(ReplicatedStorage.Shared.ShotCone)
 local WeaponDefinitions = require(ReplicatedStorage.Shared.WeaponDefinitions)
 local EnemyService = require(script.Parent.EnemyService)
 local KitService = require(script.Parent.KitService)
+local BurnService = require(script.Parent.BurnService)
+local WallBreachService = require(script.Parent.WallBreachService)
 local DamageService = require(script.Parent.DamageService)
+local EnemyProjectileService = require(script.Parent.EnemyProjectileService)
 local LoadoutService = require(script.Parent.LoadoutService)
 local PauseService = require(script.Parent.PauseService)
 local Squad = require(script.Parent.Squad)
@@ -197,12 +201,19 @@ end
 function ProjectileServer.hitMultiplier(
 	part: Instance,
 	humanoid: Humanoid,
-	headshotMultiplier: number?
+	headshotMultiplier: number?,
+	armourPenetration: number? -- an AP round ignores this share of the plate's cut
 ): (number, string)
 	-- The Index's armour (IndexService): a plated part takes the round at the armoured rate
 	-- (DamageService routes it to the plate); a limb whose plate is gone is exposed.
 	if typeof(part:GetAttribute(Attributes.PlateHealth)) == "number" then
-		return Config.Index.Warden.ArmouredMultiplier, "plate"
+		-- The weak spot (his back) takes the round whole and pops the headshot marker.
+		if typeof(part:GetAttribute(Attributes.WeakSpot)) == "number" then
+			return Config.Index.Warden.WeakSpot.RoundMultiplier, "headshot"
+		end
+		local armoured = Config.Index.Warden.ArmouredMultiplier
+		local pen = math.clamp(armourPenetration or 0, 0, 1)
+		return armoured + (1 - armoured) * pen, "plate"
 	end
 	if part.Name ~= "Head" then
 		if part:GetAttribute(Attributes.Exposed) == true then
@@ -234,7 +245,9 @@ local function excludeList(character: Model?): { Instance }
 end
 
 -- One hitscan round: raycast, damage on an Infected hit (carrying on through `pierce` more
--- bodies), tracer to everyone else.
+-- bodies), tracer to everyone else. The round's behaviour (its ammo type, AttachmentMerge):
+-- "incendiary" lights each Infected it hits (BurnService, the round's Burn); "breaching" pushes
+-- on the part it stops on (WallBreachService: light walls open).
 local function fireHitscan(
 	player: Player,
 	origin: Vector3,
@@ -253,6 +266,8 @@ local function fireHitscan(
 	local remaining = weapon.Range
 	local endPoint = origin + direction * weapon.Range
 	local bodiesLeft = pierce
+	local stoppedOn: BasePart? = nil
+	local burn = if weapon.AmmoBehaviour == "incendiary" then weapon.Burn else nil
 	while remaining > 0 do
 		local result = workspace:Raycast(from, direction * remaining, params)
 		if not result then
@@ -261,20 +276,31 @@ local function fireHitscan(
 		endPoint = result.Position
 		local humanoid = findEnemyHumanoid(result.Instance)
 		if not humanoid or humanoid.Health <= 0 then
+			if not humanoid and result.Instance:IsA("BasePart") then
+				stoppedOn = result.Instance
+			end
 			break
 		end
-		local multiplier, kind =
-			ProjectileServer.hitMultiplier(result.Instance, humanoid, weapon.HeadshotMultiplier)
+		local multiplier, kind = ProjectileServer.hitMultiplier(
+			result.Instance,
+			humanoid,
+			weapon.HeadshotMultiplier,
+			weapon.ArmourPenetration
+		)
 		DamageService.dealDamage(
 			player,
 			humanoid,
 			damage * multiplier,
 			result.Position,
 			kind,
-			result.Instance
+			result.Instance,
+			weapon.ArmourPenetration
 		)
 		if stagger and humanoid.Health > 0 then
 			EnemyService.stagger(humanoid, Config.Upgrades.HollowPoint.StaggerSeconds)
+		end
+		if burn then
+			BurnService.ignite(player, humanoid, burn)
 		end
 		if bodiesLeft <= 0 then
 			break
@@ -289,6 +315,29 @@ local function fireHitscan(
 		remaining -= (result.Position - from).Magnitude
 		from = result.Position
 	end
+	if stoppedOn and weapon.AmmoBehaviour == "breaching" then
+		WallBreachService.hit(stoppedOn, weapon.BreachPower, endPoint)
+	end
+	for _, other in Players:GetPlayers() do
+		if other ~= player then
+			tracerRemote:FireClient(
+				other,
+				origin,
+				endPoint,
+				weapon.Sound,
+				LoadoutService.fitted(player, weapon.Id, "Barrel"),
+				weapon.AmmoBehaviour
+			)
+		end
+	end
+end
+
+local function sendTracers(
+	player: Player,
+	origin: Vector3,
+	endPoint: Vector3,
+	weapon: WeaponDefinitions.WeaponDefinition
+)
 	for _, other in Players:GetPlayers() do
 		if other ~= player then
 			tracerRemote:FireClient(
@@ -300,6 +349,120 @@ local function fireHitscan(
 			)
 		end
 	end
+end
+
+-- A squadmate's body (a player's or a bot's) that `hit` belongs to.
+local function soldierHumanoid(hit: Instance): Humanoid?
+	local model = hit:FindFirstAncestorOfClass("Model")
+	while model do
+		local humanoid = model:FindFirstChildOfClass("Humanoid")
+		if humanoid and Squad.fromHumanoid(humanoid) then
+			return humanoid
+		end
+		model = model:FindFirstAncestorOfClass("Model")
+	end
+	return nil
+end
+
+-- How thick `part` is along the round's line from `entry`, when no thicker than `limit`
+-- studs (nil: thicker, or terrain). A ray cast back from just past `limit` meets the part's
+-- far face only when the part ends before that point.
+local function wallThickness(
+	part: Instance,
+	entry: Vector3,
+	direction: Vector3,
+	limit: number
+): number?
+	if not part:IsA("BasePart") or part:IsA("Terrain") then
+		return nil
+	end
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Include
+	params.FilterDescendantsInstances = { part }
+	local beyond = entry + direction * (limit + 0.05)
+	local back = workspace:Raycast(beyond, entry - beyond, params)
+	return if back then (back.Position - entry).Magnitude else nil
+end
+
+-- An overpenetrating round (the Fifty; Rules/Overpen, Config.Weapons.<id>.Overpen): through
+-- every body in its line up to Bodies, the Infected and squadmates alike (friendly fire,
+-- EnemyProjectileService.damagePlayer: armour, downed and god mode as any hit on a soldier),
+-- each at its falloff share, and through walls no thicker than WallThickness. A round with
+-- BreaksArmour lands whole on the Brute's plated front. `exclude` must not hold the bots.
+local function fireOverpen(
+	player: Player,
+	origin: Vector3,
+	direction: Vector3,
+	weapon: WeaponDefinitions.WeaponDefinition,
+	overpen: WeaponDefinitions.Overpen,
+	stagger: boolean,
+	exclude: { Instance }
+)
+	local round = Overpen.new({
+		bodies = overpen.Bodies,
+		falloff = overpen.Falloff,
+		wallThickness = overpen.WallThickness,
+		friendlyFire = overpen.FriendlyFire,
+	})
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	local filter = table.clone(exclude)
+	params.FilterDescendantsInstances = filter
+	local from = origin
+	local remaining = weapon.Range
+	local endPoint = origin + direction * weapon.Range
+	while remaining > 0 do
+		local result = workspace:Raycast(from, direction * remaining, params)
+		if not result then
+			break
+		end
+		endPoint = result.Position
+		local hit = result.Instance
+		local passed: Instance = hit
+		local continues = true
+		local enemy = findEnemyHumanoid(hit)
+		local soldier = if enemy then nil else soldierHumanoid(hit)
+		if enemy then
+			passed = enemy.Parent or hit
+			if enemy.Health > 0 then
+				local share
+				share, continues = Overpen.hit(round, "infected")
+				local multiplier, kind =
+					ProjectileServer.hitMultiplier(hit, enemy, weapon.HeadshotMultiplier)
+				DamageService.dealDamage(
+					player,
+					enemy,
+					Overpen.damage(weapon.Damage, share) * multiplier,
+					result.Position,
+					kind,
+					hit,
+					if overpen.BreaksArmour then 1 else weapon.ArmourPenetration
+				)
+				if stagger and enemy.Health > 0 then
+					EnemyService.stagger(enemy, Config.Upgrades.HollowPoint.StaggerSeconds)
+				end
+			end
+		elseif soldier then
+			passed = soldier.Parent or hit
+			local share
+			share, continues = Overpen.hit(round, "soldier")
+			if share > 0 then
+				EnemyProjectileService.damagePlayer(soldier, Overpen.damage(weapon.Damage, share))
+			end
+		else
+			local thickness = wallThickness(hit, result.Position, direction, overpen.WallThickness)
+			local _wallShare
+			_wallShare, continues = Overpen.hit(round, "wall", thickness)
+		end
+		if not continues then
+			break
+		end
+		table.insert(filter, passed)
+		params.FilterDescendantsInstances = filter
+		remaining -= (result.Position - from).Magnitude
+		from = result.Position
+	end
+	sendTracers(player, origin, endPoint, weapon)
 end
 
 -- A launcher's round (Config.Weapons.<id>.Explosive): a visible rocket at the gun's
@@ -399,7 +562,7 @@ local function onFireRequest(
 	lastFireTime[player] = now
 	-- The Infected hear it (Config.Awareness): the gun's reach, or its suppressor's.
 	local barrel = LoadoutService.fitted(player, weapon.Id, "Barrel")
-	EnemyService.noise(root.Position, WeaponDefinitions.shotNoise(weapon, barrel))
+	EnemyService.noise(root.Position, WeaponDefinitions.shotNoise(weapon, barrel), "shot")
 	local exclude = excludeList(character)
 	-- The client says whether it is aiming down sights; that only tightens the cone (the
 	-- speed penalty is client-owned movement either way), so trusting it costs nothing.
@@ -436,6 +599,26 @@ local function onFireRequest(
 	end
 	-- A shotgun's pellets: the ones the client drew (so the tracers it shows are the hits),
 	-- each checked against this cone; any missing or outside it is rolled here instead.
+	local overpen = weapon.Overpen
+	if overpen then
+		-- Squadmates are in the line too (friendly fire): only the shooter is left out.
+		local bots = workspace:FindFirstChild("SquadBots")
+		local through = table.clone(exclude)
+		local at = bots and table.find(through, bots)
+		if at then
+			table.remove(through, at)
+		end
+		fireOverpen(
+			player,
+			origin,
+			applySpread(direction.Unit, spread),
+			weapon,
+			overpen,
+			stagger,
+			through
+		)
+		return
+	end
 	local count = weapon.Pellets or 1
 	local sent = if count > 1 and typeof(pellets) == "table" then pellets :: { unknown } else nil
 	for index = 1, count do

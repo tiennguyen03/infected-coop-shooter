@@ -1,17 +1,18 @@
 # Characters: the Infected, the Index hosts, Pike
 
-Build sheets for every body in the game. Written by the lore developer 2026-11-07 for the
-body redesign; the engineer models straight from these in `assets/3d/build/build_assets.py`.
-Constraints every sheet obeys: stock R15, one mesh per limb inside its box (left/right
-shared), flat facets from the palette (`docs/STYLES.md` §2), budgets from §6 (3,000 tris
-per Infected, 5,000 for Brute/Index). Asymmetry lives on the head and torso only, or on
-attached parts (the Hocker sac proves attached parts work).
+Build sheets for every body in the game, by the lore developer; the engineer models from
+them (`assets/3d/build/build_assets.py`, `infected_v2.py`). Constraints: stock R15, one mesh
+per limb inside its box, flat palette facets (`docs/STYLES.md` §2), budgets from §6 (3,000
+tris per Infected, 5,000 for Brute/Index). Asymmetry on the head and torso or attached parts.
 
-Status: Walker, Runner, Brute, Hocker and the player body (then the five Chosen, retired 2026-11-08) rebuilt to these sheets 2026-11-07
-(list kept in `docs/STYLES.md` §7); everything else is sheet only. Skin v2 (art director,
-2026-11-07) repainted the four built Infected: where a sheet below says `infected skin` read
-`pallor` (the Bloat reads `flesh`), the Runner's muscle is `wound`, the Brute's skin `bruise`;
-each built form carries a **Skin v2** line with what changed. Palette rows in `STYLES.md` §2.
+**Contents:** [the two rules](#the-two-rules-that-make-the-roster-read) · A the Infected
+(Walker, Runner, Brute, Hocker built; Bloat, Shedder, Crawler, Kite, Growth sheet only) ·
+B the Index hosts (the Warden built; the rest sheet only) · [C Pike](#c-pike).
+
+Status: the four built Infected and the player body follow these sheets; what the game wears
+now is the v2 remake (`docs/STYLES.md` §7 > Infected v2). Where a sheet says `infected skin`
+read `pallor` (the Bloat `flesh`), the Runner's muscle is `wound`, the Brute's skin `bruise`;
+each built form's **Skin v2** line says what changed.
 
 ## The two rules that make the roster read
 

@@ -20,6 +20,7 @@ local Attributes = require(ReplicatedStorage.Shared.Attributes)
 local CallInDefinitions = require(ReplicatedStorage.Shared.CallInDefinitions)
 local Config = require(ReplicatedStorage.Shared.Config)
 local KitPrices = require(ReplicatedStorage.Shared.KitPrices)
+local DistrictUnlock = require(ReplicatedStorage.Shared.Rules.DistrictUnlock)
 local LobbyDesks = require(ReplicatedStorage.Lobby.LobbyDesks)
 local HoldStill = require(script.Parent.HoldStill)
 local HudTheme = require(script.Parent.HudTheme)
@@ -406,10 +407,12 @@ local function fillCard(id: string)
 	cardBuy.Visible = forSale
 	if forSale then
 		local short = RecordClient.merits() < (price :: number)
-		cardBuy.Text = if short
-			then `{labels.buy} · {price} {labels.currency} (SHORT)`
+		local lock = RecordClient.lockText(id)
+		cardBuy.Text = if lock
+			then `{lock} · {price} {labels.currency}`
+			elseif short then `{labels.buy} · {price} {labels.currency} (SHORT)`
 			else `{labels.buy} · {price} {labels.currency}`
-		cardBuy.TextTransparency = if short then 0.5 else 0
+		cardBuy.TextTransparency = if short or lock then 0.5 else 0
 	end
 	cardLine.Text = def.Description
 	local row = (Config.CallIns :: any)[def.ConfigKey] or {}
@@ -648,9 +651,12 @@ function CallInDisplayUI.init()
 			fillCard(order[selected])
 		end
 	end)
-	RecordClient.Refused:Connect(function(_id: unknown, reason: unknown)
+	RecordClient.Refused:Connect(function(id: unknown, reason: unknown)
 		if desk and mode ~= "closed" then
-			say.Text = if reason == "short" then `"{desk.talk.short}"` else `"{desk.talk.refused}"`
+			say.Text = if reason == "locked" and typeof(id) == "string"
+				then DistrictUnlock.need(KitPrices.unlockOf(id))
+				elseif reason == "short" then `"{desk.talk.short}"`
+				else `"{desk.talk.refused}"`
 		end
 	end)
 

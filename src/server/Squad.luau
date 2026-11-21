@@ -349,6 +349,32 @@ function Squad.knock(member: Member, seconds: number): boolean
 	return true
 end
 
+-- Cuts a knockdown short (a pinning Runner shot or shoved off): the member gets up over
+-- `seconds` from now (the get-up clip), then the usual grace. No-op when not knocked down
+-- or when the knockdown already ends sooner.
+function Squad.standUp(member: Member, seconds: number)
+	local character = member.character
+	if not character then
+		return
+	end
+	local current = character:GetAttribute(Attributes.KnockedUntil) :: number?
+	local now = os.clock()
+	if not current or current <= now + seconds then
+		return
+	end
+	local until_ = now + seconds
+	character:SetAttribute(Attributes.KnockedUntil, until_)
+	if member.owner then
+		Remotes.get("Impact"):FireClient(member.owner, Messages.Impact.GetUp, seconds)
+	end
+	task.delay(seconds, function()
+		if character.Parent and character:GetAttribute(Attributes.KnockedUntil) == until_ then
+			character:SetAttribute(Attributes.KnockedUntil, nil)
+			character:SetAttribute(Attributes.KnockGraceUntil, os.clock() + Config.Knockdown.Grace)
+		end
+	end)
+end
+
 function Squad.members(): { Member }
 	return table.clone(members)
 end

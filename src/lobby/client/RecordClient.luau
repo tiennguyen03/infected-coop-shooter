@@ -11,6 +11,7 @@ local Messages = require(ReplicatedStorage.Shared.Messages)
 local Record = require(ReplicatedStorage.Shared.Rules.Record)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local KitPrices = require(ReplicatedStorage.Shared.KitPrices)
+local DistrictUnlock = require(ReplicatedStorage.Shared.Rules.DistrictUnlock)
 
 local RecordClient = {}
 
@@ -51,25 +52,42 @@ function RecordClient.owns(id: string): boolean
 	return record ~= nil and Record.owns(record, id, RecordClient.priceOf)
 end
 
+-- Missions won per district (the record's `wins`).
+function RecordClient.wins(): { [string]: number }
+	return if record then record.wins else {}
+end
+
+-- What still has to be won before `id` is on sale ("WIN 3 AT MILE 14 (1/3)"), or nil when it
+-- is open (Rules/DistrictUnlock; the server checks the buy again).
+function RecordClient.lockText(id: string): string?
+	local unlock = KitPrices.unlockOf(id)
+	if DistrictUnlock.met(unlock, RecordClient.wins()) then
+		return nil
+	end
+	return DistrictUnlock.text(unlock, RecordClient.wins())
+end
+
 function RecordClient.buy(id: string)
 	Remotes.get("Record"):FireServer(Messages.Record.Buy, id)
 end
 
 function RecordClient.init()
-	Remotes.get("Record").OnClientEvent:Connect(function(kind: string, a: any, b: any, c: any)
-		if kind == Messages.Record.State and typeof(a) == "number" and typeof(b) == "table" then
-			-- Receipts stay on the server.
-			record = {
-				merits = a,
-				owned = b,
-				tabs = if typeof(c) == "number" then c else 0,
-				receipts = {},
-			}
-			changed:Fire()
-		elseif kind == Messages.Record.Refused then
-			refused:Fire(a, b)
-		end
-	end)
+	Remotes.get("Record").OnClientEvent
+		:Connect(function(kind: string, a: any, b: any, c: any, d: any)
+			if kind == Messages.Record.State and typeof(a) == "number" and typeof(b) == "table" then
+				-- Receipts stay on the server.
+				record = {
+					merits = a,
+					owned = b,
+					tabs = if typeof(c) == "number" then c else 0,
+					receipts = {},
+					wins = if typeof(d) == "table" then d else {}, -- shown as locks in the shop (the buy is checked on the server)
+				}
+				changed:Fire()
+			elseif kind == Messages.Record.Refused then
+				refused:Fire(a, b)
+			end
+		end)
 end
 
 return RecordClient

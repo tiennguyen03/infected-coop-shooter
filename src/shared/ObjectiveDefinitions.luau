@@ -77,6 +77,13 @@ export type Row = {
 	ReachRadius: number?,
 	SpawnFactor: number?,
 	MaxLamps: number?,
+	-- Words for a module two maps share (Sanitize, SilenceAlarm); nil = the module's own.
+	Prompt: string?, -- the hold prompt's action ("Burn the bus")
+	Object: string?, -- the prompt's object ("Fuel can")
+	Step: string?, -- the HUD step after "Hold E " ("at each fuel can to burn the buses")
+	Target: string?, -- SilenceAlarm: the map part the noise comes from ("Siren")
+	Sound: string?, -- SilenceAlarm: its loop (WorldSounds key)
+	Noise: { Reach: number, Every: number }?, -- SilenceAlarm: wakes the Infected until off
 	LampRange: number?,
 	LampBrightness: number?,
 	Boss: Boss?, -- main only: the Warden's last act (defaults Config.Objectives.Boss)
@@ -85,6 +92,7 @@ export type Row = {
 export type Pick = { Id: string, Weight: number }
 
 export type Map = {
+	Of: string?, -- a bigger version of that map: it plays that map's signature objectives
 	Main: { Pick }, -- drawn by weight, never the same twice in a row on a server
 	Side: { Pick },
 	Sites: { [string]: { Site } }, -- by objective id: where it can be played here
@@ -268,6 +276,56 @@ local ROWS: { [string]: Row } = {
 		Radius = 140, -- roaming spawns picked this close to the siren ...
 		SpawnFactor = 0.4, -- ... happen only this share of the time once it is off
 	},
+
+	-- Mile 14's signature main objective: three sealed buses in the jam (the Sanitize module).
+	burn_buses = {
+		Kind = "signature",
+		Map = "mile14",
+		Role = "main",
+		Module = "Sanitize",
+		Name = "Burn the Buses",
+		Brief = "Three buses in the jam are sealed with the bitten inside. When they get out, the road is theirs. Burn all three.",
+		Why = "Sealed buses full of the bitten",
+		Done = "The buses are burning. Nothing is getting out of them.",
+		Needs = { "Points" },
+		StartRadius = 60,
+		Hold = 3,
+		Prompt = "Burn the bus",
+		Object = "Fuel can",
+		Step = "at each fuel can to burn the buses",
+		BurnWave = { Runner = 4, Walker = 3 },
+		Boss = {
+			At = 0.6,
+			Contest = 14,
+			Arrive = "The fires woke something in the lead bus. It's coming up the lane.",
+			Contested = "It's standing over the last fuel can. Pull it off, then burn the bus.",
+			Blocked = "The Warden is at the fuel can: pull him off",
+		},
+	},
+
+	-- Mile 14's signature side objective: a stuck bus horn (the SilenceAlarm module).
+	kill_horn = {
+		Kind = "signature",
+		Map = "mile14",
+		Role = "side",
+		Module = "SilenceAlarm",
+		Name = "Kill the Horn",
+		Brief = "A bus horn near the toll plaza is stuck on, and it is waking the whole jam. Get to the cab and kill it.",
+		Why = "The horn is waking the Infected",
+		Done = "Horn's dead. The jam goes quiet.",
+		Needs = {},
+		StartRadius = 0,
+		Supply = 150,
+		Hold = 4,
+		Radius = 140,
+		SpawnFactor = 0.4,
+		Target = "Horn",
+		Prompt = "Kill the horn",
+		Object = "Bus cab",
+		Step = "at the bus cab to kill the horn",
+		-- The siren loop stands in until a horn sound is made (assets/audio/build).
+		Noise = { Reach = 200, Every = 6 },
+	},
 }
 
 -- Coordinates: docs/LEVELS.md (A3 the three sites, A5 placements, A7 side objectives).
@@ -347,7 +405,154 @@ local MAPS: { [string]: Map } = {
 			},
 		},
 	},
+	-- Mile 14 v2 (docs/LEVELS.md > Mile 14; level designer 2026-11-20). Frame x +-320, z +-450;
+	-- the deck at 12, the span and county road at 26.
+	mile14 = {
+		Main = {
+			{ Id = "burn_buses", Weight = 1.5 },
+			{ Id = "secure_site", Weight = 1 },
+			{ Id = "restore_comms", Weight = 1 },
+			{ Id = "confirm_casualties", Weight = 1 },
+			{ Id = "recover_record", Weight = 1 },
+		},
+		Side = {
+			{ Id = "kill_horn", Weight = 1.5 },
+			{ Id = "lights_on", Weight = 1 },
+			{ Id = "misdrop", Weight = 1 },
+			{ Id = "clear_spitters", Weight = 1 },
+		},
+		Sites = {
+			burn_buses = {
+				{
+					Name = "the jam",
+					Position = { 16, 12, -246 },
+					-- a fuel can 2 studs clear of each sealed bus
+					Points = { { -8.5, 12.6, -160 }, { 23.5, 12.6, -246 }, { -8.5, 12.6, -366 } },
+					BossFrom = { -16, 12, -400 }, -- out of the lead bus
+				},
+			},
+			secure_site = {
+				{
+					Name = "the Overpass",
+					Position = { 0, 26.5, 80 },
+					Size = { 28, 1, 28 },
+					BossFrom = { -70, 26, 80 },
+				},
+				{
+					Name = "the toll plaza",
+					Position = { 0, 12.5, 260 },
+					Size = { 46, 1, 46 },
+					BossFrom = { -80, 12, 236 },
+				},
+				{
+					Name = "the rest stop",
+					Position = { -190, 0.6, -255 },
+					Size = { 46, 1, 46 },
+					BossFrom = { -70, 0, -320 },
+				},
+			},
+			restore_comms = {
+				{ Name = "the water tower", Position = { 225, 8.6, -350 } },
+			},
+			confirm_casualties = {
+				{
+					Name = "the weigh station",
+					Position = { 150, 0.5, -185 },
+					Spawns = {
+						{ 80, 0, -180 },
+						{ 160, 0, -170 },
+						{ 215, 0, -185 },
+						{ 240, 0, -140 },
+						{ 160, 0, -235 },
+						{ 95, 0, -235 },
+					},
+				},
+			},
+			recover_record = {
+				{
+					Name = "the toll office",
+					Position = { 154, 12.6, 341 },
+					To = { 0, 26.5, 80 },
+					ToName = "the Overpass",
+				},
+			},
+			kill_horn = {
+				{ Name = "the jam", Position = { 23.5, 13, 168 } },
+			},
+			lights_on = {
+				{ Name = "the weigh station", Position = { 142, 3, -172.8 } },
+			},
+			misdrop = {
+				{ Name = "the Halt", Position = { -200, 0, 250 } },
+				{ Name = "the east field", Position = { 230, 0, 10 } },
+				{ Name = "the county road", Position = { -250, 26, 80 } },
+			},
+			clear_spitters = {
+				{ Name = "the south barricade", Position = { 0, 12, -425 } },
+				{ Name = "the Drop", Position = { -110, 0, -50 } },
+			},
+		},
+	},
 }
+
+-- The big map (docs/sprints/DELTA_XL.md, Config.DeltaXL): today's Delta in the middle with
+-- eight areas round it. Every site of `delta` is kept; the outer areas add theirs (data only,
+-- no new objective types). Coordinates: docs/LEVELS.md > E. Checkpoint Delta XL.
+local OUTER: { [string]: { Site } } = {
+	secure_site = {
+		{ Name = "the truck stop", Position = { 60, 0.8, 735 }, Size = { 46, 1, 46 } },
+		{ Name = "the interchange", Position = { 90, 0.5, -640 }, Size = { 46, 1, 46 } },
+	},
+	restore_comms = {
+		{ Name = "the water tower", Position = { 820, 1.2, 772 } },
+	},
+	confirm_casualties = {
+		{
+			Name = "the freight wagons",
+			Position = { 607, 0.5, -60 },
+			-- between the sidings, at the wagons' ends
+			Spawns = {
+				{ 607, 0, -145 },
+				{ 607, 0, -95 },
+				{ 607, 0, 5 },
+				{ 607, 0, 55 },
+				{ 582, 0, -110 },
+				{ 582, 0, -20 },
+			},
+		},
+	},
+	lights_on = {
+		{ Name = "the fuel farm", Position = { 540, 3, -647.6 } },
+		{ Name = "the water works", Position = { 720, 3, 652.6 } },
+		{ Name = "the camp", Position = { -440, 3, 37.6 } },
+	},
+	misdrop = {
+		{ Name = "the farms", Position = { -780, 0, 580 } },
+		{ Name = "the truck stop", Position = { 200, 0, 640 } },
+		{ Name = "the water works", Position = { 560, 0, 380 } },
+		{ Name = "the camp", Position = { -520, 0, 240 } },
+		{ Name = "the rail yard", Position = { 420, 0, -200 } },
+		{ Name = "the houses", Position = { -480, 0, -760 } },
+		{ Name = "the interchange", Position = { 200, 0, -760 } },
+		{ Name = "the fuel farm", Position = { 420, 0, -420 } },
+	},
+	clear_spitters = {
+		{ Name = "the flyover", Position = { -110, 24.2, -560 } },
+		{ Name = "the bridge", Position = { -30, 0, 425 } },
+		{ Name = "the grain silos", Position = { -470, 0, 760 } },
+	},
+}
+
+local deltaXL: Map = { Of = "delta", Main = MAPS.delta.Main, Side = MAPS.delta.Side, Sites = {} }
+for id, sites in MAPS.delta.Sites do
+	deltaXL.Sites[id] = table.clone(sites)
+end
+for id, sites in OUTER do
+	local list = deltaXL.Sites[id] or {}
+	table.move(sites, 1, #sites, #list + 1, list)
+	deltaXL.Sites[id] = list
+end
+MAPS.delta_xl = deltaXL
 
 return {
 	Rows = ROWS,
